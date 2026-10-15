@@ -11,8 +11,8 @@ import Foundation
 /// that docked windows pushed aside or squeezed to where its user left it. Nothing is raised, so the window in use stays in
 /// front. (Whoever only wants ⌃⌥ for the app in front has Controller+PassThrough.swift, which moves nothing.) Tiles and seam
 /// handles go away; Arbor stops observing windows; and the app hands back every shortcut except the ones that end the pause,
-/// and both pointer taps (`inputSettings`, `KeyBindings.whilePaused`). Resuming is a launch: the arrangement and camera
-/// are matched against the windows that exist by then. It also puts the floating windows back on the Desktop that the pause
+/// and both pointer taps (`inputSettings`, `KeyBindings.whilePaused`). Resuming is a launch that keeps the view: the arrangement and
+/// camera are matched against the windows that exist by then. It also puts the floating windows back on the Desktop that the pause
 /// took off it (`isBackFromThePause`), each in one move. Both ends are the paths that quitting and launching take.
 extension Controller {
   func pause(minutes: Double?, forApp: Bool = false) -> CommandResult {

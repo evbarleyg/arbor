@@ -104,6 +104,36 @@ private let c = WindowID(3)
     #expect(workspace.camera == root)
   }
 
+  @Test func showingEverythingLeavesNothingOutOfViewAndLosesNothing() {
+    var workspace = Workspace()
+    workspace.dock(a, at: .cameraEdge(.left))
+    workspace.dock(b, at: .cameraEdge(.right))
+    let (root, left, right) = (workspace.tree.root, workspace.tree.leaf(containing: a)!, workspace.tree.leaf(containing: b)!)
+    workspace.floating[c] = CGRect(x: 10, y: 10, width: 300, height: 200)
+    workspace.summon(c, app: "C", at: CGRect(x: 40, y: 40, width: 300, height: 200))
+    workspace.dismissSummon()
+    workspace.moveCamera(to: left)
+    workspace.saveView(slot: 1)
+    workspace.moveCamera(to: right)
+    workspace.moveCamera(to: workspace.tree.desktop)
+    _ = workspace.goBack()
+    let before = workspace
+    #expect(!before.forward.isEmpty)
+
+    workspace.showEverything()
+    #expect(workspace.camera == root)
+    #expect(workspace.back == [root, left, right], "the view it had is one step back")
+    #expect(workspace.forward.isEmpty, "as after any move of the view")
+    #expect(workspace.role(of: c) == nil && workspace.floating[c] == before.floating[c])
+    #expect(workspace.tree == before.tree && workspace.savedViews == before.savedViews)
+    #expect(workspace.summonFrames == before.summonFrames, "where it was summoned is still known")
+
+    // With everything showing already, and nothing sent away, it changes nothing.
+    let shown = workspace
+    workspace.showEverything()
+    #expect(workspace == shown)
+  }
+
   @Test func guestsFollowTheirHostAndLeaveWithIt() {
     var workspace = Workspace()
     workspace.dock(a, at: .cameraEdge(.left))

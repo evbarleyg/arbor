@@ -75,7 +75,7 @@ import Testing
     #expect(h.system.isVisible(b), "\(h.frame(b)!)")
   }
 
-  // MARK: Stopping and starting again in one process (Accessibility permission taken away and given back)
+  // MARK: Stopping and starting again in one process
 
   @Test func arborCanStopAndStartAgainAndSeesWhatChangedMeanwhile() {
     let (h, a, b, c) = makeHarness()
@@ -94,11 +94,10 @@ import Testing
     h.start()
     #expect(h.controller.isRunning)
     #expect(h.controller.windows.keys.sorted() == [a, c, d], "no memory of the window that closed")
-    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: a), "the camera is where it was")
+    #expect(h.workspace.camera == h.workspace.tree.root, "a start after a quit shows everything")
     #expect(h.layout?.windowFrames.keys.sorted() == [a])
-    #expect(h.frame(a) == h.visibleFrame.insetBy(dx: 12, dy: 12))
+    expectWindowsMatchLayout(h)
     #expect(h.workspace.isFloating(d))
-    h.run("show-all")
     for window in [a, c, d] { #expect(h.system.isVisible(window), "\(window)") }
     h.scheduler.advance(by: Controller.pendingSlotLifetime + 1)
     #expect(h.workspace.tree.allWindows == [a])
@@ -154,10 +153,11 @@ import Testing
     h.controller.saveNow()
     let tree = h.controller.workspaces[second.id]!.tree
 
-    // Arbor dies, the display is unplugged, Arbor starts again. (macOS would move the windows onto the
+    // Arbor dies, the display is unplugged, the watchdog starts Arbor again. (macOS would move the windows onto the
     // display that is left; the fake leaves them where they were, which is the harder case.)
     h.system.displayList = [FakeWindowSystem.standardDisplay]
     let again = relaunch(after: h, saved: h.store.saved)
+    again.controller.restartedAfterAccident = true
     again.start()
     for window in [a, b] { #expect(again.system.isVisible(window), "\(window) \(again.frame(window)!)") }
 

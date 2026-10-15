@@ -90,6 +90,15 @@ public struct PersistedState: Codable, Equatable, Sendable {
     return state
   }
 
+  /// What a launch starts from (`Workspace.showEverything`), on the displays that are not connected too: they may be by now,
+  /// or come back while this run lasts.
+  public func showingEverything() -> PersistedState {
+    var state = self
+    for id in state.workspaces.keys { state.workspaces[id]!.showEverything() }
+    for id in state.dormant.keys { state.dormant[id]!.workspace.showEverything() }
+    return state
+  }
+
   private enum CodingKeys: String, CodingKey {
     case version, workspaces, hints, dormant, welcomed, pause
     case hintsShown

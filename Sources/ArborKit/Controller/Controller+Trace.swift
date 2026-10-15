@@ -138,5 +138,7 @@ extension Controller {
     minimumSizes = header.minimumSizes
     appPlacedFrames = header.appPlaced
     focusHistory = header.focusHistory
+    // A recording begins in the middle of a run, so the replay goes on from the view of then. A launch would show everything.
+    resumeState = store.load()
   }
 }

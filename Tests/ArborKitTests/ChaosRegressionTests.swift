@@ -936,4 +936,20 @@ private let c = WindowID(103)
       swap 103 102
       """)
   }
+
+  /// The rule `start-took-out-of-view`. Two docked, one framed, one that was never docked: the second start brought the framed view back and sent the
+  /// other two to the corner, from where the quit had just fetched them. After a summon too, whatever the view.
+  @Test(arguments: ["zoom 101", "summon Mail\nfocus 101\nshow-all"]) func aLaunchTakesNothingOutOfView(before: String) {
+    expectEveryInvariantHolds(
+      Self.twoDocked + """
+
+        open 103 Mail pid 1002 at 420 300 500 400
+        settle
+        \(before)
+        settle
+        quit
+        launch
+        settle
+        """)
+  }
 }

@@ -619,12 +619,17 @@ private let side = DisplaySnapshot(
     first.run("zoom \(a.rawValue)")
     first.controller.saveNow()
 
-    let h = Harness(saved: first.store.saved)
-    h.system.open(app: "Safari", title: "Secret plans")
-    h.system.open(app: "Mail", title: "Re: salary")
+    // The watchdog's start, which brings the view back. (A launch shows everything.)
+    let h = first.newProcess(byTheWatchdog: true)
     h.start()
     #expect(!h.controller.parked.isEmpty, "the view is restored, with Mail out of view")
     #expect(h.overlays.messages.isEmpty)
+
+    h.controller.shutdown()
+    let launched = h.newProcess()
+    launched.start()
+    #expect(launched.layout?.windowFrames[a] != nil, "the arrangement is restored")
+    #expect(launched.overlays.messages.isEmpty)
   }
 
   @Test func aProblemComesBeforeAnyHint() {

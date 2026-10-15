@@ -400,27 +400,6 @@ extension ChaosRunner {
         advance 0.5
         """),
     ChaosKnownFailure(
-      rule: "start-took-out-of-view", owner: "rule 2: a start takes nothing out of view", severity: 2,
-      story: "Quit gives every window back in view. The next start brings the arrangement and the view back, and what is a tile or outside the view there goes out "
-        + "of view before its person has touched anything.",
-      script: """
-        open 101 Preview pid 1007 at 80 491 723 553 min 723 400 max 723 2000
-        open 102 Xcode pid 1004 at 546 183 1248 896 min 1188 685
-        launch
-        key down arrange
-        quit
-        launch
-        """,
-      """
-        open 103 Terminal pid 1003 at 917 485 719 409 min 177 60
-        open 104 Music pid 1006 at 991 54 784 480 min 680 480
-        launch
-        key down arrange
-        key down in
-        quit
-        launch
-        """),
-    ChaosKnownFailure(
       rule: "app-switch-out-of-view", owner: "rule 4: the window you switch to", severity: 3,
       story: "Another app comes forward and nobody says which of its windows has the keyboard (`keyboardFocusMoved` alone). The controller does not ask, and the "
         + "window stays out of view with the keyboard in it. The Accessibility layer is meant to say; where it misses, this is what a person sees.",
@@ -433,6 +412,31 @@ extension ChaosRunner {
         zoom
         switch-app 105
         settle
+        """),
+    ChaosKnownFailure(
+      rule: "launch-keyboard-in-a-tile", owner: "rule 2, a follow-up (decided, Q16): that window is let be where it stands, docked, its place kept, until the next layout somebody causes",
+      severity: 3,
+      story: "Arbor is started with the keyboard in a docked window that is a tile when everything shows, whatever room F61 finds for it. A "
+        + "launch shows everything, and no key may go to a window out of view: so the view goes to that window, and every other one leaves it.",
+      script: """
+        open 101 Xcode pid 1004 at 393 391 518 528 min 518 528 max 628 539 title Untitled
+        launch
+        settings {"minimumUsableWidth":800,"minimumUsableHeight":0}
+        open 106 Music pid 1006 at 636 440 1687 1775 max 561 347
+        url arbor://toggle-float/106
+        flush
+        crash
+        launch
+        """,
+      """
+        launch
+        open 101 Mail pid 1002 at 309 186 555 421 min 555 421 max 696 1933 title Übersicht
+        open 103 Safari pid 1000 at -154 293 714 663 min 714 663 no-bundle
+        tab-open 109 in 103
+        via shortcut dock 109 bottom
+        quit
+        settings {"gap":1000000000}
+        launch
         """),
   ]
 

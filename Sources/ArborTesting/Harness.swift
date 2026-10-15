@@ -63,6 +63,20 @@ public final class Harness {
 
   public func start() { controller.start() }
 
+  /// A new run of Arbor on the same Mac, not started yet: the windows and displays as they are now, the settings in use, what this run
+  /// saved, and a clock that goes on. It knows nothing else of this run, which has quit (`controller.shutdown()`) or counts
+  /// as killed, and must not be used any more.
+  /// - Parameter byTheWatchdog: the watchdog does the starting, a second after an accident; otherwise a person, or a login.
+  public func newProcess(byTheWatchdog: Bool = false) -> Harness {
+    system.events = nil
+    system.stop()
+    system.forgetSession()
+    let (new, ended) = (Harness(settings: controller.settings, saved: store.saved, system: system), controller.now())
+    new.controller.now = { [scheduler = new.scheduler] in ended.addingTimeInterval(scheduler.now) }
+    new.controller.restartedAfterAccident = byTheWatchdog
+    return new
+  }
+
   /// Lets the controller ask whether it still has Accessibility permission, as the app does. Call before `start()`.
   /// Not the default: the question comes round every two seconds, which most tests do not want in their schedule.
   public func watchAccessibility() {

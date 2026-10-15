@@ -120,6 +120,14 @@ public struct Workspace: Codable, Sendable, Equatable {
     return false
   }
 
+  /// Nothing here is out of view any more, whatever the view was, as after `home`: the camera goes to the root, with the old
+  /// view one step back, and a window that `summon` had sent away is an ordinary floating window. The arrangement, the saved
+  /// views, the names and what Back led to stay. As after any move of the view, there is nothing to go forward to.
+  public mutating func showEverything() {
+    moveCamera(to: tree.root)
+    forgetSummons()
+  }
+
   public mutating func saveView(slot: Int) { savedViews[String(slot)] = camera }
 
   public func savedView(slot: Int) -> NodeID? {

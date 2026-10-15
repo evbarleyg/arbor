@@ -341,6 +341,7 @@ extension Runner {
     try step("start with a minimized window", by: "Arbor, same home folder") {
       try startArbor(managing: 3)
       check("it kept its place in the tree", try state().displays[0].tree.allWindows.contains(w1))
+      check("a launch shows everything", try state().displays[0].camera == state().displays[0].tree.root)
     }
     try step("show everything with the window still minimized", "show-all") { state in
       check("it takes no space", state.displays[0].windowFrames[w1] == nil)

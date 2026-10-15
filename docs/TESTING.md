@@ -970,7 +970,7 @@ done to the world as if Arbor had done it, at which the net has to speak, beside
 | Rule of the product | Rules of the walks | Detector |
 |---|---|---|
 | Nothing moves until the person docks something, and nothing that was not asked to | `moved-before-any-dock`, `fetched-before-any-dock`, `moved-at-launch`, `moved-at-resume`, `moved-unasked`, `there-and-back-moved`, `pause-and-resume-moved` | `moved-unasked` |
-| A start takes nothing out of view | `start-took-out-of-view` | `lost` |
+| A start takes nothing out of view, but for what Show Everything itself has out of view | `start-took-out-of-view`, `launch-keyboard-in-a-tile` (the keyboard is in such a window, and takes the view) | `lost` |
 | A window moves once, to where it ends up | `moved-twice` (in the step of the command or event), `moved-again` (later, with nobody touching anything); `-sizing` where its app refused a size, `-sizing-again` where it had refused in the same way before | `jolt` |
 | The window you switch to comes to the front and into view | `switched-to-out-of-view`, `switched-to-partly-out`, `app-switch-out-of-view` (only the app was reported), `switched-to-behind` | `focus`, `behind` |
 | Quitting, Float All and pause give windows their own sizes back | `size-not-given-back` | `size-lost` |

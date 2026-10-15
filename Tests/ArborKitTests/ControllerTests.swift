@@ -432,6 +432,10 @@ import Testing
     }
     again.start()
     #expect(again.workspace.tree == h.workspace.tree)
+    // A launch ends showing everything (LaunchShowsEverythingTests), with the view of last time one step back.
+    #expect(again.workspace.camera == again.workspace.tree.root)
+    #expect(again.system.isVisible(a) && again.system.isVisible(b))
+    #expect(again.run("back").ok)
     #expect(again.workspace.camera == again.workspace.tree.leaf(containing: b))
     #expect(again.system.isVisible(b))
     #expect(!again.system.isVisible(a))

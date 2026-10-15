@@ -70,6 +70,8 @@ import Foundation
 //   trace on [name] | trace off  record the session as a trace file in $ARBOR_HOME/traces
 //   field-type [text]            type into the name field (`ask-name`) and press ↩
 //   field-cancel                 press ⎋ in the name field
+//   relaunch                     quit Arbor and start it again: every window comes back into view, then a new process
+//                                that knows what was saved and nothing else. A trace or a `watch` ends with the quit
 //
 // `arbor-sim replay <file.jsonl> [--strict] [--verbose]` replays a trace instead (Replay.swift).
 //   map <id>|desktop|beside      click in the minimap: on a window, on the Desktop's outline, beside the map.
@@ -107,12 +109,8 @@ func runSimulation() {
     while let line = readLine() { lines.append(line) }
   }
 
-  let harness = launch?.harness() ?? Harness()
-  // The clock is the script's: an hour of `wait` is no reason to stop.
-  harness.recorder.limits.seconds = .infinity
-  harness.recorder.openSink = TraceRecorder.openFile
-  harness.watchAccessibility()
-  harness.start()
+  var harness = launch?.harness() ?? Harness()
+  begin(harness)
   var printLayout = true
   var lastCommandOK = true
   var failedExpectations = 0
@@ -126,7 +124,7 @@ func runSimulation() {
     print("COMMAND FAILED: `\(line)` (follow it with `expect fail` if it is meant to)\n")
   }
   var printTransitions = false
-  let watcher = SimulatedWatcher(harness: harness)
+  var watcher = SimulatedWatcher(harness: harness)
   var staleLayouts = 0
   var linesPrinted = 0
   var minimapsPrinted = 0
@@ -164,6 +162,15 @@ func runSimulation() {
       watcher.printLines()
       print("")
       continue
+    }
+    if words == ["relaunch"] {
+      // As the app does: `quit` is answered, then the app ends, which shuts the controller down. Then somebody starts Arbor.
+      _ = harness.run("quit")
+      harness.controller.shutdown()
+      watcher.printLines()
+      harness = relaunched(harness)
+      watcher = SimulatedWatcher(harness: harness)
+      (linesPrinted, minimapsPrinted) = (0, 0)
     }
     let (message, ok) = simulate(words, harness: harness, printLayout: &printLayout)
     // macOS reports the focus changes Arbor asked for back to it.
@@ -203,6 +210,28 @@ func runSimulation() {
   // On damaged files half the script fails, and is meant to. Whoever reads the output looks for the rest.
   if launch != nil { exit(failedExpectations > 0 ? 1 : 0) }
   if failedExpectations + unexpectedFailures + staleLayouts > 0 { exit(1) }
+}
+
+/// Starts a harness as every run of the simulator's Arbor starts.
+@MainActor
+func begin(_ harness: Harness) {
+  // The clock is the script's: an hour of `wait` is no reason to stop.
+  harness.recorder.limits.seconds = .infinity
+  harness.recorder.openSink = TraceRecorder.openFile
+  harness.watchAccessibility()
+  harness.start()
+}
+
+/// The new process of `relaunch`, started. It uses the settings file the old one used (`settings-file`).
+@MainActor
+func relaunched(_ old: Harness) -> Harness {
+  let new = old.newProcess()
+  new.controller.saveSettings = old.controller.saveSettings
+  new.controller.loadSettings = old.controller.loadSettings
+  new.controller.replaceSettingsFile = old.controller.replaceSettingsFile
+  new.controller.keepCopyOfSettingsFile = old.controller.keepCopyOfSettingsFile
+  begin(new)
+  return new
 }
 
 /// `watch` in the simulator: the real `EventFeed`, with standard output in place of a socket.
@@ -387,6 +416,9 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
   case "save-state":
     guard words.count > 1 else { return usage("save-state <file>") }
     return saveState(of: harness, to: words[1])
+  case "relaunch" where words.count == 1:
+    // The loop has done it: this is the new process.
+    return ("quit, and started again", harness.controller.isRunning)
   case "revoke":
     harness.revokeAccessibility()
     return ("Accessibility permission taken away", true)

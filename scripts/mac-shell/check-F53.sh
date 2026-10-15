@@ -272,7 +272,8 @@ env ARBOR_ONLY_PIDS="$ARBOR_WINDOWS_PID,$SCRATCH_PID" ARBOR_NO_PROMPT=1 ARBOR_DE
 ARBOR_PID=$!
 started "$ARBOR_PID"
 check "running again" eventually running
-check "relaunched: stashed, and out of view again" eventually is_not on_screen "$SCRATCH"
+check "relaunched: an ordinary window" eventually is_not_trait "$SCRATCH" stashed
+check "relaunched: still in view, where the quit put it" is on_screen "$SCRATCH"
 # shellcheck disable=SC2046
 click $(center_of "$W1")
 view=$(camera)

@@ -46,12 +46,13 @@ private let side = DisplaySnapshot(
   }
 
   /// The same windows (numbers, apps, titles, frames) seen by a new Arbor process that loads what `old` saved.
-  func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Harness {
+  func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil, byTheWatchdog: Bool = false) -> Harness {
     let new = Harness(displays: displays ?? old.system.displayList, saved: old.store.saved)
     for window in old.system.allWindows() {
       new.system.open(
         app: window.appName, bundleID: window.bundleID, title: window.title, pid: window.pid, frame: window.frame)
     }
+    new.controller.restartedAfterAccident = byTheWatchdog
     new.start()
     return new
   }
@@ -1007,7 +1008,7 @@ private let side = DisplaySnapshot(
     #expect(h.workspace.role(of: notes) == nil)
   }
 
-  @Test func quittingLeavesEveryWindowInViewAndTheNextLaunchRemembers() {
+  @Test func quittingLeavesEveryWindowInViewAndSoDoesTheNextLaunch() {
     let (old, _, _, terminal) = makeHarness()
     let notes = old.system.open(app: "Notes", pid: 1004, frame: CGRect(x: 100, y: 100, width: 300, height: 400))
     old.run("summon Notes")
@@ -1016,19 +1017,22 @@ private let side = DisplaySnapshot(
     #expect(old.frame(terminal) == middle)
     #expect(old.system.isVisible(notes))
 
+    // No start takes a window out of view: they are ordinary floating windows now. Where each was summoned is remembered.
     let h = relaunch(old)
-    #expect(h.workspace.isStashed(terminal) && h.workspace.isStashed(notes))
-    #expect(isOutOfView(terminal, h) && isOutOfView(notes, h))
+    #expect(h.workspace.role(of: terminal) == nil && h.workspace.role(of: notes) == nil)
+    #expect(h.system.frameLog.allSatisfy { $0.window != terminal && $0.window != notes }, "\(h.system.frameLog)")
+    #expect(h.system.isVisible(terminal) && h.system.isVisible(notes))
+    h.system.userMove(terminal, to: CGRect(x: 40, y: 60, width: 400, height: 300))
     h.run("summon Terminal")
     #expect(h.frame(terminal) == middle)
   }
 
-  @Test func killedWhileSummonedItIsStillSummonedAtTheNextLaunch() {
+  @Test func killedWhileSummonedItIsStillSummonedWhenTheWatchdogHasStartedArborAgain() {
     let (old, editor, _, terminal) = makeHarness()
     old.run("summon Terminal")
     old.controller.saveNow()
 
-    let h = relaunch(old)
+    let h = relaunch(old, byTheWatchdog: true)
     #expect(h.workspace.isSummoned(terminal))
     #expect(h.frame(terminal) == middle)
     h.system.userFocus(editor)

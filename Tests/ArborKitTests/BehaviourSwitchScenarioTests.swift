@@ -51,7 +51,7 @@ private func frames(_ h: Harness) -> [WindowID: CGRect] {
 }
 
 /// A new Arbor process that finds the windows of `old` exactly as they are now, and the state `old`
-/// saved: what a launch after a crash sees. With `savingFirst` false the state is as old as the last save.
+/// saved: what the watchdog's start after a crash sees. With `savingFirst` false the state is as old as the last save.
 @MainActor
 private func relaunchAfterCrash(
   _ old: Harness, settings: Settings = Settings(), savingFirst: Bool = true, forgetState: Bool = false
@@ -63,6 +63,7 @@ private func relaunchAfterCrash(
     new.system.open(
       app: window.appName, bundleID: window.bundleID, title: window.title, pid: window.pid, frame: window.frame)
   }
+  new.controller.restartedAfterAccident = true
   new.start()
   return new
 }
@@ -90,6 +91,8 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
   }
   new.system.cursor = old.system.cursor
   new.system.focused = old.system.focused
+  // It goes on where `old` was, view included, which a launch would not.
+  new.controller.restartedAfterAccident = true
   new.start()
   return new
 }

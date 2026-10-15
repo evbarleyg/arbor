@@ -929,7 +929,7 @@ that still exist keep a slot: what is missing was closed by the user, not by a r
 remembered arrangements of disconnected displays too: the window floats where it appears and returns to its slot
 with the display. Whatever is found mostly off-screen (parked by a run
 that did not quit cleanly) counts as parked, so the first layout brings back everything the
-saved camera shows, and floating windows nobody remembers are moved to the middle of their display.
+camera shows, and floating windows nobody remembers are moved to the middle of their display.
 The size such a window is found at may be the small one of `shrinkOutOfView`, so it is not taken for the size it has in view
 (`noteWindowsLeftParked`).
 
@@ -937,6 +937,20 @@ On quit, `shutdown()` brings every window back into view, including windows that
 left on another Space: a docked window where it floated before it was docked (see Leaving the arrangement), or, if that
 is not known, in its slot with the display laid out at its root without tiles; a floating window where the user left
 it. It ends with a sweep for anything it arranges that is still mostly off-screen, whatever `parked` says.
+
+**Starting Arbor takes no window out of view that is in view** (`collab/QUESTIONS.md`, Q16). A first start moves nothing. A **launch** (a
+person starts Arbor, or logs in: `start()` reads the file itself) brings back what was docked, one move per window, and ends **showing
+everything**, whatever the view was when Arbor stopped: `PersistedState.showingEverything()` puts every camera at its root, with the old
+view one step back, and makes windows that `summon` had sent away ordinary floating windows, on the displays that are not connected
+too. The arrangement, saved views, names and what Back led to stay. A window that was never docked is not moved.
+**The watchdog's restart** goes on from a second ago: it keeps the view, and nothing moves, because what the view leaves out is still in its
+corner. It has one net: `state.json` can be half a second behind, so on a display where the first layout would send away
+a window that is in view now, everything shows instead (`showEverythingWhereTheViewWouldTakeAWindowOutOfView`).
+What is out of view all the same: what Show Everything itself has out of view, a docked window too large for its place (a tile) and the tabs
+behind the one in front. And if the keyboard is in such a window at a launch, the view goes to it, as it does whenever the keyboard goes to a
+tile, and the rest leaves the view: a known fault (the chaos lab's `launch-keyboard-in-a-tile`). Decided: that window will be let be where it stands.
+The end of a pause and the return of the permission are no such starts: they run `start()` from `resumeState`, and bring back
+the view they interrupted (the permission's return then shows everything if windows were stranded, F63).
 
 ## Ending, and starting again
 
@@ -946,9 +960,9 @@ Arbor parks windows out of view, so every way it can end has to account for them
 |---|---|
 | Quit in the menu, `arborctl quit`, SIGTERM, SIGINT, SIGHUP | `applicationWillTerminate` runs `shutdown()`: all back in view |
 | Logout, restart, shutdown | `NSWorkspace.willPowerOffNotification` arrives before apps are asked to quit and save their windows' frames. Arbor pauses for two minutes (`Controller.sessionIsEnding`): all back in view at once. Its own request to quit follows; if some app cancels the logout, the pause ends and Arbor carries on |
-| Crash, Swift trap, `kill -9`, Force Quit | Nothing in the process can act. The **watchdog** starts Arbor again within a second; the apps did not restart, so every window has its number and the arrangement and camera come back from `state.json`. A pause that was on goes on, with its end (`PersistedState.pause`, followed only when the watchdog did the starting) |
+| Crash, Swift trap, `kill -9`, Force Quit | Nothing in the process can act. The **watchdog** starts Arbor again within a second; the apps did not restart, so every window has its number and the arrangement and camera come back from `state.json`, and nothing moves. A pause that was on goes on, with its end (`PersistedState.pause`, followed only when the watchdog did the starting) |
 | The same, three times within two minutes | The third start is a **rescue** (`ARBOR_RESCUE=1`): `state.json` is set aside, every window is brought into view, Arbor quits and says so |
-| Both processes killed (`killall -9 Arbor`), power loss | Recovered at the next launch, as above. After a reboot apps restore windows at the frames they saved, which may be the parked ones; those count as parked too |
+| Both processes killed (`killall -9 Arbor`), power loss | Recovered at the next launch, which shows everything and so fetches what was left in the corners. After a reboot apps restore windows at the frames they saved, which may be the parked ones; those count as parked too |
 | An update replaces the bundle while Arbor runs | The old process keeps running. Quit it first; the new copy refuses to start beside it |
 | Accessibility permission revoked | Windows cannot be moved until it is granted again; the event taps are removed at once (`PointerInput`) |
 | Sleep, display sleep, fast user switching | Arbor keeps running. Displays that disconnect are handled as below |

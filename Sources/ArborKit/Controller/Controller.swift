@@ -421,8 +421,9 @@ public final class Controller {
   // MARK: Lifecycle
 
   /// Starts observing windows, restores the saved arrangement, and lays out
-  /// every display.
+  /// every display. A launch ends showing everything; a start that goes on from a moment ago ends in the view of then.
   public func start() {
+    let afterAccident = restartedAfterAccident
     guard !isRunning, !comesBackPaused() else { return }
     // Not always the first start of the process: Arbor also starts after a pause, and after losing and
     // regaining Accessibility permission. Nobody told it what happened meanwhile, so what it knew about
@@ -447,7 +448,9 @@ public final class Controller {
     displays = system.displays()
     var saved = resumeState
     if saved == nil {
-      saved = store.load()
+      // Somebody starts Arbor, or logs in. Quitting put every window in view, and the view of last time would send most of
+      // them out of it again, unasked. Where nobody quit (a pause, the permission, the watchdog) `resumeState` has the view.
+      saved = store.load()?.showingEverything()
       noteHowLoadingWent()
     }
     resumeState = nil
@@ -493,6 +496,7 @@ public final class Controller {
     resumeDormantWorkspaces(from: saved, hints: savedHints)
     // A run that did not quit cleanly leaves its parked windows out of view.
     treatStrandedWindowsAsParked()
+    if afterAccident { showEverythingWhereTheViewWouldTakeAWindowOutOfView() }
     isRunning = true
     Log.info("started: \(displays.count) display(s), \(managedWindowIDs.count) managed window(s)")
     relayoutAll(reason: .camera, motion: .instant)
@@ -509,6 +513,18 @@ public final class Controller {
     // include that window: it was swept out of view with the keyboard in it, and ⌘Tab does not fetch it, because its
     // app is in front already and nothing is reported. A launch ends with the focused window in view, as `resume` does.
     if isRunning, !isResuming, let focused = system.focusedWindow() { windowFocused(focused) }
+  }
+
+  /// After an accident the windows the view leaves out are still in their corners, and keeping the view moves nothing. But the
+  /// file can be half a second behind: the view had just widened when Arbor died, say, or ⌃⌥0 had fetched what `summon` had sent
+  /// away. The watchdog's start takes no window out of view either, so a display where it would shows everything instead.
+  private func showEverythingWhereTheViewWouldTakeAWindowOutOfView() {
+    for id in workspaces.keys.sorted() {
+      guard let layout = layout(of: id) else { continue }
+      let floating = floatingMoves(on: id, layout: layout, reason: .camera).filter { if case .park = $0.move { true } else { false } }
+      guard !layout.hiddenWindows.union(floating.map(\.window)).isSubset(of: parked) else { continue }
+      workspaces[id]?.showEverything()
+    }
   }
 
   /// Puts every window somewhere visible, saves, and stops. Called on quit so

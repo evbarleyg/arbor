@@ -8,7 +8,7 @@ import Foundation
 ///
 /// | Rule | Net |
 /// |---|---|
-/// | Nothing moves until the person docks something | `moved-before-any-dock`, `fetched-before-any-dock`, `moved-at-launch`, `moved-at-resume`, `start-took-out-of-view`, `pause-and-resume-moved`, `there-and-back-moved`, `moved-unasked` |
+/// | Nothing moves until the person docks something | `moved-before-any-dock`, `fetched-before-any-dock`, `moved-at-launch`, `moved-at-resume`, `start-took-out-of-view`, `launch-keyboard-in-a-tile`, `pause-and-resume-moved`, `there-and-back-moved`, `moved-unasked` |
 /// | No jolts: a window moves once, to where it ends up | `moved-twice`, `moved-again`; both with `-sizing` where its app refused a size, `-sizing-again` where it had refused before |
 /// | The window you switch to comes to the front and into view | `switched-to-out-of-view`, `app-switch-out-of-view`, `switched-to-partly-out`, `switched-to-behind` |
 /// | Quitting, Float All and pause give windows their own earlier sizes back | `size-not-given-back` |
@@ -386,15 +386,22 @@ extension ChaosRunner {
     }
   }
 
-  /// A start takes no window out of view that is in view when Arbor starts.
+  /// A start takes no window out of view that is in view when Arbor starts, but for what Show Everything itself has out of view: windows
+  /// in tiles, and tabs behind the one in front (collab/QUESTIONS.md, Q16).
   func startViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
     guard action == .launch, isRunning, !wasRunningBefore, !seven.pausedBefore, !system.displayList.isEmpty else { return }
     asked("start")
-    for window in system.windows.keys.sorted() {
+    let behind = controller.workspaces.keys.reduce(into: Set<WindowID>()) {
+      $0.formUnion(controller.layoutOfEverything(on: $1)?.hiddenWindows ?? [])
+    }
+    // If one of those has the keyboard the view of its display goes to it, which is a bug of its own.
+    let taken = system.focused.flatMap { behind.contains($0) ? controller.workspaceID(containing: $0) : nil }
+    for window in system.windows.keys.sorted() where !behind.contains(window) {
       guard let fake = isFairGame(window), presentBefore.contains(window), let before = framesBefore[window],
         Self.area(of: before, showingOn: system.displayList) >= 0.5 * before.area, !isInView(fake.snapshot.frame) || controller.parked.contains(window)
       else { continue }
-      problems.append(.init("start-took-out-of-view", "\(window) was in view at \(before.brief) when Arbor started, and Arbor has put it at \(fake.snapshot.frame.brief)"))
+      let rule = taken != nil && controller.workspaceID(containing: window) == taken ? "launch-keyboard-in-a-tile" : "start-took-out-of-view"
+      problems.append(.init(rule, "\(window) was in view at \(before.brief) when Arbor started, and Arbor has put it at \(fake.snapshot.frame.brief)"))
     }
   }
 

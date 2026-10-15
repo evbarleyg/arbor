@@ -35,6 +35,9 @@ extension Controller {
   /// A held view with nothing left in it should look empty, not like what is around it (Controller+Hold.swift).
   public func freshLayout(of displayID: DisplayID) -> Layout? { layoutOfAnEmptyHeldView(on: displayID) ?? layout(of: displayID) }
 
+  /// What `displayID` would look like with everything showing, for tests that ask what even that leaves out of view.
+  public func layoutOfEverything(on displayID: DisplayID) -> Layout? { layout(of: displayID, camera: workspaces[displayID]?.tree.root) }
+
   func relayoutAll(reason: RelayoutReason, motion: Motion = .animated) {
     for id in workspaces.keys.sorted() { relayout(id, reason: reason, motion: motion) }
   }

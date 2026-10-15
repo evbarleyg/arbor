@@ -186,7 +186,24 @@ import Testing
     let place = CGRect(x: 500, y: 300, width: 400, height: 300)
     let note = h.system.open(app: "Stickies", frame: place)
     h.start()
-    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: c), "the saved view is framed")
+    #expect(h.workspace.camera == h.workspace.tree.root, "the saved view is framed, and a launch shows everything")
+    #expect(h.frame(note) == place)
+    #expect(h.system.isVisible(d))
+  }
+
+  @Test func aWindowOpenedWhileArborWasDownStaysInViewWhenTheWatchdogBringsTheViewBack() {
+    let (first, _, _, c, d) = makeHarness()
+    first.controller.saveNow()
+    let h = Harness(saved: first.store.saved)
+    for window in first.system.allWindows() {
+      h.system.open(
+        app: window.appName, bundleID: window.bundleID, title: window.title, pid: window.pid, frame: window.frame)
+    }
+    let place = CGRect(x: 500, y: 300, width: 400, height: 300)
+    let note = h.system.open(app: "Stickies", frame: place)
+    h.controller.restartedAfterAccident = true
+    h.start()
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: c), "the view of a moment ago")
     #expect(h.frame(note) == place)
     #expect(!h.system.isVisible(d), "what the arrangement knows is where the arrangement has it")
   }

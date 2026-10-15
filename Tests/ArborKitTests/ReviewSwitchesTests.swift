@@ -39,7 +39,7 @@ private func frames(_ h: Harness) -> [WindowID: CGRect] {
   Dictionary(uniqueKeysWithValues: h.system.allWindows().map { ($0.id, $0.frame) })
 }
 
-/// A new Arbor that finds the windows of `old` as they are now, minimized ones included, and the state it saved. With
+/// A new Arbor, started by the watchdog, that finds the windows of `old` as they are now, minimized ones included, and the state it saved. With
 /// `nothingRemembered` the state holds no frames for docked windows (F48), like a file from before it: a docked window
 /// that leaves the arrangement then goes by its slot, or by its own size.
 @MainActor
@@ -64,6 +64,7 @@ private func relaunchAfterCrash(_ old: Harness, settings: Settings, nothingRemem
       app: window.appName, bundleID: window.bundleID, title: window.title, pid: window.pid, frame: window.frame)
     if window.isMinimized { new.system.setMinimized(id, true) }
   }
+  new.controller.restartedAfterAccident = true
   new.start()
   return new
 }

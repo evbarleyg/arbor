@@ -232,14 +232,18 @@ private let side = DisplaySnapshot(
     let (h, a, _, _) = makeHarness()
     h.run("zoom \(a.rawValue)")
     h.scheduler.runPending()
-    let again = Harness(settings: passing, saved: h.store.saved)
-    for window in h.system.allWindows() {
-      again.system.open(
-        app: window.appName, bundleID: window.bundleID, title: window.title, pid: window.pid, frame: window.frame)
+    for byTheWatchdog in [false, true] {
+      let again = Harness(settings: passing, saved: h.store.saved)
+      for window in h.system.allWindows() {
+        again.system.open(
+          app: window.appName, bundleID: window.bundleID, title: window.title, pid: window.pid, frame: window.frame)
+      }
+      again.controller.restartedAfterAccident = byTheWatchdog
+      again.start()
+      // The view of a moment ago, or everything.
+      #expect(again.workspace.camera == (byTheWatchdog ? h.workspace.camera : h.workspace.tree.root))
+      #expect(again.overlays.minimapHistory.isEmpty, "silently")
     }
-    again.start()
-    #expect(again.workspace.camera == h.workspace.camera, "the view is restored")
-    #expect(again.overlays.minimapHistory.isEmpty, "silently")
   }
 
   @Test func aMoveThatGoesNowhereShowsNothing() {

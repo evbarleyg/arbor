@@ -1,0 +1,66 @@
+# Proposed by the swarm (2026-10-14), from the product owner's decision in collab/QUESTIONS.md (what a start may move); the documenter may edit or drop it.
+# Story: an editor and a browser are docked, the notes were never docked and float on the Desktop. Framed on the editor, the person
+# quits Arbor in the evening: every window comes back into view. In the morning they start it again. No surprises at start: what was docked
+# is docked, EVERYTHING shows, and the notes are where they were. The view of last night is one step back; the saved view and the name are kept.
+# Reference: T60 T61, issue #3 rule 2.
+open Editor 900x700
+open Browser 1000x700
+open Notes 400x300
+dock 101 left
+dock 102 right
+zoom 101
+save-view 1
+name writing
+expect camera 101
+expect hidden 102
+expect hidden 103
+relaunch
+expect ok
+expect camera root
+expect docked 101
+expect docked 102
+expect left-of 101 102
+expect visible 101
+expect visible 102
+expect floating 103
+expect visible 103
+expect size 103 400x300
+# Nothing is lost: last night's view is where Back leads, and ⌃⌥1 and the name still know it.
+back
+expect camera 101
+expect hidden 102
+show-all
+view 1
+expect camera 101
+expect space writing
+# Quit while everything shows, and the next start changes nothing a person can see.
+show-all
+relaunch
+expect camera root
+expect visible 101
+expect visible 102
+expect visible 103
+# A terminal that was summoned and sent away: quitting fetches it like every other window, and the next start leaves it there.
+open Terminal 600x400
+zoom 101
+summon Terminal
+focus 101
+expect hidden 104
+relaunch
+expect camera root
+expect visible 104
+expect size 104 600x400
+# A pause is no quit: its end brings the view back.
+zoom 102
+pause
+resume
+expect camera 102
+expect hidden 101
+# But a quit during a pause is a quit, and the next start a start like any other.
+pause
+relaunch
+expect camera root
+expect visible 101
+expect visible 102
+expect visible 103
+expect visible 104

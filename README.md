@@ -57,7 +57,9 @@ independent implementation and is not affiliated with it.
   Unplug a display and its windows float on the main one; plug it back in and
   they return to their places. Windows on other macOS Spaces and in full screen keep
   their places too, and so do minimized windows and hidden apps.
-  If Arbor ever crashes, it starts again within a second with the arrangement as it was.
+  Quit Arbor and start it again, and what was docked is back in its places with everything showing, whatever the view
+  was; a window you never docked is not moved. The view you quit in is one step back.
+  If Arbor ever crashes, it starts again within a second with the arrangement and the view as they were.
 - **At home on macOS**: macOS's own window tabs (Finder, Terminal, Xcode) count as one
   window, whichever tab is in front. An app that hangs does not hold Arbor up, and one
   that insists on placing its own window is left in peace after three tries.
@@ -392,7 +394,7 @@ Desktop means a trip there and back. Give each a shortcut in `settings.json` ins
 - Once summoned, a window no longer lives on the Desktop: sent away, it stays out of view in every view, Show
   Everything (⌃⌥Space) included, until you summon it again or switch to it (⌘Tab, its Dock icon), which summons it. ⌃⌥0, the way back
   for a window you cannot find, puts it back on the Desktop as an ordinary window; so do docking it, pinning it and Float All Windows. Pausing
-  and quitting bring it into view like every other window.
+  and quitting bring it into view like every other window, and after a quit it stays there: the next launch has it as an ordinary window.
 - If the app has no window, is hidden, or is not running, it is opened as a click on its Dock icon would, and its window is summoned if it
   appears within five seconds.
 - A docked window has a place, and the place wins: `summon` moves the view to it, as ⌘Tab would, and `summon` again goes back where you were, view and keyboard. So one key does for an app wherever its window lives. Once you have moved the view or turned to another window there is no "back", and the next press goes to the window again. A pinned window just gets the keyboard.

@@ -222,6 +222,8 @@ import Testing
     again.system.close(mail)
     again.start()
     #expect(again.workspace.tree == h.workspace.tree)
+    // A launch shows everything; the view of last time is one step back.
+    #expect(again.run("back").ok)
     #expect(inView(again) == [notes, safari])
   }
 }

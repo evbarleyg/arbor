@@ -155,7 +155,7 @@ around that window, where the window is; there is none), `outline <id>|desktop|n
 `held view|still|no` (F58), `focused <id>` (that window has the keyboard),
 `said <words>` / `silent` (the heads-up line on screen now contains those words, ignoring
 case; there is none. A line stays until `flush` or `wait`). `press <command>` runs a command as its shortcut would, which is what
-makes Arbor answer on screen; arbor-sim prints each line as `on screen: …`. Failed expectations print
+makes Arbor answer on screen; arbor-sim prints each line as `on screen: …`. `relaunch` quits Arbor and starts it again. Failed expectations print
 `EXPECTATION FAILED` and make arbor-sim exit with code 1.
 
 arbor-sim checks each `expect` line as it runs (`ScenarioExpectation` in

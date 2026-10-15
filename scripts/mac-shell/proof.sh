@@ -179,7 +179,10 @@ check "Arbor comes up again on the same windows" arbor_relaunch 3
 summary
 check "the left window is docked again" is docked "$W4"
 check "the right window is docked again" is docked "$W1"
-check "the camera is where it was: the framed window fills the screen" eventually fills "$W4"
+check "a launch shows everything: the window that was out of view is in its slot" eventually in_its_slot "$W1"
+check "and so is the one that was framed" eventually in_its_slot "$W4"
+ctl back
+check "the view of last time is one step back: the framed window fills the screen" eventually fills "$W4"
 check "and the other one is out of view" eventually is parked "$W1"
 ctl show-all
 check "everything comes back into its slot" eventually in_its_slot "$W1"
