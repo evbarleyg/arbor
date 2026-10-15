@@ -23,7 +23,8 @@ everything and `resume` takes it back. (For a shared screen, where bringing ever
 - Every shortcut is handed back to the apps except those bound to `toggle-pause` or `resume`. The pinch and rectangle event taps are removed.
 - `pause <minutes>` (up to 1440) resumes by itself. A second `pause` replaces the first one's end; `pause` without a number has no end.
 - `resume`: the saved arrangement, view, history and saved views come back, matched against the windows and displays that exist by then, as at
-  launch: windows closed meanwhile leave no empty slot, new ones float, windows moved by hand return to their slots. Each window moves once. A floating window the pause took off the Desktop goes back on it, unless somebody has moved it
+  launch: windows closed meanwhile leave no empty slot, new ones float, windows moved by hand return to their slots. Each window moves once, also when the keyboard has gone to a window that the saved view leaves out: a resume ends with that window in view (F41), so the view is worked out first and everything is laid out
+  once. A floating window the pause took off the Desktop goes back on it, unless somebody has moved it
   meanwhile: then the resume leaves it where they put it.
 - `toggle-pause` (⌃⌥⎋) does whichever applies.
 - While paused, other commands fail with "paused: … until `resume`"; queries work; `state` has `"paused": true`, no window list and no frames, and still
@@ -47,7 +48,7 @@ everything and `resume` takes it back. (For a shared screen, where bringing ever
 
 1. Pausing leaves every docked and floating window at least 99% on a display and removes every overlay; every window Arbor had moved or resized is at its own earlier frame, after one `setFrame`, and the others after none; nothing is raised;
    a resume brings every frame back, after one `setFrame` each. ✔ `pausingBringsEveryWindowBackIntoView`, `aPauseGivesEveryWindowItsOwnFrameBackInOneMove`, `aPauseRaisesNothingAndLeavesTheKeyboardWhereItIs`,
-   `resumingBringsTheArrangementAndTheViewBackInOneMove`, `framedOnAWindowAPauseGivesThatOneItsSizeBackToo`, `aPauseLeavesTheWindowsWhereAQuitWould`, `aPauseAndAResumeMoveOnlyWhatArborHadMovedOnceEachWay`;
+   `resumingBringsTheArrangementAndTheViewBackInOneMove`, `aResumeWithTheKeyboardOutsideTheViewStillMovesEachWindowOnce`, `aGuestWithTheKeyboardBringsItsHostsViewBackInOneLayout`, `framedOnAWindowAPauseGivesThatOneItsSizeBackToo`, `aPauseLeavesTheWindowsWhereAQuitWould`, `aPauseAndAResumeMoveOnlyWhatArborHadMovedOnceEachWay`;
    `collab/scenarios/40-a-pause-gives-sizes-back.sim`
 2. While paused, moves, drags, minimising, focus changes, new and closed windows, display changes and pending work cause no `setFrame`. ✔ `whilePausedArborMovesNothingWhateverHappens`
 3. Resume restores workspace, camera and history exactly when nothing changed. ✔ `resumingRestoresTheArrangementAndTheCamera`
@@ -67,6 +68,7 @@ Shipped: everything above. Not shipped, and worth doing next:
   pause that ended otherwise (the watchdog brought it back after a crash; Accessibility was taken away and given back) stay where their user had left them, over the docked windows if need be.
 - **A floating window moved during the pause** is left there by the resume, but what is remembered for it is still the frame of before (F48: "a move during a pause, which Arbor does not see"), so a later layout can take it back there; one that
   floats alone takes the Desktop again two seconds later (F18).
+- **Two layouts are left** at a resume where the plan cannot tell whether the view will follow the keyboard: to a window of the saved view that is too small there and becomes a tile, and during a call, where the hold decides (F58).
 - **One after the other.** A pause asks each app in turn, as a quit does, where a layout lets the apps work side by side (`moveTogether`).
 - Nobody has watched the new pause on a Mac yet. The day with real apps that found the fault checks sizes, places and the number of moves at its steps "pause" and "resume"; `scripts/mac-shell/check-F18.sh` checks the window that fills the Desktop.
 

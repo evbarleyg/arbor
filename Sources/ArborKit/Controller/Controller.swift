@@ -514,6 +514,7 @@ public final class Controller {
     if afterAccident { showEverythingWhereTheViewWouldTakeAWindowOutOfView() }
     isRunning = true
     Log.info("started: \(displays.count) display(s), \(managedWindowIDs.count) managed window(s)")
+    letTheViewFollowTheKeyboardBeforeTheFirstLayout()
     relayoutAll(reason: .camera, motion: .instant)
     placedOnPurpose.removeAll()
     refreshHoldCaller()

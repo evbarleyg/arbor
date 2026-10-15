@@ -77,7 +77,7 @@ Not shipped:
 ### After the product owner's review
 
 - The menu's first line in a listed app is **Shortcuts are off in “Emacs”** (`Controller.passThroughNotice`): walking onto one with the keyboard switches the keys off, and nothing else said so. ✔ `theMenuSaysFirstThatTheShortcutsAreOffHere`
-- **A resume always ends with the focused window in view**, whoever began the pause: ⌃⌥⎋, the one key left in a listed app, used to lead back to the view one was stuck in. ✔ `aResumeAlwaysEndsWithTheFocusedWindowInView`
+- **A resume always ends with the focused window in view**, whoever began the pause: ⌃⌥⎋, the one key left in a listed app, used to lead back to the view one was stuck in. ✔ `aResumeAlwaysEndsWithTheFocusedWindowInView`. In one layout: the view is worked out before anything moves (`letTheViewFollowTheKeyboardBeforeTheFirstLayout`). ✔ `aResumeWithTheKeyboardOutsideTheViewStillMovesEachWindowOnce`
 - `pass-through [bundle-id] on|off`, for files that must say which; repeating it changes and saves nothing. ✔ `onAndOffSayWhichAndCanBeRepeated`
 - People read "shortcuts are off **in** Emacs" and "paused **for** Game", not "while … is frontmost". "pass-through" is the command's name only.
 - **The key that summoned the app stays** (the product owner's day on the trunk; F53): with `"ctrl+opt+t": "summon Terminal"` and shortcuts off in Terminal, the key brought the terminal and could not send it away. While an app's window is summoned,

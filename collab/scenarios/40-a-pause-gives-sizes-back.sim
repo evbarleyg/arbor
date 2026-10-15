@@ -61,3 +61,14 @@ expect visible 101
 press toggle-pause
 expect fills 102
 expect hidden 101
+
+# The keyboard goes elsewhere during the pause: a click on Finder, which the view that was left does not show. The resume
+# ends with Finder in view, framed as Safari was, and ⌃⌥[ leads back to Safari.
+press toggle-pause
+focus 101
+press toggle-pause
+expect fills 101
+expect focused 101
+expect hidden 102
+back
+expect fills 102

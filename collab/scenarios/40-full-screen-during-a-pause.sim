@@ -16,8 +16,6 @@ wait 1
 expect visible 102
 expect visible 101
 resume
-# Known (a rest of board 1.20): Mail has the keyboard since it left full screen, and it is outside the view that was left. The resume
-# lays that view out and then follows the keyboard, so both windows move twice.
-expect jolt 102
-expect jolt 101
+# Mail has the keyboard since it left full screen, and it is outside the view that was left: the view follows it, in one layout.
+expect fills 102
 expect docked 102

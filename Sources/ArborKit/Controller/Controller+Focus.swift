@@ -16,6 +16,48 @@ extension Controller {
   static let focusCheckRetries = 4
   static let focusCheckInterval = 0.25
 
+  /// Called by `start()` before its first layout. Nobody told Arbor where the keyboard went while it was not running, and a
+  /// start ends with that window in view. So the view is worked out first, as `bringIntoView` would after a layout that took
+  /// the window out of view: laid out for the view that was saved and then for the one that shows it, every window moved twice.
+  ///
+  /// The plan of that first layout is asked, on paper, whether it leaves the window out. A docked window inside the view that
+  /// is too small to show there is not foreseen: room may be made for it, which only the layout itself can tell. That and
+  /// a call (whether the view follows then depends on who asked, Controller+Hold.swift) are seen to
+  /// afterwards, as before. Nor if Arbor is about to pause for the app in front: then nothing is laid out for long, and the
+  /// view that was saved is the one to come back.
+  ///
+  /// Where the view does turn, the layout that follows starts from the plan as if it had been carried out: a Desktop that comes
+  /// into view gathers what floats, and what opened unseen, which was to stay over the saved view, goes with that view.
+  func letTheViewFollowTheKeyboardBeforeTheFirstLayout() {
+    guard signOfACall == nil, !settings.pausesFor(frontmostApp?.bundleID), let focused = system.focusedWindow(), isManaged(focused),
+      windows[focused]?.isPresent == true, let display = workspaceID(containing: focused)
+    else { return }
+    // A pause ends a summon and does not touch the window. With the keyboard still in it, it is summoned again where it is,
+    // not sent to its corner first.
+    guard !summonIfStashed(focused) else { return }
+    workspaces[display]!.tree.activate(focused)
+    guard let workspace = workspaces[display], let plan = layout(of: display) else { return }
+    let sentAway = floatingMoves(on: display, layout: plan, reason: .camera).filter { if case .park = $0.move { true } else { false } }.map(\.window)
+    let view: NodeID
+    if let leaf = workspace.tree.leaf(containing: focused) {
+      guard !workspace.tree.subtree(plan.camera, contains: leaf) else { return }
+      view = viewThatShows(focused, leaf: leaf, on: display)
+    } else {
+      guard sentAway.contains(focused) else { return }
+      view = workspace.guests?[focused] ?? viewThatBringsInWhatFloats(in: workspace)
+    }
+    layouts[display] = plan
+    placedOnPurpose.subtract(workspace.floating.keys)
+    // Sent away and fetched again, a window is where Arbor has it, also if that is where it stands already.
+    for window in sentAway { settled[window] = windows[window]?.frame }
+    moveCamera(on: display, to: view, refocus: false, layingOut: false)
+    // As after every move that followed the keyboard (`bringIntoViewIfFocused`).
+    keyboardHandOver.reveal = .init(
+      window: focused, holder: focusHistory.first { $0 != focused }, display: display, time: now(),
+      floatingInView: workspace.floating.keys.sorted().filter { !parked.contains($0) && !sentAway.contains($0) }
+        .compactMap { window in windows[window].map { (window: window, frame: $0.frame) } })
+  }
+
   /// Moves the camera to show `id` if it has the keyboard. If it does not (yet), looks again
   /// `retries` times.
   func bringIntoViewIfFocused(_ id: WindowID, retries: Int = Controller.focusCheckRetries) {

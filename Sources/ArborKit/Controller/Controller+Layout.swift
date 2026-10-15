@@ -612,8 +612,10 @@ extension Controller {
 
   /// Moves the camera on a display, lays it out, and makes sure keyboard
   /// focus is not left on a window that just went out of view. A caller that
-  /// is about to focus a window of its own choice passes `refocus: false`.
-  func moveCamera(on displayID: DisplayID, to node: NodeID, record: Bool = true, refocus: Bool = true) {
+  /// is about to focus a window of its own choice passes `refocus: false`. One that lays out itself passes `layingOut: false`.
+  func moveCamera(
+    on displayID: DisplayID, to node: NodeID, record: Bool = true, refocus: Bool = true, layingOut: Bool = true
+  ) {
     // The last line of defence: whoever asks, a held view does not move (Controller+Hold.swift).
     guard workspaces[displayID] != nil, holdLevel != .view else { return }
     peekYields(on: displayID)
@@ -623,7 +625,7 @@ extension Controller {
     keyboardHandOver.reveal = nil
     unframedIntoATile = nil
     workspaces[displayID]!.moveCamera(to: node, record: record)
-    relayout(displayID, reason: .camera)
+    if layingOut { relayout(displayID, reason: .camera) }
     // A command that leaves the view where it is changes nothing a person can see, the focus included.
     let moved = workspaces[displayID]!.camera != before
     if refocus { ensureFocusIsVisible(on: displayID, alsoFromAPinnedWindow: moved, alsoFromNothing: moved) }
@@ -692,16 +694,23 @@ extension Controller {
   /// `onItsWayBack`: the window has been asked out of the Dock or out of ⌘H, and macOS has not said yet that it
   /// is back. The view is picked as if it were, so it does not depend on when that report comes.
   func reveal(_ window: WindowID, leaf: NodeID, on displayID: DisplayID, onItsWayBack: Bool = false) {
-    guard let workspace = workspaces[displayID] else { return }
+    guard workspaces[displayID] != nil else { return }
+    moveCamera(on: displayID, to: viewThatShows(window, leaf: leaf, on: displayID, onItsWayBack: onItsWayBack))
+  }
+
+  /// Where `reveal` goes.
+  func viewThatShows(_ window: WindowID, leaf: NodeID, on displayID: DisplayID, onItsWayBack: Bool = false) -> NodeID {
+    guard let workspace = workspaces[displayID], !isFramedOnOneSpace(workspace) else { return leaf }
     let common = Navigation.commonAncestor(workspace.camera, leaf, in: workspace.tree)
-    if !isFramedOnOneSpace(workspace),
-      let trial = layout(of: displayID, camera: common, including: onItsWayBack ? window : nil),
-      trial.windowFrames[window] != nil
-    {
-      moveCamera(on: displayID, to: common)
-    } else {
-      moveCamera(on: displayID, to: leaf)
-    }
+    let trial = layout(of: displayID, camera: common, including: onItsWayBack ? window : nil)
+    return trial?.windowFrames[window] != nil ? common : leaf
+  }
+
+  /// The view that brings a floating window in: out until the Desktop is part of the view, as a tile if need be. Onto the
+  /// Desktop itself if the view is on one window, whose level is kept (`isFramedOnOneSpace`).
+  func viewThatBringsInWhatFloats(in workspace: Workspace) -> NodeID {
+    let desktop = workspace.tree.desktop
+    return isFramedOnOneSpace(workspace) ? desktop : Navigation.commonAncestor(workspace.camera, desktop, in: workspace.tree)
   }
 
   func scheduleEnforce(_ displayID: DisplayID, havingWaitedForTheDisplays turns: Int = 0) {

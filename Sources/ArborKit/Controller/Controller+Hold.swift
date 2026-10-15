@@ -373,20 +373,27 @@ extension Controller {
   /// Minimized and hidden windows and those on another macOS Space count: the call goes on.
   func refreshHoldCaller() {
     guard isRunning else { return }
-    let patterns = settings.holdStillFor.map(HoldPattern.init)
-    var caller =
-      patterns.isEmpty
-      ? nil
-      : windows.values.sorted { $0.id < $1.id }.first { window in
-        patterns.contains { $0.matches(bundleID: window.bundleID, title: window.title) }
-      }.map { "\($0.appName) is open" }
-    if caller == nil, settings.holdStillWhileCameraIsOn, callSignals.cameraIsOn { caller = "the camera is on" }
-    if caller == nil, settings.holdStillWhileMicrophoneIsOn, callSignals.microphoneIsOn { caller = "the microphone is on" }
+    let caller = signOfACall
     guard caller != hold.caller else { return }
     let before = holdLevel
     hold.caller = caller
     if caller == nil { hold.callerDismissed = false }
     holdChanged(from: before)
+  }
+
+  /// The sign of a call there is right now, in words; nil if there is none.
+  var signOfACall: String? {
+    let patterns = settings.holdStillFor.map(HoldPattern.init)
+    let open =
+      patterns.isEmpty
+      ? nil
+      : windows.values.sorted { $0.id < $1.id }.first { window in
+        patterns.contains { $0.matches(bundleID: window.bundleID, title: window.title) }
+      }.map { "\($0.appName) is open" }
+    if let open { return open }
+    if settings.holdStillWhileCameraIsOn, callSignals.cameraIsOn { return "the camera is on" }
+    if settings.holdStillWhileMicrophoneIsOn, callSignals.microphoneIsOn { return "the microphone is on" }
+    return nil
   }
 
   /// The app reports what it reads from macOS (App/CallSensor.swift). Whether it matters is decided here.

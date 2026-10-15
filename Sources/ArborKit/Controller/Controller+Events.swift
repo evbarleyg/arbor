@@ -236,11 +236,7 @@ extension Controller: WindowSystemEvents {
       moveCamera(on: display, to: host)
     } else if parked.contains(id) {
       if summonIfStashed(id) { return }
-      // A floating window out of view: zoom out until the Desktop is part of the view, as a tile if need be. Onto the
-      // Desktop itself if the view is on one window, whose level is kept (`isFramedOnOneSpace`).
-      let desktop = workspace.tree.desktop
-      let common = Navigation.commonAncestor(workspace.camera, desktop, in: workspace.tree)
-      moveCamera(on: display, to: isFramedOnOneSpace(workspace) ? desktop : common)
+      moveCamera(on: display, to: viewThatBringsInWhatFloats(in: workspace))
     }
   }
 
