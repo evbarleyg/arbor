@@ -1,0 +1,115 @@
+# 66-summon 2026-10-15T12:49Z on macOS 26.6.2, commit 66a3a07
+
+▸ press the shortcut bound to summon: the other app's window comes over the framed window with the keyboard in it
+  ✔ the framed window fills the screen
+  ✔ the other app's window is out of view with the Desktop
+  ✔ the framed window has the keyboard
+  ✔ ⌃⌥` reaches Arbor
+  ✔ the other app's window is in view
+  ✔ it has the keyboard
+  ✔ its app is the one in front
+  ✔ nothing covers it
+  ✔ Arbor calls it summoned, and it stays
+  ✔ the view has not moved
+  ✔ the framed window still fills the screen
+  ✔ the other docked window is still out of view
+
+▸ summoned for the first time, a window wider than the Desktop between two docked windows comes at its own size
+  ✔ the two docks had not made it narrower
+  ✔ over the view it is as wide as it was before anything was docked
+  ✔ and as high
+
+▸ press the summon shortcut again: the window goes out of view, and the keyboard back to the window that had it
+  ✔ ⌃⌥` reaches Arbor
+  ✔ the other app's window is out of view
+  ✔ the framed window has the keyboard again
+  ✔ its app is the one in front
+  ✔ the view has not moved
+  ✔ the framed window still fills the screen
+
+▸ drag the summoned window, click another window: it goes; summoned again, it comes back to where it was put
+  ✔ ⌃⌥` reaches Arbor
+  ✔ the other app's window is in view
+  ✔ no drop preview shows
+  ✔ it is still summoned
+  ✔ the clicked window has the keyboard
+  ✔ the summoned window is out of view
+  ✔ the view has not moved
+  ✔ ⌃⌥` reaches Arbor
+  ✔ it is where it was put
+  ✔ it has the keyboard
+
+▸ a window sent away stays out of view where the Desktop shows, and ⌃⌥0 brings it home as an ordinary window
+  ✔ ⌃⌥` reaches Arbor
+  ✔ it is out of view
+  ✔ the camera is on everything
+  ✔ it is still out of view
+  ✔ ⌃⌥` brings it over this view too
+  ✔ where it was put
+  ✔ ⌃⌥` sends it away
+  ✔ it is out of view
+  ✔ ⌃⌥0 reaches Arbor
+  ✔ it is in view
+  ✔ Arbor no longer keeps it away
+  ✔ it floats
+  ✔ windows match Arbor's layout
+
+▸ quit Arbor and start it again: the summoned window still comes to where it was put
+  ✔ Arbor exits within 5 s of quit
+  ✔ quitting leaves it in view
+  ✔ ⌃⌥↩ reaches Arbor
+  ✔ the first window fills the screen
+  ✔ the other app's window is out of view
+  ✔ ⌃⌥` reaches Arbor
+  ✔ it is where it was put before
+  ✔ it has the keyboard
+  ✔ the view has not moved
+
+▸ with summonStays a click on another window leaves the summoned window in view, in front, until it is summoned away
+  ✔ the clicked window has the keyboard
+  ✔ the summoned window is still summoned
+  ✔ where it was
+  ✘ nothing covers it — another window lies over it, or it is not on screen (known: a summoned window of another app stays behind the window that has the keyboard: the Accessibility raise does not lift it over that one; Q25 in collab/QUESTIONS.md decides what is to become of it)
+  ✔ ⌃⌥` reaches Arbor
+  ✔ it is out of view
+  ✔ the keyboard stays where it was
+
+▸ summon an app whose windows are docked, by command: the view goes to the one used last, which stays in its slot
+  ✔ the docked windows are out of view
+  ✔ summon says that it is docked
+  ✔ the window used last is in view
+  ✔ in its slot
+  ✔ it has the keyboard
+  ✔ both are still docked
+  ✔ windows match Arbor's layout
+
+▸ summon an app that is not installed, by command: Arbor says so and nothing moves
+  ✔ it fails
+  ✔ and says why
+  ✔ the window in view is still in view
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+▸ with floatingWindowsMakeWay on: summoned for the first time, a window that a narrow Desktop had squeezed comes at its own size
+  ✔ the Desktop between two docked windows had squeezed it
+  ✔ the other app's window is out of view with the Desktop
+  ✔ ⌃⌥` reaches Arbor
+  ✔ the other app's window is in view
+  ✔ over the view it is as wide as it was before anything was docked
+  ✔ and as high
+  ✔ ⌃⌥` reaches Arbor again
+  ✔ the other app's window is out of view
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+87 passed, 1 failed

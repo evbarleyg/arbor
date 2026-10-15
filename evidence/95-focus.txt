@@ -1,0 +1,60 @@
+# 95-focus 2026-10-15T12:52Z on macOS 26.6.2, commit 66a3a07
+
+▸ frame another app's window: it gets the keyboard
+  ✔ the first app has the keyboard
+  ✔ the other app's window fills the screen
+  ✔ the other app has the keyboard
+  ✔ Arbor says its window is focused
+  ✔ a click brings the first app back
+
+▸ with one window framed, a docked window out of view gets the keyboard: the camera frames that one instead
+  ✔ the window below it is out of view
+  ✔ it fills the screen: the level is kept
+  ✔ the one the camera was on is out of view
+  ✔ windows match Arbor's layout
+
+▸ with a column framed, a docked window outside it gets the keyboard: the camera steps out just far enough to show it
+  ✔ the column is in view
+  ✔ the other app's window is out of view
+  ✔ it comes into view
+  ✔ together with the column the camera was on
+  ✔ windows match Arbor's layout
+
+▸ a floating window out of view gets the keyboard: the camera steps out until the Desktop shows
+  ✔ the floating window is out of view
+  ✔ it comes into view
+  ✔ windows match Arbor's layout
+
+▸ another app's window out of view is brought forward by its app: the camera shows it
+  ✔ the other app's window is out of view
+  ✔ the other app has the keyboard
+  ✔ its window comes into view
+  ✔ windows match Arbor's layout
+
+▸ frame a window and show everything again: the docked windows lie in the order they had, front to back
+  ✔ the first window has the keyboard
+  ✔ the others are out of view
+  ✔ out of view they are in the same order
+  ✔ everything is back in view
+  ✔ and in the same order
+  ✔ windows match Arbor's layout
+
+▸ ⌘Tab to an app whose window is out of view: the camera shows it
+  ✔ the first app has the keyboard
+  ✔ the other app's window is out of view
+  ✔ ⌘Tab switched to the other app
+  ✔ its window comes into view
+  ✔ windows match Arbor's layout
+
+▸ click a window in view: the camera stays
+  ✔ it has the keyboard
+  ✔ the camera stayed
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+39 passed, 0 failed

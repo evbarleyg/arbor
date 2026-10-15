@@ -1,0 +1,77 @@
+# 75-menu 2026-10-15T12:49Z on macOS 26.6.2, commit 66a3a07
+
+▸ the menu bar item opens a menu of commands
+  ✔ Arbor has an item in the menu bar
+  ✔ the menu offers Show Everything
+  ✔ and Arrange Windows
+  ✔ and Float All Windows
+  ✔ and Quit Arbor
+
+▸ choose Arrange Windows from the menu: every window docks
+  ✔ the item can be clicked
+  ✔ Arbor ran arrange
+  ✔ all four are docked
+  ✔ nothing overlaps
+  ✔ the first window is in view
+  ✔ windows match Arbor's layout
+
+▸ choose Float All Windows from the menu: back to a normal Mac
+  ✔ the others are out of view
+  ✔ the item can be clicked
+  ✔ Arbor ran float-all
+  ✔ nothing is docked
+  ✔ the first window is in view
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ the other app's window is in view
+
+▸ choose Dock Focused Window, Left from the menu
+  ✔ the submenu's item can be clicked
+  ✔ Arbor ran dock left
+  ✔ the focused window docked at the left edge
+  ✔ windows match Arbor's layout
+
+▸ choose Don’t Arrange for the focused app: its windows are released, the other app's stay
+  ✔ the submenu's item can be clicked
+  ✔ Arbor ran exclude
+  ✔ the app's windows are no longer arranged
+  ✔ none of them
+  ✔ the other app's window is still docked
+  ✔ one is docked
+  ✔ the released windows stay in view
+  ✔ a command on one of them is refused
+  ✔ settings.json has the app
+
+▸ choose the app under Arrange Again: its windows are arranged again
+  ✔ the submenu's item can be clicked
+  ✔ Arbor ran include
+  ✔ the app's windows are arranged again
+  ✔ they float
+  ✔ a command on one of them works
+  ✔ windows match Arbor's layout
+
+▸ exclude and include an app by command
+  ✔ exclude succeeds
+  ✔ its docked window is released
+  ✔ it stays in view
+  ✔ include succeeds
+  ✔ its window is arranged again
+
+▸ launch-at-login on and off, by command: macOS takes the installed app on and lets it go again
+  ✔ at first it does not open at login
+  ✔ launch-at-login on succeeds
+  ✔ macOS says that it opens at login
+  ✔ launch-at-login off succeeds
+  ✔ macOS says that it does not any more
+
+▸ choose Quit Arbor from the menu while zoomed in: every window comes back
+  ✔ the others are out of view
+  ✔ the item can be clicked
+  ✔ Arbor exits
+  ✔ the first window is in view
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ the other app's window is in view
+  ✔ its menu bar item is gone
+
+56 passed, 0 failed

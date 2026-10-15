@@ -1,0 +1,122 @@
+# 32-undo 2026-10-15T12:38Z on macOS 26.6.2, commit 66a3a07
+
+▸ with nothing to undo the menu's Undo and Redo are grey, a click on Undo does nothing, and ⌃⌥Z moves nothing
+  ✔ Undo names no step and is grey
+  ✔ so is Redo
+  ✔ the open menu has the row
+  ✔ the click on it runs nothing
+  ✔ ⌃⌥Z reaches Arbor
+  ✔ Arbor says that there is nothing to undo
+  ✔ the window with the keyboard has not moved
+  ✔ nothing is docked
+
+▸ drag a gap forth and part of the way back, let go, press ⌃⌥Z once: the gap is back where it was before the drag
+  ✔ the window beside the gap follows the pointer out
+  ✔ and back: let go, it is 50 points wider than it was
+  ✔ the menu offers to undo a resize
+  ✔ ⌃⌥Z reaches Arbor
+  ✔ Arbor says that it took the drag of the gap back
+  ✔ one press puts the gap back: the window is exactly where it was
+  ✔ so is the window that floats on the Desktop
+  ✔ the whole drag was one step: the next to undo is the dock before it
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⇧Z after ⌃⌥Z: the gap is where the drag left it, and ⌃⌥Z takes it back again
+  ✔ the menu offers to redo the resize
+  ✔ ⌃⌥⇧Z reaches Arbor
+  ✔ the window is 50 points wider again
+  ✔ there is nothing left to redo
+  ✔ windows match Arbor's layout
+  ✔ ⌃⌥Z reaches Arbor
+  ✔ the gap is back
+  ✔ windows match Arbor's layout
+
+▸ drag a docked window's inner edge, then ⌃⌥Z: window and neighbour have their sizes back
+  ✔ the window is wider
+  ✔ it is in its slot: the layout followed the window
+  ✔ the menu offers to undo a resize
+  ✔ ⌃⌥Z reaches Arbor
+  ✔ the window is exactly where it was
+  ✔ that was one step too
+  ✔ windows match Arbor's layout
+
+▸ drop a floating window on the wrong screen edge, then ⌃⌥Z: it floats again where it was picked up, and the others have their places back
+  ✔ the window docked at the bottom edge
+  ✔ the others made room above it
+  ✔ ⌃⌥Z reaches Arbor
+  ✔ it floats again
+  ✔ exactly where it was picked up
+  ✔ the first window is back
+  ✔ the second window is back
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥Z while a docked window is held over the Desktop: refused, and the window stays in the hand; let go and pressed again, it is back in its slot
+  ✔ the window follows the pointer
+  ✔ ⌃⌥Z reaches Arbor
+  ✔ Arbor says why not
+  ✔ the window is not pulled out of the hand
+  ✔ let go, it floats
+  ✔ the menu offers to undo that
+  ✔ ⌃⌥Z reaches Arbor
+  ✔ it is docked where it was
+  ✔ Arbor says that it is docked
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥A by mistake, then ⌃⌥Z: everything is back, the floating window included
+  ✔ ⌃⌥A reaches Arbor
+  ✔ all three are docked
+  ✔ ⌃⌥Z reaches Arbor
+  ✔ two are docked
+  ✔ the floating window is exactly where it was
+  ✔ so is the first window
+  ✔ and the second
+  ✔ windows match Arbor's layout
+
+▸ the menu names the step: choose Redo Arrange, then Undo Arrange, and the arrangement goes forth and back
+  ✔ Redo Arrange can be clicked
+  ✔ Arbor ran redo
+  ✔ all three are docked
+  ✔ Undo Arrange can be clicked
+  ✔ Arbor ran undo
+  ✔ two are docked
+  ✔ the floating window is exactly where it was
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥↩ frames a window, ⌃⌥F floats it out of its frame, ⌃⌥Z: it fills the screen again and the others are out of view
+  ✔ ⌃⌥↩ reaches Arbor
+  ✔ the window fills the screen
+  ✔ ⌃⌥F reaches Arbor
+  ✔ the window floats
+  ✔ ⌃⌥Z reaches Arbor
+  ✔ it fills the screen again: the view is undone with the change that moved it
+  ✔ the second window is out of view again
+  ✔ ⌃⌥Space reaches Arbor
+  ✔ everything is where it was
+  ✔ windows match Arbor's layout
+
+▸ close a docked window with its red button, then ⌃⌥Z: Arbor says once that it cannot bring the window back, and the next ⌃⌥Z goes on with the step before
+  ✔ it is docked below the first window
+  ✔ the window above has the whole column again
+  ✔ ⌃⌥Z reaches Arbor
+  ✔ Arbor says what it cannot undo
+  ✔ nothing has changed
+  ✔ ⌃⌥Z again
+  ✔ the second window, docked last, floats
+  ✔ the first is still docked
+
+▸ one more ⌃⌥Z takes back the first dock and nothing is left to undo: what macOS reported of Arbor's own moves added no step
+  ✔ one step is left, the first dock
+  ✔ ⌃⌥Z reaches Arbor
+  ✔ nothing is docked
+  ✔ Undo is grey again
+  ✔ the first window floats where it was before it was docked
+  ✔ so does the second
+  ✔ the third is in view
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+95 passed, 0 failed

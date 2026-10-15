@@ -1,0 +1,104 @@
+# 48-hold 2026-10-15T12:43Z on macOS 26.6.2, commit 66a3a07
+
+▸ choose Hold This View from the menu with a window framed: no shortcut moves the view, and a line says why and what releases it
+  ✔ the others are out of view
+  ✘ the submenu's item can be clicked — pointer: process 27061 shows no menu item starting with View
+  ✘ Arbor ran hold — Arbor did not run: hold
+  ✘ status says that the view is held — it said: running: 1 display, 3 docked and 1 floating, 3 out of view
+  ✔ the framed window has the keyboard
+  ✔ ⌃⌥Space reaches Arbor
+  ✘ Arbor says on screen why nothing happened — arbor.log does not say: The view is held · ⌃⌥⎋ releases it
+  ✔ ⌃⌥↑ reaches Arbor
+  ✔ ⌃⌥D reaches Arbor
+  ✔ ⌃⌥⇧F reaches Arbor
+  ✘ the framed window still fills the screen — it is at 170 220 480 348, not 12 43 1000 650
+  ✘ the other app's window is still out of view — 100 % of it is to be seen: 170 220 480 348
+  ✘ and so is the floating one — 100 % of it is to be seen: 270 140 480 348
+  ✘ all three are still docked — 0 docked, not 3
+  ✘ the menu's first line says that the view is held — pointer: process 27061 shows no menu item starting with The view is held · Release
+  ✘ its submenu opens — pointer: process 27061 shows no menu item starting with View
+  ✘ Hold This View is ticked — Hold This View is not marked ✓
+
+▸ an app comes forward by itself while the view is held: its window stays out of view and the keyboard goes back
+  ✘ Arbor saw it take the keyboard — arbor.log does not say: took the keyboard out of view; sending it back
+  ✘ the keyboard is back in the framed window — the focused window is 323
+  ✘ its app is in front again — the app in front is 27040, not 27023
+  ✘ the window that came forward stays out of view — 100 % of it is to be seen: 170 220 480 348
+  ✘ the framed window still fills the screen — it is at 170 220 480 348, not 12 43 1000 650
+  ✔ nothing is said about it on the shared screen
+
+▸ ⌃⌥F on the only window of a held view, which would float it and widen the view: it stays docked, and a line says why
+  ✔ ⌃⌥F reaches Arbor
+  ✘ Arbor says on screen why nothing happened — said 0 times, not 1: That would bring windows that are out of view into it
+  ✘ it is still docked — it is managed at 170 220 480 348
+  ✘ it still fills the screen — it is at 170 220 480 348, not 12 43 1000 650
+  ✘ the other app's window is still out of view — 100 % of it is to be seen: 518 43 494 650
+
+▸ drag the only window of a held view out of its slot, with no key held: it goes back, and nothing else comes into view
+  ✔ it follows the pointer while the button is held
+  ✘ the window below it stays out of view meanwhile — 100 % of it is to be seen: 220 180 480 348
+  ✘ let go, it fills the screen again — it is at 230 300 480 348, not 12 43 1000 650
+  ✘ it is still docked — it is managed at 230 300 480 348
+  ✘ the window below it stays out of view — 100 % of it is to be seen: 220 180 480 348
+  ✘ and so does the other app's — 100 % of it is to be seen: 518 43 494 650
+  ✘ and the floating one — 100 % of it is to be seen: 270 140 480 348
+  ✔ the dragged window is in view
+  ✘ the view is still held — it said: running: 1 display, 1 docked and 3 floating, 0 out of view
+
+▸ hold a column of two windows: they can still be dragged beside and below each other, and nothing else comes into view
+  ✔ the column is in view
+  ✘ the other app's window is not — 100 % of it is to be seen: 518 43 494 650
+  ✔ the view is held
+  ✘ over the left part of the other window a preview shows
+  ✘ it docks on the left of the other — the first is at 32 342 480 348, the second at 220 180 480 348
+  ✘ the other app's window is still out of view — 100 % of it is to be seen: 518 43 494 650
+  ✘ over the lower part of the other window a preview shows
+  ✘ it docks below the other — the first is at 220 180 480 348, the second at 184 374 480 348
+  ✘ the other app's window is out of view as before — 100 % of it is to be seen: 518 43 494 650
+  ✘ and so is the floating one — 100 % of it is to be seen: 270 140 480 348
+  ✔ the view is still held
+  ✔ windows match Arbor's layout
+
+▸ ⌘M on the only window of a held view: nothing else comes into view, and the menu says that nothing is in it
+  ✔ the framed window has the keyboard
+  ✔ a letter arrives in it
+  ✔ it is minimized
+  ✘ the other window of its column stays out of view — 100 % of it is to be seen: 220 180 480 348
+  ✔ and so does the other app's
+  ✘ and the floating one — 100 % of it is to be seen: 270 140 480 348
+  ✔ the view is still held
+  ✘ the menu says that nothing is in the view — pointer: process 27061 shows no menu item starting with The view is held: nothing is in it
+  ✘ restored, it fills the screen as before — it is at 184 374 480 348, not 12 43 1000 650
+  ✔ the other app's window is still out of view
+
+▸ ⌃⌥⎋ on a held view releases it and moves nothing; pressed again it pauses
+  ✔ ⌃⌥⎋ reaches Arbor
+  ✔ the view is no longer held
+  ✔ Arbor is not paused
+  ✔ Arbor says on screen that the same key again pauses
+  ✘ the framed window still fills the screen — it is at 184 374 480 348, not 12 43 1000 650
+  ✔ the other app's window is still out of view
+  ✔ pressed again, it pauses
+  ✔ and every window comes into view
+  ✔ a third press resumes
+  ✘ with the view it had — it is at 184 374 480 348, not 12 43 1000 650
+  ✔ ⌃⌥Space works again
+  ✔ everything is in view
+  ✔ windows match Arbor's layout
+
+▸ choose Hold Still from the menu: an app that comes forward by itself is turned away, said once; one's own keys still move the view
+  ✔ ⌃⌥↩ frames the focused window
+  ✔ the other app's window is out of view
+  ✘ the submenu's item can be clicked — pointer: process 27061 shows no menu item starting with View
+  ✘ Arbor ran hold still — Arbor did not run: hold still
+  ✘ status says that Arbor holds still — it said: running: 1 display, 1 docked and 3 floating, 1 out of view
+  ✘ Arbor saw it take the keyboard — arbor.log does not say: took the keyboard out of view; sending it back
+  ✘ the keyboard is back in the framed window — the focused window is 323
+  ✘ the window that came forward stays out of view — 100 % of it is to be seen: 12 43 1000 650
+  ✘ Arbor says on screen what it turned away — said 0 times, not 1: is out of view: holding still
+  ✘ it comes forward again, and is turned away again — Arbor has sent the keyboard back 0 times, not more than 0
+  ✘ the script ended early, with exit code 143
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✘ window 1 is back on screen after quitting — pointer: the window server has no window 320

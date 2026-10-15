@@ -1,0 +1,148 @@
+# 44-name 2026-10-15T12:41Z on macOS 26.6.2, commit 66a3a07
+
+▸ ⌃⌥N, a name, ↩: a field in the upper middle takes the typing and the space in view has the name; the app behind stays in front, sees no letter and has the keyboard again
+  ✔ the second window has the keyboard
+  ✔ ⌃⌥N reaches Arbor
+  ✔ the field is on screen
+  ✔ in the upper middle of the display
+  ✔ the app in front stays in front
+  ✔ its window is still the focused window
+  ✔ no window moved for it
+  ✔ nothing has a name before ↩
+  ✔ ↩ closes the field
+  ✔ the space in view has the name, capital and all
+  ✔ the app behind saw none of it
+  ✔ it is still in front
+  ✔ the next letter goes to its window, without a click
+  ✔ the name is not in the log
+  ✔ no window moved
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥N on a space that has a name, other letters, ⎋: the field closes, the name stays and the app has the keyboard again
+  ✔ ⌃⌥N reaches Arbor
+  ✔ the field is on screen
+  ✔ ⎋ closes the field
+  ✔ the name is as it was
+  ✔ nothing is called what was typed
+  ✔ the app behind saw none of it
+  ✔ the next letter goes to its window, without a click
+
+▸ type a direction for a name and press ↩: it is refused, the field stays open and takes a better name
+  ✔ ⌃⌥N reaches Arbor
+  ✔ the field is on screen
+  ✔ the field stays
+  ✔ nothing is called up
+  ✔ the name is as it was
+  ✔ ↩ closes the field now
+  ✔ the space is renamed to all that was typed
+  ✔ the old name is gone
+
+▸ ⌃⌥N with the field open closes it, and changes nothing
+  ✔ ⌃⌥N reaches Arbor
+  ✔ the field is on screen
+  ✔ ⌃⌥N again reaches Arbor, not the field
+  ✔ the field is gone
+  ✔ the name is as it was
+  ✔ the next letter goes to the app's window
+
+▸ click another window with the field open: the field closes, nothing is named and the click reaches the window
+  ✔ ⌃⌥N reaches Arbor
+  ✔ the field is on screen
+  ✔ the field is gone
+  ✔ the clicked window got the press
+  ✔ and has the keyboard
+  ✔ the name is as it was
+  ✔ nothing is called what was typed
+  ✔ the view stayed
+
+▸ another app comes forward by itself with the field open: the field closes, and typing goes to that app
+  ✔ ⌃⌥N reaches Arbor
+  ✔ the field is on screen
+  ✔ the other app is in front
+  ✔ the field is gone
+  ✔ the next letter goes to the other app's window
+  ✔ the name is as it was
+
+▸ ⌘Tab with the field open: the field closes, and typing goes to the app that came forward
+  ✔ the first app is in front
+  ✔ ⌃⌥N reaches Arbor
+  ✔ the field is on screen
+  ✔ ⌘Tab switched to the other app
+  ✔ the field is gone
+  ✔ the next letter goes to the other app's window
+  ✔ the name is as it was
+
+▸ ⌃⌥↑ with the field open: the view leaves the space and the field goes with it
+  ✔ ⌃⌥N reaches Arbor
+  ✔ the field is on screen
+  ✔ ⌃⌥↑ reaches Arbor, not the field
+  ✔ everything is in view
+  ✔ the field is gone
+  ✔ and stays away
+  ✔ the space keeps its name
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⎋ with the field open: Arbor pauses and the field closes, and resuming does not bring it back
+  ✔ ⌃⌥N reaches Arbor
+  ✔ the field is on screen
+  ✔ Arbor is paused
+  ✔ the field is gone
+  ✔ Arbor runs again
+  ✔ the field stays away
+  ✔ the name outlived the pause
+
+▸ choose the named space under Saved Views in the menu: it is ticked while in view, and from elsewhere the view goes there
+  ✔ the menu has Saved Views
+  ✔ its submenu lists the name
+  ✔ ticked, because that space is in view
+  ✔ from the first window's view the column is out of view
+  ✔ the row can be clicked
+  ✔ Arbor went there, and its log has the command without the name
+  ✔ the column fills the view
+  ✔ spaces says that it is in view
+  ✔ windows match Arbor's layout
+
+▸ choose Name This Space… from the menu: the field opens with the keyboard, and emptied, ↩ takes the name off
+  ✔ the row can be clicked
+  ✔ Arbor ran ask-name
+  ✔ the field is on screen
+  ✔ the app in front stays in front
+  ✔ ↩ closes the field
+  ✔ no space has a name any more
+  ✔ the app behind saw neither key
+  ✔ the next letter goes to its window, without a click
+
+▸ name a space, go to it by the beginning of its name and take the name off, by command
+  ✔ name succeeds
+  ✔ the space in view has the name
+  ✔ no window moved
+  ✔ from the first window's view the column is out of view
+  ✔ go finds it by its first letters, whatever their case
+  ✔ the column fills the view
+  ✔ ⌃⌥[ reaches Arbor
+  ✔ and leads back to the first window
+  ✔ a name nobody has is refused
+  ✔ the view stayed
+  ✔ unname needs the whole name
+  ✔ and takes it off from anywhere
+  ✔ no space has a name any more
+  ✔ windows match Arbor's layout
+
+▸ quit Arbor and start it again: the space has its name back, and go leads to the same windows
+  ✔ ⌃⌥N reaches Arbor
+  ✔ the field is on screen
+  ✔ the space in view has the name
+  ✔ Arbor exits within 5 s of quit
+  ✔ the name is there again
+  ✔ from the first window's view the column is out of view
+  ✔ go succeeds
+  ✔ the column fills the view
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+117 passed, 0 failed
