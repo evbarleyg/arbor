@@ -1,0 +1,11 @@
+33 drag-notes-by: drags notes, which floats, by its title bar -155 across and 38 down
+expected: {'act': 'drag', 'settled': 'quiet:1018', 'judge': 'no', 'performed': 'no', 'undone': 'drag_window', 'drags': '53', 'front': '53', 'own': '53'}
+ODD rule -: the act was not performed: drag_window could not be done
+
+05:32:07.834 SCREEN -- begin 33 drag-notes-by
+05:32:07.834 SCREEN -- text 33 drags notes, which floats, by its title bar -155 across and 38 down
+05:32:07.889 SCRIPT drag w53 from 804,117 to 649,155
+05:32:08.477 SCREEN the button is down 804 117
+05:32:11.229 SCREEN the button is up 649 155
+05:32:12.260 SCREEN -- end 33 act=drag settled=quiet:1018 judge=no performed=no undone=drag_window drags=53 front=53 own=53
+05:32:12.574 SCRIPT == 34 dock-icon-textedit
