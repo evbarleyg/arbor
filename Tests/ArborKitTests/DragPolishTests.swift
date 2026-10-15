@@ -203,6 +203,7 @@ private let side = DisplaySnapshot(
 
   @Test func screenEdgesAndTheWindowsOwnSlotDoNotWait() {
     let s = DragScene()
+    s.h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     s.h.system.beginDrag(s.c)
     s.h.system.moveDrag(to: CGPoint(x: 3, y: 450))
     #expect(s.h.overlays.preview != nil, "a screen edge shows at once")
@@ -311,8 +312,10 @@ private let side = DisplaySnapshot(
     s.expectNothingLeftBehind()
   }
 
+  /// As far as Arbor is concerned. With "Hold ⌥ key while dragging windows to tile" on, ⌥ makes the window macOS's (MacTilingTests).
   @Test func theOtherModifiersDoNotSuppressDocking() {
     let s = DragScene()
+    s.h.system.tiling.optionKey = false
     s.h.system.heldModifiers = [.option, .shift, .control]
     s.h.system.drag(s.c, through: [s.frame(s.c).center, s.edge(.bottom, of: s.b)])
     #expect(s.h.workspace.isDocked(s.c))
@@ -348,8 +351,10 @@ private let side = DisplaySnapshot(
   }
 
   /// ⌃⌥⌘ + arrow moves the focused window. Pressed with a window in the hand it is a command, not "do not dock".
+  /// With macOS's ⌥ switch off: with it on, macOS tiles a window let go with ⌃⌥⌘ held, as it was seen to (MacTilingTests).
   @Test func arborsOwnShortcutsHeldDuringADragDoNotTurnDockingOff() {
     let s = DragScene()
+    s.h.system.tiling.optionKey = false
     s.h.system.beginDrag(s.c)
     s.h.system.moveDrag(to: s.edge(.bottom, of: s.b), holding: 0.3)
     let preview = s.h.overlays.preview
@@ -589,6 +594,7 @@ private let side = DisplaySnapshot(
       s.h.run("dock \(d.rawValue) left")
       s.h.system.cursor = CGPoint(x: 720, y: 450)
       let system = s.h.system
+      system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
       let sideSlot = s.h.controller.layouts[side.id]!.windowFrames[d]!
       switch journey {
       case "back":
@@ -697,6 +703,7 @@ private let side = DisplaySnapshot(
     let d = s.h.system.open(app: "Terminal", frame: CGRect(x: 600, y: 500, width: 300, height: 200))
     let rest = CGRect(x: s.desktop.minX + 10, y: 400, width: 300, height: 200)
     s.h.system.userMove(s.c, to: rest)
+    s.h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     s.h.system.beginDrag(d)
     s.h.system.moveDrag(to: CGPoint(x: 720, y: 28))
     let pushed = s.frame(s.c)
@@ -739,6 +746,7 @@ private let side = DisplaySnapshot(
     let rest = CGRect(x: s.desktop.minX + 10, y: 400, width: 300, height: 200)
     let slow = s.h.system.open(app: "Slow", pid: 77, frame: rest)
     s.h.system.userMove(slow, to: rest)
+    s.h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     s.h.system.beginDrag(s.c)
     s.h.system.moveDrag(to: CGPoint(x: 720, y: 28))
     let pushed = s.frame(slow)
@@ -760,6 +768,7 @@ private let side = DisplaySnapshot(
     let d = s.h.system.open(app: "Terminal", frame: CGRect(x: 600, y: 500, width: 300, height: 200))
     let rest = CGRect(x: s.desktop.minX + 10, y: 400, width: 300, height: 200)
     s.h.system.userMove(s.c, to: rest)
+    s.h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     s.h.system.beginDrag(d)
     s.h.system.moveDrag(to: CGPoint(x: 720, y: 28))
     let pushed = s.frame(s.c)
@@ -987,6 +996,7 @@ private let side = DisplaySnapshot(
   @Test(arguments: both, both) func aSecondDragWithoutAnEndToTheFirstStartsClean(reflow: Bool, active: Bool) {
     let s = DragScene { $0.reflowWhileDragging = reflow }
     let before = s.outcome
+    s.h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     s.h.system.beginDrag(s.a)
     s.h.system.moveDrag(to: s.edge(.bottom, of: s.b), holding: active ? 0.3 : 0.05)
     // The mouse-up was lost; the next thing Arbor hears is another drag.
@@ -1106,6 +1116,7 @@ private let side = DisplaySnapshot(
 
   @Test(arguments: both) func theDraggedWindowStaysInTheHandWhileTheCameraMoves(reflow: Bool) {
     let s = DragScene { $0.reflowWhileDragging = reflow }
+    s.h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     s.h.system.beginDrag(s.a)
     s.h.system.moveDrag(to: s.onDesktop, holding: 0.3)
     let held = s.frame(s.a)

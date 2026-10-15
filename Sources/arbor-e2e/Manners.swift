@@ -31,6 +31,26 @@ func secondsSinceInput() -> Double? {
   return nanoseconds / 1_000_000_000
 }
 
+/// The process macOS has in front. Asked of a tool each time: NSWorkspace tells a process without a run loop nothing new.
+func frontmostPID() -> Int32? {
+  func lsappinfo(_ arguments: [String]) -> String? {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/lsappinfo")
+    process.arguments = arguments
+    let output = Pipe()
+    process.standardInput = FileHandle.nullDevice
+    process.standardOutput = output
+    process.standardError = FileHandle.nullDevice
+    guard (try? process.run()) != nil else { return nil }
+    let text = String(decoding: output.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+    process.waitUntilExit()
+    return text.trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+  // `ASN:0x0-0x1b01b:`, then `"pid"=1234`.
+  guard let front = lsappinfo(["front"]), !front.isEmpty, let answer = lsappinfo(["info", "-only", "pid", front]) else { return nil }
+  return answer.split(separator: "=").last.flatMap { Int32($0) }
+}
+
 /// Unchecked: everything but `init` runs on `queue`. The runner is used from there only to clean up, after which the process ends.
 final class Manners: @unchecked Sendable {
   /// A run takes three or four minutes.

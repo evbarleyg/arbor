@@ -168,6 +168,11 @@ public protocol WindowSystem: AnyObject {
   /// starting asks every running app for its windows, and one that hangs, which is a reason to pause, makes
   /// everybody wait. Nothing is observed or reported because of it. The default starts, moves and stops.
   func setFrameOnce(_ frame: CGRect, of window: WindowID, pid: Int32) -> CGRect?
+
+  /// Which parts of macOS's own tiling of dragged windows are switched on right now. Asked when a drag begins: where
+  /// macOS takes the window, Arbor stands aside (`MacTiling`). No default: in a wrapper that forgot to pass it on, the fight
+  /// over the window would be back in silence.
+  func macTiling() -> MacTiling
 }
 
 extension WindowSystem {

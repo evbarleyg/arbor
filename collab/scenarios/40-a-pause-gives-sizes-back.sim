@@ -1,0 +1,63 @@
+# Proposed by the swarm (2026-10-14, from a day with real apps on a hosted Mac at macOS defaults); the documenter may edit or drop it.
+# Story: an ordinary afternoon on a display of 1600 x 900. Finder is docked on the left, Safari on the right, and the
+# Desktop between them is narrow, so Terminal, Notes, Mail and TextEdit are squeezed to stay on it. ⌃⌥⎋: Arbor lets go,
+# and the Mac looks as it did before Arbor touched it: every window has its own size again, in view. ⌃⌥⎋ again, and
+# the arrangement is back.
+# Reference: F40, F48; "quitting, Float All and pause give windows back their own earlier sizes".
+quiet
+display-size 1600x900 31
+open Finder 920x436
+open Safari 1324x791
+open Terminal 877x499
+open Notes 1000x660 min 709x0
+open Mail 1120x630 min 871x0
+open TextEdit 673x439
+move 101 340 120 920 436
+move 102 138 31 1324 791
+move 103 40 51 877 499
+move 104 300 105 1000 660
+move 105 240 72 1120 630
+move 106 165 65 673 439
+
+dock 101 left
+dock 102 right
+expect docked 101
+expect docked 102
+expect left-of 101 102
+expect size 104 709x660
+expect size 105 871x630
+
+press toggle-pause
+expect size 101 920x436
+expect size 102 1324x791
+expect size 103 877x499
+expect size 104 1000x660
+expect size 105 1120x630
+expect size 106 673x439
+expect visible 101
+expect visible 102
+expect visible 103
+expect visible 104
+expect visible 105
+expect visible 106
+
+press toggle-pause
+expect docked 101
+expect docked 102
+expect left-of 101 102
+expect camera root
+expect size 104 709x660
+expect size 105 871x630
+
+# Framed on Safari, which fills the display, the same holds: Safari too is as it was. (Whoever only wants ⌃⌥ for the
+# app in front has Shortcuts Off in "App", which moves nothing.)
+zoom 102
+expect fills 102
+expect hidden 101
+press toggle-pause
+expect size 102 1324x791
+expect size 101 920x436
+expect visible 101
+press toggle-pause
+expect fills 102
+expect hidden 101

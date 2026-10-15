@@ -37,8 +37,9 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
+      # A pull request takes this file from its trial merge with the base, and the branch itself may be from before there was a check.
       - name: The check finds what it should, and leaves alone what it should
-        run: ./scripts/test-public-check.py
+        run: if [ -f scripts/test-public-check.py ]; then ./scripts/test-public-check.py; else echo "this branch is from before the check"; fi
       - name: Nothing private in what this adds
         env:
           GH_TOKEN: ${{ github.token }}
@@ -47,4 +48,12 @@ jobs:
           BASE: ${{ github.event.pull_request.base.sha || (contains(fromJSON('["refs/heads/main", "refs/heads/swarm/trunk"]'), github.ref) && github.event.before) || '' }}
           BRANCH: ${{ github.ref_type != 'tag' && (github.head_ref || github.ref_name) || '' }}
           TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
-        run: ./scripts/public-check.py ${BASE:+--base "$BASE"} ${BRANCH:+--branch "$BRANCH"} ${TAG:+--tag "$TAG"}
+        run: |
+          check=scripts/public-check.py
+          if [ ! -f "$check" ]; then
+            # Such a branch is as public as any other: it is read with the trunk's check.
+            mkdir "$RUNNER_TEMP/check"
+            for name in public-check.py public-check.allow; do git show "origin/swarm/trunk:scripts/$name" > "$RUNNER_TEMP/check/$name"; done
+            check=$RUNNER_TEMP/check/public-check.py
+          fi
+          python3 "$check" ${BASE:+--base "$BASE"} ${BRANCH:+--branch "$BRANCH"} ${TAG:+--tag "$TAG"}

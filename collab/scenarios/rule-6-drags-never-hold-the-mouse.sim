@@ -1,0 +1,49 @@
+# Rule 6 of the product direction (issue #3; QUESTIONS Q17): drags must never block input.
+# Story: somebody drags windows about, slowly, quickly, with ⌘ held, and once Arbor is paused with a window in the hand.
+# However a drag ends, nothing of Arbor's is left on the screen that could take the next click.
+# This is the half that needs no Mac: the preview is up only while a window is in the hand. That the panel lets the mouse through
+# is board 1.6.
+quiet
+# The three tiling switches of the guide's section 2 are off: with macOS's own tiling on, the left, right and top edges of the screen are macOS's (Q23).
+mac-tiling off
+open Safari
+open Notes
+open Mail
+drag 101 2 400
+expect docked 101
+expect preview none
+drag 102 1438 400
+expect docked 102
+expect preview none
+# Let go at once, before any target has woken up.
+drag 103 1000 850 quick
+expect preview none
+# With ⌘ nothing docks and nothing is offered.
+drag 103 2 300 cmd
+expect floating 103
+expect preview none
+# Out of a slot and back onto the Desktop.
+drag 102 720 400
+expect floating 102
+expect preview none
+# Dropped on another window's edge.
+drag 102 300 850
+expect docked 102
+expect preview none
+# The control: while a window is held over a target there is a preview to lose.
+pick-up 103 1438 400
+expect preview showing
+let-go
+expect docked 103
+expect preview none
+# Arbor is paused with a window in the hand.
+pick-up 103 2 400
+expect preview showing
+pause
+# Known (the rest of board 1.20): the drag is called off, which puts the window back in its place, and then the pause gives it
+# its own size.
+expect jolt 103
+expect preview none
+let-go
+resume
+expect preview none

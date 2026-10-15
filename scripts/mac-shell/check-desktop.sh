@@ -7,6 +7,9 @@
 source "$(dirname "$0")/lib.sh"
 needs_throwaway_mac "switch to dark mode, replace the wallpaper, add a Space, and change Reduce Motion and edge tiling"
 arbor_build
+# Its drags dock at the left and right edges of the screen, which are Arbor's only with macOS's own tiling off (MacTiling.swift). It declines on a
+# person's Mac, where the setting is theirs; with the tiling on there, those steps fail.
+macos_tiling off
 
 style() { defaults read -g AppleInterfaceStyle 2>/dev/null || echo Light; }
 shows() { [ "$(basename "$(pointer wallpaper | head -n 1)")" = "$1" ]; }
@@ -74,33 +77,6 @@ shot light-gradient
 wallpaper "#2e7d32"
 check "the desktop shows the colour" eventually shows wallpaper-2e7d32.png
 shot light-green
-
-step "macOS's own edge tiling, which is on unless somebody turned it off"
-macos_tiling
-# Whatever is on the screen besides the test windows, Arbor and the furniture: macOS's preview, if it shows one.
-strangers() {
-  pointer windows | awk -v arbor="$ARBOR_PID" '$8 == "on" && $2 != arbor' \
-    | grep -v -E " (ArborTestWindows|Dock|Finder|Window Server|Control Center|Spotlight|Notification Center|Wallpaper)$"
-}
-# Pushed against the edge as a hand does it: the pointer stops at the edge and the mouse keeps going.
-push_right() {
-  # shellcheck disable=SC2046
-  drag $(titlebar_of "$W3") $(arbor_point $(screen_of 1) "x + w + 40" "y + h / 2") --no-release
-  echo "pointer: $(pointer where)"
-  shot "$1-1-pushed"
-  echo "on the screen besides the expected (id pid level x y w h on owner):"
-  strangers
-  release &
-  film "$1-2-released" 8
-  wait $!
-  shot "$1-3-settled"
-  echo "the window server has the window at $(real_frame_of "$W3"); Arbor's slot for it is $(arbor_ask slot "$W3")"
-  check "$1: the window ends in Arbor's slot" eventually is in_slot "$W3"
-}
-push_right tiling-on
-ctl float "$W3"
-macos_tiling off
-push_right tiling-off
 
 step "Reduce Motion"
 macos_reduce_motion off

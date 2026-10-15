@@ -421,6 +421,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     #expect(h.system.raiseLog.isEmpty)
     h.run("show-all")
     #expect(h.system.isVisible(call))
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(call, through: [CGPoint(x: 700, y: 300), CGPoint(x: 3, y: 400)])
     #expect(h.workspace.isDocked(call), "and can be docked by dragging")
   }

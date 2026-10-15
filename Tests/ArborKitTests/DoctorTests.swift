@@ -174,7 +174,7 @@ import Testing
   @Test func theWallpaperClickIsOnlyNotedWhileArborGuardsAgainstIt() {
     var facts = Self.healthy
     facts.switches = [.clickWallpaper]
-    var guarded = Settings()
+    var guarded = Settings.withGestures
     guarded.guardDesktopClicks = true
     let alone = check(makeHarness(facts, settings: guarded), "Desktop & Dock settings")
     #expect(alone?.mark == .ok && alone?.detail == "none in the way")
@@ -195,6 +195,12 @@ import Testing
     unguarded.guardDesktopClicks = false
     let row = makeHarness(facts, settings: unguarded).controller.onboardingModel(facts).row(.desktopAndDock)
     #expect(row?.points == [MacSwitch.clickWallpaper.advice])
+
+    // The guard works through an event tap. With `pointerGestures` off there is none, and nobody may be told that Arbor guards.
+    guarded.pointerGestures = false
+    #expect(check(makeHarness(facts, settings: guarded), "Desktop & Dock settings")?.mark == .problem)
+    #expect(
+      makeHarness(facts, settings: guarded).controller.onboardingModel(facts).row(.desktopAndDock)?.points == [MacSwitch.clickWallpaper.advice])
   }
 
   @Test func aPauseIsSaidAndIsNotAProblem() {
@@ -280,17 +286,17 @@ import Testing
   @Test func anEventTapTheSettingsAskForMustBeInstalled() {
     var facts = Self.healthy
     facts.eventTaps = ["scroll", "rectangle"]
-    let h = makeHarness(facts)
+    let h = makeHarness(facts, settings: .withGestures)
     #expect(check(h, "Gestures")?.mark == .problem)
     #expect(check(h, "Gestures")?.detail == "pinch does nothing: its event tap is not installed (installed: scroll, rectangle)")
     facts.eventTaps = []
     #expect(
-      check(makeHarness(facts), "Gestures")?.detail
+      check(makeHarness(facts, settings: .withGestures), "Gestures")?.detail
         == "pinch, scroll and rectangle do nothing: their event taps are not installed (installed: none)")
     facts.eventTaps = ["rectangle"]
 
     // Switched off in the settings, it is not missed.
-    var settings = Settings()
+    var settings = Settings.withGestures
     settings.gesturesEnabled = false
     #expect(check(makeHarness(facts, settings: settings), "Gestures") == .init(mark: .ok, title: "Gestures", detail: "rectangle"))
     // ⇧-drag on the Desktop and the guard against the wallpaper click listen through the same tap as the rectangle.
@@ -307,20 +313,21 @@ import Testing
     // A tap doctor has not heard of is listed, not complained about.
     facts.eventTaps = ["pinch", "scroll", "rectangle", "double-click"]
     #expect(
-      check(makeHarness(facts), "Gestures") == .init(mark: .ok, title: "Gestures", detail: "pinch, scroll, rectangle, double-click"))
+      check(makeHarness(facts, settings: .withGestures), "Gestures")
+        == .init(mark: .ok, title: "Gestures", detail: "pinch, scroll, rectangle, double-click"))
   }
 
   @Test func theTapForScrollingIsATapOfItsOwn() {
-    // ⌃⌥ + scroll (F55) is on by default, and listens through another tap than the pinch.
+    // ⌃⌥ + scroll (F55) listens through another tap than the pinch.
     var facts = Self.healthy
     facts.eventTaps = ["pinch", "rectangle"]
     #expect(
-      check(makeHarness(facts), "Gestures")
+      check(makeHarness(facts, settings: .withGestures), "Gestures")
         == .init(
           mark: .problem, title: "Gestures",
           detail: "scroll does nothing: its event tap is not installed (installed: pinch, rectangle)"))
     // Nothing that scrolls is asked for: it is not missed.
-    var settings = Settings()
+    var settings = Settings.withGestures
     settings.scrollZoom = false
     #expect(check(makeHarness(facts, settings: settings), "Gestures") == .init(mark: .ok, title: "Gestures", detail: "pinch, rectangle"))
     // The view that follows the fingers slides with two of them (F16).
@@ -528,6 +535,7 @@ import Testing
     #expect(ticks(session.model) == [false, false, false])
 
     // Each move is ticked off as it happens, with no look at the clock.
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(a, through: [CGPoint(x: 600, y: 210), CGPoint(x: 300, y: 300), CGPoint(x: 2, y: 400)])
     #expect(ticks(session.model) == [true, false, false])
     h.system.userFocus(a)

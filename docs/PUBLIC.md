@@ -38,10 +38,36 @@ the commits were made.
 | Before a push, by hand | `make public-check` |
 | Before posting a pull request's body, an issue or a comment | `scripts/public-check.py --text body.md`, or pipe the text in |
 | After every push, of a branch or a tag, and on every pull request | The workflow `Public check`, on Linux, in seconds |
+| After every post and every edit of one: issues, pull requests, comments, reviews | The workflow `Public text` (`scripts/public-text.py`), see below |
 | To see what the whole tree holds, old lines too | `scripts/public-check.py --tree`: an audit to read, not a gate |
 
 It prints the place, the rule, what to write instead, and the line with the find between » and «. In GitHub Actions, whose
 logs are as public as the rest, everything found is blanked out, in file and branch names too.
+
+## What is posted
+
+Nothing can read a post before it is public, so `Public text` reads it right after, and again at every edit. It reads the
+whole thread each time.
+
+- **A link to a working session becomes the generic link**, in place and without a word. Some platforms append such a
+  link to every pull request they create. It is the one edit the workflow makes to anybody's text. The earlier wording stays
+  in the post's edit history (the "edited" menu), where only a person with the right to can delete it, and an earlier title stays
+  in the thread's "changed the title" line for good; so it is still better not to post the link in the first place.
+- **Everything else is named in one comment on the thread**: which post, which line, what to write instead, never the words
+  themselves. Edit the post in place. The comment changes as things are reworded and goes away when nothing is left.
+- **While a pull request's own title or description holds something, its check `public-text` is red.** For comments, reviews and
+  issues the comment is the only sign: a run they start counts for the newest commit on `main`, which has nothing to do with it.
+- Those who work on the repository, and the apps that post for them, are held to all the rules. Anybody else is only told of
+  what would give away something of their own: an address, a path with their name in it, a session.
+- Once a night it reads every thread that changed in the last day, for what no event brought to it: a review on a pull
+  request from a fork, where the token may only read, or a run that failed.
+
+It is not told of commit comments, discussions, the wiki or the text of releases. `scripts/public-text.py --all --dry-run`
+reads every thread there is and changes nothing.
+
+The workflow holds a token that may edit what people wrote, and anybody can start it by posting. Its header says what
+keeps that safe: nothing of a pull request is checked out, what was posted reaches it as data only, and what it quotes back
+stands in a code span. It takes effect from the default branch, so a change to it works once it is on `main`.
 
 ## When it finds something
 
@@ -71,8 +97,9 @@ of things, not things:
 
 Words that no kind covers go in a plain file outside the repository, one to a line, named with
 `git config arbor.privateWords <path>`. They are looked for in that clone only, wherever they stand, whatever their case. A
-list that git was told of and that cannot be read stops the push: the check cannot tell. A workflow can be given
-such words in `$PUBLIC_CHECK_WORDS`, from a secret.
+list that git was told of and that cannot be read stops the push: the check cannot tell. `Public text` can be given such
+words in a secret, `PUBLIC_CHECK_WORDS`. It looks for them only in what those who work here post, and then names the post and
+nothing more: if it answered strangers, anybody could post guesses and read the list off the answers.
 
 No check reads for sense. "The display on the left is a 27-inch one from 2019" names nobody and still describes somebody's
 desk. Nor does it read pictures, or the time zone every commit's date carries (`TZ=UTC git commit` keeps that to yourself).

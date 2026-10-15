@@ -91,6 +91,7 @@ private let side = DisplaySnapshot(
 
   @Test func draggingADockedWindowToTheOtherDisplayJoinsItsArrangement() {
     let (h, a, b, _) = makeHarness()
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(a, through: [h.frame(a)!.center, CGPoint(x: 1445, y: 400)])
     #expect(workspace(h, side).isDocked(a))
     #expect(!workspace(h, main).contains(a))

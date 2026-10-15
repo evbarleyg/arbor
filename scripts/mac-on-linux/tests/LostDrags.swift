@@ -1,0 +1,141 @@
+import ArborCore
+@testable import ArborKit
+import CoreGraphics
+import FakeMacOS
+import Foundation
+
+// Drags on a loaded Mac. On loaded hosted Macs Arbor saw no drag at all though the window moved (2026-10-14). What could lose one: the monitors hear of the press late; the
+// window server begins to move the window late, with the pointer already some way off; Arbor's own main thread is busy at the press, and everything arrives at once.
+
+@MainActor
+private func stage(_ story: Story) -> (StoreyOne, FakeMac.Window) {
+  var window: FakeMac.Window!
+  let one = StoreyOne(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 100, y: 100, width: 400, height: 300)) }
+  return (one, window)
+}
+
+private let grip = CGPoint(x: 300, y: 112)
+
+/// What became of a drag, in a line: for the table in the findings.
+@MainActor
+private func account(_ one: StoreyOne, _ window: FakeMac.Window, pressedAt: TimeInterval) -> String {
+  let began = one.mac.journal.first { $0.contains("reports: drag began w\(window.number)") }.flatMap { Double($0.trimmingCharacters(in: .whitespaces).prefix(while: { $0 != " " })) }
+  let moved = one.heard.all.filter { $0 == .dragMoved(window.number) }.count
+  let changes = one.heard.all.filter { $0 == .changed(window.number, byUser: true) }.count
+  return began.map { "drag began \(Int((($0 + 10_000) - pressedAt) * 1000)) ms after the press, \(moved) moves" } ?? "NO DRAG; \(changes) reports that the window changed, not by Arbor"
+}
+
+/// A slow drag (a second, 200 points) or a flick (a quarter of a second).
+@MainActor
+private func play(_ one: StoreyOne, flick: Bool) {
+  if flick {
+    one.mac.drag(from: grip, to: CGPoint(x: 500, y: 262), steps: 4, interval: 0.03)
+  } else {
+    one.mac.drag(from: grip, to: CGPoint(x: 500, y: 262))
+  }
+  one.mac.release()
+  one.mac.pass(3)
+}
+
+@MainActor
+private func judge(_ story: Story, _ one: StoreyOne, _ window: FakeMac.Window, pressedAt: TimeInterval) {
+  let words = account(one, window, pressedAt: pressedAt)
+  story.check("the window has moved", window.bounds.origin == CGPoint(x: 300, y: 250), window.bounds.text)
+  story.check("the drag is reported to begin", one.heard.all.contains(.dragBegan(window.number)), words)
+  story.check("and to end, so that there is a drop to act on", one.heard.all.contains(.dragEnded(window.number)), words)
+  story.check("Arbor knows where the window is", one.snapshot(window)?.frame == window.bounds, "\(one.snapshot(window)?.frame.text ?? "")")
+  one.mac.note("IN SHORT: \(words)")
+}
+
+@MainActor
+func tellOfLostDrags(_ book: Book) {
+  for flick in [false, true] {
+    let gesture = flick ? "a window is flicked" : "a window is dragged for a second"
+
+    for late in [0, 20, 100, 500] {
+      book.story("\(gesture), and the monitor hears of the press \(late) ms late") { story in
+        let (one, window) = stage(story)
+        one.mac.mouseDownIsLateBy = Double(late) / 1000
+        let pressed = one.mac.now
+        play(one, flick: flick)
+        judge(story, one, window, pressedAt: pressed)
+      }
+    }
+
+    for order in [FakeMac.Backlog.byTime, .accessibilityFirst, .mouseFirst] {
+      book.story("\(gesture) while Arbor's main thread is busy for 300 ms from the press, and what queued up comes \(order)") { story in
+        let (one, window) = stage(story)
+        let pressed = one.mac.now
+        one.mac.arborIsBusy(for: 0.3, then: order)
+        play(one, flick: flick)
+        judge(story, one, window, pressedAt: pressed)
+      }
+    }
+  }
+
+  // `WindowGrab.patience`: with the pointer more than 24 points from the press and the window where it was, the press is settled as not being about the window, and both
+  // signs are ignored until the button comes up.
+  for wait in [0, 100, 400] {
+    for distance in [10, 24, 40] {
+      book.story("the window server begins to move a dragged window \(wait) ms after the press, with the pointer \(distance) points away") { story in
+        let (one, window) = stage(story)
+        one.mac.serverFollowsPointerAfter = Double(wait) / 1000
+        let pressed = one.mac.now
+        one.mac.press(at: grip)
+        // The pointer is that far away before the window stirs, in two steps.
+        let step = max(Double(wait) / 1000 / 3, 0.01)
+        one.mac.pass(step)
+        one.mac.moveMouse(to: CGPoint(x: grip.x + CGFloat(distance) / 2, y: grip.y))
+        one.mac.pass(step)
+        one.mac.moveMouse(to: CGPoint(x: grip.x + CGFloat(distance), y: grip.y))
+        one.mac.pass(step + 0.02)
+        for part in 1...8 {
+          one.mac.moveMouse(to: CGPoint(x: grip.x + CGFloat(distance) + (200 - CGFloat(distance)) * CGFloat(part) / 8, y: grip.y + 150 * CGFloat(part) / 8))
+          one.mac.pass(0.08)
+        }
+        one.mac.release()
+        one.mac.pass(3)
+        judge(story, one, window, pressedAt: pressed)
+      }
+    }
+  }
+
+  // What a person sees of it.
+  for wait in [0, 100] {
+    let words = wait > 0 ? ", and the window server begins to move it \(wait) ms after the press, with the pointer 40 points away" : ""
+    book.story("a floating window is dragged briskly to the left edge of the screen\(words)") { story in
+      var window: FakeMac.Window!
+      let two = StoreyTwo(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 300, y: 130, width: 400, height: 300)) }
+      two.mac.serverFollowsPointerAfter = Double(wait) / 1000
+      two.mac.drag(from: CGPoint(x: 510, y: 148), to: CGPoint(x: 3, y: 368), steps: 12, interval: 0.04, rest: 0.02)
+      two.mac.pass(0.3)
+      story.check("a preview shows where it would go", two.overlays.preview != nil)
+      two.mac.release()
+      two.mac.pass(2)
+      story.check("let go, it is docked", two.isDocked(window), two.whereabouts(window))
+    }
+
+    book.story("a docked window is dragged briskly out onto the Desktop\(words)") { story in
+      var window: FakeMac.Window!, other: FakeMac.Window!
+      let two = StoreyTwo(story) { mac in
+        other = mac.open("other", in: mac.launch("Safari"), frame: CGRect(x: 500, y: 100, width: 400, height: 300))
+        window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 60, y: 100, width: 400, height: 300))
+      }
+      story.check(
+        "two windows are docked, with the Desktop between them", two.run("dock \(window.number) left").ok && two.run("dock \(other.number) right").ok)
+      let slot = window.frame
+      let asked = window.timesAskedForAFrame
+      two.mac.serverFollowsPointerAfter = Double(wait) / 1000
+      two.mac.drag(from: CGPoint(x: slot.midX, y: slot.minY + 12), to: CGPoint(x: 512, y: 300), steps: 8, interval: 0.04, rest: 0.02)
+      two.mac.pass(0.6)
+      story.check(
+        "while it is held Arbor does not pull at it", window.timesAskedForAFrame == asked,
+        "asked for a place or a size \(window.timesAskedForAFrame - asked) times")
+      two.mac.release()
+      two.mac.pass(2)
+      story.check(
+        "let go over the Desktop, it floats there", !two.isDocked(window) && window.frame.minX > slot.minX + 100,
+        "\(two.isDocked(window) ? "docked" : "floating"), \(two.whereabouts(window))")
+    }
+  }
+}

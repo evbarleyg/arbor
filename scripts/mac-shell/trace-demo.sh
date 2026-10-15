@@ -72,7 +72,9 @@ arbor_build
 step "the Mac"
 echo "macOS $(sw_vers -productVersion) ($(sw_vers -buildVersion)) on $(uname -m)"
 pointer displays
-macos_tiling
+# Its drags dock at the left and right edges of the screen, which are Arbor's only with macOS's own tiling off (MacTiling.swift). It declines on a
+# person's Mac, where the setting is theirs; with the tiling on there, those steps fail.
+macos_tiling off
 
 # MARK: Test windows
 

@@ -6,10 +6,10 @@ This page says what each of those words means in numbers, so that a program give
 
 - The verdict is about **one commit**. It is `VIABLE`, `NOT VIABLE`, or `INVALID` where nothing shows that the detectors catch anything (section 5), with the reasons and the ledger of runs it rests on.
 - The numbers are in the block in section 1. `scripts/mac-shell/viable.py` reads them **from this page**: there is no second copy.
-- Kept by the product owner. A number changes only by a pull request that says why, never in the same pull request as a fix it would excuse.
+- Kept by the product owner; the checker is kept by the lane that keeps the detectors, which feeds it real runs. A number changes only by a pull request that says why, never in the same pull request as a fix it would excuse.
 - It replaces the half hour on one person's Mac that issue #3 ends with (`collab/QUESTIONS.md`, Q19). Its measure is the same: no jolt, no lost or stuck window, nothing moved that the person did not move.
 
-**State, 2026-10-14: a draft that binds.** The sampler, the day and most detectors are in a pull request (`scripts/mac-shell/day.sh`, `sampler.swift`, `jolts.py`) and have played their first days on hosted Macs. Section 9 lists what is still to be built, and by which lane.
+**State, 2026-10-15: agreed** by the four lanes it rests on (the detectors, the walks, the stand-ins, the rubric). The sampler, the day and most detectors are in a pull request (`scripts/mac-shell/day.sh`, `sampler.swift`, `jolts.py`) and have played their first days on hosted Macs. Section 9 lists what is still to be built, and by which lane.
 Until all of it is there the verdict is `INVALID`, for want of evidence: `scripts/mac-shell/viable.py check` on an empty ledger lists what is missing.
 
 ## 1. The numbers
@@ -151,14 +151,14 @@ Distances are in points. "Changes" means by more than 2, because apps round and 
 | `jolt` | 3 | for one act a window moves more than once (two changes more than 250 ms apart), or goes more than 6 points out of the straight road to where it ends up, or opens in one place and is then moved to another | samples | `jolts.py`, rule 3 |
 | `pulled` | 3, 6 | while the button is down, from one sample to the next, the dragged window moves over 40 points further than the pointer did; or, over the drag so far, it is more than 40 points ahead of where the pointer carries it, or more than 150 behind. (Not "it is where the pointer carries it": with no Arbor running macOS holds a dragged window back where its edge meets another's, 49 points after a drag of 130, and clamps it under the menu bar. It never runs ahead; 18 points were seen with nobody pulling) | samples | `jolts.py` |
 | `flash` | 3 | a window that is out of view at both ends of an act shows more than its parking strip in any sample between; or any window leaves the screen and comes back within one act that did not ask for it | samples | partly |
-| `fought` | 1 | in a drag that macOS answers (its preview is up at the drop, or the window ends in one of macOS's own tile frames) Arbor's preview was up **at any time** (Q23: one after the other is both reacting), or Arbor docks the window, or the window moves again afterwards; or both previews are up in one sample of any drag; or after a double-click on a title bar that macOS answers Arbor moves that window (Q22); or Arbor moves any window before the first run has shown what it found | samples | `jolts.py`: both at once, docked, moved again. The rest to build |
+| `fought` | 1 | in a drag that macOS answers (its preview is up at the drop, or the window ends in one of macOS's own tile frames) Arbor's preview is up in a sample in which the pointer is within 12 points (`screenEdgeBand`) of an edge that is macOS's (Q23: one after the other is both reacting; further in, the preview of a docked window's own edge is honest), or Arbor docks the window, or the window moves again afterwards; or both previews are up in one sample of any drag; or after a double-click on a title bar that macOS answers Arbor moves that window (Q22); or Arbor moves any window before the first run has shown what it found | samples | `jolts.py`: both at once, docked, moved again. The rest to build |
 | `lost` | the measure of a severity 1 | at the end of an act that did not take it out of view, less than half of a window is on any display; or at a point where everything must be in view (after Show Everything, ⌃⌥0, pause, Float All, Quit) a window shows less than its own frame did, and no tile stands for it where a tile may (below) | samples | `jolts.py`, rule L |
 | `stuck` | 3, 4 | a window is moved by Arbor more than three times in two seconds with nobody acting; or a window a real drag let go of is, within 24 points, in none of five places: where it was let go, where Arbor's preview was, in macOS's own tile where macOS answered the drag, under the pointer by its title bar at its own size (F48), back where it was taken from (a drag called off); or after Quit a click on an app's Dock icon does not bring its window to the front | samples | partly |
-| `behind` | 4 | the window switched to does not end in front of every other ordinary window | samples (order) | `jolts.py`, rule 4 |
+| `behind` | 4 | the window switched to does not end in front of every other ordinary window; or a window kept in view that has its strip (Q25) is overlapped by a window Arbor arranges. One for which there was no room, and of which Arbor says so, may be covered | samples (order) | `jolts.py`, rule 4 |
 | `focus` | 4 | the window switched to does not end wholly in view with its app in front and itself its app's focused window; a key typed into a witness window arrives elsewhere; or the app in front changes during an act that is no switch | samples, `apptool`, the witness | partly |
-| `size-lost` | 5 | after pause, Float All or Quit a window's size differs from its own: the last size it had while nobody but its person and its app decided it. After Float All and Quit its place too | samples | `jolts.py`, rule 5 (place: today `ODD`) |
-| `input-held` | 6 | the button is not up within 50 ms of the posted mouse-up; a click 300 ms after a drop does not arrive in the window that lies there; a key, click or scroll that is not Arbor's does not reach the witness, or reaches it more than 10 ms later (99th percentile) than in the run without Arbor | the witness, samples | to build |
-| `slow` | 3 | a window Arbor moves is not at rest 1,500 ms after the act's event was posted; the first act after a start has 3,000. From 700 ms (1,500 after a start) it is listed, as a class that explains itself, and goes on the scoreboard: the motion takes 460. **These numbers wait for the release build**: the first hosted days were debug builds on three virtual cores | samples | partly: `settled=` |
+| `size-lost` | 5 | after pause, Float All or Quit a window's size differs from its own: the last size it had while nobody but its person and its app decided it. After pause, Float All and Quit its place too, and nothing is raised (Q21) | samples | `jolts.py`, rule 5 (place: today `ODD`) |
+| `input-held` | 6 | the button is not up within 100 ms of the posted mouse-up, asked only while a process of Arbor's exists (it was 50: with Arbor quit, one release in 118 took 57 ms on a hosted Mac; a limit that a Mac without Arbor breaks measures the Mac); a click 300 ms after a drop does not arrive in the window that lies there; a key, click or scroll that is not Arbor's does not reach the witness, or reaches it more than 10 ms later (99th percentile, by kind of event: press, release, key, drag) than in **its own** control: the same script, seed and cell without Arbor, where the same presses are made. Never between different journeys: macOS itself takes some 19 ms over a press that brings another app forward, so the percentile depends on how many such presses a journey has | the witness, samples | to build |
+| `slow` | 3 | a window Arbor moves is not at rest 1,500 ms after the act's event was posted; the first act after a start has 3,000. From 700 ms (1,500 after a start) it is listed, as a class that explains itself, and goes on the scoreboard: the motion takes 460. Hosted Macs get no numbers of their own: release and debug builds were measured within 50 ms of each other there, and with the icons out of the way docks and frames take 580 to 710 ms | samples | partly: `settled=` |
 | `crash` | severity 2 | Arbor's process ends unasked; a crash report of Arbor's appears; `arborctl status` takes longer than a second; Quit takes longer than five | the script | partly |
 | `busy` | daily use | during `idle` acts Arbor uses more than 1 % of a core on average, or writes more than 20 lines of log a minute | `ps`, `arbor.log` | to build |
 | `left-behind` | 5 | after Quit a process, a panel or an event tap of Arbor's is still there | the window list, `ps` | partly |
@@ -187,19 +187,25 @@ or it becomes a `FAIL`. With one unexplained the verdict is `NOT VIABLE`. Two cl
 
 ## 6. What an act may move
 
-Each window at most once, straight to where it ends up.
+Each window at most once, straight to where it ends up: that holds in every row, "anything" included. With Arbor's settings as they ship.
 
 | Act | May move |
 |---|---|
-| Arbor starts for the first time; `idle`; a switch to a window in view; anything done to a floating window but a drag of it | nothing |
+| Arbor starts for the first time; `idle`; a switch to a window in view; anything done to a floating window but a drag of it | nothing. One exception, at a start and when a window opens: what nobody could get hold of (no 24 points of its title bar on any display) may be fetched, once. Anything else stays: what is found counts as left, and people do park windows three quarters off an edge |
 | Arbor starts again | what was docked when it stopped. No window that is in view goes out of view (Q16) |
 | A window opens | nothing, and the new window stays where its app put it (`newWindows` ships `"float"`) |
 | A dock, by key or drag | that window and the docked windows. **No floating window, ever** (Q20) |
 | A float; a docked window closes, is minimized or hidden, or comes back | that window and the docked windows. There and back is nothing: hidden and unhidden, every window is where it was |
-| A drag | the dragged window goes where the pointer goes. Everything else waits for the button |
+| A drag | the dragged window goes where the pointer goes. Everything else waits for the button (`reflowWhileDragging` ships false) |
 | A move of the view; a switch to a window out of view | the docked windows; floating windows only out of view and back to exactly where they were |
 | A gap or an edge is dragged | the windows on both sides of it |
-| Pause, resume, Float All, Quit | anything; afterwards `size-lost` and `lost` have their say |
+| A window is kept in view, let go of again, or dragged or resized while it is kept in view | a docked window that is pinned goes to its own earlier size, once; after that the pinned window moves by the hand only. The docked windows, which make room beside it (Q25) |
+| Pause, resume, Float All, Quit; the permission lost and returned, which is a pause and a resume | anything, once; afterwards `size-lost` and `lost` have their say |
+| Undo, redo | what the step moved |
+| A peek; a hold | a peek that ends where it began is there and back: nothing. A hold moves nothing; a release the person chose brings in what waited |
+| Summon, and sending away | the summoned window |
+| A setting that shapes the layout is changed (the gap, the smallest usable sizes) | the docked windows |
+| An app is excluded, or a rule comes to match (a late title too) | that app's or that rule's windows, and the docked windows, as at a float or a dock |
 | macOS's own (full screen, Mission Control, a Space, the wallpaper click) | what the run without Arbor shows macOS moving. When it is over, every window is where it was before |
 | A display comes, goes, moves or changes size | the windows on the displays concerned; afterwards nothing is `lost` |
 
@@ -209,7 +215,7 @@ A run counts when all of this holds. One that does not counts for nothing either
 
 - It ran on a hosted Mac, unattended, on the commit being judged, started by the workflow in the repository, and the script took under 600 seconds from its first line to its last. The toolchain and the build come before it and have their own target (board, section 2).
 - It brought back its manifest, the samples, `arbor.log`, a trace (`docs/TRACES.md`), the findings as JSON, and a picture and a story for every finding.
-- The sampler saw enough: at most 1 % of its samples came more than 100 ms after the one before. An act during which it was blind for more than 250 ms is not judged. (The first hosted day reached 33 samples a second with blind spells of up to 1.5 s; a cure is being tried. These two numbers are unproven until it has run.)
+- The sampler saw enough: at most 1 % of its samples came more than 100 ms after the one before, **counted over one stretch, from the first act that counts to the last, with everything between**. What comes before, while a cast of apps starts cold and nothing is judged, says nothing about what was judged; the whole run's figures stay in the findings and in the ledger. An act during which the sampler was blind for more than 250 ms is not judged. (Measured on hosted Macs at about 38 samples a second, over that stretch: 0 of 4,098, 0.12 % and 0.10 %. Over whole runs: 1.6 to 1.9 % before a cure, 0.24 and 0.49 % after it, 1.13 % on a short run, 71 of whose 72 late samples fell while the apps started. The number stays at 1 %: 2 % would admit the sampler as it was before its cure.)
 - At least 90 % of its acts were judged, and at least six apps of its cast opened a window.
 
 If more than a fifth of a gate's runs do not count, the gate is `INVALID`: too many fell out to believe the rest.
@@ -218,14 +224,23 @@ If more than a fifth of a gate's runs do not count, the gate is `INVALID`: too m
 **No run is left out and none is repeated until it passes.** `viable.py check --runs` is given every run of the gate's workflow on that commit as GitHub lists them, with how often each was started. One that the ledger lacks is a reason; one that GitHub does not know, or that is there twice, makes the gate `INVALID`;
 without the list the verdict is never `VIABLE`. A run that was started again counts with every attempt. A run that ended before its report is in the ledger too: it was started, so it is accounted for.
 
+**A hosted Mac's failure does not sink a commit, and who says that a part never ran is GitHub or the batch, never an absence** (decided 2026-10-15; the checker does not do this yet):
+
+1. Whoever starts a gate fixes its parts and which job, that is which Mac, plays which.
+2. A job that gets a Mac writes, before its first script, a stub of a manifest for each of its parts (`"started": false`). A script overwrites its own as it begins (`"started": true`). So a batch that is stopped because its Mac is spoilt leaves stubs, not holes.
+3. `--runs` is GitHub's own list of the jobs that got a Mac: a line for each job and attempt, with the parts it was given.
+4. Every part of every listed job has a manifest in that attempt, stub or real: one that is missing is a reason, and a manifest of a part that no listed job covers makes the gate `INVALID`. A manifest that was started counts with every attempt and is never replaced.
+   A stub, or a part whose job never got a Mac, may be supplied by a later attempt of the same run under the same number. A part that no attempt played is a reason.
+
 **The manifest** (`run.json`, written by the script):
 
 ```json
-{"gate": 1, "commit": "<40 hex>", "run": "<GitHub's run id>", "attempt": 1, "script": "day.sh", "kind": "day | walk | sit | control | sabotage", "seed": "<from the commit, for a walk>",
+{"gate": 1, "commit": "<40 hex>", "run": "<GitHub's run id>", "attempt": 1, "part": 1, "parts": 1, "script": "day.sh", "kind": "day | walk | sit | control | sabotage", "seed": "<from the commit, for a walk>",
  "tiling": "defaults", "tiling_seen_to_act": true, "display": "laptop", "cast": "stock", "apps": ["com.apple.Safari", "…"], "settings": "shipped", "reduce_motion": false, "stage_seen": true, "macos": "<version and build>", "seconds": 540}
 ```
 
-It is written when the run begins and completed when it ends. A sabotage run's also has `"offences": [{"detector": "jolt", "id": "idle#3"}, …]`. An act's `id` is its slug and which act of that slug it is in its run, so that it means the same act in the run without Arbor.
+It is written when the run begins and completed when it ends. One run of GitHub's may play several scripts, one after the other on one Mac or spread over several: each is a run of the gate with a manifest of its own. `"part"` and `"parts"` count over the whole run of GitHub's, all its Macs together, and are fixed by whoever starts it, before the first script begins, so that none can be left out afterwards. A script alone in its run is part 1 of 1 and says so: `viable.py` refuses a manifest without them.
+Such scripts share a Mac, and apps remember their windows' frames from the script before. That is as on a person's Mac, which is never fresh: where a window is when Arbor first starts is its own frame. Arbor's own home is empty each time. A sabotage run's also has `"offences": [{"detector": "jolt", "id": "idle#3"}, …]`. An act's `id` is its slug and which act of that slug it is in its run, so that it means the same act in the run without Arbor.
 
 **The findings** are what `jolts.py report --json` writes, with two more keys a step: `"act"`, its kind from section 4, and `"judged"`; and one more a finding: `"detector"`, its id from section 5. The naming is the detector's own business: `viable.py` refuses a finding that names none. That Arbor died is `crash`, whoever noticed.
 
@@ -252,11 +267,13 @@ A move Arbor cannot make yet counts as failed, not as left out. So the gate wait
 
 Every measure is first tried on a metronome: a square of the camera's own that moves rightly once and wrongly in known ways. If the judge misreads it, that run's score is void. The judge builds nothing it judges.
 
+**What no hosted Mac can show:** every system material comes out there as one flat colour, so translucency and blur are not scored. What is scored is the flat look, which is what a person with Reduce Transparency sees; and nothing in Arbor may rest on the rest (`collab/QUESTIONS.md`, "materials").
+
 What the product owner asks of the rubric, whatever else it holds. The first five are measured, from the sampler, the stage's own log of frames and the film; the rest are judged from the film by an agent that has the rubric and no stake in the answer.
 
 | Row | Passes when |
 |---|---|
-| Length | the motion takes `animationDuration` (460 ms) give or take 60 |
+| Length | the motion takes `animationDuration` (460 ms) give or take 60. A motion that is corrected, because an app had the last word on its frame, gets what is left of it, at least 150 ms: up to 610 in all |
 | Curve | fast start, gentle settle: no stand-in ever goes back on its road, none overshoots by more than 2 points |
 | Cadence | no two frames of the stage are more than 34 ms apart, with eight windows. The stage's own log is the app's view of it; the film is the screen's |
 | Hand-over | at the first and the last frame each stand-in is within 2 points of its real window; and inside each window's own rectangle, window to card to window is a fade: no step of more than 10 % of full scale from one frame to the next (some 130 ms or more). Measured inside the rectangle, because a window that grows changes the whole display's brightness, rightly |
@@ -274,8 +291,9 @@ What the product owner asks of the rubric, whatever else it holds. The first fiv
 | Days with Reduce Motion on; `"reduce_motion"` and `"stage_seen"` in `run.json`; `tile-click` acts | D |
 | The sabotage tool and its run | D |
 | The casts `browsers` and `awkward`; the cell `two` (does a hosted Mac allow `vdisplay.m`?); the two `sit` runs | D, N |
-| The rules of section 5 as rules of the Linux walks: written, and on their way to the trunk, for `jolt`, `moved-unasked`, `lost`, `focus`, `behind`, `size-lost` (`ChaosRunner.detector(for:)` says which rule is which detector; known failures carry a severity). **No net yet:** `flash`, `stuck`, and `fought`, which waits for macOS's tiling in the stand-in. `moved-unasked` is to be rewritten against section 6 | L |
+| The rules of section 5 as rules of the Linux walks: on the trunk for `jolt`, `moved-unasked`, `lost`, `focus`, `behind`, `size-lost` (`ChaosRunner.detector(for:)` says which rule is which detector; known failures carry a severity). **No net yet:** `flash`, `stuck`, and `fought`, which waits for macOS's tiling in the stand-in. `moved-unasked` is to be rewritten against section 6 | L |
 | Walks that write a script for a real Mac, seeded from the commit. The first version has `switch`, `open-close`, `dock-key`, `drag`, `view`, `way-out` and `quit-and-start`; display changes, hiding, native tabs and full screen come from the written days | L, after D's vocabulary is on the trunk |
 | The ledger of differences, each row saying which detector it touches | N |
 | `docs/POLISH.md`, the films of the five moves, the stage's log of frames, the judge | Q |
+| `"part"` and `"parts"` handed to every script by whoever starts a run, counted over all its Macs | O |
 | `make viable`; `viable.py --self-test` as part of `make check`; the workflow that starts a gate, lists its runs for `--runs` and keeps to the queue's priorities. (`scripts/mac-shell/viable.py` itself is there) | O, D |

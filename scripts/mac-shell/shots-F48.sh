@@ -8,8 +8,8 @@
 #   title bar, after a slow drag and after a fast one released without a pause (macOS reports moves only about
 #   eight times a second, so Arbor reads the frame once more on mouse-up);
 # - `float`, `float-all`, quitting: do real windows end at the frames they started from, to the point;
-# - a pause while framed: does the framed window stay put; a quit during a pause, which starts and stops the
-#   Accessibility layer once more;
+# - a pause while framed: is every window, the framed one too, back where it started, and framed again after the resume;
+#   a quit during a pause, which has nothing left to do;
 # - a kill -9 and a relaunch: is what was remembered still there;
 # - does a minimized window accept a frame.
 source "$(dirname "$0")/lib.sh"
@@ -133,7 +133,7 @@ check "w$W4 is where it started" eventually is_at "$W4" "$B4"
 shot 11-float-all
 summary
 
-step "framed on a window, a pause cannot be seen; what was out of view comes back at its own size"
+step "framed on a window, a pause lets go as a quit does: every window is back where it was, at its own size"
 ctl arrange
 ctl zoom "$W2"
 sleep 0.5
@@ -141,12 +141,12 @@ P2=$(real_frame_of "$W2")
 ctl pause &
 film 12-pausing 3
 wait $!
-check "the framed window has not moved" is_at "$W2" "$P2"
+check "the framed window is where it started" eventually is_at "$W2" "$B2"
 check "w$W1 is back where it was" eventually is_at "$W1" "$D1"
 check "w$W4 is back where it was" eventually is_at "$W4" "$B4"
 shot 12-paused
 ctl resume
-check "the framed window has still not moved" is_at "$W2" "$P2"
+check "the framed window is framed again" eventually is_at "$W2" "$P2"
 check "w$W1 is out of view again" eventually is parked "$W1"
 shot 13-resumed
 ctl show-all
@@ -200,7 +200,7 @@ if check "Arbor is back" eventually arbor_ready 4; then
   arbor_log
 fi
 
-step "quit during a pause: Arbor looks once more, and no window is left in the shape of its slot"
+step "quit during a pause: the pause has left no window in the shape of its slot, and the quit moves nothing"
 arbor_close_windows
 arbor_new_home
 ARBOR_TEST_WINDOWS_ARGS=" "
@@ -209,7 +209,7 @@ B1=$(real_frame_of "$W1"); B2=$(real_frame_of "$W2"); B3=$(real_frame_of "$W3")
 ctl arrange
 shot 18-arranged
 ctl pause
-check "in view, w$W1 was left in its slot by the pause" sh -c "! [ '$(real_frame_of "$W1")' = '$B1' ]"
+check "in view, w$W1 is where it started as soon as Arbor is paused" eventually is_at "$W1" "$B1"
 ctl quit
 check "Arbor exits within 5 s of quit" arbor_gone
 wait "$ARBOR_PID" 2>/dev/null

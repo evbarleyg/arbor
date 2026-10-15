@@ -38,6 +38,8 @@ extension Controller: WindowSystemEvents {
     disprovedMinimums[id] = nil
     parkedAgain[id] = nil
     landsAt[id] = nil
+    sharedItsSpace[id] = nil
+    metAhead[id] = nil
     leftInFullScreen.notes[id] = nil
     chosenOnShape[id] = nil
     appPlacedFrames[id] = nil
@@ -78,6 +80,7 @@ extension Controller: WindowSystemEvents {
     if owedTheWayBack[window.id] != nil { payTheWayBack(to: window.id) }
     noteWhetherItCameBack(window, was: previous)
     putBackIfItLeftFullScreen(window, was: previous)
+    meetAtItsSlotIfItLeftFullScreen(window, was: previous)
     defer { focusRingFollows(window) }
     if previous?.title != window.title { refreshHoldCaller() }
     defer { if previous?.frame != window.frame { notify(.frames) } }
@@ -138,6 +141,16 @@ extension Controller: WindowSystemEvents {
     // macOS sometimes pulls a window that is mostly off screen back onto it (seen when another window of
     // its app leaves full screen). It goes back to the corner with the next put-back.
     if hasLeftItsCorner(window.id) { scheduleEnforce(display) }
+
+    // A drag by the title bar changes no size, with one exception: macOS gives a window that is dragged off a tile of its own the
+    // size it had before. That is the window's own size again. Left as it was, what is remembered would be the tile's,
+    // and the smaller window would pass for one that Arbor had squeezed (`frameToRemember`). Only the size: where it is on its way
+    // through is no place to come back to, should it be docked at the end of this drag.
+    if userInitiated, drag?.window == window.id, let previous, workspaces[display]!.isFloating(window.id),
+      abs(previous.frame.width - window.frame.width) > 1 || abs(previous.frame.height - window.frame.height) > 1
+    {
+      workspaces[display]!.floating[window.id]?.size = window.frame.size
+    }
 
     guard userInitiated, drag?.window != window.id, !parked.contains(window.id) else { return }
 

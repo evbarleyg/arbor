@@ -51,7 +51,7 @@ private func frames(_ h: Harness) -> [WindowID: CGRect] {
 }
 
 /// A new Arbor process that finds the windows of `old` exactly as they are now, and the state `old`
-/// saved: what a launch after a crash sees. With `savingFirst` false the state is as old as the last save.
+/// saved: what the watchdog's start after a crash sees. With `savingFirst` false the state is as old as the last save.
 @MainActor
 private func relaunchAfterCrash(
   _ old: Harness, settings: Settings = Settings(), savingFirst: Bool = true, forgetState: Bool = false
@@ -63,6 +63,7 @@ private func relaunchAfterCrash(
     new.system.open(
       app: window.appName, bundleID: window.bundleID, title: window.title, pid: window.pid, frame: window.frame)
   }
+  new.controller.restartedAfterAccident = true
   new.start()
   return new
 }
@@ -90,6 +91,8 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
   }
   new.system.cursor = old.system.cursor
   new.system.focused = old.system.focused
+  // It goes on where `old` was, view included, which a launch would not.
+  new.controller.restartedAfterAccident = true
   new.start()
   return new
 }
@@ -99,6 +102,7 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
 @Suite @MainActor struct PreviewDragsTests {
   /// Drags `a` over the middle of the Desktop to the left screen edge.
   func dragToTheLeftEdge(_ h: Harness, _ a: WindowID) {
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(a, through: [CGPoint(x: 400, y: 110), CGPoint(x: 200, y: 300), CGPoint(x: 3, y: 450)])
   }
 
@@ -116,6 +120,7 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
 
   @Test func turningThePreviewOffDuringADragHidesIt() {
     let (h, a, _, _) = makeHarness()
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.controller.dragBegan(a, at: CGPoint(x: 400, y: 110))
     h.controller.dragMoved(a, to: CGPoint(x: 3, y: 450))
     #expect(h.overlays.preview != nil)
@@ -170,8 +175,9 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
 
   @Test func withHandlesOffAPressInAGapIsKeptFromTheWallpaper() {
     // No panel of Arbor's takes it, and macOS would sweep every window aside (F60).
-    let (off, _, _, _) = makeRow(settings { $0.gapHandles = "off" })
-    let (hidden, _, _, _) = makeRow(settings { $0.gapHandles = "hidden" })
+    // The guard asks where the wallpaper shows; with it off nobody is told.
+    let (off, _, _, _) = makeRow(settings { ($0.gapHandles, $0.guardDesktopClicks, $0.pointerGestures) = ("off", true, true) })
+    let (hidden, _, _, _) = makeRow(settings { ($0.gapHandles, $0.guardDesktopClicks, $0.pointerGestures) = ("hidden", true, true) })
     for seam in off.layout!.seams {
       #expect(off.controller.desktopGuardZones().mayBeBare(seam.frame.center))
       #expect(!hidden.controller.desktopGuardZones().mayBeBare(seam.frame.center))
@@ -326,6 +332,7 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
   @Test func draggingAWindowToAnotherDisplayWidensOnlyTheNeighbour() {
     let (h, a, b, c) = makeRow(keep, displays: [main, side])
     let (before, desktop) = (frames(h), h.layout!.desktopFrame)
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(b, through: [CGPoint(x: before[b]!.midX, y: before[b]!.minY + 10), CGPoint(x: 2717, y: 400)])
     #expect(h.controller.workspaces[side.id]!.isDocked(b))
     expectOnlyTheNeighbourGrew(h, from: before, desktop: desktop, a, b, c)
@@ -341,6 +348,7 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
   @Test func thePreviewOfADockedWindowsMoveMatchesWhereItLands() {
     let (h, _, b, _) = makeRow(keep)
     let start = h.frame(b)!
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(
       b, through: [CGPoint(x: start.midX, y: start.minY + 10), CGPoint(x: 900, y: 400), CGPoint(x: 1437, y: 450)])
     #expect(h.overlays.previewHistory.compactMap { $0 }.last == h.frame(b))
@@ -752,7 +760,6 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
     let before = frames(h)
     h.run("zoom \(a.rawValue)")
     #expect(h.run("pause").ok)
-    // A pause leaves what is in view where it is; what is out of view comes back.
     #expect(h.frame(b) == before[b] && h.frame(c) == before[c])
     #expect(h.run("resume").ok)
     #expect(h.frame(b)!.size == small && h.frame(c)!.size == small)

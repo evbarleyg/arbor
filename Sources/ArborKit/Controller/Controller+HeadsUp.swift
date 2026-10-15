@@ -92,9 +92,14 @@ extension Controller {
     }
     guard
       let kind = HeadsUpPolicy.kind(
-        of: command, ok: result.ok, from: source, level: level, changedNothing: changedNothing, namesALoss: loss),
-      let display = display ?? cameraDisplay()?.0 ?? pointerDisplayID
-    else { return }
+        of: command, ok: result.ok, from: source, level: level, changedNothing: changedNothing, namesALoss: loss)
+    else {
+      // The line that is up answered the last thing this person asked. What they asked now has changed something, so
+      // it may no longer be true: "out of view, not closed" with everything in view again.
+      if !command.isQuery, !command.opensItsOwnAnswer { hideHeadsUp() }
+      return
+    }
+    guard let display = display ?? cameraDisplay()?.0 ?? pointerDisplayID else { return }
     if var line = lineOfItsOwn(for: command, result, changedNothing: changedNothing) {
       line.kind = kind
       showHeadsUp(line, on: display)
@@ -254,6 +259,14 @@ extension Controller {
     // The Desktop with nothing on it is a tile too when room is short, and nobody has a reason to click that one.
     let tiles = layout.tiles.filter { $0.kind != .desktop || !$0.windows.isEmpty }.count
     return HeadsUpFacts(docked: docked.count, outOfView: outside + floatingAway, tiles: tiles)
+  }
+
+  /// A teaching moment that is an event and no change of the facts. Shown as often as the others.
+  func teach(_ hint: HeadsUpHint, on display: DisplayID) {
+    guard headsUp.source == nil, headsUp.trying == 0, peeking == nil, settings.messageLevel != .off,
+      headsUp.hintsShown[hint.rawValue, default: 0] < HeadsUpHint.timesShown, let facts = facts(on: display)
+    else { return }
+    teach(Moment(hint: hint, display: display, facts: facts))
   }
 
   private func teach(_ moment: Moment) {

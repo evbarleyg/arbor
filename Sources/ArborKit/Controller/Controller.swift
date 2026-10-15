@@ -264,7 +264,7 @@ public final class Controller {
   var keyThatReleasedTheHold: KeyChord?
   /// What the app last heard about cameras and microphones. Kept through a pause.
   var callSignals = CallSignals()
-  /// Where the pause left each window, to tell at a quit which ones nobody has touched since.
+  /// Where the pause left each window it moved, to tell at the resume which of them nobody has touched since.
   var pausedFrames: [WindowID: CGRect] = [:]
   /// The window that had the keyboard before `summon` took it (Controller+Summon.swift).
   var keyboardBeforeSummon: WindowID?
@@ -326,7 +326,8 @@ public final class Controller {
   /// What was wrong with it when this run read it (Controller+Notices.swift).
   var stateNews: StateNews?
   /// Floating windows that the layout in progress must leave exactly where they are: the one that was just
-  /// dropped, or the ones `float-all` has just put back (Controller+UndockedFrames.swift).
+  /// dropped, the ones `float-all` has just put back (Controller+UndockedFrames.swift), or the ones that lay over a view that
+  /// is taken back (Controller+Focus.swift).
   var placedOnPurpose: Set<WindowID> = []
   /// What each display showed when it was last laid out, for the next transition to start from
   /// (Controller+Transitions.swift).
@@ -386,6 +387,11 @@ public final class Controller {
 
   /// When each window that has only just come back can be taken at its word (Controller+OnTheWayBack.swift).
   var landsAt: [WindowID: Date] = [:]
+  /// For each window in macOS's full screen, the windows that took up room when it went there (Controller+OnTheWayBack.swift).
+  var sharedItsSpace: [WindowID: Set<WindowID>] = [:]
+  /// Windows on their way out of full screen: the frame each is to land at, what it last made of that, and how often Arbor has
+  /// looked whether it has it.
+  var metAhead: [WindowID: (target: CGRect, answer: CGRect?, looks: Int)] = [:]
 
   /// Windows a pause could not bring into view (Controller+LeftInFullScreen.swift).
   var leftInFullScreen = LeftInFullScreen()
@@ -421,8 +427,9 @@ public final class Controller {
   // MARK: Lifecycle
 
   /// Starts observing windows, restores the saved arrangement, and lays out
-  /// every display.
+  /// every display. A launch ends showing everything; a start that goes on from a moment ago ends in the view of then.
   public func start() {
+    let afterAccident = restartedAfterAccident
     guard !isRunning, !comesBackPaused() else { return }
     // Not always the first start of the process: Arbor also starts after a pause, and after losing and
     // regaining Accessibility permission. Nobody told it what happened meanwhile, so what it knew about
@@ -447,7 +454,9 @@ public final class Controller {
     displays = system.displays()
     var saved = resumeState
     if saved == nil {
-      saved = store.load()
+      // Somebody starts Arbor, or logs in. Quitting put every window in view, and the view of last time would send most of
+      // them out of it again, unasked. Where nobody quit (a pause, the permission, the watchdog) `resumeState` has the view.
+      saved = store.load()?.showingEverything()
       noteHowLoadingWent()
     }
     resumeState = nil
@@ -493,6 +502,7 @@ public final class Controller {
     resumeDormantWorkspaces(from: saved, hints: savedHints)
     // A run that did not quit cleanly leaves its parked windows out of view.
     treatStrandedWindowsAsParked()
+    if afterAccident { showEverythingWhereTheViewWouldTakeAWindowOutOfView() }
     isRunning = true
     Log.info("started: \(displays.count) display(s), \(managedWindowIDs.count) managed window(s)")
     relayoutAll(reason: .camera, motion: .instant)
@@ -511,11 +521,22 @@ public final class Controller {
     if isRunning, !isResuming, let focused = system.focusedWindow() { windowFocused(focused) }
   }
 
+  /// After an accident the windows the view leaves out are still in their corners, and keeping the view moves nothing. But the
+  /// file can be half a second behind: the view had just widened when Arbor died, say, or ⌃⌥0 had fetched what `summon` had sent
+  /// away. The watchdog's start takes no window out of view either, so a display where it would shows everything instead.
+  private func showEverythingWhereTheViewWouldTakeAWindowOutOfView() {
+    for id in workspaces.keys.sorted() {
+      guard let layout = layout(of: id) else { continue }
+      let floating = floatingMoves(on: id, layout: layout, reason: .camera).filter { if case .park = $0.move { true } else { false } }
+      guard !layout.hiddenWindows.union(floating.map(\.window)).isSubset(of: parked) else { continue }
+      workspaces[id]?.showEverything()
+    }
+  }
+
   /// Puts every window somewhere visible, saves, and stops. Called on quit so
-  /// no window is left parked off-screen. A pause stops the same way but with `leavingWhatIsInView`:
-  /// only windows that are out of view are moved (Controller+Pause.swift). Without `movingWindows` nothing
-  /// is moved: for when nothing can be (Controller+Permission.swift).
-  public func shutdown(leavingWhatIsInView: Bool = false, movingWindows: Bool = true) {
+  /// no window is left parked off-screen. A pause stops the same way (Controller+Pause.swift). Without `movingWindows`
+  /// nothing is moved: for when nothing can be (Controller+Permission.swift).
+  public func shutdown(movingWindows: Bool = true) {
     guard isRunning else {
       letGoAfterPause()
       return
@@ -535,7 +556,6 @@ public final class Controller {
     forgetHold()
     scheduler.cancel(Self.afterLaunchKey)
     soleFloats.isWaitingAfterLaunch = false
-    func stays(_ window: WindowID) -> Bool { leavingWhatIsInView && !parked.contains(window) }
     endSummonsWithoutMoving()
     forgetPendingLayouts()
     let present = presentWindowIDs()
@@ -548,11 +568,11 @@ public final class Controller {
         isPresent: { present.contains($0) })
       // Each goes back to where it floated before it was docked (Controller+UndockedFrames.swift), or
       // stays in its slot if that is not known.
-      for (window, frame) in layout.windowFrames.sorted(by: { $0.key < $1.key }) where !stays(window) {
+      for (window, frame) in layout.windowFrames.sorted(by: { $0.key < $1.key }) {
         letGo(of: window, on: display, otherwiseAt: frame)
       }
       // Inactive tabs go where their stack is.
-      for window in layout.hiddenWindows.sorted() where !stays(window) {
+      for window in layout.hiddenWindows.sorted() {
         if let leaf = workspace.tree.leaf(containing: window), let frame = layout.nodeFrames[leaf] {
           letGo(of: window, on: display, otherwiseAt: frame)
         }
@@ -563,12 +583,12 @@ public final class Controller {
       let everything = LayoutEngine.layout(
         workspace.tree, camera: workspace.tree.root, in: display.visibleFrame, options: withoutTiles,
         isPresent: { _ in true })
-      for window in workspace.tree.allWindows where !present.contains(window) && !stays(window) {
+      for window in workspace.tree.allWindows where !present.contains(window) {
         let slot = workspace.tree.leaf(containing: window).flatMap { everything.nodeFrames[$0] }
         letGo(of: window, on: display, otherwiseAt: parked.contains(window) ? slot : nil)
       }
       for (window, preferred) in workspace.floating.sorted(by: { $0.key < $1.key })
-      where parked.contains(window) || (!leavingWhatIsInView && wasPushedAside(window, from: preferred)) {
+      where parked.contains(window) || wasPushedAside(window, from: preferred) {
         putBack(window, at: asItWas(preferred, on: display), on: display)
       }
     }

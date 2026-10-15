@@ -1,4 +1,5 @@
 // A stand-in for AppKit: events and responders. See Application.swift.
+import FakeMacOS
 
 open class NSEvent: NSObject {
   public enum EventType: UInt, Sendable {
@@ -83,10 +84,18 @@ open class NSEvent: NSObject {
   }
   public enum SpecialKey {}
   public convenience init?(cgEvent: CGEvent) { self.init() }
-  open var cgEvent: CGEvent? { nil }
-  open var type: EventType { .leftMouseDown }
+  var _type = EventType.leftMouseDown
+  var _flags: ModifierFlags = []
+  /// Where the pointer was when it happened, in CoreGraphics' coordinates, which are the model's.
+  var _location: CGPoint?
+  open var cgEvent: CGEvent? {
+    guard let _location, let event = CGEvent(source: nil) else { return nil }
+    event.location = _location
+    return event
+  }
+  open var type: EventType { _type }
   open var subtype: EventSubtype { .windowExposed }
-  open var modifierFlags: ModifierFlags { [] }
+  open var modifierFlags: ModifierFlags { _flags }
   open var timestamp: TimeInterval { 0 }
   // Main-actor only, like the window itself.
   @MainActor open var window: NSWindow? { nil }
@@ -119,9 +128,12 @@ open class NSEvent: NSObject {
   open var phase: Phase { [] }
   @MainActor open func touches(matching phase: NSTouch.Phase, in view: NSView?) -> Set<NSTouch> { [] }
   @MainActor open func allTouches() -> Set<NSTouch> { [] }
-  open class var mouseLocation: NSPoint { .zero }
-  open class var modifierFlags: ModifierFlags { [] }
-  open class var pressedMouseButtons: Int { 0 }
+  open class var mouseLocation: NSPoint {
+    let mac = FakeMac.current
+    return NSPoint(x: mac.mouse.location.x, y: (mac.screens.first?.frame.height ?? 0) - mac.mouse.location.y)
+  }
+  open class var modifierFlags: ModifierFlags { ModifierFlags(rawValue: FakeMac.current.mouse.flags) }
+  open class var pressedMouseButtons: Int { FakeMac.current.mouse.isDownByAppKit ? 1 : 0 }
   open class var doubleClickInterval: TimeInterval { 0.5 }
   open class var keyRepeatDelay: TimeInterval { 0.5 }
   open class var keyRepeatInterval: TimeInterval { 0.1 }
@@ -130,9 +142,26 @@ open class NSEvent: NSObject {
     get { true }
     set {}
   }
-  open class func addGlobalMonitorForEvents(matching mask: EventTypeMask, handler block: @escaping (NSEvent) -> Void) -> Any? { nil }
-  open class func addLocalMonitorForEvents(matching mask: EventTypeMask, handler block: @escaping (NSEvent) -> NSEvent?) -> Any? { nil }
-  open class func removeMonitor(_ eventMonitor: Any) {}
+  private final class _Monitor {
+    let number: Int
+    init(number: Int) { self.number = number }
+  }
+  private class func _event(_ type: FakeMac.MouseEvent, _ flags: UInt, _ location: CGPoint) -> NSEvent {
+    let event = NSEvent()
+    event._location = location
+    event._type = EventType(rawValue: type.rawValue) ?? .leftMouseDown
+    event._flags = ModifierFlags(rawValue: flags)
+    return event
+  }
+  open class func addGlobalMonitorForEvents(matching mask: EventTypeMask, handler block: @escaping (NSEvent) -> Void) -> Any? {
+    _Monitor(number: FakeMac.current.addMonitor(global: true, mask: mask.rawValue) { type, flags, location in block(_event(type, flags, location)) })
+  }
+  open class func addLocalMonitorForEvents(matching mask: EventTypeMask, handler block: @escaping (NSEvent) -> NSEvent?) -> Any? {
+    _Monitor(number: FakeMac.current.addMonitor(global: false, mask: mask.rawValue) { type, flags, location in _ = block(_event(type, flags, location)) })
+  }
+  open class func removeMonitor(_ eventMonitor: Any) {
+    if let monitor = eventMonitor as? _Monitor { FakeMac.current.removeMonitor(monitor.number) }
+  }
   open class func mouseEvent(
     with type: EventType, location: NSPoint, modifierFlags flags: ModifierFlags, timestamp time: TimeInterval, windowNumber wNum: Int,
     context unusedPassNil: NSGraphicsContext?, eventNumber eNum: Int, clickCount cNum: Int, pressure: Float

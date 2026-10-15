@@ -2,7 +2,7 @@
 """Checks that the tools which say "all is well" can also say the opposite.
 
 parity.py, ci-step.py, scenarios.sh with arbor-sim, lint-imports.py, lint-mac-shell.py, mutate.py, fuzz-launch.py, ci-mtimes.py and the safety nets of
-scripts/mac-shell/lib.sh each get situations that must come out as failures (a misspelt status, a test that was renamed, a log cut off by a crash, a scenario whose
+scripts/mac-shell/lib.sh each get situations that must come out as failures (a misspelt status, a test that was renamed, a record cut off by a crash, a scenario whose
 commands do nothing) next to ones that must pass. Every row here passed when it should have failed
 before 2026-10-14.
 
@@ -12,7 +12,10 @@ Exit code 1 when a row comes out wrong.
 """
 
 import concurrent.futures
+import contextlib
 import importlib.util
+import io
+import json
 import os
 import pty
 import select
@@ -59,6 +62,87 @@ def level(entry, passed=(), failed=(), steps=None, runnable=()):
     return parity.level_of(entry, set(passed), set(failed), steps or {}, set(runnable))[0]
 
 
+LINUX, MAC = "x86_64-unknown-linux-gnu", "arm64e-apple-macos14.0"
+
+
+def record(fates, target=LINUX, suite="T.S", folder="/w"):
+    """The lines Swift Testing writes about one run: {test: "passes", "fails", "known", "crashes" or "skipped: reason"}."""
+    def line(about, **payload):
+        return json.dumps({"kind": about, "payload": payload, "version": 0}, ensure_ascii=False)
+
+    def said(symbol, text):
+        return [{"symbol": symbol, "text": text}]
+
+    def event(kind, test=None, messages=(), **more):
+        return line("event", kind=kind, messages=list(messages), **({"testID": identity(test)} if test else {}), **more)
+
+    def identity(test):
+        return f"{suite}/{test if '(' in test else test + '()'}/T.swift:3:2"
+
+    place = {"_filePath": f"{folder}/Tests/T/T.swift", "fileID": "T/T.swift", "line": 3, "column": 2}
+    lines = [line("test", kind="suite", id=suite, name="S", sourceLocation=place)]
+    lines += [line("test", kind="function", id=identity(test), name=identity(test).split("/")[1], isParameterized="(" in test,
+                   sourceLocation=place) for test in fates]
+    lines.append(event("runStarted", messages=said("default", "Test run started.") + said("details", f"Target Platform: {target}")))
+    lines.append(event("testStarted", messages=said("default", "Suite S started."), testID=suite))
+    for test, fate in fates.items():
+        if fate.startswith("skipped"):
+            reason = fate[len("skipped: "):]
+            lines.append(event("testSkipped", test, said("skip", f"Test {test}() skipped" + (f': "{reason}"' if reason else ".")),
+                               _comments=[reason] if reason else []))
+            continue
+        lines.append(event("testStarted", test))
+        if fate == "crashes":
+            return lines
+        if fate != "passes":
+            lines.append(event("issueRecorded", test, said("fail", "Expectation failed: 1 == 2") + said("details", "1 → 1"),
+                               issue={"isKnown": fate == "known", "sourceLocation": place}))
+        lines.append(event("testEnded", test))
+    lines.append(event("testEnded", messages=said("pass", "Suite S passed after 0.1 seconds."), testID=suite))
+    outcome = "failed" if "fails" in fates.values() else "passed"
+    lines.append(event("runEnded", messages=said(outcome[:4], f"Test run with {len(fates)} tests in 1 suite {outcome} after 0.1 seconds.")))
+    return lines
+
+
+@contextlib.contextmanager
+def saved(records):
+    """Each list of lines as a file."""
+    with tempfile.TemporaryDirectory() as folder:
+        paths = [os.path.join(folder, f"part-{index}.jsonl") for index in range(len(records))]
+        for path, lines in zip(paths, records):
+            with open(path, "w", encoding="utf-8") as handle:
+                handle.write("".join(line + "\n" for line in lines))
+        yield paths
+
+
+def read(*records):
+    """What parity.py makes of them: what became of each test, and how many reasons it has to believe none of it."""
+    with saved(records) as paths:
+        outcomes, problems, _, _ = parity.read_reports(paths)
+    return outcomes, len(problems)
+
+
+def score(*records):
+    """parity.py from end to end, on a parity.json of one item that lists the tests `a` and `mac`: its exit code, and its complaints."""
+    features = [item(area="x", title="t", tests=["a", "mac"])]
+    kept = parity.PARITY, parity.FEATURES, parity.REFERENCE_IDS, sys.argv
+    output = io.StringIO()
+    with saved(records) as paths, tempfile.TemporaryDirectory() as folder:
+        parity.PARITY, parity.FEATURES, parity.REFERENCE_IDS = os.path.join(folder, "parity.json"), os.path.join(folder, "F.md"), {"T01"}
+        with open(parity.PARITY, "w", encoding="utf-8") as handle:
+            json.dump({"features": features}, handle)
+        sys.argv = ["parity.py", "--report", *paths]
+        try:
+            with contextlib.redirect_stdout(output):
+                parity.main()
+        except SystemExit as stop:
+            code = stop.code
+        finally:
+            parity.PARITY, parity.FEATURES, parity.REFERENCE_IDS, sys.argv = kept
+    said = [line for line in output.getvalue().split("\n") if line.startswith(("BROKEN", "THE TESTS"))]
+    return code, " / ".join(line.split(": ", 1)[1].replace(os.path.dirname(paths[0]) + os.sep, "") for line in said)
+
+
 def check_parity():
     row("a listed test passes", level(item(tests=["a"]), passed=["a"]), "tested")
     row("a listed test was renamed", level(item(tests=["a"]), passed=["b"]), "broken")
@@ -84,54 +168,81 @@ def check_parity():
     row("an id listed twice", problems([item(), item()]), 1)
     row("Arbor-only ids need no reference", problems([item(), item(id="A01")]), 0)
 
-    start, end = "◇ Test run started.", "✔ Test run with 3 tests in 1 suite passed after 0.1 seconds."
-    row("a finished run", parity.run_problem(f"{start}\n{end}"), None)
-    row("a run with a known issue, whose symbol differs",
-        parity.run_problem(f"{start}\n━ Test run with 1 test in 1 suite passed after 0.1 seconds with 1 known issue."), None)
-    row("a run cut off by a crash", parity.run_problem(start) is not None, True)
-    row("the second of two runs cut off", parity.run_problem(f"{start}\n{end}\n{start}") is not None, True)
-    row("a failed run", parity.run_problem(f"{start}\n✘ Test run with 3 tests in 1 suite failed after 0.1 seconds.") is not None, True)
-    row("swift test exits with an error", parity.run_problem(f"{start}\n{end}", 1) is not None, True)
-
-    skipped = '➜ Test macTest() skipped: "Carbon exists only on macOS"'
-    row("a macOS-only test in a Linux log counts",
-        parity.parse_tests(f"↳ Target Platform: x86_64-unknown-linux-gnu\n{skipped}")[2], {"macTest"})
+    carbon = "skipped: Carbon exists only on macOS"
+    row("a run that finished", read(record({"a": "passes", "b(x:)": "passes"})), ({"a": "passed", "b": "passed"}, 0))
+    row("a test that fails", read(record({"a": "fails", "b": "passes"})), ({"a": "failed", "b": "passed"}, 0))
+    row("a test with a known issue proves nothing", read(record({"a": "known"})), ({"a": "has a known issue"}, 0))
+    row("a run cut off by a crash",
+        read(record({"a": "passes", "b": "crashes", "c": "passes"})), ({"a": "passed", "b": "did not finish", "c": "did not run"}, 1))
+    row("the second of two runs cut off", read(record({"a": "passes"}) + record({"b": "crashes"}, suite="U.S"))[1], 1)
+    row("a macOS-only test in a record from Linux counts", read(record({"mac": carbon})), ({"mac": "was left to macOS"}, 0))
     row("the same test skipped on a Mac does not",
-        parity.parse_tests(f"↳ Target Platform: arm64e-apple-macos14.0\n{skipped}")[2], set())
-    row("a test skipped for another reason does not",
-        parity.parse_tests('↳ Target Platform: x86_64-unknown-linux-gnu\n➜ Test t() skipped: "later"')[2], set())
-    row("one failing case of a parameterised test fails it",
-        parity.parse_tests("✔ Test t(x:) passed after 0.1 seconds.\n✘ Test t(x:) failed after 0.1 seconds.")[:2], (set(), {"t"}))
+        read(record({"mac": carbon}, MAC)), ({"mac": "was skipped: Carbon exists only on macOS"}, 0))
+    row("a test skipped for another reason does not", read(record({"a": "skipped: later"})), ({"a": "was skipped: later"}, 0))
+    row("nor one skipped without a reason", read(record({"a": "skipped"})), ({"a": "was skipped"}, 0))
+    row("the reason is found where only the message for people has it",
+        read([line.replace('"_comments"', '"_other"') for line in record({"mac": carbon})]), ({"mac": "was left to macOS"}, 0))
+    row("of two tests of one name, in two suites, the one that fails counts",
+        read(record({"a": "passes"}) + record({"a": "fails"}, suite="U.S")), ({"a": "failed"}, 0))
+    row("and so does the one that was skipped",
+        read(record({"a": "skipped: later"}) + record({"a": "passes"}, suite="U.S")), ({"a": "was skipped: later"}, 0))
+    row("a test shown under a name that speaks of macOS, skipped for another reason, does not count",
+        read([line.replace("Test a() skipped", 'Test \\"menus, only on macOS\\" skipped').replace('"_comments"', '"_other"')
+              for line in record({"a": "skipped: flaky"})]), ({"a": 'was skipped: "flaky"'}, 0))
+    row("a name between backticks may hold brackets", read(record({"`a (b) c`()": "passes"})), ({"a (b) c": "passed"}, 0))
+    thrown = [line for line in record({"a": "fails", "b": "passes"}) if "T.S/a()" not in line or "testStarted" not in line and "testEnded" not in line]
+    row("a test whose trait throws fails without having started or ended", read(thrown), ({"a": "failed", "b": "passed"}, 0))
+    row("a suite run in two parts", read(record({"a": "passes"}), record({"b": "passes"}, suite="U.S")), ({"a": "passed", "b": "passed"}, 0))
+    row("one of the parts did not finish", read(record({"a": "passes"}), record({"b": "crashes"}, suite="U.S"))[1], 1)
+    row("one of the parts is not there", parity.read_reports(["/no/such/file"])[:2], ({}, ["/no/such/file: No such file or directory (`make test` writes it)"]))
+    row("an empty record", read([]), ({}, 1))
+    row("a record in a format of later years", read([line.replace('"version": 0', '"version": "9.0"') for line in record({"a": "passes"})])[0], {})
 
-    begun = "◇ Test t() started."
-    row("a `passed` line lost from a run that finished and passed", parity.parse_tests(f"{start}\n{begun}\n{end}")[0], {"t"})
-    row("the same from a run that did not finish", parity.parse_tests(f"{start}\n{begun}")[0], set())
-    row("the same from a run in which something failed",
-        parity.parse_tests(f"{start}\n{begun}\n✘ Test u() failed after 0.1 seconds.\n✘ Test run with 2 tests in 1 suite failed after 0.1 seconds.")[0], set())
-    row("a test with a known issue proves nothing",
-        parity.parse_tests(f"{start}\n{begun}\n━ Test t() recorded a known issue at T.swift:3:5: Expectation failed\n{end}")[0], set())
+    # The file is not what `swift test` prints, and nothing is known to damage it. If something does, that is said, and nothing is green.
+    sound, bad = record({"a": "passes", "mac": carbon}), record({"a": "passes", "b": "fails"})
+    row("a line torn in the middle", read(sound[:4] + [sound[4][:40]] + sound[5:])[1], 1)
+    row("two lines run together", read(sound[:4] + [sound[4] + sound[5]] + sound[6:])[1], 1)
+    row("the line that says a test ended is lost", read(sound[:6] + sound[7:]), ({"a": "did not finish", "mac": "was left to macOS"}, 1))
+    row("a line of something else", read(sound[:4] + ["◇ Test a() started."] + sound[4:])[1], 1)
 
-    with tempfile.TemporaryDirectory() as folder:
-        os.makedirs(os.path.join(folder, "Tests", "T"))
-        with open(os.path.join(folder, "Tests", "T", "T.swift"), "w", encoding="utf-8") as handle:
-            handle.write("\n".join([
-                "@Test func one() {}", "@Test(arguments: [f(1), g((2))]) func two(x: Int) {}", "  @Test @MainActor\n  func three() {}",
-                '@Test(.disabled("later")) func four() {}', "#if canImport(Carbon)", "@Test func mac() {}", "#else",
-                '@Test(.disabled("Carbon exists only on macOS")) func mac() {}', "#endif", "func helper() {}",
-            ]))
-        row("the tests the sources declare, off macOS", parity.declared_tests(False, folder), ({"one", "two", "three"}, {"mac"}, 5))
-        row("and on macOS", parity.declared_tests(True, folder), ({"one", "two", "three", "mac"}, set(), 5))
-        linux = "↳ Target Platform: x86_64-unknown-linux-gnu"
+    nobodys = json.loads(next(line for line in bad if "issueRecorded" in line))
+    del nobodys["payload"]["testID"]
+    row("something goes wrong outside any test", read(sound[:-1] + [json.dumps(nobodys)] + sound[-1:]), (read(sound)[0], 1))
 
-        def closing(count, outcome="passed"):
-            return f"✔ Test run with {count} tests in 1 suite {outcome} after 0.1 seconds."
+    def green(outcomes, problems):
+        return not problems and set(outcomes.values()) <= {"passed", "was left to macOS"}
 
-        wanted = {"one", "four", "mac", "gone"}
-        row("both lines of a test lost, and the runs ran as many tests as there are",
-            parity.recover(wanted, f"{start}\n{linux}\n{closing(2)}\n{start}\n{closing(3)}", folder), ({"one"}, {"mac"}))
-        row("the same, but the runs ran fewer tests than there are", parity.recover(wanted, f"{start}\n{linux}\n{closing(4)}", folder), (set(), set()))
-        row("the same, but a run did not finish", parity.recover(wanted, f"{start}\n{linux}\n{closing(5)}\n{start}", folder), (set(), set()))
-        row("the same, but a run failed", parity.recover(wanted, f"{start}\n{linux}\n{closing(5, 'failed')}", folder), (set(), set()))
+    row("the control: a sound record is green, one with a failure is not", (green(*read(sound)), green(*read(bad))), (True, False))
+    row("whichever line of a record with a failure is lost, it does not turn green",
+        [index for index in range(len(bad)) if green(*read(bad[:index] + bad[index + 1:]))], [])
+    row("nor whichever line is torn",
+        [index for index in range(len(bad)) if green(*read(bad[:index] + [bad[index][:len(bad[index]) // 2]] + bad[index + 1:]))], [])
+    row("whichever line of a sound record is lost or torn, both tests are there and well, or it is not green",
+        [index for index in range(len(sound)) for part in ([], [sound[index][:30]])
+         if green(*read(sound[:index] + part + sound[index + 1:])) and set(read(sound[:index] + part + sound[index + 1:])[0]) != {"a", "mac"}], [])
+
+    row("parity.py: the listed tests ran and passed", score(sound), (0, ""))
+    row("parity.py: in two parts", score(record({"a": "passes"}), record({"mac": carbon}, suite="U.S")), (0, ""))
+    row("parity.py: a listed test was deleted", score(record({"mac": carbon})), (1, "test a not found"))
+    row("parity.py: a listed test was renamed", score(record({"a2": "passes", "mac": carbon})), (1, "test a not found"))
+    row("parity.py: a macOS-only test was deleted", score(record({"a": "passes"})), (1, "test mac not found"))
+    row("parity.py: a part was left out, so a listed test did not run", score(record({"mac": carbon}, suite="U.S")), (1, "test a not found"))
+    row("parity.py: a listed test failed", score(record({"a": "fails", "mac": carbon})), (1, "test a failed / failed: a"))
+    row("parity.py: a test failed and the run crashed: both are said", score(record({"a": "fails", "mac": carbon, "b": "crashes"})),
+        (1, "test a failed / part-0.jsonl: 1 of 1 test runs did not finish (a crash?); failed: a"))
+    row("parity.py: another test failed", score(record({"a": "passes", "mac": carbon, "b": "fails"})), (1, "failed: b"))
+    row("parity.py: a listed test was skipped", score(record({"a": "skipped: later", "mac": carbon})), (1, "test a was skipped: later"))
+    row("parity.py: a listed test has a known issue", score(record({"a": "known", "mac": carbon})), (1, "test a has a known issue"))
+    row("parity.py: a macOS-only test skipped on a Mac",
+        score(record({"a": "passes", "mac": carbon}, MAC)), (1, "test mac was skipped: Carbon exists only on macOS"))
+    row("parity.py: the run crashed after the listed tests",
+        score(record({"a": "passes", "mac": carbon, "b": "crashes"})), (1, "part-0.jsonl: 1 of 1 test runs did not finish (a crash?)"))
+    row("parity.py: a torn line", score(sound[:-1] + [sound[-1][:50]])[0], 1)
+    row("parity.py: a torn line is called that",
+        score(sound[:6] + [sound[6][:50]] + sound[7:]),
+        (1, "test a did not finish / part-0.jsonl: line 7 is damaged; "
+            "part-0.jsonl: the runs finished, yet nothing says how 1 of the tests ended: lines are missing"))
+    row("parity.py: nothing ran", score([])[0] not in (0, None), True)
 
     evidence = "\n".join([
         "# header", "▸ good  (dock 1 left)", "  ✔ a", "  ✔ b", "▸ bad", "  ✔ a", "  ✘ b", "▸ again", "  ✔ a",
@@ -160,9 +271,46 @@ def check_ci_step():
     row("ci-step: a command that crashes", step("sh", "-c", "kill -SEGV $$"), (139, True))
     row("ci-step: a command that does not exist", step("no-such-command-anywhere"), (127, True))
 
+    def told(lines, *command):
+        """The annotations of a step whose command leaves that record (or none) behind and prints next to nothing."""
+        with tempfile.TemporaryDirectory() as folder:
+            folder = os.path.realpath(folder)
+            if lines is not None:
+                with open(os.path.join(folder, "report.jsonl"), "w", encoding="utf-8") as handle:
+                    handle.write("".join(line.replace("/w/", folder + "/") + "\n" for line in lines))
+            result = subprocess.run([sys.executable, os.path.join(HERE, "ci-step.py"), "--report", "report.jsonl", "test", *command],
+                                    capture_output=True, text=True, check=False, cwd=folder)
+        return [line for line in result.stdout.split("\n") if line.startswith("::")]
+
+    row("ci-step: what failed comes from the tests' record, with its place, though the output lost it",
+        told(record({"a": "passes", "b": "fails"}), "sh", "-c", "exit 1")[0],
+        "::error title=test,file=Tests/T/T.swift,line=3,col=2::Test b: Expectation failed: 1 == 2%0A1 → 1")
+    row("ci-step: a crash: the tests that were under way",
+        told(record({"a": "passes", "b": "crashes"}), "sh", "-c", "exit 1")[0],
+        "::error title=test::under way when the run ended (a crash?): b")
+    row("ci-step: a crash's last words, which only the output has, come first; what it printed of the tests is left to the record",
+        told(record({"a": "fails", "b": "crashes"}), "sh", "-c", "echo 'T/T.swift:9: Fatal error: boom'; echo '✘ Test a() failed'; exit 1")[:3],
+        ["::error title=test::T/T.swift:9: Fatal error: boom", "::error title=test::under way when the run ended (a crash?): b",
+         "::error title=test,file=Tests/T/T.swift,line=3,col=2::Test a: Expectation failed: 1 == 2%0A1 → 1"])
+    many = record({"a": "fails", "b": "fails"})
+    issue = next(index for index, line in enumerate(many) if "issueRecorded" in line)
+    row("ci-step: a test with twenty issues takes one place, so the next test is told too",
+        [line.split("::")[2][:7] for line in told(many[:issue] + [many[issue]] * 20 + many[issue + 1:], "sh", "-c", "exit 1")[:2]],
+        ["Test a:", "Test b:"])
+    row("ci-step: tests built under another path: the place is in the words",
+        told([line.replace("/w/", "/elsewhere/") for line in record({"b": "fails"})], "sh", "-c", "exit 1")[0],
+        "::error title=test::Test b: Expectation failed: 1 == 2%0A1 → 1%0A(at T/T.swift:3)")
+    row("ci-step: no record, because the build failed: the compiler's errors from the output",
+        told(None, "sh", "-c", "echo 'error: no such module'; exit 1")[0], "::error title=test::error: no such module")
+    row("ci-step: the tests passed: how many, and which did not run",
+        told(record({"a": "passes", "mac": "skipped: Carbon exists only on macOS", "mac2": "skipped: AppKit exists only on macOS"}), "true"),
+        ["::notice title=test::tests: 3, passed: 1, skipped: 2, test runs: 1", "::notice title=test::was left to macOS: mac, mac2"])
+
 
 # MARK: scenarios.sh and arbor-sim
 
+# One line in which a window goes somewhere and on from there.
+TWICE = "shove 101 10 40 then 500 40\n"
 SCENARIOS = [
     (0, "a scenario that holds", "open A\ndock 101 left\nexpect docked 101\n"),
     (1, "an expectation that does not hold", "open A\nexpect docked 101\n"),
@@ -174,6 +322,12 @@ SCENARIOS = [
     (1, "`Expect` is not `expect`", "open A\nExpect floating 101\n"),
     (1, "an expectation nobody knows", "open A\nexpect dcked 101\n"),
     (1, "a number the simulator refuses", "open A\nexpect floating 101\nseam 1e300 5\n"),
+    (0, "a window that is moved once", "open A\nshove 101 10 40\nexpect moved-once\n"),
+    (1, "a window that is moved twice in one line, and nothing answers for it", "open A\n" + TWICE + "expect floating 101\n"),
+    (0, "a window that is moved twice, which is known", "open A\n" + TWICE + "expect jolt 101\n"),
+    (1, "a window that is moved twice in the last line", "open A\nexpect floating 101\n" + TWICE),
+    (1, "a known fault that has been mended", "open A\nshove 101 10 40\nexpect jolt 101\n"),
+    (1, "another window answers for it", "open A\nopen B\n" + TWICE + "expect jolt 102\n"),
 ]
 
 
@@ -337,6 +491,7 @@ case "$1" in
   status-item) case " $* " in *" --frame "*) cat "$FAKE/status-item-frame" 2>/dev/null || exit 64 ;; *) cat "$FAKE/status-item" 2>/dev/null || exit 64 ;; esac ;;
   front) cat "$FAKE/front" 2>/dev/null || exit 64 ;;
   screen-access) cat "$FAKE/screen-access" 2>/dev/null || echo true ;;
+  asleep) cat "$FAKE/asleep" 2>/dev/null || echo false ;;
   displays) echo "1 0 0 1024 768 1024 768 1" ;;
   wallpaper) echo "/System/Library/Desktop Pictures/x.heic" ;;
   *) echo "$*" >> "$FAKE/posted" ;;
@@ -350,7 +505,8 @@ esac
     "pgrep": '#!/bin/bash\nname=${!#}\n[ -f "$FAKE/running-$name" ] && cat "$FAKE/running-$name" || exit 1\n',
     "ioreg": '#!/bin/bash\necho "    | |   \\"HIDIdleTime\\" = $(cat "$FAKE/idle" 2>/dev/null || echo 900)000000000"\n'
              '[ -f "$FAKE/locked" ] && echo "    \\"IOConsoleUsers\\" = ({\\"CGSSessionScreenIsLocked\\"=Yes,\\"kCGSSessionOnConsoleKey\\"=Yes})"\nexit 0\n',
-    "pmset": '#!/bin/bash\necho "   PreventUserIdleDisplaySleep    $(cat "$FAKE/awake" 2>/dev/null || echo 0)"\n',
+    "pmset": '#!/bin/bash\necho "   PreventUserIdleDisplaySleep    $(cat "$FAKE/awake" 2>/dev/null || echo 0)"\necho "Listed by owning process:"\n'
+             'cat "$FAKE/awake-owners" 2>/dev/null\nexit 0\n',
     "defaults": '#!/bin/bash\n[ "$1" = read ] || exit 0\ncat "$FAKE/defaults-${2#-}" 2>/dev/null || exit 1\n',
     "security": "#!/bin/bash\necho '\"/Users/x/Library/Keychains/login.keychain-db\"'\n",
     "lsappinfo": "#!/bin/bash\nexit 0\n",
@@ -591,6 +747,24 @@ def lib_situations(canary):
         return [("lib.sh: in a list, no input since the script before ended is as good as five quiet minutes; input since then is somebody's",
                  (quiet, touched, nonsense, mac.read("said")), (0, 77, 77, "went on\n"))]
 
+    def keeps_awake(mac):
+        went = 'arbor_build\necho "went on" >> "$FAKE/said"'
+        line = '   pid {}({}): [0x0005f5a300018a5b] 00:00:04 PreventUserIdleDisplaySleep named: "{}"'
+        mac.environment["ARBOR_KEEPS_AWAKE"] = "4711"
+        mac.put("awake", "1")
+        mac.put("awake-owners", line.format(4711, "caffeinate", "caffeinate command-line tool"))
+        ours, _ = mac.run(went)
+        mac.put("awake", "2")
+        mac.put("awake-owners", line.format(4711, "caffeinate", "caffeinate command-line tool") + "\n" + line.format(500, "zoom.us", "a call"))
+        both, _ = mac.run(went)
+        mac.put("awake", "1")
+        mac.put("awake-owners", line.format(4711, "zoom.us", "a call"))
+        posing, _ = mac.run(went)
+        mac.put("awake-owners", "   something macOS has never printed yet")
+        unknown, _ = mac.run(went)
+        return [("lib.sh: the list's own caffeinate is no call; a call beside it, a call under its number and a listing nobody can read are",
+                 (ours, both, posing, unknown, mac.read("said")), (0, 77, 77, 77, "went on\n"))]
+
     def no_curtain(mac):
         mac.tool("curtain", "#!/bin/bash\nexit 1\n")
         return declined("not without a curtain")(mac)
@@ -707,9 +881,10 @@ kill $mine
         mac.environment["HOME"] = os.path.join(mac.folder, "home of mine")
         os.makedirs(mac.environment["HOME"])
         said = 'echo "in $ARBOR_ROOT/Sources and /private$ARBOR_ROOT/x, $HOME/Documents/tax.pdf, /Users/jo/Library and \\"/Users/al\\": done"'
-        setup = 'echo "2026-10-14T11:00:00.000Z ERROR setup: Other window managers: Secret Tiler is running | quit it"'
+        setup = ('echo "2026-10-14T11:00:00.000Z ERROR setup: Other window managers: Secret Tiler is running | quit it"\n'
+                 'echo "2026-10-14T11:00:00.000Z INFO  shortcuts: Secret Tiler keys is a shortcut of macOS\'s as well, so one of the two does nothing"')
         code, output = mac.run(f'{said}\n{said} >&2\n{said} > "$ARBOR_OUT/build.log"\n{said} > "$ARBOR_OUT/picture.png"\nyes | head -n 1\n'
-                               f'{setup}\n{setup} > "$ARBOR_OUT/arbor.log"\nexit 3')
+                               f'logs() {{\n{setup}\n}}\nlogs\nlogs > "$ARBOR_OUT/arbor.log"\nexit 3')
         clean = 'in <checkout>/Sources and <checkout>/x, ~/Documents/tax.pdf, ~/Library and "~": done'
         return [("lib.sh: on somebody's Mac what a run prints, on either output, says neither where the checkout nor where the home folder is",
                  (code, [line for line in output.splitlines() if line.startswith("in ") or line == "y"]), (3, [clean, clean, "y"])),
@@ -778,8 +953,9 @@ kill $mine
                  ended("the time limit", "on somebody's Mac, "), ended("an interrupt", "on somebody's Mac, "), ended("kill -9", "on somebody's Mac, "),
                  declined("not beside an Arbor that is running already", running__Arbor=str(canary)),
                  declined("not beside another window manager", running__Rectangle=str(canary)),
-                 declined("not under somebody's hands", idle="20"), quiet_since, declined("not into a call", awake="1"), declined("not as root", uid="0"),
-                 declined("not behind a locked screen", locked="yes"), declined("not under the screen saver", running__ScreenSaverEngine=str(canary))]
+                 declined("not under somebody's hands", idle="20"), quiet_since, keeps_awake, declined("not into a call", awake="1"), declined("not as root", uid="0"),
+                 declined("not behind a locked screen", locked="yes"), declined("not under the screen saver", running__ScreenSaverEngine=str(canary)),
+                 declined("not with the display asleep", asleep="true")]
     # One looks at what else is under /tmp, the other is no rehearsal and would be declined beside another run.
     return [(situation, False) for situation in throwaway] + [(situation, True) for situation in somebodys], [(traces, True), (stray_environment, False)]
 
@@ -897,6 +1073,24 @@ def check_run_list():
     tools = {"compile-tools.sh": fine, "b.sh": fine}
     row("run-list: at a terminal it asks for Return once everything is built, and quiet counts from there", at_a_terminal(tools, b"\n"), (0, ["sees no no no", "sees no no no quiet"]))
     row("run-list: at a terminal ⌃C instead of Return ends it, and nothing more is started", at_a_terminal(tools, b"\x03"), (1, ["sees no no no"]))
+    def awake(listing):
+        """What the scripts are told, with stand-ins for caffeinate and pmset on the PATH, and whether the caffeinate outlives the list."""
+        with tempfile.TemporaryDirectory(prefix="tooling-") as tools:
+            for name, text in (("caffeinate", f'echo $$ > "{tools}/pid"\nexec sleep 30'), ("pmset", listing.replace("TOOLS", tools))):
+                with open(os.path.join(tools, name), "w", encoding="utf-8") as handle:
+                    handle.write(f"#!/bin/bash\n{text}\n")
+                os.chmod(os.path.join(tools, name), 0o755)
+            told = 'echo "told ${ARBOR_KEEPS_AWAKE:-nothing}"\n'
+            output = tried({"a.sh": told, "b.sh": told}, PATH=tools + os.pathsep + os.environ["PATH"], ARBOR_KEEPS_AWAKE="1")[2]
+            with open(os.path.join(tools, "pid"), encoding="utf-8") as handle:
+                pid = handle.read().strip()
+            return [line.replace(pid, "its pid") for line in output.splitlines() if line.startswith("told")], alive(pid)
+
+    row("run-list: it keeps the display awake, tells every script with which process, and lets go at the end",
+        awake('echo "   pid $(cat "TOOLS/pid")(caffeinate): [0x1] 00:00:01 PreventUserIdleDisplaySleep named: \\"caffeinate command-line tool\\""'),
+        (["told its pid", "told its pid"], False))
+    row("run-list: where macOS does not list its caffeinate as the scripts look for it, it is given up, or they would all decline",
+        awake('echo "   something else"'), (["told nothing", "told nothing"], False))
     some = {"compile-tools.sh": 'echo "✔ pointer"\necho "✘ scenery"\necho "✘ axfind"\nexit 2\n', "b.sh": fine}
     row("run-list: a tool that does not compile is a finding, and the harness is tried all the same",
         tried(some, ARBOR_LIST_FIRST="compile-tools.sh b.sh")[:2], (0, ["01-compile-tools", "02-b"]))
@@ -1486,6 +1680,62 @@ def check_preflight():
         row("preflight.sh: where Git does not work nothing counts as shown", (flight("--check", new)[0], flight(new)[0]), (2, 2))
 
 
+# MARK: ci-build-key.sh
+
+def check_ci_build_key():
+    """A build's name: there is always one, and it differs whenever what goes into the build does. A script that fails costs every run its cache, quietly."""
+    with tempfile.TemporaryDirectory(prefix="tooling-") as folder:
+        def git(*arguments):
+            subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@example.com", *arguments], cwd=folder, capture_output=True, check=True)
+
+        def write(path, text, mode=0o644):
+            os.makedirs(os.path.dirname(os.path.join(folder, path)), exist_ok=True)
+            with open(os.path.join(folder, path), "w", encoding="utf-8") as handle:
+                handle.write(text)
+            os.chmod(os.path.join(folder, path), mode)
+
+        for name in ("sw_vers", "xcodebuild", "swift"):
+            write(f"bin/{name}", f'#!/bin/sh\necho {name} "${{VERSION_OF_{name}:-1}}"\n', 0o755)
+        write(".gitignore", "/bin/\n")
+        for path in ("Package.swift", "Sources/A.swift", "Tests/T.swift", "scripts/mac-shell/pointer.swift", "scripts/mac-shell/compile-tools.sh", "docs/x.md"):
+            write(path, "one\n")
+        git("init", "--quiet")
+        git("add", "--all")
+        git("commit", "--quiet", "--message", "one")
+
+        def key(kind, **more):
+            environment = {name: value for name, value in os.environ.items() if not name.startswith("ARBOR_TEST_SOURCES_")}
+            done = subprocess.run([BASH, os.path.join(HERE, "ci-build-key.sh"), kind], cwd=folder, capture_output=True, text=True, check=False,
+                                  env={**environment, "PATH": os.path.join(folder, "bin") + os.pathsep + os.environ["PATH"], **more})
+            lines = dict(line.split("=", 1) for line in done.stdout.splitlines() if "=" in line)
+            return done.returncode, lines.get("key")
+
+        def changed(path, kind, text="two\n"):
+            before = key(kind)[1]
+            write(path, text)
+            git("add", "--all")
+            git("commit", "--quiet", "--message", path)
+            return key(kind)[1] != before
+
+        for kind in ("products", "tests"):
+            row(f"ci-build-key.sh: {kind}: there is a name", (key(kind)[0], bool(key(kind)[1])), (0, True))
+            row(f"ci-build-key.sh: {kind}: the same twice", key(kind) == key(kind), True)
+            for name in ("sw_vers", "xcodebuild", "swift"):
+                row(f"ci-build-key.sh: {kind}: another {name}, another name", key(kind) != key(kind, **{f"VERSION_OF_{name}": "2"}), True)
+        row("ci-build-key.sh: with and without the tests are two names", key("products")[1] != key("tests")[1], True)
+        row("ci-build-key.sh: which test files are compiled is part of the name of a build with tests",
+            key("tests") != key("tests", ARBOR_TEST_SOURCES_T="T.swift"), True)
+        row("ci-build-key.sh: and no part of the name of one without", key("products") == key("products", ARBOR_TEST_SOURCES_T="T.swift"), True)
+        for path in ("Package.swift", "Sources/A.swift", "scripts/mac-shell/pointer.swift", "scripts/mac-shell/compile-tools.sh"):
+            row(f"ci-build-key.sh: {path} changes: another name, with the tests and without", (changed(path, "products"), changed(path, "tests", "three\n")), (True, True))
+        row("ci-build-key.sh: a test changes: another name with the tests, the same without", (changed("Tests/T.swift", "tests"), changed("Tests/T.swift", "products", "three\n")),
+            (True, False))
+        row("ci-build-key.sh: prose changes: the same name", (changed("docs/x.md", "products"), changed("docs/x.md", "tests", "three\n")), (False, False))
+        row("ci-build-key.sh: no such kind", key("sideways")[0], 64)
+        write("Sources/A.swift", "not committed\n")
+        row("ci-build-key.sh: a checkout that differs from its commit has no name", key("products"), (2, None))
+
+
 def check_fuzz_launch():
     for situation in fuzz_launch.situations():
         row(*situation)
@@ -1506,6 +1756,7 @@ def main():
     check_install()
     check_e2e()
     check_ci_mtimes()
+    check_ci_build_key()
     check_mac_shell_batch()
     check_preflight()
     check_fuzz_launch()

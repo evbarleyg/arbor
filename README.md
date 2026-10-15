@@ -47,7 +47,7 @@ independent implementation and is not affiliated with it.
 - **Pinch and frame**: with ⌥ held, or over the Desktop, pinch on the trackpad
   to step out and spread two fingers to step in toward the pointer. Hold ⇧
   and drag a rectangle, starting on the Desktop, to frame what it covers; with
-  ⌃⌥ held the drag can start anywhere.
+  ⌃⌥ held the drag can start anywhere. Off for now, with the next: `arborctl set pointerGestures true` switches them on.
 - **Zoom with a mouse**: hold ⌃⌥ and scroll: up steps in toward the pointer, down steps out. One step per notch of a
   wheel.
 - **Nothing gets lost**: windows outside the view are out of view, not closed: they wait past a
@@ -57,7 +57,9 @@ independent implementation and is not affiliated with it.
   Unplug a display and its windows float on the main one; plug it back in and
   they return to their places. Windows on other macOS Spaces and in full screen keep
   their places too, and so do minimized windows and hidden apps.
-  If Arbor ever crashes, it starts again within a second with the arrangement as it was.
+  Quit Arbor and start it again, and what was docked is back in its places with everything showing, whatever the view
+  was; a window you never docked is not moved. The view you quit in is one step back.
+  If Arbor ever crashes, it starts again within a second with the arrangement and the view as they were.
 - **At home on macOS**: macOS's own window tabs (Finder, Terminal, Xcode) count as one
   window, whichever tab is in front. An app that hangs does not hold Arbor up, and one
   that insists on placing its own window is left in peace after three tries.
@@ -96,10 +98,10 @@ independent implementation and is not affiliated with it.
   is no room for float as always, and nothing turns into a tile because a window opened. Off by default.
 - **Your Mac, your rules**: "Don't Arrange" leaves an app's windows alone; "Float All Windows" returns you
   to a normal Mac; quitting puts every window back in view.
-- **No trace**: a window that leaves the arrangement gets its own size back. Float All Windows, quitting
+- **No trace**: a window that leaves the arrangement gets its own size back. Float All Windows, quitting, pausing
   and Don't Arrange put windows back where they were before they were docked.
 - **Out of the way when you need it**: ⌃⌥⎋ pauses Arbor for a game, a remote desktop or an app it
-  gets in the way of: what you are looking at stays as it is, windows out of view come back on screen, and windows, shortcuts and gestures are left
+  gets in the way of: every window goes back to where it was, in its own size and in view, and windows, shortcuts and gestures are left
   alone until you press it again.
 - **Apps that need ⌃⌥ keep it**: Emacs, an IDE, a remote desktop or a virtual machine. Choose Shortcuts Off
   in “App” from the menu, and in that app the keys are its own; its windows stay arranged.
@@ -392,7 +394,7 @@ Desktop means a trip there and back. Give each a shortcut in `settings.json` ins
 - Once summoned, a window no longer lives on the Desktop: sent away, it stays out of view in every view, Show
   Everything (⌃⌥Space) included, until you summon it again or switch to it (⌘Tab, its Dock icon), which summons it. ⌃⌥0, the way back
   for a window you cannot find, puts it back on the Desktop as an ordinary window; so do docking it, pinning it and Float All Windows. Pausing
-  and quitting bring it into view like every other window.
+  and quitting bring it into view like every other window, and after a quit it stays there: the next launch has it as an ordinary window.
 - If the app has no window, is hidden, or is not running, it is opened as a click on its Dock icon would, and its window is summoned if it
   appears within five seconds.
 - A docked window has a place, and the place wins: `summon` moves the view to it, as ⌘Tab would, and `summon` again goes back where you were, view and keyboard. So one key does for an app wherever its window lives. Once you have moved the view or turned to another window there is no "back", and the next press goes to the window again. A pinned window just gets the keyboard.
@@ -598,6 +600,7 @@ in the file it costs only its own key. [docs/SETTINGS.md](docs/SETTINGS.md) is t
 | `newWindows` | "float" | What a new window does when no rule matches it. "dock": it docks beside the focused window (below). The menu's "Dock New Windows" and `toggle-auto-dock` switch it |
 | `autoDockMinimumWidth` / `autoDockMinimumHeight` | 400 / 300 | A window that opens smaller than this is never docked by `dock auto` or by a rule for `*` |
 | `minimapDuration` | 0 | Seconds (at most 10) the minimap shows by itself after the view has moved; 0 is off, ⌃⌥M shows it either way |
+| `pointerGestures` | false | The one switch above the pinch, ⌃⌥ + scroll, both ways to draw a rectangle and `guardDesktopClicks`. false: Arbor installs no event tap, so it holds back no click, scroll or pinch of the Mac, whatever their own settings say. Dragging windows, gaps and tiles works either way |
 
 The file is yours. When a command changes a setting (`set`, `bind`, `rule add`, "Don't Arrange"…), Arbor
 changes that setting in the file and leaves the rest as you wrote it: your order and spacing, keys
@@ -695,7 +698,7 @@ What it never does:
 
 | | Windows | The view moves by itself | Your keys and gestures |
 |---|---|---|---|
-| **Pause** (⌃⌥⎋) | all come into view; Arbor lets go of them | | are handed back to the apps |
+| **Pause** (⌃⌥⎋) | all come into view, in their own sizes; Arbor lets go of them | | are handed back to the apps |
 | **Hold Still** | stay as they are | no | work as ever |
 | **Hold This View** | stay as they are | no | cannot move the view either, until you release it |
 

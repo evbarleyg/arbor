@@ -52,8 +52,9 @@ public final class ChaosRunner {
   /// Called with every action of every runner before it is applied. arbor-sim's watchdog listens.
   public static var beforeEachStep: ((ChaosAction) -> Void)?
 
-  /// settings.json, as the object in the file.
-  private var settingsFile: [String: Any] = [:]
+  /// settings.json, as the object in the file. A walk begins with the gestures switched on, though they ship off: the net over the zones of
+  /// the Desktop (`guard-zones`) catches nothing where nobody asks for zones. `set pointerGestures` is among a walk's steps.
+  private var settingsFile: [String: Any] = ["pointerGestures": true]
   /// state.json, and what was written to it, as of the last save.
   private var stateFile: Data?
   private var stateWritten: PersistedState?
@@ -87,6 +88,8 @@ public final class ChaosRunner {
   /// Windows that somebody other than Arbor has ever left across the edge of a display: hanging over it, or straddling two.
   var leftAcrossAnEdge: Set<WindowID> = []
   var theChangeChangedNothing = false
+  /// What the nets for the product's seven rules remember (ChaosInvariants+SevenRules.swift).
+  var seven = SevenRules()
   /// The displays there were last, for as long as there are none.
   private var lastDisplays: [DisplaySnapshot] = []
   var owedTheWayBackBefore: Set<WindowID> = []
@@ -162,7 +165,10 @@ public final class ChaosRunner {
       if let failure = step(generator.next(runner)) { return failure }
     }
     // Whatever happened, the three things a person tries when a window is gone each bring every window within reach.
-    for action in WayBack.allCases.map({ ChaosAction.wayBack($0) }) {
+    // Each comes first in its share of the walks, from the state the walk ended in: held, framed, paused, in the middle of a drag.
+    let ways = WayBack.allCases
+    let first = Int(seed % UInt64(ways.count))
+    for action in (ways[first...] + ways[..<first]).map({ ChaosAction.wayBack($0) }) {
       if let failure = step(action) { return failure }
     }
     return nil
@@ -208,12 +214,14 @@ public final class ChaosRunner {
     wasPeekingBefore = timersBefore.contains("peek")
     let movesBefore = system.windows.mapValues(\.movesNotArbors)
     inHandBefore = system.dragging ?? system.resizing
+    noteBeforeTheSevenRules(action)
     perform(action)
     listen()
     beforeTheNextCheck?(self)
     beforeTheNextCheck = nil
     noteWhereItsUserLeftEachWindow(after: action, movesBefore: movesBefore)
-    return found + check(after: action)
+    noteAfterTheSevenRules(action, movesBefore: movesBefore)
+    return found + wayHomeViolations(after: action) + check(after: action)
   }
 
   /// Where somebody other than Arbor last put each window, as seen from the corner of the display that shows most of it, and
@@ -354,6 +362,7 @@ public final class ChaosRunner {
     case .release: system.letGo()
     case .loseRelease: system.loseTheRelease()
     case .commandKey(held: let held): system.holdModifierKeys(held ? .command : [])
+    case .macTiling(on: let on): system.tiling = on ? .on : .off
     case .via(let source, let line):
       // `quit`, `pause` and the like have their promises checked in `run`.
       if let command = try? Command.parse(line), isRunning, ![.quit, .pause(minutes: nil), .togglePause].contains(command) {
@@ -447,6 +456,7 @@ public final class ChaosRunner {
         let frames = gone.map { "\($0) at \(system.windows[$0]!.snapshot.frame.brief)" }.joined(separator: ", ")
         found.append(.init("out-of-reach", "after \(way.rawValue) nobody can get hold of \(frames)"))
       }
+      found += wayHomeViolations(way.rawValue, on: way.isAboutOneDisplay ? displaysAtHome : nil, givesSizesBack: way.givesSizesBack)
     case .save: if isRunning { controller.saveNow() }
     case .crash: if isRunning || isPaused { endProcess() }
     case .launch: if !isRunning, !isPaused { launch() }
@@ -709,18 +719,32 @@ public final class ChaosRunner {
 
   /// What a person does when a window is gone: float everything, quit Arbor, or (after whatever ended it) start it again.
   public enum WayBack: String, CaseIterable, Sendable {
+    case home
+    case showAll = "show-all"
+    case pause
     case floatAll = "float-all"
     case startAgain = "start-again"
     case quit
 
     var actions: [ChaosAction] {
       switch self {
+      case .home: [.release, .command("resume"), .launch, .command("release"), .command("home"), .settle]
+      case .showAll: [.release, .command("resume"), .launch, .command("release"), .command("show-all"), .settle]
+      case .pause: [.release, .command("resume"), .launch, .settle, .command("pause")]
       case .floatAll: [.release, .command("resume"), .launch, .command("float-all"), .settle]
       case .quit: [.release, .launch, .command("quit")]
       case .startAgain: [.release, .crash, .launch, .settle]
       }
     }
+
+    /// Quitting, Float All and pause give every window the size it had of its own (F48).
+    var givesSizesBack: Bool { [.pause, .floatAll, .quit].contains(self) }
+    /// ⌃⌥0 and ⌃⌥Space are about the display they are pressed on, and a start brings back the view there was.
+    var isAboutOneDisplay: Bool { [.home, .showAll, .startAgain].contains(self) }
   }
+
+  /// The displays whose view is on everything.
+  var displaysAtHome: Set<DisplayID> { Set(controller.workspaces.filter { $0.value.camera == $0.value.tree.root }.keys) }
 
   /// Windows nobody could get hold of: present or not, none of their title bar is within reach on any display. Windows that Arbor does
   /// not arrange, whose apps do not do as they are asked, and that their own app or the user put where they are, are not Arbor's to fetch.

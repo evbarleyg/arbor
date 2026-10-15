@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Every test on a Mac, built from nothing, once a night on main: the backstop for all that the other runs leave to Linux and to caches.
+  # At an hour when few people want a Mac.
+  schedule:
+    - cron: "17 10 * * *"
+  # The same by hand, on any branch.
+  workflow_dispatch:
 
 # A newer push makes the run for the older one worthless.
 concurrency:
@@ -13,15 +19,18 @@ concurrency:
 permissions:
   contents: read
 
-# A hosted Mac is the slower and scarcer machine.
-# Hence one macOS job, and none at all when it could prove nothing new (scripts/ci-changes.py
-# has the rules; "[mac]" in the head commit's subject asks for it regardless).
+# A hosted Mac is the slower and scarcer machine: GitHub lends the repository five at a time, for everybody's runs together.
+# Hence one macOS job, which sets up once and builds once; none at all when it could prove nothing new; and on it only what a Mac can
+# tell: the tests Linux cannot run or might answer differently, and real windows. scripts/ci-changes.py has the rules ("[mac]" in the
+# head commit's subject asks for the Mac regardless, "[mac-full]" for every test on it). Nothing is dropped silently: `tests-accounted-for`
+# fails if a test ran neither here nor there, and its summary says what ran where.
 #
 # Steps run through scripts/ci-step.py, which publishes test counts, the parity score and whatever
 # failed as check annotations, for executors that cannot download logs.
 jobs:
   changes:
-    runs-on: ubuntu-latest
+    # By its number: if this job ever failed on a new system that `latest` had moved to, every run would take a Mac, by design.
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       contents: read
@@ -29,80 +38,132 @@ jobs:
       checks: read
     outputs:
       mac: ${{ steps.decide.outputs.mac }}
+      tests: ${{ steps.decide.outputs.tests }}
+      build: ${{ steps.decide.outputs.build }}
+      why: ${{ steps.decide.outputs.why }}
     steps:
       - uses: actions/checkout@v5
         with:
-          sparse-checkout: scripts
+          # The rules, and what they read off which scripts the macOS job can reach.
+          sparse-checkout: |
+            scripts
+            .github
+            Tests
       - name: Does this run need a Mac?
         id: decide
         env:
           GH_TOKEN: ${{ github.token }}
         run: ./scripts/ci-changes.py
 
-  # Everything: the app, the real Accessibility and AppKit code, the headless stack, and real windows.
+  # The app, the real Accessibility and AppKit code, the tests a Mac can say something about, and real windows.
   macos:
     needs: changes
     # Only an explicit "false" saves the Mac: it also runs when `changes` itself failed.
     if: ${{ !cancelled() && needs.changes.outputs.mac != 'false' }}
     runs-on: macos-26
-    # The tests alone take thirteen minutes on a hosted Mac.
-    timeout-minutes: 40
+    # Every test takes thirteen minutes on a hosted Mac, and a build from nothing five.
+    timeout-minutes: 45
+    outputs:
+      real-windows: ${{ steps.verdict.outputs.real-windows }}
+      said: ${{ steps.verdict.outputs.said }}
+    env:
+      # Anything but these two words means the most: every test, built from nothing.
+      TESTS: ${{ needs.changes.outputs.tests == 'mac-only' && 'mac-only' || 'full' }}
     steps:
       - uses: actions/checkout@v5
-      - name: Use the newest Xcode on the runner
-        run: |
-          xcode=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
-          sudo xcode-select -s "$xcode"
-      - name: The Swift release the project is built with
-        run: ./scripts/ci-toolchain.sh
+      # Compiling all the test files took longer than running the ones this job runs. For every step: it is part of the manifest's answer.
+      - name: Which test files are compiled
+        run: ./scripts/ci-tests.py sources --mode "$TESTS" >> "$GITHUB_ENV"
+      - name: Set up
+        id: setup
+        uses: ./.github/actions/mac-setup
+        with:
+          build-cache: ${{ needs.changes.outputs.build == 'upon' && 'tests' || 'none' }}
       - name: Toolchain
         run: ./scripts/ci-step.py toolchain swift --version
       - name: Build
         id: build
-        run: ./scripts/ci-step.py --summary 'warning:|Build complete' build swift build
-      - name: Test
-        run: ./scripts/ci-step.py --summary 'Test run with|skipped' --log test.log test swift test
-      - name: Simulator smoke test
-        run: ./scripts/ci-step.py smoke ./scripts/sim-smoke.sh
-      - name: User-journey scenarios
-        run: ./scripts/ci-step.py scenarios ./scripts/scenarios.sh
-      - name: Release tooling
-        run: ./scripts/ci-step.py --summary '✘|release tools test' release-tools ./scripts/release-tools-test.sh
-      - name: Parity (no shipped feature may break; FEATURES.md must be current)
-        run: ./scripts/ci-step.py parity python3 scripts/parity.py --test-log test.log --check
-
-  # Real windows and the real pointer, in a job of their own: whether Arbor builds and passes its tests, and whether it
-  # does on real windows what the tests say, are two questions, and each gets its own answer. They also run side by side.
-  real-windows:
-    needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.mac != 'false' }}
-    runs-on: macos-26
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v5
-      - name: Use the newest Xcode on the runner
         run: |
-          xcode=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
-          sudo xcode-select -s "$xcode"
-      - name: The Swift release the project is built with
-        run: ./scripts/ci-toolchain.sh
-      - name: Build
-        id: build
-        run: ./scripts/ci-step.py --summary 'warning:|Build complete' build swift build
-      # Real windows. GitHub's macOS runners grant Accessibility to the runner's processes (probe P3,
+          build() { ./scripts/ci-step.py --summary 'warning:|Build complete' build ./scripts/ci-build.sh --build-tests; }
+          build && exit 0
+          [ -n "${!ARBOR_TEST_SOURCES_*}" ] || exit 1
+          # The list is read off the sources, and a file too few on it must cost minutes, not the verdict. If the fault is in the code it fails again.
+          echo "::warning title=build::it does not compile with the selected test files alone (scripts/ci-tests.py sources): now with all of them"
+          for name in ${!ARBOR_TEST_SOURCES_*}; do
+            echo "$name=" >> "$GITHUB_ENV"
+            unset "$name"
+          done
+          echo "whole=true" >> "$GITHUB_OUTPUT"
+          build
+      - name: Keep the build
+        # Not under the name of a build it is not.
+        if: steps.setup.outputs.keep-build == 'true' && steps.build.outputs.whole != 'true'
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: ./.github/actions/mac-keep-build
+        with:
+          key: ${{ steps.setup.outputs.build-key }}
+      # Real windows and the real pointer, on the same Mac and the same build. Whether Arbor builds and passes its tests, and whether it does on
+      # real windows what the tests say, are two questions, and each still gets its own answer: these two steps do not fail this job, and
+      # the job `real-windows` below passes on what they said.
+      #
+      # First, on a Mac on which nothing but a build has happened. After the tests and the rest, a quarter of an hour into the job, Arbor saw
+      # no drag at all (11 of 18 checks of e2e-drag.sh, twice: whenever these steps came last, and never when they had a Mac of their own).
+      #
+      # GitHub's macOS runners grant Accessibility to the runner's processes (probe P3,
       # 2026-10-14), so arbor-e2e can move its test windows there. The fresh evidence comes back as an artifact (or through
       # scripts/mac-shell/run.sh scripts/mac-shell/e2e.sh); commit it as
       # collab/evidence/e2e-latest.txt when `make parity` should count it.
       - name: Real-window test
         id: e2e
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        continue-on-error: true
         run: |
           rm -f collab/evidence/e2e-latest.txt  # only a file this run wrote may be uploaded
-          ./scripts/ci-step.py e2e ./scripts/e2e.sh --full-screen
+          set -o pipefail
+          ./scripts/ci-step.py e2e ./scripts/e2e.sh --full-screen | tee e2e.out
       # Nobody is using this Mac's pointer, so the drags a person would make can be made for real (F17, H4).
       - name: Real-pointer test
+        id: drag
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
-        run: ./scripts/ci-step.py e2e-drag ./scripts/mac-shell/e2e-drag.sh
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          ./scripts/ci-step.py e2e-drag ./scripts/mac-shell/e2e-drag.sh | tee e2e-drag.out
+      - name: Test
+        run: >
+          ./scripts/ci-step.py --summary '^Recorded [0-9]|^Running the tests of' --report mac.tsv.events test
+          ./scripts/ci-tests.py run --mode "$TESTS" --record mac.tsv --all mac-all.txt
+      - name: Hand on what ran
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: tests-mac
+          path: |
+            mac.tsv
+            mac-all.txt
+          if-no-files-found: warn
+      - name: Simulator smoke test
+        run: ./scripts/ci-step.py smoke ./scripts/sim-smoke.sh
+      - name: User-journey scenarios
+        run: ./scripts/ci-step.py scenarios ./scripts/scenarios.sh
+      - name: Release tooling
+        run: ./scripts/ci-step.py --summary '✘|release tools test' release-tools ./scripts/release-tools-test.sh
+      # It wants the log of every test. Linux has one on every commit, and checks the same.
+      - name: Parity (no shipped feature may break; FEATURES.md must be current)
+        if: env.TESTS == 'full'
+        run: ./scripts/ci-step.py parity python3 scripts/parity.py --report mac.tsv.events --check
+
+      - name: What real windows said
+        id: verdict
+        if: ${{ !cancelled() }}
+        env:
+          E2E: ${{ steps.e2e.outcome }}
+          DRAG: ${{ steps.drag.outcome }}
+        run: |
+          echo "real-windows=e2e $E2E, e2e-drag $DRAG" >> "$GITHUB_OUTPUT"
+          # The annotations of the two steps, for the job that gives the verdict to show as its own.
+          { echo "said<<END-OF-WHAT-WAS-SAID"; cat e2e.out e2e-drag.out 2>/dev/null | grep -E '^::(error|notice) ' | cut -c 1-4000 | head -n 24; echo "END-OF-WHAT-WAS-SAID"; } >> "$GITHUB_OUTPUT"
       - name: Keep the evidence
         if: ${{ !cancelled() && steps.e2e.outcome != 'skipped' }}
         uses: actions/upload-artifact@v4
@@ -111,35 +172,165 @@ jobs:
           path: collab/evidence/e2e-latest.txt
           if-no-files-found: warn
 
+  # The second answer. No Mac: it says what the Mac job's two steps on real windows said, and shows their annotations as its own.
+  real-windows:
+    needs: macos
+    if: ${{ !cancelled() && needs.macos.result != 'skipped' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: What real windows said
+        env:
+          VERDICT: ${{ needs.macos.outputs.real-windows }}
+          SAID: ${{ needs.macos.outputs.said }}
+        run: |
+          printf '%s\n' "$SAID"
+          case "$VERDICT" in
+            "e2e success, e2e-drag success") echo "::notice title=real windows::$VERDICT" ;;
+            # Also when the Mac job never got that far, and said nothing.
+            *) echo "::error title=real windows::${VERDICT:-the Mac job did not get to them}"; exit 1 ;;
+          esac
+
+  # A mark for scripts/ci-changes.py and nothing else: this commit passed on a Mac that had built it from nothing. Where work is integrated
+  # only such a pass spares the next run its Mac.
+  macos-from-nothing:
+    needs: [changes, macos]
+    if: ${{ needs.macos.result == 'success' && needs.changes.outputs.build != 'upon' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - run: echo "::notice title=macos::passed, built from nothing"
+
+  # The net under the selection: every test the Mac's build contains has run, there or on Linux. Its summary says what ran where.
+  tests-accounted-for:
+    needs: [changes, linux, macos]
+    if: ${{ !cancelled() && needs.macos.result != 'skipped' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: tests-*
+          merge-multiple: true
+      - name: Has every test run somewhere?
+        env:
+          MODE: ${{ needs.changes.outputs.tests == 'mac-only' && 'mac-only' || 'full' }}
+          WHY: ${{ needs.changes.outputs.why }}
+        run: ./scripts/ci-tests.py account --mac mac.tsv --mac-all mac-all.txt --linux linux.tsv --mode "$MODE" --why "$WHY"
+
   # The headless stack only (see Package.swift), so that it stays buildable for executors without a
   # Mac. Always runs: it is what checks parity, FEATURES.md and the scenarios when the Mac is left out.
   # scripts/linux.sh runs the same image.
-  linux:
+  #
+  # Linux runners are plentiful and a pull request waits for the slowest job, so what does not need one
+  # another's results runs side by side. Every job's name starts with "linux", and the last one, `linux`,
+  # passes only if all the others did: that is the one to wait for or to put in `needs`.
+  # scripts/test-ci-linux.py (`make lint`) holds this file to that.
+
+  # What needs neither Swift nor a build, and so no container either. The runner has curl, which the image
+  # lacks and the release tooling's test wants for half of its checks.
+  linux-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: The rules that decide about the macOS job
+        run: ./scripts/ci-step.py ci-changes ./scripts/test-ci-changes.py
+      - name: The arithmetic of the queue for the Macs
+        run: ./scripts/ci-step.py mac-queue ./scripts/test-mac-queue.py
+      - name: The selection of tests for the Mac, the record of a run, and the net under both
+        run: ./scripts/ci-step.py ci-tests ./scripts/test-ci-tests.py
+      - name: Lint (imports a Mac would miss; Mac shell scripts that would change a person's Mac; these jobs)
+        run: ./scripts/ci-step.py lint make lint
+      - name: Release tooling
+        run: ./scripts/ci-step.py --summary '✘|not tried|release tools test' release-tools ./scripts/release-tools-test.sh
+
+  # Here and not on the Mac: the stand-ins are for machines without AppKit, and the check declines where
+  # swift build sees the real thing.
+  linux-typecheck-mac:
+    runs-on: ubuntu-latest
+    container: swift:6.4-noble
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Python and make for the scripts, and a git that trusts the checkout
+        # The checkout belongs to the runner's user and the container runs as root, which git refuses to work with.
+        run: |
+          apt-get update -qq && apt-get install -y -qq python3 make
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Type-check the macOS-only code against stand-ins
+        run: ./scripts/ci-step.py --summary 'error:|type-check' typecheck-mac make typecheck-mac
+
+  # Whatever drives the built arbor-sim, and the rest of `make check` that is not a test.
+  linux-sim:
+    runs-on: ubuntu-latest
+    container: swift:6.4-noble
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Python and make for the scripts, and a git that trusts the checkout
+        # The checkout belongs to the runner's user and the container runs as root, which git refuses to work with.
+        run: |
+          apt-get update -qq && apt-get install -y -qq python3 make
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Toolchain
+        run: ./scripts/ci-step.py toolchain swift --version
+      - name: Build
+        run: ./scripts/ci-step.py --summary 'warning:|Build complete' build swift build
+      - name: Simulator smoke test
+        run: ./scripts/ci-step.py smoke ./scripts/sim-smoke.sh
+      - name: Nothing a person typed reaches the log
+        run: ./scripts/ci-step.py privacy ./scripts/privacy-smoke.sh
+      - name: User-journey scenarios
+        run: ./scripts/ci-step.py scenarios ./scripts/scenarios.sh
+      - name: The tools that report all this can also report a failure
+        run: ./scripts/ci-step.py tooling python3 scripts/test-tooling.py
+
+  linux-tests:
     runs-on: ubuntu-latest
     container: swift:6.4-noble
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
-      - name: Install Python and make for the scripts
-        run: apt-get update -qq && apt-get install -y -qq python3 make
-      - name: The rules that decide about the macOS job
-        run: ./scripts/ci-step.py ci-changes ./scripts/test-ci-changes.py
-      - name: Lint (imports a Mac would miss; Mac shell scripts that would change a person's Mac)
-        run: ./scripts/ci-step.py lint make lint
+      - name: Python and make for the scripts, and a git that trusts the checkout
+        # The checkout belongs to the runner's user and the container runs as root, which git refuses to work with.
+        run: |
+          apt-get update -qq && apt-get install -y -qq python3 make
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Toolchain
         run: ./scripts/ci-step.py toolchain swift --version
-      - name: Build
-        run: ./scripts/ci-step.py --summary 'warning:|Build complete' build swift build
       - name: Test
-        run: ./scripts/ci-step.py --summary 'Test run with|skipped' --log test.log test swift test
-      - name: Simulator smoke test
-        run: ./scripts/ci-step.py smoke ./scripts/sim-smoke.sh
-      - name: User-journey scenarios
-        run: ./scripts/ci-step.py scenarios ./scripts/scenarios.sh
-      - name: Release tooling
-        run: ./scripts/ci-step.py --summary '✘|release tools test' release-tools ./scripts/release-tools-test.sh
-      # Here and not on the Mac: the stand-ins are for machines without AppKit, and the check declines where swift build sees the real thing.
-      - name: Type-check the macOS-only code against stand-ins
-        run: ./scripts/ci-step.py --summary 'error:|type-check' typecheck-mac make typecheck-mac
+        run: ./scripts/ci-step.py --summary '^Recorded [0-9]' --report linux.tsv.events test ./scripts/ci-tests.py run --mode full --record linux.tsv
+      - name: Hand on what ran
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: tests-linux
+          path: linux.tsv
+          if-no-files-found: warn
       - name: Parity (no shipped feature may break; FEATURES.md must be current)
-        run: ./scripts/ci-step.py parity python3 scripts/parity.py --test-log test.log --check
+        run: ./scripts/ci-step.py parity python3 scripts/parity.py --report linux.tsv.events --check
+
+  # The verdict. It runs whatever became of the others: by default a failure among them would leave it
+  # skipped, which reads as "nothing against it". Only when the whole run is cancelled is there no verdict.
+  linux:
+    needs: [linux-lint, linux-typecheck-mac, linux-sim, linux-tests]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every Linux job passed
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'VERDICT'
+          import json, os, sys
+          results = {name: job["result"] for name, job in json.loads(os.environ["RESULTS"]).items()}
+          for name, result in results.items():
+              if result != "success":
+                  print(f"::error title=linux::{name}: {result}")
+          sys.exit(0 if results and all(result == "success" for result in results.values()) else 1)
+          VERDICT

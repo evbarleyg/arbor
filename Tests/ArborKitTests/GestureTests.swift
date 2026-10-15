@@ -9,7 +9,7 @@ import Testing
 @Suite @MainActor struct GestureTests {
   /// root(h)[a, desktop, b], showing everything, with the pointer over `a`.
   func makeHarness() -> (Harness, WindowID, WindowID) {
-    let h = Harness()
+    let h = Harness(settings: .withGestures)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 600, height: 400))
     h.start()

@@ -121,7 +121,7 @@ import Testing
 
   @Test func gesturesThatAreSwitchedOffAreNotListed() {
     func keys(_ change: (inout Settings) -> Void) -> [String] {
-      var settings = Settings()
+      var settings = Settings.withGestures
       change(&settings)
       return CheatSheetModel.pointerRows(settings: settings).map(\.keys)
     }

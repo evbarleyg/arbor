@@ -142,6 +142,23 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     }
   }
 
+  @Test func whileTheWindowsMoveItsStandInIsInFrontToo() throws {
+    // The editor was clicked last, and beside the call it covers none of it, so the call is left behind it in the stacking. Framed, the
+    // editor reaches under the call: on the stage, which is stacked before anything moves, the call must not be buried for the time of the motion.
+    let (h, editor, _, call) = makeHarness()
+    h.system.userFocus(editor)
+    settle(h)
+    #expect(h.system.windowsFrontToBack().first == editor)
+    h.overlays.clearTransitions()
+    h.run("zoom")
+    for transition in h.overlays.transitions {
+      #expect(transition.items.last?.window == call, "back to front: \(transition.items.map(\.window))")
+    }
+    #expect(!h.overlays.transitions.isEmpty)
+    settle(h)
+    #expect(h.system.windowsFrontToBack().first == call, "which is how the real windows end up")
+  }
+
   @Test func framingTheWindowThatAlreadyHasTheKeyboardDoesNotBuryIt() {
     // macOS reports no focus change here, though focusing the window again puts it in front.
     let (h, editor, _, call) = makeHarness()

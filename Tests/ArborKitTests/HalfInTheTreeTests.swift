@@ -237,6 +237,74 @@ import Testing
     }
   }
 
+  /// The same by the keys themselves. A pressed ⌃⌥Space is not the command: it begins a peek, which takes `show-all`'s place.
+  /// Tapped, and held for two seconds and let go; wherever the pointer is, as for the commands.
+  @Test(arguments: ["ctrl+opt+0", "ctrl+opt+space", "ctrl+opt+shift+f", "ctrl+opt+d"], [false, true])
+  func eachKeyFetchesWhatAHoldKeptOut(key: String, docked: Bool) {
+    for seconds in key == "ctrl+opt+space" ? [0, 2.0] : [0] {
+      for pointer in [Self.main, Self.side] {
+        let (h, _, late) = lateMail(hold: "hold", docked: docked)
+        h.run("release")
+        h.system.cursor = CGPoint(x: pointer.frame.midX, y: pointer.frame.midY)
+        #expect(!isWithinReach(late, h))
+        h.keyDown(key)
+        h.scheduler.advance(by: seconds)
+        h.keyUp(key)
+        h.scheduler.advance(by: 2)
+        #expect(
+          isWithinReach(late, h), "\(key), down for \(seconds) s, the pointer on \(pointer.id), left it at \(h.frame(late)!)")
+        expectWindowsMatchLayout(h)
+      }
+    }
+  }
+
+  @Test(arguments: ["ctrl+opt+0", "ctrl+opt+space", "ctrl+opt+d"], ["hold", "hold still"])
+  func duringAHoldNoKeyLetsInWhatWaits(key: String, hold: String) {
+    for seconds in key == "ctrl+opt+space" ? [0, 2.0] : [0] {
+      let (h, _, late) = lateMail(hold: hold, docked: false)
+      h.system.cursor = CGPoint(x: Self.side.frame.midX, y: Self.side.frame.midY)
+      h.keyDown(key)
+      h.scheduler.advance(by: seconds)
+      h.keyUp(key)
+      h.scheduler.advance(by: 2)
+      #expect(!isWithinReach(late, h), "\(key), down for \(seconds) s during `\(hold)`, let it in at \(h.frame(late)!)")
+      expectWindowsMatchLayout(h)
+    }
+  }
+
+  /// As somebody met it who read only the guide: a laptop with Mail and Safari docked and Mail framed, a large display beside it
+  /// with nothing docked, the view held for a call. Safari opens a page, the call ends, and ⌃⌥0 did not show the page.
+  @Test(arguments: ["home", "float-all"]) func thePageThatOpenedDuringTheCallComesWhenEverythingIsAskedFor(way: String) {
+    let laptop = DisplaySnapshot(
+      id: DisplayID("laptop"), frame: CGRect(x: 0, y: 0, width: 1728, height: 1117),
+      visibleFrame: CGRect(x: 0, y: 25, width: 1728, height: 1092), isMain: true)
+    let large = DisplaySnapshot(
+      id: DisplayID("large"), frame: CGRect(x: 1728, y: -323, width: 2560, height: 1440),
+      visibleFrame: CGRect(x: 1728, y: -298, width: 2560, height: 1415), isMain: false)
+    let h = Harness(displays: [laptop, large])
+    let mail = h.system.open(app: "Mail", pid: 1101)
+    let safari = h.system.open(app: "Safari", pid: 1102)
+    h.start()
+    h.system.cursor = CGPoint(x: 800, y: 500)
+    h.run("dock \(mail.rawValue) left")
+    h.run("dock \(safari.rawValue) right")
+    h.run("zoom \(mail.rawValue)")
+    h.run("hold")
+    let page = h.system.open(app: "Safari", pid: 1102, frame: CGRect(x: 1749, y: 1107, width: 1000, height: 700))
+    h.scheduler.advance(by: 2)
+    #expect(h.run("zoom \(safari.rawValue)").ok == false, "the hold is real")
+    h.run("release")
+    h.run(way)
+    h.scheduler.advance(by: 2)
+    let frame = h.frame(page)!
+    let shows = [laptop, large].contains {
+      let part = $0.visibleFrame.intersection(frame)
+      return part.width >= 40 && part.height >= 5
+    }
+    #expect(shows, "`\(way)` left the page at \(frame)")
+    expectWindowsMatchLayout(h)
+  }
+
   /// `float-all here` is about one display: the one under the pointer.
   @Test(arguments: [false, true]) func floatAllHereFetchesWhatWaitedOnItsOwnDisplay(docked: Bool) {
     let (h, _, late) = lateMail(hold: "hold", docked: docked)

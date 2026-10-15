@@ -36,7 +36,7 @@ With `soleFloatTakesDesktop` on, for each display by itself:
   - the setting goes off;
   - the last docked window leaves (`float-all`, closing it);
   - Arbor quits, or stops arranging its app.
-  A pause leaves it as it is, like everything in view (F40); quitting during the pause gives it its frame back.
+  - Arbor pauses (F40); at the resume it takes the Desktop again, in one move.
   Docking it remembers that frame, not the Desktop's, as the one to float at again (F48).
 - **The user's hand wins.** Moving, resizing or dropping the window while it is alone makes that its own frame, and Arbor stops filling until the window
   has had company or has been docked. Being minimized, hidden or on another macOS Space for a while does not count as company.
@@ -52,7 +52,7 @@ With `soleFloatTakesDesktop` on, for each display by itself:
   already does.
 - **At launch** floating windows are left where they are found at first: not every window is reported at once, and a window that grows and shrinks again as
   the others turn up would be worse than one that waits. Two seconds after the last window has turned up, the one that is alone takes the Desktop, once; other floating
-  windows stay as they were found. (A pause leaves it filling, so on resume there is nothing to do.)
+  windows stay as they were found. (A resume does not wait: the window the pause gave its own frame back fills again at once.)
 - **`float`** on a window that floats alone and was taken in hand makes it take the Desktop again; otherwise it says "already floating" as before.
 
 **Overruled on 2026-10-14 by the product owner (QUESTIONS Q20), as Arbor ships:** a floating window's frame is its person's, so a window that floats alone is **not** stretched over the Desktop. What this spec describes happens only with `floatingWindowsMakeWay` true. Being built; until it lands the text below is what the trunk does.
@@ -81,10 +81,10 @@ All in `SoleFloatTests` (65 tests) and `SoleFloatFuzzTests` (200 random walks); 
 4. A second floating window (opened, restored, unhidden, back from another macOS Space or from full screen, dropped from another display) gives the
    first its own frame back and is not moved itself; when it goes, the first fills again. ✔ `aSecondFloatingWindowGivesItItsOwnFrameBack`,
    `windowsThatTakeNoRoomAreNoCompany`, `windowsArborDoesNotArrangeAreNoCompany`, `aWindowDroppedOnAnotherDisplaysDesktopIsCompanyThereAndMissedHere`
-5. Turning the setting off, `float-all`, closing the last docked window, quitting (also minimized, out of view, or during a pause) and excluding its app each give it its own
-   frame back; a pause leaves it as it is. ✔ `turningTheSettingOffAndOn`, `floatAllMeansANormalMac`, `closingTheLastDockedWindowGivesItItsOwnFrameBack`,
+5. Turning the setting off, `float-all`, closing the last docked window, quitting (also minimized, out of view, or during a pause), pausing and excluding its app each give it its own
+   frame back; a resume gives it the Desktop again. ✔ `turningTheSettingOffAndOn`, `floatAllMeansANormalMac`, `closingTheLastDockedWindowGivesItItsOwnFrameBack`,
    `quittingGivesItItsOwnFrameBack`, `quittingWhileItIsOutOfViewGivesItItsOwnFrameBack`, `quittingWhileItIsMinimizedGivesItItsOwnFrameBack`,
-   `quittingDuringAPauseGivesItItsOwnFrameBack`, `excludingItsAppGivesItItsOwnFrameBack`, `aPauseLeavesItAsItIsLikeEverythingInView`;
+   `quittingDuringAPauseGivesItItsOwnFrameBack`, `excludingItsAppGivesItItsOwnFrameBack`, `aPauseGivesItItsOwnFrameBackAndAResumeTheDesktop`;
    docked, it remembers its own frame, and floated alone it goes straight to the Desktop's size: `dockedItRemembersItsOwnFrameNotTheDesktops`, `floatedAloneItGoesStraightToTheDesktopsSize`
 6. Where no docked window takes up room nothing is stretched. ✔ `withNothingDockedNothingIsStretched`,
    `onAMacOSSpaceWhereNothingDockedShowsNothingIsStretched`

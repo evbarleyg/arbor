@@ -233,6 +233,8 @@ import Testing
       "minimapFrame",
       // F15. What the overlays should be showing, for the chaos lab: it asks, as `expectedTilesAndSeams` does.
       "expectedScene",
+      // What even Show Everything leaves out of view, for the chaos lab: it asks, as `freshLayout` does.
+      "layoutOfEverything",
     ]
     /// Everything they do, they do by calling `perform`. A gesture that moves the view by itself (F16) will have to be recorded.
     let endAsCommands: Set = ["gesture"]

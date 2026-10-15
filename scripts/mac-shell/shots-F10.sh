@@ -16,12 +16,14 @@
 # keeps its permission, its arbor:// links and its login item. It ends no process by name or by pattern, only ones whose
 # number it got from starting them. It moves the pointer and presses keys: hands off meanwhile.
 #
-# Pictures: `shot` shows the whole screen and does nothing on a person's Mac. `look` (lib.sh) is what this script takes there: one
-# window of Arbor's own as the window server keeps it, whatever lies over or under it, and only if the terminal already has
-# Screen Recording permission: nobody is asked for it. No rectangle of the screen is taken there. Never ARBOR_SHOTS=1.
+# Pictures: `shot` does nothing on a person's Mac, whatever ARBOR_SHOTS says (below): what stands in front of the curtain here is, half the time,
+# the welcome window. `look` (lib.sh) is what this script takes there: one window of Arbor's own as the window server keeps it, whatever lies
+# over or under it, and only if the terminal already has Screen Recording permission: nobody is asked for it. No rectangle of the screen is taken there.
 # Words: what `doctor` and `menu` say about the Mac and the apps on it (`doctor`, `menu` below) stays on a person's Mac, and so does the
 # welcome window, whose first page shows the same (`look_welcome`).
 source "$(dirname "$0")/lib.sh"
+# run-list.sh --pictures sets it for every script. Here it would photograph the welcome window with what doctor found on the Mac.
+on_throwaway_mac || unset ARBOR_SHOTS ARBOR_SHOTS_WHOLE_SCREEN_I_HAVE_CLOSED_EVERYTHING
 # Everything below that is made, opened or ended is named by a path under this folder.
 case "${ARBOR_SESSION_DIR:-}" in /tmp/arbor-shell.*) ;; *) die "no session folder of this run's" ;; esac
 

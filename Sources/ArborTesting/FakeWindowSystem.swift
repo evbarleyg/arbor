@@ -56,13 +56,27 @@ public final class FakeWindowSystem: WindowSystem {
       keyboardOrder.insert(focused, at: 0)
     }
   }
-  public var cursor: CGPoint = CGPoint(x: 720, y: 450) { didSet { pointerUsedAt = clock() } }
+  public var cursor: CGPoint = CGPoint(x: 720, y: 450) {
+    didSet {
+      pointerUsedAt = clock()
+      if macClaim(at: cursor) != .menuBar { inMenuBarSince = nil } else if inMenuBarSince == nil { inMenuBarSince = clock() }
+    }
+  }
+  /// Since when the pointer has been where macOS fills the screen, which it does only for a pointer that has rested there.
+  private var inMenuBarSince: Double?
   public var mouseDown = false
   /// The window being resized by its edges until the mouse is released.
   public internal(set) var resizing: WindowID?
   public private(set) var started = false
   /// Every frame Arbor set, in order.
   public private(set) var frameLog: [(window: WindowID, frame: CGRect)] = []
+  /// Where a person could have seen windows that Arbor or macOS moved, in order: the frame a window came out of full screen
+  /// at (`leaveFullScreen`), and every frame Arbor gave a window that was in sight. A move nobody can see is not here.
+  public fileprivate(set) var sightings: [(window: WindowID, frame: CGRect)] = []
+  /// Windows that take only half of the next frame they are asked for (`leaveFullScreen`).
+  fileprivate var hearHalfNext: Set<WindowID> = []
+  /// Windows that are on the screen again after full screen, and that their apps do not list yet.
+  fileprivate var inSightUnlisted: Set<WindowID> = []
   /// As on a Mac, `focus` takes effect only a moment later: at `finishSlowFocus()`.
   public var focusIsSlow = false
   public private(set) var slowFocus: WindowID?
@@ -83,6 +97,8 @@ public final class FakeWindowSystem: WindowSystem {
   /// Windows that had the keyboard, most recent first.
   fileprivate var keyboardOrder: [WindowID] = []
   fileprivate var framesBeforeFullScreen: [WindowID: CGRect] = [:]
+  /// The last frame each of them, or its user, chose for itself.
+  fileprivate var ownFramesBeforeFullScreen: [WindowID: CGRect] = [:]
   /// Windows whose app moves them back to a frame of its own a moment after anyone else moves them
   /// (`appsSettle()` is that moment).
   public var stubbornFrames: [WindowID: CGRect] = [:]
@@ -114,6 +130,11 @@ public final class FakeWindowSystem: WindowSystem {
   private var pointerUsedAt = 0.0
   private var keyReleasedAt = -Double.infinity
   private var keyPresses: UInt32 = 0
+  /// macOS's own tiling of dragged windows, which `endDrag` carries out as macOS does. On, as a Mac comes: what holds only with
+  /// the switches off does not hold for most people.
+  public var tiling = MacTiling.on
+  /// The sizes windows had before macOS tiled them, which it gives back when they are dragged off their tiles.
+  private var sizesBeforeTiles: [WindowID: CGSize] = [:]
   /// The modifier keys that are down. `hold` and `letGo` keep it; set it to let go of ⌃⌥ before the key.
   public var heldModifiers: KeyChord.Modifiers = []
   private var heldKeys: Set<KeyChord.Key> = []
@@ -136,6 +157,9 @@ public final class FakeWindowSystem: WindowSystem {
   /// The app Arbor said is in use, whose dialogs never wait.
   public private(set) var appWhoseDialogsNeverWait: String?
   fileprivate var nobodyTouchedAnything = false
+  /// While macOS shows its desktop: where the window server lists each window that was swept aside
+  /// (FakeWindowSystem+SweptAside.swift).
+  var sweptAside: [WindowID: CGRect]?
   /// Makes `focus(_:)` take effect only at `settleFocus()`. On a real Mac the front app changes a moment after
   /// Arbor asks, and until then `focusedWindow()` gives the old answer.
   public var defersFocus = false
@@ -203,7 +227,11 @@ public final class FakeWindowSystem: WindowSystem {
     started = true
     starts += 1
   }
-  public func stop() { started = false }
+  /// The real one lets go of every app, so what the apps were about to report of Arbor's last moves is never heard.
+  public func stop() {
+    started = false
+    undelivered.removeAll()
+  }
   /// How often it was started: each start of the real one asks every running app for its windows.
   public private(set) var starts = 0
 
@@ -254,6 +282,9 @@ public final class FakeWindowSystem: WindowSystem {
       frameLog.append((window, fake.snapshot.frame))
       return fake.snapshot.frame
     }
+    var frame = frame
+    // Its app places it between two of the calls a frame is set with: the size is taken, the position is the app's again.
+    if hearHalfNext.remove(window) != nil { frame.origin = fake.snapshot.frame.origin }
     var applied = Self.accepted(frame, by: fake)
     if fake.behaviour != .frozen { applied = whereMacOSPuts(applied) }
     let changed = fake.snapshot.frame != applied
@@ -268,6 +299,7 @@ public final class FakeWindowSystem: WindowSystem {
     fake.changedItsWays = false
     windows[window] = fake
     frameLog.append((window, applied))
+    if changed, fake.snapshot.isPresent || inSightUnlisted.contains(window) { sightings.append((window, applied)) }
     if changed, echoes.frames, !undelivered.contains(.frame(window)) { undelivered.append(.frame(window)) }
     return applied
   }
@@ -304,6 +336,8 @@ public final class FakeWindowSystem: WindowSystem {
       slowFocus = window
       return
     }
+    // Its app comes forward, which brings back what macOS had swept aside.
+    sweptAside = nil
     let moved = focused != window
     // macOS reports it two to four times when it crosses apps. Telling those apart is the Accessibility layer's job.
     if moved, echoes.focus { undelivered.append(.focus(window)) }
@@ -337,6 +371,7 @@ public final class FakeWindowSystem: WindowSystem {
   public func bringInStrayDialogs(ofApp bundleID: String?) { strayDialogs.removeAll { $0 == bundleID } }
   public func strayDialogsWaiting() -> Int { strayDialogs.count }
   public func modifierKeysDown() -> KeyChord.Modifiers { heldModifiers }
+  public func macTiling() -> MacTiling { tiling }
 
   public func inputActivity() -> InputActivity {
     InputActivity(
@@ -502,6 +537,8 @@ public final class FakeWindowSystem: WindowSystem {
   /// macOS, says nothing if the app is in front already.
   public func activate(bundleID: String?, name: String = "App") {
     let app = FrontmostApp(bundleID: bundleID, name: name)
+    // Whoever comes forward, but for Finder with the desktop, brings back what macOS had swept aside.
+    if bundleID != Self.finder { sweptAside = nil }
     guard app != frontmost else { return }
     frontmost = app
     events?.applicationActivated(app)
@@ -530,6 +567,8 @@ public final class FakeWindowSystem: WindowSystem {
   }
 
   public func clearFrameLog() { frameLog.removeAll() }
+  public func clearSightings() { sightings.removeAll() }
+  public func sightings(of window: WindowID) -> [CGRect] { sightings.filter { $0.window == window }.map(\.frame) }
 
   fileprivate func nextTabID() -> UInt32 {
     defer { nextID += 1 }
@@ -673,7 +712,8 @@ extension FakeWindowSystem {
     /// one it has and keeps it. 0, the default: not seen on a Mac so far (the report of the un-minimize seems to come
     /// when the flight is over), but nobody has looked at a slow Mac or with ⇧ held.
     public var flightFromTheDock = 0.0
-    /// The same for the way back from full screen, which takes macOS longer.
+    /// The same for the way back from full screen, which takes macOS longer. All the way it has not been seen either: see
+    /// `leaveFullScreen`, which plays what has.
     public var flightFromFullScreen = 0.0
 
     public init() {}
@@ -752,19 +792,75 @@ extension FakeWindowSystem {
   /// The user clicks the green button. Entering, the window grows to cover its display, on a Space
   /// of its own: switch the other windows' Space out of view with `setOnActiveSpace`. Leaving,
   /// it goes back to the frame it had. Both are reported as resizes nobody asked Arbor for.
+  ///
+  /// This is the report alone, and kinder than a Mac about the frame. `leaveFullScreen` plays the whole way out as one was seen to.
   public func setFullScreen(_ window: WindowID, _ fullScreen: Bool) {
     guard let fake = windows[window], fake.snapshot.isFullScreen != fullScreen else { return }
     if fullScreen {
       framesBeforeFullScreen[window] = fake.snapshot.frame
+      ownFramesBeforeFullScreen[window] = fake.home ?? fake.snapshot.frame
       let center = CGPoint(x: fake.snapshot.frame.midX, y: fake.snapshot.frame.midY)
       let display = displayList.first { $0.frame.contains(center) } ?? displayList[0]
       windows[window]!.snapshot.frame = display.frame
     } else if let frame = framesBeforeFullScreen.removeValue(forKey: window) {
+      ownFramesBeforeFullScreen[window] = nil
       windows[window]!.snapshot.frame = frame
     }
     windows[window]!.snapshot.isFullScreen = fullScreen
     landings[window] = !fullScreen && echoes.flightFromFullScreen > 0 ? clock() + echoes.flightFromFullScreen : nil
     events?.windowChanged(windows[window]!.snapshot, userInitiated: true)
+  }
+
+  /// The way out of full screen as a hosted Mac played it with a docked Safari window (⌃⌘F, 2026-10-14), `others` being the
+  /// windows of the Space that comes back:
+  ///
+  ///     0 ms    macOS puts a stand-in on the app's list, which shows the animation. The window is off the list, and off the screen.
+  ///     2 ms    the window reports a resize: no longer in full screen, and already at the frame macOS gives it back. That is
+  ///             not the one it had last, its slot: it is the one it had before Arbor ever moved it
+  ///     690 ms  the stand-in goes, and the apps list their windows again, this one too
+  ///     720 ms  the window is on the screen
+  ///     830 ms  the Space is reported to have changed, which is when Arbor read the lists
+  ///
+  /// So "it has left" comes when the way out begins, and "it is back" a tenth of a second after everybody has seen it. (Since then the
+  /// Accessibility layer reads the lists when the stand-in goes. The order stays: seen first, reported afterwards.)
+  ///
+  /// `whereItWas`: it lands at the frame it had last after all, be it a corner out of view. Nobody has seen a Mac do that, and
+  /// nobody has seen that it never does; what Arbor does about it (Controller+LeftInFullScreen.swift) is tried with this.
+  ///
+  /// `deafFor`: asked for a frame in the first moments of its way out, it says yes and stays where it is. That is Safari, which places
+  /// the window itself once more 0.06 to 0.17 s after the report; asked after that it takes the frame and keeps it. A frame is set
+  /// with several calls, and Safari's own placing fell between them in three rounds of four: it had the new size at the old place, or
+  /// the new place at the old size, and landed so. So the first frame that is heard here is heard by half. 0 is TextEdit, which
+  /// takes it at once. Both land where they were last put. (`echoes.flightFromFullScreen`, deaf all the way, was a prediction,
+  /// and has not been seen.)
+  public func leaveFullScreen(
+    _ window: WindowID, with others: [WindowID], whereItWas: Bool = false, deafFor: Double = 0.15
+  ) {
+    guard windows[window]?.snapshot.isFullScreen == true else { return }
+    setOnActiveSpace(window, false)
+    if !whereItWas, let own = ownFramesBeforeFullScreen[window] { framesBeforeFullScreen[window] = own }
+    // Before the report: Arbor may answer it with a question.
+    let flight = echoes.flightFromFullScreen
+    echoes.flightFromFullScreen = max(flight, deafFor)
+    if deafFor > 0 { hearHalfNext.insert(window) }
+    setFullScreen(window, false)
+    echoes.flightFromFullScreen = flight
+    afterEvents?()
+    deliverEchoes()
+    passTime?(0.72)
+    hearHalfNext.remove(window)
+    inSightUnlisted.insert(window)
+    sightings.append((window, windows[window]!.snapshot.frame))
+    passTime?(0.11)
+    inSightUnlisted.remove(window)
+    // One list after the other, in the order of the Accessibility layer's scan.
+    for id in (others + [window]).sorted() { setOnActiveSpace(id, true) }
+    // On a Mac the focus report comes in the same breath, before the layout that was put off. Not here: a strict replay runs what
+    // is due between two reports of the same instant, and would part from the recording (docs/TRACES.md).
+    afterEvents?()
+    if echoes.keyboard { giveKeyboard(to: window) }
+    afterEvents?()
+    deliverEchoes()
   }
 }
 
@@ -859,6 +955,8 @@ extension FakeWindowSystem {
     events?.windowChanged(windows[window]!.snapshot, userInitiated: true)
     events?.dragMoved(window, to: point)
     mouseDown = false
+    // macOS sees every release.
+    if let letGo = windows[window]?.snapshot.frame { letMacOSTile(window, letGoAt: letGo) }
     events?.dragCancelled(window)
   }
 }
@@ -914,11 +1012,11 @@ extension FakeWindowSystem {
     strangers
       + windowsFrontToBack().compactMap { id in
         guard let snapshot = windows[id]?.snapshot, snapshot.isPresent else { return nil }
-        return StackedWindow(id: id, frame: snapshot.frame)
+        return StackedWindow(id: id, frame: sweptAside?[id] ?? snapshot.frame)
       }
   }
 
-  /// The user clicks somewhere: on the wallpaper, in a window's content, on anything that starts no drag.
+  /// The user clicks somewhere: in a window's content, on anything that starts no drag.
   public func click() {
     events?.pointerPressed()
   }
@@ -954,13 +1052,20 @@ extension FakeWindowSystem {
   /// Presses the mouse on `window`'s title bar (10 points below its top, centred) and starts
   /// dragging it with the pointer at `point`, or where it took hold.
   public func beginDrag(_ window: WindowID, at point: CGPoint? = nil) {
-    guard let start = windows[window]?.snapshot.frame else { return }
+    guard var start = windows[window]?.snapshot.frame else { return }
+    let ownSize = takeSizeBeforeTile(of: window)
+    if let ownSize {
+      start = CGRect(x: (start.midX - ownSize.width / 2).rounded(), y: start.minY, width: ownSize.width, height: ownSize.height)
+      windows[window]?.snapshot.frame = start
+    }
     let grab = CGPoint(x: start.midX, y: start.minY + 10)
     inHand = (window, start, grab)
     mouseDown = true
     events?.pointerPressed()
     follow(point ?? grab)
     events?.dragBegan(window, at: point ?? grab)
+    // Its app reports the size it has again, a moment after the window server has shown that it is being dragged.
+    if ownSize != nil, let snapshot = windows[window]?.snapshot { events?.windowChanged(snapshot, userInitiated: true) }
   }
 
   /// Moves the pointer, and the dragged window with it, to `point` and rests there for `seconds`.
@@ -989,7 +1094,72 @@ extension FakeWindowSystem {
     mouseDown = false
     guard let window = inHand?.window else { return }
     inHand = nil
+    let letGo = windows[window]?.snapshot.frame
     events?.dragEnded(window, at: cursor)
+    if let letGo { letMacOSTile(window, letGoAt: letGo) }
+  }
+
+  /// Where macOS puts a window that is let go with the pointer at `point`, or nil where it leaves it alone. The
+  /// halves, the quarters and the whole of the visible frame, where they were seen on a Mac (`MacTiling`).
+  public func macTile(at point: CGPoint) -> CGRect? {
+    guard let display = displayList.first(where: { $0.frame.contains(point) }), let claim = macClaim(at: point) else {
+      return nil
+    }
+    let (frame, visible) = (display.frame, display.visibleFrame)
+    guard claim != .menuBar else { return visible }
+    var tile = visible
+    tile.size.width = visible.width / 2
+    if point.x >= visible.midX { tile.origin.x = visible.midX }
+    guard claim == .side else { return tile }
+    if point.y < visible.minY + 1 {
+      tile.size.height = visible.height / 2
+    } else if point.y >= frame.maxY - 1 {
+      tile.size.height = visible.height / 2
+      tile.origin.y = visible.midY
+    }
+    return tile
+  }
+
+  private func macClaim(at point: CGPoint) -> MacTiling.Claim? {
+    guard let display = displayList.first(where: { $0.frame.contains(point) }) else { return nil }
+    return tiling.claim(
+      onWindowLetGoAt: point, on: display.frame, visibleFrame: display.visibleFrame,
+      optionHeld: heldModifiers.contains(.option))
+  }
+
+  /// The size macOS gives back to a window that is dragged off the tile it put it in, once. Nil if it is in none.
+  public func takeSizeBeforeTile(of window: WindowID) -> CGSize? { sizesBeforeTiles.removeValue(forKey: window) }
+
+  /// What macOS does about a window that had the frame `start` when it was let go with the pointer where it is now. As seen on
+  /// a Mac: Arbor hears of the release first and does what it does. Then macOS grows the window from where it was let go
+  /// to the tile, over a third of a second, whatever has become of it meanwhile, and its app reports every step.
+  ///
+  /// Thrown into the menu bar and let go at once, the window is left alone (`MacTiling.menuBarRest`); at the sides macOS waits for
+  /// nothing. A window that cannot take the tile's size keeps the nearest it can: one too small lies against the side of the
+  /// screen, or in the middle of a screen it should have filled, half way up; one too large begins where the tile does.
+  /// ⌥ means nothing for a window of a fixed size.
+  public func letMacOSTile(_ window: WindowID, letGoAt start: CGRect) {
+    guard var tile = macTile(at: cursor), let claim = macClaim(at: cursor), let fake = windows[window] else { return }
+    if claim == .menuBar, clock() - (inMenuBarSince ?? clock()) < MacTiling.menuBarRest { return }
+    if claim == .optionKey, fake.maximumSize == fake.minimumSize { return }
+    let largest = fake.maximumSize ?? tile.size
+    let size = CGSize(
+      width: max(min(tile.width, largest.width), fake.minimumSize.width),
+      height: max(min(tile.height, largest.height), fake.minimumSize.height))
+    if size.width < tile.width {
+      tile.origin.x = claim == .menuBar ? (tile.midX - size.width / 2).rounded() : tile.minX > start.midX ? tile.maxX - size.width : tile.minX
+    }
+    if size.height < tile.height { tile.origin.y = (tile.midY - size.height / 2).rounded() }
+    tile.size = size
+    sizesBeforeTiles[window] = start.size
+    let halfway = CGRect(
+      x: (start.minX + tile.minX) / 2, y: (start.minY + tile.minY) / 2, width: (start.width + tile.width) / 2,
+      height: (start.height + tile.height) / 2
+    ).integral
+    for step in [halfway, tile] {
+      passTime?(0.15)
+      userMove(window, to: step)
+    }
   }
 
   /// The button comes up and nobody sees it, until the AX layer finds it up and calls the drag off.
@@ -997,6 +1167,8 @@ extension FakeWindowSystem {
     mouseDown = false
     guard let window = inHand?.window else { return }
     inHand = nil
+    // macOS sees every release.
+    if let letGo = windows[window]?.snapshot.frame { letMacOSTile(window, letGoAt: letGo) }
     events?.dragCancelled(window)
   }
 

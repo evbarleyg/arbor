@@ -15,7 +15,7 @@ work="$root/.build/typecheck-mac"
 if [ "$(uname)" = Darwin ]; then echo "On a Mac, swift build checks the real thing."; exit 2; fi
 
 # The stand-ins, each after the ones it imports.
-frameworks="MacFoundation Darwin CarbonSwift CoreGraphics ApplicationServices QuartzCore AppKit os ServiceManagement Combine SwiftUI
+frameworks="FakeMacOS MacFoundation Darwin CarbonSwift CoreGraphics ApplicationServices QuartzCore AppKit os ServiceManagement Combine SwiftUI
   CoreVideo CoreMedia ScreenCaptureKit ImageIO UniformTypeIdentifiers UserNotifications CoreAudio CoreMediaIO"
 # Arbor's targets as the real manifest declares them on macOS, each after the ones it imports. The libraries first.
 libraries="ArborCore ArborIPC ArborKit ArborTesting"

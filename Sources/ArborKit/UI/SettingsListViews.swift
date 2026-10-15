@@ -18,9 +18,11 @@ struct ShortcutsPane: View {
             .foregroundStyle(.secondary)
         }
       }
-      Section {
-        ForEach(store.model.shortcutRows) { row in
-          ShortcutRowView(store: store, row: row)
+      ForEach(store.model.shortcutSections) { section in
+        Section(section.title) {
+          ForEach(section.rows) { row in
+            ShortcutRowView(store: store, row: row)
+          }
         }
       }
       Section("A shortcut for another command") {
@@ -77,8 +79,13 @@ struct ShortcutRowView: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 4) {
       HStack(spacing: 8) {
-        Text(row.command.text)
-          .font(.system(.body, design: .monospaced))
+        // What a script or settings.json calls it goes small under what people call it.
+        VStack(alignment: .leading, spacing: 2) {
+          Text(row.title)
+          Text(row.command.text)
+            .font(.system(.caption, design: .monospaced))
+            .foregroundStyle(.secondary)
+        }
         Spacer()
         Button {
           if isRecording {
@@ -92,7 +99,7 @@ struct ShortcutRowView: View {
         }
         .help("Click, then press the new keys. Escape cancels.")
         .accessibilityIdentifier("record.\(row.command.text)")
-        .accessibilityLabel("Shortcut for \(row.command.text): \(keysTitle)")
+        .accessibilityLabel("Shortcut for \(row.title): \(keysTitle)")
         Button {
           store.model.removeShortcut(row)
         } label: {
@@ -102,7 +109,7 @@ struct ShortcutRowView: View {
         .disabled(row.chord == nil)
         .help("Remove the shortcut")
         .accessibilityIdentifier("remove.\(row.command.text)")
-        .accessibilityLabel("Remove the shortcut for \(row.command.text)")
+        .accessibilityLabel("Remove the shortcut for \(row.title)")
         Button {
           store.model.restoreShortcut(row)
         } label: {
@@ -112,7 +119,7 @@ struct ShortcutRowView: View {
         .disabled(!row.isChanged)
         .help(row.standard == nil ? "Remove the shortcut" : "Back to the default")
         .accessibilityIdentifier("restore.\(row.command.text)")
-        .accessibilityLabel("Restore the shortcut for \(row.command.text)")
+        .accessibilityLabel("Restore the shortcut for \(row.title)")
       }
       if let clash = store.model.clash, clash.row == row {
         ShortcutClashView(store: store, clash: clash)
@@ -142,7 +149,7 @@ struct ShortcutClashView: View {
 
   var body: some View {
     HStack(spacing: 8) {
-      Text("\(clash.label) runs \(clash.holder.text) now.")
+      Text(clash.message)
         .font(.caption)
         .foregroundStyle(.orange)
       Button("Use It Here Instead") { store.model.replaceHolder() }

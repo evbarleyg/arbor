@@ -709,6 +709,100 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
     }
   }
 
+  // MARK: A display that was away and comes back smaller
+
+  /// In view, and it stays so: `home`, and a pause, a resume and `home`.
+  func expectInViewForGood(_ window: WindowID, on display: DisplaySnapshot, _ h: Harness, sourceLocation: SourceLocation = #_sourceLocation) {
+    h.scheduler.advance(by: 5)
+    for command in ["home", "relayout", "pause", "resume", "home"] {
+      h.run(command)
+      h.scheduler.advance(by: 3)
+      #expect(
+        display.visibleFrame.contains(h.frame(window)!), "after \(command): \(h.frame(window)!)", sourceLocation: sourceLocation)
+    }
+  }
+
+  func display(_ id: String, _ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloat, isMain: Bool = false) -> DisplaySnapshot {
+    DisplaySnapshot(
+      id: DisplayID(id), frame: CGRect(x: x, y: y, width: width, height: height),
+      visibleFrame: CGRect(x: x, y: y + 25, width: width, height: height - 25), isMain: isMain)
+  }
+
+  /// (A), found by a random walk: the window is let go at 2694,821 on `third`, whose corner is 1440,61.
+  /// `third` goes, and comes back alone at 0,0, 1280×800 where it was 1512×982. Shifted and not fitted the window was at
+  /// 1254,760: 26 points of it showed, and `home` did not fetch it.
+  @Test func aDisplayThatComesBackSmallerAndElsewhereHasItsWindowsInView() {
+    let main = display("main", 0, 0, 1440, 900, isMain: true)
+    let h = Harness(displays: [main, display("third", 1440, 61, 1512, 982)])
+    let mail = h.system.open(app: "Mail", frame: CGRect(x: 2694, y: 821, width: 138, height: 103))
+    h.start()
+    h.system.setDisplays([main])
+    h.scheduler.advance(by: 5)
+    let smaller = display("third", 0, 0, 1280, 800, isMain: true)
+    h.system.setDisplays([smaller])
+    expectInViewForGood(mail, on: smaller, h)
+  }
+
+  /// (B): the corner is 0,0 before and after, so nothing was shifted, and nothing fitted.
+  @Test func aDisplayThatComesBackSmallerAtTheSameCornerHasItsWindowsInView() {
+    let h = Harness(displays: [display("desk", 0, 0, 2560, 1440, isMain: true)])
+    let mail = h.system.open(app: "Mail", frame: CGRect(x: 1254, y: 760, width: 500, height: 400))
+    h.start()
+    h.system.setDisplays([laptop])
+    h.scheduler.advance(by: 5)
+    let smaller = display("desk", 0, 0, 1280, 800, isMain: true)
+    h.system.setDisplays([smaller])
+    expectInViewForGood(mail, on: smaller, h)
+  }
+
+  /// (B) plain: beside a laptop that stays, unplugged and plugged in again at another scaling.
+  @Test func aSecondDisplayPluggedInAgainSmallerHasItsWindowsInView() {
+    let h = Harness(displays: [laptop, studio])
+    let mail = h.system.open(app: "Mail", frame: CGRect(x: 1440 + 1890, y: 1050, width: 500, height: 300))
+    h.start()
+    h.system.setDisplays([laptop])
+    h.scheduler.advance(by: 5)
+    let smaller = display("studio", 1440, 0, 1920, 1080)
+    h.system.setDisplays([laptop, smaller])
+    expectInViewForGood(mail, on: smaller, h)
+  }
+
+  /// As large as it was, nothing is fitted: a strip left on purpose comes back the same strip, wherever the display returns.
+  @Test(arguments: Side.allCases) private func aDisplayThatComesBackAsLargeAsItWasKeepsAnOverhang(returns: Side) {
+    let h = Harness(displays: [laptop, studio])
+    let strip = CGRect(x: 1440 + 2500, y: 1300, width: 600, height: 400)
+    let n = h.system.open(app: "Notes", frame: CGRect(x: 2000, y: 500, width: 600, height: 400))
+    h.start()
+    h.system.userMove(n, to: strip)
+    h.scheduler.advance(by: 3)
+    #expect(onStudio(h)?.floating[n] == strip, "put there by hand")
+    h.system.setDisplays([laptop])
+    h.scheduler.advance(by: 5)
+    h.system.setDisplays([laptop, moved(studio, to: Self.corner(returns), isMain: false)])
+    h.scheduler.advance(by: 5)
+    // Not a pause: that fetches whatever is mostly off screen, whoever left it there.
+    for command in ["home", "relayout", "desktop", "home"] {
+      h.run(command)
+      h.scheduler.advance(by: 3)
+    }
+    #expect(onStudio(h)?.floating[n] == strip.offsetBy(dx: Self.corner(returns).x - 1440, dy: Self.corner(returns).y))
+  }
+
+  /// It grew: every place is still on it, and fitting changes none that was in full view.
+  @Test func aDisplayThatComesBackLargerKeepsPlacesInFullView() {
+    let small = display("studio", 1440, 0, 1920, 1080)
+    let h = Harness(displays: [laptop, small])
+    let spot = CGRect(x: 1440 + 1200, y: 600, width: 500, height: 300)
+    let n = h.system.open(app: "Notes", frame: spot)
+    h.start()
+    h.system.setDisplays([laptop])
+    h.scheduler.advance(by: 5)
+    h.system.setDisplays([laptop, studio])
+    h.scheduler.advance(by: 5)
+    h.run("home")
+    #expect(h.frame(n) == spot)
+  }
+
   // MARK: What is saved
 
   /// A corner that is no place for a display is not believed, and costs nothing else.

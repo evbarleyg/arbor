@@ -119,6 +119,60 @@ import Testing
     }
   }
 
+  @Test func stillMovedOnceAtAndJoltLookAtTheStepBefore() {
+    let h = Harness()
+    let a = h.system.open(app: "Safari", frame: CGRect(x: 300, y: 200, width: 640, height: 420))
+    let b = h.system.open(app: "Notes", frame: CGRect(x: 900, y: 300, width: 400, height: 300))
+    h.start()
+    // Where nobody says where a line begins, as in the `.expect` file of a trace, these have nothing to look at.
+    for line in ["still", "still \(a.rawValue)", "moved-once", "jolt \(a.rawValue)"] {
+      #expect(expect(line, h)?.contains("looks at the line before") == true, "\(line)")
+    }
+    h.beginStep()
+    #expect(expect("still", h) == nil)
+    #expect(expect("moved-once", h) == "Arbor moved nothing")
+    #expect(expect("at \(a.rawValue) 300 200", h) == nil)
+    #expect(expect("at \(a.rawValue) 300 240", h) == "w\(a.rawValue) at (300,200 640×420) is not at 300,240")
+    h.run("dock \(a.rawValue) left")
+    #expect(expect("still", h) == "Arbor moved w\(a.rawValue)")
+    #expect(expect("still \(a.rawValue)", h) == "Arbor moved w\(a.rawValue) at (12,37 702×851)")
+    #expect(expect("still \(b.rawValue)", h) == nil)
+    #expect(expect("moved-once", h) == nil)
+    #expect(expect("jolt \(a.rawValue)", h)?.hasPrefix("w\(a.rawValue) was not moved twice") == true)
+    // What no command does: moved on at once.
+    _ = h.system.setFrame(CGRect(x: 100, y: 100, width: 300, height: 300), of: a)
+    #expect(expect("moved-once", h) == "Arbor moved w\(a.rawValue) 2 times")
+    #expect(expect("jolt \(a.rawValue)", h) == nil)
+    // The next step starts afresh.
+    h.beginStep()
+    #expect(expect("still", h) == nil)
+    #expect(expect("still 999", h) == "there is no window w999")
+    for line in ["still x", "at 1", "at x 1 2", "jolt", "moved-once 1", "preview", "preview perhaps", "replied"] {
+      #expect(expect(line, h)?.hasPrefix("cannot read") == true, "\(line)")
+    }
+  }
+
+  @Test func repliedAndPreview() {
+    let h = Harness()
+    let a = h.system.open(app: "Safari")
+    h.start()
+    func replied(_ words: String, to reply: String) -> String? {
+      ScenarioExpectation.check(["replied"] + words.split(separator: " ").map(String.init), harness: h, lastCommandOK: true, lastReply: reply)
+    }
+    #expect(replied("none in the WAY", to: "✔ Desktop & Dock settings: none in the way") == nil)
+    #expect(replied("a problem", to: "all is well") == "the reply does not say “a problem”")
+    #expect(expect("replied anything", h)?.contains("looks at the line before") == true)
+    #expect(expect("preview none", h) == nil)
+    #expect(expect("preview showing", h) == "no drop preview is showing")
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
+    h.system.beginDrag(a)
+    h.system.moveDrag(to: CGPoint(x: 2, y: 400), holding: 0.5)
+    #expect(expect("preview showing", h) == nil)
+    #expect(expect("preview none", h)?.hasPrefix("a drop preview is showing at") == true)
+    h.system.endDrag()
+    #expect(expect("preview none", h) == nil)
+  }
+
   @Test func focusedSaysWhoHasTheKeyboard() {
     let h = Harness()
     let a = h.system.open(app: "Safari")

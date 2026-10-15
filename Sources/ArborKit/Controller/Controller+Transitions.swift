@@ -56,15 +56,32 @@ extension Controller {
     else { return nil }
     // Asked for only now: most relayouts move nothing, and the window server takes a moment to answer.
     let stack = system.stackedWindows()
+    // macOS is showing its desktop. The windows take their new frames unseen and come back to them; a stage would
+    // put stand-ins on a desktop that somebody wanted bare, and lift on nothing.
+    guard !isSweptAside(stack) else {
+      overlays.finishAnimations()
+      return nil
+    }
     fit(&transition, to: stack)
     overlays.animate(transition)
     return StagedTransition(before: before, stack: stack, sent: transition)
   }
 
+  /// Whether macOS has swept the windows aside to show its desktop, going by what the window server has just `listed`.
+  private func isSweptAside(_ listed: [StackedWindow]) -> Bool {
+    SweptAside.isSwept(
+      believed: windows.filter(\.value.isPresent).mapValues(\.frame), listed: listed, displays: displays.map(\.frame))
+  }
+
   /// Stacks the stand-ins like the real windows. `Transition.leaveOpen` joins in with the change that teaches
   /// the stage to draw holes: a hole it does not draw is a window that vanishes for as long as the motion lasts.
+  ///
+  /// Windows that stay in view (pinned, summoned) go in front whatever the stacking says. The stack is read before anything moves, and one of
+  /// them that nothing covered yet may lie behind the window that is about to reach under it; Arbor raises the real one as soon as the move
+  /// is over (`raisePinnedWindows`), and for the time of the motion its stand-in must not be buried either.
   private func fit(_ transition: inout Transition, to stack: [StackedWindow]) {
-    transition.stack(frontToBack: stack.map(\.id))
+    let order = stack.map(\.id)
+    transition.stack(frontToBack: order.filter(staysInView) + order.filter { !staysInView($0) })
   }
 
   /// A click during a motion ends it (T42): the user wants their windows now. The click itself goes

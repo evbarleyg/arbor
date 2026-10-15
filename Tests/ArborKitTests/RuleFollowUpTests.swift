@@ -878,6 +878,7 @@ private let finder = "com.apple.finder"
     h.start()
     let m = h.system.open(app: "Mail", bundleID: mail, title: "")
     let start = h.frame(m)!
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(m, through: [CGPoint(x: start.midX, y: start.minY + 10), CGPoint(x: 1437, y: 450)])
     #expect(columns(h) == [[], [m]])
     h.system.setTitle(m, "Inbox (1 unread)")

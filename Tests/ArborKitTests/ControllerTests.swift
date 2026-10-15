@@ -129,6 +129,7 @@ import Testing
     let start = h.frame(a)!
     let grab = CGPoint(x: start.midX, y: start.minY + 10)
     let edge = CGPoint(x: 3, y: 450)
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(a, through: [grab, CGPoint(x: 200, y: 400), edge])
     #expect(h.workspace.isDocked(a))
     #expect(h.frame(a)!.minX == h.visibleFrame.minX + 12)
@@ -432,6 +433,10 @@ import Testing
     }
     again.start()
     #expect(again.workspace.tree == h.workspace.tree)
+    // A launch ends showing everything (LaunchShowsEverythingTests), with the view of last time one step back.
+    #expect(again.workspace.camera == again.workspace.tree.root)
+    #expect(again.system.isVisible(a) && again.system.isVisible(b))
+    #expect(again.run("back").ok)
     #expect(again.workspace.camera == again.workspace.tree.leaf(containing: b))
     #expect(again.system.isVisible(b))
     #expect(!again.system.isVisible(a))

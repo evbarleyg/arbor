@@ -528,6 +528,7 @@ private let third = DisplaySnapshot(
     d.frameColumn()
     d.h.run("name Writing")
     let terminal = d.h.system.open(app: "Terminal", frame: CGRect(x: 500, y: 300, width: 400, height: 300))
+    d.h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     d.h.system.drag(terminal, through: [CGPoint(x: 700, y: 310), CGPoint(x: 300, y: 400), CGPoint(x: 2, y: 450)])
     #expect(d.workspace.isDocked(terminal))
     #expect(Set(d.windows(named: "Writing")!) == [d.notes, d.mail, terminal])

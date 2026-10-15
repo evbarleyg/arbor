@@ -446,17 +446,11 @@ extension World {
         if isShown { shown.append(window) } else { hidden.append(window) }
       }
     }
-    /// Where a window waits while all are swept aside: at the nearer side, 12 points of it showing. (On the
-    /// runner they also moved up or down, away from the middle, by amounts nobody has worked out.)
-    func swept(_ frame: CGRect) -> CGRect {
-      guard isSwept else { return frame }
-      let x = frame.midX < display.frame.midX ? display.frame.minX - frame.width + 12 : display.frame.maxX - 12
-      return CGRect(x: x, y: frame.minY, width: frame.width, height: frame.height)
-    }
     for thing in stack {
-      guard let frame = frame(of: thing).map(swept) else { continue }
+      guard var frame = frame(of: thing) else { continue }
       if case .window(let id) = thing {
         guard let pid = owner(of: id) else { continue }
+        frame = sweptFrames[id] ?? frame
         if let arbor, let ring = arbor.overlays.ringPanel, ring.shown, ring.window.rawValue == id {
           shown.append(
             ListedWindow(id: ring.id, pid: arbor.pid, layer: 0, frame: swept(ring.frame), owner: "Arbor"))
@@ -465,7 +459,7 @@ extension World {
           ListedWindow(id: id, pid: pid, layer: level(of: thing), frame: frame, owner: apps[pid]?.name ?? "?"))
       } else if let arbor {
         shown.append(
-          ListedWindow(id: overlayID(of: thing), pid: arbor.pid, layer: 0, frame: frame, owner: "Arbor"))
+          ListedWindow(id: overlayID(of: thing), pid: arbor.pid, layer: 0, frame: swept(frame), owner: "Arbor"))
       }
     }
     shown += systemWindows(above: false)

@@ -76,7 +76,7 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Check
-        run: ./scripts/ci-step.py --summary 'Test run with|passed|failed' check make check
+        run: ./scripts/ci-step.py --summary 'Test run with|passed|failed' --report .build/test-report.jsonl check make check
 
       - name: Build the release
         run: ./scripts/ci-step.py release make release

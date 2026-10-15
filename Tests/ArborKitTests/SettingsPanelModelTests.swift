@@ -161,16 +161,44 @@ private final class Panel {
   @Test func aRefusalIsShownOnItsRowUntilTheNextChangeThere() {
     let p = Panel()
     p.model.set("gap", to: "500")
-    #expect(p.row("gap", in: .windows)?.error == "`gap` must be from 0 to 100 pt, got 500")
+    #expect(p.row("gap", in: .windows)?.error == "Must be from 0 to 100 pt, got 500")
     #expect(p.row("minimumUsableWidth", in: .windows)?.error == nil)
     #expect(p.settings.gap == 12 && p.inset == 12)
     p.model.set("gap", to: "wide")
-    #expect(p.row("gap", in: .windows)?.error == "`gap` needs a number from 0 to 100 pt, got `wide`")
+    #expect(p.row("gap", in: .windows)?.error == "Needs a number from 0 to 100 pt, got “wide”")
     p.model.set("gap", to: "20")
     #expect(p.row("gap", in: .windows)?.error == nil && p.settings.gap == 20)
     p.model.set("gap", to: "500")
     p.model.pane = .section(.windows)
     #expect(p.model.errors.isEmpty, "a refusal does not outlive a visit to another pane")
+  }
+
+  /// A reply is written for a terminal, where the key has to be named and code is marked as code. Under the control it
+  /// is about, the key is noise, and nothing draws a backtick as anything but a backtick.
+  @Test func aRefusalIsSaidInTheWindowsWordsNotTheTerminals() {
+    let p = Panel()
+    for (key, value) in [("gap", "500"), ("gap", "wide"), ("focusRingColour", "mauve"), ("frameRectangleModifier", "hyper")] {
+      p.model.set(key, to: value)
+      let error = p.model.errors[key] ?? ""
+      #expect(!error.isEmpty && !error.contains("`") && !error.contains(key), "\(key) \(value): \(error)")
+      #expect(error.first?.isUppercase == true, "\(error)")
+    }
+  }
+
+  /// One translator: what the line on screen does with a reply (`HeadsUpText`), the window does too.
+  @Test func adviceForATerminalIsLeftOutAndCommandsAreCalledByTheirTitles() throws {
+    let p = Panel()
+    p.model.pane = .shortcuts
+    p.model.startRecording(commandText: "frobnicate")
+    #expect(p.model.errors[SettingsPanelModel.Pane.shortcuts.id] == "Unknown command “frobnicate”")
+  }
+
+  /// ⌃⌥` is written with the very sign that marks code.
+  @Test func aBacktickThatIsAKeyStaysOne() {
+    #expect(SettingsPanelModel.withoutCodeMarks("ctrl+opt+`: `state` is a query") == "ctrl+opt+`: “state” is a query")
+    #expect(SettingsPanelModel.withoutCodeMarks("ctrl+opt+`: the same shortcut as ⌃⌥`") == "ctrl+opt+`: the same shortcut as ⌃⌥`")
+    #expect(SettingsPanelModel.withoutCodeMarks("(`a` and `b`)") == "(“a” and “b”)")
+    #expect(SettingsPanelModel.withoutCodeMarks("one ` alone") == "one ` alone")
   }
 
   @Test func changesMadeElsewhereShowUp() {
@@ -201,10 +229,54 @@ private final class Panel {
     #expect(p.commands.isEmpty)
   }
 
+  /// 0.25 of what? A share of a whole is a number from 0 to 1 in settings.json, and so many per cent to a person.
+  @Test func aShareOfTheWholeIsShownInPerCent() throws {
+    let p = Panel()
+    #expect(p.row("dimBehindArranged", in: .appearance)?.control == .number(value: 25, range: 0...100, step: 5, unit: "%"))
+    #expect(p.row("windowEdgeFraction", in: .dragging)?.control == .number(value: 30, range: 0...50, step: 5, unit: "%"))
+    // Not everything without a unit is one: this is so many times the width of the windows beside it.
+    #expect(p.row("arrangeDesktopWeight", in: .windows)?.control == .number(value: 0.5, range: 0.1...3, step: 0.1, unit: ""))
+
+    p.model.set("dimBehindArranged", to: 41.0)  // the slider
+    #expect(p.commands.last == "set dimBehindArranged 0.4" && p.settings.dimBehindArranged == 0.4)
+    p.model.set("dimBehindArranged", to: "55")  // the field
+    #expect(p.commands.last == "set dimBehindArranged 0.55")
+    #expect(p.row("dimBehindArranged", in: .appearance)?.control == .number(value: 55, range: 0...100, step: 5, unit: "%"))
+    p.model.set("dimBehindArranged", to: " 7.5 % ")
+    #expect(p.commands.last == "set dimBehindArranged 0.075")
+    for odd in ["2 5", "5%5", "%", "1e400"] {
+      p.model.set("dimBehindArranged", to: odd)
+      #expect(p.model.errors["dimBehindArranged"]?.hasPrefix("Needs a number from 0 to 100 %") == true, "\(odd)")
+    }
+    p.model.set("dimBehindArranged", to: "7.5")
+
+    // A refusal counts as the field does.
+    let before = p.commands.count
+    p.model.set("dimBehindArranged", to: "500")
+    #expect(p.model.errors["dimBehindArranged"] == "Must be from 0 to 100 %, got 500")
+    p.model.set("windowEdgeFraction", to: "60")
+    #expect(p.model.errors["windowEdgeFraction"] == "Must be from 0 to 50 %, got 60")
+    p.model.set("dimBehindArranged", to: "dark")
+    #expect(p.model.errors["dimBehindArranged"] == "Needs a number from 0 to 100 %, got “dark”")
+    #expect(p.commands.count == before && p.settings.dimBehindArranged == 0.075)
+  }
+
+  /// The help stands beside the field, and in docs/SETTINGS.md beside the file's numbers: it can name neither's.
+  @Test func theHelpOfAShareNamesNoNumberButNought() {
+    let p = Panel()
+    for entry in SettingsSchema.entries where entry.level != .hidden {
+      guard case .number(_, _, _, "%")? = p.model.row(for: entry)?.control else { continue }
+      let words = entry.help.split { !($0.isLetter || $0.isNumber || $0 == ".") }
+      #expect(!words.contains { Double($0) != nil && Double($0) != 0 }, "\(entry.key): \(entry.help)")
+      #expect(!entry.help.contains("fraction"), "\(entry.key)")
+    }
+  }
+
   @Test func everySnappedValueOfEverySliderIsAccepted() {
     let p = Panel()
     for entry in SettingsSchema.entries {
-      guard case .number(let range, let step, _) = entry.kind else { continue }
+      // As the slider counts.
+      guard case .number(_, let range, let step, _)? = p.model.row(for: entry)?.control else { continue }
       var value = range.lowerBound
       while value <= range.upperBound + step {
         p.model.set(entry.key, to: value + step / 3)
@@ -280,6 +352,27 @@ private final class Panel {
     }
   }
 
+  /// Seen in the window: "ring" also found the setting that holds still "during a call".
+  @Test func aSearchBeginsAWordAndDoesNotEndOne() {
+    let p = Panel()
+    p.model.search = "ring"
+    #expect(p.model.found.sections.flatMap(\.rows).map(\.key) == ["focusRing", "focusRingWidth", "focusRingColour"])
+    p.model.search = "dock"
+    #expect(p.model.found.sections.flatMap(\.rows).contains { $0.key == "dimBehindArranged" }, "“docked” begins so")
+    // A key's words run together, and whoever types part of one knows it.
+    p.model.search = "behindarr"
+    #expect(p.model.found.sections.flatMap(\.rows).map(\.key).contains("dimBehindArranged"))
+    // One field, one rule: the lines of the Shortcuts pane and the panes themselves are found the same way.
+    p.model.search = "range"
+    #expect(p.model.found.shortcuts.isEmpty, "not Arrange Windows")
+    p.model.search = "arr"
+    #expect(p.model.found.shortcuts.map(\.title) == ["Arrange Windows"])
+    p.model.search = "cuts"
+    #expect(p.model.found.panes.isEmpty, "not Shortcuts")
+    p.model.search = "short"
+    #expect(p.model.found.panes.contains(.shortcuts))
+  }
+
   @Test func hiddenSettingsAreNotFound() {
     let p = Panel()
     p.model.search = "focus ring"
@@ -324,6 +417,11 @@ private final class Panel {
     #expect(p.model.found.shortcuts.first?.label == "⌃⌥X")
     p.model.search = "gap"
     #expect(p.model.found.shortcuts.isEmpty)
+    // By what the line says, which is what the menu calls it.
+    p.model.search = "step out"
+    #expect(p.model.found.shortcuts.map(\.command.text) == ["out"])
+    p.model.search = "everything"
+    #expect(p.model.found.shortcuts.map(\.command.text) == ["show-all", "home"])
   }
 
   @Test func nothingFoundIsNothingFound() {
@@ -368,7 +466,8 @@ private final class Panel {
     #expect(p.model.fileProblem == "line 3, column 1: expected a key")
     #expect(p.redraws == 1, "the window hears of it by itself")
     p.model.set("gap", to: "30")
-    #expect(p.row("gap", in: .windows)?.error?.hasPrefix("settings.json cannot be read, so nothing was changed") == true)
+    // The banner above has the reason and the two ways out, as buttons.
+    #expect(p.row("gap", in: .windows)?.error == "Nothing was changed: settings.json cannot be read")
     // Not at one click.
     p.model.replaceFileWithDefaults()
     #expect(p.model.question == .replaceFile && p.commands.last != "reset everything")
@@ -378,14 +477,37 @@ private final class Panel {
     p.model.answer(yes: true)
     #expect(p.model.question == nil && p.commands.last == "reset everything")
     #expect(p.model.fileProblem == nil && !broken)
+    #expect(p.model.errors.isEmpty, "what was refused because of the file is not held against the file that replaced it")
     p.h.controller.loadSettings = nil
     p.model.set("gap", to: "30")
     #expect(p.settings.gap == 30)
   }
 
+  /// The window is made when it is first opened, which may well be because Arbor beeped at the file.
+  @Test func aWindowOpenedOnABrokenFileForgetsItsRefusalsToo() {
+    let early = Panel()
+    var broken = true
+    early.h.controller.loadSettings = {
+      if broken { throw Settings.FileError("line 3, column 1: expected `,` or `}` after the value of `gap`, found `rules`") }
+      return Settings()
+    }
+    early.h.controller.takeInSettingsFile()
+    let model = SettingsPanelModel(controller: early.h.controller) { early.h.controller.perform($0) }
+    #expect(model.fileProblem == "line 3, column 1: expected “,” or “}” after the value of “gap”, found “rules”", "no code marks")
+    model.set("gap", to: "30")
+    #expect(model.errors["gap"] == "Nothing was changed: settings.json cannot be read")
+    model.set("minimumUsableWidth", to: "-4")
+    broken = false
+    early.h.controller.takeInSettingsFile()
+    #expect(model.fileProblem == nil && model.errors.isEmpty)
+  }
+
   @Test func valuesThatCouldNotBeUsedAreListed() throws {
     let settings = try JSONDecoder().decode(Settings.self, from: Data(#"{"gap": -500}"#.utf8))
     #expect(Panel(settings: settings).model.valueProblems == ["gap: -500 is outside 0 to 100 pt; using 0"])
+    let mauve = try JSONDecoder().decode(Settings.self, from: Data(#"{"focusRingColour": "mauve"}"#.utf8))
+    #expect(
+      Panel(settings: mauve).model.valueProblems == ["focusRingColour: “mauve” is not accent, #RRGGBB or #RRGGBBAA; using the default, accent"])
   }
 }
 
@@ -401,6 +523,34 @@ private final class Panel {
     #expect(rows.suffix(2).allSatisfy { $0.standard == nil && $0.isChanged })
     #expect(Set(rows.map(\.id)).count == rows.count)
     #expect(p.model.shortcutsAreChanged && !Panel().model.shortcutsAreChanged)
+  }
+
+  /// `out`, `in` and `neighbor left` are what a script types. A person knows them from the menu and the panel of shortcuts.
+  @Test func aLineIsCalledWhatTheMenuCallsIt() throws {
+    let p = Panel()
+    #expect(p.shortcut("out")?.title == "Step Out" && p.shortcut("show-all")?.title == "Show Everything")
+    #expect(p.shortcut("toggle-float")?.title == "Float or Dock Focused Window")
+    for row in p.model.shortcutRows {
+      #expect(row.command.listedTitle != nil, "\(row.command.text) has only the title made from its text")
+    }
+    // One of the user's own, for a command nobody chose a title for, still says what runs.
+    p.h.run("bind ctrl+opt+x set gap 0")
+    #expect(p.shortcut("set gap 0")?.title == "Set Gap 0")
+  }
+
+  /// Fifty lines in a row are a wall. The panel of shortcuts and docs/KEYBOARD.md have three groups.
+  @Test func theLinesStandInTheGroupsOfThePanelOfShortcuts() throws {
+    let p = Panel()
+    #expect(p.model.shortcutSections.map(\.title) == ["Look", "Arrange", "Arbor itself"])
+    #expect(p.model.shortcutSections.flatMap(\.rows).map(\.id).sorted() == p.model.shortcutRows.map(\.id).sorted(), "each once")
+    let look = try #require(p.model.shortcutSections.first)
+    #expect(look.rows.prefix(3).map(\.title) == ["Show Everything", "Step Out", "Step In"], "in the table's order")
+    #expect(look.rows.allSatisfy { $0.command.group == .look })
+    // The user's own have a group to themselves, whatever they run: that is where one looks for them.
+    p.h.run("bind ctrl+opt+x set gap 0")
+    p.h.run("bind ctrl+opt+y desktop")
+    #expect(p.model.shortcutSections.map(\.title) == ["Look", "Arrange", "Arbor itself", "Your own"])
+    #expect(p.model.shortcutSections.last?.rows.map(\.command.text) == ["desktop", "set gap 0"])
   }
 
   @Test func aShortcutThatTakesKeysFromEveryAppSaysSoOnItsLine() throws {
@@ -566,6 +716,7 @@ private final class Panel {
     try p.press("ctrl+opt+a")
     let clash = try #require(p.model.clash)
     #expect(clash.row == row && clash.chord.text == "ctrl+opt+a" && clash.holder == .arrange)
+    #expect(clash.message == "⌃⌥A runs Arrange Windows now.")
     #expect(p.commands.isEmpty && p.model.recording == nil)
     p.model.cancelRecording()
     #expect(p.model.clash == nil && p.commands.isEmpty)
@@ -598,7 +749,7 @@ private final class Panel {
     // A key Arbor has no name for leaves the recording going.
     p.model.startRecording(row)
     #expect(p.model.keyPressed(code: 10, modifiers: [.control, .option]))
-    #expect(p.model.errors[row.id] == "that key cannot be part of a shortcut" && p.model.recording == row)
+    #expect(p.model.errors[row.id] == "That key cannot be part of a shortcut" && p.model.recording == row)
   }
 
   @Test func removeLeavesTheLineWithoutKeysAndRestoreBringsThemBack() throws {
@@ -635,7 +786,7 @@ private final class Panel {
     let p = Panel()
     p.model.pane = .shortcuts
     p.model.startRecording(commandText: "teleport")
-    #expect(p.model.errors["Shortcuts"] == "unknown command `teleport`; try `help`" && p.model.recording == nil)
+    #expect(p.model.errors["Shortcuts"] == "Unknown command “teleport”" && p.model.recording == nil)
     p.model.startRecording(commandText: "set gap 0")
     #expect(p.model.recording?.isNew == true && p.model.errors.isEmpty)
     try p.press("ctrl+opt+x")
@@ -788,7 +939,7 @@ private final class Panel {
 
   @Test func entriesThatCouldNotBeReadAreListed() throws {
     let settings = try JSONDecoder().decode(Settings.self, from: Data(#"{"rules": [{"app": "com.a"}]}"#.utf8))
-    #expect(Panel(settings: settings).model.skippedRules == ["entry 1 (com.a): `action` is missing"])
+    #expect(Panel(settings: settings).model.skippedRules == ["entry 1 (com.a): “action” is missing"])
   }
 }
 
@@ -849,7 +1000,7 @@ private final class Panel {
     let p = Panel()
     p.h.controller.loadSettings = { throw Settings.FileError("line 1, column 1: expected `{`") }
     p.model.add("com.example.safari", to: "excludedBundleIDs")
-    #expect(p.row("excludedBundleIDs", in: .apps)?.error?.hasPrefix("settings.json cannot be read") == true)
+    #expect(p.row("excludedBundleIDs", in: .apps)?.error == "Nothing was changed: settings.json cannot be read")
     #expect(try dontArrange(p).listed.isEmpty)
   }
 

@@ -257,15 +257,29 @@ extension Runner {
     try step("dock the other app's window", "dock \(x.rawValue) right") { state in
       check("\(x) is docked", state.displays[0].windowFrames[x] != nil)
     }
-    try step("frame a window of the first app", "zoom \(w1.rawValue)") { _ in
-      check("\(x) is out of view", leavesView(x), whereabouts(x))
-      check("the keyboard crossed over to the first app", eventually { $0.focused == w1 })
+    // Ten times. One switch in three went unnoticed, by a race inside macOS, so one that is followed says little.
+    func timesBehind() -> Int { arborLog().components(separatedBy: "macOS still names another app as the one in front").count - 1 }
+    let behindBefore = timesBehind()
+    for _ in 1...10 {
+      try step("frame a window of the first app", "zoom \(w1.rawValue)") { _ in
+        check("\(x) is out of view", leavesView(x), whereabouts(x))
+        check("the keyboard crossed over to the first app", eventually { $0.focused == w1 })
+      }
+      step("switch to the other app", by: "the other app activates itself") {
+        other.send("activate")
+        let followed = eventually { $0.displays[0].windowFrames[x] != nil }
+        let front = frontmostPID()
+        if !followed, front != other.pid {
+          // macOS can turn down an app that asks to come forward, and then there was nothing to follow.
+          observe("macOS lets it come forward", false, "pid \(front ?? -1) is in front")
+          return
+        }
+        check("the camera moves to show its window", followed, "its app is in front")
+        check("\(x) is in view", comesIntoView(x), whereabouts(x))
+      }
     }
-    step("switch to the other app", by: "the other app activates itself") {
-      other.send("activate")
-      check("the camera moves to show its window", eventually { $0.displays[0].windowFrames[x] != nil })
-      check("\(x) is in view", comesIntoView(x), whereabouts(x))
-    }
+    // Both ways: Arbor's own `zoom` brings the first app forward.
+    print("\n(in those twenty switches macOS named the app in front late \(timesBehind() - behindBefore) time(s))")
     try step("frame the other app's window", "zoom \(x.rawValue)") { _ in
       check("\(w2) is out of view", leavesView(w2), whereabouts(w2))
       check("the keyboard is with the other app", eventually { $0.focused == x })
@@ -327,6 +341,7 @@ extension Runner {
     try step("start with a minimized window", by: "Arbor, same home folder") {
       try startArbor(managing: 3)
       check("it kept its place in the tree", try state().displays[0].tree.allWindows.contains(w1))
+      check("a launch shows everything", try state().displays[0].camera == state().displays[0].tree.root)
     }
     try step("show everything with the window still minimized", "show-all") { state in
       check("it takes no space", state.displays[0].windowFrames[w1] == nil)

@@ -20,7 +20,7 @@ Each option is a `settings.json` key, off unless stated:
 | `appColours` (default true) | Tiles use each app's icon colour; false uses one neutral colour |
 | `appColourAmount` (0–1, default 0.25) | How strongly app colour tints tiles and (with F02) moving stand-ins |
 | `showSeamHandles` (default true) | Draw a faint line in the middle of each gap on hover |
-| `tileStyle` (`"icon"` default, `"name"`) | What a window tile shows: `"icon"` is the app icon alone with no caption, as TrellisWM's tiles are (T50); `"name"` adds the caption today's tiles draw, so the default look changes |
+| `tileStyle` (`"name"` default, `"icon"`) | What a window tile shows: `"name"` is the icon with a caption that says which window it is (the note below says which words); `"icon"` is the app icon alone, as TrellisWM's tiles are (T50) |
 
 - The dim and blur sit in a single panel at the desktop level (below every
   normal window, above the wallpaper), shaped to the union of docked slots

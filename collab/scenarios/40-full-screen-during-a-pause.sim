@@ -11,9 +11,13 @@ zoom 101
 expect hidden 102
 fullscreen 102 on
 pause
-fullscreen 102 off
+fullscreen 102 off where-it-was
 wait 1
 expect visible 102
 expect visible 101
 resume
+# Known (a rest of board 1.20): Mail has the keyboard since it left full screen, and it is outside the view that was left. The resume
+# lays that view out and then follows the keyboard, so both windows move twice.
+expect jolt 102
+expect jolt 101
 expect docked 102

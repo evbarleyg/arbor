@@ -28,6 +28,9 @@ The ledger:
              "stand_ins": {"commit": "…", "open_divergences_that_touch_a_detector": n},
              "polish": {"commit": "…", "judged": [{"move": 1, "appearance": "light", "rows_failing": []}, …]}}}
 
+One run of GitHub's may play several scripts, on one Mac or spread over several: each has a manifest of its own with `"part"` and `"parts"`, counted over
+the whole run and written down before its first script begins. A script that is alone in its run is part 1 of 1, and says so.
+
 An act's id is its slug and which act of that slug it is in its run, so that it means the same act in the run without Arbor, which
 leaves out the acts that are Arbor's own keys. The manifest of a sabotage run also has `"offences": [{"detector": "jolt", "id": "idle#3"}, …]`.
 
@@ -44,6 +47,8 @@ import tempfile
 PAGE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "docs", "VIABLE.md")
 COUNTED = ("day", "walk", "sit")
 KINDS = COUNTED + ("control", "sabotage")
+# Attempts of a run, and scripts in one.
+MOST = 64
 # Numbers of the page's block that another tool has to keep to, and which.
 READ_ELSEWHERE = {
     "sampler.blind_ms_max": "jolts.py: an act during which the sampler was blind for longer is not judged",
@@ -97,18 +102,26 @@ def count(value, what):
     return value
 
 
-def key_of(manifest):
-    attempt = manifest.get("attempt", 1)
-    if isinstance(attempt, bool) or not isinstance(attempt, int) or attempt < 1:
-        raise Unreadable(f"run {manifest.get('run')}: attempt {attempt!r}")
+def playing(manifest):
+    """(run, attempt, part, parts): which playing of a script this is. One run of GitHub's may play several scripts, on one Mac or on several."""
     if not manifest.get("run"):
         raise Unreadable("a run without GitHub's id")
-    return str(manifest["run"]), attempt
+    found = []
+    for name in ("attempt", "part", "parts"):
+        value = manifest.get(name)
+        # A number far beyond what a run can hold is a slip: a time or an id in the wrong place.
+        if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= MOST:
+            raise Unreadable(f"run {manifest['run']}: {name} is {value!r}; a number from 1 to {MOST} is wanted")
+        found.append(value)
+    attempt, part, parts = found
+    if part > parts:
+        raise Unreadable(f"run {manifest['run']}: part {part} of {parts}")
+    return str(manifest["run"]), attempt, part, parts
 
 
 def name_of(run):
-    manifest = run["manifest"]
-    return f"run {manifest['run']}.{manifest.get('attempt', 1)} ({manifest.get('script', '?')})"
+    identifier, attempt, part, parts = playing(run["manifest"])
+    return f"run {identifier}.{attempt} ({run['manifest'].get('script', '?')}{f', part {part} of {parts}' if parts > 1 else ''})"
 
 
 def why_not(run, gate, commit):
@@ -188,22 +201,31 @@ def judge(ledger, gate, listed=None):
 
     seen = {}
     for run in ledger["runs"]:
-        key = key_of(run["manifest"])
+        key = playing(run["manifest"])[:3]
         if key in seen:
             invalid.append(f"{name_of(run)} is in the ledger twice")
         seen[key] = run
-    for identifier, attempt in seen:
+    started = {}
+    for (identifier, attempt, part), run in seen.items():
+        started.setdefault((identifier, attempt), {})[part] = playing(run["manifest"])[3]
+    for (identifier, attempt), parts in sorted(started.items()):
         for earlier in range(1, attempt):
-            if (identifier, earlier) not in seen:
+            if (identifier, earlier) not in started:
                 reasons.append(f"run {identifier} was started {attempt} times, and the ledger leaves out attempt {earlier}")
+        # How many scripts a run plays is written down before the first begins, so that none can be left out afterwards.
+        if len(set(parts.values())) > 1:
+            invalid.append(f"run {identifier}.{attempt}: its parts do not agree how many they are")
+        for part in range(1, max(parts.values()) + 1):
+            if part not in parts:
+                reasons.append(f"run {identifier}.{attempt} played {max(parts.values())} scripts, and the ledger leaves out part {part}")
     if listed is None:
         reasons.append("nobody compared the ledger with GitHub's list of runs (--runs), so runs may have been left out")
     else:
         for identifier, attempts in sorted(listed.items()):
             for attempt in range(1, attempts + 1):
-                if (identifier, attempt) not in seen:
+                if (identifier, attempt) not in started:
                     reasons.append(f"GitHub knows run {identifier}.{attempt} on this commit, and the ledger leaves it out")
-        for identifier, attempt in sorted(seen):
+        for identifier, attempt in sorted(started):
             if attempt > listed.get(identifier, 0):
                 invalid.append(f"the ledger has run {identifier}.{attempt}, of which GitHub knows nothing")
 
@@ -508,7 +530,7 @@ def perfect(gate):
 
     def manifest(number, kind, cell, cast):
         return {
-            "gate": gate["gate"], "commit": commit, "run": str(1000 + number), "attempt": 1, "script": f"{kind}.sh", "kind": kind, "seed": None,
+            "gate": gate["gate"], "commit": commit, "run": str(1000 + number), "attempt": 1, "part": 1, "parts": 1, "script": f"{kind}.sh", "kind": kind, "seed": None,
             "tiling": cell[0], "tiling_seen_to_act": True, "display": cell[1], "cast": cast, "apps": apps, "settings": "shipped",
             "seconds": gate["run_seconds_max"], "reduce_motion": False, "stage_seen": kind != "control",
         }
@@ -682,6 +704,27 @@ def self_test():
     expect("a first attempt left out", lambda l: l["runs"][0]["manifest"].update(attempt=2), "NOT VIABLE", "leaves out attempt 1", listed={**everything, "1000": 2})
     expect("a first attempt left out, GitHub listing the run once", nothing, "NOT VIABLE", "1000.2", listed={**everything, "1000": 2})
     expect("both attempts there", lambda l: twin(l, "walk", attempt=2), "VIABLE", "", listed={**everything, "1000": 2})
+    def batch(ledger, parts=2, keep=(1, 2)):
+        """The first two counted runs become two scripts of one run of GitHub's."""
+        first, second = every(ledger, "walk")[:2]
+        second["manifest"]["run"] = first["manifest"]["run"]
+        first["manifest"].update(part=1, parts=parts)
+        second["manifest"].update(part=2, parts=parts)
+        ledger["runs"] = [run for run in ledger["runs"] if run not in (first, second) or run["manifest"]["part"] in keep]
+
+    batched = {identifier: 1 for identifier in everything if identifier != "1001"}
+    expect("two scripts in one run of GitHub's", batch, "VIABLE", "", listed=batched)
+    expect("… of which one is left out", lambda l: batch(l, keep=(1,)), "NOT VIABLE", "the ledger leaves out part 2", listed=batched)
+    expect("… of three", lambda l: batch(l, parts=3), "NOT VIABLE", "the ledger leaves out part 3", listed=batched)
+    expect("… which do not agree how many they are", lambda l: (batch(l), every(l, "walk")[0]["manifest"].update(parts=3)), "INVALID", "do not agree how many", listed=batched)
+    expect("… both calling themselves the first", lambda l: (batch(l), every(l, "walk")[1]["manifest"].update(part=1)), "INVALID", "is in the ledger twice", listed=batched)
+    expect("part 3 of 2", lambda l: l["runs"][0]["manifest"].update(part=3, parts=2), "UNREADABLE", "part 3 of 2")
+    expect("a part that is no number", lambda l: l["runs"][0]["manifest"].update(part="first"), "UNREADABLE", "part is 'first'")
+    expect("parts that are no number, and a finding by nobody", lambda l: (l["runs"][0]["manifest"].update(parts="two"), l["runs"][0]["findings"].append({"level": "FAIL"})), "UNREADABLE", "parts is 'two'")
+    expect("a run that does not say which part it is", lambda l: l["runs"][0]["manifest"].pop("part"), "UNREADABLE", "part is None")
+    expect("a run that does not say of how many", lambda l: l["runs"][0]["manifest"].pop("parts"), "UNREADABLE", "parts is None")
+    expect("a run id where the parts belong", lambda l: l["runs"][0]["manifest"].update(parts=2000000000), "UNREADABLE", "parts is 2000000000")
+    expect("a time where the attempt belongs", lambda l: l["runs"][0]["manifest"].update(attempt=1760000000), "UNREADABLE", "attempt is 1760000000")
     expect("a run GitHub never heard of", lambda l: twin(l, "day", run="31337"), "INVALID", "of which GitHub knows nothing")
     expect("half the acts, every run twice", lambda l: ([run.update(acts=run["acts"][::2]) for run in every(l, *COUNTED)], l["runs"].extend(copy.deepcopy(every(l, *COUNTED)))),
            "INVALID", "is in the ledger twice")
@@ -702,7 +745,7 @@ def self_test():
     expect("another gate's ledger", lambda l: l.update(gate=gate["gate"] + 1), "NOT VIABLE", "the page describes gate")
 
     expect("no commit anywhere", lambda l: (l.pop("commit"), [run["manifest"].pop("commit") for run in l["runs"]], [ring.pop("commit") for ring in l["rings"].values()]), "UNREADABLE", "forty hexadecimal")
-    expect("an attempt that is no number", lambda l: l["runs"][0]["manifest"].update(attempt="x"), "UNREADABLE", "attempt")
+    expect("an attempt that is no number", lambda l: l["runs"][0]["manifest"].update(attempt="x"), "UNREADABLE", "attempt is 'x'")
     expect("violations that are no number", lambda l: l["rings"]["linux"].update(violations=None), "UNREADABLE", "no count")
     expect("samples that are no number", lambda l: l["runs"][0]["sampler"].update(samples="many"), "UNREADABLE", "no count")
     expect("a finding by nobody", lambda l: every(l, "sabotage")[0]["findings"].append({"level": "FAIL", "id": "idle#0"}), "UNREADABLE", "needs a detector")

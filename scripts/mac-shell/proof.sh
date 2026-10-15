@@ -17,6 +17,7 @@
 #            while its window is out of view
 # Session 4  a docked window goes full screen and comes back (docs/features/F30-full-screen-windows.md)
 source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/lib-gestures.sh"
 
 echo "# proof.sh $(date -u +%Y-%m-%dT%H:%MZ) on macOS $(sw_vers -productVersion), commit $(git rev-parse --short HEAD), real pointer and keys"
 arbor_build
@@ -179,7 +180,10 @@ check "Arbor comes up again on the same windows" arbor_relaunch 3
 summary
 check "the left window is docked again" is docked "$W4"
 check "the right window is docked again" is docked "$W1"
-check "the camera is where it was: the framed window fills the screen" eventually fills "$W4"
+check "a launch shows everything: the window that was out of view is in its slot" eventually in_its_slot "$W1"
+check "and so is the one that was framed" eventually in_its_slot "$W4"
+ctl back
+check "the view of last time is one step back: the framed window fills the screen" eventually fills "$W4"
 check "and the other one is out of view" eventually is parked "$W1"
 ctl show-all
 check "everything comes back into its slot" eventually in_its_slot "$W1"
@@ -228,6 +232,8 @@ fi
 step "session 2: the published keyboard, on [ [W1 / W3] | Desktop | W2 ] with W4 floating"
 # The fourth window refuses to be smaller than 700×500, for the tile further down.
 ARBOR_TEST_WINDOWS_ARGS="--min-size 4:700x500"
+# For the ⌃⌥ rectangle further down.
+arbor_settings "{$ARBOR_GESTURES_ON}"
 arbor_start 4 ARBOR_NO_HOTKEYS=0
 ctl dock "$W1" left
 ctl dock "$W2" right

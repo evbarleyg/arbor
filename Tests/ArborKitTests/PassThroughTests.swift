@@ -13,7 +13,7 @@ import Testing
   func makeHarness(passThrough: [String] = [emacsID], pauseFor: [String] = [gameID])
     -> (Harness, emacs: WindowID, safari: WindowID, game: WindowID)
   {
-    var settings = Settings()
+    var settings = Settings.withGestures  // what a listed app takes away
     settings.passThroughApps = passThrough
     settings.pauseForApps = pauseFor
     let h = Harness(settings: settings)
@@ -114,6 +114,7 @@ import Testing
     expectWindowsMatchLayout(h, on: h.display)
 
     #expect(h.run("float \(emacs.rawValue)").ok)
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(emacs, through: [CGPoint(x: 700, y: 400), CGPoint(x: 400, y: 400), CGPoint(x: 2, y: 400)])
     #expect(h.workspace.isDocked(emacs), "dragging to an edge docks while the app is in front")
     expectWindowsMatchLayout(h, on: h.display)

@@ -35,6 +35,14 @@ import PackageDescription
 let fakeMac: [Target] = withFakeMac
   ? [.executableTarget(name: "arbor-fakemac", dependencies: ["ArborTesting", "ArborKit", "ArborCore"] + geometry)] : []
 
+// CI's Mac runs only the tests a Mac can say something about, and compiling the others took it longer than running these. With
+// ARBOR_TEST_SOURCES_<target> set (file names with colons between them; scripts/ci-tests.py sources writes it) a test target is made of those
+// files alone. Not set, or empty: of all its files, as for everybody else.
+func sources(of target: String) -> [String]? {
+  let names = (Context.environment["ARBOR_TEST_SOURCES_\(target)"] ?? "").split(separator: ":").map(String.init)
+  return names.isEmpty ? nil : names
+}
+
 let package = Package(
   name: "Arbor",
   platforms: [.macOS(.v14)],
@@ -62,9 +70,10 @@ let package = Package(
 
     .executableTarget(name: "arborctl", dependencies: ["ArborCore", "ArborIPC"]),
 
-    .testTarget(name: "ArborCoreTests", dependencies: ["ArborCore"] + geometry),
-    .testTarget(name: "ArborIPCTests", dependencies: ["ArborIPC"]),
+    .testTarget(name: "ArborCoreTests", dependencies: ["ArborCore"] + geometry, sources: sources(of: "ArborCoreTests")),
+    .testTarget(name: "ArborIPCTests", dependencies: ["ArborIPC"], sources: sources(of: "ArborIPCTests")),
     .testTarget(
-      name: "ArborKitTests", dependencies: ["ArborKit", "ArborCore", "ArborIPC", "ArborTesting"] + geometry),
+      name: "ArborKitTests", dependencies: ["ArborKit", "ArborCore", "ArborIPC", "ArborTesting"] + geometry,
+      sources: sources(of: "ArborKitTests")),
   ]
 )

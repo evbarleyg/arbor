@@ -82,6 +82,8 @@ use exactly this key. **reserved**: keep free for that purpose, bound to nothing
 | **⌃⌥** + two fingers sideways; two fingers during a pinch of Arbor's | slide the view | assigned (F16). ⌥ + scroll **alone is never Arbor's**: editors, design tools, timelines and terminals use it, and ⌃⌥ is Arbor, with the pointer too |
 | **⌘** held while dragging a window | do not dock, just move | shipped (F09), **instead of ⌥**; see "Conflicts" |
 
+The first five need an event tap. `pointerGestures` ("Trackpad and mouse gestures" in the settings window) is the one switch above them: off, no tap is installed, whatever their own settings say. **It ships off** (Q26), so none of the five works until it is switched on.
+
 ## Never bind by default
 
 | Keys | Why |
@@ -106,7 +108,7 @@ How sure: **high** = long-documented defaults; **medium** = from memory of curre
 | **VoiceOver** | ⌃⌥ *is* the VoiceOver modifier: every Arbor shortcut is a VoiceOver command | unusable together (high) | F42: when VoiceOver is on, say so once and offer Caps Lock as the VoiceOver modifier or Arbor's shortcuts off; never fight it |
 | Rectangle, Magnet | ⌃⌥ + arrows, ↩, D, F, G, E, T, C, U, I, J, K, `-`, `=`, ⌫; ⌃⌥⌘←/→ | both react, or one silently wins (high) | onboarding checks whether one is running and says to quit it or turn its shortcuts off |
 | macOS 14+ "Click wallpaper to reveal desktop" (on by default) | a **click** on the Desktop or in a gap | every window is swept to the screen edges; Accessibility reports nothing (seen on macOS 26.6: `collab/evidence/screens/2026-10-14-review-ux-3-wallpaper-click.png`) | not a key, but the same kind of clash: double-click, ⇧-drag and pinch on the Desktop all begin with that click. F42 detects it; the README asks for "Only in Stage Manager" |
-| macOS 15+ window tiling | **⌥ held while dragging a window shows macOS's own tiling preview** (on by default); dragging to an edge tiles; dragging to the menu bar fills | F09's "hold ⌥ to drag without docking" would summon macOS's tiling instead (high) | use **⌘**, Apple's own "no snapping" key (Keynote and Pages guides, Finder's grid); onboarding links to Desktop & Dock → Windows and names the three switches |
+| macOS 15+ window tiling | **⌥ held while dragging a window shows macOS's own tiling preview** (on by default); dragging to an edge tiles; dragging to the menu bar fills | F09's "hold ⌥ to drag without docking" would summon macOS's tiling instead (high) | use **⌘**, Apple's own "no snapping" key (Keynote and Pages guides, Finder's grid); while they are on the left, right and top edges are macOS's and Arbor stands aside (`MacTiling`, Q23). Measured: with ⌥ held macOS acts wherever the pointer is and whatever else is held, ⌃⌥⌘ included, so a shortcut of Arbor's pressed with a window in the hand makes the window macOS's for as long as the keys are down; onboarding links to Desktop & Dock → Windows and names the three switches |
 | JetBrains IDEs | ⌃⌥Space class-name completion, ⌃⌥D Debug…, ⌃⌥R Run… | lost inside the IDE (medium) | Shortcuts Off in “App” (`pass-through`, F41); `bindings` can remove any default |
 | Emacs, terminals with Option as Meta | every ⌃⌥ + letter is C-M-letter (C-M-f, C-M-a, C-M-d, C-M-Space…) | lost (high) | Shortcuts Off in “App” (`pass-through`, F41) |
 | Remote desktops and virtual machines | ⌃⌥ is AltGr on Windows guests (⌃⌥Q = @, ⌃⌥E = € on German layouts), ⌃⌥ + arrows switch Linux workspaces | lost (high) | Shortcuts Off in “App” (`pass-through`, F41); ⌃⌥⎋ pauses by hand. Never listed by default: someone who frames a virtual machine still wants ⌃⌥Space to get out |
@@ -133,7 +135,7 @@ A letter, digit or sign in a shortcut is the key that types it on the layout in 
 Not keys, but the same race. `arbor-sim` has its own words that it handles **before** passing a line to the controller,
 so a product command with one of these names cannot be driven in the simulator or in `collab/scenarios`:
 `open`, `close`, `minimize`, `restore`, `focus`, `cursor`, `drag`, `move`, `pull`, `seam`, `tile`, `flush`, `quiet`, `loud`, `expect`,
-`press`, `from`, `type`, `wait`, `keydown`, `keyup`, `key`, `mouse`, `hide`, `unhide`, `background-focus`, `displays`, `title`, `settings-file`, `keyboard`, `min`, `fullscreen`, `transitions`, `field-type`, `field-cancel`, `map`, `revoke`, `grant`;
+`press`, `from`, `type`, `wait`, `keydown`, `keyup`, `key`, `mouse`, `hide`, `unhide`, `background-focus`, `displays`, `title`, `settings-file`, `keyboard`, `min`, `fullscreen`, `transitions`, `field-type`, `field-cancel`, `map`, `revoke`, `grant`, `macos`, `pick-up`, `let-go`, `shove`;
 and on branches not merged yet `dblclick`, `tab-tear`, `tab-click`, `tab-drop`, `strip-drag`.
 A feature that needs one (`focus left`, `restore` for presets) must teach the simulator to tell the two apart in the same change
 (`focus 101` is the user clicking a window; `focus left` is the command).

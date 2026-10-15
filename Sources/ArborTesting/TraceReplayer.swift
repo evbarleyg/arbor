@@ -403,7 +403,7 @@ public final class TraceReplayer {
     answerFocus()
 
     // Quitting is not a stimulus of its own: the app shuts the controller down after whatever made it quit. A pause has
-    // stopped by itself, and shutting down after it would be quitting during the pause, which lets go of more.
+    // stopped by itself, and shutting down after it would be quitting during the pause.
     if harness.controller.isRunning, response.contains(where: { entries[$0].line == .stop }) { harness.controller.shutdown() }
 
     comparePreviews()
@@ -628,7 +628,8 @@ public final class TraceReplayer {
       let numbers = words[1].split(separator: ",").compactMap { Double($0) }
       if numbers.count == 2 { fake.cursor = CGPoint(x: numbers[0], y: numbers[1]) }
     case .done(let text, let ok, let message):
-      guard let result = lastResult, mode == .strict else { break }
+      // What `doctor` finds is about the Mac it ran on (switches, taps, other apps), of which a trace holds nothing.
+      guard let result = lastResult, mode == .strict, text != "doctor" else { break }
       if result.ok != ok || (result.message != message && !message.hasPrefix(TraceLine.aboutMark)) {
         diverged(
           at: current,
@@ -1079,6 +1080,8 @@ private final class ReplayWindowSystem: WindowSystem {
   func windowsFrontToBack() -> [WindowID] { replayer?.answer(read: "windowsFrontToBack") ?? fake?.windowsFrontToBack() ?? [] }
   func stackedWindows() -> [StackedWindow] { replayer?.answer(read: "stackedWindows") ?? fake?.stackedWindows() ?? [] }
   func modifierKeysDown() -> KeyChord.Modifiers { replayer?.answer(read: "modifierKeysDown") ?? fake?.modifierKeysDown() ?? [] }
+  /// A trace without the answer was recorded by an Arbor that did not ask, and stood aside for nobody.
+  func macTiling() -> MacTiling { replayer?.answer(read: "macTiling") ?? .off }
   func openApplication(_ app: String) -> Bool {
     replayer?.answer(call: "openApplication", [app])?.decoded() ?? fake?.openApplication(app) ?? false
   }

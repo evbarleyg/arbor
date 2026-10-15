@@ -15,8 +15,8 @@ import CoreGraphics
 ///
 /// No test reaches this code, so it decides as little as it can: what counts as a window, an echo, a drag, a
 /// tab or a reason to try again is decided by pure types in ArborCore (`WindowKind`, `EchoFilter`, `WindowGrab`,
-/// `NativeTabs`, `FramePlan`, `RetrySchedule`). What macOS does in each case was written down by a Mac: see
-/// collab/reports/2026-10-14-review-ax.md.
+/// `NativeTabs`, `FramePlan`, `RetrySchedule`, `AppThatCameForward`). What macOS does in each case was written down by a
+/// Mac: see collab/reports/2026-10-14-review-ax.md.
 @MainActor
 public final class AXWindowSystem: WindowSystem {
   public weak var events: (any WindowSystemEvents)?
@@ -37,6 +37,9 @@ public final class AXWindowSystem: WindowSystem {
   private var resizingWindow: WindowID?
   /// The modifier keys held when the mouse event being handled happened; nil between events.
   private var eventModifiers: NSEvent.ModifierFlags?
+  /// Where the button went down or came up, while that event is being handled. A hand recoils, and Arbor can be some way behind:
+  /// one point decides whether a window is let go at the very edge of the display, where it is macOS's (`MacTiling`).
+  private var eventLocation: CGPoint?
   private var running = false
   /// Numbers the drags and resizes, so that the check on one does not outlive it.
   private var grabNumber = 0
@@ -51,6 +54,8 @@ public final class AXWindowSystem: WindowSystem {
   private var lastReportedFocus: WindowID?
   /// Counts the apps that came forward, to see whether a request to activate one had any effect.
   private var activations = 0
+  /// The next look at an app that came forward before macOS named it as the one in front.
+  private var lookAtAppThatCameForward: Task<Void, Never>?
   /// The displays as the controller last heard of them.
   private var reportedDisplays: [DisplaySnapshot] = []
   /// Windows to be looked at again once Arbor's move of them has settled (`EchoFilter.Verdict.early`).
@@ -150,7 +155,8 @@ public final class AXWindowSystem: WindowSystem {
       [weak self] event in
       let type = event.type
       let modifiers = event.modifierFlags
-      MainActor.assumeIsolated { self?.handleMouse(type, modifiers: modifiers) }
+      let location = event.cgEvent?.location
+      MainActor.assumeIsolated { self?.handleMouse(type, modifiers: modifiers, at: location) }
     }
     // Global monitors do not see events that go to Arbor's own panels (seams, tiles, the menu).
     localMouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] event in
@@ -173,6 +179,7 @@ public final class AXWindowSystem: WindowSystem {
     localMouseMonitor = nil
     pendingRescan?.cancel()
     pendingDisplayChange?.cancel()
+    lookAtAppThatCameForward?.cancel()
     for look in secondLooks.values { look.cancel() }
     secondLooks.removeAll()
     broughtIntoView.removeAll()
@@ -180,6 +187,7 @@ public final class AXWindowSystem: WindowSystem {
     leavesStrayDialogs = false
     appWhoseDialogsNeverWait = nil
     reportedCreated.removeAll()
+    standIns.removeAll()
     counted.removeAll()
     putAway.removeAll()
     press = nil
@@ -339,7 +347,7 @@ public final class AXWindowSystem: WindowSystem {
   }
 
   public func cursorLocation() -> CGPoint {
-    ScreenGeometry.global(fromAppKit: NSEvent.mouseLocation)
+    eventLocation ?? ScreenGeometry.global(fromAppKit: NSEvent.mouseLocation)
   }
 
   public func isMouseButtonDown() -> Bool {
@@ -363,6 +371,8 @@ public final class AXWindowSystem: WindowSystem {
   public func unhideApp(pid: Int32) {
     NSRunningApplication(processIdentifier: pid)?.unhide()
   }
+
+  public func macTiling() -> MacTiling { MacFacts.tiling }
 
   public func modifierKeysDown() -> KeyChord.Modifiers {
     // People let go of the key and the button together, and by the time Arbor hears of the
@@ -472,7 +482,31 @@ public final class AXWindowSystem: WindowSystem {
     activations += 1
     lastReportedFocus = nil
     if apps[pid] == nil, !waitingToObserve.contains(pid) { observe(pid: pid, announce: true, wasRunning: true) }
-    reportFocus(of: pid)
+    // Whoever came forward before has been overtaken.
+    lookAtAppThatCameForward?.cancel()
+    reportFocus(ofAppThatCameForward: pid, earlierLooks: 0)
+  }
+
+  /// Reports the focused window of `pid` as soon as macOS names it as the app in front (`AppThatCameForward`).
+  private func reportFocus(ofAppThatCameForward pid: pid_t, earlierLooks: Int) {
+    let front = NSWorkspace.shared.frontmostApplication?.processIdentifier
+    switch AppThatCameForward.verdict(isNamedInFront: front == pid, earlierLooks: earlierLooks) {
+    case .report:
+      if earlierLooks > 0 { recorder?.raw("frontmostApplication names pid \(pid)") }
+      reportFocus(of: pid)
+    case .lookAgain(let seconds):
+      if earlierLooks == 0 {
+        recorder?.raw("frontmostApplication still names pid \(front ?? -1)")
+        Log.debug("pid \(pid) came forward, and macOS still names another app as the one in front")
+      }
+      lookAtAppThatCameForward = Task { @MainActor [weak self] in
+        try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+        guard !Task.isCancelled, let self, self.running else { return }
+        self.reportFocus(ofAppThatCameForward: pid, earlierLooks: earlierLooks + 1)
+      }
+    case .giveUp:
+      Log.debug("pid \(pid) came forward and was never named as the app in front: nothing is reported")
+    }
   }
 
   // MARK: Apps that do not answer
@@ -991,6 +1025,26 @@ public final class AXWindowSystem: WindowSystem {
     events?.windowChanged(record.snapshot, userInitiated: !programmatic)
   }
 
+  /// macOS's stand-ins for windows on their way out of full screen.
+  ///
+  /// The stand-in shows the animation and is on the app's list in the window's place. When it goes, the window is on the screen
+  /// and all apps list the windows of the Space that has come back (16 rounds of 16 on a hosted Mac, macOS 26.6). The change of
+  /// Space is reported about then: 0.14 s later in one run, and in two rounds of four a moment EARLIER, when the window was not
+  /// listed yet, so that Arbor heard of it from the second look, a second after everybody had seen it.
+  private var standIns: Set<WindowID> = []
+
+  private func watchIfItStandsInOnTheWayOutOfFullScreen(_ element: AXUIElement, pid: pid_t) {
+    // As large as the window: in full screen apps make and drop smaller helpers all the time (the toolbar that slides in).
+    guard let app = apps[pid], let id = element.windowID, records[id] == nil,
+      let leaving = records.values.first(where: { $0.snapshot.pid == pid && $0.snapshot.isFullScreen }),
+      element.string(kAXSubroleAttribute) == kAXUnknownSubrole, element.frame?.size == leaving.snapshot.frame.size
+    else { return }
+    if standIns.count > 20 { standIns.removeAll() }
+    standIns.insert(id)
+    let refcon = UnsafeMutableRawPointer(bitPattern: UInt(id.rawValue))
+    AXObserverAddNotification(app.observer, element, kAXUIElementDestroyedNotification as CFString, refcon)
+  }
+
   /// A report came so soon after Arbor's move that it was taken for a stage of it, though the frame was another. If the
   /// window is still not where Arbor put it when things have settled, that was its app's answer, and is reported as such.
   private func lookAgain(at window: WindowID) {
@@ -1031,11 +1085,18 @@ public final class AXWindowSystem: WindowSystem {
     switch notification {
     case kAXWindowCreatedNotification:
       guard let pid = element.pid else { return }
+      // Before the list is read, which takes the window that is leaving full screen for one on another Space.
+      watchIfItStandsInOnTheWayOutOfFullScreen(element, pid: pid)
       // A new tab is a new window that pushes another off the list, so the list comes first.
       rescan([pid], afterSpaceSwitch: false, aWindowOpened: true)
       addWindow(element, pid: pid, announce: true)
 
     case kAXUIElementDestroyedNotification:
+      if let raw, standIns.remove(WindowID(raw)) != nil {
+        Log.debug("the stand-in \(WindowID(raw)) is gone: the way out of full screen is over")
+        rescan(Array(apps.keys), afterSpaceSwitch: true)
+        return
+      }
       guard let raw, let record = records[WindowID(raw)] else { return }
       // If it was the tab in front of others, one of them is taking its place. macOS 26 reports that first, as a
       // change of the main window; should the order ever be the other way round, the list says so already.
@@ -1106,6 +1167,9 @@ public final class AXWindowSystem: WindowSystem {
   // notifications are looked at as before. The window server moves a dragged window itself and knows its place at once,
   // without the app having a say; the app learns of it about a tenth of a second later, posts at most a few
   // notifications a second, and some apps post none until the drag is over. Asking the window server also cannot hang.
+  // Neither sign is ever switched off while the button is down: a pointer that has gone far over a window that stands still
+  // is most likely selecting text, so the window server is then asked ten times a second and not with every movement, but a
+  // window that starts late is still a window in hand (`WindowGrab.judge`).
 
   private struct Press {
     let point: CGPoint
@@ -1115,14 +1179,28 @@ public final class AXWindowSystem: WindowSystem {
     var frame: CGRect = .zero
     /// It is settled that this press is not about a window Arbor knows.
     var isSettled = false
+    /// What `WindowGrab.judge` remembers between two looks. Once the pointer has gone far while the window stood still, the
+    /// window server is asked less often; what the window's app reports is heard as before.
+    var memory = WindowGrab.Memory()
+    /// When the window server was last asked.
+    var lookedAt: TimeInterval = 0
   }
+
+  /// How long the window server is left alone between two looks at a window that stood still: a selection in a long text
+  /// is thousands of movements.
+  private static let restBetweenLooks: TimeInterval = 0.1
 
   /// How far outside a window's frame a press still belongs to it: macOS's resize area.
   private static let reach: CGFloat = 4
 
-  private func handleMouse(_ type: NSEvent.EventType, modifiers: NSEvent.ModifierFlags) {
+  private func handleMouse(_ type: NSEvent.EventType, modifiers: NSEvent.ModifierFlags, at location: CGPoint?) {
     eventModifiers = modifiers
-    defer { eventModifiers = nil }
+    // Not for movements: of those the newest place is the one to show a preview for.
+    if type == .leftMouseDown || type == .leftMouseUp { eventLocation = location }
+    defer {
+      eventModifiers = nil
+      eventLocation = nil
+    }
     if let recorder, recorder.isRecording {
       switch type {
       case .leftMouseDown: recorder.raw("leftMouseDown \(traceText(cursorLocation()))")
@@ -1137,6 +1215,11 @@ public final class AXWindowSystem: WindowSystem {
       // A button cannot go down twice: the release of whatever was going on was lost.
       releaseWasLost()
       press = makePress(at: cursorLocation())
+      // Served late, on a busy Mac, the press finds the window gone from under its own place: the list of windows is of now. Then the
+      // pointer's place of now, with the window's frame of now, is the pair to go by.
+      if press?.window == nil, press?.isSettled == false, eventLocation != nil {
+        press = makePress(at: ScreenGeometry.global(fromAppKit: NSEvent.mouseLocation))
+      }
       events?.pointerPressed()
     case .leftMouseDragged:
       if let window = draggingWindow {
@@ -1148,6 +1231,7 @@ public final class AXWindowSystem: WindowSystem {
       // A modifier going down or up counts as a move, so ⌘ takes effect while the pointer rests.
       if let window = draggingWindow { events?.dragMoved(window, to: cursorLocation()) }
     case .leftMouseUp:
+      noteAGrabThatWasMissed()
       press = nil
       endGrab()
     default:
@@ -1181,7 +1265,9 @@ public final class AXWindowSystem: WindowSystem {
         let bounds = Self.bounds(in: info), bounds.insetBy(dx: -Self.reach, dy: -Self.reach).contains(point)
       else { continue }
       if let number = (info[kCGWindowNumber as String] as? NSNumber)?.uint32Value,
-        records[WindowID(number)]?.isBackgroundTab == false
+        let record = records[WindowID(number)], !record.isBackgroundTab,
+        // macOS is showing its desktop, and this is the strip of a window it swept aside.
+        !WindowGrab.isListedElsewhere(bounds, than: record.snapshot.frame)
       {
         press.window = WindowID(number)
         press.frame = bounds
@@ -1219,8 +1305,10 @@ public final class AXWindowSystem: WindowSystem {
   /// The pointer moved with the button down and nothing is decided yet.
   private func lookAtPressedWindow() {
     guard let press, !press.isSettled, let window = press.window, records[window] != nil,
+      !press.memory.stoodStill || uptime - press.lookedAt >= Self.restBetweenLooks,
       let bounds = Self.serverBounds(of: window)
     else { return }
+    self.press?.lookedAt = uptime
     if echoes.isEcho(bounds, of: window, at: uptime) {
       // Arbor moved it itself after the press. Start from there.
       self.press?.frame = bounds
@@ -1241,21 +1329,35 @@ public final class AXWindowSystem: WindowSystem {
     }
   }
 
+  /// The button comes up on a press that was taken for nothing, and the window is not where it was. Nothing can be done about it
+  /// now; a line in the log is what tells a run, or whoever reads a report, that it happened at all.
+  private func noteAGrabThatWasMissed() {
+    guard Log.debugEnabled, let press, !press.isSettled, draggingWindow == nil, resizingWindow == nil, let window = press.window,
+      let bounds = Self.serverBounds(of: window), !echoes.isEcho(bounds, of: window, at: uptime),
+      abs(bounds.minX - press.frame.minX) >= 1 || abs(bounds.minY - press.frame.minY) >= 1 || bounds.size != press.frame.size
+    else { return }
+    Log.debug("\(window) was moved or resized while the button was down, and it was taken for neither a drag nor a resize")
+  }
+
   private func decide(_ window: WindowID, from before: CGRect, to now: CGRect, pressedAt point: CGPoint) {
-    switch WindowGrab.classify(pressedAt: point, frameAtPress: before, frameNow: now, pointerNow: cursorLocation()) {
-    case .undecided:
+    var memory = press?.memory ?? WindowGrab.Memory()
+    let late = memory.stoodStill
+    let verdict = WindowGrab.judge(
+      pressedAt: point, frameAtPress: before, frameNow: now, pointerNow: cursorLocation(), memory: &memory)
+    if memory.stoodStill, !late { Log.debug("the press on \(window) has moved nothing so far: looking less often") }
+    press?.memory = memory
+    switch verdict {
+    case .undecided, .neither:
       break
-    case .neither:
-      press?.isSettled = true
     case .drag:
       draggingWindow = window
       watchForLostRelease()
-      Log.debug("\(window) is being dragged")
+      Log.debug("\(window) is being dragged" + (late ? ", which began late" : ""))
       events?.dragBegan(window, at: cursorLocation())
     case .resize:
       resizingWindow = window
       watchForLostRelease()
-      Log.debug("\(window) is being resized by its edges")
+      Log.debug("\(window) is being resized by its edges" + (late ? ", which began late" : ""))
       events?.resizeBegan(window)
     }
   }

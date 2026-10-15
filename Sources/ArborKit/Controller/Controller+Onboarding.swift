@@ -11,7 +11,7 @@ extension Controller {
       ? [] : isPaused ? effectiveBindings.bindings : bindingsInEffect
     // Arbor keeps clicks on the Desktop from macOS itself (F60), so a newcomer is not sent to look for that switch.
     var facts = facts
-    if settings.guardDesktopClicks { facts.switches?.removeAll { $0 == .clickWallpaper } }
+    if guardsDesktopClicks { facts.switches?.removeAll { $0 == .clickWallpaper } }
     facts.accessibility = hasPermission(facts)
     return OnboardingModel(
       facts, flow: flow, windowsOutOfView: permissionLoss?.windows ?? 0, offersScreenRecording: offersScreenRecording, appsWithOwnShortcuts: passThroughSuggestions.map(\.name), isPaused: isPaused && accessibilityGranted,

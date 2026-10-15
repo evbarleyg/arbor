@@ -230,7 +230,7 @@ private let side = DisplaySnapshot(
       case 47:
         // The same windows seen by a new Arbor process that loads what the old one saved.
         let killed = random.below(2) == 0
-        note(killed ? "killed, launched again" : "quit, launched again")
+        note(killed ? "killed, started again by the watchdog" : "quit, launched again")
         h.scheduler.advance(by: 5)
         let pinned = Set(h.controller.workspaces.values.flatMap(\.pinnedWindows))
         let away = Set(h.controller.workspaces.values.flatMap(\.stashedWindows))
@@ -251,6 +251,7 @@ private let side = DisplaySnapshot(
           return
         }
         h = Harness(settings: h.controller.settings, saved: saved, system: h.system)
+        h.controller.restartedAfterAccident = killed
         h.start()
         h.scheduler.advance(by: 3)
         let still = Set(h.controller.workspaces.values.flatMap(\.pinnedWindows))
@@ -259,12 +260,19 @@ private let side = DisplaySnapshot(
           Issue.record("seed \(seed): launched again, \(lost.sorted()) are no longer pinned\n  \(log.joined(separator: " | "))")
           return
         }
-        // One that has the keyboard is summoned at once, as after ⌘Tab.
+        // Nobody quit: what was sent away still is. One that has the keyboard is summoned at once, as after ⌘Tab.
         let back = away.filter { id in
           h.controller.windows[id] != nil && !h.controller.workspaces.values.contains { $0.isStashed(id) || $0.isSummoned(id) }
         }
-        if !back.isEmpty {
-          Issue.record("seed \(seed): launched again, \(back.sorted()) are no longer sent away\n  \(log.joined(separator: " | "))")
+        // Unless the view would have taken a window out of view, and everything shows instead.
+        let shown = back.filter { id in h.controller.workspaces.values.contains { $0.isFloating(id) && $0.camera == $0.tree.root } }
+        if killed, back != shown {
+          Issue.record("seed \(seed): started again, \(back.sorted()) are no longer sent away\n  \(log.joined(separator: " | "))")
+          return
+        }
+        // The quit brought them into view, and a launch takes nothing out of it.
+        if !killed, back != away.filter({ h.controller.windows[$0] != nil }) {
+          Issue.record("seed \(seed): launched again, \(away.subtracting(back).sorted()) are sent away again\n  \(log.joined(separator: " | "))")
           return
         }
       case 50, 51: run("reveal \(window.rawValue)")

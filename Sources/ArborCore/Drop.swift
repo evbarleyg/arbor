@@ -24,19 +24,37 @@ public struct DropOptions: Equatable, Sendable {
   /// How long, in seconds, the pointer must rest on a window or tile before it becomes the drop
   /// target. See `dwell(for:)`.
   public var dwell: Double
+  /// The screen edges along which Arbor offers nothing in its band: macOS's, which tiles a window dragged there (`MacTiling.edges`), and
+  /// those in whose band the drag began, until the pointer has left it.
+  public var silentEdges: Set<Edge>
 
   public init(
     screenEdgeBand: CGFloat = 12, windowEdgeFraction: CGFloat = 0.3, tabsEnabled: Bool = false,
-    dwell: Double = 0.15
+    dwell: Double = 0.15, silentEdges: Set<Edge> = []
   ) {
     self.screenEdgeBand = screenEdgeBand
     self.windowEdgeFraction = windowEdgeFraction
     self.tabsEnabled = tabsEnabled
     self.dwell = dwell
+    self.silentEdges = silentEdges
   }
 }
 
 public enum DropResolver {
+  private static func distances(from point: CGPoint, toTheEdgesOf visibleFrame: CGRect) -> [(Edge, CGFloat)] {
+    [
+      (.left, point.x - visibleFrame.minX),
+      (.right, visibleFrame.maxX - point.x),
+      (.top, point.y - visibleFrame.minY),
+      (.bottom, visibleFrame.maxY - point.y),
+    ]
+  }
+
+  /// The screen edges in whose band `point` lies: two in a corner.
+  public static func screenEdges(near point: CGPoint, visibleFrame: CGRect, options: DropOptions = .init()) -> Set<Edge> {
+    Set(distances(from: point, toTheEdgesOf: visibleFrame).filter { $0.1 < options.screenEdgeBand }.map(\.0))
+  }
+
   /// Decides the drop target for `window` released at `point`.
   ///
   /// - Parameters:
@@ -52,16 +70,12 @@ public enum DropResolver {
       return .none
     }
 
-    let band = options.screenEdgeBand
-    let edgeDistances: [(Edge, CGFloat)] = [
-      (.left, point.x - visibleFrame.minX),
-      (.right, visibleFrame.maxX - point.x),
-      (.top, point.y - visibleFrame.minY),
-      (.bottom, visibleFrame.maxY - point.y),
-    ]
-    if let nearest = edgeDistances.min(by: { $0.1 < $1.1 }), nearest.1 < band {
-      return .cameraEdge(nearest.0)
-    }
+    let edgeDistances = distances(from: point, toTheEdgesOf: visibleFrame).filter { $0.1 < options.screenEdgeBand }
+    // A pointer travels. On its way to the last point of an edge, which is macOS's, it crosses this band, and a preview that comes up
+    // there goes again as macOS's comes: two promises for one drag. So the whole band is macOS's, in the corners too, and
+    // whatever else lies in it. Let go there, short of macOS's own point, the window floats where it is.
+    if edgeDistances.contains(where: { options.silentEdges.contains($0.0) }) { return .float }
+    if let nearest = edgeDistances.min(by: { $0.1 < $1.1 }) { return .cameraEdge(nearest.0) }
 
     guard let node = layout.leafOrTile(at: point, in: tree), node != ownLeaf,
       node != tree.desktop, let frame = layout.nodeFrames[node], frame.width > 0,

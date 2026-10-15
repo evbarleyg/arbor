@@ -5,8 +5,9 @@ import CoreGraphics
 import Foundation
 import Testing
 
-/// A launch ends with the focused window in view, as a resume does. Nobody tells Arbor where the keyboard went while it was
-/// not running, and the view it saved may not include that window.
+/// A start ends with the focused window in view, as a resume does. Nobody tells Arbor where the keyboard went while it was
+/// not running. A launch shows everything, that window included (LaunchShowsEverythingTests); the view that the watchdog's
+/// start brings back may not include it.
 @Suite @MainActor struct ReviewLaunchKeyboardTests {
   /// [editor | Desktop | browser], framed on the editor, which has the keyboard. The terminal floats, so it is out of
   /// view with the Desktop.
@@ -33,13 +34,14 @@ import Testing
   }
 
   /// The same windows seen by a new Arbor process that loads what `old` saved, with the keyboard in `focused`.
-  func relaunch(_ old: Harness, focused: WindowID?) -> Harness {
+  func relaunch(_ old: Harness, focused: WindowID?, byTheWatchdog: Bool = false) -> Harness {
     let new = Harness(displays: old.system.displayList, saved: old.store.saved)
     for window in old.system.allWindows().sorted(by: { $0.id < $1.id }) {
       new.system.open(
         app: window.appName, bundleID: window.bundleID, title: window.title, pid: window.pid, frame: window.frame)
     }
     new.system.focused = focused
+    new.controller.restartedAfterAccident = byTheWatchdog
     new.start()
     return new
   }
@@ -49,7 +51,7 @@ import Testing
   @Test func launchedWithTheKeyboardInTheWindowThatWasSummonedAtQuitItIsInView() {
     let (h, editor, _, terminal) = makeHarness()
     h.run("summon Terminal")
-    let (place, camera) = (h.frame(terminal)!, h.workspace.camera)
+    let place = h.frame(terminal)!
     h.controller.shutdown()
 
     let new = relaunch(h, focused: terminal)
@@ -58,19 +60,32 @@ import Testing
     #expect(new.system.isVisible(terminal), "keys must not go to a window out of view")
     #expect(!new.controller.parked.contains(terminal))
     #expect(new.frame(terminal) == place, "where it was")
-    #expect(new.controller.role(of: terminal) == .summoned(app: "com.apple.Terminal"))
-    #expect(new.workspace.camera == camera, "a summoned window comes over the view, which stays")
+    #expect(new.workspace.camera == new.workspace.tree.root)
 
-    // It goes like any summoned window.
+    // It is an ordinary floating window now, and stays.
+    #expect(new.controller.role(of: terminal) == nil)
     new.system.userFocus(editor)
-    #expect(isOutOfView(terminal, new))
+    #expect(new.frame(terminal) == place)
   }
 
-  @Test func launchedWithTheKeyboardElsewhereAWindowThatWasSentAwayIsOutOfViewAsItWasLeft() {
+  @Test func launchedWithTheKeyboardElsewhereAWindowThatWasSentAwayStaysWhereTheQuitPutIt() {
     let (h, editor, _, terminal) = makeHarness()
     h.run("summon Terminal")
     h.controller.shutdown()
+    let place = h.frame(terminal)!
     let new = relaunch(h, focused: editor)
+    settle(new)
+    #expect(new.frame(terminal) == place && new.system.isVisible(terminal))
+    #expect(new.controller.role(of: terminal) == nil)
+  }
+
+  /// Nobody quit, so it is sent away still, and in its corner.
+  @Test func startedAgainAfterItDiedAWindowThatWasSentAwayIsOutOfViewAsItWasLeft() {
+    let (h, editor, _, terminal) = makeHarness()
+    h.run("summon Terminal")
+    h.system.userFocus(editor)
+    settle(h)
+    let new = relaunch(h, focused: editor, byTheWatchdog: true)
     settle(new)
     #expect(isOutOfView(terminal, new))
     #expect(new.controller.role(of: terminal) == .stashed)
@@ -89,17 +104,17 @@ import Testing
     #expect(!new.controller.parked.contains(browser))
   }
 
-  @Test func launchedWithTheKeyboardInAWindowInViewTheViewDoesNotMove() {
+  @Test func launchedWithTheKeyboardInAWindowOfTheSavedViewEverythingShowsAllTheSame() {
     let (h, editor, browser, _) = makeHarness()
     let (camera, back) = (h.workspace.camera, h.workspace.back)
     h.controller.shutdown()
 
     let new = relaunch(h, focused: editor)
     settle(new)
-    #expect(new.workspace.camera == camera)
-    #expect(new.workspace.back == back, "nor is there anything new to go back to")
+    #expect(new.workspace.camera == new.workspace.tree.root)
+    #expect(new.workspace.back == back + [camera], "the keyboard adds nothing to go back to")
     #expect(new.system.focused == editor)
-    #expect(isOutOfView(browser, new))
+    #expect(new.system.isVisible(browser))
   }
 
   /// The watchdog starts Arbor again a second after it died: nothing was put back, and the view is the one of a second ago.
@@ -107,19 +122,34 @@ import Testing
     let (h, editor, browser, terminal) = makeHarness()
     let (camera, frames) = (h.workspace.camera, [editor, browser, terminal].map { h.frame($0) })
 
-    let new = relaunch(h, focused: editor)
+    let new = relaunch(h, focused: editor, byTheWatchdog: true)
     settle(new)
     #expect(new.workspace.camera == camera)
     #expect([editor, browser, terminal].map { new.frame($0) } == frames, "nothing has a reason to move")
     #expect(new.system.focused == editor)
   }
 
-  @Test func launchedWithTheKeyboardInNothingArborKnowsTheViewDoesNotMove() {
+  /// ⌘Tab in the second that Arbor was gone: the browser has the keyboard in its corner.
+  @Test func startedAgainAfterItDiedWithTheKeyboardInAWindowThatTheViewLeavesOutTheViewGoesToIt() {
+    let (h, _, browser, _) = makeHarness()
+    let new = relaunch(h, focused: browser, byTheWatchdog: true)
+    settle(new)
+    #expect(new.system.focused == browser)
+    #expect(new.layout?.windowFrames[browser] != nil)
+    #expect(new.system.isVisible(browser), "keys must not go to a window out of view")
+    #expect(!new.controller.parked.contains(browser))
+  }
+
+  @Test func startedWithTheKeyboardInNothingArborKnowsTheViewDoesNotMove() {
     let (h, _, _, _) = makeHarness()
     let camera = h.workspace.camera
+    let again = relaunch(h, focused: nil, byTheWatchdog: true)
+    settle(again)
+    #expect(again.workspace.camera == camera)
+
     h.controller.shutdown()
     let new = relaunch(h, focused: nil)
     settle(new)
-    #expect(new.workspace.camera == camera)
+    #expect(new.workspace.camera == new.workspace.tree.root)
   }
 }

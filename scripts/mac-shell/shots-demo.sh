@@ -11,6 +11,7 @@
 # edge, a ⌃⌥-drag around a window, a double-click on a title bar.
 # It also prints what scripts need to know about the Mac they run on.
 source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/lib-gestures.sh"
 
 step "the Mac"
 echo "macOS $(sw_vers -productVersion) ($(sw_vers -buildVersion)) on $(uname -m), $(sysctl -n hw.ncpu) cores"
@@ -23,7 +24,9 @@ system_profiler SPDisplaysDataType 2>/dev/null | grep -E "Resolution|Chipset|Dis
 echo "Accessibility for a child process: $(pointer ax-access)"
 echo "Screen Recording for a child process: $(pointer screen-access)"
 echo "pointer: $(pointer where)"
-macos_tiling
+# Its drags dock at the left and right edges of the screen, which are Arbor's only with macOS's own tiling off (MacTiling.swift). It declines on a
+# person's Mac, where the setting is theirs; with the tiling on there, those steps fail.
+macos_tiling off
 # On a person's Mac that is the list of the apps they have open, in output that gets pasted into pull requests.
 if on_throwaway_mac; then
   echo "windows on screen before the session (id pid layer x y w h on owner):"
@@ -127,7 +130,8 @@ arbor_stop 15-after-quit
 step "session 2: the menu bar item and the shortcuts, macOS's own edge tiling off"
 macos_tiling off # declines on a person's Mac: it is their setting, not the session's
 ARBOR_TEST_WINDOWS_ARGS=""
-arbor_settings '{"gap": 24}'
+# The gestures for the ⌃⌥ rectangle further down.
+arbor_settings "{\"gap\": 24, $ARBOR_GESTURES_ON}"
 arbor_start 2 ARBOR_NO_STATUS_ITEM=0 ARBOR_NO_HOTKEYS=0
 if on_throwaway_mac; then
   echo "menu bar items, as the window server sees them (id pid level x y w h on owner):"

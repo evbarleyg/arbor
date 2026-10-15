@@ -3,7 +3,7 @@
 A running draft of what the first release can honestly say. A line moves up only when its code has merged, and changes its mark only when there is evidence.
 `docs/FEATURES.md` (generated) has the item-by-item comparison; `CHANGELOG.md` is the documenter's.
 
-Last brought up to date: 2026-10-14; the head section at the third freeze of that day.
+Last brought up to date: 2026-10-15, the section "Build 1". The rest is as it stood at the third freeze of 2026-10-14.
 
 **How sure we are**
 
@@ -14,6 +14,53 @@ Last brought up to date: 2026-10-14; the head section at the third freeze of tha
 | ○ | Built, with no test that reaches it. Treat as unproven |
 
 Nothing here has been used by a person for a working day yet. All real-Mac evidence is from test windows on macOS 26.6; none is from Safari, Slack, Terminal or Zoom.
+
+## Build 1, cut on 2026-10-15 at about 03:00 UTC
+
+For whoever tries it first, in plain words. It is a build to try, not a release: `docs/VIABLE.md` says what a release takes, and this build has not been put to that gate.
+
+**What Arbor is for.** Arrange windows side by side once. Fill the screen with any one, and one key brings the arrangement back. Your Mac's own tiling forgets an arrangement; Arbor keeps it.
+
+**Who has tried it.** Programs only: random walks over simulated windows, well over a hundred thousand of them, and scripts that drive the real app with real apps, a real pointer and real keys on GitHub's hosted Macs. No person has used this build. No lid, no second physical display and no trackpad have met it.
+
+### Better than the build before
+
+- **A start takes nothing away.** The first start moves nothing. A later start puts back what was docked and ends showing everything; no window that was in view when Arbor started leaves it.
+- **A pause is as good as a Quit.** Every window gets its own size back, and comes back into the arrangement when the pause ends.
+- **Arbor stands aside for macOS's own tiling.** While macOS's tiling is on, the left, right and top edges of the screen are macOS's: Arbor shows no preview there and docks nothing. ⌃⌥⌘← and its fellows dock at every setting, and the bottom edge and the edges of docked windows stay Arbor's. Check Setup… in the menu names the switches of macOS to turn off; with them off every edge is Arbor's.
+- **A brisk drag is seen.** A window dragged quickly, above all one of an app that was not in front, used to go unnoticed: no preview, nothing docked, and a docked window dragged out was put back. Now it is a drag like any other.
+- **Leaving full screen is one move.** A docked window used to land where it once was and jump to its place a quarter of a second later. Now it lands in its place.
+- **The app you switch to comes forward**, however late macOS says so.
+- **A click on the wallpaper** sweeps the windows aside, as macOS does out of the box. A click on a window's strip brings them back, and Arbor no longer takes that click for a drag.
+- A window kept in view stays in front while the others move. ⌃⌥Space fetches what a hold kept out. The welcome window waits at what is still in the way. The settings window speaks the menu's words.
+- **What you type stays with you.** A name, a shortcut or a rule that Arbor cannot read is no longer written into its log or into a trace as you typed it. Traces recorded before 2026-10-15 can hold such words: run `make trace-check FILE=…` on each before you pass it on.
+
+### Switched off in this build, and why
+
+**The gestures of mouse and trackpad are off**: zooming with ⌃⌥ and the scroll wheel or a pinch, and drawing a rectangle with ⌃⌥ held. Dragging windows to dock them, every key, the menu and `arborctl` work as before.
+
+Why: to act on those gestures Arbor has to stand in the path of every click, key, scroll and pinch on the Mac, so that it can keep the ones meant for it. (Seeing a window dragged takes no such thing: for that Arbor only looks on.) On hosted Macs we took Arbor's permission away while it stood there. From the instant macOS withdrew it until Arbor noticed and stepped aside, a tenth of a second to a whole second, every click, key and scroll on the Mac was lost: in eight rounds of nine. With no Arbor running, and with Arbor only looking on, nothing was lost in any round: so it is the standing in the path. Before that instant and after it all was well, and in the one round that tried it nothing stayed stuck. It can only happen when the permission is taken away while Arbor runs, which few people ever do; but a second in which the Mac hears nothing is not ours to risk. The cure, noticing at once, is being built. Until it has passed on real Macs, Arbor holds back no click, key, scroll or pinch of the Mac.
+
+To switch them on all the same: Settings… → Gestures → "Trackpad and mouse gestures", or `arborctl set pointerGestures true`. In ordinary use Arbor as a whole, with the gestures on, made a click about two thousandths of a second later on a hosted Mac.
+
+### Known faults, worst first, each with its way back
+
+| What you may meet | How likely | The way back |
+|---|---|---|
+| **Two displays, one above the other.** A floating window lies across both; the lower display goes (its lid shuts, its cable is pulled). macOS rescues the window, and Arbor pushes it down again until only its title bar shows at the bottom edge. No key fetches it | rare: it takes displays arranged one above the other and a window across the border | Drag it up by its title bar |
+| **An app that does not answer while you quit Arbor.** Its windows that were out of view stay past the corner of the screen when the app wakes, although Arbor's log says all windows came back | rare: an app has to hang in the very second of the Quit, with windows out of view | Open Arbor again and press ⌃⌥0 |
+| **Back at the desk.** Nothing need be docked. A window lives on the laptop's own screen. You work with the lid shut at the monitor, then away with the laptop alone, then come back and open both: Arbor moves that window over to the monitor | likely for whoever carries a laptop to and from a desk | Drag it back. It happens once for each such round |
+| **Quit, drag, start.** You quit Arbor, move a floating window by hand, and start Arbor again. The first ⌃⌥0 throws the window back to where it was before the Quit | likely for whoever quits and starts Arbor often | Drag it again; the second time it stays |
+| **Keep in View does not always keep in view.** Pin a call, then fill the screen with a window of another app: the call is wholly covered, while the menu's tick still says it is kept in view. Seen on a hosted Mac: macOS lets nobody lift another app's window over the one you type in. Decided: a pinned window will get room of its own beside every view; not in this build | everyday for whoever pins a window | Click the pinned window's app in the Dock, or ⌘Tab to it; ⌃⌥0 shows everything |
+| **A start with the keyboard in a docked window that fits nowhere but alone**: the view goes to that window and the rest leaves the view | takes a small screen and many docked windows | ⌃⌥0 |
+| **Windows that make way.** A floating window may still be moved or made smaller to make room for docked ones, and gets its size back only later. Decided against; the change is not in this build | everyday | ⌃⌥⎋, or Quit: it gets its own size and place back |
+| **Two moves where one would do.** A window docked for the first time is often sized first and moved after; at a login a docked window may move twice as its neighbours arrive | everyday; costs nothing but calm | none needed |
+
+The last two are what the random walks count most often; the board (`collab/BOARD.md`, section 1) has every known fault with who is at it.
+
+### If anything goes wrong
+
+⌃⌥0 shows everything. ⌃⌥⎋ pauses Arbor: every window gets its own size and place back. Quit does the same for good. None of the three needs the pointer.
 
 ## Frozen on 2026-10-14 at 17:35 UTC to become release candidate 1, not tagged, and mended once more
 
@@ -89,7 +136,7 @@ The rows are what was known at 17:35 UTC, with what the hour added; each was pla
 | 1 | **While an app hangs**: quitting Arbor leaves that app's windows that were out of view past the corner (a pause, ⌃⌥0 and Float All in the same plight bring them back by themselves once the app answers); Arbor itself stands still for about a second the first time it touches the app | after quitting: start Arbor again once the app answers: they are back in the arrangement, and ⌃⌥0 shows them | always, worse on `main` |
 | 3 | **A window you open (⌘N) in an app that is already running is not received as the framed view's guest**: it comes up in view with the keyboard, floats, goes out of view when the view moves on and does not come back with it. Rules and Dock New Windows do not act on such a window (an `ignore` rule does). Windows of an app you launch are not affected. Proven on a Mac; its mend is written, is macOS-only, could be tried on no Mac in time, and is not in: no macOS-only line that no Mac has compiled is in this commit | ⌃⌥0 shows it | **new** |
 | 3 | **A window you have left lying across the border of two displays can end mostly off screen when the displays are rearranged** (a quarter and a third of it showed in two plays, one of which the lid's mend has since put right), by Arbor's own move; macOS alone would have put it wholly in view. With three displays, `layout` and a zoom one such window ended with a sliver showing. ⌃⌥0 does not bring it in | drag it by its title bar, which stays in reach; or quit Arbor and open it again | new |
-| 3 | **After a hold ends, a window that an app opened mostly off screen during it waits in the corner until everything is asked for.** The line on screen then names ⌃⌥Space; pressed, that key only peeks, and does not bring the window in (Show Everything in the menu does) | **⌃⌥0 brings it in**, from any display; so do ⌃⌥D, ⌃⌥⇧F and turning to the window | new |
+| 3 | **After a hold ends, a window that an app opened mostly off screen during it waits in the corner until everything is asked for.** The line on screen then names ⌃⌥Space | **⌃⌥Space or ⌃⌥0 brings it in**; so do ⌃⌥D, ⌃⌥⇧F and turning to the window. On another display whose view is framed on one window, only ⌃⌥0 and ⌃⌥⇧F do | new |
 | 3 | **A display that changes side and gets smaller in one step, apps reporting first**: floating windows on it can be left where macOS left them, mostly off its right or lower edge: a twentieth to two fifths of each showed in the hour's plays, three windows of four (heavier than this row said when it was frozen). Arbor does not move them there, and they lie the same with Arbor quit; but none of ⌃⌥0, ⌃⌥Space, ⌃⌥D, ⌃⌥⇧F fetches them. In the usual order of reports Arbor fits them | ⌃⌥⎋ twice (pause, resume); or drag it; or quit Arbor and open it again | before the first freeze |
 | 3 | **A display that shrinks so far that the Desktop's own space becomes a tile** leaves a floating window on it unfitted: a quarter shows, its title bar's buttons among it. ⌃⌥0 and ⌘Tab do not fetch it | ⌃⌥⇧F, a click on the Desktop's tile, or quitting | before the second freeze |
 | 3 | **If Arbor starts, or a timed pause ends, while the display is asleep or the screen locked**, it may take up none of the windows, and then only one by one as each app is switched to. Nothing is lost: saved places wait. Seen on a Mac with test windows; the cause in Arbor is not yet known | with the display on: pause and resume, or quit Arbor and open it again (by its finder's reading; run by nobody) | not established |
@@ -125,7 +172,7 @@ TrellisWM does, adds a keyboard and a command line for all of it, and is careful
 | **It tells scripts what you are looking at** | `arborctl watch`: a line of JSON whenever the view, the layout, the focused window or the windows change; a SketchyBar recipe | ◐; an earlier state ● for commands and clicks on test windows | A12 |
 | **URLs that cannot be turned against you** | A web page can only move the view and arrange windows, never quit Arbor or change settings | ◐ | #13 |
 | **Rules for new windows** | Per app and title: dock here, dock beside that app, float, leave alone | ◐ | A04 |
-| **Pause** | ⌃⌥⎋: what you are looking at stays as it is, windows that were out of view come back on screen behind it; windows, shortcuts and gestures are left alone; the arrangement and the view return | ● for the pause of this morning, which moved every window; ◐ for leaving what is in view untouched (#41) | A40; same file |
+| **Pause** | ⌃⌥⎋: as if Arbor had quit, and it comes back. Every window goes back to where it was, in its own size and in view, in one move; windows, shortcuts and gestures are left alone; the arrangement and the view return, in one move each | ◐, at the numbers of a day with real apps on a hosted Mac, where a pause gave no size back | A40, A48 |
 | **Behaves on a shared screen and in calls** | Hold This View: nothing moves the view, apps that push themselves forward stay out of view, rules wait, and neither ⌘M on the window you are showing nor the end of the hold brings anything else into view. ⌃⌥⎋ releases. Hold Still: the view moves only when you ask, and what it turns away is said on screen, once for each app. **Out of the box Arbor holds only when you choose it from the menu**; a camera, a microphone or a meeting's window can start it, each by a setting that is off until somebody has seen it at work | ◐; it builds and its tests pass on a Mac, but no hold has been tried on real windows ○ | A58, A59 |
 | **Three ways home, each one key** | ⌃⌥0 everything on every display; ⌃⌥⇧F a normal Mac on every display; ⌃⌥↩ again un-frames | ● | A41, A42, T17; same file |
 | **⌘Tab finds a window that is out of view** | | ● for a test app; ○ between real apps | same file |
@@ -139,7 +186,7 @@ TrellisWM does, adds a keyboard and a command line for all of it, and is careful
 | **Your `settings.json` stays yours** | Commands change one key and leave your order, spacing and unknown keys; a typo is reported with its place, and the settings in force stay | ◐ | B1 |
 | **Full screen is left alone, also afterwards** | A docked window that goes full screen gives its place back for the time being and returns to it; commands on it are refused | ◐; the Accessibility side ● on test windows | #17, #24, #54 |
 | **You can see where the keyboard is** | A line round the focused window, in the gap, from the first dock on; it flashes when Arbor moved the focus | ● drawn and following on test windows; the rule "not before something is docked" ◐ | A15, F37's report |
-| **Peek** | Hold ⌃⌥Space: everything shows while the keys are down; point, or walk the outline with the arrows, and let go to land there. A tap is still Show Everything, but for one thing: it does not yet bring in a window that a hold kept out (⌃⌥0 does) | ◐; compiled and its tests run on a Mac, **○ for the held keys**: nobody has held them (`check-F51.sh` waits) | F51 |
+| **Peek** | Hold ⌃⌥Space: everything shows while the keys are down; point, or walk the outline with the arrows, and let go to land there. A tap is still Show Everything, and brings in what a hold kept out as the menu item does | ◐; compiled and its tests run on a Mac, **○ for the held keys**: nobody has held them (`check-F51.sh` waits) | F51 |
 | **Shortcuts follow the keyboard** | With two displays, ⌃⌥↑ means the display you are typing on, a pinch the one you point at; only a pointer moved since you last typed changes that | ◐; how macOS counts "since you last typed" ○ (`check-F56.sh` waits). Every way it can misjudge is the old behaviour | F56 |
 | **Shortcuts follow your keyboard layout** | ⌃⌥Z is the key that types Z in Germany and France too; the menu and `bindings` show what is printed on your keys | ◐; switching layouts while Arbor runs ○ (`check-F44.sh` waits) | F44 |
 | **Apps that need ⌃⌥ keep it** | Shortcuts Off in “App”: in Emacs, an IDE or a remote desktop the keys and drags are the app's own, its windows stay arranged, ⌃⌥⎋ still answers. `pauseForApps` pauses for a game and resumes after it | ◐; **○ that a key reaches the app** (`check-F41.sh` waits) | F41 |
@@ -161,6 +208,7 @@ TrellisWM does, adds a keyboard and a command line for all of it, and is careful
 | **Show Everything shows everything** | Floating windows are out of view only when the Desktop is not part of the view. If the Desktop has become too narrow to use, by a dragged gap or by ⌃⌥A with many windows, they show over the docked windows at their own size | ◐ | #211 |
 | **New windows can dock by themselves** | Dock New Windows (off): a window you open takes half of the one you were working in; dialogs and small windows float; never a tile, never a move of the view | ◐; ○ on a Mac | F23 |
 | **Zoom with a mouse** | ⌃⌥ + scroll steps in and out, a notch a step | ◐; ○ with a real wheel, and beside macOS's own ⌃ + scroll zoom | F55 |
+| **One switch for everything that can hold input back** | **Off as it ships**, also on a Mac whose `settings.json` an earlier build wrote: `arborctl set pointerGestures true`, or Trackpad and mouse gestures under Settings… → Gestures, switches it on. Off, Arbor installs no event tap, so no click, scroll or pinch of the Mac waits for Arbor. The pinch, ⌃⌥ + scroll and the rectangle go with it; keys, the menu and dragging windows stay | ◐; `input-taps.sh` counts the taps on a Mac | Q26 |
 | **Go to…** | ⌃⌥G, type a few letters, ↩: any window, in view or not, minimized or hidden, and any saved view | ◐; compiled and seen to come and go on a Mac; **○ typing in it** | F27 |
 | **Options per display** | Another gap, tile size or edge band on the laptop than on the big display | ◐ | F25 |
 | **A minimap** | ⌃⌥M shows where the view is in the whole arrangement; click a window in it to go there. Showing it after every move is built and off | ◐; **○ the panel**: nobody has seen it | F26 |
@@ -222,24 +270,24 @@ The gravest, those that can cost sight of a window or stop Arbor, are [at the he
 | **⌘W or ⌘M** on the focused window, when its app's next window is out of view: the view goes out to that window and comes back | #100 | decided: the view waits until the keyboard has settled (R5) |
 | A shortcut that cannot act **over another app's full-screen window** is silent: no line on screen, no beep; ⌃⌥? there opens its panel unseen | F43 | decided: both show there too |
 | While Arbor is **paused**, `arborctl home` and `float-all` are refused, though every window is on screen already | F40 | decided: ways back work from wherever you are |
-| An ordinary floating window in view over a **framed** window goes out of view at a **relaunch** | always | needs a line in `state.json` (R5) |
+| Arbor is **started** with the keyboard in a docked window that is a **tile** when everything shows: the view goes to that window and the others leave it, instead of everything showing | since a launch shows everything | decided (Q16): everything shows, and that window is let be where it stands, with the keyboard, its place kept |
 | After ⌘W on an app's **last window** the keyboard goes to the window you used before, so a quick ⌘N lands in another app | #100 | on purpose; to be judged by a person |
 | A **dialog** of an app whose window is out of view may open off screen | always; not yet seen | F47 |
 | On a **shared screen**, windows that are out of view show as a line one point wide and 20 to 85 tall in a bottom corner | always | F58's follow-up: needs measuring on a Mac |
 | If you **rebound a letter** by writing the US letter of the key you wanted, as the guide used to say, that shortcut has moved to the key that types the letter. Write `ctrl+opt+us:z` for a place | F44 | |
-| If you learnt **⇧⌘-drag** for the rectangle: it is **⌃⌥-drag** now, and ⇧⌘-drag belongs to the design tools again. `arborctl set frameRectangleModifier shift+cmd` brings the old keys back | #207 | |
+| If you learnt **⇧⌘-drag** for the rectangle: it is **⌃⌥-drag** now, and ⇧⌘-drag belongs to the design tools again. `arborctl set frameRectangleModifier shift+cmd` brings the old keys back, once `pointerGestures` is on | the rectangle's change of keys | |
 | **VoiceOver**, Rectangle, Magnet, Stage Manager, macOS tiling and "click wallpaper to reveal desktop" clash with Arbor. It says so now, in the welcome window and `arborctl doctor`; it changes none of them for you | always | |
 | Nothing by keyboard puts a window **under one other window**; ⌃⌥⌘↓ puts it under everything | always | F59 |
 
 ## What a person still has to try before anyone else is invited
 
 1. A whole working day on real apps: browser, chat, terminal, a call, a shared screen.
-2. Pinch, on a real trackpad. Hold ⌃⌥Space and let go.
+2. With `arborctl set pointerGestures true`: pinch, on a real trackpad. Hold ⌃⌥Space and let go.
 3. Unplugging and plugging a real display; sleep and wake; a laptop lid.
 4. Apps known to be awkward: System Settings, Calculator, Terminal with large text, an Electron app, Finder, a Java or Qt app.
 5. The line on screen (F43): legible on your wallpaper, helpful or in the way? Does the panel of shortcuts (⌃⌥⇧/) give the keyboard back?
 6. Emacs, an IDE or a remote desktop with Shortcuts Off: do its own ⌃⌥ keys arrive?
 7. A keyboard layout that is not US; two layouts switched during the day.
-8. With `"guardDesktopClicks": true` and macOS's "Click wallpaper to reveal desktop" at its default: click the wallpaper between docked windows. Then an icon, a widget, a rubber band round icons, a file dragged from the Desktop into a docked window; and a click on the wallpaper to dismiss an open menu, Spotlight, Control Centre, a Dock stack; the items of Arbor's own menu; tap to click.
+8. With `"guardDesktopClicks": true`, `"pointerGestures": true` and macOS's "Click wallpaper to reveal desktop" at its default: click the wallpaper between docked windows. Then an icon, a widget, a rubber band round icons, a file dragged from the Desktop into a docked window; and a click on the wallpaper to dismiss an open menu, Spotlight, Control Centre, a Dock stack; the items of Arbor's own menu; tap to click.
 9. ⌘W on an app's last window: the keyboard goes to the window you used before. Welcome, or did the next ⌘N land in the wrong app?
 10. Double-click a word in Safari's address field, a browser tab, a toolbar button in a docked window (once F14 is in): the view must stay.

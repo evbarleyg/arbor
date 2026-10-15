@@ -26,7 +26,14 @@ import Foundation
 //   drag <id> <x> <y> [quick] [cmd]
 //                                drag a window by its title bar to a point and hold it there
 //                                before letting go; `quick` lets go at once, `cmd` holds ⌘
+//   pick-up <id> <x> <y>         the first half of a drag: the window is held at that point, with the button down
+//   let-go                       the second half
+//   mac-tiling on|off            macOS's own tiling of dragged windows: on, as a Mac comes and every run begins, or off. With it on the
+//                                left, right and top edges of the screen are macOS's, which tiles a window let go at their last point
 //   move <id> <x> <y> <w> <h>    move/resize a window without the mouse
+//   shove <id> <x> <y> [then <x> <y>]
+//                                what no command does: the window is moved the way Arbor moves windows, behind the
+//                                controller's back. For the tools' own test, which needs a window that is moved twice
 //   pull <id> <edge> <points> [<edge> <points>]
 //                                drag a window's edges with the mouse (positive grows it)
 //   seam <index> <delta>         drag the index-th seam handle
@@ -43,6 +50,8 @@ import Foundation
 //                                under three seconds, counted from when Arbor noticed, is taken for a false
 //                                alarm and the view stays as it was: play a real one with `wait 10`
 //   keyboard <name>              select a keyboard layout: us, german, french, dvorak, russian
+//   macos defaults|tidy          Desktop & Dock is set as macOS comes (its own tiling and the wallpaper click are on), or
+//                                with nothing in Arbor's way; `doctor` says what it makes of it
 //   What Arbor says on screen after a step (a `press`, a drag, a click on a tile) is printed as `on screen: …`.
 //   expect <form>                check the layout (collab/README.md, "Scenarios"); a form
 //                                that does not hold prints EXPECTATION FAILED and makes
@@ -54,8 +63,11 @@ import Foundation
 //   min <id> <WxH>               from now on the window refuses to be smaller (0x0: any size will do)
 //   wait <seconds>               let time pass, running the scheduled work that falls due
 //   watch [events…] [--titles]   from here on, print the lines `arborctl watch` would send after each step
-//   fullscreen <id> on|off       the green button: the window gets a macOS Space to itself, so the other windows
-//                                of its display are on a Space that does not show; off brings all of it back
+//   fullscreen <id> on|off [where-it-was]
+//                                the green button: the window gets a macOS Space to itself, so the other windows
+//                                of its display are on a Space that does not show; off brings all of it back, as a Mac
+//                                does (FakeWindowSystem.leaveFullScreen), and says where a person saw the window meanwhile.
+//                                It lands at the frame it had before Arbor moved it; `where-it-was`: at the one it had last
 //   comes-forward <id>           the window's app brings itself forward: nobody clicked or pressed anything
 //   hold-still-for <bundle id> [title words…]
 //                                add an entry to the `holdStillFor` setting
@@ -70,6 +82,8 @@ import Foundation
 //   trace on [name] | trace off  record the session as a trace file in $ARBOR_HOME/traces
 //   field-type [text]            type into the name field (`ask-name`) and press ↩
 //   field-cancel                 press ⎋ in the name field
+//   relaunch                     quit Arbor and start it again: every window comes back into view, then a new process
+//                                that knows what was saved and nothing else. A trace or a `watch` ends with the quit
 //
 // `arbor-sim replay <file.jsonl> [--strict] [--verbose]` replays a trace instead (Replay.swift).
 //   map <id>|desktop|beside      click in the minimap: on a window, on the Desktop's outline, beside the map.
@@ -81,6 +95,8 @@ import Foundation
 // code 1, unless the next line is `expect fail`: a script that does not do what it says proves nothing.
 // So does a line after which a display's last layout is not what a layout would give now (LAYOUT OUT OF DATE):
 // something changed the arrangement or the view and forgot to lay out.
+// And so does a line during which Arbor moved a window twice where once would have done (MOVED TWICE; ArborTesting/Jolts.swift),
+// unless `expect jolt <id>` follows, which is for a fault that is known and on the board.
 //
 //   swift run -c release arbor-sim bench [sizes…]   count and time everyday commands (Bench.swift)
 // `arbor-sim chaos|hunt|shrink …`, and `replay` without a file, are the chaos test's modes: see ChaosModes.swift.
@@ -107,26 +123,34 @@ func runSimulation() {
     while let line = readLine() { lines.append(line) }
   }
 
-  let harness = launch?.harness() ?? Harness()
-  // The clock is the script's: an hour of `wait` is no reason to stop.
-  harness.recorder.limits.seconds = .infinity
-  harness.recorder.openSink = TraceRecorder.openFile
-  harness.watchAccessibility()
-  harness.start()
+  var harness = launch?.harness() ?? Harness()
+  begin(harness)
+  // As the app does at the end of its launch: what `doctor` finds wrong goes into the log, whoever asked or did not.
+  if launch != nil { harness.controller.logSetupProblems() }
   var printLayout = true
   var lastCommandOK = true
+  var lastReply = ""
   var failedExpectations = 0
   /// The last command, if it failed and no `expect fail` has answered for it yet.
   var unexpectedFailure: String?
   var unexpectedFailures = 0
+  /// The windows the last line moved twice, for which no `expect jolt` has answered yet.
+  var unexpectedJolts: [Jolt] = harness.jolts.filter { !$0.whileLearning }
+  for jolt in unexpectedJolts { print("moved twice at the start: \(jolt)") }
+  var jolts = 0
   func settleFailure() {
+    for jolt in unexpectedJolts {
+      jolts += 1
+      print("MOVED TWICE: \(jolt) (a known fault is answered for with `expect jolt \(jolt.window.rawValue)`)\n")
+    }
+    unexpectedJolts = []
     guard let line = unexpectedFailure else { return }
     unexpectedFailure = nil
     unexpectedFailures += 1
     print("COMMAND FAILED: `\(line)` (follow it with `expect fail` if it is meant to)\n")
   }
   var printTransitions = false
-  let watcher = SimulatedWatcher(harness: harness)
+  var watcher = SimulatedWatcher(harness: harness)
   var staleLayouts = 0
   var linesPrinted = 0
   var minimapsPrinted = 0
@@ -141,9 +165,13 @@ func runSimulation() {
     if launch != nil { fflush(nil) }
     if words[0] == "expect" {
       if words.count == 2, words[1].lowercased() == "fail" { unexpectedFailure = nil }
+      // `expect jolt <id>` answers for a fault that is known and on the board. It fails once the fault is mended.
+      if words.count == 3, words[1].lowercased() == "jolt", let id = WindowID(word: words[2]) {
+        unexpectedJolts.removeAll { $0.window == id }
+      }
       // Expectations check the previous command; they do not count as one.
       if let problem = ScenarioExpectation.check(
-        Array(words.dropFirst()), harness: harness, lastCommandOK: lastCommandOK)
+        Array(words.dropFirst()), harness: harness, lastCommandOK: lastCommandOK, lastReply: lastReply)
       {
         failedExpectations += 1
         print("EXPECTATION FAILED: \(problem)")
@@ -156,14 +184,31 @@ func runSimulation() {
     if words[0] == "transitions" {
       printTransitions.toggle()
       print("transition printing \(printTransitions ? "on" : "off")\n")
+      // This is the line before now, for the expectations that look at it.
+      harness.beginStep()
+      lastReply = ""
       continue
     }
     harness.overlays.clearTransitions()
     if words[0] == "watch", case .watch(let options)? = try? Command.parse(words: words) {
+      harness.beginStep()
+      lastReply = ""
       watcher.watch(options)
       watcher.printLines()
       print("")
       continue
+    }
+    if words == ["relaunch"] {
+      // As the app does: `quit` is answered, then the app ends, which shuts the controller down. Then somebody starts Arbor.
+      _ = harness.run("quit")
+      harness.controller.shutdown()
+      watcher.printLines()
+      // The step that is judged is the start (`begin`): the quit before it is an act of its own.
+      harness = relaunched(harness)
+      watcher = SimulatedWatcher(harness: harness)
+      (linesPrinted, minimapsPrinted) = (0, 0)
+    } else {
+      harness.beginStep()
     }
     let (message, ok) = simulate(words, harness: harness, printLayout: &printLayout)
     // macOS reports the focus changes Arbor asked for back to it.
@@ -171,6 +216,7 @@ func runSimulation() {
     // What Arbor puts off only until the command or event is over (raising pinned windows) happens now.
     harness.scheduler.advance(by: 0)
     lastCommandOK = ok
+    lastReply = message
     if !ok { unexpectedFailure = line }
     print(message)
     for said in harness.overlays.messages.dropFirst(linesPrinted) { print("on screen: \(said.model.line)") }
@@ -182,6 +228,9 @@ func runSimulation() {
         print("LAYOUT OUT OF DATE: \(problem)")
       }
     }
+    // Whatever the line did, each window went straight to where it ended up, unless an app's answer taught Arbor better.
+    unexpectedJolts = harness.jolts.filter { !$0.whileLearning }
+    for jolt in unexpectedJolts { print("moved twice: \(jolt)") }
     for shown in harness.overlays.minimapHistory.dropFirst(minimapsPrinted) {
       print("minimap: \(shown.model?.line ?? "gone")")
     }
@@ -200,9 +249,33 @@ func runSimulation() {
   if failedExpectations > 0 { print("\(failedExpectations) expectation(s) failed") }
   if unexpectedFailures > 0 { print("\(unexpectedFailures) command(s) failed") }
   if staleLayouts > 0 { print("\(staleLayouts) time(s) a display was not laid out again") }
+  if jolts > 0 { print("\(jolts) time(s) a window was moved twice where once would have done") }
   // On damaged files half the script fails, and is meant to. Whoever reads the output looks for the rest.
-  if launch != nil { exit(failedExpectations > 0 ? 1 : 0) }
-  if failedExpectations + unexpectedFailures + staleLayouts > 0 { exit(1) }
+  if launch != nil { exit(failedExpectations + jolts > 0 ? 1 : 0) }
+  if failedExpectations + unexpectedFailures + staleLayouts + jolts > 0 { exit(1) }
+}
+
+/// Starts a harness as every run of the simulator's Arbor starts.
+@MainActor
+func begin(_ harness: Harness) {
+  // The clock is the script's: an hour of `wait` is no reason to stop.
+  harness.recorder.limits.seconds = .infinity
+  harness.recorder.openSink = TraceRecorder.openFile
+  harness.watchAccessibility()
+  harness.beginStep()
+  harness.start()
+}
+
+/// The new process of `relaunch`, started. It uses the settings file the old one used (`settings-file`).
+@MainActor
+func relaunched(_ old: Harness) -> Harness {
+  let new = old.newProcess()
+  new.controller.saveSettings = old.controller.saveSettings
+  new.controller.loadSettings = old.controller.loadSettings
+  new.controller.replaceSettingsFile = old.controller.replaceSettingsFile
+  new.controller.keepCopyOfSettingsFile = old.controller.keepCopyOfSettingsFile
+  begin(new)
+  return new
 }
 
 /// `watch` in the simulator: the real `EventFeed`, with standard output in place of a socket.
@@ -303,6 +376,10 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     }
     system.heldModifiers = []
     return ("dragged \(id.rawValue) to \(Int(x)),\(Int(y))", true)
+  case "mac-tiling":
+    guard words.count == 2, words[1] == "on" || words[1] == "off" else { return usage("mac-tiling on|off") }
+    system.tiling = words[1] == "on" ? .on : .off
+    return ("macOS’s own tiling is \(words[1])", true)
   case "move":
     guard let id = window(1), let x = number(2), let y = number(3), let w = number(4), let h = number(5) else {
       return usage("move <id> <x> <y> <w> <h>")
@@ -380,6 +457,37 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     guard let count = Int(words[1]), (0...2).contains(count) else { return usage("displays <0|1|2>") }
     system.setDisplays(Array(simulatedDisplays.prefix(count)))
     return ("\(count) display(s)", true)
+  case "macos":
+    // What `doctor` and the welcome window are told about this Mac. Until this line: nothing ("unknown here").
+    guard words.count == 2, ["defaults", "tidy"].contains(words[1]) else { return usage("macos defaults|tidy") }
+    let switches = words[1] == "defaults" ? MacSwitch.inTheWay(macOS: 26) { _ in nil } : []
+    harness.controller.systemFacts = { [system] in
+      SystemFacts(
+        accessibility: !system.isDenied, screenRecording: false, switches: switches, eventTaps: ["pinch", "scroll", "rectangle"])
+    }
+    return (words[1] == "defaults" ? "macOS is set as it comes" : "none of macOS's switches is in Arbor's way", true)
+  case "pick-up":
+    guard let id = window(1), let x = number(2), let y = number(3), system.frame(of: id) != nil, system.dragging == nil else {
+      return usage("pick-up <id> <x> <y>")
+    }
+    system.beginDrag(id)
+    system.moveDrag(to: CGPoint(x: x, y: y), holding: 0.5)
+    return ("\(id.rawValue) is in the hand at \(Int(x)),\(Int(y))", true)
+  case "let-go":
+    guard let id = system.dragging else { return ("error: nothing is in the hand", false) }
+    system.endDrag()
+    return ("let go of \(id.rawValue)", true)
+  case "shove":
+    let text = "shove <id> <x> <y> [then <x> <y>]"
+    guard let id = window(1), let x = number(2), let y = number(3), let size = system.frame(of: id)?.size,
+      words.count == 4 || (words.count == 7 && words[4] == "then")
+    else { return usage(text) }
+    _ = system.setFrame(CGRect(origin: CGPoint(x: x, y: y), size: size), of: id)
+    if words.count == 7 {
+      guard let x = number(5), let y = number(6) else { return usage(text) }
+      _ = system.setFrame(CGRect(origin: CGPoint(x: x, y: y), size: size), of: id)
+    }
+    return ("\(id.rawValue) was moved the way Arbor moves windows", true)
   case "health":
     return (health(of: harness), true)
   case "quit-check":
@@ -387,6 +495,9 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
   case "save-state":
     guard words.count > 1 else { return usage("save-state <file>") }
     return saveState(of: harness, to: words[1])
+  case "relaunch" where words.count == 1:
+    // The loop has done it: this is the new process.
+    return ("quit, and started again", harness.controller.isRunning)
   case "revoke":
     harness.revokeAccessibility()
     return ("Accessibility permission taken away", true)
@@ -421,8 +532,10 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     harness.controller.keyboardLayoutChanged(layout)
     return ("keyboard layout: \(layout.name)", true)
   case "fullscreen":
-    guard let id = window(1), words.count == 3, ["on", "off"].contains(words[2]) else {
-      return usage("fullscreen <id> on|off")
+    guard let id = window(1), words.count == 3 || Array(words.dropFirst(2)) == ["off", "where-it-was"],
+      ["on", "off"].contains(words[2])
+    else {
+      return usage("fullscreen <id> on|off [where-it-was]")
     }
     guard system.windows[id] != nil else { return ("error: there is no window \(id.rawValue)", false) }
     let on = words[2] == "on"
@@ -435,13 +548,20 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     let others = system.windows.keys.sorted().filter {
       $0 != id && harness.controller.workspaceID(containing: $0) == display
     }
-    system.setFullScreen(id, on)
-    for other in others where system.windows[other]?.snapshot.isFullScreen == false {
-      system.setOnActiveSpace(other, !on)
+    let onItsSpace = others.filter { system.windows[$0]?.snapshot.isFullScreen == false }
+    if on {
+      system.setFullScreen(id, true)
+      for other in onItsSpace { system.setOnActiveSpace(other, false) }
+    } else {
+      // In the order and at the times of a Mac, where it is seen before it is reported back.
+      system.clearSightings()
+      system.leaveFullScreen(id, with: onItsSpace, whereItWas: words.count == 4)
     }
     // macOS reports each window by itself; Arbor lays out once they have all been heard of.
     harness.scheduler.advance(by: 2)
-    return ("\(id.rawValue) \(on ? "went into" : "left") full screen", true)
+    let seen = system.sightings(of: id).map { "\(Int($0.minX)),\(Int($0.minY)) \(Int($0.width))×\(Int($0.height))" }
+    let sighted = on || seen.isEmpty ? "" : " and was seen at \(seen.joined(separator: ", then at "))"
+    return ("\(id.rawValue) \(on ? "went into" : "left") full screen\(sighted)", true)
   case "field-type":
     guard let prompt = harness.overlays.namePrompt else { return ("the name field is not open", false) }
     let text = words.dropFirst().joined(separator: " ")

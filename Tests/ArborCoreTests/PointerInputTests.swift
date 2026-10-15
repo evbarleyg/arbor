@@ -674,6 +674,20 @@ import Testing
   }
 }
 
+extension Settings {
+  /// Every gesture that needs an event tap switched on, whatever Arbor ships with: the pinch, ⌃⌥ + scroll, the ⌃⌥ rectangle, ⇧-drag on
+  /// the Desktop. For a test that is about one of them.
+  static var withGestures: Settings {
+    var settings = Settings()
+    settings.pointerGestures = true
+    settings.gesturesEnabled = true
+    settings.scrollZoom = true
+    settings.frameRectangleModifier = "ctrl+opt"
+    settings.frameRectangleOnDesktop = true
+    return settings
+  }
+}
+
 @Suite struct PointerSettingsTests {
   @Test func oldSettingsFilesGetThePointerDefaults() throws {
     let settings = try JSONDecoder().decode(Settings.self, from: Data(#"{"gap": 20}"#.utf8))

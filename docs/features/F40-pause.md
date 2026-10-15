@@ -13,15 +13,18 @@ everything and `resume` takes it back. (For a shared screen, where bringing ever
 
 ## Behaviour
 
-- `pause`: windows **in view** (docked ones the view shows, floating ones on a Desktop that is in view) are not touched at all: same place, same size. Someone framed on a virtual machine who
-  wants ⌃⌥ back sees nothing change. Windows **out of view** come back on screen without being raised: at the frame they floated at before they were docked if that is remembered (F48), otherwise in their slot with
-  everything shown. Tiles, gap handles and previews go away. Arbor stops observing windows and moves nothing, whatever happens.
-- Windows come into view **because** nothing reacts to ⌘Tab during a pause: a window left out of view would be lost. They end up behind what is in view, as on any Mac.
-- **Quitting during a pause** leaves no trace either: Arbor looks once more, puts the windows nobody has moved since the pause began back where they floated, and stops. Nothing is laid out or sent out of view on the way.
+- `pause`: **as if Arbor had quit, and it comes back.** Every window Arbor has moved or resized, in view or out of it, goes back to where it was, in its own size, in one move and without being raised: a docked window
+  to the frame it floated at before it was docked if that is remembered (F48), otherwise into its slot with everything shown; a floating window that docked ones pushed aside or squeezed to where its user left it. A window Arbor has not
+  touched is not touched now. Tiles, gap handles and previews go away. Arbor stops observing windows and moves nothing, whatever happens.
+  ("Quitting, Float All and pause give windows back their own earlier sizes, not just a visible position." Until 2026-10-14 a pause left what was in view as it was, in the shape of its slot. Someone framed on a virtual machine who
+  only wants ⌃⌥ back has Shortcuts Off in “App” (F41), which moves nothing.)
+- Windows come into view **because** nothing reacts to ⌘Tab during a pause: a window left out of view would be lost. They end up behind the window in use, as on any Mac.
+- **Quitting during a pause** has nothing left to do, and asks no app anything.
 - Every shortcut is handed back to the apps except those bound to `toggle-pause` or `resume`. The pinch and rectangle event taps are removed.
 - `pause <minutes>` (up to 1440) resumes by itself. A second `pause` replaces the first one's end; `pause` without a number has no end.
 - `resume`: the saved arrangement, view, history and saved views come back, matched against the windows and displays that exist by then, as at
-  launch: windows closed meanwhile leave no empty slot, new ones float, windows moved by hand return to their slots. If nothing was touched meanwhile, what is in view does not move.
+  launch: windows closed meanwhile leave no empty slot, new ones float, windows moved by hand return to their slots. Each window moves once. A floating window the pause took off the Desktop goes back on it, unless somebody has moved it
+  meanwhile: then the resume leaves it where they put it.
 - `toggle-pause` (⌃⌥⎋) does whichever applies.
 - While paused, other commands fail with "paused: … until `resume`"; queries work; `state` has `"paused": true`, no window list and no frames, and still
   shows the arrangement that will come back.
@@ -30,31 +33,42 @@ everything and `resume` takes it back. (For a shared screen, where bringing ever
 - The menu shows "Arbor is paused", Resume, Settings… and Quit; the menu bar icon is dimmed. ⌃⌥, is handed back like the other shortcuts.
 - A pause does not survive a relaunch: starting Arbor means wanting it.
 
-**Changed on 2026-10-14 by the product owner (QUESTIONS Q21):** a pause has one meaning: as if Arbor had quit, and it comes back. Every window Arbor sized goes to its own earlier frame, one move each, nothing raised; resume brings arrangement and view back. "What you are looking at stays as it is" no longer holds. Being built; until it lands the text below is what the trunk does.
+**Changed on 2026-10-14 by the product owner (QUESTIONS Q21):** a pause has one meaning: as if Arbor had quit, and it comes back. Every window Arbor sized goes to its own earlier frame, one move each, nothing raised; resume brings arrangement and view back. "What you are looking at stays as it is" no longer holds. Built: the text above and below says what the trunk does.
 
 ## Design notes
 
-- `Controller+Pause.swift` calls `shutdown(leavingWhatIsInView: true)` and later `start()`, so both ends run code that quitting and launching already exercise. `resume` first drops what the
-  controller knew about windows and displays.
+- `Controller+Pause.swift` calls `shutdown()` and later `start()`, so both ends are the roads that quitting and launching take: what is mended on them is mended for a pause. `resume` first drops what the
+  controller knew about windows and displays, but for where the pause left the windows it moved (`pausedFrames`), which tells it what nobody has touched since.
 - `resume` starts from a copy of the arrangement kept in memory, so it does not depend on `state.json` having been written.
 - `Command.endsPause`, `KeyBindings.whilePaused(_:)` and `Controller.inputSettings` keep the decisions in tested code; `ArborApp` re-registers shortcuts and
   updates the taps on the `.lifecycle` change.
 
 ## Acceptance criteria
 
-1. Pausing while framed leaves every docked and floating window at least 99% on a display and removes every overlay; the windows that were in view keep their frames, before, during and after (no `setFrame` for them).
-   ✔ `pausingBringsEveryWindowBackIntoView`, `aPauseCannotBeSeenByWhoeverIsFramedOnAWindow`, `withEverythingInViewAPauseAndAResumeMoveNothing`
+1. Pausing leaves every docked and floating window at least 99% on a display and removes every overlay; every window Arbor had moved or resized is at its own earlier frame, after one `setFrame`, and the others after none; nothing is raised;
+   a resume brings every frame back, after one `setFrame` each. ✔ `pausingBringsEveryWindowBackIntoView`, `aPauseGivesEveryWindowItsOwnFrameBackInOneMove`, `aPauseRaisesNothingAndLeavesTheKeyboardWhereItIs`,
+   `resumingBringsTheArrangementAndTheViewBackInOneMove`, `framedOnAWindowAPauseGivesThatOneItsSizeBackToo`, `aPauseLeavesTheWindowsWhereAQuitWould`, `aPauseAndAResumeMoveOnlyWhatArborHadMovedOnceEachWay`;
+   `collab/scenarios/40-a-pause-gives-sizes-back.sim`
 2. While paused, moves, drags, minimising, focus changes, new and closed windows, display changes and pending work cause no `setFrame`. ✔ `whilePausedArborMovesNothingWhateverHappens`
 3. Resume restores workspace, camera and history exactly when nothing changed. ✔ `resumingRestoresTheArrangementAndTheCamera`
 4. Resume copes with windows closed, opened and moved meanwhile, reported or not. ✔ `resumingCopesWithWhatChangedMeanwhile`, `resumingCopesWithChangesNobodyReported`
 5. Timed pauses end by themselves, can be replaced, and are cancelled by a manual resume. ✔ three tests
 6. Only shortcuts that end the pause stay registered; the taps' settings are off. ✔ `onlyTheShortcutsThatEndThePauseStayRegistered`, `thePointerTapsAreOffWhilePaused`
-7. Quitting while paused is safe, keeps the arrangement for the next launch, and puts the windows nobody has moved back where they floated. ✔ `quittingWhilePausedIsSafe`, `quittingWhilePausedLeavesNoColumnShapedWindows`,
-   `quittingWhilePausedLeavesWhatSomebodyMovedMeanwhile`
+7. Quitting while paused is safe, keeps the arrangement for the next launch, and moves nothing: the pause has put the windows back. ✔ `quittingWhilePausedIsSafe`, `quittingWhilePausedLeavesNoColumnShapedWindows`,
+   `quittingWhilePausedLeavesWhatSomebodyMovedMeanwhile`, `aQuitDuringThePauseHasNothingLeftToDo`, `aQuitDuringThePauseAsksNoAppAgain`
 
 ## Shipped / Not shipped
 
 Shipped: everything above. Not shipped, and worth doing next:
+
+- **A window in view whose app does not answer when the pause begins** keeps the shape of its slot, as after a quit (one that is out of view is tried again until it comes, F17); `pause` replies as if it had not.
+- **With no display at all** a pause, like a quit, moves only what was out of view.
+- **Floating windows go back on the Desktop in the resume's one layout, or not at all.** One that is minimized, hidden or hung at that moment, one whose app settled on another size after the pause had stopped listening, and all of them after a
+  pause that ended otherwise (the watchdog brought it back after a crash; Accessibility was taken away and given back) stay where their user had left them, over the docked windows if need be.
+- **A floating window moved during the pause** is left there by the resume, but what is remembered for it is still the frame of before (F48: "a move during a pause, which Arbor does not see"), so a later layout can take it back there; one that
+  floats alone takes the Desktop again two seconds later (F18).
+- **One after the other.** A pause asks each app in turn, as a quit does, where a layout lets the apps work side by side (`moveTogether`).
+- Nobody has watched the new pause on a Mac yet. The day with real apps that found the fault checks sizes, places and the number of moves at its steps "pause" and "resume"; `scripts/mac-shell/check-F18.sh` checks the window that fills the Desktop.
 
 - **Pausing by itself.** While displays are mirrored (`CGDisplayIsInMirrorSet`: a projector), and while an app on a list is frontmost (F41, `pauseForApps`).
   macOS has no public way to ask "is my screen being shared?", so that case stays manual.

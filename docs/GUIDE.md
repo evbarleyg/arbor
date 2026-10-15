@@ -57,7 +57,7 @@ That is all of it: **dock**, **float**, **zoom**. Everything else is a faster wa
 | Dock | drag to a screen edge, or hold over another docked window's edge until the preview shows | ⌃⌥⌘ + arrow |
 | Float | drag onto the Desktop, or anywhere with ⌘ held (in a view without the Desktop, only ⌘ takes a window out: let go without it, the window goes back to its place) | ⌃⌥F |
 | Frame one window | | ⌃⌥↩ (again to return) |
-| Step out, step in | ⌥ + pinch, or pinch on the Desktop; with a mouse, ⌃⌥ + scroll down or up: a notch is one step, a flick goes all the way | ⌃⌥↑, ⌃⌥↓ |
+| Step out, step in | with [the gestures switched on](#6-on-its-way): ⌥ + pinch, or pinch on the Desktop; with a mouse, ⌃⌥ + scroll down or up: a notch is one step, a flick goes all the way | ⌃⌥↑, ⌃⌥↓ |
 | Show everything | | ⌃⌥Space |
 | Peek: from one window to another | point while holding ⌃⌥Space | hold ⌃⌥Space, arrows, let go |
 | Take it back | menu → Undo, which names the step ("Undo Dock") | ⌃⌥Z, and ⌃⌥⇧Z to do it again: the last 50 changes to the arrangement, Arrange and Float All among them, with the saved views they cost |
@@ -72,6 +72,22 @@ Arbor was inspired by TrellisWM and is not a copy of it. Three things are differ
 - **Show Everything shows your real windows**, laid out smaller, not pictures of them. You can read, click and type in them at once, and Arbor needs no permission to record your screen. A window that cannot be that small shows as a tile with its app's colour and icon.
 - **Nothing of Arbor's lies between your pointer and your windows.** While you drag, the preview is a picture that lets the mouse through: no layer of Arbor's covers the screen, so letting go always reaches the window.
 
+### What Arbor promises
+
+Seven things you can hold Arbor to. Each has a story of its own that is played after every change to Arbor (`collab/scenarios/rule-1…` to `rule-7…`), and examples beside it. Where today's build is known to fall short, it says so here; the whole list is section 1 of `collab/BOARD.md`.
+
+1. **It does not fight macOS.** macOS has tiling of its own, and as it comes it wants the same screen edges and the same drags. Arbor looks before it arranges anything and tells you what it found (the welcome window; menu → Help → Check Setup…; `arborctl doctor`). While macOS's own tiling is on, Arbor stands aside wherever macOS acts: one preview at a time, and what it shows is what happens.
+   *Not yet:* putting the switches right is still a walk through System Settings; Arbor will offer to do it in one step, and to put them back.
+2. **Nothing moves until you dock something.** Starting Arbor for the first time moves nothing; a later start puts back what you had docked, shows everything, and takes nothing out of view. Nor does a window that opens, closes, goes to the Dock or comes back, an app that is hidden, or time that passes. A window you have not docked is yours: it floats where you left it, at the size you gave it.
+   *Not yet:* a dock still pushes floating windows out of its way and can make them narrower, and a window that hangs over the edge of the screen is pulled in the first time anything else changes.
+3. **No jolts.** A window moves once, straight to where it ends up. Arbor never pulls at a window you are dragging. Out of view means out of view: nothing flashes.
+   *Not yet:* a window whose app refuses the size it is asked for takes a second move the first time Arbor meets it, and so does one that leaves full screen.
+4. **The window you switch to is the window you get.** ⌘Tab, a click in the Dock, the Window menu: it comes to the front and into view, and the keyboard is in it. The view moves to it; it is never left behind another window.
+5. **It leaves things as it found them.** Float All, Quit and a pause give every window back the size and the place it had before you docked it.
+6. **A drag is yours from the press to the release.** The preview is a picture that lets the mouse through. Nothing of Arbor's can take the release, and however a drag ends, nothing is left on the screen that could take your next click.
+7. **There is always a way back.** ⌃⌥Space shows everything on this display, ⌃⌥0 on all of them, ⌃⌥D whatever floats, ⌃⌥[ where you were, ⌃⌥Z takes the last change back, ⌃⌥⇧F makes it a normal Mac again, and so does quitting. No window is ever closed, hidden or minimised by Arbor.
+   *Not yet:* ⌃⌥⇧F answers "nothing is docked" and does nothing while a floating window hangs out of view.
+
 ## 2. The first ten minutes
 
 ### Before you start: four switches
@@ -81,9 +97,11 @@ macOS has features of its own that want the same screen edges and the same click
 | Switch | Set it to | Otherwise |
 |---|---|---|
 | Click wallpaper to reveal desktop | **Only in Stage Manager** | One click on the Desktop, or in a gap between docked windows, sweeps every window off to the sides. It looks as if Arbor lost them. A second click brings them back |
-| Drag windows to screen edges to tile | off | Both macOS and Arbor react to the same drag |
-| Drag windows to menu bar to fill screen | off | The same, at the top edge |
-| Hold ⌥ key while dragging windows to tile | off | macOS's tiling preview appears while ⌥ is down |
+| Drag windows to screen edges to tile | off | The left and right edges of the screen are macOS's: pushed against one, a window gets half the screen from macOS, and Arbor offers nothing along them |
+| Drag windows to menu bar to fill screen | off | The top edge is macOS's: held in the menu bar, a window fills the screen |
+| Hold ⌥ key while dragging windows to tile | off | While ⌥ is down the window is macOS's wherever you let go |
+
+**Arbor never fights macOS over a window. With macOS's tiling on, the left, right and top edges are macOS's.** Arbor shows no preview along them and docks nothing there, and leaves the window floating where macOS puts it. So there is one preview at a time, and what it shows is what happens. The bottom edge, the edges of docked windows and the keys stay Arbor's: ⌃⌥⌘← docks at the left at every setting. The first few times, a line on screen says who took the window and which key docks it. With the switches off, every edge is Arbor's to its last point.
 
 Quit other window managers (Rectangle, Magnet, Amethyst and others use the same ⌃⌥ keys), and turn Stage Manager off.
 
@@ -138,7 +156,7 @@ Browser on the left, terminal on the right, chat under the terminal, the Desktop
 - Drag the chat window onto the lower part of the terminal and let go when the preview covers its bottom half.
 - Drag the gaps until the proportions suit you.
 
-Arbor remembers the arrangement, per display, across restarts of Arbor and across a login, when apps bring their windows back. An app that you quit and open again while Arbor runs does not get its places back yet: its windows float, and you dock them again.
+Arbor remembers the arrangement, per display, across restarts of Arbor and across a login, when apps bring their windows back. Starting Arbor puts what was docked back in its places and shows everything, whatever the view was when you quit, and a window you never docked is not moved. (A docked window too large for its place shows as a tile, as always when everything shows.) The view you quit in is one step back (**⌃⌥[**). An app that you quit and open again while Arbor runs does not get its places back yet: its windows float, and you dock them again.
 
 In a hurry? **⌃⌥A** docks every window on the display in a grid. It replaces whatever arrangement was there.
 
@@ -207,7 +225,7 @@ Would you like to see it after every move of the view, without asking? `arborctl
 
 ### Reading and writing side by side
 
-Frame a rectangle: hold **⇧** and drag, starting on the Desktop, in a gap or on a tile, around the windows you want; or hold **⌃⌥** and start anywhere. The view moves to the space that fits best. It is the quickest way to say "these two". Let go of the keys first to call it off.
+Frame a rectangle (with [the gestures switched on](#6-on-its-way)): hold **⇧** and drag, starting on the Desktop, in a gap or on a tile, around the windows you want; or hold **⌃⌥** and start anywhere. The view moves to the space that fits best. It is the quickest way to say "these two". Let go of the keys first to call it off.
 
 ### Something small for a moment
 
@@ -250,7 +268,7 @@ The two in one sentence each. **Hold This View**: nothing moves the view, not ev
 They need ⌃⌥ for themselves. For an app you use every day, bring it to the front and choose **Shortcuts Off in “App”** from Arbor's menu. From then on, in that app the keys and drags are its own, and its windows stay arranged like any
 others; ⌘Tab or click elsewhere and Arbor's shortcuts are back. Only ⌃⌥⎋ keeps working there, and the key that summoned the app, if one did, to send it away again. The same menu item, now ticked, undoes it. One thing to know: walking onto such an app with ⌃⌥→ hands it the keyboard, so the way on is ⌘Tab or the pointer.
 
-For now and then, **⌃⌥⎋** pauses Arbor: what you are looking at stays exactly as it is, windows that were out of view come back on screen behind it, and windows, shortcuts and gestures are left alone. The menu bar icon dims. ⌃⌥⎋ again, and the arrangement and the view come back, minus whatever was closed meanwhile.
+For now and then, **⌃⌥⎋** pauses Arbor: the Mac looks as if Arbor had quit. Every window goes back to where it was before Arbor touched it, in its own size and in view, nothing comes to the front that was not there, and windows, shortcuts and gestures are left alone. The menu bar icon dims. ⌃⌥⎋ again, and the arrangement and the view come back, minus whatever was closed meanwhile. (If all you want is ⌃⌥ for the app in front, Shortcuts Off in “App”, above, moves nothing.)
 `arborctl pause 45` resumes by itself after 45 minutes. A game that changes the display's resolution can have this done for it: add it to Pause for (Settings… → Apps → Advanced, or `arborctl set pauseForApps add <bundle id>`), and Arbor pauses whenever it is in front and resumes when it is not. (⌃⌥⎋ inside such an app resumes by hand; pressed once more it is a pause of your own, which lasts until you end it.)
 
 ### Plugging in and unplugging a display
@@ -267,7 +285,7 @@ while it is in full screen.
 
 ### Evening
 
-Nothing to do. Quit Arbor or leave it running; log out or restart. Quitting brings every window into view, and the arrangement is there again next time.
+Nothing to do. Quit Arbor or leave it running; log out or restart. Quitting brings every window into view, and the arrangement is there again next time, with everything showing.
 
 ## 4. Making it yours
 
@@ -350,8 +368,9 @@ Arrange the windows by hand once, ask for the line, and bind it to a shortcut: `
 | **The shortcuts do nothing** | No permission; another app has the keys; shortcuts are off, or off in this app; Arbor is paused | Open the menu: it says if permission is missing or Arbor is paused, and Shortcuts Off in “App” has a tick if they are off in the app in front. Quit Rectangle, Magnet and the like. ⌃⌥⇧/ or Keyboard Shortcuts… in the menu shows the shortcuts in effect; `arborctl bindings` lists them too and says if they are off right now, and why |
 | **Only ⌃⌥Space does nothing**, or ⌃⌥Space no longer switches keyboards | With several keyboards or input methods set up, macOS uses the same keys for "Select next source in Input menu", and only one of the two gets them (on the one Mac where it was measured, Arbor) | ⌃⌥0 shows everything too. Free the key on either side: System Settings → Keyboard → Keyboard Shortcuts → Input Sources, or `arborctl unbind ctrl+opt+space` |
 | **Show Everything springs back** when the keys come up | They were held for a second or more, or the pointer moved meanwhile, which is a peek: letting go returns to the outlined view | Let go within a second with the pointer at rest, or use ⌃⌥0, which never peeks. `"peek": false` in `settings.json` turns peeking off |
+| **Clicks, scrolling or pinches feel late or go missing**, in any app, since you switched the gestures on | For the pinch, ⌃⌥ + scroll and the rectangle macOS shows Arbor each press, scroll and pinch first, and holds it until Arbor has answered | Settings… → Gestures → **Trackpad and mouse gestures** off, or `arborctl set pointerGestures false`: nothing waits for Arbor any more. Keys, the menu and dragging windows, gaps and tiles work as before. If that cures it, please tell us |
 | **A beep** | The shortcut has nothing to do here, and `messages` is "off" | Set `messages` to "helpful" and Arbor says why on screen; or ask `arborctl` with the same command: `arborctl in` → "nothing is docked yet: drag a window to a screen edge…" |
-| **Two previews fight** when dragging to an edge | macOS's own tiling | The three switches in section 2 |
+| **A window pushed against the edge takes half the screen**, or all of it at the top, and is not docked | With macOS's own tiling on, the left, right and top edges are macOS's, and Arbor stands aside | ⌃⌥⌘ + an arrow docks it at once. Or switch off the three switches in section 2, and every edge is Arbor's |
 | **A window shows as a coloured tile** with its icon | Its place is too small for it, or its app refused to shrink that far | Arbor has already moved the gaps as far as the Desktop and the neighbours could spare. Click the tile to zoom in on it. Give it more room by dragging a gap. Once there is room, Arbor asks the window again, out of view, and gives it the place if it fits |
 | **An app keeps moving its own windows**, or looks wrong when docked | Some apps insist | Don't Arrange "App" in the menu |
 | **The menu shows ⌃⌥Ü, the documentation ⌃⌥[** | A letter, digit or sign is the key that types it on your keyboard layout. What your layout cannot type on its own stays where a US keyboard has it, and the menu shows what is printed on that key | Trust the menu and `arborctl bindings`. To move it, bind the command to a key you like, written as your keyboard types it: `"ctrl+opt+ö": "back"`; `"ctrl+opt+ü": null` frees the old one |
@@ -374,9 +393,9 @@ Being built or waiting to be merged as this is written. When one lands, its sect
 | Motion with the windows' own contents | With Screen Recording permission windows will keep their contents while they move. Not yet: wait for the release notes to say it has been seen on a Mac |
 | A later start shows everything | Today a later start also goes back to the view you had, so windows can go out of view at once. It will end showing everything; ⌃⌥[ will go to where the view was |
 | Tiles say which window they are | A tile will show the window's title under the icon, so that two windows of one app can be told apart (`tileStyle`, which will ship as `name`) |
-| Standing aside for macOS's own tiling | Where macOS reacts to a drag (the screen's edges, the menu bar), Arbor will leave the drag to it, so the switches in section 2 become advice and no longer a condition |
 | Tab groups | Drop a window on the middle of another: they share a place under a strip of tabs; ⌃⌥⇥ switches |
 | Presets | Set the table with one command |
 | Carry a window with the keyboard (⌃⌥⌘Space) | Everything a drag can do, from the keys: put a window under one other window, make a tab group |
 | Clicks on the Desktop guarded | Built, and off until someone has tried it on a Mac (`guardDesktopClicks`). Then the first of the four switches in section 2 will no longer be needed |
+| Trackpad and mouse gestures: the pinch, ⌃⌥ + scroll, the rectangle | Built, and off for now: for them macOS shows Arbor every pinch, scroll and press of the Mac first, in every app, and holds it until Arbor has answered. That waits until all its checks on a Mac are green. To have them today: Settings… → Gestures → **Trackpad and mouse gestures**, or `arborctl set pointerGestures true` |
 | Double-click a title bar or the Desktop | More of what TrellisWM users' hands expect |

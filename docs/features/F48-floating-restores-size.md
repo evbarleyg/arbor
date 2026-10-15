@@ -18,11 +18,11 @@ Windows all give a window its previous size back when it leaves a tile, so this 
 - `float`, `toggle-float`: the window takes its remembered **size**, centred on where its slot was, fitted into the Desktop if the Desktop is in view, otherwise into the display.
 - Dragging a docked window out and dropping it to float: remembered size, placed so that the pointer stays over the title bar at the same relative position. (Resizing at the drop is safe. Resizing when the
   drag starts, as macOS does, looks better but means setting a frame during a live drag; try it on a Mac behind a setting before making it the default.)
-- `float-all` and quitting: remembered **frame**, position too: these mean "as it was".
+- `float-all`, quitting and pausing: remembered **frame**, position too: these mean "as it was".
 - A window docked since Arbor first saw it, with nothing remembered, keeps today's behaviour.
 - Remembered frames are saved with the arrangement and dropped when the window closes.
 
-**Changed on 2026-10-14 by the product owner (QUESTIONS Q20, Q21):** Arbor no longer places or squeezes floating windows (`floatingWindowsMakeWay` ships false), so a floating window has only one frame, its own, and nothing to be given back. A pause gives docked windows their own frames back as Quit does. Being built; until it lands the text below is what the trunk does.
+**Changed on 2026-10-14 by the product owner (QUESTIONS Q20, Q21):** Arbor no longer places or squeezes floating windows (`floatingWindowsMakeWay` ships false), so a floating window has only one frame, its own, and nothing to be given back. A pause gives docked windows their own frames back as Quit does: built. The first is being built; until it lands the text below is what the trunk does.
 
 ## Design notes
 
@@ -48,8 +48,9 @@ Shipped: everything above. Each criterion has a scenario test in `Tests/ArborKit
 Beyond the list above:
 
 - **Excluding an app** lets go as quitting does: the remembered frame.
-- **Pausing** (the product owner's decision, F40) does not touch what is in view. Windows out of view come back on screen at the remembered frame. Quitting during a pause puts the rest back too, except what somebody has moved
-  meanwhile, so it leaves no column-shaped windows either.
+- **Pausing** lets go as quitting does (F40; QUESTIONS Q21, which replaces "a pause does not touch what is in view"): every window, in view or not, is back at the remembered frame, in one move, and a floating one that
+  was pushed aside or squeezed is where its user left it. It takes the road a quit takes (`shutdown()`). Resuming docks and squeezes them again, in one move each. ✔ `Tests/ArborKitTests/PauseGivesSizesBackTests.swift`, on the desk of a day with
+  real apps on a hosted Mac, where two docked windows had kept their slots' sizes and four floating ones had stayed squeezed; `collab/scenarios/40-a-pause-gives-sizes-back.sim`.
 - **Windows that take no space** (minimized, hidden, on another macOS Space) get their frame back from `float-all` and quitting too, or they would come back later in the shape of a slot.
 - **A window docked by a rule as it opens** goes back to the frame its app gave it.
 - **A dropped window is not pushed onto the Desktop** by the layout that follows the drop, so it does not jump away from the pointer when its old slot closes and the Desktop moves.
@@ -72,7 +73,7 @@ Beyond the list above:
   main one at their own sizes.
 - **A restarted app's window**, matched again by app and title, keeps what was remembered.
 - **A window in macOS's full screen** is left alone; macOS does not let it be moved.
-- **Guests** (F57) that are out of view come back where they were; a guest in view is not touched by a pause; a guest that is docked and floats again has its own size.
+- **Guests** (F57) that are out of view come back where they were; a guest in view is where its app or its user put it, so no way of letting go moves it; a guest that is docked and floats again has its own size.
 - Placing the dropped window relative to the pointer needs its frame at mouse-up. `AXWindowSystem.endGrab` (F17) reads it from the window server just before `dragEnded`.
 
 Not shipped:

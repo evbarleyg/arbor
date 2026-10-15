@@ -167,6 +167,51 @@ private let simpleEntries = SettingsSchema.entries.filter {
     }
   }
 
+  /// The window draws the help as plain text beside a control. Code marks come out as backticks there, what settings.json calls a
+  /// choice is not what the menu beside it offers, and how sure its builders are is said in one word people know.
+  @Test func whatTheWindowShowsIsWrittenForTheWindow() {
+    for entry in SettingsSchema.entries where entry.level != .hidden {
+      #expect(!entry.help.contains("`") && !entry.label.contains("`"), "\(entry.key): no code in the window")
+      if case .choice(let choices) = entry.kind {
+        for choice in choices {
+          #expect(!"\(entry.help) ".lowercased().contains("\(choice.value.lowercased()): "), "\(entry.key): “\(choice.value):” is the file's word")
+        }
+      }
+      for phrase in ["not yet", "seen at work", "from memory", "not ready", "an experiment"] {
+        #expect(!entry.help.lowercased().contains(phrase), "\(entry.key): “\(phrase)” is the builders' talk; say Experimental")
+      }
+    }
+  }
+
+  /// What the window has no use for is not lost: it follows the help where values and commands are typed.
+  @Test func whatIsTypedIsExplainedWhereItIsTyped() throws {
+    let report = SettingsSchema.report(Settings()), page = SettingsSchema.markdown()
+    for words in [
+      "`toggle-auto-dock` switches it too.", "`resize` moves a window's edge whatever this says.",
+      "0 leaves it as it is, 1 is black.", "0 is grey, 1 is the colour itself.",
+      "That is `dock auto` and a rule for `*`; a rule that names an app docks its windows whatever their size.",
+    ] {
+      #expect(report.contains(words) && page.contains(words), "\(words)")
+      #expect(!SettingsSchema.entries.contains { $0.help.contains(words) })
+    }
+  }
+
+  /// Said in the schema and not guessed from the numbers: the next ratio from 0 to 1 need not be a share of anything.
+  @Test func aShareIsANumberFromNoughtToOneAtMostWithoutAUnit() throws {
+    let shares = SettingsSchema.entries.filter(\.isShare).map(\.key)
+    #expect(
+      Set(shares) == [
+        "windowEdgeFraction", "dimBehindArranged", "blurBehindArranged", "appColourAmount", "tintBehindArranged", "desktopEdge",
+      ])
+    for entry in SettingsSchema.entries where entry.isShare {
+      guard case .number(let range, _, let unit) = entry.kind else {
+        Issue.record("\(entry.key) is no number")
+        continue
+      }
+      #expect(unit.isEmpty && range.lowerBound >= 0 && range.upperBound <= 1, "\(entry.key)")
+    }
+  }
+
   @Test func aChoicesValuesAreExplainedWhereTheyAreTyped() throws {
     let entry = try SettingsSchema.entry(named: "newWindowsWhileFramed")
     let note = "`guest`: Stay with that view. `float`: Belong to the Desktop."

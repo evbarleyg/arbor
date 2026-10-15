@@ -57,20 +57,8 @@ private final class PeekOutlineView: NSView {
   override func rightMouseDown(with event: NSEvent) {}
   override func rightMouseUp(with event: NSEvent) { onClick?() }
 
-  /// Windows on macOS 26 have the continuous curve of radius 17. The middle of the line runs `reach` less half
-  /// its width outside them, so this radius keeps it parallel to their corners.
-  private static let cornerRadius: CGFloat = 17 + reach - lineWidth / 2
-
+  /// The line's outer edge runs `reach` outside the windows, so this radius keeps it parallel to their corners.
   override func draw(_ dirtyRect: NSRect) {
-    guard let context = NSGraphicsContext.current?.cgContext else { return }
-    let inset = Self.lineWidth / 2
-    let path = ContinuousCorners.path(bounds.insetBy(dx: inset, dy: inset), radius: Self.cornerRadius)
-    context.addPath(path)
-    context.setFillColor(NSColor.controlAccentColor.withAlphaComponent(0.12).cgColor)
-    context.fillPath()
-    context.addPath(path)
-    context.setStrokeColor(NSColor.controlAccentColor.cgColor)
-    context.setLineWidth(Self.lineWidth)
-    context.strokePath()
+    AccentInk.mark(bounds, radius: ContinuousCorners.windowRadius + Self.reach, fill: 0.12, width: Self.lineWidth)
   }
 }

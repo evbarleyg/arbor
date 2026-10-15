@@ -9,6 +9,7 @@
 # GitHub's, or with ARBOR_INPUT_TAPS_HERE=1 on a Mac with nothing else on screen and no other Arbor running. What
 # changes the Mac itself (a system setting, the Accessibility permission) runs on GitHub's only, whatever is set.
 source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/lib-gestures.sh"
 [ "${ARBOR_INPUT_TAPS_HERE:-}" = 1 ] || needs_throwaway_mac "click and drag at fixed places on the screen (see its header)"
 
 arbor_build
@@ -57,6 +58,12 @@ arbor_taps() { "$WITNESS" taps | grep "pid=$ARBOR_PID "; }
 # tap_is <mask> <true|false>: whether Arbor's tap with that mask is switched on. 0x2 is mouse-downs, 0x44 drags
 # and mouse-ups, 0x400000 scrolls, 0x20000000 gestures.
 tap_is() { arbor_taps | grep -q "mask=$1 enabled=$2"; }
+# This script is about the taps, so it asks for them, whatever Arbor ships with. with_gestures '<json object>': a settings.json with
+# every gesture that needs a tap switched on and, on top of that, what the object says.
+with_gestures() {
+  python3 -c 'import json, sys; print(json.dumps({**json.loads("{" + sys.argv[1] + "}"), **json.loads(sys.argv[2])}))' \
+    "$ARBOR_GESTURES_ON" "$1" > "$ARBOR_HOME/settings.json"
+}
 
 # Since macOS 14 a click on the wallpaper slides every window off the screen, and the next one brings them
 # back. This script clicks the wallpaper a lot, also where Arbor does not guard it (F60), so the switch is off except
@@ -97,7 +104,16 @@ PINCHES=yes
 echo "posted pinches arrive: $PINCHES (posted at the $PINCH_TAP tap)"
 
 step "session 1: three windows, taps and shortcuts on"
+# Launched as on a Mac that has run an earlier build: its settings.json holds the four gestures switched on, as the first launch wrote them
+# down (and the guard, which shipped on for a while), and cannot hold the switch above them, which ships off (Q26). Only then are the gestures asked for.
+printf '%s\n' '{"gesturesEnabled": true, "scrollZoom": true, "frameRectangleModifier": "ctrl+opt", "frameRectangleOnDesktop": true, "guardDesktopClicks": true}' \
+  > "$ARBOR_HOME/settings.json"
 arbor_start 3 ARBOR_NO_HOTKEYS=0
+sleep 1
+arbor_taps
+check "launched with an earlier build's settings Arbor holds no event tap" test "$(arbor_taps | wc -l)" -eq 0
+with_gestures '{}'
+ctl reload-settings
 ctl dock "$W1" left
 ctl dock "$W2" right
 ctl dock "$W3" beside "$W1" bottom
@@ -268,23 +284,36 @@ click 20 "$((sy + sh + 30))" --mods shift
 check "the mouse-down arrived as it was" test "$(count '^down .*mark=none')" -eq 1
 
 step "with frameRectangleOnDesktop off, ⇧-drag on the Desktop is Finder's"
-printf '%s\n' '{"frameRectangleOnDesktop": false}' > "$ARBOR_HOME/settings.json"
+with_gestures '{"frameRectangleOnDesktop": false}'
 ctl reload-settings
 mark "shift drag with the setting off"
 drag "$BARE_X" "$BARE_Y" "$((BARE_X + 80))" "$((BARE_Y + 80))" --mods shift --steps 10
 check "Finder saw the mouse-down as it was" test "$(count '^down .*mark=none')" -eq 1
 check "Finder saw the drag" test "$(count '^dragged ')" -ge 10
 check "⌃⌥-drag is still watched for" tap_is 0x2 true
-printf '%s\n' '{"frameRectangleOnDesktop": false, "frameRectangleModifier": "none"}' > "$ARBOR_HOME/settings.json"
+# The guard ships off, so it is asked for.
+with_gestures '{"frameRectangleOnDesktop": false, "frameRectangleModifier": "none", "guardDesktopClicks": true}'
 ctl reload-settings
 check "with both off the guard of the Desktop still watches the mouse" tap_is 0x2 true
-printf '%s\n' '{"frameRectangleOnDesktop": false, "frameRectangleModifier": "none", "guardDesktopClicks": false}' \
-  > "$ARBOR_HOME/settings.json"
+with_gestures '{"frameRectangleOnDesktop": false, "frameRectangleModifier": "none", "guardDesktopClicks": false}'
 ctl reload-settings
 check "with all three off, only the pinch and scroll taps are left" test "$(arbor_taps | wc -l)" -eq 2
-printf '%s\n' '{}' > "$ARBOR_HOME/settings.json"
+with_gestures '{}'
 ctl reload-settings
 check "and back" test "$(arbor_taps | wc -l)" -eq 4
+
+step "pointerGestures off: no tap is left, whatever the other settings say"
+with_gestures '{"pointerGestures": false, "guardDesktopClicks": true, "continuousZoom": true, "scrollOnDesktopZooms": true}'
+ctl reload-settings
+arbor_taps
+check "Arbor holds no event tap" test "$(arbor_taps | wc -l)" -eq 0
+mark "a shift drag with the switch off"
+drag "$BARE_X" "$BARE_Y" "$((BARE_X + 80))" "$((BARE_Y + 80))" --mods shift --steps 10
+check "a ⇧-drag on the Desktop is Finder's: the mouse-down arrived as it was" test "$(count '^down .*mark=none')" -eq 1
+check "and the drag" test "$(count '^dragged ')" -ge 10
+with_gestures '{}'
+ctl reload-settings
+check "switched on again all four are back" test "$(arbor_taps | wc -l)" -eq 4
 
 step "continuousZoom: ⌃⌥-scroll and pinch are streamed, every other scroll is left alone"
 read -r x y w h <<< "$(frame_of "$W2")"
@@ -317,13 +346,13 @@ sleep 0.7
 check "pressed a second time it is switched on again" tap_is 0x400000 true
 wait $!
 check "and paused again" eventually tap_is 0x400000 false
-printf '%s\n' '{"scrollZoom": false}' > "$ARBOR_HOME/settings.json"
+with_gestures '{"scrollZoom": false}'
 ctl reload-settings
 check "with scrollZoom off as well there is no scroll tap" test "$(arbor_taps | wc -l)" -eq 3
 mark "a scroll without the tap"
 "$WITNESS" scroll "$((x + w / 2))" "$((y + h / 2))" 0 -120 --steps 6
 echo "a scroll event without Arbor's scroll tap: $(delays scroll)"
-printf '%s\n' '{"continuousZoom": true, "scrollZoom": false}' > "$ARBOR_HOME/settings.json"
+with_gestures '{"continuousZoom": true, "scrollZoom": false}'
 ctl reload-settings
 check "the scroll tap is installed, and paused" tap_is 0x400000 false
 mark "a plain scroll"
@@ -350,9 +379,9 @@ if [ "$PINCHES" = yes ]; then
   ctl show-all
   sleep 0.5
 fi
-printf '%s\n' '{}' > "$ARBOR_HOME/settings.json"
+with_gestures '{}'
 ctl reload-settings
-check "with the settings as they come the scroll tap stays, for ⌃⌥-scroll" test "$(arbor_taps | wc -l)" -eq 4
+check "with continuousZoom off again the scroll tap stays, for ⌃⌥-scroll" test "$(arbor_taps | wc -l)" -eq 4
 
 step "F55: ⌃⌥ and a scroll zoom; every other scroll is left alone"
 ctl show-all
@@ -460,6 +489,7 @@ arbor_close_windows
 arbor_new_home
 
 step "session 2: Arbor stops answering, again and again"
+with_gestures '{}'
 arbor_start 1 ARBOR_NO_HOTKEYS=0
 mark "before the rounds"
 # Quick, so that three rounds fit into the ten seconds within which Arbor counts them (TapHealth).
@@ -492,7 +522,7 @@ if on_throwaway_mac; then
   step "session 3: a click on the Desktop does not sweep the windows away"
   wallpaper_click on
   # Off by default until this session has been seen to pass.
-  printf '%s\n' '{"guardDesktopClicks": true}' > "$ARBOR_HOME/settings.json"
+  with_gestures '{"guardDesktopClicks": true}'
   arbor_start 3 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0
   server_frames() { for id in $ARBOR_WINDOW_IDS; do printf '%s | ' "$(real_frame_of "$id")"; done; }
   echo "nothing docked yet: Arbor takes no interest"
@@ -642,7 +672,7 @@ if on_throwaway_mac; then
   ctl show-all
   sleep 0.5
 
-  printf '%s\n' '{"guardDesktopClicks": false}' > "$ARBOR_HOME/settings.json"
+  with_gestures '{"guardDesktopClicks": false}'
   ctl reload-settings
   mark "a click on the Desktop with the guard off"
   before=$(server_frames)
@@ -659,6 +689,7 @@ fi
 # Last, and only on a throwaway Mac: the permission is taken from everything, this script's tools included.
 if on_throwaway_mac; then
   step "session 4: Accessibility is taken away while the taps are installed"
+  with_gestures '{}'
   arbor_start 1 ARBOR_NO_HOTKEYS=0
   check "the taps are installed" test "$(arbor_taps | wc -l)" -eq 4
   sudo tccutil reset Accessibility

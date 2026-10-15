@@ -90,6 +90,9 @@ extension Controller {
     watchLifecycleForPeek()
     // As `perform` would before `show-all`, whose place this takes.
     closeFinder()
+    // On every display, as the command does. A peek can begin while Arbor holds still, and then it fetches nothing
+    // (Controller+Hold.swift).
+    if holdLevel == nil { holdFetchesWhatWaited(on: nil) }
     moveCamera(on: display, to: workspace.tree.root, record: false)
     Log.info("show-all: showing everything")
     // The clock starts once everything shows. Laying out many windows takes a while, and a release that

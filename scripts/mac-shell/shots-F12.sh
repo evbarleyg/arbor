@@ -161,7 +161,7 @@ check "the real window starts 40 points from the edge" eventually inset_is 40
 check "the window is still above the gap handles, which were drawn again" level_is 3
 enter gap.field 500
 check "500 is refused" setting_is gap 40
-check "the reason stands in the window" eventually shows AXStaticText "must be from 0 to 100"
+check "the reason stands in the window" eventually shows AXStaticText "Must be from 0 to 100"
 check "the field is back at the real value" eventually field_is gap.field 40
 wshot light-gap-refused
 
@@ -176,7 +176,7 @@ if check "the slider is found" [ -n "${sh:-}" ]; then
   check "let go: gap has changed" eventually not setting_is gap 40
   ctl get gap
 fi
-check "the refusal is gone after the next change" not shows AXStaticText "must be from 0 to 100"
+check "the refusal is gone after the next change" not shows AXStaticText "Must be from 0 to 100"
 
 step "a change from outside shows in the open window"
 ctl set gap 20
@@ -214,7 +214,7 @@ step "recording: one of Arbor's own shortcuts reaches the recorder instead of ru
 view=$("$ARBOR_BIN/arborctl" status)
 press AXButton record.show-all
 key ctrl+opt+shift+f9
-check "the window says who has the keys" eventually shows AXStaticText "runs desktop now"
+check "the window says who has the keys" eventually shows AXStaticText "runs Show the Desktop now"
 check "the shortcut did not run: the view is where it was" [ "$("$ARBOR_BIN/arborctl" status)" = "$view" ]
 check "nothing is bound yet" runs ctrl+opt+shift+f9 desktop
 wshot light-clash
@@ -259,7 +259,7 @@ check "the banner is up" eventually shows AXStaticText "settings.json cannot be 
 wshot light-file-broken
 press_switch hotkeysEnabled
 check "a switch is refused meanwhile" setting_is hotkeysEnabled true
-check "with the reason under it" eventually shows AXStaticText "so nothing was changed"
+check "with the reason under it" eventually shows AXStaticText "Nothing was changed"
 wshot light-file-broken-refusal
 press AXButton "Replace It with the Defaults"
 check "it asks first" eventually shows AXButton question.yes
@@ -302,12 +302,12 @@ session dark
 panes dark
 ctl settings-window windows
 enter gap.field 500
-check "the reason stands in the window" eventually shows AXStaticText "must be from 0 to 100"
+check "the reason stands in the window" eventually shows AXStaticText "Must be from 0 to 100"
 wshot dark-gap-refused
 ctl settings-window shortcuts
 press AXButton record.show-all
 key ctrl+opt+shift+f9
-check "the window says who has the keys" eventually shows AXStaticText "runs desktop now"
+check "the window says who has the keys" eventually shows AXStaticText "runs Show the Desktop now"
 wshot dark-clash
 press AXButton Cancel
 ctl settings-window general

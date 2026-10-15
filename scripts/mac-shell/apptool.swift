@@ -23,6 +23,12 @@ let usage = """
     apps                          pid policy state bundle-id, one line per app that is not background-only
     pid <bundle id | name>        the running app's process id (exit code 1: not running)
     front                         pid bundle-id of the frontmost app
+    focused [pid]                 id pid: the window of the frontmost app (or of that one) that has the keyboard, or would
+                                  have it if the app were in front (exit code 1: none)
+    dock <bundle id | name>       x y: the middle of that app's icon in the Dock (exit code 1: it has none)
+    dock-window <window>          x y: the middle of that minimized window's miniature in the Dock (exit code 1: none)
+    menu <pid> <title>            x y: the middle of that menu's title in the menu bar, e.g. Window (exit code 1: none)
+    menu-window <window>          x y: the middle of that window's line in its app's Window menu, which must be open
     windows <pid>                 id role subrole x y w h flags, as the app lists them to Accessibility
     wait-window <pid> [seconds]   the same, once a standard window is among them (exit code 1: none came)
     describe <window>             that line for one window
@@ -170,10 +176,17 @@ func owner(of window: UInt32) -> pid_t? {
   return nil
 }
 
-/// The frontmost window at the ordinary level under a point: the list comes front to back.
-func topWindow(at point: CGPoint) -> (id: UInt32, pid: pid_t)? {
+/// The frontmost window at the ordinary level under a point: the list comes front to back. `ringAround` looks through Arbor's focus
+/// ring: a window at the ordinary level, right in front of the focused window and a few points larger all round, that lets presses
+/// through. Arbor's other windows (its welcome, its settings) take presses like anybody's.
+func topWindow(at point: CGPoint, ringAround framed: CGRect? = nil) -> (id: UInt32, pid: pid_t)? {
   for info in windowList([.optionOnScreenOnly, .excludeDesktopElements]) where number(info, kCGWindowLayer) == 0 {
     guard let rect = bounds(info), rect.contains(point), let id = number(info, kCGWindowNumber) else { continue }
+    if let framed, info[kCGWindowOwnerName as String] as? String == "Arbor", rect.contains(framed),
+      framed.insetBy(dx: -24, dy: -24).contains(rect)
+    {
+      continue
+    }
     return (UInt32(id), pid_t(number(info, kCGWindowOwnerPID) ?? 0))
   }
   return nil
@@ -267,7 +280,7 @@ func grabPoint(_ window: AXUIElement, id: UInt32, pid: pid_t) -> (CGPoint, Strin
   for offset in [12, 20, 7] as [CGFloat] {
     for column in columns {
       let point = CGPoint(x: column.rounded(), y: (frame.minY + offset).rounded())
-      guard topWindow(at: point)?.id == id else { continue }
+      guard topWindow(at: point, ringAround: frame)?.id == id else { continue }
       var found: AXUIElement?
       guard AXUIElementCopyElementAtPosition(app, Float(point.x), Float(point.y), &found) == .success,
         let element = found
@@ -530,6 +543,59 @@ case "pid":
 case "front":
   guard let app = NSWorkspace.shared.frontmostApplication else { fail("no app is in front", code: 1) }
   print("\(app.processIdentifier) \(app.bundleIdentifier ?? "?")")
+
+case "focused":
+  guard let app = arguments.isEmpty ? NSWorkspace.shared.frontmostApplication : appArgument() else {
+    fail("no app is in front", code: 1)
+  }
+  let element = application(app.processIdentifier)
+  guard let window = element.element(kAXFocusedWindowAttribute) ?? element.element(kAXMainWindowAttribute),
+    let id = window.windowNumber
+  else { fail("the app has no focused window", code: 1) }
+  print("\(id) \(app.processIdentifier)")
+
+case "dock", "dock-window":
+  guard let dock = runningApp("com.apple.dock") else { fail("the Dock is not running", code: 1) }
+  var items: [AXUIElement] = []
+  for list in application(dock.processIdentifier).elements(kAXChildrenAttribute) where list.role == kAXListRole {
+    items += list.elements(kAXChildrenAttribute)
+  }
+  var found: AXUIElement?
+  if command == "dock" {
+    let wanted = word(0, "a bundle id or a name")
+    found = items.first { item in
+      guard item.subrole == "AXApplicationDockItem" else { return false }
+      if item.string(kAXTitleAttribute) == wanted { return true }
+      guard let url = item.attribute(kAXURLAttribute) as? URL else { return false }
+      return Bundle(url: url)?.bundleIdentifier == wanted
+    }
+  } else {
+    // Compared here and never printed: the miniature is called what the window is called.
+    let title = axWindow(windowArgument()).string(kAXTitleAttribute)
+    found = items.first { $0.subrole == "AXMinimizedWindowDockItem" && $0.string(kAXTitleAttribute) == title }
+  }
+  guard let frame = found?.frame else { fail("the Dock shows no such thing", code: 1) }
+  print("\(text(frame.midX.rounded())) \(text(frame.midY.rounded()))")
+
+case "menu":
+  let title = word(1, "the title of a menu")
+  guard let bar = application(pidArgument()).element(kAXMenuBarAttribute),
+    let frame = bar.elements(kAXChildrenAttribute).first(where: { $0.string(kAXTitleAttribute) == title })?.frame
+  else { fail("no menu called \(title)", code: 1) }
+  print("\(text(frame.midX.rounded())) \(text(frame.midY.rounded()))")
+
+case "menu-window":
+  let id = windowArgument()
+  guard let pid = owner(of: id) else { fail("the window server has no window \(id)", code: 1) }
+  // Compared here and never printed: the line is called what the window is called.
+  let title = axWindow(id).string(kAXTitleAttribute)
+  guard let bar = application(pid).element(kAXMenuBarAttribute),
+    let menu = bar.elements(kAXChildrenAttribute).first(where: { $0.string(kAXTitleAttribute) == "Window" })?
+      .elements(kAXChildrenAttribute).first,
+    let frame = menu.elements(kAXChildrenAttribute).last(where: { $0.string(kAXTitleAttribute) == title })?.frame,
+    frame.height > 0
+  else { fail("the Window menu has no line for window \(id), or is not open", code: 1) }
+  print("\(text(frame.midX.rounded())) \(text(frame.midY.rounded()))")
 
 case "windows":
   for window in application(pidArgument()).elements(kAXWindowsAttribute) { print(describe(window)) }

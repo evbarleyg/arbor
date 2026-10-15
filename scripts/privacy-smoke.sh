@@ -10,7 +10,7 @@ cd "$(dirname "$0")/.."
 sim=.build/debug/arbor-sim
 [ -x "$sim" ] || { echo "privacy smoke test: $sim is not built"; exit 1; }
 home=$(mktemp -d) || exit 1
-trap 'rm -rf "$home"' EXIT
+trap '[ -n "${ARBOR_KEEP:-}" ] || rm -rf "$home"' EXIT
 
 # Commands that fail are part of it, so the simulator's exit code says nothing.
 ARBOR_HOME=$home ARBOR_DEBUG=1 "$sim" quiet \
@@ -36,4 +36,75 @@ if grep -n -e TITLEWORD -e NAMEWORD -e QUERYWORD "$home/arbor.log"; then
   echo "privacy smoke test FAILED: the lines above are in arbor.log"
   exit 1
 fi
+
+# Act two: the words are in the FILES Arbor starts on, in every place where a person can write words of their own, sound and damaged
+# alike, and a trace is recorded besides. What is told to whoever asks (`doctor`, `settings`, `rules`, `displays`) is one thing; the same
+# sentences also reach the log and the trace by other paths (what `doctor` finds wrong is logged at every launch), and there the words
+# must not be. **A new setting that takes words, and a new way for an entry to be refused, get a line in these files.**
+files=$home/files
+mkdir -p "$files"
+cat > "$files/settings.json" <<'JSON'
+{
+  "rules": [
+    {"app": "com.example.safari", "title": "RULEWORD one", "action": "float"},
+    {"app": "com.example.mail", "title": "RULEWORD two", "action": "no-such-action"},
+    {"title": "RULEWORD without an app", "action": "float"},
+    {"app": "com.example.notes", "title": ["RULEWORD", "in a list"], "action": "float"},
+    "RULEWORD that is no rule at all"
+  ],
+  "displays": [
+    {"match": "DISPLAYWORD's iPad", "gap": 30},
+    {"match": "DISPLAYWORD two", "gap": "no-number"},
+    {"match": "DISPLAYWORD three", "noSuchKey": 1},
+    {"match": "DISPLAYWORD four"},
+    {"match": ["DISPLAYWORD"], "gap": 10},
+    {"gap": 10, "remark": "DISPLAYWORD without a match"},
+    "DISPLAYWORD that is no entry at all"
+  ],
+  "holdStillFor": ["com.example.zoom HOLDWORD meeting", "HOLDWORD", "", 7, ["HOLDWORD"], "com.example.x  HOLDWORD   spaced"],
+  "bindings": {
+    "ctrl+opt+j": "go NAMEWORD", "ctrl+opt+k": "find TITLEWORD", "ctrl+opt+l": "layout Safari~TITLEWORD | Mail",
+    "ctrl+opt+m": "rule add com.example.safari float title RULEWORD", "ctrl+opt+n": "BINDWORD", "ctrl+opt+o": "go",
+    "ctrl+opt+p": "name BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD",
+    "ctrl+opt+s": "bind ctrl+opt+t go NAMEWORD", "ctrl+opt+u": "bind ctrl+opt+v bind ctrl+opt+w find TITLEWORD", "ctrl+opt+x": "bind BINDWORD go NAMEWORD",
+    "BINDWORD+j": "home", "ctrl+opt+q": 7, "ctrl+opt+r": ["BINDWORD"]
+  },
+  "gap": "wide", "tileStyle": "no-such-style", "newWindows": ["float"], "noSuchKey": "x",
+  "excludedBundleIDs": ["com.example.books", 7]
+}
+JSON
+# Not among them: a wrong word where one of Arbor's own was wanted (an action, a style). The log quotes it, so that a typo can be found.
+words="RULEWORD DISPLAYWORD HOLDWORD BINDWORD TITLEWORD NAMEWORD QUERYWORD"
+
+# A state.json with names in it, as Arbor writes it, and one of them damaged by hand afterwards.
+ARBOR_HOME=$home/first "$sim" quiet "open Safari" "open Notes" "open Mail" "dock 101 left" "dock 102 right" "zoom 101" "name NAMEWORD one" \
+  "show-all" "zoom 102" "name NAMEWORD two" "show-all" "save-state $files/state.json" > /dev/null 2>&1
+grep -q NAMEWORD "$files/state.json" || { echo "privacy smoke test FAILED: the names are not in state.json, so nothing was tried"; exit 1; }
+
+second=$home/second
+for state in sound damaged unreadable; do
+  [ "$state" != damaged ] || sed -i.bak 's/"NAMEWORD two"/["NAMEWORD two"]/' "$files/state.json"
+  # A quote too few, inside a title: Arbor says where it stopped reading, and quotes the place to whoever asks.
+  [ "$state" != unreadable ] || sed -i.bak 's/"RULEWORD one"/"RULEWORD one/' "$files/settings.json"
+  ARBOR_HOME=$second ARBOR_DEBUG=1 "$sim" launch --state "$files/state.json" --settings "$files/settings.json" --windows 3 --displays 2 quiet \
+    "trace on files" "settings-file $files/settings.json" \
+    "title 101 TITLEWORD one" "title 102 TITLEWORD two" "doctor" "status" "settings" "rules" "displays" "bindings" "spaces" "menu" "state" \
+    "reload-settings" "doctor" "key ctrl+opt+j" "key ctrl+opt+k" "key ctrl+opt+l" "key ctrl+opt+m" "key ctrl+opt+n" "key ctrl+opt+p" \
+    "open Safari" "open Zoom" "title 105 HOLDWORD meeting" "displays 1" "displays 2" "set gap 20" "get gap" "reset gap" \
+    "rule move 1 2" "rule remove 1" "display main gap 30" "go NAMEWORD" "unname NAMEWORD one" "undo" "redo" \
+    "pause" "resume" "hold" "release" "health" "trace off" "quit-check" >> "$home/out2.txt" 2>&1
+done
+
+for word in RULEWORD DISPLAYWORD HOLDWORD NAMEWORD; do
+  grep -q "$word" "$home/out2.txt" || { echo "privacy smoke test FAILED: $word never arrived: no reply says it, so nothing was tried"; exit 1; }
+done
+[ -s "$second/arbor.log" ] || { echo "privacy smoke test FAILED: act two logged nothing"; exit 1; }
+grep -q "cannot be read" "$home/out2.txt" || { echo "privacy smoke test FAILED: the settings.json that cannot be read was read"; exit 1; }
+grep -q "setup:" "$second/arbor.log" || { echo "privacy smoke test FAILED: what doctor finds wrong was not logged at launch, so that path was not tried"; exit 1; }
+ls "$second"/traces/*.jsonl > /dev/null 2>&1 || { echo "privacy smoke test FAILED: no trace was recorded"; exit 1; }
+failed=0
+for word in $words; do
+  if grep -n -i -- "$word" "$second"/arbor.log* "$second"/traces/*.jsonl | cut -c 1-260; then failed=1; fi
+done
+[ "$failed" = 0 ] || { echo "privacy smoke test FAILED: the lines above are in arbor.log or in a trace"; exit 1; }
 echo "privacy smoke test passed"

@@ -16,7 +16,8 @@
 #   (rehearse/) around arbor-fakemac (Sources/arbor-fakemac), which runs the REAL controller on the fakes of
 #   ArborTesting: one display, test windows where the real ones open, which window is in front, who has the
 #   keyboard, title-bar drags, edge resizes, seams, tiles, shortcuts, the ⌃⌥ rectangle, pinches, the menu, URLs,
-#   pause, quit, signals, SIGKILL and the watchdog. There is no daemon: a session's history is a text file next
+#   pause, quit, signals, SIGKILL and the watchdog, and macOS's own tiling of a window let go where it acts (on, as a Mac comes,
+#   until `defaults write` says otherwise; its preview is not in the list of windows). There is no daemon: a session's history is a text file next
 #   to its ARBOR_HOME, and every call replays it. The header of Sources/arbor-fakemac/main.swift says more.
 # - screencapture, sips, sw_vers, defaults, killall, launchctl, system_profiler, and sysctl and bc where they
 #   are missing, are rehearse/mac-tools.
@@ -33,7 +34,7 @@
 #                                              they run as `bash`.
 #
 # What it cannot tell you: anything about AppKit's and Accessibility's timing and order of events, animations,
-# the finer points of which window is in front, macOS's own tiling, the Dock growing and shrinking, Spaces, full
+# the finer points of which window is in front, the Dock growing and shrinking, Spaces, full
 # screen, or what anything looks like (every picture is one black pixel). A ✔ here proves the script, not Arbor.
 #
 # Left behind in .build/rehearsal/: out/ (what a Mac would send back: logs, "pictures") and worlds/ (every

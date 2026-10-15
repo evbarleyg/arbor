@@ -1,4 +1,5 @@
 import ArborCore
+import CoreGraphics
 import Foundation
 
 /// Keeping the window that has the keyboard in view.
@@ -45,10 +46,13 @@ extension Controller {
       return
     }
     let camera = workspaces[display]?.camera
+    let floatingInView = (workspaces[display]?.floating.keys.sorted() ?? []).filter { !parked.contains($0) }
+      .compactMap { window in windows[window].map { (window: window, frame: $0.frame) } }
     bringIntoView(id)
     if workspaces[display]?.camera != camera {
       keyboardHandOver.reveal = .init(
-        window: id, holder: focusHistory.first { $0 != id }, display: display, time: now())
+        window: id, holder: focusHistory.first { $0 != id }, display: display, time: now(),
+        floatingInView: floatingInView)
     }
   }
 
@@ -72,6 +76,9 @@ extension Controller {
       var holder: WindowID?
       var display: DisplayID
       var time: Date
+      /// The floating windows that were in view before that move, and where. A window can float over a view that is not
+      /// the Desktop's (a change of the arrangement takes none away), and nothing but this says that it did.
+      var floatingInView: [(window: WindowID, frame: CGRect)]
     }
     var reveal: Reveal?
     /// The window with the keyboard went away, on this display. `app` is the process macOS picks the next window
@@ -104,7 +111,17 @@ extension Controller {
       guard before?.retractLastMove() == true, let view = before?.camera, somethingWouldBeInView(on: reveal.display, at: view)
       else { return }
       if workspaces[reveal.display]?.retractLastMove() == true {
-        relayout(reveal.display, reason: .camera)
+        // As if the view had never moved. Over a view without the Desktop the move back would send out whatever floats there,
+        // and the move there may have gathered it onto a Desktop that came into view: each is where it was. With the
+        // Desktop in the view the layout knows where they belong, also now that `id` has gone.
+        let showsTheDesktop = workspaces[reveal.display].map { $0.tree.subtree(view, contains: $0.tree.desktop) } ?? true
+        let back = showsTheDesktop ? [] : reveal.floatingInView.filter {
+          windows[$0.window]?.isPresent == true && workspaces[reveal.display]?.isFloating($0.window) == true
+        }
+        placedOnPurpose.formUnion(back.map(\.window))
+        relayout(reveal.display, reason: .camera, puttingBack: back)
+        // Only for that layout: should the view have to move on, they go with it like any other.
+        placedOnPurpose.subtract(back.map(\.window))
         if !ensureFocusIsVisible(on: reveal.display), let heir = system.focusedWindow(), heir != id,
           windows[heir]?.isPresent == true
         {

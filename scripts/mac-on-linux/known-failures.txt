@@ -1,0 +1,102 @@
+# Checks of `make mac-on-linux` that are known to fail, one to a line: the story, a colon, the check, then " # " and a word on it.
+# The run fails when a check that is not listed fails, AND when one that is listed passes: whoever lands the cure deletes the line.
+# "sometimes: " before a line: it fails with some seeds of the walk only, and may pass.
+
+# didActivateApplication arrives while NSWorkspace.shared.frontmostApplication still names the old app (hosted Macs, 2026-10-14: 27 times in three runs). Since 5726225 the layer asks again every
+# 10 ms until macOS names the app, for half a second (`AppThatCameForward`). Past that it gives up, by design, and says so at debug level only. How long a loaded Mac can lag nobody has measured.
+⌘Tab to another app, and NSWorkspace names the old app for 600 ms more: the window that has the keyboard now is reported focused # past the half second AppThatCameForward looks for
+a click on another window of another app, and NSWorkspace names the old app for 600 ms more: the window that was clicked is reported focused # past the half second AppThatCameForward looks for
+⌘Tab to an app whose window is out of view, and NSWorkspace names the old app for 600 ms more: the view moves to show the window that has the keyboard now # past the half second AppThatCameForward looks for
+
+# A window closes and "destroyed" never comes. The layer reads an app's list only when a window is created, the focused or main window changes, a window comes out of
+# the Dock, the app is shown, or the Space changes; and the focus report of a closing window comes 12 ms BEFORE the window goes (trace `close`), when the list
+# still has it. After that nothing looks. `setFrame` of such a window gets `invalidUIElement`, reads no frame back and answers nil, for ever.
+a window closes and the notification never comes: it is reported gone all the same, once # nothing reads the app's list again, and setFrame does not take invalidUIElement for an answer
+a window closes and the notification never comes: Arbor knows the one that is left # the same
+the last window of an app closes and the notification never comes: by the time its app has been left and come back to, it is reported gone # appCameForward reads the focus, not the list
+a docked window closes and the notification never comes: its neighbour gets the room # the same, seen from the screen
+a docked window closes and the notification never comes: at the latest after the person has gone on working # zoom and show-all ask the ghost for a frame, get nil, and keep it
+
+# An app ends and nothing says so (one started from a shell). The layer finds out when a call to it fails, and nothing calls until a layout wants its window moved.
+an app with a docked window ends and nothing says so: the window that is left gets the room # nobody asks a silent app anything until the next layout that moves its window
+
+# If "focused window changed" of the new Space's window comes before the notice of the switch, the list is read as after any change of focus, and a window that left the
+# list while another of its app joined it in the same place is taken for a native tab. Nobody knows the order on a Mac.
+two windows of one app fill the same place on two Spaces, and the Space is switched, the focus reported before the notice: the one is not taken for a tab of the other # rescan(afterSpaceSwitch: false) runs before the notice has come
+two windows of one app fill the same place on two Spaces, and the Space is switched, the focus reported before the notice: Arbor knows both, one showing and one not # the same
+
+# The "resized" reports of a window on its way into full screen can come before AXFullScreen says yes. Until it does they are a docked window out of its slot.
+a docked window enters full screen and leaves it, saying so late: and Arbor has not pulled at it on the way # the controller puts it back in its slot in the middle of the transition
+
+
+# Drags that are lost on a loaded Mac. (1) One leftMouseDragged that finds the window where it was, with the pointer more than WindowGrab.patience = 24 points from the press, settles the press as
+# not being about the window, and both signs of a drag are ignored until the button comes up. (2) Served late, the mouse's events read the pointer and the window server as they are by
+# then: a gesture that is over before Arbor hears of the press compares the last frame with itself. (3) Since 37d0f05 a press has the place where it happened, and the window under it is still looked
+# for in the window server's list as it is when the press is served: half a second late, the window has moved out from under the point. Nothing is logged in any of these cases.
+a window is dragged for a second, and the monitor hears of the press 500 ms late: the drag is reported to begin # the press's own place is held against the window list of half a second later
+a window is dragged for a second, and the monitor hears of the press 500 ms late: and to end, so that there is a drop to act on # the same
+a window is flicked, and the monitor hears of the press 500 ms late: the drag is reported to begin # the queued events read the pointer and the window server as they are now, not as of the event
+a window is flicked, and the monitor hears of the press 500 ms late: and to end, so that there is a drop to act on # the queued events read the pointer and the window server as they are now, not as of the event
+a window is flicked while Arbor's main thread is busy for 300 ms from the press, and what queued up comes byTime: the drag is reported to begin # the queued events read the pointer and the window server as they are now, not as of the event
+a window is flicked while Arbor's main thread is busy for 300 ms from the press, and what queued up comes byTime: and to end, so that there is a drop to act on # the queued events read the pointer and the window server as they are now, not as of the event
+a window is flicked while Arbor's main thread is busy for 300 ms from the press, and what queued up comes accessibilityFirst: the drag is reported to begin # the queued events read the pointer and the window server as they are now, not as of the event
+a window is flicked while Arbor's main thread is busy for 300 ms from the press, and what queued up comes accessibilityFirst: and to end, so that there is a drop to act on # the queued events read the pointer and the window server as they are now, not as of the event
+a window is flicked while Arbor's main thread is busy for 300 ms from the press, and what queued up comes mouseFirst: the drag is reported to begin # the queued events read the pointer and the window server as they are now, not as of the event
+a window is flicked while Arbor's main thread is busy for 300 ms from the press, and what queued up comes mouseFirst: and to end, so that there is a drop to act on # the queued events read the pointer and the window server as they are now, not as of the event
+the window server begins to move a dragged window 100 ms after the press, with the pointer 40 points away: the drag is reported to begin # the press is settled as not about the window at the first look
+the window server begins to move a dragged window 100 ms after the press, with the pointer 40 points away: and to end, so that there is a drop to act on # the press is settled as not about the window at the first look
+the window server begins to move a dragged window 400 ms after the press, with the pointer 40 points away: the drag is reported to begin # the press is settled as not about the window at the first look
+the window server begins to move a dragged window 400 ms after the press, with the pointer 40 points away: and to end, so that there is a drop to act on # the press is settled as not about the window at the first look
+a floating window is dragged briskly to the left edge of the screen, and the window server begins to move it 100 ms after the press, with the pointer 40 points away: a preview shows where it would go # the press is settled as not about the window at the first look
+a floating window is dragged briskly to the left edge of the screen, and the window server begins to move it 100 ms after the press, with the pointer 40 points away: let go, it is docked # the press is settled as not about the window at the first look
+a docked window is dragged briskly out onto the Desktop, and the window server begins to move it 100 ms after the press, with the pointer 40 points away: let go over the Desktop, it floats there # the press is settled as not about the window at the first look
+
+# The rude walk, with the usual seeds (1-40). Each rule here is one of the faults above, or of those in README.md, "What the walk has found".
+the rude walk (polite): a window whose app hung as it came forward is reported focused once the app wakes # reportFocus(of:) waits the second out, notes no silence, and answersAgain reports no focus
+the rude walk (overtaking): a window whose app hung as it came forward is reported focused once the app wakes # reportFocus(of:) waits the second out, notes no silence, and answersAgain reports no focus
+the rude walk (overtaking): Arbor's main thread waits at most two seconds for one hang # a second for each ⌘Tab to a hung app, and for each notification that was on its way when the app hung
+the rude walk (stale answers): a tab is not announced as a window of its own # the list is read once; if it lags, or a Space switch is under way, the new tab is added as a window and can be no tab any more
+the rude walk (stale answers): when the tab in front goes, Arbor knows the one that shows instead # the list is read once; if it lags the group is reported gone and the tab that shows stays unknown
+the rude walk (stale answers): a window whose app hung as it came forward is reported focused once the app wakes # reportFocus(of:) waits the second out, notes no silence, and answersAgain reports no focus
+the rude walk (twice or never): a window that closed without a word is found out # nothing reads the app's list again, and setFrame does not take invalidUIElement for an answer
+the rude walk (twice or never): the windows of an app that ended without a word are found out # nobody asks a silent app anything until the next layout that moves its window
+the rude walk (late calls): a window whose app hung as it came forward is reported focused once the app wakes # reportFocus(of:) waits the second out, notes no silence, and answersAgain reports no focus
+the rude walk (all four): a window that closed without a word is found out # nothing reads the app's list again, and setFrame does not take invalidUIElement for an answer
+the rude walk (all four): the windows of an app that ended without a word are found out # nobody asks a silent app anything until the next layout that moves its window
+the rude walk (all four): a tab is not announced as a window of its own # the list is read once; if it lags, or a Space switch is under way, the new tab is added as a window and can be no tab any more
+the rude walk (all four): when the tab in front goes, Arbor knows the one that shows instead # the list is read once; if it lags the group is reported gone and the tab that shows stays unknown
+the rude walk (all four): Arbor's main thread waits at most two seconds for one hang # a second for each ⌘Tab to a hung app, and for each notification that was on its way when the app hung
+
+# What the walk breaks with some seeds only (seen in 1-400). These may pass.
+sometimes: the rude walk (polite): a tab is not announced as a window of its own # the list is read once; if it lags, or a Space switch is under way, the new tab is added as a window and can be no tab any more
+sometimes: the rude walk (polite): Arbor's main thread waits at most two seconds for one hang # a second for each ⌘Tab to a hung app, and for each notification that was on its way when the app hung
+sometimes: the rude walk (overtaking): a tab is not announced as a window of its own # the list is read once; if it lags, or a Space switch is under way, the new tab is added as a window and can be no tab any more
+sometimes: the rude walk (overtaking): a window that has just opened is announced as new # it opens 2 ms before its app hangs, and a Space switch counts it as there before the layer has seen it
+sometimes: the rude walk (stale answers): Arbor's main thread waits at most two seconds for one hang # a second for each ⌘Tab to a hung app, and for each notification that was on its way when the app hung
+sometimes: the rude walk (twice or never): a tab is not announced as a window of its own # the list is read once; if it lags, or a Space switch is under way, the new tab is added as a window and can be no tab any more
+sometimes: the rude walk (twice or never): a window whose app hung as it came forward is reported focused once the app wakes # reportFocus(of:) waits the second out, notes no silence, and answersAgain reports no focus
+sometimes: the rude walk (twice or never): Arbor's main thread waits at most two seconds for one hang # a second for each ⌘Tab to a hung app, and for each notification that was on its way when the app hung
+sometimes: the rude walk (late calls): a tab is not announced as a window of its own # the list is read once; if it lags, or a Space switch is under way, the new tab is added as a window and can be no tab any more
+sometimes: the rude walk (late calls): Arbor's main thread waits at most two seconds for one hang # a second for each ⌘Tab to a hung app, and for each notification that was on its way when the app hung
+sometimes: the rude walk (all four): a window that has just opened is announced as new # it opens 2 ms before its app hangs, and a Space switch counts it as there before the layer has seen it
+sometimes: the rude walk (all four): a window whose app hung as it came forward is reported focused once the app wakes # reportFocus(of:) waits the second out, notes no silence, and answersAgain reports no focus
+
+# An app that hangs, or is still marked as silent, when it comes forward. `reportFocus(of:)` waits the timeout out on the focused window, says only that the keyboard moved, and does not call
+# `noteSilence`: nobody asks whether the app is back, every further ⌘Tab to it costs another second, and `answersAgain`, if it is reached at all, reports no focus.
+⌘Tab to an app that hangs, and wakes two seconds later: once it wakes, its window, which has the keyboard, is reported focused # reportFocus(of:) notes no silence, and answersAgain reports no focus
+⌘Tab three times to an app that hangs: Arbor's main thread has waited a second for it once, not each time # reportFocus(of:) notes no silence
+⌘Tab to an app whose window is out of view and which hangs for two seconds: once the app wakes the view moves to show its window, which has the keyboard # the same, seen from the screen
+
+# "Whoever posts a notification is awake" (`handle`) does not hold for what was on its way when the app hung: each such notification takes the app off the list of the silent, and the next call waits again.
+an app opens a window and is busy at once, loading what goes into it: Arbor's main thread waits for it two seconds at most # a second for each notification that was on its way
+
+# An app's list is read once for each report. If it is behind, "created" finds the old list, `addWindow` announces the new tab as a window of its own, and from then on it is no candidate for a tab; and when the
+# tab in front closes, neither "main window changed" nor "destroyed" finds the successor on the list.
+native tabs of an app whose list of windows is 10 ms behind: a new tab takes the place of the window it was opened in # the list is read once, and believed
+native tabs of an app whose list of windows is 10 ms behind: it is not announced as a window of its own # the same
+native tabs of an app whose list of windows is 10 ms behind: to Arbor the group is one window # the same
+native tabs of an app whose list of windows is 50 ms behind: a new tab takes the place of the window it was opened in # the same
+native tabs of an app whose list of windows is 50 ms behind: it is not announced as a window of its own # the same
+native tabs of an app whose list of windows is 50 ms behind: to Arbor the group is one window # the same
+the tab in front is closed, and the app's list of windows is 50 ms behind: nothing is reported gone: to the person the window is still there # the same
+the tab in front is closed, and the app's list of windows is 50 ms behind: Arbor knows the tab that shows now # the same

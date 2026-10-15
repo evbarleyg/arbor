@@ -9,6 +9,7 @@
 # reads with footprint, heap, leaks and top (the first three only where developer mode is on: elsewhere macOS asks for a
 # password in a dialog). It drags one gap with the real pointer. About three minutes.
 source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/lib-gestures.sh"
 
 PERF_PIDS=""
 PERF_LAST_PID=""
@@ -215,6 +216,7 @@ step "energy"
 idle "without shortcuts and event taps"
 perf_stop
 PERF_NO_HOTKEYS=0
+arbor_settings "{$ARBOR_GESTURES_ON}"
 perf_start 4 3
 quiet arrange
 idle "with shortcuts and event taps (and their permission check once a second)"

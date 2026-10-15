@@ -176,6 +176,9 @@ keyboard on by itself. If it picks a window out of view, the view stays and a wi
 view gets the keyboard; the view follows only if nothing is in view. macOS reports
 the new focus before a close or a minimize, after a hide, and sometimes not at all, so
 a view that has already followed is taken back (`Workspace.retractLastMove`).
+Two moves that cancel out are no move to a person. A window can float over a view that is not the Desktop's, and
+nothing in the model says that it does: the move back to such a view would park it. So the floating windows that
+were in view before the first move are where they were after the second (`Reveal.floatingInView`).
 When a camera move parks the window that has the keyboard, a visible window is
 focused instead. Commands that arrange windows focus the window they moved only
 if it shows, because focusing a tile would zoom onto it.
@@ -339,7 +342,32 @@ changed after a press within 10 points of the border → an edge resize; size
 changed after a press anywhere else → not a resize (macOS zooms a window whose
 title bar is double-clicked, and gives a window it had tiled its old size back
 when it is dragged away); the pointer 24 points away and the window where it was
-→ the press is about the window's content, stop looking.
+→ the press is most likely about the window's content: look ten times a second
+from here on, not with every movement. It is not the last word
+(`WindowGrab.judge`): a window whose app was busy, or had to bring it forward first,
+starts late, and one that then goes the pointer's way at its own size is in hand.
+Moved farther than the pointer went, by more than 32 points → not in the hand, stop looking.
+
+**macOS showing its desktop** (a click on the wallpaper, as macOS 14 and later come; F11; a
+hot corner) is a picture and nothing more: the window server lists every window at the
+side of its display, with the size it had, while Accessibility has it where it is and
+reports no move. A frame set meanwhile is taken, shows nowhere, and is where the window
+comes back to. So Arbor goes on as ever, by Accessibility, and what it lays out meanwhile
+nobody sees move. What it must not do is believe the window server:
+
+- A press on the strip of a window that still shows brings them all back with the button
+  down, so the window under the pointer leaps across the display in the list. Taken for a drag,
+  that is one at the edge of the display, where Arbor docks. So a press on a window that is listed
+  elsewhere than Accessibility last had it takes hold of nothing (`WindowGrab.isListedElsewhere`,
+  asked by `makePress`), and the last rule above catches a leap from whatever cause.
+- A layout is shown as motion from where the windows are to where they go. With the windows aside
+  there is nothing on screen to lead from, and the stage would put stand-ins on a desktop that
+  somebody wanted bare: `stageTransition` asks `SweptAside`, which compares what Arbor believes
+  with the list it has just read, and moves the windows at once.
+
+`collab/reports/2026-10-14-the-desktop-is-shown.md` has what a Mac answered;
+`FakeWindowSystem+SweptAside.swift` and arbor-fakemac sweep as it did; `scripts/mac-shell/check-sweep.sh`
+asks a Mac again.
 
 `DropResolver` turns the pointer into a target, the
 first of these that applies: on the window's own slot → snap back; within
@@ -365,6 +393,30 @@ back to its slot (`cancelDrag()`). While ⌘ is down
 on release) every target is "float", even the window's own slot. During a mouse
 event `AXWindowSystem` answers with that event's own flags: people let go of key
 and button together, and the key can be up by the time the mouse-up arrives.
+
+**Where macOS tiles, Arbor stands aside.** macOS 15 and later tile a dragged window themselves, a Mac comes with that
+switched on, and macOS asks nobody. `WindowSystem.macTiling()` says which of its three switches are on; it is asked
+when a drag begins and kept in the session. `MacTiling.claim(onWindowLetGoAt:…)` (ArborCore, with the measurements) says
+whether the pointer is where macOS acts, and why: the first and the last point of the display's width, the menu bar, anywhere
+with ⌥ held. `hover(of:)` asks that before anything else and answers `.float` with `leftToMacOS` set: no preview, no
+docking, and neither `drop(of:…)` nor `soleFloatDropped` gives the window a frame, so that a docked window leaves the
+arrangement without the size Arbor would otherwise give it back. From then on it is a floating window that something else
+moves, which `windowChanged` follows as always. Half a second later, if macOS has moved it, a hint says who took it
+(`HeadsUpHint.leftToMacOS`); macOS does not always: thrown into the menu bar and let go at once, the window stays as it is.
+A pointer travels, and on its way to macOS's point it crosses Arbor's own band along the screen's edge, where a preview would come up only to go
+again as macOS's comes. So while the switch for an edge is on, the whole band is silent (`MacTiling.edges`, `DropOptions.silentEdges`;
+`collab/QUESTIONS.md`, Q23): `DropResolver` answers `.float` there, in the corners too, before it looks at anything else that lies in the
+band. Let go there, short of macOS's point, a floating window stays where it is and a docked one goes back to its slot, as wherever nothing
+was promised. The bottom edge, docked windows' own edges further in and the keys stay Arbor's.
+An edge is silent in the same way, at every setting, while the pointer has not left the band in which it took hold (`DragSession.edgesNeverLeft`): a window that
+lies under the menu bar has its title bar in the top band, and slid sideways it has not been carried to the top.
+A release that Arbor never saw ends the same way at an edge or in the menu bar (`dragCancelled`), because macOS saw it; a drag
+that ends with the button still down (a pause, a quit) does not. Dragged off its tile, a window gets its earlier size
+back from macOS, the one change of size `windowChanged` takes from a window in the hand. One point decides, so
+`AXWindowSystem.cursorLocation()` answers with the event's own place while a press or a release is handled.
+`FakeWindowSystem.tiling`, which is on as on a Mac that nobody has changed, makes the fake tile as a Mac was seen to: after
+Arbor has heard of the release, step by step, whatever Arbor made of the window meanwhile. That is what turns a fight
+into a failing test, in every test, random walk and scenario that lets go of a window there.
 
 Every drag ends in `endDrag(on:)`, whether the mouse came up (`dragEnded`) or
 the release will never come (`cancelDrag()`: the window closed, Arbor is
@@ -912,7 +964,7 @@ that still exist keep a slot: what is missing was closed by the user, not by a r
 remembered arrangements of disconnected displays too: the window floats where it appears and returns to its slot
 with the display. Whatever is found mostly off-screen (parked by a run
 that did not quit cleanly) counts as parked, so the first layout brings back everything the
-saved camera shows, and floating windows nobody remembers are moved to the middle of their display.
+camera shows, and floating windows nobody remembers are moved to the middle of their display.
 The size such a window is found at may be the small one of `shrinkOutOfView`, so it is not taken for the size it has in view
 (`noteWindowsLeftParked`).
 
@@ -920,6 +972,20 @@ On quit, `shutdown()` brings every window back into view, including windows that
 left on another Space: a docked window where it floated before it was docked (see Leaving the arrangement), or, if that
 is not known, in its slot with the display laid out at its root without tiles; a floating window where the user left
 it. It ends with a sweep for anything it arranges that is still mostly off-screen, whatever `parked` says.
+
+**Starting Arbor takes no window out of view that is in view** (`collab/QUESTIONS.md`, Q16). A first start moves nothing. A **launch** (a
+person starts Arbor, or logs in: `start()` reads the file itself) brings back what was docked, one move per window, and ends **showing
+everything**, whatever the view was when Arbor stopped: `PersistedState.showingEverything()` puts every camera at its root, with the old
+view one step back, and makes windows that `summon` had sent away ordinary floating windows, on the displays that are not connected
+too. The arrangement, saved views, names and what Back led to stay. A window that was never docked is not moved.
+**The watchdog's restart** goes on from a second ago: it keeps the view, and nothing moves, because what the view leaves out is still in its
+corner. It has one net: `state.json` can be half a second behind, so on a display where the first layout would send away
+a window that is in view now, everything shows instead (`showEverythingWhereTheViewWouldTakeAWindowOutOfView`).
+What is out of view all the same: what Show Everything itself has out of view, a docked window too large for its place (a tile) and the tabs
+behind the one in front. And if the keyboard is in such a window at a launch, the view goes to it, as it does whenever the keyboard goes to a
+tile, and the rest leaves the view: a known fault (the chaos lab's `launch-keyboard-in-a-tile`). Decided: that window will be let be where it stands.
+The end of a pause and the return of the permission are no such starts: they run `start()` from `resumeState`, and bring back
+the view they interrupted (the permission's return then shows everything if windows were stranded, F63).
 
 ## Ending, and starting again
 
@@ -929,9 +995,9 @@ Arbor parks windows out of view, so every way it can end has to account for them
 |---|---|
 | Quit in the menu, `arborctl quit`, SIGTERM, SIGINT, SIGHUP | `applicationWillTerminate` runs `shutdown()`: all back in view |
 | Logout, restart, shutdown | `NSWorkspace.willPowerOffNotification` arrives before apps are asked to quit and save their windows' frames. Arbor pauses for two minutes (`Controller.sessionIsEnding`): all back in view at once. Its own request to quit follows; if some app cancels the logout, the pause ends and Arbor carries on |
-| Crash, Swift trap, `kill -9`, Force Quit | Nothing in the process can act. The **watchdog** starts Arbor again within a second; the apps did not restart, so every window has its number and the arrangement and camera come back from `state.json`. A pause that was on goes on, with its end (`PersistedState.pause`, followed only when the watchdog did the starting) |
+| Crash, Swift trap, `kill -9`, Force Quit | Nothing in the process can act. The **watchdog** starts Arbor again within a second; the apps did not restart, so every window has its number and the arrangement and camera come back from `state.json`, and nothing moves. A pause that was on goes on, with its end (`PersistedState.pause`, followed only when the watchdog did the starting) |
 | The same, three times within two minutes | The third start is a **rescue** (`ARBOR_RESCUE=1`): `state.json` is set aside, every window is brought into view, Arbor quits and says so |
-| Both processes killed (`killall -9 Arbor`), power loss | Recovered at the next launch, as above. After a reboot apps restore windows at the frames they saved, which may be the parked ones; those count as parked too |
+| Both processes killed (`killall -9 Arbor`), power loss | Recovered at the next launch, which shows everything and so fetches what was left in the corners. After a reboot apps restore windows at the frames they saved, which may be the parked ones; those count as parked too |
 | An update replaces the bundle while Arbor runs | The old process keeps running. Quit it first; the new copy refuses to start beside it |
 | Accessibility permission revoked | Windows cannot be moved until it is granted again; the event taps are removed at once (`PointerInput`) |
 | Sleep, display sleep, fast user switching | Arbor keeps running. Displays that disconnect are handled as below |
@@ -1235,7 +1301,7 @@ shows `binding.label` is right. `KeyboardLayoutWatcher` reads the layout macOS h
 What is registered at a given moment is `Controller.activeBindings`: the effective table, cut down to the
 shortcuts that end a pause while paused (`KeyBindings.whilePaused`), or to `toggle-pause` and `pass-through`
 while an app on `passThroughApps` is frontmost (`whilePassingThrough`), and the `summon` of that app while its window is summoned. `Controller.inputSettings` does the
-same for the pointer taps. `FrontmostAppWatcher` reports every app that comes to the front
+same for the pointer taps, and leaves them nothing for as long as `pointerGestures` is off: the taps, `doctor`, the panel of shortcuts and the zones of the Desktop all go by it, so that one switch takes every tap out. `FrontmostAppWatcher` reports every app that comes to the front
 (`applicationActivated`), also during a pause, when `AXWindowSystem` is not observing; the controller
 compares, and tells the app with `Change.input` only when the answer differs, so switching between two
 ordinary apps registers nothing. A new tap or key source follows these two properties and that change, and needs no

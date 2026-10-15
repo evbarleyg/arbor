@@ -7,7 +7,7 @@ import CoreGraphics
 /// There are two ways out:
 /// - **One window floats**, and the person is looking at it (`float`, `toggle-float`, a drag out of its
 ///   slot). It takes the remembered size where it is: centred on its slot, or under the pointer.
-/// - **Arbor lets go** (`float-all`, quitting, excluding its app; pausing, of windows out of view). That means "as it was", so the
+/// - **Arbor lets go** (`float-all`, quitting, pausing, excluding its app). That means "as it was", so the
 ///   window takes the remembered position too.
 ///
 /// A window with nothing remembered (docked for as long as Arbor has known it) keeps its slot's size.

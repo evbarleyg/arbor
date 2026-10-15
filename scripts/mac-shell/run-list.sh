@@ -31,7 +31,7 @@ FIRST="compile-tools.sh check-harness.sh"
 REST="shots-demo.sh shots-review-controller.sh check-F51.sh check-F44.sh check-review-ux.sh
   proof.sh check-F41.sh e2e-drag.sh check-F56.sh check-F49.sh check-F53.sh check-F09.sh check-F18.sh check-F20.sh check-F54.sh shots-F45.sh
   shots-F48.sh shots-F02.sh perf.sh check-F12.sh shots-focus-ring.sh events.sh trace-demo.sh check-F58.sh shots-finder.sh
-  probe-keyboard.sh shots-minimap.sh shots-F43.sh shots-F15.sh
+  probe-keyboard.sh shots-minimap.sh shots-F43.sh shots-F15.sh shots-F19.sh shots-F22.sh shots-F10.sh
   check-F13.sh watchdog-bundle.sh"
 
 folder=scripts/mac-shell
@@ -81,6 +81,23 @@ show() {
   shown=$size
 }
 
+# A list takes up to two hours with nobody at the Mac. The display would go to sleep and the screen lock in the middle, and behind a lock no window
+# shows: the next script would decline. So the display is kept awake for as long as this process lives (-w: also if it is killed), which changes no
+# setting. The scripts decline while an app keeps the display awake, as a call does, so they are told which process is this one's; and if
+# macOS does not list it the way they look for it, it is given up rather than have them all decline.
+awake=""
+if command -v caffeinate > /dev/null 2>&1; then
+  caffeinate -d -i -w $$ > /dev/null 2>&1 &
+  awake=$!
+  sleep 1
+  # safe anywhere: -g only reads
+  if ! pmset -g assertions 2>/dev/null | grep -Eq "pid $awake\(caffeinate\).* PreventUserIdleDisplaySleep "; then
+    kill "$awake" 2>/dev/null
+    awake=""
+    echo "note: the display is not kept awake (caffeinate is not listed as expected). See that it does not go to sleep or lock while this runs."
+  fi
+fi
+
 stop=""
 # Passed on as TERM: bash starts what runs in the background with ⌃C's signal ignored, for good. The script's supervisor takes it for an
 # interruption, and cleans up before it ends.
@@ -119,7 +136,7 @@ for name in $FIRST $chosen; do
   # Nothing from the caller's environment that opens a gate or steers a build. ARBOR_QUIET_SINCE: the input since then was the last script's.
   env -u GITHUB_ACTIONS -u ARBOR_SHOTS -u ARBOR_SHOTS_WHOLE_SCREEN_I_HAVE_CLOSED_EVERYTHING -u ARBOR_BUSY_OK -u ARBOR_APPS_HERE \
     -u ARBOR_INPUT_TAPS_HERE -u ARBOR_UNATTENDED -u PREFIX -u BINDIR -u LAUNCH -u ARBOR_SIGN_IDENTITY -u ARBOR_NOTARY_PROFILE -u ARBOR_VERSION \
-    -u ARBOR_CONFIGURATION -u GITHUB_TOKEN ${pictures:+ARBOR_SHOTS=1} ${busy:+ARBOR_BUSY_OK=1} ${quiet_since:+ARBOR_QUIET_SINCE=$quiet_since} \
+    -u ARBOR_CONFIGURATION -u GITHUB_TOKEN -u ARBOR_KEEPS_AWAKE ${awake:+ARBOR_KEEPS_AWAKE=$awake} ${pictures:+ARBOR_SHOTS=1} ${busy:+ARBOR_BUSY_OK=1} ${quiet_since:+ARBOR_QUIET_SINCE=$quiet_since} \
     bash "$folder/$name" > "$kept/output.txt" 2>&1 &
   script=$!
   # Shown as it comes, without a pipe between this script and that one's exit code, and with a signal heard within half a second.
@@ -160,5 +177,6 @@ if [ -n "$stop" ]; then
 else
   say "all $number ran"
 fi
+[ -z "$awake" ] || kill "$awake" 2>/dev/null
 echo "results: $results (summary.txt first). Nothing was sent anywhere."
 [ -z "$stop" ]

@@ -62,7 +62,7 @@ public struct HeadsUpModel: Equatable, Sendable {
   /// The whole line as one string, as logs, arbor-sim and tests show it.
   public var line: String { hint.map { "\(text) · \($0)" } ?? text }
 
-  /// The line read out, as VoiceOver gets it: two sentences, where the eye has a dot between two shades of grey.
+  /// The line read out, as VoiceOver gets it: two sentences, where the eye has a dot between two weights of type.
   public var spoken: String { hint.map { "\(text). \($0)" } ?? text }
 
   /// How long the line stays, in seconds: a glance for a few words, and time to read a sentence.
@@ -186,6 +186,8 @@ public enum HeadsUpHint: String, Sendable, CaseIterable {
   case outOfView
   case tile
   case docked
+  /// A window was let go where macOS itself tiles, and Arbor stood aside (`MacTiling`).
+  case leftToMacOS
 
   /// How often each is shown before Arbor takes it as read. More than once, because a line that fades
   /// after a few seconds is easily missed the first time.
@@ -206,6 +208,10 @@ public enum HeadsUpHint: String, Sendable, CaseIterable {
         kind: .hint, text: "Too small to show: click the tile to zoom in", hint: shortcut(.find(nil)).map { "\($0) goes there too" })
     case .docked:
       return HeadsUpModel(kind: .hint, text: "Docked", hint: shortcut(.zoom(nil)).map { "\($0) frames it" })
+    case .leftToMacOS:
+      // First the way that works at once, then the lasting cure, which is no shortcut and is said whatever the keys are.
+      let ways = [shortcut(.dock(nil, .left)).map { "\($0) docks it" }, "Check Setup… in the menu"].compactMap { $0 }
+      return HeadsUpModel(kind: .hint, text: "macOS tiled this window; Arbor stood aside", hint: ways.joined(separator: " · "))
     }
   }
 }

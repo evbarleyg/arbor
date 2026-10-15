@@ -10,6 +10,10 @@ extension Controller {
   /// The windows' real frames, not their slots: a window that cannot grow to its slot has wallpaper around it. They
   /// change without a new layout (the user drags a floating window about), which observers hear of as `.frames`.
   /// A frame gone stale all the same errs on the safe side: the press goes where it would without Arbor.
+  /// Whether the settings have Arbor keep plain clicks on the Desktop from macOS: what `doctor` and the welcome window may promise. The guard
+  /// works through a tap, so it goes with `pointerGestures`. Not `inputSettings`: a pause is no reason to send anybody to System Settings.
+  var guardsDesktopClicks: Bool { settings.pointerGestures && settings.guardDesktopClicks }
+
   public func desktopGuardZones() -> DesktopGuardZones {
     let settings = inputSettings
     guard isRunning, settings.guardDesktopClicks || settings.frameRectangleOnDesktop else { return DesktopGuardZones() }

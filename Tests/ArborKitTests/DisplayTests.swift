@@ -604,13 +604,17 @@ private func reopen(_ old: Harness, in new: Harness) {
     let again = Harness(displays: [main], saved: decoded)
     reopen(h, in: again)
     again.start()
-    #expect(again.controller.dormant[side.id] == remembered)
+    // A launch shows everything, also on a display that comes back later. The view it had is one step back.
+    var expected = remembered
+    expected.workspace.showEverything()
+    #expect(expected.workspace.back.last == remembered.workspace.camera)
+    #expect(again.controller.dormant[side.id] == expected)
     for window in [a, b, c] {
       #expect(again.workspace.isFloating(window))
     }
 
     again.system.setDisplays([main, side])
-    #expect(again.controller.workspaces[side.id] == remembered.workspace)
+    #expect(again.controller.workspaces[side.id] == expected.workspace)
     #expect(again.controller.dormant.isEmpty)
     #expect(again.workspace.floating.isEmpty)
     expectWindowsMatchLayout(again, on: side.id)

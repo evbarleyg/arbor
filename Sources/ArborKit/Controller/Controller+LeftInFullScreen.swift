@@ -143,8 +143,6 @@ extension Controller {
       let target = isOutOfView(note.frame) ? note.frame.fitted(into: main.visibleFrame) : note.frame
       if let actual = system.setFrameOnce(target, of: window, pid: note.pid), !isOutOfView(actual) {
         leftInFullScreen.notes[window] = nil
-        // What a quit during the pause compares with, to tell whether somebody has moved it since.
-        pausedFrames[window] = actual
         Log.info("\(window) left full screen during the pause and came back into view")
         continue
       }

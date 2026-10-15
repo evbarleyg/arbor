@@ -369,6 +369,7 @@ private func endReason(_ entries: [TraceEntry]) -> String? {
     let a = h.system.open(app: "Safari")
     h.start()
     h.run("trace on drag")
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(a, through: [CGPoint(x: 620, y: 210), CGPoint(x: 300, y: 300), CGPoint(x: 3, y: 450)])
     h.run("trace off")
     let kinds = essential(recordedTrace(h).entries).map { $0.line.description.split(separator: " ").prefix(3).joined(separator: " ") }
@@ -544,6 +545,7 @@ private func endReason(_ entries: [TraceEntry]) -> String? {
     h.start()
     h.run("trace on edges")
     h.system.mouseDown = true
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.events?.dragBegan(a, at: CGPoint(x: 100, y: 400))
     // In and out of the band along the screen's left edge, a millisecond apart: the preview changes every time.
     let xs: [CGFloat] = [100, 3, 100, 3, 100, 3]
@@ -724,6 +726,7 @@ private func endReason(_ entries: [TraceEntry]) -> String? {
     system.moveTogether([(id, frame)])
     #expect(spy.calls.last == "moveTogether w5")
     #expect(system.windowsFrontToBack() == [WindowID(77), WindowID(5)])
+    #expect(system.macTiling() == MacTiling(screenEdges: true, menuBar: false, optionKey: true))
     system.setMinimized(id, true)
     #expect(spy.calls.last == "setMinimized w5 true")
     system.unhideApp(pid: 9)
@@ -855,8 +858,9 @@ private func endReason(_ entries: [TraceEntry]) -> String? {
     let lines = recordedTrace(h).entries.map(\.line)
     // A window named after its app gives nothing away, and replies that name the app must stay readable.
     #expect(lines.contains(.note("about to move title[1] beside Calculator")))
-    #expect(lines.contains(.command("layout Pages~title[1]")))
-    #expect(lines.contains(.done("layout Pages~title[1]", ok: false, message: "no window called title[1]")))
+    // This text cannot be read as a command, so of the command only the verb is written (`CanaryTests`). The reply keeps its tokens.
+    #expect(lines.contains(.command("layout …")))
+    #expect(lines.contains(.done("layout …", ok: false, message: TraceLine.aboutMark + "no window called title[1]")))
     #expect(lines.contains(.other(.call, "showHeadsUp", arguments: [.object(["text": .string("title[1] docked"), "window": .string("\(a)")])])))
     #expect(lines.contains(.other(.read, "frontmostTitle", result: .string("title[1]"))))
   }
@@ -867,14 +871,14 @@ private func endReason(_ entries: [TraceEntry]) -> String? {
     recorder.clock = { 0 }
     recorder.openSink = { _ in sink }
     try recorder.begin(name: "nest", fileName: "nest") { _ in Self.emptyHeader }
-    recorder.stimulus(.command("outer")) {
+    recorder.stimulus(.command("home")) {
       recorder.record(.focus(WindowID(1)))
       recorder.stimulus(.focused(WindowID(1))) { recorder.record(.focus(WindowID(2))) }
     }
     recorder.stimulus(.focused(WindowID(3))) {}
     #expect(
       sink.lines.dropFirst() == [
-        #"{"t":0.0000,"command":"outer"}"#, #"{"t":0.0000,"call":"focus","id":1}"#,
+        #"{"t":0.0000,"command":"home"}"#, #"{"t":0.0000,"call":"focus","id":1}"#,
         #"{"t":0.0000,"nested":true,"event":"focused","id":1}"#, #"{"t":0.0000,"call":"focus","id":2}"#,
         #"{"t":0.0000,"event":"focused","id":3}"#,
       ])
@@ -983,6 +987,7 @@ final class SpyWindowSystem: WindowSystem {
   func windowsFrontToBack() -> [WindowID] { [WindowID(77), WindowID(5)] }
   func stackedWindows() -> [StackedWindow] { [] }
   func modifierKeysDown() -> KeyChord.Modifiers { [.command] }
+  func macTiling() -> MacTiling { MacTiling(screenEdges: true, menuBar: false, optionKey: true) }
   func openApplication(_ app: String) -> Bool {
     calls.append("openApplication \(app)")
     return true

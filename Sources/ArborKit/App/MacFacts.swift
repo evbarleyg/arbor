@@ -15,6 +15,13 @@ enum MacFacts {
     }
   }
 
+  /// macOS's own tiling of dragged windows as it stands. Settings that cannot be read count as this macOS comes: standing
+  /// aside for nobody costs the last point of a screen edge, and not standing aside costs a fight over the window.
+  static var tiling: MacTiling {
+    let macOS = ProcessInfo.processInfo.operatingSystemVersion.majorVersion
+    return MacTiling(switches ?? MacSwitch.inTheWay(macOS: macOS) { _ in nil })
+  }
+
   /// How many keyboard layouts and input methods the Input menu switches between.
   static var inputSources: Int? {
     let wanted: [String: Any] = [

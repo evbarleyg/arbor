@@ -107,9 +107,14 @@ A real-window step is a `▸` heading printed by `arbor-e2e` (`make e2e`,
 A step the runner has but the evidence does not yet is not counted and breaks nothing.
 
 `make parity` also fails when the test run as a whole failed or did not finish
-(a crash ends the log early; what it printed before proves nothing), and exits with
+(a crash ends its record early; what came before proves nothing), and exits with
 code 2 when `parity.json` itself is wrong: an unknown status or a spec that does not
 exist.
+
+What the tests did is read from the record Swift Testing writes for tools (`make test` leaves it in
+`.build/test-report.jsonl`), never from what `swift test` prints, which loses some hundred lines now and
+then from a run that went well. So "test … not found" means what it says: no such test ran. Do not run it
+again; look for the test. `make check parity` runs the tests once.
 
 **Keeping it honest.** `shipped` means a TrellisWM user who tried the thing the
 reference describes, the way it describes it, would agree that Arbor does it. If it
@@ -153,9 +158,12 @@ around that window, where the window is; there is none), `outline <id>|desktop|n
 `field open` / `field closed` (the field of `ask-name`; `field-type [text]` types into it and presses ↩, `field-cancel` presses ⎋), `minimap <id>|desktop|everything|none` (what the minimap marks as filling the view; there is none;
 `map <id>|desktop|beside` clicks in it),
 `held view|still|no` (F58), `focused <id>` (that window has the keyboard),
+`still` / `still <id>` (during the line before, Arbor moved no window, or not that one), `moved-once` (it moved something, and nothing twice),
+`at <id> <x> <y>` (the window's top-left corner), `replied <words>` (what the line before printed contains those words, ignoring case),
+`preview none|showing` (the drop preview), `jolt <id>` (see below),
 `said <words>` / `silent` (the heads-up line on screen now contains those words, ignoring
 case; there is none. A line stays until `flush` or `wait`). `press <command>` runs a command as its shortcut would, which is what
-makes Arbor answer on screen; arbor-sim prints each line as `on screen: …`. Failed expectations print
+makes Arbor answer on screen; arbor-sim prints each line as `on screen: …`. `relaunch` quits Arbor and starts it again. Failed expectations print
 `EXPECTATION FAILED` and make arbor-sim exit with code 1.
 
 arbor-sim checks each `expect` line as it runs (`ScenarioExpectation` in
@@ -163,6 +171,12 @@ ArborTesting). A line that does not hold prints `EXPECTATION FAILED: <why>`,
 and arbor-sim exits with code 1 at the end, so `make scenarios` (part of
 `make check` and of CI) fails when a user journey breaks. `expect ok` and
 `expect fail` refer to the last command, not to earlier expectations.
+
+**A window moves once.** After every line of every scenario arbor-sim looks at what Arbor asked of the windows. A window that did
+as it was asked and was then asked for another frame before the line was over has been moved twice where once would have done
+(`ArborTesting/Jolts.swift`): arbor-sim prints `MOVED TWICE` and the scenario fails. Asking again because an app answered with another size
+than it was asked for does not count. `expect jolt <id>` on the next line answers for a fault that is known, beside a remark that names its row on
+the board; it fails once the fault is mended, so it cannot outlive it.
 
 A command that fails (a misspelt verb, a window that is not there) fails the
 scenario too, unless the very next line is `expect fail`; so does a scenario
@@ -181,7 +195,9 @@ and `arbor-e2e` executables, and adds a module named CoreGraphics that re-export
 Foundation (`Sources/LinuxShims`), so `import CoreGraphics` works on both platforms.
 
 **On Linux**, `make check`, `make scenarios`, `make parity` and `make sim` work as
-on a Mac, so run them before pushing. A machine with Docker but no Swift (or a
+on a Mac, so run them before pushing. **`make gate` runs all of it, with `make typecheck-mac` and `make lint`, in a third of
+the time**: the tests once instead of twice, and on every core instead of one (`scripts/gate.sh`, `scripts/fast-tests.py`;
+`make test-fast` for the tests alone). A machine with Docker but no Swift (or a
 Mac, to check that the Linux build still works) runs the first three in the image
 CI uses with `make linux`, or any command with `./scripts/linux.sh <command>`.
 
@@ -201,41 +217,68 @@ Three rules keep the Linux build working and the platforms telling the same stor
   elsewhere with a reason containing "only on macOS" (`CarbonKeyCodeTests.swift`
   is the pattern). `parity.py` takes exactly those as passing in a run off
   macOS, so `docs/FEATURES.md` comes out the same on both platforms. A test
-  skipped for any other reason counts as not found, and so does one in a file
-  that is compiled only on macOS (`EventTapThreadTests.swift`, all of it inside
-  `#if os(macOS)`): do not list such a test in `parity.json`.
+  skipped for any other reason proves nothing and breaks the item that lists it, and so does
+  one in a file that is compiled only on macOS (`EventTapThreadTests.swift`, all of it inside
+  `#if os(macOS)`), which off macOS is not found: do not list such a test in `parity.json`.
 
 **The macOS-only code** is proved through GitHub:
 
 1. Push the work branch and open a **draft pull request** against `main`; the
    PR description is the report (same template).
-2. GitHub Actions runs `linux` (the headless stack) and `macos` (everything).
+2. GitHub Actions runs the headless stack on Linux and everything on `macos`.
    Both build, test, and run the simulator smoke test, the scenarios and
-   `parity.py --check`; `macos` then runs the real-window and real-pointer tests. A newer push
+   `parity.py --check` (on the Mac: see below); `macos` then runs the real-window and real-pointer tests. A newer push
    cancels the run for the older one.
+
+   Linux runners are plentiful, so the Linux work is several jobs side by side, each named `linux-…`
+   (`linux-lint`, `linux-typecheck-mac`, `linux-sim`, `linux-tests`). The last job, `linux`, passes only if all of
+   them did: that one is the Linux verdict. A new job gets a name that starts with `linux-` and a place in its `needs`;
+   `scripts/test-ci-linux.py` (part of `make lint`) fails if it has none, or if a step of `make check` is run by no job.
 
    A macOS job is slow and runners are few, so a first small job,
    `changes`, leaves it out (it shows as skipped, and the annotation on
    `changes` says why) when a Mac could prove nothing new
-   (`scripts/ci-changes.py`; the `linux` job holds its rules to the table of
+   (`scripts/ci-changes.py`; the `linux-lint` job holds its rules to the table of
    cases in `scripts/test-ci-changes.py`):
-   - the pull request changes only `collab/`, `docs/`, `*.md` files, `scripts/typecheck-mac/` and the scripts in
-     `scripts/mac-shell/` that CI does not run (it runs `e2e-drag.sh`, built on `lib.sh`, `pointer.swift` and `state.py`);
+   - the pull request changes only `collab/`, `docs/`, `*.md` files, `scripts/typecheck-mac/`, the scripts in
+     `scripts/mac-shell/` that CI does not run (it runs `e2e-drag.sh` and `compile-tools.sh`, built on `lib.sh`, `pointer.swift` and
+     `state.py`), the Mac shell workflow, and the rules and self-tests that only Linux runs;
    - or besides those only code that Linux builds and tests too: `Sources/ArborCore`,
      `Sources/ArborKit/{Controller,Platform,Support}`, `Sources/ArborTesting`,
      `Sources/arbor-sim`, `Sources/LinuxShims`, `Tests`;
    - or only prose has changed since the last commit that passed on a Mac
      (the report pushed after the code; a branch moved to a tested head).
 
-   The second rule does not hold where work is integrated (pushes to `main`,
+   The second rule does not hold where work is integrated (pushes to `main`, pull requests into it,
    the pull request from `swarm/trunk`): there every change of code is compiled
    and driven on a Mac. So a change to the controller or a platform protocol can
-   pass its own pull request and break the macOS-only code that uses it. The `linux`
+   pass its own pull request and break the macOS-only code that uses it. The `linux-typecheck-mac`
    job type-checks that code against stand-ins (`make typecheck-mac`), which catches a changed
    name or type; it runs nothing. When
    you change something `AX`, `App`, `Input`, `IPC` or `UI` calls, run that first, and ask for the Mac with
    **`[mac]` in the subject of the head commit** (or the label `mac`), or
    compile with `scripts/mac-shell/run.sh scripts/mac-shell/compile.sh`.
+
+   A Mac that does run need not repeat what `linux` runs on the same commit, nor build what an earlier job has built. There is
+   one Mac job, `macos`: it sets up once, builds once, runs **only the tests a Mac can say something about**, then the
+   real-window and real-pointer tests. `scripts/ci-tests.py select` lists the test files, each with its reason (a
+   compile-time condition, a trait that switches a test on or off, an Apple framework, real files, sockets,
+   processes, threads and clocks, or a place in that script's `ALWAYS`). The annotation on `changes` says how it runs, and why:
+   - **in an ordinary pull request** it builds upon an earlier job's build (`docs/TESTING.md`, "What a run starts with");
+   - **where work is integrated** (pull requests into `main`, the one from `swarm/trunk`, pushes to `main`) it builds from
+     nothing, and only a pass of that kind (the job `macos-from-nothing` marks it) spares a later run there its Mac;
+   - **every test, built from nothing**: every night on `main`, when **`[mac-full]` in the subject of the head commit** (or the
+     label `mac-full`) asks for it, when the workflow is started by hand, and when anything is unclear.
+
+   `real-windows` is still a check of its own, with its own annotations, but no longer a Mac of its own: it passes on what the two
+   steps on real windows in `macos` said. So `macos` green and `real-windows` red means what it always did.
+
+   Nothing is dropped on the way. Both jobs leave a record of every test and what became of it, and the job
+   `tests-accounted-for` fails, naming each one, if a test ran neither on the Mac nor on Linux: one that only a
+   Mac compiles and the selection missed, one that is skipped on both. Its summary counts what ran where. If it names
+   your test, give the file a reason to be selected; a test that is to run on neither is a decision, and goes
+   into `NOWHERE_ON_PURPOSE` with the reason. With a selection `macos` leaves `parity.py --check` to `linux`,
+   which runs it on every commit.
 3. Read the results. Every step publishes its outcome as check annotations:
    compiler warnings, test counts and the parity score when it passes; the
    errors and the end of its output when it fails (`scripts/ci-step.py`). They can
@@ -248,9 +291,17 @@ Three rules keep the Linux build working and the platforms telling the same stor
      --jq '.[] | "\(.annotation_level) [\(.title)] \(.path):\(.start_line)\n\(.message)"'
    ```
 
+   **Do not ask GitHub in a loop.** An account has five thousand requests an hour, and agents that work under one account share
+   them: a dozen that wait for a check by asking every ten seconds spend the lot, and then nobody can read a check, open a
+   pull request or start a run until the hour is up. Where agents share a folder, ONE of them runs
+   `scripts/gh-state.py --out <file>`, which asks every two or three minutes, sparingly, and all the others read:
+   `scripts/gh-state.py --read <file> 123` for a pull request's line, `--read <file> --wait 123` to wait for its checks without
+   asking anybody. Ask git for what git can tell (`git ls-remote origin swarm/trunk 'refs/pull/*/head'`): that has no such limit.
+   When you must ask GitHub: one request for a whole commit, as above, and `gh api rate_limit`, which is free, to see what is left.
+
 4. Fix and push until the checks pass, then mark the PR ready, merge it
    (squash or merge commit), and update the board and parity data in the same PR.
-5. Real-window checks: CI's `macos` job ends with `make e2e` (GitHub's macOS
+5. Real-window checks: CI's `real-windows` job runs `make e2e` (GitHub's macOS
    runners grant Accessibility) and keeps the evidence as the artifact
    `e2e-evidence`. Drags, clicks, shortcuts, the menu bar and what
    it all looks like can be checked from anywhere with a Mac shell script

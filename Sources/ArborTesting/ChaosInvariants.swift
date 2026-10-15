@@ -20,6 +20,7 @@ extension ChaosRunner {
     "displays-blinked", "menu-bar",
     "back-from-full-screen",
     "desktop-guard-zones",
+    "left-to-macos",
   ]
 
   /// How far a docked window may sit from its slot: 4 points of the app rounding its size
@@ -47,7 +48,10 @@ extension ChaosRunner {
       for index in inside.indices where inside[index].rule == "stale-layout" { inside[index].rule = "stale-layout-after-drop" }
     }
     guard isRunning else {
-      return inside + (harness.overlays.finder == nil ? [] : [.init("palette", "Go to… is open and Arbor is paused or not running")])
+      // Quitting and pausing move more windows at once than anything else, each of them once.
+      var jolts: [InvariantViolation] = []
+      onceViolations(after: action, &jolts)
+      return inside + jolts + (harness.overlays.finder == nil ? [] : [.init("palette", "Go to… is open and Arbor is paused or not running")])
     }
     var problems: [InvariantViolation] = []
     mirrorViolations(&problems)
@@ -72,6 +76,7 @@ extension ChaosRunner {
     reachViolations(&problems)
     wholeViolations(&problems)
     restingPlaceViolations(after: action, &problems)
+    sevenRulesViolations(after: action, &problems)
     timerViolations(settled: action == .settle, &problems)
     untouchedViolations(&problems)
     // Encoding is slow next to everything else, so a random run checks it now and then. A replay checks it at every step:
@@ -564,8 +569,10 @@ extension ChaosRunner {
       let fake = system.windows[window], controller.windows[window] != nil
     else { return }
     if system.focused != window { problems.append(.init("palette", "\(window) was chosen in Go to… and \(system.focused.map(\.description) ?? "nothing") has the keyboard")) }
-    // On its own Space macOS shows it; a window Arbor leaves alone stays where it is.
-    guard fake.snapshot.isOnActiveSpace, !fake.snapshot.isFullScreen, controller.filter.manages(fake.snapshot) else { return }
+    // On its own Space macOS shows it; a window Arbor leaves alone stays where it is; and so does one whose app does not do as
+    // it is asked, or does not answer at all: that one follows when its app answers again.
+    guard fake.snapshot.isOnActiveSpace, !fake.snapshot.isFullScreen, controller.filter.manages(fake.snapshot), cooperates(fake)
+    else { return }
     if fake.snapshot.isMinimized || fake.snapshot.isHidden {
       problems.append(.init("palette", "\(window) was chosen in Go to… and is still minimised or hidden"))
     } else if controller.parked.contains(window) {

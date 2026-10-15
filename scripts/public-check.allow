@@ -14,6 +14,9 @@ name   LICENSE   .*
 # ids of a real machine and words on a private list are looked for there as everywhere.
 session,host,email,home,person,money,model,role,number,repository   scripts/public-check.py        .*
 session,host,email,home,person,money,model,role,number,repository   scripts/test-public-check.py   .*
+session,host,email,home,person,money,model,role,number,repository   scripts/test-public-text.py    .*
+# The pattern of the one link that is mended.
+host   scripts/public-text.py   claude
 
 # Addresses that lead to nobody: GitHub's no-reply addresses, the domains reserved for examples, and the form of
 # an ssh address. `name@2x.png` is a picture at twice the size.

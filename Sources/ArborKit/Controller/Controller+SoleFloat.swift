@@ -121,8 +121,8 @@ extension Controller {
   }
 
   /// The window that is alone on `displayID` and its own frame, if it is in view at a size Arbor gave it instead. That
-  /// is the size it took when Arbor last placed it, or, when that has been forgotten (a pause leaves it stretched, and
-  /// resuming is a launch), the Desktop's.
+  /// is the size it took when Arbor last placed it, or, when that has been forgotten (a crash leaves it stretched, and the
+  /// launch that follows knows nothing of it), the Desktop's.
   private func ownFrameOfStretchedWindow(on displayID: DisplayID) -> (window: WindowID, frame: CGRect)? {
     guard settings.soleFloatTakesDesktop, let window = windowAloneOnDesktop(of: displayID),
       window != soleFloats.inHand[displayID], !parked.contains(window), let current = windows[window]?.frame,
@@ -256,15 +256,16 @@ extension Controller {
     soleFloats.dragged = (window, stretched?.window == window ? stretched?.frame.size : nil)
   }
 
-  /// A drag that began on `source` ended, and the drop has been dealt with.
-  func soleFloatDropped(_ window: WindowID, from source: DisplayID?) {
+  /// A drag that began on `source` ended, and the drop has been dealt with. `leftToMacOS`: macOS is about to tile the window, so
+  /// nothing here gives it a frame.
+  func soleFloatDropped(_ window: WindowID, from source: DisplayID?, leftToMacOS: Bool = false) {
     let ownSize = soleFloats.dragged?.window == window ? soleFloats.dragged?.ownSize : nil
     soleFloats.dragged = nil
     guard settings.soleFloatTakesDesktop, let displayID = workspaceID(containing: window) else { return }
     if windowAloneOnDesktop(of: displayID) == window { soleFloats.inHand[displayID] = window }
     // Dragged off the Desktop it filled and still floating, it is its old size again, as a window dragged out of
     // macOS's own tiling is, with the pointer where it was along the title bar.
-    if let ownSize, workspaces[displayID]?.isFloating(window) == true, let dropped = windows[window]?.frame,
+    if !leftToMacOS, let ownSize, workspaces[displayID]?.isFloating(window) == true, let dropped = windows[window]?.frame,
       let room = display(displayID)?.visibleFrame.size
     {
       let size = CGSize(width: min(ownSize.width, room.width), height: min(ownSize.height, room.height))
@@ -283,7 +284,7 @@ extension Controller {
     // From one Desktop to another, as above.
     guard let source, source != displayID else { return }
     relayout(source, reason: .structure)
-    relayout(displayID, reason: .structure)
+    if !leftToMacOS { relayout(displayID, reason: .structure) }
   }
 
   /// A frame of `size` for a window that was dropped as `dragged` with the pointer at `pointer`: the pointer stays

@@ -1,0 +1,59 @@
+import ArborCore
+import ArborKit
+import CoreGraphics
+
+/// "A window moves once, to where it ends up" (docs/GUIDE.md, "What Arbor promises"), read off the fake's `moveLog`.
+///
+/// A jolt is Arbor changing its own mind where a person can see it: it asked a window for a frame, the window's app
+/// did exactly as it was asked, nobody else touched the window, and before the command or event was over Arbor asked
+/// the same window for another frame. Not a jolt: asking again because the app answered with another size than it was asked for
+/// (nobody can know an app's limits before asking), and two moves of which a person sees one, because the
+/// place in between is out of view like the place before or after it.
+public struct Jolt: Equatable, Sendable, CustomStringConvertible {
+  public var window: WindowID
+  public var from: CGRect
+  public var via: CGRect
+  public var to: CGRect
+  /// Before the second move some app, this window's or another's, had answered with another frame than it was asked for.
+  /// What Arbor learns from that can change where everything goes.
+  public var whileLearning = false
+
+  public init(window: WindowID, from: CGRect, via: CGRect, to: CGRect, whileLearning: Bool = false) {
+    (self.window, self.from, self.via, self.to, self.whileLearning) = (window, from, via, to, whileLearning)
+  }
+
+  public var description: String { "\(window) went from \(from.brief) by way of \(via.brief) to \(to.brief)" }
+}
+
+extension FakeWindowSystem {
+  /// The jolts among the moves Arbor has made since the move log was `mark` long.
+  public func jolts(since mark: Int) -> [Jolt] {
+    var last: [WindowID: Move] = [:]
+    var found: [Jolt] = []
+    var learning = false
+    for move in moveLog[min(mark, moveLog.count)...] {
+      defer { if move.after != whereMacOSPuts(move.requested) { learning = true } }
+      guard move.before != move.after else { continue }
+      defer { last[move.window] = move }
+      guard let first = last[move.window],
+        // The app did as it was asked, so there was nothing to learn from its answer.
+        first.after == whereMacOSPuts(first.requested),
+        // Nobody else has had the window since.
+        first.after == move.before
+      else { continue }
+      let (before, between, after) = (shows(first.before), shows(first.after), shows(move.after))
+      if between || (before && after) {
+        found.append(Jolt(window: move.window, from: first.before, via: first.after, to: move.after, whileLearning: learning))
+      }
+    }
+    return found
+  }
+
+  /// Whether some display shows more of `frame` than the sliver, a point or two wide, that is left of a window out of view.
+  private func shows(_ frame: CGRect) -> Bool {
+    displayList.contains {
+      let showing = frame.intersection($0.frame)
+      return !showing.isNull && showing.width > 2 && showing.height > 2
+    }
+  }
+}

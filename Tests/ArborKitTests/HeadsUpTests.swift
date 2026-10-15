@@ -346,14 +346,48 @@ private let side = DisplaySnapshot(
     #expect(Array(h.overlays.headsUp.keys) == [side.id])
   }
 
-  @Test func aSilentCommandLeavesTheLineAlone() {
-    let (h, _, _, _) = makeHarness()
-    let a = h.system.focused!
+  /// Until 2026-10-14 a command that needs no line of its own left the last one up (`aSilentCommandLeavesTheLineAlone`).
+  /// Seen on a hosted Mac: "Your other windows are out of view, not closed" with every window in view again. The product
+  /// owner overruled it: a line answers the last thing asked, and after the next it may be a false statement on screen.
+  @Test func theNextThingAPersonAsksForPutsTheLineAway() {
+    let (h, a, _, _) = makeHarness(taught: false)
+    h.run("dock \(a.rawValue) left")
+    h.run("zoom", from: .shortcut)
+    #expect(h.overlays.headsUp[h.display]?.text == "Your other windows are out of view, not closed")
+    h.run("show-all", from: .shortcut)
+    #expect(h.overlays.headsUp.isEmpty, "they are in view")
+  }
+
+  @Test func andItsTimeDoesNotRunOnIntoTheNextLines() {
+    let (h, a, _, _) = makeHarness()
     h.run("dock \(a.rawValue) left")
     h.run("out", from: .shortcut)
-    h.run("desktop", from: .shortcut)
-    h.run("status")
     #expect(h.overlays.headsUp[h.display]?.text == "Already showing everything")
+    h.run("desktop", from: .menu)
+    #expect(h.overlays.headsUp.isEmpty, "it no longer is")
+    h.scheduler.advance(by: 1.0)
+    h.run("forward", from: .shortcut)
+    let line = h.overlays.headsUp[h.display]
+    #expect(line != nil)
+    h.scheduler.advance(by: 1.4)
+    #expect(h.overlays.headsUp[h.display] == line)
+  }
+
+  @Test func whatChangesNothingAndWhatNoPersonAskedForLeaveTheLineAlone() {
+    let (h, a, _, _) = makeHarness()
+    h.run("dock \(a.rawValue) left")
+    h.run("out", from: .shortcut)
+    let line = h.overlays.headsUp[h.display]
+    #expect(line?.text == "Already showing everything")
+    h.run("status")
+    h.run("state", from: .shortcut)
+    #expect(h.overlays.headsUp[h.display] == line, "a question changes nothing")
+    h.run("desktop")
+    h.run("show-all")
+    #expect(h.overlays.headsUp[h.display] == line, "a script is not the person the line was said to")
+    // A panel that opens is its own answer, and leaves everything the line may be about as it is.
+    h.run("find", from: .shortcut)
+    #expect(h.overlays.headsUp[h.display] == line)
   }
 
   // MARK: Pausing and quitting
@@ -366,7 +400,7 @@ private let side = DisplaySnapshot(
     h.run("toggle-pause", from: .shortcut)
 
     #expect(h.overlays.cheatSheets.isEmpty)
-    #expect(h.overlays.headsUp[h.display]?.line == "Paused until ⌃⌥⎋; windows that were out of view are back on screen")
+    #expect(h.overlays.headsUp[h.display]?.line == "Paused until ⌃⌥⎋; windows are back in view, in their own sizes")
     h.scheduler.advance(by: 10)
     #expect(h.overlays.headsUp.isEmpty, "and nothing of Arbor's is left on screen")
     #expect(h.scheduler.pendingKeys.isEmpty, "nor any timer")
@@ -377,11 +411,12 @@ private let side = DisplaySnapshot(
 
   /// One harness with the line up, one with the panel of shortcuts: the panel takes the line's place.
   private func withEachPanelUp(_ body: (Harness) -> Void) {
-    let (line, _, _, _) = makeHarness()
+    // With the gestures on: the zones they ask for have a timer of their own, and "nor any timer" is about every timer.
+    let (line, _, _, _) = makeHarness(settings: .withGestures)
     line.run("out", from: .shortcut)
     #expect(line.overlays.headsUp.count == 1)
     body(line)
-    let (panel, _, _, _) = makeHarness()
+    let (panel, _, _, _) = makeHarness(settings: .withGestures)
     panel.run("show-shortcuts", from: .shortcut)
     #expect(panel.overlays.cheatSheets.count == 1)
     body(panel)
@@ -583,6 +618,7 @@ private let side = DisplaySnapshot(
 
   @Test func aDropAndAClickOnATileTeachToo() {
     let (h, a, b, _) = makeHarness(taught: false)
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(a, through: [CGPoint(x: 600, y: 210), CGPoint(x: 300, y: 400), CGPoint(x: 2, y: 400)])
     #expect(lines(h) == ["Docked · ⌃⌥↩ frames it"])
 
@@ -619,12 +655,17 @@ private let side = DisplaySnapshot(
     first.run("zoom \(a.rawValue)")
     first.controller.saveNow()
 
-    let h = Harness(saved: first.store.saved)
-    h.system.open(app: "Safari", title: "Secret plans")
-    h.system.open(app: "Mail", title: "Re: salary")
+    // The watchdog's start, which brings the view back. (A launch shows everything.)
+    let h = first.newProcess(byTheWatchdog: true)
     h.start()
     #expect(!h.controller.parked.isEmpty, "the view is restored, with Mail out of view")
     #expect(h.overlays.messages.isEmpty)
+
+    h.controller.shutdown()
+    let launched = h.newProcess()
+    launched.start()
+    #expect(launched.layout?.windowFrames[a] != nil, "the arrangement is restored")
+    #expect(launched.overlays.messages.isEmpty)
   }
 
   @Test func aProblemComesBeforeAnyHint() {
@@ -673,7 +714,9 @@ private let side = DisplaySnapshot(
   }
 
   @Test func inAnAppThatKeepsItsOwnKeysOnlyTheShortcutsStillHeldAreNamed() {
-    let (h, _, _, _) = makeHarness(settings: settings { $0.passThroughApps = ["org.gnu.Emacs"] }, taught: false)
+    var own = Settings.withGestures  // which go with the keys, further down
+    own.passThroughApps = ["org.gnu.Emacs"]
+    let (h, _, _, _) = makeHarness(settings: own, taught: false)
     h.controller.applicationActivated(FrontmostApp(bundleID: "org.gnu.Emacs", name: "Emacs"))
     h.run("dock left", from: .menu)
     #expect(lines(h) == ["Docked"], "⌃⌥↩ is Emacs's for now (F41)")

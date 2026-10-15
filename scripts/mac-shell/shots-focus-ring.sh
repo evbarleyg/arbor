@@ -126,8 +126,10 @@ check "the ring is around the same window after going back" eventually ring_arou
 shot 10-back
 
 step "drag the focused window by its title bar"
+# High enough that the window, which gets its own size back when it is dropped (F48), ends clear of the bottom of the
+# screen: at an edge of the visible frame the ring stays inside it, and `ring_around` expects it all round the window.
 # shellcheck disable=SC2046
-drag $(titlebar_of "$W1") "$((sx + sw / 2))" "$((sy + sh / 2))" --no-release
+drag $(titlebar_of "$W1") "$((sx + sw / 2))" "$((sy + sh / 3))" --no-release
 check "no ring while the window is dragged" no_ring
 shot 11-drag-held
 release
@@ -182,11 +184,16 @@ summary
 echo "rings: $(rings)"
 check "the ring is around whichever window has the keyboard now, or gone" eventually ring_matches_focus
 shot 18-minimized
+# `arbor_stop` expects every window on screen afterwards, and quitting takes nothing out of the Dock.
+echo "restore $W1" >&9
+check "the window is back from the Dock" eventually not is minimized "$W1"
+check "the ring is around whichever window has the keyboard after that" eventually ring_matches_focus
 arbor_stop 19-after-quit
 
+# Without `makeRoom` (F61), which would move the gaps until the third window fits: this session wants it in a tile.
 step "session 2: no gap, a thicker yellow line; the third window cannot shrink"
 ARBOR_TEST_WINDOWS_ARGS="--min-size 3:700x500"
-arbor_settings '{"gap": 0, "focusRingWidth": 4, "focusRingColour": "#FFCC00"}'
+arbor_settings '{"makeRoom": false, "gap": 0, "focusRingWidth": 4, "focusRingColour": "#FFCC00"}'
 arbor_start 3
 ctl dock "$W1" left
 ctl dock "$W2" right
@@ -214,24 +221,24 @@ shot 22-tile
 check "there is no ring around the tiled window" not ring_around "$W3" 4 0
 
 step "other settings, applied with reload-settings"
-arbor_settings '{"gap": 24, "focusRingWidth": 8, "focusRingColour": "#FF2D55CC"}'
+arbor_settings '{"makeRoom": false, "gap": 24, "focusRingWidth": 8, "focusRingColour": "#FF2D55CC"}'
 ctl reload-settings
 ctl zoom "$W1"
 ctl back
 check "a thick line in a wide gap" eventually ring_around "$W1" 8
 shot 23-thick
-arbor_settings '{"gap": 12, "focusRingWidth": 1}'
+arbor_settings '{"makeRoom": false, "gap": 12, "focusRingWidth": 1}'
 ctl reload-settings
 check "a hairline" eventually ring_around "$W1" 1
 shot 24-hairline
-arbor_settings '{"gap": 12, "focusRingColour": "mauve"}'
+arbor_settings '{"makeRoom": false, "gap": 12, "focusRingColour": "mauve"}'
 ctl reload-settings
 check "an unknown colour is reported in the log" grep -q "focusRingColour" "$ARBOR_HOME/arbor.log"
-arbor_settings '{"gap": 12, "focusRing": false}'
+arbor_settings '{"makeRoom": false, "gap": 12, "focusRing": false}'
 ctl reload-settings
 check "switched off" eventually not ring_around "$W1"
 shot 25-off
-arbor_settings '{"gap": 12}'
+arbor_settings '{"makeRoom": false, "gap": 12}'
 ctl reload-settings
 check "switched on again" eventually ring_around "$W1"
 

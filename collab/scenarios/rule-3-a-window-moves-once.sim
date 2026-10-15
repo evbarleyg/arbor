@@ -1,0 +1,58 @@
+# Rule 3 of the product direction (issue #3; docs/VIABLE.md, "What an act may move"): no jolts. A window moves once, to where
+# it ends up.
+# Story: an ordinary half hour with four windows. After every act, whatever Arbor moved it moved once.
+# arbor-sim looks for this after every line of every scenario (MOVED TWICE); here each act also says so itself.
+quiet
+open Safari 900x600
+open Terminal 600x400
+open Mail 700x500
+open Notes 400x300
+move 104 1000 500 400 300
+dock 101 left
+expect moved-once
+dock 102 right
+expect moved-once
+dock 103 beside 102 bottom
+expect moved-once
+# The view goes in, sideways, out and back.
+zoom 101
+expect moved-once
+expect fills 101
+neighbor right
+expect moved-once
+back
+expect moved-once
+out
+expect moved-once
+show-all
+expect still
+zoom 103
+expect moved-once
+out
+expect moved-once
+home
+expect moved-once
+# Sizes and places.
+resize 101 right 60
+expect moved-once
+swap 102 103
+expect moved-once
+dock 103 left
+expect moved-once
+# Windows come and go.
+minimize 102
+expect moved-once
+restore 102
+expect moved-once
+float 103
+expect moved-once
+expect size 103 700x500
+close 102
+expect moved-once
+# All at once.
+arrange
+expect moved-once
+float-all
+expect moved-once
+expect size 101 900x600
+expect size 104 400x300

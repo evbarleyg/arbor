@@ -1072,6 +1072,7 @@ extension Harness {
     #expect(h.isFloating(torn))
     #expect(h.system.frameLog.isEmpty)
     // Dropped at the left edge of the screen, it docks there like any dragged window.
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(torn, through: [CGPoint(x: 950, y: 310), CGPoint(x: 400, y: 400), CGPoint(x: 2, y: 450)])
     #expect(h.isDocked(torn))
     #expect(h.rect(torn).minX < h.rect(a).minX)

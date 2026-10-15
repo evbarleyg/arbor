@@ -114,17 +114,20 @@ public enum SettingsSchema {
       .choice(
         "newWindows", \.newWindows, ["float": "Float where they open", "dock": "Dock beside the focused window"],
         "New windows",
-        "What a new window does when no rule matches it. dock: it takes half the place of the docked window you were "
-          + "working in, if there is room; small windows and windows of a fixed size float. The menu's Dock New "
-          + "Windows and `toggle-auto-dock` switch it."),
+        "What a new window does when no rule matches it. Docked, it takes half the place of the docked window you were "
+          + "working in, if there is room; small windows and windows of a fixed size float. Dock New Windows in the menu "
+          + "is the same switch."
+      ).typed("`toggle-auto-dock` switches it too."),
       .number(
         "autoDockMinimumWidth", \.autoDockMinimumWidth, min: 0, max: 3000, step: 10, unit: "pt",
         "Narrowest window docked",
-        "A window that opens narrower than this is never docked by `dock auto` or by a rule for `*`.", advanced: true),
+        "Where new windows dock by themselves, one that opens narrower than this floats.", advanced: true
+      ).typed("That is `dock auto` and a rule for `*`; a rule that names an app docks its windows whatever their size."),
       .number(
         "autoDockMinimumHeight", \.autoDockMinimumHeight, min: 0, max: 3000, step: 10, unit: "pt",
         "Shortest window docked",
-        "A window that opens shorter than this is never docked by `dock auto` or by a rule for `*`.", advanced: true),
+        "Where new windows dock by themselves, one that opens shorter than this floats.", advanced: true
+      ).typed("That is `dock auto` and a rule for `*`; a rule that names an app docks its windows whatever their size."),
       .toggle(
         "shareRemovedSpace", \.shareRemovedSpace, "Share a leaving window's space",
         "The space of a window that leaves is shared by its whole group. Off, it goes to the neighbour before it and "
@@ -143,8 +146,9 @@ public enum SettingsSchema {
         "How close to a screen edge the pointer must come for a dragged window to dock there.", advanced: true),
       .number(
         "windowEdgeFraction", \.windowEdgeFraction, min: 0, max: 0.5, step: 0.05, unit: "", "Window edge band",
-        "The band along a window's edges, as a fraction of its size, where a dropped window docks beside it.",
-        advanced: true),
+        "The band along a window's edges, as a share of its size, where a dropped window docks beside it.",
+        advanced: true
+      ).share(),
       .number(
         "dropDwell", \.dropDwell, min: 0, max: 2, step: 0.05, unit: "s", "Hold over a target",
         "How long a dragged window must be held over a window or tile before it can be dropped there. "
@@ -171,6 +175,11 @@ public enum SettingsSchema {
   private static let gestures = section(
     .gestures,
     [
+      // First, not last: it is the switch above the others.
+      .toggle(
+        "pointerGestures", \.pointerGestures, "Trackpad and mouse gestures",
+        "The pinch, ⌃⌥ and scroll, and rectangles drawn with the pointer. Off, Arbor holds back no click, scroll or pinch of the "
+          + "Mac, whatever the switches below say. Dragging windows, gaps and tiles works either way."),
       .toggle(
         "gesturesEnabled", \.gesturesEnabled, "Pinch to zoom",
         "A trackpad pinch with ⌥ held, or over the Desktop, zooms the view in and out."),
@@ -192,7 +201,7 @@ public enum SettingsSchema {
           + "For now a pinch steps as before.", hidden: true),
       .toggle(
         "guardDesktopClicks", \.guardDesktopClicks, "Guard clicks on the Desktop",
-        "An experiment, not yet seen at work on a Mac. While something is docked, a plain click on the bare Desktop is "
+        "Experimental. While something is docked, a plain click on the bare Desktop is "
           + "kept from macOS, which would sweep every window aside (“Click wallpaper to reveal desktop”). Drags, icons and "
           + "widgets are left alone.", advanced: true),
       .toggle(
@@ -238,12 +247,14 @@ public enum SettingsSchema {
         "For how long the minimap shows by itself after the view has moved. 0 is off; its shortcut shows it either way."),
       .number(
         "dimBehindArranged", \.dimBehindArranged, min: 0, max: 1, step: 0.05, unit: "", "Darken behind docked windows",
-        "How much darker the wallpaper is behind docked windows, so that they read as one surface: 0 leaves it as it "
-          + "is, 1 is black."),
+        "How much darker the wallpaper is behind docked windows, so that they read as one surface: from as it is to "
+          + "black."
+      ).share("0 leaves it as it is, 1 is black."),
       .number(
         "blurBehindArranged", \.blurBehindArranged, min: 0, max: 1, step: 0.1, unit: "", "Blur behind docked windows",
-        "How much the wallpaper is blurred behind docked windows: 0 leaves it sharp, 1 is all the blur macOS has.",
-        advanced: true),
+        "How much the wallpaper is blurred behind docked windows: from sharp to all the blur macOS has.",
+        advanced: true
+      ).share("0 leaves it sharp, 1 is all the blur macOS has."),
       .choice(
         "tileStyle", \.tileStyle, ["icon": "The icon", "name": "The icon and the name", "plain": "Only the colour"],
         "Tiles show", "What the tile of a window too small to use shows on its colour."),
@@ -252,13 +263,15 @@ public enum SettingsSchema {
         "A tile takes on the colour of its app's icon. Off, every tile is the same grey.", advanced: true),
       .number(
         "appColourAmount", \.appColourAmount, min: 0, max: 1, step: 0.05, unit: "", "How much of the app's colour",
-        "How much of its app's colour goes into a tile: 0 is grey, 1 is the colour itself.", advanced: true),
+        "How much of its app's colour goes into a tile: from grey to the colour itself.", advanced: true
+      ).share("0 is grey, 1 is the colour itself."),
       .choice(
         "gapHandles", \.gapHandles,
         ["shown": "Drag them, with a handle", "hidden": "Drag them, nothing drawn", "off": "Only gaps"],
         "Gaps between windows",
-        "shown: dragging a gap resizes the windows on both sides, and a handle shows in it under the pointer. hidden: the "
-          + "same without the handle. off: gaps cannot be dragged; window edges and `resize` still resize."),
+        "Whether dragging a gap resizes the windows on both sides of it, and whether a handle shows in the gap under the "
+          + "pointer. A window's own edges resize it either way."
+      ).typed("`resize` moves a window's edge whatever this says."),
       .toggle(
         "windowPictures", \.windowPictures, "Pictures of moving windows",
         "Not ready: it has crashed Arbor and has not been tried since it was mended. While they move, windows are still "
@@ -266,11 +279,13 @@ public enum SettingsSchema {
           + "permission; nothing is recorded or stored.", hidden: true),
       .number(
         "tintBehindArranged", \.tintBehindArranged, min: 0, max: 1, step: 0.05, unit: "", "Tint behind docked windows",
-        "How much of your accent colour is laid over the wallpaper behind docked windows.", advanced: true),
+        "How much of your accent colour is laid over the wallpaper behind docked windows.", advanced: true
+      ).share(),
       .number(
         "desktopEdge", \.desktopEdge, min: 0, max: 1, step: 0.05, unit: "", "Line around the Desktop",
         "How strong the hairline around the Desktop is where it lies between docked windows; 0 draws none.",
-        advanced: true),
+        advanced: true
+      ).share(),
       .number(
         "tileFade", \.tileFade, min: 0, max: 1, step: 0.05, unit: "s", "Tiles fade for",
         "How long a tile takes to fade in and out; 0 shows and hides it at once.", hidden: true),
@@ -282,16 +297,16 @@ public enum SettingsSchema {
       .toggle(
         "holdStillWhileCameraIsOn", \.holdStillWhileCameraIsOn, "While a camera is on",
         "Hold still by itself during a call: the view moves only when you ask. Arbor reads from macOS that some app has a camera "
-          + "running, and opens none itself. Off until that has been seen at work: choose Hold Still from the menu.", advanced: true),
+          + "running, and opens none itself. Experimental; Hold Still in the menu does the same by hand.", advanced: true),
       .toggle(
         "holdStillWhileMicrophoneIsOn", \.holdStillWhileMicrophoneIsOn, "While a microphone is on",
-        "The same for calls without a camera. Off, because it is not yet known what else keeps a microphone running on a "
-          + "Mac.", advanced: true),
+        "The same for calls without a camera. Experimental: other things than calls may keep a microphone running.",
+        advanced: true),
       .list(
         "holdStillFor", \.holdStillFor, shape: "a list of bundle ids, each with part of a title after it if you like",
         editedWith: "a text editor", "While one of these is open",
-        "Arbor also holds still while a window like one of these is open, for example \"us.zoom.xos Zoom Meeting\" (written from "
-          + "memory: check the title on your Mac).", advanced: true),
+        "Arbor also holds still while a window like one of these is open: an app's bundle id and, if you like, part of the "
+          + "window's title, such as \"us.zoom.xos Zoom Meeting\".", advanced: true),
     ])
 
   private static let menuBar = section(
@@ -467,7 +482,7 @@ public enum SettingsSchema {
         let value = entry.value(in: settings).summary
         lines.append(
           "\(mark) \(entry.key) = \(value)  (\(entry.accepts); default \(entry.defaultValue.summary))")
-        lines.append("      \(entry.help)\(entry.choiceNote)\(entry.commandHint)")
+        lines.append("      \(entry.help)\(entry.typedNote)\(entry.choiceNote)\(entry.commandHint)")
       }
     }
     if !settings.valueProblems.isEmpty {
@@ -558,7 +573,7 @@ public enum SettingsSchema {
       for entry in entries {
         let cells = [
           "`\(entry.key)`", "`\(entry.defaultValue.text)`", entry.accepts,
-          "**\(entry.label).** \(entry.help)\(entry.choiceNote)\(entry.commandHint)\(entry.levelNote)",
+          "**\(entry.label).** \(entry.help)\(entry.typedNote)\(entry.choiceNote)\(entry.commandHint)\(entry.levelNote)",
         ]
         lines.append(
           "| " + cells.map { $0.replacingOccurrences(of: "|", with: "\\|") }.joined(separator: " | ") + " |")
@@ -693,6 +708,10 @@ public struct SettingEntry: Sendable {
   public var isCountedInWords: Bool { counts != nil || isAppList }
   /// For a switch: what someone who has just switched it off should hear.
   public private(set) var whenOff: String?
+  /// A share of some whole: from 0 to 1 at most where it is typed, so many per cent in the window.
+  public private(set) var isShare = false
+  /// What only somebody who types values and commands can use.
+  private var typedWords: String?
 
   private let read: @Sendable (Settings) -> SettingValue
   /// Stores a value that `validated` has passed.
@@ -774,17 +793,34 @@ public struct SettingEntry: Sendable {
     return " " + choices.map { "`\($0.value)`: \($0.label)." }.joined(separator: " ")
   }
 
+  /// A sentence or two to follow `help` where values and commands are typed. The window shows `help` alone.
+  fileprivate var typedNote: String { typedWords.map { " " + $0 } ?? "" }
+
+  fileprivate func typed(_ words: String) -> SettingEntry {
+    var entry = self
+    entry.typedWords = words
+    return entry
+  }
+
+  /// `ends`: what 0 and 1 mean, which `help` cannot say beside a field that counts to 100.
+  fileprivate func share(_ ends: String? = nil) -> SettingEntry {
+    var entry = self
+    entry.isShare = true
+    entry.typedWords = ends
+    return entry
+  }
+
   /// For a list, a sentence on the commands that change it, to follow `help` where commands are at home.
   fileprivate var commandHint: String {
     guard case .list(let editedWith) = kind else { return "" }
     return " Change it with \(editedWith)."
   }
 
-  /// Whether a search for `words` finds this setting: each must occur in its label, help or key,
-  /// ignoring case.
+  /// Whether a search for `words` finds this setting, ignoring case: each must begin a word of its label or help, or occur
+  /// anywhere in its key, whose words run together. "ring" is after the focus ring, not after what happens "during a call".
   public func matches(search words: String) -> Bool {
-    let text = "\(label) \(help) \(key)".lowercased()
-    return words.lowercased().split(whereSeparator: \.isWhitespace).allSatisfy { text.firstRange(of: $0) != nil }
+    let key = key.lowercased(), typed = SettingsSearch(words)
+    return typed.isEmpty || typed.finds(in: "\(label) \(help)") { key.firstRange(of: $0) != nil }
   }
 
   // MARK: Writing
@@ -1005,5 +1041,28 @@ public struct SettingEntry: Sendable {
       write: { _, _ in },
       restoreDefault: { $0[keyPath: path] = Settings()[keyPath: path] },
       canonicalText: { _ in nil }, expects: "", jsonShape: shape)
+  }
+}
+
+/// What is typed into the settings window's search field, and the one rule by which it finds anything there.
+public struct SettingsSearch: Sendable {
+  private let words: [Substring]
+
+  public init(_ typed: String) { words = typed.lowercased().split(whereSeparator: \.isWhitespace).map { $0[...] } }
+
+  public var isEmpty: Bool { words.isEmpty }
+
+  /// Whether each word begins a word of `text`, ignoring case, or passes `otherwise`. Nothing typed finds nothing.
+  public func finds(in text: String, otherwise: (Substring) -> Bool = { _ in false }) -> Bool {
+    let text = text.lowercased()
+    return !words.isEmpty
+      && words.allSatisfy { word in
+        otherwise(word)
+          || text.ranges(of: word).contains { found in
+            guard found.lowerBound > text.startIndex else { return true }
+            let before = text[text.index(before: found.lowerBound)]
+            return !(before.isLetter || before.isNumber)
+          }
+      }
   }
 }

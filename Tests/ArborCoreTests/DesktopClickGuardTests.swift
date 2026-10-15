@@ -9,9 +9,9 @@ import Testing
   typealias Modifiers = RectangleGesture.Modifiers
   let here = CGPoint(x: 500, y: 400)
 
-  /// As the default settings make it, with the guard on.
+  /// With every gesture on, and the guard.
   func guarding() -> RectangleGesture {
-    var settings = Settings()
+    var settings = Settings.withGestures
     settings.guardDesktopClicks = true
     var gesture = RectangleGesture()
     gesture.follow(settings)
@@ -287,7 +287,7 @@ import Testing
   }
 
   @Test func theSettingsDecideEverythingAboutTheGesture() {
-    var settings = Settings()
+    var settings = Settings.withGestures
     var gesture = RectangleGesture(trigger: [], desktopTrigger: [])
     #expect(gesture.follow(settings) == true)
     #expect(gesture.trigger == [.control, .option] && gesture.desktopTrigger == [.shift] && !gesture.guardsDesktopClicks)
@@ -460,7 +460,7 @@ import Testing
 
   func makeState() -> State {
     var state = State()
-    var settings = Settings()
+    var settings = Settings.withGestures
     settings.guardDesktopClicks = true
     state.gesture.follow(settings)
     state.zones = DesktopGuardZones(displays: [
@@ -727,7 +727,7 @@ import Testing
 
   /// A plain click on bare Desktop that is over before anybody has answered.
   func clicked() -> RectangleGesture {
-    var settings = Settings()
+    var settings = Settings.withGestures
     settings.guardDesktopClicks = true
     var gesture = RectangleGesture()
     gesture.follow(settings)
@@ -752,7 +752,7 @@ import Testing
   }
 
   @Test func anAnswerWhileTheButtonIsDownDecidesNothingYet() {
-    var settings = Settings()
+    var settings = Settings.withGestures
     settings.guardDesktopClicks = true
     var gesture = RectangleGesture()
     gesture.follow(settings)
@@ -780,7 +780,7 @@ import Testing
   }
 
   @Test func thereIsNothingToGiveUpWhileTheButtonIsDown() {
-    var settings = Settings()
+    var settings = Settings.withGestures
     settings.guardDesktopClicks = true
     var gesture = RectangleGesture()
     gesture.follow(settings)
@@ -794,7 +794,7 @@ import Testing
   @Test func aClickWithShiftDoesNotWait() {
     // macOS sweeps nothing for it, so it is given back whatever is there.
     var gesture = RectangleGesture()
-    gesture.follow(Settings())
+    gesture.follow(.withGestures)
     _ = gesture.mouseDown(at: here, modifiers: [.shift], onDesktop: true)
     #expect(gesture.mouseUp(at: here) == .replay)
   }

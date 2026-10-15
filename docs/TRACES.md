@@ -42,6 +42,13 @@ Of a command's result only `ok` and `message` are kept; `state` and `text` hold 
 **Words in commands that change settings.** `bind ctrl+opt+1 go Clients` holds a command like any other, and it is written as that command would be: `bind ctrl+opt+1 go name-1`, `bind … layout 104 | Notes`,
 `bind … find …`. The part of a title in `rule add … title Payslip` gets a mark, `[p1]`, as the rules in the header do, so the rule matches in a replay what it matched.
 
+**What cannot be read as a command.** The words in a command are hidden by reading the command's text, each kind of word in its own way. A text that cannot be read cannot be hidden that way, and that it cannot be
+read does not mean that nobody meant it: a name longer than the reader allows, typed into the name field, is a command built in code, which never went through the reader. So the recorder fails closed: of
+such a text only the verb is written, if it is one of Arbor's, and `…` (`layout …`, `… name`, or `…` alone), as a command, as what `bind` was given, and for a shortcut in the recorded settings; keys that are no
+shortcut become `…1`, `…2`. What is written is no command either, so a replay stops at it, as it stopped at the text itself. Traces recorded before 2026-10-15 can hold such texts as they were typed: read them
+with `make trace-check` before passing them on. `CanaryTests` puts one word, in forty shapes, into every command that carries words and looks for it in the trace and the log; `scripts/privacy-smoke.sh` does the
+same with the files Arbor starts on.
+
 **What is typed to find a window** (F27). It is part of a title, any part, so looking for whole titles does not catch it. `find diag` is written as `find title[1]`, the
 token of the title of the window it found: in a replay that is the window's title, so the replayed command finds the same window. (For a window without a
 title, a saved view or a named space: its name in the list. The recorder checks that the stand-in finds the same row among the rows as a replay will have them.) If nothing was found, or
@@ -388,6 +395,7 @@ gave the keyboard to either. Sort, or take a `min(by:)` whose last key is the wi
   recorded again (`stubborn-fast`, `stubborn-slow`).
 - Beyond echoes and answers to `focus`, what macOS did because of a call the replayed Arbor no longer makes is still delivered.
 
+- What the app finds out about the Mac (`SystemFacts`: macOS's switches, event taps, other window managers) is not in a trace, so a strict replay does not compare `doctor`'s reply.
 - Of what is above the seams only shortcuts are recorded (`shortcut` lines): menu clicks, pinches and ⌃⌥-drags appear as the commands they end as.
 - What the controller remembers about the hands (which of pointer and keyboard led last, when the focus last moved: `Controller+Lead.swift`) is not in the header. The first command
   of a trace started in the middle of a session may choose differently in a replay.

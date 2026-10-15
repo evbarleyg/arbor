@@ -19,6 +19,9 @@ WIDTH=1280
 HEIGHT=800
 
 arbor_build
+# Its drags dock at the left and right edges of the screen, which are Arbor's only with macOS's own tiling off (MacTiling.swift). It declines on a
+# person's Mac, where the setting is theirs; with the tiling on there, those steps fail.
+macos_tiling off
 echo "displays (id uuid x y w h scale main vendor model serial):"
 "$ARBOR_VDISPLAY" list
 

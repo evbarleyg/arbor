@@ -294,12 +294,12 @@ private let side = DisplaySnapshot(
     #expect([note, call].map { h.frame($0)! } == before)
   }
 
-  @Test func butWhatWasOutOfViewBeforeIsOutOfViewAgain() {
+  @Test func norWhatWasOutOfViewBeforeTheQuit() {
     let (h, _, b, f) = zoomedIn()
     h.controller.shutdown()
     #expect(h.system.isVisible(f) && h.system.isVisible(b), "quitting brings everything back")
     h.controller.start()
-    #expect(!h.system.isVisible(f) && !h.system.isVisible(b), "the view is on Safari as before")
+    #expect(h.system.isVisible(f) && h.system.isVisible(b), "and a launch leaves it in view")
   }
 
   /// A very wide window hangs far over the left edge, on purpose. Its display goes and comes back; meanwhile its app
@@ -467,6 +467,7 @@ private let side = DisplaySnapshot(
       h.system.open(
         app: window.appName, bundleID: window.bundleID, title: window.title, pid: window.pid, frame: window.frame)
     }
+    h.controller.restartedAfterAccident = true
     h.start()
     #expect(!h.system.isVisible(f), "the view is still on Safari")
     h.system.userMove(f, to: CGRect(x: 500, y: 300, width: 320, height: 300))

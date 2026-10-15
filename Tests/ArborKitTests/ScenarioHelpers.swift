@@ -4,6 +4,21 @@ import ArborTesting
 import CoreGraphics
 import Testing
 
+extension Settings {
+  /// Every gesture that needs an event tap switched on, whatever Arbor ships with: the pinch, ⌃⌥ + scroll, the ⌃⌥ rectangle, ⇧-drag on
+  /// the Desktop. For a test about one of them, or about whoever takes them away for a while (a pause, a hold, an app that keeps its
+  /// keys, the permission gone): with nothing to take away it would prove nothing.
+  static var withGestures: Settings {
+    var settings = Settings()
+    settings.pointerGestures = true
+    settings.gesturesEnabled = true
+    settings.scrollZoom = true
+    settings.frameRectangleModifier = "ctrl+opt"
+    settings.frameRectangleOnDesktop = true
+    return settings
+  }
+}
+
 /// The display (every display, if none is named) has been laid out since the arrangement or the view last changed, every
 /// docked window that shows is in its place, and the others are out of view (`Harness.layoutProblems`).
 @MainActor

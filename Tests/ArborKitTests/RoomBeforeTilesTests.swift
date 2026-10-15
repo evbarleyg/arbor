@@ -176,6 +176,7 @@ import Testing
     h.run("float \(notes.rawValue)")
     let start = try #require(h.frame(notes))
     let grab = CGPoint(x: start.midX, y: start.minY + 10)
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.drag(notes, through: [grab, CGPoint(x: 300, y: 400), CGPoint(x: 3, y: 450)])
     expectInView(h, notes, safari)
     let preview = try #require(h.overlays.previewHistory.compactMap { $0 }.last)

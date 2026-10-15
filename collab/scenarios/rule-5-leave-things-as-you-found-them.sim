@@ -1,0 +1,62 @@
+# Rule 5 of the product direction (issue #3; F48): leave things better than you found them. Float All, Quit and a pause give
+# windows back their own earlier sizes, not just a place in view.
+# Story: four windows, each with a size and a place of its own, spend an hour docked, framed, in tiles and in the Dock.
+# Each way out puts them back. A pause is as if Arbor had quit, and it comes back (QUESTIONS Q21).
+quiet
+open Safari 900x600
+open Terminal 600x400
+open Mail 700x500
+open Notes 400x300
+move 101 40 60 900 600
+move 102 800 80 600 400
+move 103 300 360 700 500
+move 104 1000 520 400 300
+# Float All, from a framed view, with one window in the Dock.
+arrange
+expect count docked 4
+zoom 102
+minimize 103
+float-all
+expect count docked 0
+expect size 101 900x600
+expect at 101 40 60
+expect size 102 600x400
+expect at 102 800 80
+expect size 104 400x300
+expect at 104 1000 520
+restore 103
+expect size 103 700x500
+expect at 103 300 360
+# One window at a time: its own size.
+dock 104 left
+expect docked 104
+float 104
+expect size 104 400x300
+move 104 1000 520 400 300
+# A pause: everything is as it was, the framed window too. Resuming brings arrangement and view back.
+arrange
+zoom 101
+expect hidden 102
+pause
+expect moved-once
+expect size 101 900x600
+expect at 101 40 60
+expect size 102 600x400
+expect at 102 800 80
+expect size 103 700x500
+expect size 104 400x300
+resume
+expect moved-once
+expect fills 101
+expect hidden 102
+# Quit.
+quit-check
+expect replied QUIT ok
+expect size 101 900x600
+expect at 101 40 60
+expect size 102 600x400
+expect at 102 800 80
+expect size 103 700x500
+expect at 103 300 360
+expect size 104 400x300
+expect at 104 1000 520

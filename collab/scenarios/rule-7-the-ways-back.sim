@@ -1,0 +1,45 @@
+# Rule 7 of the product direction (issue #3): useful daily, not just impressive. There is always a way back.
+# Story: somebody is three steps deep in a view, has lost track, and presses what the guide names: ⌃⌥Space, ⌃⌥0, ⌃⌥⇧F.
+# By the keys themselves, not by the commands they are bound to. Pin, peek, hold and summon have stories of their
+# own: scenarios 49, 51, 58 and 53.
+quiet
+open Safari 900x600
+open Terminal 600x400
+open Mail 700x500
+open Notes 400x300
+dock 101 left
+dock 102 right
+dock 103 beside 102 bottom
+zoom 103
+expect fills 103
+expect hidden 101
+expect hidden 104
+# ⌃⌥Space, tapped: everything on this display.
+key ctrl+opt+space
+expect camera root
+expect visible 101
+expect visible 102
+expect visible 103
+expect visible 104
+# ⌃⌥[ goes back like a browser.
+key ctrl+opt+[
+expect fills 103
+# ⌃⌥0: everything on every display, from anywhere.
+key ctrl+opt+0
+expect camera root
+expect visible 101
+expect visible 104
+# ⌃⌥D: whatever floats.
+zoom 101
+key ctrl+opt+d
+expect camera desktop
+expect visible 104
+# ⌃⌥⇧F: back to a normal Mac, each window at its own size. ⌃⌥Z takes even that back.
+key ctrl+opt+shift+f
+expect count docked 0
+expect size 101 900x600
+expect size 102 600x400
+expect size 103 700x500
+expect visible 104
+key ctrl+opt+z
+expect count docked 3
