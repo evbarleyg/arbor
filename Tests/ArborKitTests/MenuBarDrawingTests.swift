@@ -108,9 +108,8 @@
       return canvas
     }
 
-    /// As a menu bar would show it: macOS turns a template image black on a light bar and white on a dark one. `dimmed` stands
-    /// in for `appearsDisabled`, which only a real status bar button can show.
-    func savePicture(_ image: NSImage, as name: String, dimmed: Bool = false) throws {
+    /// As a menu bar would show it: macOS turns a template image black on a light bar and white on a dark one.
+    func savePicture(_ image: NSImage, as name: String) throws {
       for (suffix, bar, ink) in [("light", NSColor(white: 0.93, alpha: 1), NSColor.black), ("dark", NSColor(white: 0.16, alpha: 1), NSColor.white)] {
         for scale: CGFloat in [1, 2] {
           let whole = NSRect(origin: .zero, size: image.size)
@@ -126,7 +125,6 @@
           picture.draw {
             bar.setFill()
             NSRect(origin: .zero, size: size).fill()
-            picture.bitmap.setAlpha(dimmed ? 0.35 : 1)
             picture.bitmap.draw(
               tinted, in: CGRect(x: 8, y: (24 - image.size.height) / 2, width: image.size.width, height: image.size.height))
           }
@@ -200,7 +198,10 @@
       for (name, icon) in Self.icons {
         let image = ArborArtwork.menuBarIcon(icon.glyph)
         #expect(image.size == ArborGlyph.iconSize, "\(name)")
-        try savePicture(image, as: "one-icon-\(name)", dimmed: icon.isDimmed)
+        // As `StatusMenu.show` hands it to the button. The pause is in the image, and of the same size.
+        let shown = icon.isDimmed ? ArborArtwork.paused(image) : image
+        #expect(shown.size == image.size, "\(name)")
+        try savePicture(shown, as: "one-icon-\(name)")
       }
     }
 
@@ -260,7 +261,11 @@
       h.run("pause")
       let paused = h.controller.menuBarModel()
       #expect(paused.icon.isDimmed)
-      try savePicture(image(for: paused), as: "paused", dimmed: true)
+      let faint = ArborArtwork.paused(image(for: paused))
+      try savePicture(faint, as: "paused")
+      // Dimmer than when Arbor runs, and still to be seen: it is the one thing to click in order to resume.
+      let most = try bitmap(of: faint).ink(in: NSRect(origin: .zero, size: faint.size), above: 0.2).most
+      #expect(faint.isTemplate && abs(most - Double(ArborArtwork.pausedOpacity)) < 0.05, "its strongest ink: \(most)")
 
       let waiting = Harness()
       waiting.controller.accessibilityGranted = false

@@ -376,6 +376,154 @@ import Testing
     #expect(h.welcome.timesItTookTheKeyboard == 5)
   }
 
+  // MARK: Nobody is taught twice
+
+  /// Somebody who has used Arbor, on the Mac of `makeDesk`: a first run that was welcomed and has quit, and a new process on what it saved.
+  /// Without the permission: to macOS every update of a build signed ad hoc is a new app.
+  func afterAnUpdate(withSomethingDocked: Bool = true) -> (Harness, [WindowID]) {
+    let (first, windows, _) = makeDesk()
+    first.launchForTheFirstTime(permitted: true)
+    first.welcome.close()
+    if withSomethingDocked { first.run("dock \(windows[0].rawValue) left") }
+    first.scheduler.advance(by: 5)
+    first.run("quit")
+    first.controller.shutdown()
+    let h = first.newProcess()
+    h.launchWithItsWindow(permitted: false)
+    return (h, windows)
+  }
+
+  func timesSaid(_ h: Harness, _ line: String) -> Int { h.overlays.messages.filter { $0.model.line == line }.count }
+
+  /// Arbor can do nothing and must say why and where, on any day. But whoever had been welcomed before this launch is waiting for the
+  /// permission and for nothing else: when it comes the window goes away by itself, and the line on screen says once that Arbor is ready.
+  /// Or after every update somebody who has used Arbor for weeks would be taught the four moves again, in the middle of the display.
+  @Test(arguments: [true, false]) func afterAnUpdateTheWindowGoesAwayWhenThePermissionComes(withSomethingDocked: Bool) {
+    let (h, _) = afterAnUpdate(withSomethingDocked: withSomethingDocked)
+    #expect(h.welcome.isOpen && h.welcome.model.page == .permissions, "it opens without a look at who this is")
+    #expect(h.welcome.text?.contains("Already on? Switch it off and on again") == true)
+    #expect(h.welcome.text?.contains("comes back by itself") == false, "which is so for a newcomer alone")
+    let keyboard = h.welcome.timesItTookTheKeyboard
+    // As a person does it: the window's own button, which is no asking for the window.
+    #expect(h.welcome.click("Open Settings…"))
+    h.permissionArrives()
+    #expect(!h.welcome.isOpen, "no second page")
+    #expect(h.overlays.headsUp[h.display]?.line == "Arbor is ready")
+    #expect(h.welcome.timesItTookTheKeyboard == keyboard && h.welcome.timesComeForward == 0, "it takes nothing on its way out")
+    h.scheduler.advance(by: 10)
+    h.welcome.tick()
+    #expect(!h.welcome.isOpen && timesSaid(h, "Arbor is ready") == 1, "once")
+  }
+
+  /// "Before this launch" is what the file said at the start: the window counts as seen from the moment it shows.
+  @Test func aNewcomerIsShownTheMovesAsEver() {
+    let (h, _, _) = makeDesk()
+    h.launchForTheFirstTime()
+    h.permissionArrives()
+    #expect(h.welcome.isOpen && h.welcome.model.page == .firstSteps)
+    #expect(timesSaid(h, "Arbor is ready") == 0)
+  }
+
+  /// A window that was asked for stays until it is closed, whoever it is.
+  @Test(arguments: ["welcome", "check-setup", "opened again"]) func aWindowThatWasAskedForStays(how: String) {
+    let (h, _) = afterAnUpdate()
+    if how == "opened again" { h.controller.welcome(at: .openedAgain) } else { h.run(how) }
+    h.permissionArrives()
+    #expect(h.welcome.isOpen, "\(how), on the window that had opened by itself")
+    // And shows what was asked for, or how things stand. The moves only to whoever asked for the moves: Arbor's own line, and the one row
+    // of its menu while it waits, send people to Check Setup….
+    #expect(h.welcome.model.page == (how == "welcome" ? .firstSteps : .setup))
+    #expect(timesSaid(h, "Arbor is ready") == 0, "the window says it")
+    // Closed, that is over: the next one that opens by itself goes by itself.
+    #expect(h.controller.welcomeWasAskedFor)
+    h.welcome.close()
+    #expect(!h.controller.welcomeWasAskedFor)
+  }
+
+  /// A newcomer who follows that line before granting is a newcomer still.
+  @Test func aNewcomerWhoAskedForCheckSetupIsShownTheMovesAsEver() {
+    let (h, _, _) = makeDesk()
+    h.launchForTheFirstTime()
+    h.run("check-setup")
+    h.permissionArrives()
+    #expect(h.welcome.isOpen && h.welcome.model.page == .firstSteps)
+  }
+
+  /// Arbor is not ready before its start is over, and a start tells of itself on its way. As `arbor-sim first-launch --been-here` plays it.
+  @Test func theLineComesWhenTheStartIsOver() {
+    let h = Harness(saved: PersistedState(workspaces: [:], hints: [:], welcomed: true))
+    h.system.open(app: "Safari", frame: CGRect(x: 200, y: 120, width: 800, height: 600))
+    var wasTurning: [Bool] = []
+    h.overlays.onCall = { [unowned h] in if case .headsUp(.some, _) = $0 { wasTurning.append(h.controller.isInTheMiddleOfAStart) } }
+    h.launchWithItsWindow(permitted: false)
+    h.permissionArrives()
+    #expect(!h.welcome.isOpen && timesSaid(h, "Arbor is ready") == 1)
+    #expect(wasTurning == [false])
+  }
+
+  /// "Arbor is ready" over something that would have held a newcomer at the welcome would say two things at once.
+  @Test func withSomethingInTheWayTheLineSaysSoAndWhereToReadOn() {
+    let (h, _) = afterAnUpdate()
+    h.mac.values[.stageManager] = true
+    h.permissionArrives()
+    #expect(!h.welcome.isOpen && timesSaid(h, "Arbor is ready") == 0)
+    let line = h.overlays.messages.last?.model.line
+    h.run("check-setup")
+    #expect(line == "\(h.welcome.model.title) · Check Setup… in its menu" && h.welcome.model.title.hasPrefix("Ready, with"))
+  }
+
+  /// After an accident in a pause the watchdog's start comes back paused. The window goes all the same, and nothing is called ready.
+  @Test func whereArborComesBackPausedTheWindowGoesAndNothingIsCalledReady() {
+    let (first, windows, _) = makeDesk()
+    first.launchForTheFirstTime(permitted: true)
+    first.welcome.close()
+    first.run("dock \(windows[0].rawValue) left")
+    first.run("pause")
+    first.scheduler.advance(by: 5)
+    let h = first.newProcess(byTheWatchdog: true)
+    h.launchWithItsWindow(permitted: false, atLogin: true)
+    #expect(h.welcome.isOpen)
+    h.permissionArrives()
+    #expect(h.controller.isPaused && !h.welcome.isOpen && h.overlays.messages.isEmpty)
+  }
+
+  /// The same for the window that opens because the permission went while windows were out of view (F63).
+  @Test func whatOpenedBecauseThePermissionWentGoesWhenItIsBack() {
+    let (h, windows) = afterAnUpdate()
+    h.watchAccessibility()
+    h.permissionArrives()
+    h.run("dock \(windows[1].rawValue) right")
+    h.run("zoom \(windows[0].rawValue)")
+    h.scheduler.advance(by: 10)
+    h.revokeAccessibility()
+    h.scheduler.advance(by: 3)
+    #expect(h.welcome.isOpen && h.welcome.model.title == "Arbor needs its permission back")
+    h.grantAccessibility()
+    h.scheduler.advance(by: 3)
+    h.welcome.tick()
+    #expect(!h.welcome.isOpen && timesSaid(h, "Arbor is ready") == 2, "once for each time it came")
+  }
+
+  /// A newcomer who loses the permission in the first run of all and gets it back has still not been welcomed before this launch, though
+  /// the file says "welcomed" by then, and a start reads the file.
+  @Test func whatTheFileSaysLaterInTheSameRunMakesNobodyAnOldHand() {
+    let (h, windows, _) = makeDesk()
+    h.watchAccessibility()
+    h.launchForTheFirstTime(permitted: true)
+    h.welcome.close()
+    h.run("dock \(windows[0].rawValue) left")
+    h.run("dock \(windows[1].rawValue) right")
+    h.run("zoom \(windows[0].rawValue)")
+    h.scheduler.advance(by: 10)
+    h.revokeAccessibility()
+    h.scheduler.advance(by: 3)
+    #expect(h.welcome.isOpen)
+    h.grantAccessibility()
+    h.scheduler.advance(by: 3)
+    h.welcome.tick()
+    #expect(h.welcome.isOpen && timesSaid(h, "Arbor is ready") == 0, "as it was")
+  }
+
   // MARK: The errand to System Settings
 
   /// macOS does not always ask. Then the button must not seem dead.

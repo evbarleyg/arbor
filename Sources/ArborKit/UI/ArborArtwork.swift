@@ -12,6 +12,19 @@ enum ArborArtwork {
   /// How opaque a disabled button's glyph is.
   private static let disabledOpacity: CGFloat = 0.35
 
+  /// How opaque the item is during a pause: dimmer than when Arbor runs, and still to be seen (3 to 1 and more on a light bar and a dark one).
+  static let pausedOpacity: CGFloat = 0.6
+
+  /// The item's image during a pause.
+  static func paused(_ image: NSImage) -> NSImage {
+    let faint = NSImage(size: image.size, flipped: false) { bounds in
+      image.draw(in: bounds, from: .zero, operation: .sourceOver, fraction: pausedOpacity)
+      return true
+    }
+    faint.isTemplate = true
+    return faint
+  }
+
   /// Every button of `layout` in one image. A template image carries only opacity, which macOS
   /// turns into black or white to suit the menu bar: so a current button's background is drawn
   /// faint (`fill`), with its glyph solid on top.

@@ -63,15 +63,18 @@ final class StatusMenu: NSObject, NSMenuDelegate {
 
   private func show(_ model: MenuBarModel) {
     guard let button = item.button else { return }
+    let image: NSImage
     if model.buttons.isEmpty {
       layout = nil
-      button.image = ArborArtwork.menuBarIcon(model.icon.glyph)
+      image = ArborArtwork.menuBarIcon(model.icon.glyph)
     } else {
       let layout = MenuBarLayout(model)
       self.layout = layout
-      button.image = ArborArtwork.menuBarControls(layout, fill: model.fill)
+      image = ArborArtwork.menuBarControls(layout, fill: model.fill)
     }
-    button.appearsDisabled = model.icon.isDimmed
+    // Not `appearsDisabled`: macOS draws that at 1.8 to 1 on the bar, as faint as a greyed menu item, and during a pause this is the one thing
+    // to click in order to resume. In the image, which is what every copy of the item on every display is drawn from.
+    button.image = model.icon.isDimmed ? ArborArtwork.paused(image) : image
     button.setAccessibilityLabel(model.icon.label)
     iconLabel = model.icon.label
     attachMenu()

@@ -1614,7 +1614,9 @@ All three show state, so each is a headless model that the app only draws.
   permission arrives (unless the welcome names something that would spoil the moves), and `OnboardingModel` words it all: three pages, the welcome, the four moves, and Check Setup…, which alone has every row. `OnboardingWindow` lays the model out in SwiftUI. It is a
   panel that never activates Arbor, so that "the focused window" stays the user's while they try the moves. It takes the keyboard only in
   answer to an act on Arbor itself: every caller that is no command goes through `Controller.welcome(at:)`, which says whether somebody asked, and the panel's own
-  `canBecomeKey` lets no road of AppKit's give it the keyboard otherwise. It opens by itself when
+  `canBecomeKey` lets no road of AppKit's give it the keyboard otherwise. Nobody is taught twice: a window that opened by itself for want of the permission
+  goes away by itself when it comes, and the line on screen says "Arbor is ready", for whoever had been welcomed before this launch (`wasWelcomedBeforeThisLaunch`: what the file
+  said when the process first read it); a newcomer is shown the moves, and a window that somebody asked for stays until it is closed. It opens by itself when
   the permission is missing and once more in a lifetime: at a launch `welcome(at:)` asks `pageToWelcomeOn()`, which answers nil
   once `noteWelcomed()` has been called, now or at an earlier launch (`welcomed` in `state.json`). The flag is written only while Arbor runs: before
   `start()` the controller has not read what it saved, and would write an empty arrangement over it.

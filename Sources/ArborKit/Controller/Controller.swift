@@ -163,6 +163,8 @@ public final class Controller {
   public internal(set) var isRunning = false
   /// `start()` or `shutdown()` is under way, and `isRunning` says what was or what will be (`macSwitchesLent`).
   var isTurning = false
+  /// For tests: whether something happens while a start or a stop is under way.
+  public var isInTheMiddleOfAStart: Bool { isTurning }
 
   /// Sizes apps refused to shrink below, learned when a frame does not stick.
   var minimumSizes: [WindowID: CGSize] = [:]
@@ -325,6 +327,11 @@ public final class Controller {
   public var isFirstLaunch = false
   /// The welcome window has been seen, now or at an earlier launch (Controller+Onboarding.swift).
   var hasWelcomed = false
+  /// This person had seen it before this launch: what the state file said when this process first read it. Nil until then. `hasWelcomed`
+  /// cannot tell: it is set as the window shows, which without the permission is before the file is read, and saved soon after.
+  var wasWelcomedBeforeThisLaunch: Bool?
+  /// Somebody asked for the welcome window that is open: it stays until it is closed (`OnboardingSession`).
+  public internal(set) var welcomeWasAskedFor = false
   /// Opens the welcome window on a page, or turns it to that page and brings it forward. Nil: no page in particular. The flag: whether it
   /// takes the keyboard, which it does only in answer to an act on Arbor itself (`welcome(at:)`).
   public var openWelcomeWindow: ((OnboardingFlow.Page?, _ takesTheKeyboard: Bool) -> Void)?
@@ -604,7 +611,8 @@ public final class Controller {
     noteTheWindowsTheFileKnew()
     // Or just now, before this start: a launch without the permission begins with the welcome window.
     // Or in an earlier run whose file could not be used: whoever had a state file has been here before.
-    hasWelcomed = hasWelcomed || saved?.welcomed == true || (stateNews != nil && stateNews?.problem != .repaired)
+    hasWelcomed = hasWelcomed || theFileSaysWelcomed(saved)
+    noteWhoThisIs(saved)
     headsUp.hintsShown = saved?.hintsShown ?? [:]
     for display in displays {
       var workspace = saved?.workspaces[display.id] ?? Workspace()

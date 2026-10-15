@@ -39,6 +39,7 @@ final class OnboardingWindow: NSObject, NSWindowDelegate {
     self.onLogin = onLogin
     super.init()
     session = OnboardingSession(controller: controller) { [weak self] _ in self?.render() }
+    session?.onLeave = { [weak self] in self?.window?.close() }
   }
 
   /// Opens the window on `page`, or turns it to that page and brings it to the front.
@@ -281,9 +282,9 @@ struct OnboardingView: View {
         keys
       } else {
         if !model.keysLegend.isEmpty {
+          // In the primary ink, small as it is: it alone says what the signs mean.
           Text(model.keysLegend)
             .font(.caption)
-            .foregroundStyle(.secondary)
             .padding(.horizontal, 12)
             .padding(.bottom, -6)
         }
@@ -384,13 +385,13 @@ struct OnboardingView: View {
           .fixedSize(horizontal: false, vertical: true)
         Text(model.keysLegend)
           .font(.caption)
-          .foregroundStyle(.secondary)
       }
     }
   }
 
   private func rowView(_ row: OnboardingModel.Row) -> some View {
-    HStack(alignment: .firstTextBaseline, spacing: 10) {
+    let ink = row.mustBeRead ? Color.primary : Color.secondary
+    return HStack(alignment: .firstTextBaseline, spacing: 10) {
       Image(systemName: symbol(for: row.state))
         .font(.system(size: 15))
         .foregroundStyle(colour(for: row.state))
@@ -421,16 +422,16 @@ struct OnboardingView: View {
         if !row.detail.isEmpty {
           Text(row.detail)
             .font(.callout)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(ink)
             .fixedSize(horizontal: false, vertical: true)
         }
         ForEach(row.points, id: \.self) { point in
           HStack(alignment: .firstTextBaseline, spacing: 6) {
             Text("•")
-              .foregroundStyle(.secondary)
+              .foregroundStyle(ink)
             Text(point)
               .font(.callout)
-              .foregroundStyle(.secondary)
+              .foregroundStyle(ink)
               .fixedSize(horizontal: false, vertical: true)
           }
         }
@@ -449,7 +450,7 @@ struct OnboardingView: View {
         if !row.afterword.isEmpty {
           Text(row.afterword)
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(ink)
             .fixedSize(horizontal: false, vertical: true)
         }
         if !row.failure.isEmpty {
@@ -462,7 +463,7 @@ struct OnboardingView: View {
           HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(row.done)
               .font(.callout)
-              .foregroundStyle(.secondary)
+              .foregroundStyle(ink)
               .fixedSize(horizontal: false, vertical: true)
             // Beside the title when the row is in order and that place is free.
             if !row.isSatisfied, let undo = row.undo {
@@ -552,7 +553,7 @@ struct OnboardingView: View {
     Image(nsImage: ArborArtwork.menuBarIcon(model.footnoteIcon.glyph))
       .renderingMode(.template)
       .foregroundStyle(.secondary)
-      .opacity(model.footnoteIcon.isDimmed ? 0.5 : 1)
+      .opacity(model.footnoteIcon.isDimmed ? ArborArtwork.pausedOpacity : 1)
       .frame(width: MenuBarLayout.pitch)
       // "Under this icon" says nothing to whoever does not see it.
       .accessibilityLabel(model.footnoteIcon.label)

@@ -60,6 +60,7 @@ extension Controller {
   func showWelcomeWindow(_ page: OnboardingFlow.Page) -> CommandResult {
     guard let openWelcomeWindow else { return .failure("there is no window to open here; try `doctor`") }
     // Somebody asked for the window.
+    welcomeWasAskedFor = true
     openWelcomeWindow(page, true)
     noteWelcomed()
     return .success("showing the welcome window")
@@ -78,15 +79,47 @@ extension Controller {
   /// Shows the window if the moment calls for it. **It takes the keyboard only in answer to an act on Arbor itself.** Wherever Arbor shows
   /// or turns it by itself it comes forward and the keyboard stays where it is: the window never makes Arbor the active app, so the app
   /// the person is in goes on looking in front, and what they type next would go into a window that has no field. The arrival of the
-  /// permission is no moment of these: whoever waited for it has seen the window, and an open one turns its page by itself
-  /// (`OnboardingSession`), which gives it no keyboard either (`WelcomeWindow.canBecomeKey`).
+  /// permission is no moment of these: whoever waited for it has seen the window, and an open one turns its page or goes away by itself
+  /// (`OnboardingSession.refresh`), which gives it no keyboard either (`WelcomeWindow.canBecomeKey`).
   public func welcome(at moment: WelcomeMoment) {
     switch moment {
     case .launch(let byHand):
       if !accessibilityGranted { openWelcomeWindow?(nil, byHand) } else if let page = pageToWelcomeOn() { openWelcomeWindow?(page, byHand) }
     case .permissionLost: openWelcomeWindow?(nil, false)
-    case .openedAgain: openWelcomeWindow?(nil, true)
+    case .openedAgain:
+      welcomeWasAskedFor = openWelcomeWindow != nil
+      openWelcomeWindow?(nil, true)
     }
+  }
+
+  /// **Nobody is taught twice.** The window that opened by itself for want of the permission has what it was waiting for. A newcomer is
+  /// shown the moves now. Whoever had been welcomed before this launch was waiting for the permission and for nothing else: to macOS every
+  /// update of a build signed ad hoc is a new app, and somebody who has used Arbor for weeks would get the four moves again each time, in
+  /// the middle of the display. A window that somebody asked for stays until it is closed, whoever it is, and shows an old hand what was
+  /// asked for, or how things stand (`OnboardingFlow.update`).
+  var knowsArbor: Bool { wasWelcomedBeforeThisLaunch == true }
+
+  /// Or in an earlier run whose file could not be used: whoever had a state file has been here before.
+  func theFileSaysWelcomed(_ saved: PersistedState?) -> Bool {
+    saved?.welcomed == true || (stateNews != nil && stateNews?.problem != .repaired)
+  }
+
+  /// With what the file held, wherever a process reads it. Only the first reading counts: by the next (the permission went and came
+  /// back) this run has written the file.
+  func noteWhoThisIs(_ saved: PersistedState?) {
+    if wasWelcomedBeforeThisLaunch == nil { wasWelcomedBeforeThisLaunch = theFileSaysWelcomed(saved) }
+  }
+
+  /// In place of the window that has gone: nothing else on the display has changed. Where something would have held a newcomer at the welcome
+  /// (another window manager, say), in the words that head Check Setup…, and with where to read on: "ready" over that would say two things.
+  func sayThatArborIsReady(_ facts: SystemFacts) {
+    guard isRunning, settings.messageLevel != .off, let display = cameraDisplay()?.0 ?? pointerDisplayID else { return }
+    let isHeld = onboardingModel(facts, flow: OnboardingFlow(isReady: facts.accessibility)).needsAttention
+    let line =
+      isHeld
+      ? HeadsUpModel(kind: .change, text: onboardingModel(facts).title, hint: "Check Setup… in its menu")
+      : HeadsUpModel(kind: .change, text: "Arbor is ready")
+    showHeadsUp(line, on: display)
   }
 
   // MARK: The first launch (docs/features/F46-first-run-coach.md)
@@ -132,6 +165,8 @@ public final class OnboardingSession {
   private var failure: String?
   private weak var controller: Controller?
   private let onChange: @MainActor (OnboardingModel) -> Void
+  /// Closes the window: it has nothing more to say (`Controller.knowsArbor`). Whoever shows the window sets it.
+  public var onLeave: (@MainActor () -> Void)?
 
   public init(controller: Controller, onChange: @escaping @MainActor (OnboardingModel) -> Void) {
     self.controller = controller
@@ -167,16 +202,28 @@ public final class OnboardingSession {
     publish()
   }
 
-  /// The window closed: nothing is watching any more.
-  public func end() { isOpen = false }
+  /// The window closed: nothing is watching any more. The next one is asked for or not on its own account.
+  public func end() {
+    isOpen = false
+    controller?.welcomeWasAskedFor = false
+  }
 
   /// Reads the facts about the Mac again.
   public func refresh() {
     guard isOpen, let controller else { return }
-    facts = Self.facts(of: controller)
+    // The start that the permission sets off reads who this is, and tells of itself more than once on its way. Arbor is not ready before it is
+    // over: it may yet pause behind an app it pauses for. Until then nothing has come for a window that waits: the next look is a second away
+    // at most. Asked before the Mac is, which costs a dozen questions.
+    if !facts.accessibility, controller.isTurning, controller.wasWelcomedBeforeThisLaunch != false { return }
+    let found = Self.facts(of: controller)
+    if !facts.accessibility, found.accessibility, controller.knowsArbor, !controller.welcomeWasAskedFor, let onLeave {
+      onLeave()
+      return controller.sayThatArborIsReady(found)
+    }
+    facts = found
     let page = flow.page
     flow.update(
-      isReady: facts.accessibility,
+      isReady: facts.accessibility, knowsArbor: controller.knowsArbor,
       needsAttention: controller.onboardingModel(facts, flow: OnboardingFlow(isReady: facts.accessibility)).needsAttention)
     if flow.page != page { failure = nil }
     publish()

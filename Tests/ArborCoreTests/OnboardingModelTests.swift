@@ -53,10 +53,12 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     #expect(OnboardingModel(permitted).title == "Ready, with one suggestion")
     // An ad-hoc build loses the permission while System Settings still shows the switch on.
     let alreadyOn = " Already on? Switch it off and on again: macOS asks anew after every update."
-    #expect(model.row(.accessibility)?.detail.hasSuffix("This window comes back by itself." + alreadyOn) == true)
+    #expect(model.row(.accessibility)?.detail.hasSuffix("Flip the switch next to Arbor in System Settings." + alreadyOn) == true)
     // To a newcomer as well. Another build over an old grant looks like a first launch, the switch looks on, and Arbor waits: whoever meets
     // that finds nothing to flip. Arbor cannot tell the two apart, so the sentence is always there, short, last in the row.
-    #expect(OnboardingModel(fresh, isNewcomer: true).row(.accessibility)?.detail.hasSuffix(alreadyOn) == true)
+    // That the window comes back by itself is so for a newcomer alone: for whoever knows Arbor it goes away when the permission comes.
+    #expect(
+      OnboardingModel(fresh, isNewcomer: true).row(.accessibility)?.detail.hasSuffix("This window comes back by itself." + alreadyOn) == true)
     // Where the permission went while Arbor ran nothing was updated: what to do, without that reason.
     #expect(OnboardingModel(fresh, windowsOutOfView: 3).row(.accessibility)?.detail.hasSuffix(" Already on? Switch it off and on again.") == true)
     #expect(model.row(.screenRecording)?.detail.contains("Nothing is recorded or stored") == true)
@@ -768,6 +770,42 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     // On whole points, whatever the window's height.
     let odd = place([], height: 331.5, in: CGRect(x: 0, y: 25, width: 1024.5, height: 673))
     #expect(odd == CGPoint(x: odd.x.rounded(), y: odd.y.rounded()))
+  }
+
+  /// Nobody is taught twice: at the moment the permission comes, whoever knows Arbor gets what they asked for, or how things stand.
+  @Test func whoeverKnowsArborIsNotShownTheMovesUnasked() {
+    func page(asking asked: OnboardingFlow.Page?, knowsArbor: Bool, needsAttention: Bool = false) -> OnboardingFlow.Page {
+      var flow = OnboardingFlow(isReady: false)
+      if let asked { flow.go(to: asked) }
+      #expect(flow.page == .permissions, "there is nothing else to show yet")
+      flow.update(isReady: true, knowsArbor: knowsArbor, needsAttention: needsAttention)
+      return flow.page
+    }
+    #expect(page(asking: nil, knowsArbor: true) == .setup)
+    #expect(page(asking: .setup, knowsArbor: true) == .setup)
+    #expect(page(asking: .firstSteps, knowsArbor: true) == .firstSteps, "whoever asks for the moves gets them")
+    #expect(page(asking: nil, knowsArbor: true, needsAttention: true) == .setup, "which has whatever is in the way")
+    // A newcomer, as ever.
+    #expect(page(asking: nil, knowsArbor: false) == .firstSteps)
+    #expect(page(asking: .setup, knowsArbor: false) == .firstSteps)
+    #expect(page(asking: nil, knowsArbor: false, needsAttention: true) == .permissions)
+    // What was asked for once is not remembered past the page it led to.
+    var flow = OnboardingFlow(isReady: false)
+    flow.go(to: .firstSteps)
+    flow.update(isReady: true, knowsArbor: true, needsAttention: false)
+    flow.update(isReady: false, knowsArbor: true, needsAttention: false)
+    flow.update(isReady: true, knowsArbor: true, needsAttention: false)
+    #expect(flow.page == .setup)
+  }
+
+  /// Words one must read in order to act are drawn in the primary ink; what stands under a tick is only good to know.
+  @Test func whatMustBeReadIsWhateverIsNotInOrder() {
+    // A Mac as it comes, before and after the permission: every state a row can be in but a tick, and ticks.
+    let waiting = OnboardingModel(SystemFacts(accessibility: false, screenRecording: false, switches: MacSwitch.allCases))
+    let ready = OnboardingModel(SystemFacts(accessibility: true, screenRecording: false, switches: MacSwitch.allCases))
+    let rows = waiting.rows + ready.rows
+    #expect(Set(rows.map(\.state)).isSuperset(of: [.required, .done, .recommended]))
+    for row in rows { #expect(row.mustBeRead == (row.state != .done), "\(row.id)") }
   }
 
   /// Where the window goes whenever it has something else to show.

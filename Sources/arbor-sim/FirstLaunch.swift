@@ -4,11 +4,12 @@ import ArborTesting
 import CoreGraphics
 import Foundation
 
-// arbor-sim first-launch [--permitted] [lines…]
+// arbor-sim first-launch [--permitted | --been-here] [lines…]
 //
 // The first five minutes, to play and to read: a Mac as it comes (macOS's own tiling and the wallpaper click are on), an Arbor that has
 // never run on it and has no Accessibility permission (with --permitted it has), and three windows open already (101 Safari, 102 Mail,
-// 103 Notes). The welcome window is the real `OnboardingSession` on the real controller (`FakeWelcomeWindow`); it is printed
+// 103 Notes). With --been-here it is no first launch: somebody who has used Arbor starts a build that macOS takes for a new app, so the state file
+// says "welcomed" and the permission is missing. The welcome window is the real `OnboardingSession` on the real controller (`FakeWelcomeWindow`); it is printed
 // whenever it opens or shows something else, buttons in square brackets. Then the lines run as in any script.
 //
 // Words that only make sense here:
@@ -24,24 +25,28 @@ import Foundation
 
 @MainActor
 final class FirstLaunch {
-  let harness = Harness()
+  let harness: Harness
   private var printed: String?
 
   /// Takes `first-launch` and its option off the front of `lines`. Nil if the first word is another.
   init?(taking lines: inout [String]) {
     guard lines.first == "first-launch" else { return nil }
     lines.removeFirst()
-    var permitted = false
+    var (permitted, beenHere) = (false, false)
     if lines.first == "--permitted" {
       permitted = true
       lines.removeFirst()
+    } else if lines.first == "--been-here" {
+      beenHere = true
+      lines.removeFirst()
     }
+    harness = Harness(saved: beenHere ? PersistedState(workspaces: [:], hints: [:], welcomed: true) : nil)
     for (index, app) in ["Safari", "Mail", "Notes"].enumerated() {
       let offset = CGFloat(index) * 120
       harness.system.open(
         app: app, pid: pid(ofApp: app), frame: CGRect(x: 200 + offset, y: 120 + offset / 2, width: 760 - offset, height: 560 - offset / 2))
     }
-    harness.launchForTheFirstTime(permitted: permitted)
+    if beenHere { harness.launchWithItsWindow(permitted: false) } else { harness.launchForTheFirstTime(permitted: permitted) }
     printWindow()
   }
 

@@ -29,6 +29,7 @@ public final class FakeWelcomeWindow {
   public init(controller: Controller) {
     self.controller = controller
     session = OnboardingSession(controller: controller) { [weak self] _ in self?.render() }
+    session.onLeave = { [weak self] in self?.close() }
     controller.openWelcomeWindow = { [weak self] page, takesTheKeyboard in self?.show(page, takesTheKeyboard: takesTheKeyboard) }
     controller.askForAccessibility = { [weak controller] in controller?.welcome(at: .permissionLost) }
     controller.accessibilityErrand = AccessibilityErrand(
@@ -130,6 +131,12 @@ extension Harness {
   /// - Parameter atLogin: macOS opened it, not a hand.
   public func launchForTheFirstTime(permitted: Bool = false, atLogin: Bool = false) {
     controller.isFirstLaunch = true
+    launchWithItsWindow(permitted: permitted, atLogin: atLogin)
+  }
+
+  /// Any launch, as `ArborApp` does it, welcome window and all. For a later one than the first: on the `newProcess()` of a run that has
+  /// saved. Not permitted there is what an update of a build signed ad hoc comes to: to macOS it is a new app.
+  public func launchWithItsWindow(permitted: Bool, atLogin: Bool = false) {
     controller.systemFacts = { [unowned self] in
       SystemFacts(
         accessibility: self.controller.accessibilityGranted, screenRecording: false, switches: self.mac.on, separateSpaces: true,

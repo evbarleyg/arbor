@@ -35,7 +35,7 @@ public struct FirstSteps: Equatable, Sendable {
 
 /// Which page the welcome window shows. It opens on the permissions, goes on to the first steps by
 /// itself the moment Arbor may arrange windows, unless something else on the page is still in the way, and
-/// comes back if the permission is taken away.
+/// comes back if the permission is taken away. Whoever knows Arbor is not shown the first steps unasked (`update`).
 public struct OnboardingFlow: Equatable, Sendable {
   public enum Page: Sendable {
     /// The welcome: what Arbor is for, and the one permission. The first minute asks for nothing else (Q29, 11).
@@ -52,6 +52,8 @@ public struct OnboardingFlow: Equatable, Sendable {
   private var isReady: Bool
   /// The four moves have been on show. Whoever has passed the first page by is not held at it again.
   private var hasGoneOn = false
+  /// The page that was asked for while there was only the welcome to show.
+  private var asked: Page?
 
   /// - Parameter isReady: Arbor has Accessibility permission.
   public init(isReady: Bool) { self.isReady = isReady }
@@ -63,11 +65,16 @@ public struct OnboardingFlow: Equatable, Sendable {
     return flow
   }
 
-  /// - Parameter needsAttention: the first page has advice that has not been taken (`OnboardingModel.needsAttention`). Asked only
-  ///   at the moment the permission arrives.
-  public mutating func update(isReady: Bool, needsAttention: @autoclosure () -> Bool) {
+  /// - Parameters:
+  ///   - knowsArbor: this person had seen the window before this launch. Nobody is taught twice.
+  ///   - needsAttention: the first page has advice that has not been taken (`OnboardingModel.needsAttention`). Asked only
+  ///     at the moment the permission arrives.
+  public mutating func update(isReady: Bool, knowsArbor: Bool = false, needsAttention: @autoclosure () -> Bool) {
     if !isReady {
       page = .permissions
+    } else if !self.isReady, page == .permissions, knowsArbor {
+      // What they asked for, the moves too if it was those; or how things stand, which has whatever is in the way.
+      go(to: asked ?? .setup, isReady: true)
     } else if !self.isReady, page == .permissions, hasGoneOn || !needsAttention() {
       // What the window was waiting for. Closing now would leave a newcomer looking at an unchanged screen.
       // Not past what is in the way: whoever comes back from granting the permission has read nothing else on the page.
@@ -78,8 +85,11 @@ public struct OnboardingFlow: Equatable, Sendable {
   }
 
   /// The Continue and Back buttons. There is nothing to try before Arbor may move windows.
-  public mutating func go(to page: Page) {
+  public mutating func go(to page: Page) { go(to: page, isReady: isReady) }
+
+  private mutating func go(to page: Page, isReady: Bool) {
     self.page = isReady ? page : .permissions
+    asked = isReady || page == .permissions ? nil : page
     if self.page == .firstSteps { hasGoneOn = true }
   }
 }
@@ -144,6 +154,9 @@ public struct OnboardingModel: Equatable, Sendable {
     }
 
     public var isSatisfied: Bool { state == .done }
+    /// Its words are to be read in order to act, so they are drawn in the primary ink: macOS's secondary grey is 3.7 to 1 in the light look.
+    /// What stands under a tick is only good to know.
+    public var mustBeRead: Bool { !isSatisfied }
     /// Something is missing or in the way, and there is something to do about it.
     public var needsAttention: Bool { state == .required || state == .recommended }
   }
@@ -256,7 +269,8 @@ public struct OnboardingModel: Equatable, Sendable {
       appsWithOwnShortcuts: appsWithOwnShortcuts, canFixSetup: canFixSetup, changed: page == .setup ? switchesChangedByArbor : [],
       givenBack: page == .setup ? switchesGivenBack : [], isPaused: isPaused,
       failure: fixSetupFailure, canDock: facts.accessibility && !isPaused,
-      lostShortcuts: lostShortcuts, isCheckSetup: page == .setup, signature: signature, dragDocks: dragDocks, shortcut: shortcut)
+      lostShortcuts: lostShortcuts, isCheckSetup: page == .setup, isNewcomer: isNewcomer, signature: signature, dragDocks: dragDocks,
+      shortcut: shortcut)
     rows =
       page == .setup
       ? all
@@ -452,7 +466,7 @@ public struct OnboardingModel: Equatable, Sendable {
   private static func rows(
     _ facts: SystemFacts, windowsOutOfView: Int, offersScreenRecording: Bool, appsWithOwnShortcuts apps: [String],
     canFixSetup: Bool, changed: [MacSwitch], givenBack: [MacSwitch], isPaused: Bool, failure: String?, canDock: Bool,
-    lostShortcuts lost: [String], isCheckSetup: Bool, signature: BuildInfo.Signature?, dragDocks: DragDocks,
+    lostShortcuts lost: [String], isCheckSetup: Bool, isNewcomer: Bool, signature: BuildInfo.Signature?, dragDocks: DragDocks,
     shortcut: (Command) -> String?
   ) -> [Row] {
     let settings = "Open Settings…"
@@ -474,7 +488,9 @@ public struct OnboardingModel: Equatable, Sendable {
               + "Developer ID."
             : "")
           : stranded + "macOS asks your permission before an app may move other apps’ windows. Arbor reads only each window’s position "
-            + "and title, and nothing leaves your Mac. Flip the switch next to Arbor in System Settings. This window comes back by itself."
+            + "and title, and nothing leaves your Mac. Flip the switch next to Arbor in System Settings."
+            // True for a newcomer alone: for whoever knows Arbor it goes away by itself then, or stays where it was asked for.
+            + (isNewcomer ? " This window comes back by itself." : "")
             // Another build over an old grant: the switch looks on, and Arbor waits. It looks like a first launch too, so this is said to
             // everybody, or whoever meets it finds nothing to flip. The reason, not where the permission went while Arbor ran, nor of a build
             // signed with a certificate, of which it is not true.

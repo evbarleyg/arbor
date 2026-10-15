@@ -11,6 +11,8 @@
 #   5  Check Setup…: Switch Off macOS Tiling, whether macOS obeys at once; a pause, a resume; Put Them Back
 #   6  the menu
 #   7  quitting with the choice standing: every window as it was found, and macOS's settings too
+#   8  a later launch without the permission, which is what an update of a build signed ad hoc comes to: the window says why, and when the
+#      permission comes it goes away by itself: nobody is taught the moves twice
 #
 # Arbor is a copy of the app under an identifier of its own, opened as Finder opens it, so that it answers for its own permissions.
 # The grant is written into the permission database, which is what the switch in System Settings does.
@@ -228,6 +230,17 @@ j_does_not_arrive() {
   sleep 2
   [ "$(js)" -eq "$before" ]
 }
+keys_ready() { grep -q "ready pid=$KEYS_PID " "$KEYS_LOG" 2>/dev/null; }
+# Starts it and clicks in it, as a person who turns to another app.
+the_witness_has_the_keyboard() {
+  # Without descriptor 9, the test windows' stdin: they quit when it closes, and would wait for this app as well.
+  "$KEYS_APP/Contents/MacOS/keys" app "$KEYS_LOG" 20 520 260 160 9>&- &
+  KEYS_PID=$!
+  started "$KEYS_PID"
+  eventually keys_ready || die "the key-logging app did not start"
+  click 80 620
+  sleep 0.5
+}
 
 step "1  the launch"
 ARBOR_BUNDLE=$app ARBOR_MAY_LACK_PERMISSION=1 ARBOR_TEST_WINDOWS_ARGS="--regular" \
@@ -289,28 +302,25 @@ check "and the dialog is gone: nothing is left lying over the person's windows" 
 echo "on the screen, front to back:"; pointer windows --on-screen | awk '$3 >= 0 && $3 < 20'
 # Whose the keyboard is. The person is in another app when the permission arrives: System Settings mostly, here one that writes down what
 # it is given. Arbor's window comes forward and turns its page by itself then, and what is typed goes on arriving where it did.
-# Without descriptor 9, the test windows' stdin: they quit when it closes, and would wait for this app as well.
-"$KEYS_APP/Contents/MacOS/keys" app "$KEYS_LOG" 20 520 260 160 9>&- &
-KEYS_PID=$!
-started "$KEYS_PID"
-keys_ready() { grep -q "ready pid=$KEYS_PID " "$KEYS_LOG" 2>/dev/null; }
-eventually keys_ready || die "the key-logging app did not start"
-click 80 620
-sleep 0.5
+the_witness_has_the_keyboard
 check "typed before the grant, a plain J arrives in the app the person is in" j_arrives
-codesign --display --requirements - "$app" 2>/dev/null | sed -n 's/^\(# \)\{0,1\}designated => //p' | csreq -r- -b "$ARBOR_SESSION_DIR/requirement.bin"
-hex=$(xxd -p "$ARBOR_SESSION_DIR/requirement.bin" | tr -d '\n')
-tcc "INSERT OR REPLACE INTO access (service, client, client_type, auth_value, auth_reason, auth_version, csreq, indirect_object_identifier, flags, last_modified) VALUES ('kTCCServiceAccessibility', '$BUNDLE_ID', 0, 2, 3, 1, X'$hex', 'UNUSED', 0, strftime('%s', 'now'));" \
-  || die "the grant could not be written"
 # The switch in System Settings does more than write the row: it posts a notice, and a running process learns of a grant through nothing else
 # (seen on a hosted Mac: neither the row nor a restart of tccd is noticed). In this order: announced before tccd has read the row, the flag
 # says yes and event taps stay refused in that process. A relaunch is the last resort, and then the script cannot say whether a running Arbor
 # hears of the grant: it says so instead of calling it a fault.
 noticed() { eventually status_starts running || eventually status_starts running; }
+grant_as_the_switch_does() {
+  local hex
+  codesign --display --requirements - "$app" 2>/dev/null | sed -n 's/^\(# \)\{0,1\}designated => //p' | csreq -r- -b "$ARBOR_SESSION_DIR/requirement.bin"
+  hex=$(xxd -p "$ARBOR_SESSION_DIR/requirement.bin" | tr -d '\n')
+  tcc "INSERT OR REPLACE INTO access (service, client, client_type, auth_value, auth_reason, auth_version, csreq, indirect_object_identifier, flags, last_modified) VALUES ('kTCCServiceAccessibility', '$BUNDLE_ID', 0, 2, 3, 1, X'$hex', 'UNUSED', 0, strftime('%s', 'now'));" \
+    || die "the grant could not be written"
+  sudo killall -9 tccd 2>/dev/null
+  sleep 3
+  "$ARBOR_SESSION_DIR/notice"
+}
 took="the row, a restart of tccd, and the notice System Settings posts"
-sudo killall -9 tccd 2>/dev/null
-sleep 3
-"$ARBOR_SESSION_DIR/notice"
+grant_as_the_switch_does
 if ! noticed; then
   took="a relaunch"
   grep -i "accessibility" "$ARBOR_HOME/arbor.log" | tail -n 3 | cut -c 12-220
@@ -569,4 +579,51 @@ has_its_own_size() {
 for id in "$FIRST" "$SECOND"; do
   check "window $id, docked and dragged, has its own size back — it is at $(real_frame_of "$id")" has_its_own_size "$id"
 done
-arbor_stop 70-after-quit
+shot 70-after-quit
+
+step "8  a later launch without the permission"
+# To macOS every update of a build signed ad hoc is a new app. Played here by forgetting the entry: the same session, so Arbor's own file says
+# that this person has seen the window.
+check "the Arbor that arranged windows has gone" arbor_await_exit "$ARBOR_PID" 50
+tcc "DELETE FROM access WHERE client = '$BUNDLE_ID';"
+sudo killall -9 tccd 2>/dev/null
+sleep 6
+check "Arbor's own file says that this person has been welcomed" grep -q '"welcomed" *: *true' "$ARBOR_HOME/state.json"
+later=$(frames)
+ARBOR_BUNDLE=$app
+arbor_open_bundle ARBOR_ONLY_PIDS="$ARBOR_WINDOWS_PID" ARBOR_NO_PROMPT=0 ARBOR_DEBUG=1 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 \
+  ARBOR_NO_WATCHDOG=1 ARBOR_MAC_SWITCHES=1
+started "$ARBOR_PID"
+check "it waits for the permission" eventually status_starts waiting
+check "and says why and where: the window opens, on any day" eventually welcome_frame
+# A log of its own: the witness begins its file anew, and section 2's is evidence.
+KEYS_LOG="$ARBOR_OUT/keys-later.log"
+the_witness_has_the_keyboard
+check "typed before the grant, a plain J arrives in the app the person is in" j_arrives
+see 80-a-later-launch
+lines=$(arbor_log_lines)
+grant_as_the_switch_does
+if noticed; then
+  # The heading above was said while no Arbor ran, which left the recorder deaf.
+  arbor_trace_next "a later launch, granted"
+  check "typed just after the grant, it arrives there" j_arrives
+  sleep 2
+  shot 81-two-seconds-after-the-grant
+  check "the window has gone by itself: nobody is taught the moves twice" no_welcome_window
+  check "the line on screen has said that Arbor is ready" test "$(arbor_log_since "$lines" | grep -c "said on .*Arbor is ready")" = 1
+  check "typed after that, it arrives there still" j_arrives
+  check "no window has moved for any of it" test "$(frames)" = "$later"
+  # Whoever asks for the window gets it, and it stays.
+  ctl welcome
+  check "asked for, the window comes" eventually welcome_frame
+  sleep 3
+  check "and stays" welcome_frame
+else
+  echo "NOT ANSWERED HERE: this Arbor did not hear of the grant while it ran, so what its window does at that moment was not seen"
+fi
+kill_started "$KEYS_PID"
+arbor_stop 89-after-the-last-quit
+
+step "the Mac, as it is left"
+switches
+check "the last quit leaves macOS's settings as they were found" all_switches_are "not set"

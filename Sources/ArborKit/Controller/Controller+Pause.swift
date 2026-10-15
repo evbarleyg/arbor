@@ -136,6 +136,7 @@ extension Controller {
     // Read once: reading sets a file aside if it cannot be used, and a second reading would find nothing wrong.
     lastSaved = store.load()
     noteHowLoadingWent()
+    noteWhoThisIs(lastSaved)
     let saved = lastSaved ?? PersistedState(workspaces: [:], hints: [:])
     resumeState = saved
     guard let pause = saved.pause else { return false }
