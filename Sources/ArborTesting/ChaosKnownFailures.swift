@@ -722,6 +722,420 @@ extension ChaosRunner {
         launch
         """),
     ChaosKnownFailure(
+      rule: "flipped-into-view", owner: "rule 3: one thing that happens is one layout", severity: 4,
+      story: "A window that is out of view shows and goes again at a key that turns to a neighbour, among five windows of which some are tiles.",
+      script: """
+        displays main:0,0,1728,1117:37,0,0,0* side:1728,323,3008,1692:25,0,0,0 windows-never
+        open 101 Notes pid 1001 at 1912 1231 837 618 min 709 320
+        open 102 Mail pid 1002 at 3312 834 871 833 min 871 236
+        launch
+        grab 101
+        displays main:0,0,1728,1117:37,0,0,0* windows-silent
+        settle
+        open 104 Mail pid 1002 at 381 329 913 581 min 871 236
+        open 105 Finder pid 1005 at 695 49 846 436 min 501 252
+        open 106 Music pid 1006 at 534 405 1078 684 min 980 600
+        open 108 Xcode pid 1004 at 265 270 1188 696 min 1188 685
+        focus-nothing
+        key down arrange
+        edge 101 915 583 957 522
+        key down undo
+        tile main 4
+        key down focus right
+        """),
+    ChaosKnownFailure(
+      rule: "flipped-out-of-view", owner: "rule 3: one thing that happens is one layout", severity: 3,
+      story: "A window leaves the screen and comes back for one thing that happened, and no app refused a size. ⌃⌥D with one docked window that has the keyboard: it goes, and a moment later the "
+        + "view follows the keyboard and it is back. Move to Next Display: by way of the corner. Grow at the limit: out and in, twice.",
+      script: """
+        open 103 Mail pid 1002 at 1553 134 1155 658 min 760 400
+        launch
+        key down arrange
+        key down desktop
+        react
+        """,
+      """
+        displays main:-1280,0,1280,800:25,0,0,0 side:0,0,1920,1080:25,86,0,0* windows-never
+        open 103 Notes pid 1001 at 367 327 972 654 min 709 300
+        launch
+        open 104 Xcode pid 1004 at 368 312 1188 696 min 1188 685
+        key down arrange
+        focus 104
+        via menu move-to-display next
+        """,
+      """
+        launch
+        open 103 Xcode pid 1004 at 85 62 1188 800 min 1188 685
+        key down dock right
+        open 104 Preview pid 1007 at 560 287 723 514 min 723 400 max 723 2000
+        seam main 0 -187
+        key down dock left
+        key down grow
+        """),
+    ChaosKnownFailure(
+      rule: "displays-out-and-back-moved", owner: "displays: a window's report is never judged by displays that are no more", severity: 3,
+      story: "A window on the monitor. The lid is shut and opened, and each time the window speaks before macOS's list of displays has changed: it ends on the laptop. (That one window speaks so is "
+        + "common on a Mac; that all do, as here, has not been recorded.)",
+      script: """
+        displays main:0,0,1440,900:25,0,70,0* side:1440,0,2560,1440:25,0,0,0 windows-never
+        open 103 Mail pid 1002 at 1540 85 1100 700 min 760 400
+        launch
+        settle
+        displays side:0,0,2560,1440:25,0,70,0* windows-first
+        settle
+        react
+        advance 1
+        react
+        displays main:0,0,1440,900:25,0,70,0* side:1440,0,2560,1440:25,0,0,0 windows-first
+        settle
+        """),
+    ChaosKnownFailure(
+      rule: "taken-to-another-display", owner: "displays: a display claims only what is its own", severity: 2,
+      story: "As `displays-out-and-back-moved`, asked at the move itself: when displays come and go Arbor takes a floating window to a display that it only visited, while the one "
+        + "somebody put it on is there.",
+      script: """
+        displays main:-1512,0,1512,982:37,0,0,0 side:0,0,2560,1440:25,0,59,0* windows-never
+        open 102 Finder pid 1005 at -1099 342 1067 467 min 501 252
+        launch
+        displays main:0,0,1512,982:37,0,59,0* windows-first
+        displays main:-1512,0,1512,982:37,0,0,0 side:0,0,2560,1440:25,0,59,0* windows-late
+        """,
+      """
+        displays main:0,0,1512,982:37,70,0,0* side:1512,323,1920,1080:25,0,0,0 windows-never
+        open 104 Music pid 1006 at 1802 719 980 600 min 980 600
+        launch
+        toggle-pause
+        toggle-pause
+        displays side:0,0,1920,1080:25,70,0,0* windows-first
+        displays main:0,0,1512,982:37,70,0,0* side:1512,323,1920,1080:25,0,0,0 windows-silent
+        """),
+    ChaosKnownFailure(
+      rule: "taken-back-from-where-it-was-put", owner: "displays: a display claims only what is its own", severity: 3,
+      story: "A display goes and its window lands on the one that stays. Its person docks it there and floats it again, with Arbor's own keys. The display returns, and Arbor takes the window back "
+        + "to its old frame on it. (What a hand drags or sizes there stays, since a display that comes back fetches no guests.)",
+      script: """
+        launch
+        displays side:0,0,3008,1692:25,0,0,0* windows-first
+        open 105 Notes pid 1001 at 1682 530 972 558 min 709 320
+        displays main:0,0,1728,1117:37,0,0,0* windows-silent
+        key down dock top
+        key down toggle-float
+        displays main:0,0,1728,1117:37,0,0,0* side:1728,323,3008,1692:25,0,0,0 windows-late
+        """,
+      """
+        displays main:0,0,1728,1117:37,0,70,0* side:-200,-1440,2560,1440:25,0,0,0 windows-never
+        open 101 Terminal pid 1003 at 1351 -1337 921 514 min 177 64 cells 7 15 2 4
+        launch
+        displays main:0,0,1728,1117:37,0,70,0* windows-silent
+        focus 101
+        key down toggle-float
+        key down float-all
+        displays main:0,0,1728,1117:37,0,70,0* side:-200,-1440,2560,1440:25,0,0,0 windows-silent
+        """),
+    ChaosKnownFailure(
+      rule: "taken-out-of-view-with-another-display", owner: "displays: a display claims only what is its own", severity: 2,
+      story: "A browser window on the monitor, another arranged and framed on the laptop. The lid is shut and opened: the monitor's window is out of view, with the laptop's framed view, "
+        + "and the monitor is empty.",
+      script: """
+        displays main:0,0,1512,982:37,0,48,0* side:-1920,-200,1920,1080:25,0,0,0 windows-never
+        open 103 Safari pid 1000 at 89 107 1416 784 min 574 240
+        open 104 Safari pid 1000 at -1318 -171 1152 816 min 574 240
+        launch
+        key down arrange
+        key down zoom
+        displays side:0,0,1920,1080:25,0,48,0* windows-first
+        displays main:0,0,1512,982:37,0,48,0* side:-1920,-200,1920,1080:25,0,0,0 windows-silent
+        """),
+    ChaosKnownFailure(
+      rule: "taken-back-out-of-view-from-where-it-was-put", owner: "displays: a display claims only what is its own", severity: 2,
+      story: "The monitor's view is framed on a browser, and the player that floated there is out of view. The monitor is unplugged, the player comes to the laptop, and its person drags it to "
+        + "where they want it. The monitor comes back: the player goes from the laptop out of view.",
+      script: """
+        displays main:0,0,1512,982:37,0,59,0* side:323,-1440,2560,1440:25,0,0,0 windows-never
+        launch
+        open 101 Safari pid 1000 at 1394 -1241 1440 880 min 574 240
+        key down dock bottom
+        open 102 Music pid 1006 at 1297 -738 1137 702 min 680 480
+        cursor 3110 4
+        key down in
+        displays main:0,0,1512,982:37,0,59,0* windows-silent
+        grab 102
+        carry 285 256
+        release
+        displays main:0,0,1512,982:37,0,59,0* side:323,-1440,2560,1440:25,0,0,0 windows-silent
+        """,
+      """
+        displays main:-1280,-323,1280,800:25,0,0,0 side:0,0,1920,1080:25,0,0,59* windows-never
+        open 103 Terminal pid 1003 at 228 315 693 539 min 177 60
+        launch
+        focus 103
+        key down dock left
+        open 105 Preview pid 1007 at 412 67 723 644 min 723 400 max 723 2000
+        key down zoom
+        displays main:0,0,1280,800:25,0,0,59* windows-late
+        key down dock top
+        focus 103
+        key down float-all
+        displays main:-1280,-323,1280,800:25,0,0,0 side:0,0,1920,1080:25,0,0,59* windows-silent
+        """),
+    ChaosKnownFailure(
+      rule: "nothing-in-view-held-after-displays", owner: "a held view while displays come and go", severity: 3,
+      story: "The view is held, and the display that showed the only window in view goes: the display that is left shows nothing, for as long as the view is held. Every way home fetches.",
+      script: """
+        displays main:-1728,0,1728,1117:37,0,0,0 side:0,0,2560,1440:25,0,0,0* windows-never
+        launch
+        open 105 Preview pid 1007 at 231 675 723 559 min 723 400 max 723 2000
+        key down dock left
+        key down zoom
+        via menu hold
+        displays main:0,0,1728,1117:37,0,0,0* windows-silent
+        key down dock right
+        displays side:0,0,2560,1440:25,0,0,0* windows-first
+        settle
+        """,
+      """
+        displays main:0,0,1440,900:25,0,48,0* side:-3008,150,3008,1692:25,0,0,0 windows-never
+        launch
+        open 103 Mail pid 1002 at -2199 517 1133 546 min 760 400
+        grab 103
+        carry 720 852
+        release
+        key down zoom
+        key down desktop
+        key down back
+        via menu hold
+        grab 103
+        carry -3008 1842
+        release
+        displays main:0,0,1440,900:25,0,48,0* windows-late
+        settle
+        """),
+    ChaosKnownFailure(
+      rule: "plain-drag-showed-a-preview", owner: "less by default (Q29, board 0.4): a plain drag docks nothing", severity: 2,
+      story: "A floating window is dragged to the foot of the display with no key held, and Arbor shows where it would dock.",
+      script: """
+        launch
+        open 101 Notes pid 1001 at 300 200 800 500 min 709 300
+        open 102 Safari pid 1000 at 100 100 900 600 min 574 240
+        grab 101
+        carry 700 896
+        """),
+    ChaosKnownFailure(
+      rule: "plain-drag-docked", owner: "less by default (Q29, board 0.4): a plain drag docks nothing", severity: 2,
+      story: "It is let go there, and is docked.",
+      script: """
+        launch
+        open 101 Notes pid 1001 at 300 200 800 500 min 709 300
+        open 102 Safari pid 1000 at 100 100 900 600 min 574 240
+        grab 101
+        carry 700 896
+        release
+        """),
+    ChaosKnownFailure(
+      rule: "plain-drag-moved-it", owner: "less by default (Q29, board 0.4): a plain drag docks nothing", severity: 2,
+      story: "Let go there, it is taken from where its person left it, to a slot.",
+      script: """
+        launch
+        open 101 Notes pid 1001 at 300 200 800 500 min 709 300
+        open 102 Safari pid 1000 at 100 100 900 600 min 574 240
+        grab 101
+        carry 700 896
+        release
+        """),
+    ChaosKnownFailure(
+      rule: "plain-drag-moved-another", owner: "less by default (Q29, board 0.4): a plain drag docks nothing", severity: 2,
+      story: "Notes are docked at the right. A floating window is dragged to the foot of the display with no key held and let go: it docks, and the notes, which nobody touched, are made lower.",
+      script: """
+        launch
+        open 101 Notes pid 1001 at 300 200 800 500 min 709 300
+        open 102 Safari pid 1000 at 100 100 900 600 min 574 240
+        focus 101
+        key down dock right
+        grab 102
+        carry 700 896
+        release
+        """),
+    ChaosKnownFailure(
+      rule: "moved-twice-floating-making-way", owner: "rule 3: a floating window's frame is its person's", severity: 4,
+      story: "Only with `floatingWindowsMakeWay` on, which ships off (F64). A floating window is pushed aside and, in the same breath, sent out of view, when a docked window comes out of the Dock.",
+      script: """
+        settings {"floatingWindowsMakeWay":true}
+        launch
+        displays main:0,0,2560,1440:25,0,86,0* side:2560,-170,1280,800:0,0,0,0 windows-never
+        open 101 Music pid 1006 at 1518 281 353 294
+        grab 101
+        carry 2724 -15
+        release
+        double-click 101
+        behave 101 frozen
+        undo
+        space 101 off
+        space 101 on
+        flush
+        minimize 101
+        via shortcut layout Music
+        open 107 Notes pid 1001 at 2676 12 380 315 min 255 117 max 255 968 title Inbox
+        restore 101
+        """),
+    ChaosKnownFailure(
+      rule: "fetched-before-any-dock", owner: "the ways out: Quit and a pause leave no window with less than half of it showing; a question for the product owner", severity: 3,
+      story: "Nothing was ever docked. A window lies across two displays where its person dragged it, and is made lower by an edge, so that less than half of it shows. Quit pulls it in.",
+      script: """
+        displays main:-1440,0,1440,900:25,0,0,0 side:0,0,2560,1440:25,0,70,0* windows-never
+        launch
+        open 103 Music pid 1006 at -1285 78 1127 654 min 980 600
+        grab 103
+        carry -168 793
+        release
+        edge 103 -731.5 783 1127 469
+        quit
+        """),
+    ChaosKnownFailure(
+      rule: "moved-before-any-dock", owner: "rule 2: the displays change during a pause", severity: 3,
+      story: "Nothing was ever docked. A window is dragged to the foot of the monitor; Arbor is paused, the laptop goes, Arbor is resumed; ⌃⌥0 pulls the window up by 377 points.",
+      script: """
+        displays main:0,0,1280,800:25,0,48,0* side:1280,323,1920,1080:25,0,0,0 windows-never
+        open 104 Finder pid 1005 at 45 108 791 410 min 501 252
+        launch
+        grab 104
+        carry 2774 1332
+        release
+        toggle-pause
+        displays side:0,0,1920,1080:25,0,48,0* windows-first
+        toggle-pause
+        key down home
+        """),
+    ChaosKnownFailure(
+      rule: "mirror", owner: "rule 3: Arbor notes the answer, not what it expected (new with the cure for refused sizes)", severity: 4,
+      story: "A terminal, which takes sizes in whole cells, is docked by a drop and made lower when a second window is dropped beside it: it is one point from where Arbor thinks it is, until the next event.",
+      script: """
+        displays main:0,0,1512,982:37,86,0,0* side:1512,-200,3008,1692:25,0,0,0 windows-never
+        open 101 Terminal pid 1003 at 476 273 930 484 min 177 64 cells 7 15 2 4
+        launch
+        open 104 Safari pid 1000 at 86 246 1426 584 min 574 220
+        grab 101
+        carry 2248 1483
+        release
+        grab 104
+        carry 4090 1391
+        advance 0.3
+        release
+        """),
+    ChaosKnownFailure(
+      rule: "plain-drag-started-a-timer", owner: "less by default (Q29, board 0.4): a plain drag docks nothing", severity: 3,
+      story: "A window is dragged over another with no key held, and Arbor begins to wait for it to rest there.",
+      script: """
+        launch
+        open 101 Notes pid 1001 at 300 200 800 500 min 709 300
+        open 102 Safari pid 1000 at 100 100 900 600 min 574 240
+        dock 101 left
+        dock 102 right
+        settle
+        grab 101
+        carry 1000 450
+        """),
+    ChaosKnownFailure(
+      rule: "plain-drag-left-it-docked", owner: "less by default (Q29, board 0.4): a plain drag docks nothing", severity: 2,
+      story: "A docked window is dragged away with no key held and let go over its neighbour: it goes back into the arrangement. It should float, at its own size, where it was let go.",
+      script: """
+        launch
+        open 101 Notes pid 1001 at 300 200 800 500 min 709 300
+        open 102 Safari pid 1000 at 100 100 900 600 min 574 240
+        dock 101 left
+        dock 102 right
+        settle
+        grab 101
+        carry 1000 450
+        advance 0.3
+        release
+        settle
+        """),
+    ChaosKnownFailure(
+      rule: "plain-drag-not-its-own-size", owner: "rule 5, as `size-not-given-back`: what a hand did while Arbor was not looking is undone; Undo", severity: 3,
+      story: "A window is made larger by hand while Arbor is paused. Resumed, docked and dragged out again, it has the size from before the pause.",
+      script: """
+        displays main:0,0,1512,982:37,0,86,0* side:1512,-200,1920,1080:25,0,0,0 windows-never
+        open 101 Music pid 1006 at 285 132 1088 672 min 680 480
+        launch
+        focus 101
+        toggle-pause
+        edge 101 2344 208 1092 809
+        toggle-pause
+        key down toggle-float
+        grab 101
+        carry 397 383
+        release
+        react
+        """,
+      """
+        displays main:-1280,-150,1280,800:25,0,0,0 side:0,0,1920,1080:25,86,0,0* windows-never
+        launch
+        open 104 Music pid 1006 at 1052 70 706 660 min 680 480
+        grab 104
+        carry -950 320
+        release
+        edge 104 -1303 310 663 660
+        key down undo
+        key down dock right
+        grab 104
+        carry -490 108
+        release
+        react
+        """),
+    ChaosKnownFailure(
+      rule: "switched-to-partly-out", owner: "follows from where Arbor placed it: the pin, a slot narrower than what shows", severity: 3,
+      story: "The window switched to hangs over an edge where Arbor put it, and the switch does not fetch it: a docked window that is pinned and will not be as small as the pin wants; "
+        + "an editor alone on a small laptop with the Dock at the side, 6 points over the edge.",
+      script: """
+        launch
+        open 106 Xcode pid 1004 at 147 126 1287 685 min 1188 685
+        key down arrange
+        via menu toggle-pin
+        react
+        focus 106
+        """,
+      """
+        displays main:0,0,1280,800:25,86,0,0* windows-never
+        open 101 Xcode pid 1004 at 86 25 1188 775 min 1188 685
+        launch
+        via menu arrange all
+        focus 101
+        react
+        """),
+    ChaosKnownFailure(
+      rule: "same-windows-other-frames", owner: "the arrangement is its person's: what is lent depends on the path", severity: 2,
+      story: "An editor, a browser and a terminal on a desk 1920 wide, ⌃⌥A. The terminal is 604 wide. Lay Out Again, any window that opens and closes, or the browser into the Dock and "
+        + "out: the terminal, which nobody touched, is 444 wide, for good. What is lent to a window that will not shrink is worked out otherwise by a fresh layout.",
+      script: """
+        displays side:0,0,1920,1080:25,0,70,0* windows-never
+        launch
+        open 101 Xcode pid 1004 at 150 100 1300 800 min 1188 685
+        focus 101
+        open 102 Safari pid 1000 at 300 150 1200 800 min 574 240
+        focus 102
+        open 103 Terminal pid 1003 at 600 300 877 499 min 177 60
+        focus 103
+        react
+        key down arrange
+        key up arrange
+        react
+        settle
+        relayout
+        react
+        settle
+        """),
+    ChaosKnownFailure(
+      rule: "leak-sharedItsSpace", owner: "the way out of full screen", severity: 4,
+      story: "Nothing a person sees: a window in full screen closes during a pause, which Arbor never hears of, and stays on a list for ever.",
+      script: """
+        launch
+        open 109 Safari pid 1000 at -185 784 716.5 443.25
+        full-screen 109 on
+        toggle-pause
+        close 109
+        resume
+        """),
+    ChaosKnownFailure(
       rule: "quit-left-out-of-reach", owner: "the ways home: quitting while an app hangs (K003)", severity: 1,
       story: "Arbor is quit while an app with a window out of view does not answer. The window is still past the corner when the app wakes, and Arbor is gone. "
         + "Opening Arbor again does not fetch it by itself; ⌃⌥0, Show Everything, Float All or turning to the window then do.",
@@ -895,4 +1309,16 @@ extension ChaosRunner {
   ]
 
   public nonisolated static let knownRules = Set(knownFailures.map(\.rule))
+
+  /// Numbers, not gates: `step` keeps these apart (`counted`), no walk, replay or test ends at them, and a hunt counts them beside the known failures.
+  ///
+  /// **By the eye**, for good: every change of a window that a person could see counts, however good the road was (`FakeWindowSystem.detour`). A change to
+  /// the product that comes with a change to the net that judges it is measured by both, on both sides.
+  ///
+  /// **Not yet gates**: nets for what has been decided and is not built yet, which nearly every walk and many a strict test would break today. Each is to
+  /// read 0; whoever brings one there takes it out of this set, and from then on it ends walks like any other rule.
+  public nonisolated static let countedRules: Set<String> = [
+    "eye-moved-twice", "eye-moved-twice-sizing", "eye-moved-again", "eye-moved-again-sizing",
+    "floating-taken-out-of-view", "strayed-between", "dock-took-out-of-view", "displays-moved-the-untouched", "plain-drag-left-an-undo-step", "keyboard-taken-unasked",
+  ]
 }

@@ -22,17 +22,31 @@ public struct ChaosGenerator {
   private var sizesOnTheDesk: [String: CGSize] = [:]
   private let twoDisplays = ProcessInfo.processInfo.environment["ARBOR_CHAOS_TWO_DISPLAYS"] != nil
   /// `ARBOR_CHAOS_ORDINARY=1`: walks a person could take, on a real desk (ChaosGenerator+Ordinary.swift).
+  /// What this walk draws its commands and settings from (ChaosGenerator+Vocabulary.swift).
+  private let weightedKinds: [(weight: Int, value: CommandKind)]
+  private let settingEntries: [SettingEntry]
+  /// Whether this walk's seed lies beyond the frozen versions.
+  let drawsFromEverything: Bool
   private let ordinary: Bool
+  /// Of the ordinary walks, those of a person who knows the nine keys, the menu and the mouse (ChaosGenerator+Ordinary.swift).
+  let light: Bool
   var desk: Desk
 
-  public init(seed: UInt64, ordinary: Bool = ProcessInfo.processInfo.environment["ARBOR_CHAOS_ORDINARY"] != nil) {
-    self.ordinary = ordinary
+  public init(
+    seed: UInt64, ordinary: Bool = ProcessInfo.processInfo.environment["ARBOR_CHAOS_ORDINARY"] != nil,
+    light: Bool = ProcessInfo.processInfo.environment["ARBOR_CHAOS_ORDINARY"] == "light"
+  ) {
+    self.ordinary = ordinary || light
+    weightedKinds = Self.vocabulary(for: seed, of: CommandKind.allCases, frozen: Self.frozenCommandKinds) { "\($0)" }.map { (Self.weight(of: $0), $0) }
+    drawsFromEverything = seed / Self.seedsInAVersion >= UInt64(Self.frozenCommandKinds.count)
+    settingEntries = Self.vocabulary(for: seed, of: SettingsSchema.entries, frozen: Self.frozenSettings, name: \.key)
+    self.light = light
     random = ChaosRandom(seed: seed)
     allowsMisbehaviour = random.chance(30)
     // From a stream of its own, so that the other walks are what they were.
     var forTheDesk = ChaosRandom(seed: seed &+ 0x5EED)
     desk = Desk(&forTheDesk)
-    if ordinary {
+    if self.ordinary {
       startOrdinaryWalk()
       return
     }
@@ -298,7 +312,7 @@ public struct ChaosGenerator {
   /// `set`, `reset`, `bind`, `rule` and the rest. The schema lists every setting there is, with the values it takes, so a
   /// new setting is tried from the day it is listed there.
   private mutating func settingsCommand(in world: ChaosRunner) -> SettingsCommand {
-    let entry = random.pick(SettingsSchema.entries)!
+    let entry = random.pick(settingEntries)!
     func rule(_ r: inout ChaosRandom) -> AppRule {
       let action = r.pick([
         RuleAction.float, .ignore, .pin, .dock(.left), .dock(.right), .dock(.top), .dockBeside(bundleID: "com.example.notes", .bottom),
@@ -330,7 +344,6 @@ public struct ChaosGenerator {
     }
   }
 
-  private static let weightedKinds = CommandKind.allCases.map { (weight: weight(of: $0), value: $0) }
 
   static func weight(of kind: CommandKind) -> Int {
     switch kind {
@@ -499,7 +512,7 @@ public struct ChaosGenerator {
     case .loseRelease: return .loseRelease
     case .doubleClick: return .doubleClick(window(in: world, random.chance(90) ? .inView : .any))
     case .via:
-      return .via(random.pick([.shortcut, .shortcut, .menu, .gesture])!, command(random.pick(weighted: Self.weightedKinds)!, in: world).text)
+      return .via(random.pick([.shortcut, .shortcut, .menu, .gesture])!, command(random.pick(weighted: weightedKinds)!, in: world).text)
     case .key:
       // Held for a while, with whatever else happens meanwhile, then let go. Show Everything held is a peek.
       let bindings = world.controller.activeBindings + world.controller.temporaryShortcuts
@@ -603,11 +616,11 @@ public struct ChaosGenerator {
       let delta = random.chance(10) ? random.int(-5000...5000) : random.int(-400...400)
       return .seam(display, index: random.int(0...max(count, 1)), delta: Double(delta))
     case .command:
-      return .command(command(random.pick(weighted: Self.weightedKinds)!, in: world).text)
+      return .command(command(random.pick(weighted: weightedKinds)!, in: world).text)
     case .nonsense: return .command(random.pick(Self.nonsense)!)
     case .url:
       if random.chance(30) { return .url(random.pick(Self.hostileURLs)!) }
-      let words = command(random.pick(weighted: Self.weightedKinds)!, in: world).text.split(separator: " ")
+      let words = command(random.pick(weighted: weightedKinds)!, in: world).text.split(separator: " ")
       return .url("arbor://" + words.joined(separator: "/"))
     case .displays:
       guard desks else {
@@ -655,7 +668,7 @@ public struct ChaosGenerator {
     case .displays: return .displays(arrangement(), random.chance(80) ? .first : .never)
     case .settings: return .settings(settingsChange())
     case .time: return random.chance(50) ? .flush : .advance(random.pick([0.1, 1, 31, 60])!)
-    case .command: return .command(command(random.pick(weighted: Self.weightedKinds)!, in: world).text)
+    case .command: return .command(command(random.pick(weighted: weightedKinds)!, in: world).text)
     case .crash: return .crash
     }
   }
@@ -684,7 +697,7 @@ public struct ChaosGenerator {
     case .displays: return .displays(arrangement(), random.chance(80) ? .first : .never)
     case .settings: return .settings(settingsChange())
     case .sleep: return .sleep(days: random.pick([0.5, 1, 29, 31, 400])!)
-    case .command: return .command(command(random.pick(CommandKind.allCases)!, in: world).text)
+    case .command: return .command(command(random.pick(weightedKinds.map(\.value))!, in: world).text)
     case .corrupt: return .corrupt(random.next() % 1_000_000)
     case .unlist: return .listed(window(in: world), false)
     }
