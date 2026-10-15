@@ -156,6 +156,7 @@
 #   look <name> <window id>         save that window alone, which must be of a process the run started: a test window, a
 #                                     panel of Arbor's (`overlays` lists them). Nothing else can be in the picture
 #   panorama <name>                 one picture of all displays as they are arranged
+#   closeup <name> <x> <y> <w> <h>  that rectangle of the screen in the display's own pixels, never made smaller
 #   shot_after <seconds> <name>     the same after exactly that long: `ctl zoom $W1 & shot_after 0.2 mid-zoom`
 #   film <name> <count>             <name>-1.png … as fast as pictures can be taken: `ctl zoom $W1 & film zoom 4`
 # Other
@@ -171,6 +172,7 @@
 #   macos_click_wallpaper [on|off]  print, or set, "click wallpaper to reveal desktop", which sweeps every window aside
 #   macos_reduce_motion [on|off]    print, or set (before arbor_start), Reduce Motion, which GitHub's Macs come with
 #                                     and which turns Arbor's motion off
+#   macos_increase_contrast [on|off] | macos_reduce_transparency [on|off]   the same for those two settings
 #   display_add <w> <h> [side]      plug in a virtual second display: right (default), left, above or below the main one
 #   display_move <side> [offset]    rearrange it, that many points further down (or right) than flush with the main one
 #   display_remove                  unplug it (the end of the script does too)
@@ -911,6 +913,8 @@ arbor_fingerprint() {
   local file
   arbor_fact "setting WindowManager" defaults read com.apple.WindowManager
   arbor_fact "setting Reduce Motion" defaults read com.apple.universalaccess reduceMotion
+  arbor_fact "setting Increase Contrast" defaults read com.apple.universalaccess increaseContrast
+  arbor_fact "setting Reduce Transparency" defaults read com.apple.universalaccess reduceTransparency
   arbor_fact "setting appearance" defaults read -g AppleInterfaceStyle
   arbor_fact "setting Dock hides" defaults read com.apple.dock autohide
   arbor_fact "keyboard layouts" defaults read com.apple.HIToolbox AppleEnabledInputSources
@@ -2069,6 +2073,19 @@ look() {
   arbor_finish_shot "$1"
 }
 
+# A rectangle of the screen, in global coordinates, in the display's own pixels and never made smaller: on a Retina display two
+# to the point, which is what corners, hairlines and small text are judged by.
+closeup() {
+  local name=${1:?closeup <name> <x> <y> <w> <h>} x=${2:?} y=${3:?} w=${4:?} h=${5:?}
+  sleep "${ARBOR_SETTLE:-0.7}"
+  arbor_may_shoot "$name" || return 1
+  if ! screencapture -x "-R$x,$y,$w,$h" "$ARBOR_OUT/$name.png" 2>> "$ARBOR_OUT/screencapture.log"; then
+    echo "closeup $name: screencapture failed ($(tail -n 1 "$ARBOR_OUT/screencapture.log"))"
+    return 1
+  fi
+  echo "shot: mac-shell/$name.png"
+}
+
 # -R takes a rectangle in global coordinates, and it may span displays.
 panorama() {
   local all
@@ -2444,6 +2461,32 @@ macos_reduce_motion() {
       fi ;;
   esac
   echo "Reduce Motion: $("$ARBOR_POINTER" reduce-motion)"
+}
+
+# Both are read by an app when it starts, like Reduce Motion. In System Settings the first switches the second on with it; here each
+# is set alone, and whoever wants what a person gets sets both.
+macos_increase_contrast() {
+  local value
+  case "${1:-}" in
+    on | off)
+      if arbor_may "change the Accessibility setting Increase Contrast"; then
+        [ "$1" = on ] && value=true || value=false
+        defaults write com.apple.universalaccess increaseContrast -bool "$value"
+      fi ;;
+  esac
+  echo "Increase Contrast: $("$ARBOR_POINTER" increase-contrast)"
+}
+
+macos_reduce_transparency() {
+  local value
+  case "${1:-}" in
+    on | off)
+      if arbor_may "change the Accessibility setting Reduce Transparency"; then
+        [ "$1" = on ] && value=true || value=false
+        defaults write com.apple.universalaccess reduceTransparency -bool "$value"
+      fi ;;
+  esac
+  echo "Reduce Transparency: $("$ARBOR_POINTER" reduce-transparency)"
 }
 
 # MARK: A second display (vdisplay.m: private API, for tests only)
