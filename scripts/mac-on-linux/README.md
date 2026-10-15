@@ -27,6 +27,8 @@ On Linux only (in the container CI uses: `make linux` has the image). It works i
 
 **Storey one** (`tests/StoreyOne.swift`): `AXWindowSystem` alone, with a listener that writes down the `WindowSystemEvents` it emits. **Storey two** (`tests/StoreyTwo.swift`): the real `Controller` on it, wired as `ArborApp` wires them, with the
 app's own `MainQueueScheduler` and `FrontmostAppWatcher`; only what draws (`FakeOverlays`) and what writes to disk (`MemoryStateStore`) are fakes. Its checks look at the Mac's screen: where the windows are.
+FOR THE TIME BEING THE TOLD STORIES OF STOREY TWO DO NOT PLAY WHAT SHIPS: they were written while the Desktop had a column of its own among docked windows, name frames that go by it, and run with that option on (`StoreyTwo.asTheStoriesWereWritten`). The walk at storey two
+runs on Arbor as it ships. Owed: each story on what ships, or on both.
 
 **Time** is the model's. A story says `mac.pass(0.3)` and whatever falls due is delivered in order, with no real waiting. A call to an app that hangs moves the clock by the whole messaging timeout, and what fell due meanwhile is
 delivered afterwards, as to a busy main thread. After each delivery Arbor's tasks run until none is runnable (`stubs/FakeMacOS/Pump.swift`): jobs for the main actor are taken from libdispatch's main queue the way CoreFoundation's run loop takes them; jobs for the

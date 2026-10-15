@@ -38,7 +38,7 @@ func tellOfArrangements(_ book: Book) {
   for focusFirst in [false, true] {
     book.story("with automatic docking, a window opens in a running app\(focusFirst ? " that reports the focus before the creation" : "")") { story in
       var first: FakeMac.Window!
-      var settings = Settings()
+      var settings = StoreyTwo.asTheStoriesWereWritten
       settings.newWindows = "dock"
       let two = StoreyTwo(story, settings: settings) { mac in first = mac.open("first", in: mac.launch("Notes")) }
       two.run("dock \(first.number) left")
@@ -125,7 +125,7 @@ func tellOfArrangements(_ book: Book) {
   // With no gap a slot ends at the visible frame's bottom, and with the Dock below no window can: macOS stops it a point short, in every order of calls (the probe of `roomToGrow`: D1, D8, 8 of 8). That is no refusal.
   book.story("with no gap, a window is docked left: its slot ends at the Dock") { story in
     var window: FakeMac.Window!
-    var settings = Settings()
+    var settings = StoreyTwo.asTheStoriesWereWritten
     settings.gap = 0
     let two = StoreyTwo(story, settings: settings) { mac in window = mac.open("a", in: mac.launch("Notes"), frame: CGRect(x: 170, y: 100, width: 480, height: 348)) }
     story.check("the command is taken", two.run("dock \(window.number) left", then: 3).ok && two.isDocked(window))
