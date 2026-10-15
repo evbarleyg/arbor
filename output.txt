@@ -1,0 +1,202 @@
+# mac-shell: scripts/mac-shell/probe-fn-bit.sh at 9b92c26, macOS 26.6.2, 2026-10-15T05:57Z
+built Arbor, the pointer tool and the app bundles in 6s
+
+== the app in front and the listener in the background
+  ✔ the app is up
+  ✔ the listener is up
+  back global monitor in
+  back tap-hid in
+  back tap-session in
+  back tap-annotated in
+  back ready pid=5502
+
+== 0  nobody has registered anything: the control, and what each key is called
+round control: 10 keys
+   10 heard by [local equiv menu global tap-hid tap-session tap-annotated]; Arbor's log did not grow: ctrl+opt+a ctrl+opt+return ctrl+opt+space ctrl+opt+[ ctrl+opt+z ctrl+opt+f ctrl+opt+g ctrl+opt+escape ctrl+opt+left ctrl+opt+right
+  REACHED AN APP: 10 of 10
+  ✔ every key's code is known
+
+== 1  registered plainly, as Arbor does
+  ✔ plainly: the process is up
+rival ready pid=6242: registered 16, refused 0 
+
+== 2  registered with the fn bit only
+  ✔ with-the-bit: the process is up
+rival ready pid=8312: registered 16, refused 0 
+
+== 3  registered both ways
+  ✔ both-ways: the process is up
+rival ready pid=10957: registered 32, refused 0 
+
+== 3b  other words for it, in case that bit is not heard: the same bit and exclusive; bit 23, which is the flag's own place; bit 16, Carbon's for Num Lock
+  ✔ bit-17-exclusive: the process is up
+rival ready pid=13521: registered 16, refused 0 
+  ✔ bit-23: the process is up
+rival ready pid=15823: registered 16, refused 0 
+  ✔ bit-16: the process is up
+rival ready pid=18267: registered 16, refused 0 
+
+== who heard what, and how often
+registered . pressed              key               heard by (how many keys)
+plainly.plain                     a letter or sign  plain x1 (up x1): 8
+plainly.plain                     an arrow          THE-APP x1: 2
+plainly.plain                     F5, Home and kin  THE-APP x1: 6
+plainly.fn-flag                   a letter or sign  THE-APP x1: 8
+plainly.fn-flag                   an arrow          plain x1 (up x1): 2
+plainly.fn-flag                   F5, Home and kin  plain x1 (up x1): 6
+plainly.fn-key                    a letter or sign  THE-APP x1: 8
+plainly.fn-key                    an arrow          plain x1 (up x1): 2
+plainly.fn-key                    F5, Home and kin  plain x1 (up x1): 6
+plainly.fn-up-before-the-key      a letter or sign  THE-APP x1: 8
+plainly.fn-up-before-the-key      an arrow          plain x1 (up x1): 2
+plainly.fn-up-before-the-key      F5, Home and kin  plain x1 (up x1): 6
+plainly.pad-flag                  a letter or sign  plain x1 (up x1): 8
+plainly.pad-flag                  an arrow          THE-APP x1: 2
+plainly.pad-flag                  F5, Home and kin  THE-APP x1: 6
+with-the-bit.plain                a letter or sign  THE-APP x1: 8
+with-the-bit.plain                an arrow          THE-APP x1: 2
+with-the-bit.plain                F5, Home and kin  THE-APP x1: 6
+with-the-bit.fn-flag              a letter or sign  with-the-bit x1 (up x1): 8
+with-the-bit.fn-flag              an arrow          with-the-bit x1 (up x1): 2
+with-the-bit.fn-flag              F5, Home and kin  with-the-bit x1 (up x1): 6
+with-the-bit.fn-key               a letter or sign  with-the-bit x1 (up x1): 8
+with-the-bit.fn-key               an arrow          with-the-bit x1 (up x1): 2
+with-the-bit.fn-key               F5, Home and kin  with-the-bit x1 (up x1): 6
+with-the-bit.fn-up-before-the-key a letter or sign  with-the-bit x1 (up x1): 8
+with-the-bit.fn-up-before-the-key an arrow          with-the-bit x1 (up x1): 2
+with-the-bit.fn-up-before-the-key F5, Home and kin  with-the-bit x1 (up x1): 6
+with-the-bit.pad-flag             a letter or sign  THE-APP x1: 8
+with-the-bit.pad-flag             an arrow          THE-APP x1: 2
+with-the-bit.pad-flag             F5, Home and kin  THE-APP x1: 6
+both-ways.plain                   a letter or sign  plain x1 (up x1): 8
+both-ways.plain                   an arrow          THE-APP x1: 2
+both-ways.plain                   F5, Home and kin  THE-APP x1: 6
+both-ways.fn-flag                 a letter or sign  with-the-bit x1 (up x1): 8
+both-ways.fn-flag                 an arrow          plain x1 (up x1) and with-the-bit x1 (up x1): 2
+both-ways.fn-flag                 F5, Home and kin  plain x1 (up x1) and with-the-bit x1 (up x1): 6
+both-ways.fn-key                  a letter or sign  with-the-bit x1 (up x1): 8
+both-ways.fn-key                  an arrow          plain x1 (up x1) and with-the-bit x1 (up x1): 2
+both-ways.fn-key                  F5, Home and kin  plain x1 (up x1) and with-the-bit x1 (up x1): 6
+both-ways.fn-up-before-the-key    a letter or sign  with-the-bit x1 (up x1): 8
+both-ways.fn-up-before-the-key    an arrow          plain x1 (up x1) and with-the-bit x1 (up x1): 2
+both-ways.fn-up-before-the-key    F5, Home and kin  plain x1 (up x1) and with-the-bit x1 (up x1): 6
+both-ways.pad-flag                a letter or sign  plain x1 (up x1): 8
+both-ways.pad-flag                an arrow          THE-APP x1: 2
+both-ways.pad-flag                F5, Home and kin  THE-APP x1: 6
+bit-17-exclusive.plain            a letter or sign  THE-APP x1: 8
+bit-17-exclusive.plain            an arrow          THE-APP x1: 2
+bit-17-exclusive.plain            F5, Home and kin  THE-APP x1: 6
+bit-17-exclusive.fn-flag          a letter or sign  with-the-bit x1 (up x1): 8
+bit-17-exclusive.fn-flag          an arrow          with-the-bit x1 (up x1): 2
+bit-17-exclusive.fn-flag          F5, Home and kin  with-the-bit x1 (up x1): 6
+bit-17-exclusive.fn-key           a letter or sign  with-the-bit x1 (up x1): 8
+bit-17-exclusive.fn-key           an arrow          with-the-bit x1 (up x1): 2
+bit-17-exclusive.fn-key           F5, Home and kin  with-the-bit x1 (up x1): 6
+bit-17-exclusive.fn-up-before-the-keya letter or sign  with-the-bit x1 (up x1): 8
+bit-17-exclusive.fn-up-before-the-keyan arrow          with-the-bit x1 (up x1): 2
+bit-17-exclusive.fn-up-before-the-keyF5, Home and kin  with-the-bit x1 (up x1): 6
+bit-17-exclusive.pad-flag         a letter or sign  THE-APP x1: 8
+bit-17-exclusive.pad-flag         an arrow          THE-APP x1: 2
+bit-17-exclusive.pad-flag         F5, Home and kin  THE-APP x1: 6
+bit-23.plain                      a letter or sign  with-the-bit x1 (up x1): 8
+bit-23.plain                      an arrow          THE-APP x1: 2
+bit-23.plain                      F5, Home and kin  THE-APP x1: 6
+bit-23.fn-flag                    a letter or sign  THE-APP x1: 8
+bit-23.fn-flag                    an arrow          with-the-bit x1 (up x1): 2
+bit-23.fn-flag                    F5, Home and kin  with-the-bit x1 (up x1): 6
+bit-23.fn-key                     a letter or sign  THE-APP x1: 8
+bit-23.fn-key                     an arrow          with-the-bit x1 (up x1): 2
+bit-23.fn-key                     F5, Home and kin  with-the-bit x1 (up x1): 6
+bit-23.fn-up-before-the-key       a letter or sign  THE-APP x1: 8
+bit-23.fn-up-before-the-key       an arrow          with-the-bit x1 (up x1): 2
+bit-23.fn-up-before-the-key       F5, Home and kin  with-the-bit x1 (up x1): 6
+bit-23.pad-flag                   a letter or sign  with-the-bit x1 (up x1): 8
+bit-23.pad-flag                   an arrow          THE-APP x1: 2
+bit-23.pad-flag                   F5, Home and kin  THE-APP x1: 6
+bit-16.plain                      a letter or sign  with-the-bit x1 (up x1): 8
+bit-16.plain                      an arrow          THE-APP x1: 2
+bit-16.plain                      F5, Home and kin  THE-APP x1: 6
+bit-16.fn-flag                    a letter or sign  THE-APP x1: 8
+bit-16.fn-flag                    an arrow          with-the-bit x1 (up x1): 2
+bit-16.fn-flag                    F5, Home and kin  with-the-bit x1 (up x1): 6
+bit-16.fn-key                     a letter or sign  THE-APP x1: 8
+bit-16.fn-key                     an arrow          with-the-bit x1 (up x1): 2
+bit-16.fn-key                     F5, Home and kin  with-the-bit x1 (up x1): 6
+bit-16.fn-up-before-the-key       a letter or sign  THE-APP x1: 8
+bit-16.fn-up-before-the-key       an arrow          with-the-bit x1 (up x1): 2
+bit-16.fn-up-before-the-key       F5, Home and kin  with-the-bit x1 (up x1): 6
+bit-16.pad-flag                   a letter or sign  with-the-bit x1 (up x1): 8
+bit-16.pad-flag                   an arrow          THE-APP x1: 2
+bit-16.pad-flag                   F5, Home and kin  THE-APP x1: 6
+heard by none, by more than one, or more than once:
+  both-ways.fn-flag ctrl+opt+left: plain x1 and with-the-bit x1
+  both-ways.fn-flag ctrl+opt+right: plain x1 and with-the-bit x1
+  both-ways.fn-flag ctrl+opt+f5: plain x1 and with-the-bit x1
+  both-ways.fn-flag ctrl+opt+home: plain x1 and with-the-bit x1
+  both-ways.fn-flag ctrl+opt+end: plain x1 and with-the-bit x1
+  both-ways.fn-flag ctrl+opt+pageup: plain x1 and with-the-bit x1
+  both-ways.fn-flag ctrl+opt+pagedown: plain x1 and with-the-bit x1
+  both-ways.fn-flag ctrl+opt+forwarddelete: plain x1 and with-the-bit x1
+  both-ways.fn-key ctrl+opt+left: plain x1 and with-the-bit x1
+  both-ways.fn-key ctrl+opt+right: plain x1 and with-the-bit x1
+  both-ways.fn-key ctrl+opt+f5: plain x1 and with-the-bit x1
+  both-ways.fn-key ctrl+opt+home: plain x1 and with-the-bit x1
+  both-ways.fn-key ctrl+opt+end: plain x1 and with-the-bit x1
+  both-ways.fn-key ctrl+opt+pageup: plain x1 and with-the-bit x1
+  both-ways.fn-key ctrl+opt+pagedown: plain x1 and with-the-bit x1
+  both-ways.fn-key ctrl+opt+forwarddelete: plain x1 and with-the-bit x1
+  both-ways.fn-up-before-the-key ctrl+opt+left: plain x1 and with-the-bit x1
+  both-ways.fn-up-before-the-key ctrl+opt+right: plain x1 and with-the-bit x1
+  both-ways.fn-up-before-the-key ctrl+opt+f5: plain x1 and with-the-bit x1
+  both-ways.fn-up-before-the-key ctrl+opt+home: plain x1 and with-the-bit x1
+  both-ways.fn-up-before-the-key ctrl+opt+end: plain x1 and with-the-bit x1
+  both-ways.fn-up-before-the-key ctrl+opt+pageup: plain x1 and with-the-bit x1
+  both-ways.fn-up-before-the-key ctrl+opt+pagedown: plain x1 and with-the-bit x1
+  both-ways.fn-up-before-the-key ctrl+opt+forwarddelete: plain x1 and with-the-bit x1
+
+== 4  with Arbor: ⌃⌥A twenty-five times a second through whatever might make it let go
+session 1: Arbor pid 21009, test windows 34 35 36 (pid 20983)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> arrange
+arranged 3 windows
+343 presses in 24.0 s
+  ✔ the hammer came to an end
+343 presses of ⌃⌥A were seen at the keyboard's end, through 15 acts; 19 were given to an app
+  06:03:08.040 global after: 06:03:07.968 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  06:03:08.113 global after: 06:03:07.968 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  06:03:08.169 global after: 06:03:07.968 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  06:03:08.209 global after: 06:03:07.968 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  06:03:08.271 global after: 06:03:07.968 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  06:03:08.335 global after: 06:03:07.968 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  06:03:08.435 global after: 06:03:07.968 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  06:03:08.551 global after: 06:03:07.968 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  06:03:08.611 global after: 06:03:07.968 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  06:03:08.668 global after: 06:03:07.968 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  06:03:08.785 global after: 06:03:07.968 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  06:03:08.835 global after: 06:03:07.968 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  06:03:08.918 global after: 06:03:07.968 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  06:03:08.962 global after: 06:03:07.968 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  06:03:09.003 global after: 06:03:07.968 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  06:03:09.049 global after: 06:03:07.968 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  06:03:09.113 global after: 06:03:07.968 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  06:03:09.169 global after: 06:03:07.968 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  06:03:09.227 global after: 06:03:07.968 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+how often Arbor registered its shortcuts meanwhile:
+  06:03:04.000Z DEBUG peek: the key came up
+  06:03:07.995Z INFO  registered 1 shortcuts in 1035 µs
+  06:03:09.292Z INFO  registered 52 shortcuts in 1804 µs
+how often Arbor ran arrange meanwhile: 305
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+shot: mac-shell/01-quit.png
+
+14 passed, 0 failed
+exit code 0
