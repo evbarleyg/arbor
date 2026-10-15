@@ -1103,7 +1103,22 @@ kill $mine
         return [("lib.sh: of a script that was killed the supervisor brings the log and the traces back",
                  ([name for name in left if name.endswith("-cut-off.log")] != [], os.path.exists(os.path.join(mac.folder, "out", "traces", "script-1-01.jsonl"))), (True, True))]
 
-    throwaway = [the_log_is_the_sessions, ended_by_the_script, recorded, told_not_to_record, refused, trace_had_ended, arbor_does_not_answer, cut_off, second_lock, which_build, folders, full_disk, disk_fills_up, strange_mktemp, refusals, strangers, limited, both_killed, supervisor_killed, two_at_once,
+    # As a hosted Mac lists them (2026-10-15), with the alert that lay over the title bars e2e-drag.sh presses on. The Dock's window is over the whole screen.
+    HOSTED = ("26 340 25 799 0 31 30 on Control Center\n63 26066 8 382 118 260 250 on UserNotificationCenter\n15 161 24 0 0 1024 30 on Window Server\n"
+              "6 339 20 0 0 1024 768 on Dock\n40 342 101 600 400 200 300 on Finder\n9 342 -2147483603 0 0 1024 768 on Finder")
+
+    def under_an_alert(mac):
+        mac.put("windows", HOSTED)
+        code, output = mac.run('click 510 152\nclick 100 500\nclick 650 450\ndrag 460 192 3 400')
+        said = [line.strip() for line in output.splitlines() if "lies over" in line or "lands on" in line]
+        return [("lib.sh: a press under an alert of macOS's says so and counts as a check that failed; one under the Dock's see-through window does not; a menu of Finder's is only named",
+                 (code, said),
+                 (1, ["✘ NOT ARBOR: UserNotificationCenter's window (382 118 260 250, layer 8) lies over 510,152: the press lands on it, and what follows says nothing about Arbor",
+                      "the press at 650,450 lands on Finder's window (600 400 200 300, layer 101)",
+                      "✘ NOT ARBOR: UserNotificationCenter's window (382 118 260 250, layer 8) lies over 460,192: the press lands on it, and what follows says nothing about Arbor"])),
+                ("lib.sh: the presses are made all the same", mac.read("posted").splitlines()[:4], ["click 510 152", "click 100 500", "click 650 450", "drag 460 192 3 400"])]
+
+    throwaway = [under_an_alert, the_log_is_the_sessions, ended_by_the_script, recorded, told_not_to_record, refused, trace_had_ended, arbor_does_not_answer, cut_off, second_lock, which_build, folders, full_disk, disk_fills_up, strange_mktemp, refusals, strangers, limited, both_killed, supervisor_killed, two_at_once,
                  ended("the time limit"), ended("an interrupt"), ended("kill -9"), own_shell]
     somebodys = [not_recorded, asked_to_record, nets, pictures, discreet, nameless, curtain_down, stale_output, defaults_for_arbor, no_curtain, both_killed, supervisor_killed,
                  ended("the time limit", "on somebody's Mac, "), ended("an interrupt", "on somebody's Mac, "), ended("kill -9", "on somebody's Mac, "),

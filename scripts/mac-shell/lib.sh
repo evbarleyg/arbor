@@ -2159,6 +2159,44 @@ pointer() {
   arbor_input_is_ours "$@" || return 1
   if [ "${1:-}" = windows ] && ! on_throwaway_mac; then "$ARBOR_POINTER" "$@" | arbor_nameless; else "$ARBOR_POINTER" "$@"; fi
 }
+# A press proves something about Arbor only if it reaches what the script means to press on. An alert, a permission dialog or a banner of macOS's floats
+# above every app's windows, and the press lands on it without a word. From front to back: the first window above the ordinary ones (a layer over 0)
+# that holds the point and is neither of a process this run started nor part of the furniture, which is told by its owner and not by its place:
+# the Dock has a window over the whole screen that lets presses through. Prints owner, frame and layer.
+arbor_what_lies_over() {
+  local id pid layer x y w h shown owner
+  "$ARBOR_POINTER" windows --on-screen 2>/dev/null | while read -r id pid layer x y w h shown owner; do
+    [ "${layer:-0}" -gt 0 ] 2>/dev/null && [ "$shown" = on ] || continue
+    [ "$1" -ge "${x%.*}" ] && [ "$1" -lt $((${x%.*} + ${w%.*})) ] && [ "$2" -ge "${y%.*}" ] && [ "$2" -lt $((${y%.*} + ${h%.*})) ] || continue
+    case "$owner" in
+      Dock | "Window Server" | WindowManager | "Control Center" | "Control Centre" | SystemUIServer) continue ;;
+    esac
+    [ "$pid" = "${ARBOR_PID:-}" ] && continue
+    arbor_started_here "$pid" && continue
+    echo "$owner's window ($x $y $w $h, layer $layer)"
+    return 0
+  done
+}
+
+# Under what macOS puts up without being asked, it counts as a check that failed, under a name of its own: whatever the checks after it say, they say
+# it of a press that never arrived. (e2e-drag.sh was red for hours, and six theories about Arbor died, before somebody saw the alert that lay over
+# the title bars it pressed on.) Anything else up there may be what the script means to press on (a menu of Finder's), so it is only said.
+# On GitHub's Macs: on a person's, arbor_input_is_ours has declined such a press already, and without naming whose window it is.
+arbor_look_before_pressing() {
+  local x=${2:-} y=${3:-} stranger
+  on_throwaway_mac || return 0
+  case "${1:-}" in click | drag) ;; *) return 0 ;; esac
+  x=${x%.*} y=${y%.*}
+  case "$x$y" in "" | *[!0-9-]*) return 0 ;; esac
+  stranger=$(arbor_what_lies_over "$x" "$y")
+  case "$stranger" in
+    "") return 0 ;;
+    UserNotificationCenter\'* | CoreServicesUIAgent\'* | SecurityAgent\'* | universalAccessAuthWarn\'* | loginwindow\'* | "Notification Center'"* | "Notification Centre'"*) ;;
+    *) echo "  the press at $x,$y lands on $stranger" >&3; return 0 ;;
+  esac
+  arbor_missed "NOT ARBOR: $stranger lies over $x,$y: the press lands on it, and what follows says nothing about Arbor"
+}
+
 arbor_input() {
   echo "> $*" >&3
   arbor_before_input
@@ -2167,6 +2205,7 @@ arbor_input() {
     arbor_missed "real input is let through on this Mac"
     return 1
   fi
+  arbor_look_before_pressing "$@"
   "$ARBOR_POINTER" "$@"
 }
 move() { arbor_input move "$@"; }

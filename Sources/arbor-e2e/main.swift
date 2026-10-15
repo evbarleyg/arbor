@@ -351,6 +351,7 @@ final class Runner {
       let recorded = remark("✘ \(name)")
       showWhatArborLogged()
       if recorded { print("    ↳ recorded in traces/\(traceName(traceNumber)).jsonl") }
+      keepTheMoment()
     }
   }
 
@@ -383,6 +384,29 @@ final class Runner {
     let noted = recorder("note \(text)")
     if noted == false { nextTrace(text) }
     return noted == true
+  }
+
+  /// What the screen looked like when a check failed, and which windows were on it: an alert of macOS's that lies over the test windows shows in no log.
+  /// Where `keeps` is set, which is on GitHub's Macs: it is the whole screen. The first twenty: the twenty-first failure has the cause of one of them.
+  func keepTheMoment() {
+    guard let keeps, failures.count <= 20 else { return }
+    let name = "failed-" + (failures.count < 10 ? "0" : "") + String(failures.count)
+    try? FileManager.default.createDirectory(at: keeps, withIntermediateDirectories: true)
+    let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[String: Any]] ?? []
+    // As the pointer tool of the Mac shell scripts lists them, from front to back: id, process, layer, frame, owner.
+    let lines = list.map { info -> String in
+      let rect = (info[kCGWindowBounds as String] as? NSDictionary).flatMap { CGRect(dictionaryRepresentation: $0 as CFDictionary) } ?? .zero
+      let numbers = [kCGWindowNumber, kCGWindowOwnerPID, kCGWindowLayer].map { (info[$0 as String] as? NSNumber)?.intValue ?? 0 }
+        + [rect.minX, rect.minY, rect.width, rect.height].map { Int($0) }
+      return (numbers.map(String.init) + ["on", info[kCGWindowOwnerName as String] as? String ?? "?"]).joined(separator: " ")
+    }
+    try? Data((lines.joined(separator: "\n") + "\n").utf8).write(to: keeps.appendingPathComponent(name + ".txt"))
+    let camera = Process()
+    camera.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+    // -x: no sound. -C: with the pointer.
+    camera.arguments = ["-x", "-C", keeps.appendingPathComponent(name + ".png").path]
+    if (try? camera.run()) != nil { camera.waitUntilExit() }
+    print("    ↳ the screen at that moment: \(name).png, the windows on it: \(name).txt")
   }
 
   /// The home folder goes with the run. On a hosted Mac these are all that is left to tell what happened there.
