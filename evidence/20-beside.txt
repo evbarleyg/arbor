@@ -1,0 +1,80 @@
+# 20-beside 2026-10-15T04:33Z on macOS 26.6.2, commit 8ea692f
+
+▸ drop a window on the bottom part of a docked window: it docks below it, in a space of their own
+  ✔ the preview shows while the button is held
+  ✔ the window is docked
+  ✔ it is below the other
+  ✔ in the same column
+  ✔ the two are nested one level deeper than the Desktop beside them
+  ✔ it landed exactly where the preview was
+  ✔ windows match Arbor's layout
+
+▸ drop a window on the right part of a docked window: it docks on its right
+  ✔ the window is docked
+  ✔ it is to the right of the other
+  ✔ in the same row
+  ✔ both are above the window below
+  ✔ which kept the whole width
+  ✔ windows match Arbor's layout
+
+▸ drop a window on the left part of a docked window: it docks on its left
+  ✔ the window is docked
+  ✔ it is to the left of the other
+  ✔ in the same row
+  ✔ it took over the left edge of the screen
+  ✔ windows match Arbor's layout
+
+▸ drop a window on the top part of a docked window: it docks above it
+  ✔ the window is docked
+  ✔ it is above the other
+  ✔ in the same column
+  ✔ it took over the top edge of the screen
+  ✔ nothing overlaps
+  ✔ all five are docked
+  ✔ none of them became a tile
+  ✔ windows match Arbor's layout
+
+▸ drop a window on the middle of a docked window: it floats there
+  ✔ the window floats
+  ✔ four are docked
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+
+▸ nest spaces four levels deep by dragging one window onto another
+  ✔ level 1: a column at the left edge
+  ✔ level 2: a window below it
+  ✔ level 3: a window beside that one
+  ✔ level 4: a window below that one
+  ✔ the first is above the second
+  ✔ the second is left of the third
+  ✔ the third is above the fourth
+  ✔ the third and the fourth share a column
+  ✔ nothing overlaps
+  ✔ none of them became a tile
+  ✔ windows match Arbor's layout
+
+▸ step out of the innermost space level by level
+  ✔ the innermost window fills the screen
+  ✔ one level out: it shares the screen with the one above it
+  ✔ the others are out of view
+  ✔ two levels out: the one beside them is back
+  ✔ the top one is still out of view
+  ✔ three levels out: the whole column
+  ✔ four levels out: everything
+  ✔ there is nothing further out
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+59 passed, 0 failed
