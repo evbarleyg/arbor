@@ -9,8 +9,11 @@ on:
     # To scripts/ci-changes.py a train is a push like one to main: work is integrated here.
     branches: [main, "train/**"]
   pull_request:
-    # The last of them: a draft gets lint alone (see the job `linux`), and all the rest when its author marks it ready for review.
-    types: [opened, synchronize, reopened, ready_for_review]
+    # `ready_for_review`: a draft gets lint alone (see the job `linux`), and all the rest when its author marks it ready for review.
+    # `closed`: whoever lands a pull request pushes its last form to its branch, and it is merged seconds later: a whole run for nobody.
+    # The closing starts one more run, in the same group (below), which ends the one under way; and of that run every job is
+    # skipped (`github.event.action != 'closed'`), so it takes no runner. scripts/test-ci-linux.py holds every job to that.
+    types: [opened, synchronize, reopened, ready_for_review, closed]
   # Every test on a Mac, built from nothing, once a night on main: the backstop for all that the other runs leave to Linux and to caches.
   # At an hour when few people want a Mac.
   schedule:
@@ -18,9 +21,10 @@ on:
   # The same by hand, on any branch.
   workflow_dispatch:
 
-# A newer push makes the run for the older one worthless.
+# A newer push makes the run for the older one worthless, and so does the closing of a pull request. By its number: the ref of a pull
+# request that was merged is the branch it went into, so by the ref its closing would leave its own run alone and end that branch's.
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -36,6 +40,7 @@ permissions:
 # failed as check annotations, for executors that cannot download logs.
 jobs:
   changes:
+    if: ${{ github.event.action != 'closed' }}
     # By its number: if this job ever failed on a new system that `latest` had moved to, every run would take a Mac, by design.
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -68,8 +73,9 @@ jobs:
   # installing it. The other releases Arbor promises to build with have `oldest-swift` and `macos-other-swifts`.
   macos:
     needs: changes
-    # Only an explicit "false" saves the Mac: it also runs when `changes` itself failed.
-    if: ${{ !cancelled() && needs.changes.outputs.mac != 'false' }}
+    # Only an explicit "false" saves the Mac: it also runs when `changes` itself failed. And would when that was skipped, which says nothing
+    # either: so a closed pull request is named here too.
+    if: ${{ !cancelled() && github.event.action != 'closed' && needs.changes.outputs.mac != 'false' }}
     runs-on: macos-26
     # Every test takes thirteen minutes on a hosted Mac, and a build from nothing five.
     timeout-minutes: 45
@@ -240,6 +246,7 @@ jobs:
   # the newest of that name, and not whether all that is called linux succeeded.
   linux:
     uses: ./.github/workflows/linux.yml
+    if: ${{ github.event.action != 'closed' }}
     with:
       all: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
 
@@ -250,7 +257,7 @@ jobs:
   # the time it has run, their record is there, or they failed and so does this.
   tests-whole:
     # Not for a draft: there are no parts there to hold it against.
-    if: ${{ github.event_name != 'pull_request' || (github.base_ref == 'main' && !github.event.pull_request.draft) }}
+    if: ${{ github.event.action != 'closed' && (github.event_name != 'pull_request' || (github.base_ref == 'main' && !github.event.pull_request.draft)) }}
     runs-on: ubuntu-24.04
     container: swift:6.4-noble
     timeout-minutes: 30
@@ -280,7 +287,7 @@ jobs:
   # RED HERE STOPS A LANDING as a red verdict does. What it catches is easy to write (`let x = … { x(…) }`), so it will fire.
   oldest-swift:
     # Not for a draft, like all but lint.
-    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    if: ${{ github.event.action != 'closed' && (github.event_name != 'pull_request' || !github.event.pull_request.draft) }}
     runs-on: ubuntu-24.04
     container: swift:6.2-noble
     timeout-minutes: 30
@@ -309,7 +316,7 @@ jobs:
   # minutes of two Macs for each merge train, not for each pull request.
   macos-other-swifts:
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.mac != 'false' && (github.event_name != 'pull_request' || github.base_ref == 'main' || github.head_ref == 'swarm/trunk') }}
+    if: ${{ !cancelled() && github.event.action != 'closed' && needs.changes.outputs.mac != 'false' && (github.event_name != 'pull_request' || github.base_ref == 'main' || github.head_ref == 'swarm/trunk') }}
     runs-on: macos-26
     timeout-minutes: 20
     strategy:

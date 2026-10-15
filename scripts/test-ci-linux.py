@@ -17,6 +17,8 @@ reads .github/workflows/linux.yml, ci.yml, which calls it, and the Makefile, and
   else. Marking the draft ready must start a run, and nothing else may be said about which pull requests start one. A push to
   `main` and a merge train (`train/…`), where the sum of what was landed is tried, must start one, whatever they change. What in
   ci.yml goes by Linux's record, or vouches for a run, does not run for a draft either;
+  the closing of a pull request starts a run that ends the one under way (one group for all runs of a pull request, by its number)
+  and takes no runner: every job of ci.yml says so itself, or falls with one that does;
   every command of `make check`, as it stands there, is a command of some Linux job, and so is what ALSO lists;
   the jobs that use an image use the same, which scripts/linux.sh takes from the first in linux.yml. But `oldest-swift` in ci.yml,
   which is there for the oldest Swift that README.md promises: it has another, compiles everything and type-checks the
@@ -79,10 +81,14 @@ NOT_A_DRAFT = "github.event_name != 'pull_request' || !github.event.pull_request
 WHEN_ALL = "${{ " + NOT_A_DRAFT + " }}"
 # What is said of pull requests, no more and no less. A filter (paths, branches, fewer types) stops runs without a word, and a commit
 # without a run has no check that failed.
-FOR_PULL_REQUESTS = ["types: [opened, synchronize, reopened, ready_for_review]"]
+FOR_PULL_REQUESTS = ["types: [opened, synchronize, reopened, ready_for_review, closed]"]
+# The last of them is there to end the run under way, which it does by being of the same group; and for nothing else.
+OPEN = "github.event.action != 'closed'"
+GROUP = ["group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}", "cancel-in-progress: true"]
 # Where the sum of what was landed is tried, whatever its parts were spared.
 FOR_PUSHES = ['branches: [main, "train/**"]']
-WHOLE_WHEN = "${{ github.event_name != 'pull_request' || (github.base_ref == 'main' && !github.event.pull_request.draft) }}"
+WHOLE_WHEN = "${{ " + OPEN + " && (github.event_name != 'pull_request' || (github.base_ref == 'main' && !github.event.pull_request.draft)) }}"
+OLDEST_WHEN = "${{ " + OPEN + " && (" + NOT_A_DRAFT + ") }}"
 # They go by the record Linux leaves, or say that a run was complete.
 NOT_FOR_DRAFTS = ("tests-accounted-for", "macos-from-nothing")
 ALWAYS = "linux-lint"
@@ -186,6 +192,38 @@ def events_of(caller):
     return events
 
 
+def all_of(condition):
+    """What a condition asks for all at once: the parts of `${{ a && b && (c || d) }}`. One part where an `||` stands outside all brackets."""
+    parts, depth, text = [""], 0, re.sub(r"^\$\{\{\s*|\s*\}\}$", "", condition.strip())
+    for index, letter in enumerate(text):
+        depth += (letter == "(") - (letter == ")")
+        if depth == 0 and text[index:index + 2] == "||":
+            return [text]
+        if depth == 0 and text[index:index + 2] == "&&":
+            parts.append("")
+        elif not (depth == 0 and text[index - 1:index + 1] == "&&"):
+            parts[-1] += letter
+    return [part.strip() for part in parts]
+
+
+def taken_when_closed(jobs):
+    """The jobs that would run for a pull request that was closed. One does not if it says so; nor if it waits for one that does not and either goes by
+    the rule (a job is skipped when one it needs was) or asks for that job's result. `!cancelled()` and the like put the rule out of force: a job
+    with one of them runs after a skipped job, whose outputs are empty, and empty is not 'false'."""
+    spared = set()
+    while True:
+        before = len(spared)
+        for name, lines in jobs.items():
+            conditions = values_of(lines, "if", 4)
+            asked = [part for condition in conditions for part in all_of(condition)]
+            fallen = [need for need in re.findall(r"[\w-]+", " ".join(values_of(lines, "needs", 4))) if need in spared]
+            by_the_rule = not re.search(r"\b(cancelled|always|failure)\(\)", " ".join(conditions))
+            if OPEN in asked or fallen and (by_the_rule or any(f"needs.{need}.result {how}" in asked for need in fallen for how in ("!= 'skipped'", "== 'success'"))):
+                spared.add(name)
+        if len(spared) == before:
+            return [name for name in jobs if name not in spared]
+
+
 def verdict_on(script, results):
     """The exit code of the verdict's script when the jobs it waits for ended like this."""
     needs = json.dumps({name: {"result": result, "outputs": {}} for name, result in results.items()})
@@ -198,8 +236,9 @@ def problems_in(workflow, makefile, caller):
     found = []
     if values_of(others.get(CALLER, []), "uses", 4) != [CALLED]:
         found.append(f"ci.yml has no job `{CALLER}` that uses {CALLED}")
-    elif [line.strip() for line in others[CALLER][1:]] not in ([], ["with:", f"all: {WHEN_ALL}"]):
-        found.append(f"ci.yml's job `{CALLER}` says more than what it uses, and that drafts get lint alone: it must run always, and wait for nothing")
+    elif [line.strip() for line in others[CALLER][1:]] not in ([], ["if: ${{ " + OPEN + " }}", "with:", f"all: {WHEN_ALL}"]):
+        found.append(f"ci.yml's job `{CALLER}` says more than what it uses, that drafts get lint alone and that a closed pull request gets nothing: "
+                     "but for that it must run always, and wait for nothing")
     elif len(others[CALLER]) > 1:
         if events_of(caller).get("pull_request") != FOR_PULL_REQUESTS:
             found.append(f"a draft gets lint alone, so `pull_request:` must say `{FOR_PULL_REQUESTS[0]}` and nothing else: without the last of them "
@@ -208,6 +247,12 @@ def problems_in(workflow, makefile, caller):
             found.append(f"`push:` must say `{FOR_PUSHES[0]}` and nothing else: a push to main or a merge train that starts no run leaves the sum untried")
         if values_of(others.get(WHOLE_JOB, []), "if", 4) != [WHOLE_WHEN]:
             found.append(f"`{WHOLE_JOB}` must say `if: {WHOLE_WHEN}`: where work is integrated, and not for a draft, which has no parts to hold it against")
+        group = re.search(r"^concurrency:\n((?:  .*\n)*)", caller, re.M)
+        if [line.strip() for line in (group[1] if group else "").splitlines()] != GROUP:
+            found.append(f"`concurrency:` must say `{GROUP[0]}` and `{GROUP[1]}`: the closing of a pull request ends the run under way by being of its group, "
+                         "and the ref of one that was merged is the branch it went into")
+        found += [f"{name} would take a runner for a pull request that was closed: it neither says `{OPEN}` (with `&&`, outside all brackets) nor falls with a job that does"
+                  for name in taken_when_closed(others)]
         found += [f"{name} runs for a draft too, where Linux left no record: its condition lacks `({NOT_A_DRAFT})`" for name in NOT_FOR_DRAFTS
                   if name in others and not any(f"({NOT_A_DRAFT})" in condition for condition in values_of(others[name], "if", 4))]
     found += [f"{name} in ci.yml runs on Linux, so nobody waits for it: it belongs in linux.yml" for name, lines in others.items()
@@ -229,8 +274,8 @@ def problems_in(workflow, makefile, caller):
     found += [f"`{OLDEST_JOB}` does not run `{command}`" for command in OLDEST_RUNS if command not in ran]
     if "ALL: 1" not in [line.strip() for line in oldest]:
         found.append(f"`{OLDEST_JOB}` type-checks only a part of the macOS-only code (ALL: 1)")
-    if values_of(oldest, "if") != ([WHEN_ALL] if len(others.get(CALLER, [])) > 1 else []) or values_of(oldest, "needs", 4):
-        found.append(f"{OLDEST_JOB} has a condition other than that drafts get lint alone, or waits for a job that may be skipped: what is skipped proves nothing")
+    if values_of(oldest, "if") != ([OLDEST_WHEN] if len(others.get(CALLER, [])) > 1 else []) or values_of(oldest, "needs", 4):
+        found.append(f"{OLDEST_JOB} has a condition other than that drafts get lint alone and closed pull requests nothing, or waits for a job that may be skipped: what is skipped proves nothing")
     if values_of(oldest, "continue-on-error"):
         found.append(f"{OLDEST_JOB} may fail and pass all the same (continue-on-error)")
     if VERDICT not in jobs:
@@ -389,11 +434,16 @@ typecheck-mac:
 DRAFTS = (GOOD.replace("linux-a", "linux-lint").replace("jobs:\n", "on:\n  workflow_call:\n    inputs:\n      all:\n        type: boolean\n        default: true\njobs:\n", 1)
           .replace("    name: b\n", "    name: b\n    if: ${{ inputs.all }}\n").replace("    if: ${{ !cancelled() }}\n", "    if: ${{ inputs.all && !cancelled() }}\n"))
 PUSHES = '  push:\n    # Where work is integrated.\n    branches: [main, "train/**"]\n'
-CI_DRAFTS = ("on:\n" + PUSHES + "  pull_request:\n    types: [opened, synchronize, reopened, ready_for_review]\n"
-             + CI.replace("linux.yml\n", "linux.yml\n    with:\n      all: " + WHEN_ALL + "\n").replace("${{ github.event_name == 'push' }}", WHOLE_WHEN)
-             .replace("    container: swift:0\n", "    container: swift:0\n    if: " + WHEN_ALL + "\n")
-             + "  tests-accounted-for:\n    if: ${{ !cancelled() && (" + NOT_A_DRAFT + ") }}\n    runs-on: ubuntu-latest\n")
-TYPES = "    types: [opened, synchronize, reopened, ready_for_review]\n"
+TYPES = "    types: [opened, synchronize, reopened, ready_for_review, closed]\n"
+ONE_GROUP = "concurrency:\n  " + GROUP[0] + "\n  " + GROUP[1] + "\n"
+IF_OPEN = "    if: ${{ " + OPEN + " }}\n"
+MAC_WHEN = "${{ !cancelled() && " + OPEN + " && needs.changes.outputs.mac != 'false' }}"
+CI_DRAFTS = ("on:\n" + PUSHES + "  pull_request:\n" + TYPES + ONE_GROUP
+             + CI.replace("linux.yml\n", "linux.yml\n" + IF_OPEN + "    with:\n      all: " + WHEN_ALL + "\n").replace("${{ github.event_name == 'push' }}", WHOLE_WHEN)
+             .replace("  changes:\n", "  changes:\n" + IF_OPEN).replace("    if: ${{ needs.changes.outputs.mac != 'false' }}\n", "    needs: changes\n    if: " + MAC_WHEN + "\n")
+             .replace("    container: swift:0\n", "    container: swift:0\n    if: " + OLDEST_WHEN + "\n")
+             + "  tests-accounted-for:\n    needs: [changes, linux, macos]\n    if: ${{ !cancelled() && needs.macos.result != 'skipped' && (" + NOT_A_DRAFT + ") }}\n    runs-on: ubuntu-latest\n"
+             + "  macos-from-nothing:\n    needs: [changes, macos]\n    if: ${{ needs.macos.result == 'success' && (" + NOT_A_DRAFT + ") }}\n    runs-on: ubuntu-latest\n")
 WHOLE = "      - run: ./scripts/ci-step.py --report test.jsonl test swift test\n"
 WITH_A_RECORD = "\t@rm -f $(TEST_REPORT)\n\tswift test --event-stream-output-path $(TEST_REPORT) --event-stream-version 0 $(TEST_ARGS)\n"
 TOOLING = "      - run: ./scripts/ci-step.py tooling python3 scripts/test-tooling.py\n"
@@ -460,10 +510,32 @@ TABLE = [
      changed(WHOLE_WHEN, "${{ github.event_name != 'pull_request' || github.base_ref == 'main' }}", CI_DRAFTS)),
     ("`tests-whole` must say", "the whole never runs", DRAFTS, MAKEFILE, changed(WHOLE_WHEN, "${{ false }}", CI_DRAFTS)),
     ("`tests-whole` must say", "the whole always runs", DRAFTS, MAKEFILE, changed("    if: " + WHOLE_WHEN + "\n", "", CI_DRAFTS)),
-    ("oldest-swift has a condition", "eleven minutes of the oldest Swift for every push to a draft", DRAFTS, MAKEFILE, changed("    container: swift:0\n    if: " + WHEN_ALL + "\n", "    container: swift:0\n", CI_DRAFTS)),
+    ("oldest-swift has a condition", "eleven minutes of the oldest Swift for every push to a draft", DRAFTS, MAKEFILE, changed("    container: swift:0\n    if: " + OLDEST_WHEN + "\n", "    container: swift:0\n" + IF_OPEN, CI_DRAFTS)),
     ("oldest-swift has a condition", "the oldest Swift only where work is integrated: not before trains are how work lands", DRAFTS, MAKEFILE,
-     changed("    container: swift:0\n    if: " + WHEN_ALL + "\n", "    container: swift:0\n    if: " + WHOLE_WHEN + "\n", CI_DRAFTS)),
-    ("tests-accounted-for runs for a draft too", "the account is asked for where Linux left no record", DRAFTS, MAKEFILE, changed(" && (" + NOT_A_DRAFT + ")", "", CI_DRAFTS)),
+     changed("    container: swift:0\n    if: " + OLDEST_WHEN + "\n", "    container: swift:0\n    if: " + WHOLE_WHEN + "\n", CI_DRAFTS)),
+    ("tests-accounted-for runs for a draft too", "the account is asked for where Linux left no record", DRAFTS, MAKEFILE, changed("'skipped' && (" + NOT_A_DRAFT + ")", "'skipped'", CI_DRAFTS)),
+    ("starts no run", "the closing of a pull request starts nothing, and its last run goes on for nobody", DRAFTS, MAKEFILE, changed(", closed", "", CI_DRAFTS)),
+    ("says more than what it uses", "all of Linux for a pull request that was closed", DRAFTS, MAKEFILE, changed("linux.yml\n" + IF_OPEN, "linux.yml\n", CI_DRAFTS)),
+    ("says more than what it uses", "Linux is spared on another ground", DRAFTS, MAKEFILE, changed("linux.yml\n" + IF_OPEN, "linux.yml\n    if: ${{ github.actor != 'somebody' }}\n", CI_DRAFTS)),
+    ("changes would take a runner", "a job that waits for nothing does not say it", DRAFTS, MAKEFILE, changed("  changes:\n" + IF_OPEN, "  changes:\n", CI_DRAFTS)),
+    ("macos would take a runner", "a Mac for every closed pull request: what was skipped said nothing, and nothing is not 'false'", DRAFTS, MAKEFILE,
+     changed(MAC_WHEN, "${{ !cancelled() && needs.changes.outputs.mac != 'false' }}", CI_DRAFTS)),
+    ("tests-accounted-for would take a runner", "and what asks for the Mac's result goes with it", DRAFTS, MAKEFILE,
+     changed(MAC_WHEN, "${{ !cancelled() && needs.changes.outputs.mac != 'false' }}", CI_DRAFTS)),
+    ("macos would take a runner", "it says so, or something else", DRAFTS, MAKEFILE, changed(MAC_WHEN, "${{ !cancelled() && (" + OPEN + " || needs.changes.outputs.mac != 'false') }}", CI_DRAFTS)),
+    ("macos would take a runner", "the same without brackets", DRAFTS, MAKEFILE, changed(MAC_WHEN, "${{ !cancelled() && " + OPEN + " || needs.changes.outputs.mac != 'false' }}", CI_DRAFTS)),
+    ("macos would take a runner", "it says the opposite", DRAFTS, MAKEFILE, changed(MAC_WHEN, MAC_WHEN.replace("!= 'closed'", "== 'closed'"), CI_DRAFTS)),
+    ("tests-accounted-for would take a runner", "it runs whatever became of the others, and asks for nobody's result", DRAFTS, MAKEFILE,
+     changed("needs.macos.result != 'skipped' && ", "", CI_DRAFTS)),
+    ("tidy would take a runner", "a new job that always runs", DRAFTS, MAKEFILE, CI_DRAFTS + "  tidy:\n    needs: macos\n    if: ${{ always() }}\n    runs-on: macos-26\n"),
+    ("tidy would take a runner", "a new job that waits for nothing", DRAFTS, MAKEFILE, CI_DRAFTS + "  tidy:\n    runs-on: macos-26\n"),
+    (None, "a new job that goes by the rule: skipped when what it needs was", DRAFTS, MAKEFILE, CI_DRAFTS + "  tidy:\n    needs: macos\n    runs-on: macos-26\n"),
+    (None, "the same with a condition of its own", DRAFTS, MAKEFILE, CI_DRAFTS + "  tidy:\n    needs: macos\n    if: ${{ github.ref == 'refs/heads/main' }}\n    runs-on: macos-26\n"),
+    (None, "and at second hand", DRAFTS, MAKEFILE, CI_DRAFTS + "  tidy:\n    needs: macos-from-nothing\n    runs-on: macos-26\n"),
+    ("`concurrency:` must say", "the group goes by the ref: a merged pull request's is the branch it went into", DRAFTS, MAKEFILE,
+     changed("github.event.pull_request.number || github.ref", "github.ref", CI_DRAFTS)),
+    ("`concurrency:` must say", "the newer run waits for the older", DRAFTS, MAKEFILE, changed("cancel-in-progress: true", "cancel-in-progress: false", CI_DRAFTS)),
+    ("`concurrency:` must say", "no group at all", DRAFTS, MAKEFILE, changed(ONE_GROUP, "", CI_DRAFTS)),
     ("`type: boolean`", "the switch is a text, and \"false\" is true", changed("type: boolean", "type: string", DRAFTS), MAKEFILE, CI_DRAFTS),
     ("used elsewhere", "a step that asks the switch itself, and leaves", changed(SMOKE, SMOKE + "        env:\n          ALL: ${{ inputs.all }}\n", DRAFTS), MAKEFILE, CI_DRAFTS),
     ("used elsewhere", "a list of parts that is empty for a draft", changed("    name: b\n", "    name: b\n    strategy:\n      matrix:\n        part: ${{ fromJSON(inputs['all'] && '[1]' || '[]') }}\n", DRAFTS), MAKEFILE, CI_DRAFTS),
