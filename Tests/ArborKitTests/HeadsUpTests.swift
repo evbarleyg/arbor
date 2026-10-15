@@ -346,14 +346,48 @@ private let side = DisplaySnapshot(
     #expect(Array(h.overlays.headsUp.keys) == [side.id])
   }
 
-  @Test func aSilentCommandLeavesTheLineAlone() {
-    let (h, _, _, _) = makeHarness()
-    let a = h.system.focused!
+  /// Until 2026-10-14 a command that needs no line of its own left the last one up (`aSilentCommandLeavesTheLineAlone`).
+  /// Seen on a hosted Mac: "Your other windows are out of view, not closed" with every window in view again. The product
+  /// owner overruled it: a line answers the last thing asked, and after the next it may be a false statement on screen.
+  @Test func theNextThingAPersonAsksForPutsTheLineAway() {
+    let (h, a, _, _) = makeHarness(taught: false)
+    h.run("dock \(a.rawValue) left")
+    h.run("zoom", from: .shortcut)
+    #expect(h.overlays.headsUp[h.display]?.text == "Your other windows are out of view, not closed")
+    h.run("show-all", from: .shortcut)
+    #expect(h.overlays.headsUp.isEmpty, "they are in view")
+  }
+
+  @Test func andItsTimeDoesNotRunOnIntoTheNextLines() {
+    let (h, a, _, _) = makeHarness()
     h.run("dock \(a.rawValue) left")
     h.run("out", from: .shortcut)
-    h.run("desktop", from: .shortcut)
-    h.run("status")
     #expect(h.overlays.headsUp[h.display]?.text == "Already showing everything")
+    h.run("desktop", from: .menu)
+    #expect(h.overlays.headsUp.isEmpty, "it no longer is")
+    h.scheduler.advance(by: 1.0)
+    h.run("forward", from: .shortcut)
+    let line = h.overlays.headsUp[h.display]
+    #expect(line != nil)
+    h.scheduler.advance(by: 1.4)
+    #expect(h.overlays.headsUp[h.display] == line)
+  }
+
+  @Test func whatChangesNothingAndWhatNoPersonAskedForLeaveTheLineAlone() {
+    let (h, a, _, _) = makeHarness()
+    h.run("dock \(a.rawValue) left")
+    h.run("out", from: .shortcut)
+    let line = h.overlays.headsUp[h.display]
+    #expect(line?.text == "Already showing everything")
+    h.run("status")
+    h.run("state", from: .shortcut)
+    #expect(h.overlays.headsUp[h.display] == line, "a question changes nothing")
+    h.run("desktop")
+    h.run("show-all")
+    #expect(h.overlays.headsUp[h.display] == line, "a script is not the person the line was said to")
+    // A panel that opens is its own answer, and leaves everything the line may be about as it is.
+    h.run("find", from: .shortcut)
+    #expect(h.overlays.headsUp[h.display] == line)
   }
 
   // MARK: Pausing and quitting
