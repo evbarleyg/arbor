@@ -114,6 +114,11 @@ After the button comes up, M1 to M13 are asked with that as the cause.
 | S7 | **Reduce Transparency is honoured** | with it on, over windows of strong colours: how much a panel's ground varies | flat (deviation ≤ 2 levels) | stills | 3 |
 | S8 | **Even gaps** | at rest: the gaps between neighbouring windows and to the room's edges | all equal to `gap` within 1 px | ruler | 3 |
 
+**Where macOS draws its own control in its own colour, macOS is the measure** (the product owner, 2026-10-15). "Nothing under 3" is written for what Arbor draws as text.
+A disabled control as macOS draws it is no cell: it says "not now", and a brighter one would lie. A placeholder in macOS's own colour is exempt only where something else says
+what the field is for (a magnifier, a label beside it). Where the placeholder is the field's only label it is a word a person must read in order to act, and it misses under 4.5. The cure is then not
+a brighter placeholder, which would look typed, but a label or an icon that says it.
+
 **Glass.** GitHub's Macs come with Reduce Transparency on, which draws every system material as one flat colour. A Mac does not come so: the films and the pictures
 switch it off (`glass on`), and what ships is text on a material that lets through what lies behind it. So S4 is measured twice, flat and on glass, and on glass in
 pictures of the **whole screen** over windows of strong colours: the picture the window server hands over of a panel alone shows the material without what is behind it.
@@ -172,7 +177,9 @@ The scenes of the five moves, and `frame`, are filmed twice: in light mode on a 
 | `metronome-…` | control | the camera's own square: tests the instruments, not counted | |
 
 The panels that S1 to S7 are asked of: the heads-up line, the drop preview, a tile, a seam, the focus ring, the peek's outline, the rectangle, the minimap, Go to…, the
-shortcuts, the name field, the menu, the settings window, the coach, the setup check, the tab strip.
+shortcuts, the name field, the menu, the settings window, the coach, the setup check, the tab strip. Five of them (the preview, a seam, the ring, the peek's outline, the
+rectangle) have no words and no ground of their own: S3, S4 and S7 have nothing to ask of them and are no cells there; nor are S3 and S4 for the minimap, which has no words. The pictures are the gallery's (branch `gallery/pictures`, `collab/evidence/gallery`); reviewers
+with eyes name the rectangles and `scripts/polish/stills.py` measures inside them (`scripts/polish/REVIEWERS-STILLS.md`).
 
 ## The score
 
@@ -197,9 +204,9 @@ new table, in the same commit, so that a longer table is never mistaken for a wo
 
 ## Scoreboard
 
-Restated on 2026-10-15 under the table as it is now (S4 on glass and S7 added; the drag to an edge asked as `aside`): run 1 was 36.6 and run 2 was 42.8 under the table they were first scored by. In both, gestures still shipped on and the edges were Arbor's, so the two columns are one.
+Restated on 2026-10-15 under the table as it is now (S4 on glass and S7 added; the drag to an edge asked as `aside`; no cells where a panel has no words to read or no ground to see through): run 1 was 36.6 and run 2 was 42.8 under the table they were first scored by. In both, gestures still shipped on and the edges were Arbor's, so the two columns are one.
 
 | Date (UTC) | Commit | Score, as it ships | With everything on | Seen | Severity 1 misses | Note |
 |---|---|---|---|---|---|---|
-| 2026-10-14 23:27 | `a391fe4` | **35.8** | 35.8 | 48% | 36 | Run 1 (`collab/polish/run-1.md`). Tabs, double clicks, the followed pinch and all stills unseen; four films void |
-| 2026-10-15 01:38 | `302a0b0` | **41.5** | 41.5 | 54% | 40 | Run 2 (`collab/polish/run-2.md`). A cast of four apps, panels in the picture; two films void |
+| 2026-10-14 23:27 | `a391fe4` | **36.9** | 36.9 | 50% | 36 | Run 1 (`collab/polish/run-1.md`). Tabs, double clicks, the followed pinch and all stills unseen; four films void |
+| 2026-10-15 01:38 | `302a0b0` | **42.7** | 42.7 | 55% | 40 | Run 2 (`collab/polish/run-2.md`). A cast of four apps, panels in the picture; two films void |

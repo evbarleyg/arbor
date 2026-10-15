@@ -17,6 +17,8 @@ verdicts (collab/polish/eyes-run-<n>.json) it counts like its own.
                                         ruler claims, to confirm or refute. REVIEWERS.md, beside this file, is what each reviewer is told
   judge.py eyes <run id> <commit> <verdicts.json>… > eyes-run-<n>.json
                                         the reviewers' files as one, in the form `score --eyes` reads
+  judge.py stills <where the pictures are from> <verdicts.json>… > stills-run-<n>.json
+                                        the same for the reviewers of pictures at rest (REVIEWERS-STILLS.md, stills.py), in the form `score --stills` reads
   judge.py home <run folder>            of every scene with stand-ins: when the window server had each real window at its place, beside when the stand-ins
                                         went and when the display last changed (needs the run's samples.log). It scores nothing: it says where to look
   judge.py frame <film folder> <n> <png>    one frame, whole
@@ -544,6 +546,9 @@ PANELS = ["heads-up line", "drop preview", "tile", "seam", "focus ring", "peek o
           "name field", "menu", "settings", "coach", "setup check", "tab strip"]
 STILLS = [("S1 at 1x", 2), ("S1 at 2x", 2), ("S2", 3), ("S3", 1), ("S4 light", 2), ("S4 dark", 2), ("S4 light on glass", 2), ("S4 dark on glass", 2),
           ("S6", 2), ("S7", 3)]
+# These have no ground of their own, so nothing to see through; and these no words, so nothing to clip or to read.
+GROUNDLESS = ("drop preview", "seam", "focus ring", "peek outline", "rectangle")
+WORDLESS = GROUNDLESS + ("minimap",)
 
 # What the metronome's films must say, or the instruments are not to be believed: kind -> the checks that must miss.
 METRONOME = {"good": [], "linear": ["M3"], "slow": ["M2"], "twice": ["M4"], "hop": ["M6"], "flash": ["M9"]}
@@ -717,6 +722,8 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout):
             table.append((name, kind, move, row))
         for panel in PANELS:
             for identifier, severity in STILLS:
+                if panel in WORDLESS and identifier.split()[0] in ("S3", "S4") or panel in GROUNDLESS and identifier == "S7":
+                    continue
                 seen = stills.get(panel, {}).get(identifier)
                 verdict = Verdict(seen["status"], seen["said"]) if seen else Verdict(UNSEEN, "no picture has been measured")
                 cells.append((panel, identifier, "", severity, 0, verdict))
@@ -1018,6 +1025,19 @@ def main(arguments):
                     entry.update({key: value for key, value in (("refuted", refuted), ("other", said.get("other")), ("void", said.get("void"))) if value})
                     scenes[name] = entry
         json.dump({"run": arguments[0], "commit": arguments[1], "scenes": scenes}, sys.stdout, indent=1, ensure_ascii=False)
+        return 0
+    if command == "stills":
+        panels, other = {}, []
+        for path in arguments[1:]:
+            with open(path, encoding="utf-8") as file:
+                said = json.load(file)
+            other += said.get("other", []) + said["panels"].pop("other", [])
+            for panel, cells in said["panels"].items():
+                if panel not in PANELS:
+                    raise SystemExit(f"judge.py: {path} speaks of {panel}, which is no panel of docs/POLISH.md")
+                panels[panel] = {cell: {"status": verdict["status"], "said": verdict["said"], "pictures": verdict.get("pictures", [])}
+                                 for cell, verdict in cells.items() if cell in dict(STILLS) and verdict["status"] in (PASS, MISS)}
+        json.dump({"from": arguments[0], "panels": panels, "other": other}, sys.stdout, indent=1, ensure_ascii=False)
         return 0
     if command == "home":
         return home(arguments[0])
