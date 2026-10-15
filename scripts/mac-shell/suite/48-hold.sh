@@ -120,7 +120,8 @@ ctl hold
 
 claim "⌘M on the only window of a held view: nothing else comes into view, and the menu says that nothing is in it"
 proves A58
-# Not before the keyboard rests: a report that came late had Arbor send it back, and a ⌘M in that half second minimized nothing.
+# The keyboard rests and a letter arrives before the key is pressed, so that a ✘ here is not taken for a race, as it was for two runs on a Mac. It was Arbor,
+# which fetched the window back out of the Dock (docs/REALITY.md, a-raise-fetches-a-minimized-window-out-of-the-dock); cured since.
 check "the framed window has the keyboard" stays is focused "$W1"
 keys=$(events_of "$W1" key)
 key_to "$W1" x
