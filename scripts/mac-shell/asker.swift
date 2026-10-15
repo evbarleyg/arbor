@@ -261,7 +261,7 @@ var arrivalsPort: CFMachPort?
 
 func arrivals(seconds: Double) {
   var mask = CGEventMask(0)
-  for type in [1, 2, 6, 10, 11, 12, 22, 29] { mask |= CGEventMask(1) << CGEventMask(type) }
+  for type in [1, 2, 5, 6, 10, 11, 12, 22, 29] { mask |= CGEventMask(1) << CGEventMask(type) }
   let callback: CGEventTapCallBack = { _, type, event, _ in
     if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
       print("\(now()) switched-off \(type.rawValue)")
@@ -269,7 +269,7 @@ func arrivals(seconds: Double) {
       return Unmanaged.passUnretained(event)
     }
     let names: [UInt32: String] = [
-      1: "down", 2: "up", 6: "dragged", 10: "key-down", 11: "key-up", 12: "modifiers", 22: "wheel", 29: "gesture",
+      1: "down", 2: "up", 5: "moved", 6: "dragged", 10: "key-down", 11: "key-up", 12: "modifiers", 22: "wheel", 29: "gesture",
     ]
     var mods = ""
     if event.flags.contains(.maskControl) { mods += "ctrl+" }
