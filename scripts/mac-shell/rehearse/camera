@@ -1,0 +1,26 @@
+#!/bin/bash
+# Stands in for camera.swift in a rehearsal (scripts/mac-shell/rehearse.sh): takes the same commands, keeps the film's log
+# and takes no pictures, because there is no display. So a rehearsal proves that a film script begins and ends its scenes.
+echo "camera-ready 1 1 1 rehearsal none"
+folder=""
+lines=""
+while IFS= read -r line; do
+  case "$line" in
+    "begin "*)
+      folder=${line#begin }
+      [ -d "$folder" ] || { echo "camera (rehearsal): no folder $folder" >&2; exit 64; }
+      lines="0 F 0 0 0 1 1"
+      : > "$folder/rolling"
+      ;;
+    "mark "*) [ -n "$folder" ] && lines="$lines"$'\n'"0 M ${line#mark }" ;;
+    "metronome "*) [ -n "$folder" ] && lines="$lines"$'\n'"0 M metronome ${line#metronome }" ;;
+    end)
+      [ -n "$folder" ] || continue
+      printf '%s\n0 S frames=1 seconds=0.00\n' "$lines" > "$folder/film.log"
+      : > "$folder/done"
+      folder=""
+      ;;
+    stop) exit 0 ;;
+    *) echo "camera (rehearsal): no stand-in for: $line" >&2; exit 64 ;;
+  esac
+done
