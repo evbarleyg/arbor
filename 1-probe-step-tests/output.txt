@@ -1,0 +1,40 @@
+# mac-shell: scripts/mac-shell/probe-step-tests.sh at 6e3287b, macOS 26.6.2, 2026-10-15T01:02Z
+swift build --build-tests: exit 0, 210 s
+the selection: exit 0, 108 s
+Running the tests of 48 of 263 files (scripts/ci-tests.py select says which, and why).
+Recorded 966 tests in mac-shell/mac.tsv: 965 passed, 0 failed, 1 skipped
+
+== what this step leaves behind (up 8 mins, 1 user, load averages: 21.22 30.50 20.94)
+-- processes of Arbor's:
+-- in front: pointer: no app has the keyboard
+-- the pointer: 10 10 up, the button: pointer: expected a process id, x, y and close, minimize or zoom
+-- Accessibility for this process: true
+-- Spaces:
+07230EFA-7A8D-4E37-845C-19CC8737EEF5 1 1
+-- windows on screen:
+29 463 2147483628 388 318 247 100 off TextInputSwitcher
+28 467 0 0 268 64 64 off CursorUIViewService
+27 500 3 0 255 0 0 off Accessibility
+25 467 0 0 268 64 64 off CursorUIViewService
+24 466 0 0 268 64 64 off Spotlight
+23 364 25 799 0 31 30 on Control Center
+22 466 23 90 96 844 577 off Spotlight
+21 466 23 146 346 640 56 off Spotlight
+19 364 25 830 0 42 30 on Control Center
+18 364 25 872 0 152 30 on Control Center
+17 161 -2147483602 0 0 1024 65 off Window Server
+16 161 24 0 0 1024 30 on Window Server
+15 366 0 0 268 64 64 off Finder
+14 366 0 0 0 1024 30 off Finder
+13 366 0 0 0 1024 30 off Finder
+12 366 0 0 0 1024 30 off Finder
+11 366 0 0 0 1024 30 off Finder
+9 366 -2147483603 0 0 1024 768 on Finder
+7 362 -2147483624 0 0 1024 768 on Dock
+6 362 20 0 0 1024 768 on Dock
+3 161 2147483630 5 5 28 40 off Window Server
+2 161 -2147483626 0 0 1024 768 on Window Server
+-- macOS's own tiling and the wallpaper click:
+(all at their defaults)
+-- secure input: 0
+exit code 0
