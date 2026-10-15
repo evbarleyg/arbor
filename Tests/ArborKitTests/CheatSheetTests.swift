@@ -104,6 +104,19 @@ private let side = DisplaySnapshot(
     #expect(h.overlays.cheatSheets.count == 1, "and the next press of the shortcut shows it, rather than hiding what is hidden")
   }
 
+  /// A press on one of Arbor's own panels that never take the keyboard (a gap handle, the Desktop's tile) is not a click in another
+  /// app and takes the keyboard from nobody, so the panel hears of it in neither way. The window system reports every press of the left button.
+  @Test func aPressOnOneOfArborsOwnPanelsPutsItAwayToo() {
+    let h = makeHarness()
+    h.run("show-shortcuts", from: .shortcut)
+    #expect(h.overlays.cheatSheets.count == 1)
+
+    h.controller.pointerPressed()
+
+    #expect(h.overlays.cheatSheets.isEmpty)
+    #expect(h.run("show-shortcuts", from: .shortcut).message.hasPrefix("showing"), "the controller knows that it is down")
+  }
+
   @Test func anyCommandPutsItAwayButAQuestionDoesNot() {
     let h = makeHarness()
     h.run("show-shortcuts")

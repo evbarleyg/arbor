@@ -52,6 +52,9 @@ public struct HeadsUpModel: Equatable, Sendable {
   public var anchor: CGPoint = .zero
   /// The widest the line may get before it wraps.
   public var maximumWidth: CGFloat = 720
+  /// It answers a key, a gesture or a menu item of the person's, rather than being something Arbor says by itself. Only
+  /// an answer shows in another app's full-screen Space: whoever pressed Arbor's key there asked Arbor a question.
+  public var isAnswer = false
 
   public init(kind: Kind, text: String, hint: String? = nil) {
     self.kind = kind

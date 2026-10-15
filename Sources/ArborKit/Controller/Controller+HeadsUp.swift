@@ -286,7 +286,9 @@ extension Controller {
     guard mayShowUnasked || model.kind == .problem, let display = display(id) else { return }
     if let old = headsUp.showing, old != id { overlays.showHeadsUp(nil, on: old) }
     headsUp.showing = id
-    let placed = model.placed(in: display.visibleFrame, above: minimapFrame(on: id))
+    var placed = model.placed(in: display.visibleFrame, above: minimapFrame(on: id))
+    // Said while a person's command is being carried out. What follows from one a moment later is Arbor's own remark.
+    placed.isAnswer = headsUp.source?.isAnsweredOnScreen == true
     headsUp.line = placed
     headsUp.logged = inTheLog ?? placed.line
     Log.debug("said on \(id): \(headsUp.logged)")
