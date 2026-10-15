@@ -8,12 +8,17 @@ import CoreGraphics
 /// window, a picture or a wallpaper of about that colour an accent line is not there at all (seen on a hosted Mac:
 /// the rectangle over a blue window). So the line has a second one inside it, light inside a dark accent and dark
 /// inside a light one, as the labels of icons on the Desktop have a shadow: one of the two shows on anything.
+///
+/// With Increase Contrast macOS makes the accent colour darker, and on the darkened wallpaper behind docked windows it stood
+/// out less than before: 1.1 to 2.3 to 1 (measured on pictures from a hosted Mac). The second line is then as strong as a
+/// line can be.
 @MainActor
 enum AccentInk {
   /// Fills `rect` with `accent` at `fill`, and draws a line of `width` points in it just inside the edge, with the second
   /// line, one point wide, inside that. `radius` is the outer corners'; 0 leaves them square.
   static func mark(
-    _ rect: NSRect, radius: CGFloat, fill: CGFloat, width: CGFloat, accent: NSColor = .controlAccentColor
+    _ rect: NSRect, radius: CGFloat, fill: CGFloat, width: CGFloat, accent: NSColor = .controlAccentColor,
+    increasesContrast: Bool = NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast
   ) {
     /// Nil where so far in there is nothing left: the rectangle of a drag begins a point high.
     func path(inset: CGFloat) -> NSBezierPath? {
@@ -32,15 +37,19 @@ enum AccentInk {
     }
     if let second = path(inset: width + 0.5) {
       second.lineWidth = 1
-      secondLine(inside: accent).setStroke()
+      secondLine(inside: accent, increasesContrast: increasesContrast).setStroke()
       second.stroke()
     }
   }
 
-  /// A hint of an edge on most things, and the whole edge on a few.
-  static func secondLine(inside accent: NSColor) -> NSColor {
-    guard let colour = accent.usingColorSpace(.sRGB) else { return NSColor.white.withAlphaComponent(0.55) }
+  /// A hint of an edge on most things, and the whole edge on a few. With Increase Contrast a line in its own right.
+  static func secondLine(inside accent: NSColor, increasesContrast: Bool = false) -> NSColor {
+    guard let colour = accent.usingColorSpace(.sRGB) else {
+      return NSColor.white.withAlphaComponent(increasesContrast ? 1 : 0.55)
+    }
     let brightness = 0.2126 * colour.redComponent + 0.7152 * colour.greenComponent + 0.0722 * colour.blueComponent
-    return brightness > 0.6 ? NSColor.black.withAlphaComponent(0.45) : NSColor.white.withAlphaComponent(0.55)
+    return brightness > 0.6
+      ? NSColor.black.withAlphaComponent(increasesContrast ? 1 : 0.45)
+      : NSColor.white.withAlphaComponent(increasesContrast ? 1 : 0.55)
   }
 }

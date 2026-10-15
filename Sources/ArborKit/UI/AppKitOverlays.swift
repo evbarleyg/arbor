@@ -433,9 +433,18 @@ private final class SeamView: NSView {
     let isDragged = lastLocation != nil
     guard showsHandle, isHovered || isDragged, let seam, let pill = SeamHandle.pill(in: bounds, axis: seam.axis)
     else { return }
+    let shape = NSBezierPath.make(RoundedPath.capsule(pill))
+    let fill = isDragged ? NSColor.controlAccentColor : NSColor.white.withAlphaComponent(0.9)
+    NSGraphicsContext.saveGraphicsState()
     TileDrawing.softShadow(RGBA.black.withAlpha(0.45)).set()
-    (isDragged ? NSColor.controlAccentColor : NSColor.white.withAlphaComponent(0.9)).setFill()
-    NSBezierPath.make(RoundedPath.capsule(pill)).fill()
+    fill.setFill()
+    shape.fill()
+    NSGraphicsContext.restoreGraphicsState()
+    // A soft shadow is no edge.
+    guard effectiveAppearance.increasesContrast else { return }
+    AccentInk.secondLine(inside: fill.withAlphaComponent(1), increasesContrast: true).setStroke()
+    shape.lineWidth = 1
+    shape.stroke()
   }
 
   /// The panel was put away or handed over: nothing tells it that the pointer is no longer over it.

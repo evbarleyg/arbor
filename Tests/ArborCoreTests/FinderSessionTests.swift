@@ -324,6 +324,11 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     let layout = FinderLayout(screen: screen, rows: 3, hasMessage: true)
     let bounds = CGRect(origin: .zero, size: layout.panel.size)
     #expect(bounds.contains(layout.field))
+    // The glass stands over the rows' icons, and what is typed over the rows' words.
+    #expect(bounds.contains(layout.glyph) && layout.glyph.maxX <= layout.field.minX)
+    #expect(layout.glyph.midX == layout.rowFrame(0).minX + 10 + 12)
+    #expect(layout.field.minX + 2 == layout.rowFrame(0).minX + 10 + 24 + 10)
+    #expect(layout.glyph.midY == FinderLayout.fieldBand / 2)
     #expect(layout.field.maxY <= layout.list.minY)
     #expect(layout.list.maxY == bounds.maxY && layout.list.width == bounds.width)
     let inside = CGRect(origin: .zero, size: layout.list.size)
