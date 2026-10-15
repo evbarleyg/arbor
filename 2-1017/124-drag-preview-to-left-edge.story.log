@@ -1,0 +1,201 @@
+124 drag-preview-to-left-edge: drags preview by its title bar against the left edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:378', 'drags': '242', 'moves': '242,,', 'front': '242', 'own': '242', 'floating': '218,221,230,235,236,237,240,242,245,266,268', 'docked': ''}
+FAIL rule 2: finder (w218) a floating window, moved, and the step did not name it
+FAIL rule 2: safari (w221) a floating window, moved, and the step did not name it
+FAIL rule 2: textedit (w230) a floating window, moved, and the step did not name it
+FAIL rule 2: terminal (w235) a floating window, moved, and the step did not name it
+FAIL rule 2: notes (w236) a floating window, moved, and the step did not name it
+FAIL rule 2: settings (w240) a floating window, moved, and the step did not name it
+FAIL rule 2: mail (w245) a floating window, moved, and the step did not name it
+ODD rule 2: w248 of Mail moved along with a window of its app
+
+04:27:23.776 SCREEN -- begin 124 drag-preview-to-left-edge
+04:27:23.776 SCREEN -- text 124 drags preview by its title bar against the left edge of the screen and lets go
+04:27:23.841 SCRIPT drag w242 from 642,445 to 0,450
+04:27:23.928 SCREEN w711 of Arbor left the screen
+04:27:24.327 SCREEN front to back: preview w704 notes calendar finder safari w248 mail terminal textedit settings desk-a desk-b w694
+04:27:24.327 SCREEN the button is down 642 445
+04:27:24.384 SCREEN in front: process 61177 com.apple.Preview
+04:27:24.384 MACOS pid 60611 AXApplicationDeactivated
+04:27:24.384 MACOS workspace didActivate pid 61177 com.apple.Preview regular
+04:27:24.385 MACOS workspace didDeactivate pid 60611 com.apple.Notes regular
+04:27:24.385 MACOS pid 61177 AXApplicationActivated
+04:27:24.397 DEBUG focus is on w242
+04:27:24.400 DEBUG w242 has the keyboard
+04:27:24.432 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:24.433 DEBUG raised w237, which stays in view
+04:27:24.433 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:24.466 SCREEN w704 of Arbor 3,424 1594×395
+04:27:24.466 SCREEN front to back: w704 preview calendar notes finder safari w248 mail terminal textedit settings desk-a desk-b w694
+04:27:24.629 DEBUG w242 is being dragged
+04:27:24.631 DEBUG drag of w242: on none
+04:27:24.650 DEBUG raised w237, which stays in view
+04:27:24.651 SCREEN preview (w242) -10,434 1576×377
+04:27:24.652 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:24.653 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:24.693 SCREEN preview (w242) -52,434 1576×377
+04:27:24.731 MACOS pid 61177 AXMoved w242 AXWindow/AXStandardWindow -52 434 1576 377
+04:27:24.763 SCREEN w704 of Arbor left the screen
+04:27:24.763 SCREEN front to back: preview calendar notes finder safari w248 mail terminal textedit settings desk-a desk-b w694
+04:27:24.774 SCREEN preview (w242) -73,434 1576×377
+04:27:24.859 SCREEN preview (w242) -94,434 1576×377
+04:27:24.871 MACOS pid 61177 AXMoved w242 AXWindow/AXStandardWindow -94 434 1576 377
+04:27:24.892 DEBUG raised w237, which stays in view
+04:27:24.895 SCREEN preview (w242) -116,435 1576×377
+04:27:24.901 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:24.902 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:24.905 SCREEN preview (w242) -137,435 1576×377
+04:27:24.984 MACOS pid 61177 AXMoved w242 AXWindow/AXStandardWindow -137 435 1576 377
+04:27:25.050 SCREEN preview (w242) -159,435 1576×377
+04:27:25.094 MACOS pid 61177 AXMoved w242 AXWindow/AXStandardWindow -180 435 1576 377
+04:27:25.110 SCREEN preview (w242) -180,435 1576×377
+04:27:25.155 SCREEN preview (w242) -201,435 1576×377
+04:27:25.163 SCREEN preview (w242) -223,435 1576×377
+04:27:25.169 DEBUG raised w237, which stays in view
+04:27:25.171 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:25.171 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:25.226 MACOS pid 61177 AXMoved w242 AXWindow/AXStandardWindow -223 435 1576 377
+04:27:25.249 SCREEN preview (w242) -244,436 1576×377
+04:27:25.324 SCREEN preview (w242) -266,436 1576×377
+04:27:25.327 MACOS pid 61177 AXMoved w242 AXWindow/AXStandardWindow -266 436 1576 377
+04:27:25.387 DEBUG raised w237, which stays in view
+04:27:25.388 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:25.390 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:25.421 SCREEN preview (w242) -287,436 1576×377
+04:27:25.493 SCREEN preview (w242) -308,436 1576×377
+04:27:25.503 MACOS pid 61177 AXMoved w242 AXWindow/AXStandardWindow -308 436 1576 377
+04:27:25.525 SCREEN preview (w242) -330,436 1576×377
+04:27:25.616 SCREEN preview (w242) -351,436 1576×377
+04:27:25.630 MACOS pid 61177 AXMoved w242 AXWindow/AXStandardWindow -351 436 1576 377
+04:27:25.642 DEBUG raised w237, which stays in view
+04:27:25.643 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:25.644 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:25.659 SCREEN preview (w242) -373,437 1576×377
+04:27:25.667 SCREEN preview (w242) -394,437 1576×377
+04:27:25.734 SCREEN preview (w242) -415,437 1576×377
+04:27:25.754 MACOS pid 61177 AXMoved w242 AXWindow/AXStandardWindow -415 437 1576 377
+04:27:25.828 SCREEN preview (w242) -437,437 1576×377
+04:27:25.883 SCREEN preview (w242) -458,437 1576×377
+04:27:25.937 MACOS pid 61177 AXMoved w242 AXWindow/AXStandardWindow -480 437 1576 377
+04:27:25.938 DEBUG raised w237, which stays in view
+04:27:25.939 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:25.940 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:25.952 SCREEN preview (w242) -501,438 1576×377
+04:27:26.004 SCREEN preview (w242) -522,438 1576×377
+04:27:26.040 MACOS pid 61177 AXMoved w242 AXWindow/AXStandardWindow -522 438 1576 377
+04:27:26.126 SCREEN preview (w242) -544,438 1576×377
+04:27:26.180 SCREEN preview (w242) -565,438 1576×377
+04:27:26.189 MACOS pid 61177 AXMoved w242 AXWindow/AXStandardWindow -565 438 1576 377
+04:27:26.232 DEBUG raised w237, which stays in view
+04:27:26.234 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:26.235 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:26.242 SCREEN preview (w242) -587,438 1576×377
+04:27:26.251 SCREEN preview (w242) -608,438 1576×377
+04:27:26.331 MACOS pid 61177 AXMoved w242 AXWindow/AXStandardWindow -608 438 1576 377
+04:27:26.361 DEBUG drag of w242: on float, left to macOS’s tiling
+04:27:26.411 SCREEN w883 of WindowManager -15,16 830×821
+04:27:26.411 SCREEN preview (w242) -629,439 1576×377
+04:27:26.411 SCREEN w882 of WindowManager -15,16 830×821
+04:27:26.411 SCREEN front to back: w883 preview w882 calendar notes finder safari w248 mail terminal textedit settings desk-a desk-b w694
+04:27:26.485 MACOS pid 61177 AXMoved w242 AXWindow/AXStandardWindow -629 439 1576 377
+04:27:26.522 DEBUG raised w237, which stays in view
+04:27:26.523 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:26.531 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:26.619 DEBUG drag of w242: on none
+04:27:26.633 SCREEN preview (w242) -628,439 1576×377
+04:27:26.701 DEBUG drag of w242: on float, left to macOS’s tiling
+04:27:26.735 MACOS pid 61177 AXMoved w242 AXWindow/AXStandardWindow -628 439 1576 377
+04:27:26.798 DEBUG raised w237, which stays in view
+04:27:26.799 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:26.816 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:27.052 DEBUG raised w237, which stays in view
+04:27:27.063 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:27.063 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:27.332 DEBUG raised w237, which stays in view
+04:27:27.333 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:27.335 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:27.597 DEBUG raised w237, which stays in view
+04:27:27.599 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:27.600 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:27.850 DEBUG raised w237, which stays in view
+04:27:27.852 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:27.853 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:28.084 DEBUG raised w237, which stays in view
+04:27:28.094 SCREEN preview (w242) -629,439 1576×377
+04:27:28.094 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:28.095 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:28.192 MACOS pid 61177 AXMoved w242 AXWindow/AXStandardWindow -629 439 1576 377
+04:27:28.199 SCREEN w882 of WindowManager left the screen
+04:27:28.199 SCREEN w883 of WindowManager left the screen
+04:27:28.199 SCREEN front to back: preview calendar notes finder safari w248 mail terminal textedit settings desk-a desk-b w694
+04:27:28.199 SCREEN the button is up 0 450
+04:27:28.202 INFO  dropped w242 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5, left to macOS’s tiling
+04:27:28.220 MACOS pid 61177 AXResized w242 AXWindow/AXStandardWindow -612 428 1555 389
+04:27:28.224 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 11 stand-ins, 0.46 s
+04:27:28.224 DEBUG the stage kept the windows waiting 7 ms: its panel 0, 11 costumes 0 (0 not ready), the desktop 5, going up 2
+04:27:28.238 MACOS pid 61177 AXResized w242 AXWindow/AXStandardWindow -528 373 1451 444
+04:27:28.247 MACOS pid 58574 AXResized w218 AXWindow/AXStandardWindow 340 120 920 436
+04:27:28.247 MACOS pid 58574 AXMoved w218 AXWindow/AXStandardWindow 340 120 920 436
+04:27:28.248 SCREEN w701 of Arbor 0,0 1600×900 (level 4)
+04:27:28.248 SCREEN preview (w242) -528,373 1451×444
+04:27:28.253 MACOS pid 61177 AXResized w242 AXWindow/AXStandardWindow -423 305 1322 513
+04:27:28.274 SCREEN preview (w242) -423,305 1322×513
+04:27:28.274 SCREEN finder (w218) 340,120 920×436
+04:27:28.299 SCREEN preview (w242) -324,240 1199×579
+04:27:28.356 SCREEN preview (w242) -125,111 954×710
+04:27:28.356 SCREEN safari (w221) 38,109 1324×790
+04:27:28.365 MACOS pid 61177 AXResized w242 AXWindow/AXStandardWindow -174 144 954 710
+04:27:28.366 MACOS pid 59949 AXResized w221 AXWindow/AXStandardWindow 38 109 1324 790
+04:27:28.367 MACOS pid 61177 AXResized w242 AXWindow/AXStandardWindow -61 71 876 751
+04:27:28.367 MACOS pid 60155 AXResized w230 AXWindow/AXStandardWindow 165 65 673 439
+04:27:28.368 MACOS pid 59949 AXMoved w221 AXWindow/AXStandardWindow 38 109 1324 790
+04:27:28.369 SCREEN textedit (w230) 165,31 673×439
+04:27:28.369 MACOS pid 61177 AXResized w242 AXWindow/AXStandardWindow -61 71 876 751
+04:27:28.370 MACOS pid 60155 AXMoved w230 AXWindow/AXStandardWindow 165 65 673 439
+04:27:28.370 MACOS pid 61177 AXResized w242 AXWindow/AXStandardWindow -61 71 876 751
+04:27:28.371 MACOS pid 61177 AXResized w242 AXWindow/AXStandardWindow -61 71 876 751
+04:27:28.398 MACOS pid 60524 AXTitleChanged w235 AXWindow/AXStandardWindow 800 35 800 784
+04:27:28.429 SCREEN preview (w242) -29,49 836×773
+04:27:28.429 SCREEN terminal (w235) 800,35 800×784
+04:27:28.429 SCREEN textedit (w230) 165,65 673×439
+04:27:28.441 MACOS pid 61177 AXResized w242 AXWindow/AXStandardWindow -14 39 817 783
+04:27:28.441 MACOS pid 60524 AXResized w235 AXWindow/AXStandardWindow 800 35 800 784
+04:27:28.442 MACOS pid 61177 AXResized w242 AXWindow/AXStandardWindow -14 39 817 783
+04:27:28.443 MACOS pid 60611 AXResized w236 AXWindow/AXStandardWindow 426 158 1000 660
+04:27:28.443 MACOS pid 60524 AXMoved w235 AXWindow/AXStandardWindow 800 35 800 784
+04:27:28.447 SCREEN preview (w242) -20,43 825×779
+04:27:28.483 SCREEN preview (w242) -5,33 805×789
+04:27:28.483 SCREEN notes (w236) 426,158 1000×660
+04:27:28.483 SCREEN settings (w240) 437,31 723×625
+04:27:28.508 SCREEN preview (w242) -2,32 803×790
+04:27:28.508 SCREEN settings (w240) 437,85 723×625
+04:27:28.558 MACOS pid 61177 AXResized w242 AXWindow/AXStandardWindow -5 33 804 790
+04:27:28.568 MACOS pid 60611 AXMoved w236 AXWindow/AXStandardWindow 426 158 1000 660
+04:27:28.573 MACOS pid 61177 AXResized w242 AXWindow/AXStandardWindow -1 31 801 791
+04:27:28.574 MACOS pid 60732 AXResized w240 AXWindow/AXStandardWindow 437 85 723 625
+04:27:28.574 MACOS pid 61177 AXResized w242 AXWindow/AXStandardWindow -1 31 801 791
+04:27:28.575 MACOS pid 60732 AXMoved w240 AXWindow/AXStandardWindow 437 85 723 625
+04:27:28.575 MACOS pid 61177 AXResized w242 AXWindow/AXStandardWindow -1 31 801 791
+04:27:28.578 SCREEN preview (w242) -1,31 801×791
+04:27:28.578 MACOS pid 61177 AXResized w242 AXWindow/AXStandardWindow -1 31 801 791
+04:27:28.579 MACOS pid 61177 AXResized w242 AXWindow/AXStandardWindow -1 31 801 791
+04:27:28.589 MACOS pid 61236 AXResized w245 AXWindow/AXStandardWindow 728 31 872 790
+04:27:28.608 SCREEN w248 of Mail 929,218 470×416
+04:27:28.608 SCREEN mail (w245) 728,31 872×790
+04:27:28.608 SCREEN w694 of Arbor left the screen
+04:27:28.608 SCREEN front to back: preview calendar notes finder safari w248 mail terminal textedit settings desk-a desk-b
+04:27:28.622 DEBUG raised w237, which stays in view
+04:27:28.624 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:28.625 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:28.814 SCREEN w700 of Arbor left the screen
+04:27:28.862 DEBUG stage down
+04:27:28.867 SCREEN w701 of Arbor left the screen
+04:27:28.870 DEBUG raised w237, which stays in view
+04:27:28.871 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:28.882 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:29.103 DEBUG raised w237, which stays in view
+04:27:29.104 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:29.105 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:32.474 SCREEN -- end 124 act=drag-where-macos-tiles settled=quiet:378 drags=242 moves=242,, front=242 own=242 floating=218,221,230,235,236,237,240,242,245,266,268 docked=
+04:27:32.658 SCREEN (nothing was seen for 105 ms)
+04:27:32.883 SCRIPT == 125 display-unplug

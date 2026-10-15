@@ -1,0 +1,18 @@
+47 pin: chooses Keep This Window in View in Arbor's menu, or takes the tick off
+expected: {'act': 'dock-key', 'settled': 'quiet:1061', 'moves': ',,', 'front': '240', 'floating': '218,221,230,235,236,237,240,242,245,266,268', 'docked': ''}
+FAIL rule 2: terminal (w235) a floating window, moved, and the step did not name it
+
+04:22:28.563 SCREEN -- begin 47 pin
+04:22:28.563 SCREEN -- text 47 chooses Keep This Window in View in Arbor's menu, or takes the tick off
+04:22:28.574 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 11 stand-ins, 0.46 s
+04:22:28.575 DEBUG the stage kept the windows waiting 3 ms: its panel 0, 11 costumes 0 (0 not ready), the desktop 1, going up 2
+04:22:28.585 MACOS pid 60524 AXTitleChanged w235 AXWindow/AXStandardWindow 723 300 877 499
+04:22:28.585 MACOS pid 60524 AXResized w235 AXWindow/AXStandardWindow 723 300 877 499
+04:22:28.586 INFO  toggle-pin: keeping w240 in view
+04:22:28.586 MACOS pid 60524 AXMoved w235 AXWindow/AXStandardWindow 723 300 877 499
+04:22:28.615 SCREEN w300 of Arbor 0,0 1600×900 (level 4)
+04:22:28.615 SCREEN terminal (w235) 723,300 877×499
+04:22:29.212 DEBUG stage down
+04:22:29.220 SCREEN w300 of Arbor left the screen
+04:22:29.731 SCREEN -- end 47 act=dock-key settled=quiet:1061 moves=,, front=240 floating=218,221,230,235,236,237,240,242,245,266,268 docked=
+04:22:30.001 SCRIPT == 48 dock-icon-finder

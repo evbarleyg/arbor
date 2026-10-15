@@ -1,0 +1,69 @@
+132 dock-up: presses ⌃⌥⌘ and the up arrow
+expected: {'act': 'dock-key', 'settled': 'quiet:906', 'moves': ',240,', 'front': '240', 'floating': '218,221,230,235,236,237,242,245,266,268', 'docked': '240'}
+FAIL rule 2: finder (w218) a floating window, moved, and the step did not name it
+FAIL rule 2: safari (w221) a floating window, moved, and the step did not name it
+FAIL rule 2: textedit (w230) a floating window, moved, and the step did not name it
+FAIL rule 2: terminal (w235) a floating window, moved, and the step did not name it
+FAIL rule 2: notes (w236) a floating window, moved, and the step did not name it
+FAIL rule 2: mail (w245) a floating window, moved, and the step did not name it
+ODD rule 2: w248 of Mail moved along with a window of its app
+FAIL rule 2: desk-a (w266) a floating window, moved, and the step did not name it
+FAIL rule 2: desk-b (w268) a floating window, moved, and the step did not name it
+ODD rule 3: the last window came to rest 883 ms after the key or the button
+
+04:28:01.002 SCREEN -- begin 132 dock-up
+04:28:01.002 SCREEN -- text 132 presses ⌃⌥⌘ and the up arrow
+04:28:01.188 INFO  made room for w240
+04:28:01.198 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 10 stand-ins, 0.46 s
+04:28:01.198 DEBUG the stage kept the windows waiting 8 ms: its panel 0, 10 costumes 0 (0 not ready), the desktop 3, going up 4
+04:28:01.236 SCREEN w701 of Arbor 0,0 1600×900 (level 4)
+04:28:01.236 MACOS pid 60732 AXResized w240 AXWindow/AXStandardWindow 437 85 723 470
+04:28:01.267 SCREEN settings (w240) 437,85 723×470
+04:28:01.267 MACOS pid 60732 AXMoved w240 AXWindow/AXStandardWindow 12 43 723 470
+04:28:01.271 MACOS pid 60732 AXMoved w240 AXWindow/AXStandardWindow 438 43 723 470
+04:28:01.297 SCREEN settings (w240) 438,43 723×470
+04:28:01.334 SCREEN finder (w218) 340,525 920×297
+04:28:01.340 MACOS pid 58574 AXResized w218 AXWindow/AXStandardWindow 340 525 920 297
+04:28:01.341 MACOS pid 58574 AXMoved w218 AXWindow/AXStandardWindow 340 525 920 297
+04:28:01.394 SCREEN safari (w221) 38,109 1324×375
+04:28:01.431 SCREEN safari (w221) 38,525 1324×375
+04:28:01.442 MACOS pid 59949 AXResized w221 AXWindow/AXStandardWindow 38 109 1324 375
+04:28:01.452 MACOS pid 59949 AXMoved w221 AXWindow/AXStandardWindow 38 525 1324 375
+04:28:01.468 SCREEN textedit (w230) 165,65 673×297
+04:28:01.482 MACOS pid 60155 AXResized w230 AXWindow/AXStandardWindow 165 525 673 297
+04:28:01.485 MACOS pid 60155 AXMoved w230 AXWindow/AXStandardWindow 165 525 673 297
+04:28:01.523 MACOS pid 60524 AXTitleChanged w235 AXWindow/AXStandardWindow 800 35 800 304
+04:28:01.524 MACOS pid 60524 AXResized w235 AXWindow/AXStandardWindow 800 525 800 304
+04:28:01.531 SCREEN terminal (w235) 800,525 800×304
+04:28:01.531 SCREEN textedit (w230) 165,525 673×297
+04:28:01.539 SCREEN terminal (w235) 800,525 800×289
+04:28:01.542 MACOS pid 60524 AXMoved w235 AXWindow/AXStandardWindow 800 525 800 304
+04:28:01.543 MACOS pid 60524 AXTitleChanged w235 AXWindow/AXStandardWindow 800 525 800 289
+04:28:01.543 MACOS pid 60524 AXResized w235 AXWindow/AXStandardWindow 800 525 800 289
+04:28:01.629 MACOS pid 60611 AXResized w236 AXWindow/AXStandardWindow 426 525 1000 320
+04:28:01.630 MACOS pid 60611 AXMoved w236 AXWindow/AXStandardWindow 426 525 1000 320
+04:28:01.648 MACOS pid 60611 AXMoved w236 AXWindow/AXStandardWindow 426 502 1000 320
+04:28:01.668 SCREEN notes (w236) 426,502 1000×320
+04:28:01.748 SCREEN w248 of Mail 1408,330 470×416
+04:28:01.748 SCREEN mail (w245) 855,278 1576×520
+04:28:01.752 MACOS pid 61236 AXResized w245 AXWindow/AXStandardWindow 855 525 1576 520
+04:28:01.752 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 855 525 1576 520
+04:28:01.778 MACOS pid 63184 AXMoved w266 AXWindow/AXStandardWindow 40 525 300 190
+04:28:01.795 SCREEN w248 of Mail 1408,577 470×416
+04:28:01.795 SCREEN mail (w245) 855,525 1576×520
+04:28:01.795 SCREEN desk-a (w266) 40,525 300×190
+04:28:01.795 SCREEN desk-b (w268) 360,525 300×190
+04:28:01.795 MACOS pid 63200 AXMoved w268 AXWindow/AXStandardWindow 360 525 300 190
+04:28:01.808 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 10 stand-ins, 0.15 s
+04:28:01.823 INFO  dock top: docked w240 at the top edge
+04:28:01.824 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Docked · ⌃⌥↩ frames it
+04:28:01.841 SCREEN w704 of Arbor 429,34 741×488
+04:28:01.841 SCREEN w694 of Arbor 12,513 1576×12
+04:28:01.841 SCREEN w700 of Arbor 0,31 1600×791 (level -2147483602)
+04:28:01.841 SCREEN front to back: w704 settings calendar preview notes finder safari w248 mail terminal textedit desk-a desk-b w694
+04:28:01.913 SCREEN w711 of Arbor 692,728 216×38 (level 6)
+04:28:02.114 DEBUG stage down
+04:28:02.119 SCREEN w701 of Arbor left the screen
+04:28:03.698 SCREEN w711 of Arbor left the screen
+04:28:04.568 SCREEN -- end 132 act=dock-key settled=quiet:906 moves=,240, front=240 floating=218,221,230,235,236,237,242,245,266,268 docked=240
+04:28:04.849 SCRIPT == 133 dock-icon-safari

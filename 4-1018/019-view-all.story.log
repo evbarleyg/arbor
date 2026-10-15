@@ -1,0 +1,17 @@
+19 view-all: presses ⌃⌥Space
+expected: {'act': 'view', 'settled': 'quiet:702', 'moves': 'any', 'everything': '1', 'tiles': '', 'keyboard': '1769', 'returns': '18', 'floating': '1681,1687,1699,1702,1721,1723,1731,1736,1739,1754,1769,1771', 'docked': '', 'first': '1'}
+FAIL rule 2: terminal (w1731) is not back where it was after step 18: 723,321 877×499, it was at 737,321 877×499
+
+04:38:59.427 SCREEN -- begin 19 view-all
+04:38:59.427 SCREEN -- text 19 presses ⌃⌥Space
+04:38:59.718 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 12 stand-ins, 0.46 s
+04:38:59.718 DEBUG the stage kept the windows waiting 63 ms: its panel 0, 12 costumes 0 (0 not ready), the desktop 17, going up 45
+04:38:59.729 MACOS pid 21899 AXMoved w1731 AXWindow/AXStandardWindow 723 321 877 499
+04:38:59.738 INFO  show-all: showing everything
+04:38:59.768 SCREEN w1804 of Arbor 0,0 1600×900 (level 4)
+04:38:59.768 SCREEN terminal (w1731) 723,321 877×499
+04:38:59.964 DEBUG peek: the key came up
+04:39:00.382 DEBUG stage down
+04:39:00.416 SCREEN w1804 of Arbor left the screen
+04:39:00.974 SCREEN -- end 19 act=view settled=quiet:702 moves=any everything=1 tiles= keyboard=1769 returns=18 floating=1681,1687,1699,1702,1721,1723,1731,1736,1739,1754,1769,1771 docked= first=1
+04:39:01.422 SCRIPT == 20 dock-icon-chrome

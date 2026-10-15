@@ -1,0 +1,21 @@
+67 display-unplug: the second display: unplug
+expected: {'act': 'display-change', 'settled': 'quiet:365', 'moves': 'any', 'leaves': 'any'}
+FAIL rule 3: terminal (w1065) moved 2 times
+
+04:35:31.095 SCREEN -- begin 67 display-unplug
+04:35:31.095 SCREEN -- text 67 the second display: unplug
+04:35:31.096 SCREEN terminal (w1065) 0,302 863×499
+04:35:31.096 SCREEN calendar (w1069) 1273,321 938×601
+04:35:31.876 MACOS pid 1432 AXMoved w1076 AXWindow/AXStandardWindow 728 31 872 791
+04:35:31.905 MACOS pid 99611 AXMoved w1065 AXWindow/AXStandardWindow 1450 438 863 499
+04:35:31.906 MACOS pid 1031 AXMoved w1074 AXWindow/AXStandardWindow 0 31 727 791
+04:35:31.906 MACOS pid 609 AXMoved w1069 AXWindow/AXStandardWindow 1273 321 938 601
+04:35:31.907 MACOS pid 1432 AXMoved w1076 AXWindow/AXStandardWindow 728 31 872 791
+04:35:31.907 MACOS pid 99611 AXMoved w1065 AXWindow/AXStandardWindow 1450 438 863 499
+04:35:31.907 MACOS pid 1031 AXMoved w1074 AXWindow/AXStandardWindow 0 31 727 791
+04:35:31.908 MACOS pid 609 AXMoved w1069 AXWindow/AXStandardWindow 1273 321 938 601
+04:35:31.908 MACOS pid 1031 AXMoved w1074 AXWindow/AXStandardWindow 0 31 727 791
+04:35:31.918 SCREEN (nothing was seen for 821 ms)
+04:35:31.918 SCREEN terminal (w1065) 1450,438 863×499
+04:35:34.668 SCREEN -- end 67 act=display-change settled=quiet:365 moves=any leaves=any
+04:35:35.224 SCRIPT == 68 input-after

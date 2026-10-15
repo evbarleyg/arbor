@@ -1,0 +1,16 @@
+36 display-unplug: the second display: unplug
+expected: {'act': 'display-change', 'settled': 'quiet:361', 'moves': 'any', 'leaves': 'any'}
+FAIL rule 3: terminal (w1065) moved 2 times
+
+04:33:07.348 SCREEN -- begin 36 display-unplug
+04:33:07.348 SCREEN -- text 36 the second display: unplug
+04:33:07.760 SCREEN (nothing was seen for 416 ms)
+04:33:07.760 SCREEN terminal (w1065) 1450,438 863×499
+04:33:07.760 SCREEN front to back: finder w1078 mail notes settings terminal desk-a desk-b calendar textedit preview safari
+04:33:07.821 MACOS pid 1432 AXMoved w1076 AXWindow/AXStandardWindow 728 31 872 791
+04:33:07.822 MACOS pid 99611 AXMoved w1065 AXWindow/AXStandardWindow 1450 438 863 499
+04:33:07.822 MACOS pid 1432 AXMoved w1076 AXWindow/AXStandardWindow 728 31 872 791
+04:33:07.822 MACOS pid 99611 AXMoved w1065 AXWindow/AXStandardWindow 1450 438 863 499
+04:33:07.892 SCREEN (nothing was seen for 132 ms)
+04:33:10.435 SCREEN -- end 36 act=display-change settled=quiet:361 moves=any leaves=any
+04:33:10.841 SCRIPT == 37 cmd-tab-1

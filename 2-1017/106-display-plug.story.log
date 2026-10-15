@@ -1,0 +1,61 @@
+106 display-plug: the second display: plug
+expected: {'act': 'display-change', 'settled': 'quiet:398', 'moves': 'any', 'leaves': 'any', 'floating': '218,221,230,235,236,237,240,242,245,266,268', 'docked': ''}
+FAIL rule 3: textedit (w230) moved 2 times
+FAIL rule 3: terminal (w235) moved 3 times
+FAIL rule 3: calendar (w237) moved 2 times
+FAIL rule 3: mail (w245) moved 3 times
+FAIL rule 3: w248 of Mail moved 3 times
+
+04:26:36.258 SCREEN -- begin 106 display-plug
+04:26:36.258 SCREEN -- text 106 the second display: plug
+04:26:36.543 MACOS pid 60670 AXMoved w237 AXWindow/AXStandardWindow 1273 300 937 600
+04:26:36.557 SCREEN (nothing was seen for 279 ms)
+04:26:36.557 SCREEN calendar (w237) 1273,300 937×600
+04:26:36.557 SCREEN terminal (w235) 1450,438 247×379
+04:26:36.557 SCREEN textedit (w230) 165,65 656×422
+04:26:36.706 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 855 278 1576 767
+04:26:36.707 MACOS pid 60524 AXMoved w235 AXWindow/AXStandardWindow 1450 438 247 379
+04:26:36.708 MACOS pid 60670 AXResized w237 AXWindow/AXStandardWindow 1273 300 937 600
+04:26:36.708 MACOS pid 60155 AXMoved w230 AXWindow/AXStandardWindow 165 65 656 422
+04:26:36.709 MACOS pid 61236 AXResized w245 AXWindow/AXStandardWindow 855 278 1576 767
+04:26:36.709 MACOS pid 60524 AXTitleChanged w235 AXWindow/AXStandardWindow 1450 438 247 379
+04:26:36.710 MACOS pid 60155 AXResized w230 AXWindow/AXStandardWindow 165 65 656 422
+04:26:36.710 MACOS pid 60524 AXResized w235 AXWindow/AXStandardWindow 1450 438 247 379
+04:26:36.713 SCREEN (nothing was seen for 156 ms)
+04:26:36.713 SCREEN w248 of Mail 1408,453 470×416
+04:26:36.713 SCREEN mail (w245) 855,278 1576×767
+04:26:37.029 SCREEN (nothing was seen for 109 ms)
+04:26:37.029 SCREEN calendar (w237) 663,300 937×600
+04:26:37.029 SCREEN w248 of Mail 577,308 470×416
+04:26:37.029 SCREEN mail (w245) 24,133 1576×767
+04:26:37.029 SCREEN terminal (w235) 1353,438 247×379
+04:26:37.029 MACOS pid 60670 AXMoved w237 AXWindow/AXStandardWindow 663 300 937 600
+04:26:37.030 MACOS pid 60524 AXMoved w235 AXWindow/AXStandardWindow 1353 438 247 379
+04:26:37.030 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 24 133 1576 767
+04:26:38.825 INFO  displays changed: 2 display(s), 0 remembered
+04:26:38.826 DEBUG w221 has the keyboard
+04:26:38.834 MACOS pid 60155 AXResized w230 AXWindow/AXStandardWindow 165 65 673 439
+04:26:38.839 MACOS pid 60524 AXMoved w235 AXWindow/AXStandardWindow 800 35 800 784
+04:26:38.839 MACOS pid 60524 AXTitleChanged w235 AXWindow/AXStandardWindow 800 35 800 784
+04:26:38.840 MACOS pid 60524 AXResized w235 AXWindow/AXStandardWindow 800 35 800 784
+04:26:38.889 SCREEN terminal (w235) 800,35 800×784
+04:26:38.889 SCREEN textedit (w230) 165,65 673×439
+04:26:39.044 SCREEN w248 of Mail 225,308 470×416
+04:26:39.044 SCREEN mail (w245) 24,133 872×767
+04:26:39.060 MACOS pid 61236 AXResized w245 AXWindow/AXStandardWindow 728 31 872 790
+04:26:39.063 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 728 31 872 790
+04:26:39.066 MACOS pid 61236 AXResized w245 AXWindow/AXStandardWindow 728 31 872 790
+04:26:39.090 DEBUG raised w237, which stays in view
+04:26:39.091 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:26:39.091 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:26:39.108 SCREEN w248 of Mail 929,218 470×416
+04:26:39.108 SCREEN mail (w245) 728,31 872×790
+04:26:39.129 DEBUG got ready the stage of 27B00DA5-8EBF-4AC8-8F9A-BA4837DA99D4 in 20 ms, the desktop 7 of them
+04:26:39.379 DEBUG raised w237, which stays in view
+04:26:39.381 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:26:39.383 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:26:39.612 DEBUG raised w237, which stays in view
+04:26:39.618 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:26:39.619 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:26:42.856 SCREEN -- end 106 act=display-change settled=quiet:398 moves=any leaves=any floating=218,221,230,235,236,237,240,242,245,266,268 docked=
+04:26:43.176 SCRIPT == 107 view-home

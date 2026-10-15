@@ -1,0 +1,56 @@
+104 hide-terminal: presses ⌘H
+expected: {'act': 'open-close', 'settled': 'quiet:1369', 'moves': '1699,1731,1699,1731,', 'leaves': '1731,', 'floating': '1687,1702,1721,1739,1754,1769,1771,1872,2012', 'docked': '1699,1731'}
+FAIL rule 2: chrome (w1687) a floating window, moved, and the step did not name it
+FAIL rule 2: edge (w1702) a floating window, moved, and the step did not name it
+FAIL rule 2: chrome-2 (w1739) a floating window, moved, and the step did not name it
+FAIL rule 2: edge-2 (w1754) a floating window, moved, and the step did not name it
+FAIL rule 2: desk-a (w1769) a floating window, moved, and the step did not name it
+FAIL rule 2: desk-b (w1771) a floating window, moved, and the step did not name it
+FAIL rule 2: textedit (w1872) a floating window, moved, and the step did not name it
+FAIL rule 2: safari (w2012) a floating window, moved, and the step did not name it
+
+04:44:06.584 SCREEN -- begin 104 hide-terminal
+04:44:06.584 SCREEN -- text 104 presses ⌘H
+04:44:06.867 MACOS pid 21899 AXApplicationHidden
+04:44:06.868 SCREEN in front: process 19221 com.apple.finder
+04:44:06.868 MACOS workspace didActivate pid 19221 com.apple.finder regular
+04:44:06.871 MACOS workspace didDeactivate pid 21899 com.apple.Terminal regular
+04:44:06.872 MACOS workspace didHide pid 21899 com.apple.Terminal regular
+04:44:06.882 SCREEN terminal (w1731) left the screen
+04:44:06.882 SCREEN front to back: w1942 finder safari edge-2 edge textedit firefox chrome-2 chrome desk-a desk-b
+04:44:06.885 MACOS pid 19221 AXApplicationActivated
+04:44:06.886 DEBUG focus is on w1721
+04:44:06.887 MACOS pid 21899 AXApplicationDeactivated
+04:44:06.948 SCREEN front to back: finder w1942 safari edge-2 edge textedit firefox chrome-2 chrome desk-a desk-b
+04:44:07.012 SCREEN firefox (w1699) 1599,793 1576×356
+04:44:07.024 SCREEN firefox (w1699) 12,43 1576×356
+04:44:07.034 MACOS pid 20801 AXResized w1699 AXWindow/AXStandardWindow 12 43 1576 356
+04:44:07.036 MACOS pid 20801 AXMoved w1699 AXWindow/AXStandardWindow 12 43 1576 356
+04:44:07.103 MACOS pid 20277 AXResized w1687 AXWindow/AXStandardWindow 22 411 1200 414
+04:44:07.105 SCREEN chrome (w1687) 22,411 1200×414
+04:44:07.105 MACOS pid 20277 AXMoved w1687 AXWindow/AXStandardWindow 22 411 1200 414
+04:44:07.123 SCREEN edge (w1702) 22,411 1200×414
+04:44:07.173 MACOS pid 21136 AXResized w1702 AXWindow/AXStandardWindow 22 411 1200 414
+04:44:07.188 MACOS pid 21136 AXMoved w1702 AXWindow/AXStandardWindow 22 411 1200 414
+04:44:07.232 MACOS pid 20277 AXResized w1739 AXWindow/AXStandardWindow 44 411 1200 414
+04:44:07.233 SCREEN chrome-2 (w1739) 44,411 1200×414
+04:44:07.233 MACOS pid 20277 AXMoved w1739 AXWindow/AXStandardWindow 44 411 1200 414
+04:44:07.307 MACOS pid 21136 AXResized w1754 AXWindow/AXStandardWindow 44 411 1200 414
+04:44:07.315 MACOS pid 21136 AXMoved w1754 AXWindow/AXStandardWindow 44 411 1200 414
+04:44:07.321 SCREEN edge-2 (w1754) 44,411 1200×414
+04:44:07.345 SCREEN desk-a (w1769) 40,411 300×190
+04:44:07.347 MACOS pid 26192 AXMoved w1769 AXWindow/AXStandardWindow 40 411 300 190
+04:44:07.356 MACOS pid 26209 AXMoved w1771 AXWindow/AXStandardWindow 360 411 300 190
+04:44:07.370 SCREEN safari (w2012) 96,411 1324×374
+04:44:07.370 SCREEN textedit (w1872) 1599,793 673×414
+04:44:07.370 SCREEN desk-b (w1771) 360,411 300×190
+04:44:07.372 MACOS pid 33393 AXResized w1872 AXWindow/AXStandardWindow 165 411 673 414
+04:44:07.374 MACOS pid 33393 AXMoved w1872 AXWindow/AXStandardWindow 165 411 673 414
+04:44:07.390 MACOS pid 48117 AXMoved w2012 AXWindow/AXStandardWindow 96 411 1324 374
+04:44:07.392 DEBUG w1721 has the keyboard
+04:44:07.396 SCREEN textedit (w1872) 165,411 673×414
+04:44:07.416 SCREEN w1942 of Arbor 86,380 938×451
+04:44:07.416 SCREEN w1939 of Arbor 12,399 1576×12
+04:44:07.416 SCREEN front to back: w1942 finder safari edge-2 edge textedit firefox chrome-2 chrome desk-a desk-b w1939
+04:44:08.591 SCREEN -- end 104 act=open-close settled=quiet:1369 moves=1699,1731,1699,1731, leaves=1731, floating=1687,1702,1721,1739,1754,1769,1771,1872,2012 docked=1699,1731
+04:44:08.821 SCRIPT == 105 unhide-terminal

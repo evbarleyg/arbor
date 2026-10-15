@@ -1,0 +1,65 @@
+96 view-frame: presses ⌃⌥↩
+expected: {'act': 'view', 'settled': 'quiet:1755', 'moves': 'any', 'front': '1872', 'floating': '1681,1687,1702,1721,1736,1739,1754,1769,1771,1872', 'docked': '1699,1731'}
+ODD rule 3: the last window came to rest 1163 ms after the key or the button
+
+04:43:43.321 SCREEN -- begin 96 view-frame
+04:43:43.321 SCREEN -- text 96 presses ⌃⌥↩
+04:43:43.484 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 12 stand-ins, 0.46 s
+04:43:43.484 DEBUG the stage kept the windows waiting 4 ms: its panel 0, 12 costumes 0 (0 not ready), the desktop 1, going up 3
+04:43:43.488 MACOS pid 20801 AXMoved w1699 AXWindow/AXStandardWindow 1599 793 782 356
+04:43:43.496 MACOS pid 21899 AXMoved w1731 AXWindow/AXStandardWindow 1599 793 779 769
+04:43:43.504 SCREEN w1944 of Arbor 0,0 1600×900 (level 4)
+04:43:43.504 SCREEN firefox (w1699) 1599,793 782×356
+04:43:43.554 SCREEN chrome (w1687) 0,411 1200×414
+04:43:43.554 SCREEN terminal (w1731) 1599,793 779×769
+04:43:43.556 MACOS pid 20277 AXResized w1687 AXWindow/AXStandardWindow 22 53 1200 414
+04:43:43.558 MACOS pid 20277 AXMoved w1687 AXWindow/AXStandardWindow 22 53 1200 747
+04:43:43.578 MACOS pid 20277 AXResized w1687 AXWindow/AXStandardWindow 22 53 1200 747
+04:43:43.630 SCREEN chrome (w1687) 22,53 1200×747
+04:43:43.630 SCREEN edge (w1702) 22,53 1200×414
+04:43:43.638 MACOS pid 21136 AXResized w1702 AXWindow/AXStandardWindow 22 53 1200 414
+04:43:43.640 MACOS pid 21136 AXMoved w1702 AXWindow/AXStandardWindow 22 53 1200 747
+04:43:43.641 MACOS pid 21136 AXResized w1702 AXWindow/AXStandardWindow 22 53 1200 747
+04:43:43.655 SCREEN edge (w1702) 22,53 1200×747
+04:43:43.711 MACOS pid 20042 AXResized w1736 AXWindow/AXStandardWindow 96 60 1324 374
+04:43:43.711 MACOS pid 20042 AXMoved w1736 AXWindow/AXStandardWindow 96 60 1324 374
+04:43:43.762 SCREEN safari-2 (w1736) 96,60 1324×374
+04:43:43.762 SCREEN chrome-2 (w1739) 0,411 1200×414
+04:43:43.825 MACOS pid 20277 AXResized w1739 AXWindow/AXStandardWindow 44 75 1200 747
+04:43:43.825 MACOS pid 20277 AXMoved w1739 AXWindow/AXStandardWindow 44 75 1200 747
+04:43:43.901 SCREEN edge-2 (w1754) 44,75 1200×414
+04:43:44.350 SCREEN chrome-2 (w1739) 44,75 1200×747
+04:43:44.411 SCREEN edge-2 (w1754) 44,75 1200×747
+04:43:44.412 MACOS pid 20277 AXResized w1739 AXWindow/AXStandardWindow 44 75 1200 747
+04:43:44.416 MACOS pid 21136 AXResized w1754 AXWindow/AXStandardWindow 44 75 1200 747
+04:43:44.417 MACOS pid 21136 AXMoved w1754 AXWindow/AXStandardWindow 44 75 1200 747
+04:43:44.421 MACOS pid 21136 AXResized w1754 AXWindow/AXStandardWindow 44 75 1200 747
+04:43:44.425 MACOS pid 26192 AXMoved w1769 AXWindow/AXStandardWindow 40 70 300 190
+04:43:44.438 MACOS pid 26209 AXMoved w1771 AXWindow/AXStandardWindow 360 70 300 190
+04:43:44.441 MACOS pid 33393 AXMoved w1872 AXWindow/AXStandardWindow 165 65 673 439
+04:43:44.448 MACOS pid 33393 AXResized w1872 AXWindow/AXStandardWindow 165 65 673 439
+04:43:44.454 INFO  zoom: showing the Desktop, where w1872 floats
+04:43:44.459 SCREEN textedit (w1872) 165,65 673×414
+04:43:44.459 SCREEN desk-a (w1769) 40,70 300×190
+04:43:44.459 SCREEN desk-b (w1771) 360,70 300×190
+04:43:44.467 SCREEN w1942 of Arbor 156,56 691×457
+04:43:44.467 SCREEN textedit (w1872) 165,65 673×439
+04:43:44.467 SCREEN w1941 of Arbor left the screen
+04:43:44.467 SCREEN w1939 of Arbor left the screen
+04:43:44.467 SCREEN front to back: w1942 textedit finder firefox safari safari-2 chrome-2 chrome edge-2 edge terminal desk-a desk-b
+04:43:44.474 DEBUG raised w1721, which stays in view
+04:43:44.474 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:44.475 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:44.518 SCREEN front to back: textedit finder w1942 firefox safari safari-2 chrome-2 chrome edge-2 edge terminal desk-a desk-b
+04:43:44.619 DEBUG stage down
+04:43:44.645 SCREEN w1944 of Arbor left the screen
+04:43:44.645 SCREEN front to back: w1942 textedit finder firefox safari safari-2 chrome-2 chrome edge-2 edge terminal desk-a desk-b
+04:43:44.734 DEBUG raised w1721, which stays in view
+04:43:44.738 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:44.739 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:44.759 SCREEN w1943 of Arbor left the screen
+04:43:44.958 DEBUG raised w1721, which stays in view
+04:43:44.960 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:44.963 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:45.803 SCREEN -- end 96 act=view settled=quiet:1755 moves=any front=1872 floating=1681,1687,1702,1721,1736,1739,1754,1769,1771,1872 docked=1699,1731
+04:43:46.040 SCRIPT == 97 dock-icon-safari

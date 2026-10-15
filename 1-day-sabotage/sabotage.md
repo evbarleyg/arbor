@@ -1,0 +1,51 @@
+| # | Step | Offence committed | Reported | |
+|---|---|---|---|---|
+| 14 | input-before | none | nothing | ✔ |
+| 17 | honest-switch | none | nothing | ✔ |
+| 18 | honest-click | none | nothing | ✔ |
+| 19 | honest-move | none | nothing | ✔ |
+| 20 | honest-resize | none | nothing | ✔ |
+| 21 | moved-twice | jolt | jolt | ✔ |
+| 22 | elsewhere-first | jolt | jolt | ✔ |
+| 23 | somebody-else | moved-unasked | moved-unasked | ✔ |
+| 24 | honest-park | none | nothing | ✔ |
+| 25 | flashes | flash | flash | ✔ |
+| 26 | honest-return | none | nothing | ✔ |
+| 27 | covered | behind | behind | ✔ |
+| 28 | honest-click-2 | none | nothing | ✔ |
+| 29 | honest-minimize | none | nothing | ✔ |
+| 30 | honest-hide | none | nothing | ✔ |
+| 31 | honest-landing | none | nothing | ✔ |
+| 32 | honest-hide-2 | none | nothing | ✔ |
+| 33 | lands-elsewhere | jolt | jolt | ✔ |
+| 34 | honest-put-back | none | nothing | ✔ |
+| 35 | keyboard-taken | focus | focus | ✔ |
+| 36 | honest-click-3 | none | nothing | ✔ |
+| 37 | comes-forward | focus | focus | ✔ |
+| 38 | honest-click-4 | none | nothing | ✔ |
+| 39 | honest-drag | none | nothing | ✔ |
+| 40 | out-of-the-hand | pulled | pulled | ✔ |
+| 41 | dropped-elsewhere | stuck | stuck | ✔ |
+| 42 | honest-move-2 | none | nothing | ✔ |
+| 43 | answers-late | slow | slow | ✔ |
+| 44 | honest-idle | none | nothing | ✔ |
+| 45 | wrong-size | size-lost | size-lost | ✔ |
+| 46 | honest-give-back | none | nothing | ✔ |
+| 47 | left-out | lost | lost | ✔ |
+| 48 | honest-return-2 | none | nothing | ✔ |
+| 49 | vanishes | lost | lost | ✔ |
+| 50 | honest-click-5 | none | nothing | ✔ |
+| 51 | under-the-stage | none | nothing | ✔ |
+| 52 | under-no-stage | jolt | jolt | ✔ |
+| 53 | held-back | input-held | input-held | ✔ |
+| 54 | input-started | none | nothing | ✔ |
+| 55 | input-last | input-held | input-held | ✔ |
+| 56 | both-previews | fought | nothing | ✘ |
+| 57 | honest-drag-back | none | nothing | ✔ |
+| 58 | busy-doing-nothing | busy | busy | ✔ |
+| 59 | honest-idle-2 | none | nothing | ✔ |
+| 60 | stays-behind | left-behind | crash, left-behind | ✘ |
+| 61 | ends-unasked | crash | crash | ✔ |
+| 62 | tells | told | told | ✔ |
+
+16 kinds of offence committed: behind, busy, crash, flash, focus, fought, input-held, jolt, left-behind, lost, moved-unasked, pulled, size-lost, slow, stuck, told. 2 steps were judged wrongly.

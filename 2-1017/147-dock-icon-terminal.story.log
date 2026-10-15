@@ -1,0 +1,16 @@
+147 dock-icon-terminal: clicks terminal's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:380', 'front': '235'}
+FAIL rule 4: terminal (w235) is not wholly in view: 61% of it, at 1450,438 247×379 in 0,31 1600×791
+
+04:29:26.944 SCREEN -- begin 147 dock-icon-terminal
+04:29:26.945 SCREEN -- text 147 clicks terminal's icon in the Dock
+04:29:27.517 SCREEN the button is down 1218 854
+04:29:27.605 SCREEN in front: process 60524 com.apple.Terminal
+04:29:27.605 SCREEN the button is up 1218 854
+04:29:27.606 MACOS pid 60155 AXApplicationDeactivated
+04:29:27.606 MACOS workspace didActivate pid 60524 com.apple.Terminal regular
+04:29:27.606 MACOS workspace didDeactivate pid 60155 com.apple.TextEdit regular
+04:29:27.647 SCREEN front to back: terminal textedit safari finder desk-a desk-b calendar settings preview notes w248 mail
+04:29:27.653 MACOS pid 60524 AXApplicationActivated
+04:29:28.720 SCREEN -- end 147 act=switch settled=quiet:380 front=235
+04:29:28.916 SCRIPT == 148 dock-icon-notes

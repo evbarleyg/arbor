@@ -1,0 +1,60 @@
+80 quit: chooses Quit Arbor in Arbor's menu
+expected: {'act': 'quit-and-start', 'settled': 'quiet:783', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1'}
+FAIL rule -: Arbor's process ended, and nobody asked it to
+ODD rule 3: w248 of Mail went 24 points out of its way before it ended up
+FAIL rule 5: w248 of Mail has its size back but not its place: 929,218 470×416, it was at 565,179 470×416
+
+04:25:00.805 SCREEN -- begin 80 quit
+04:25:00.805 SCREEN -- text 80 chooses Quit Arbor in Arbor's menu
+04:25:01.300 SCREEN w341 of Arbor left the screen
+04:25:01.382 DEBUG menu bar click: x 80.0 by the event, 80.0 by the screen, button 160.0 wide
+04:25:01.592 SCREEN w675 of Arbor 1201,31 293×785 (level 101)
+04:25:02.942 SCREEN w675 of Arbor left the screen
+04:25:02.971 MACOS pid 58574 AXMoved w218 AXWindow/AXStandardWindow 340 120 920 436
+04:25:02.985 SCREEN finder (w218) 340,120 920×436
+04:25:03.007 MACOS pid 59949 AXResized w221 AXWindow/AXStandardWindow 138 31 1324 791
+04:25:03.008 MACOS pid 59949 AXMoved w221 AXWindow/AXStandardWindow 138 31 1324 791
+04:25:03.033 MACOS pid 60155 AXResized w230 AXWindow/AXStandardWindow 165 65 673 439
+04:25:03.035 MACOS pid 60155 AXMoved w230 AXWindow/AXStandardWindow 165 65 673 439
+04:25:03.049 SCREEN safari (w221) 138,31 1324×791
+04:25:03.049 SCREEN textedit (w230) 165,65 673×439
+04:25:03.054 MACOS pid 60524 AXTitleChanged w235 AXWindow/AXStandardWindow 740 300 877 499
+04:25:03.055 MACOS pid 60524 AXResized w235 AXWindow/AXStandardWindow 740 300 877 499
+04:25:03.056 MACOS pid 60524 AXMoved w235 AXWindow/AXStandardWindow 740 300 877 499
+04:25:03.116 SCREEN terminal (w235) 740,300 877×499
+04:25:03.128 MACOS pid 60611 AXResized w236 AXWindow/AXStandardWindow 426 158 1000 660
+04:25:03.129 MACOS pid 60611 AXMoved w236 AXWindow/AXStandardWindow 426 158 1000 660
+04:25:03.179 SCREEN notes (w236) 426,158 1000×660
+04:25:03.198 MACOS pid 60670 AXResized w237 AXWindow/AXStandardWindow 403 115 937 600
+04:25:03.199 MACOS pid 60670 AXMoved w237 AXWindow/AXStandardWindow 403 115 937 600
+04:25:03.204 MACOS pid 60732 AXMoved w240 AXWindow/AXStandardWindow 437 85 723 625
+04:25:03.215 SCREEN calendar (w237) 403,115 937×600
+04:25:03.215 SCREEN settings (w240) 437,85 723×625
+04:25:03.249 SCREEN preview (w242) 1599,770 708×424
+04:25:03.250 MACOS pid 61177 AXResized w242 AXWindow/AXStandardWindow 4 35 708 424
+04:25:03.250 MACOS pid 61177 AXMoved w242 AXWindow/AXStandardWindow 4 35 708 424
+04:25:03.264 SCREEN preview (w242) 4,35 708×424
+04:25:03.271 MACOS pid 63184 AXResized w266 AXWindow/AXStandardWindow 40 70 300 190
+04:25:03.271 MACOS pid 63184 AXMoved w266 AXWindow/AXStandardWindow 40 70 300 190
+04:25:03.279 SCREEN desk-a (w266) 1599,790 300×190
+04:25:03.300 SCREEN desk-a (w266) 40,70 300×190
+04:25:03.304 MACOS pid 63200 AXResized w268 AXWindow/AXStandardWindow 360 70 300 190
+04:25:03.305 MACOS pid 63200 AXMoved w268 AXWindow/AXStandardWindow 360 70 300 190
+04:25:03.308 SCREEN desk-b (w268) 360,70 300×190
+04:25:03.468 SCREEN w248 of Mail 1800,957 470×416
+04:25:03.468 SCREEN mail (w245) 1599,770 872×791
+04:25:03.475 SCREEN w248 of Mail 929,218 470×416
+04:25:03.475 SCREEN mail (w245) 728,31 872×791
+04:25:03.485 MACOS pid 61236 AXResized w245 AXWindow/AXStandardWindow 728 31 872 791
+04:25:03.487 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 728 31 872 791
+04:25:03.489 INFO  trace day-1 ended: 4953 lines, Arbor stopped
+04:25:03.489 INFO  stopped; all windows returned to view
+04:25:03.492 INFO  Arbor quit
+04:25:03.520 SCREEN w339 of Arbor left the screen
+04:25:03.520 SCREEN w298 of Arbor left the screen
+04:25:03.520 SCREEN w340 of Arbor left the screen
+04:25:03.520 SCREEN front to back: calendar safari preview w248 mail finder notes terminal settings desk-a desk-b textedit
+04:25:03.646 SCREEN -- arbor gone
+04:25:04.547 SCREEN -- finding 80 -:crash FAIL Arbor's process ended, and nobody asked it to
+04:25:04.563 SCREEN -- end 80 act=quit-and-start settled=quiet:783 moves=any restores=all places=1 everything=1
+04:25:04.803 SCRIPT == 81 dock-icon-textedit

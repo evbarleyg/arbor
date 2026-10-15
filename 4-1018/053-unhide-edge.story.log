@@ -1,0 +1,41 @@
+53 unhide-edge: clicks its icon in the Dock
+expected: {'act': 'open-close', 'settled': 'quiet:358', 'moves': '1721,1731,1721,1731,', 'comes': '1702', 'lands': '1702', 'front': '1754', 'floating': '1681,1687,1699,1702,1736,1739,1754,1769,1771,1872', 'docked': '1721,1731'}
+FAIL rule 2: edge-2 (w1754) a floating window, moved, and the step did not name it
+FAIL rule 3: edge (w1702) came into sight at 22,239 1200×375 and was then moved to 22,53 1200×747
+
+04:41:02.140 SCREEN -- begin 53 unhide-edge
+04:41:02.140 SCREEN -- text 53 clicks its icon in the Dock
+04:41:02.835 SCREEN the button is down 229 856
+04:41:02.913 SCREEN the button is up 229 856
+04:41:03.048 SCREEN (nothing was seen for 135 ms)
+04:41:03.048 SCREEN edge-2 (w1754) 44,239 1200×375
+04:41:03.048 SCREEN edge (w1702) 22,239 1200×375
+04:41:03.048 SCREEN front to back: edge-2 edge textedit chrome-2 chrome firefox terminal finder safari safari-2 desk-a desk-b w1803
+04:41:03.178 MACOS pid 19221 AXFocusedWindowChanged
+04:41:03.190 MACOS workspace didActivate pid 21136 com.microsoft.edgemac regular
+04:41:03.193 MACOS workspace didDeactivate pid 19221 com.apple.finder regular
+04:41:03.194 MACOS workspace didUnhide pid 21136 com.microsoft.edgemac regular
+04:41:03.196 SCREEN in front: process 21136 com.microsoft.edgemac
+04:41:03.202 MACOS pid 19221 AXMainWindowChanged
+04:41:03.203 MACOS pid 21136 AXApplicationShown
+04:41:03.204 MACOS pid 19221 AXApplicationDeactivated
+04:41:03.204 MACOS pid 21136 AXApplicationActivated
+04:41:03.214 DEBUG focus is on w1754
+04:41:03.214 DEBUG focus report for w1754, which does not have the keyboard or takes no space; 4 checks left
+04:41:03.217 SCREEN (nothing was seen for 168 ms)
+04:41:03.278 SCREEN w1879 of Arbor 35,230 1218×393
+04:41:03.278 SCREEN edge (w1702) 22,53 1200×747
+04:41:03.278 SCREEN front to back: w1879 edge-2 edge textedit chrome-2 chrome firefox terminal finder safari safari-2 desk-a desk-b w1803
+04:41:03.291 MACOS pid 21136 AXResized w1702 AXWindow/AXStandardWindow 22 53 1200 747
+04:41:03.357 MACOS pid 21136 AXMoved w1702 AXWindow/AXStandardWindow 22 53 1200 747
+04:41:03.361 MACOS pid 21136 AXResized w1702 AXWindow/AXStandardWindow 22 53 1200 747
+04:41:03.363 DEBUG w1754 has the keyboard
+04:41:03.363 MACOS pid 21136 AXResized w1754 AXWindow/AXStandardWindow 44 75 1200 747
+04:41:03.363 MACOS pid 21136 AXMoved w1754 AXWindow/AXStandardWindow 44 75 1200 747
+04:41:03.364 MACOS pid 21136 AXResized w1754 AXWindow/AXStandardWindow 44 75 1200 747
+04:41:03.365 SCREEN edge-2 (w1754) 44,75 1200×747
+04:41:03.381 SCREEN w1879 of Arbor 35,66 1218×765
+04:41:03.526 MACOS pid 21136 AXWindowCreated w1892 AXHelpTag/AXUnknown 47 795 200 24
+04:41:03.567 MACOS pid 21136 AXUIElementDestroyed w1892
+04:41:04.581 SCREEN -- end 53 act=open-close settled=quiet:358 moves=1721,1731,1721,1731, comes=1702 lands=1702 front=1754 floating=1681,1687,1699,1702,1736,1739,1754,1769,1771,1872 docked=1721,1731
+04:41:05.214 SCRIPT == 54 click-safari

@@ -1,0 +1,75 @@
+61 quit: chooses Quit Arbor in Arbor's menu
+expected: {'act': 'quit-and-start', 'settled': 'quiet:725', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1'}
+FAIL rule -: Arbor's process ended, and nobody asked it to
+FAIL rule 5: terminal (w1731) is 737,321 863×499; its own size was 737,321 877×499
+
+04:41:27.932 SCREEN -- begin 61 quit
+04:41:27.932 SCREEN -- text 61 chooses Quit Arbor in Arbor's menu
+04:41:28.640 DEBUG menu bar click: x 80.0 by the event, 80.0 by the screen, button 160.0 wide
+04:41:28.886 SCREEN w1929 of Arbor 1201,31 290×788 (level 101)
+04:41:30.309 SCREEN w1929 of Arbor left the screen
+04:41:30.395 SCREEN safari (w1681) 67,31 1324×374
+04:41:30.437 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow 67 31 1324 374
+04:41:30.438 MACOS pid 20042 AXMoved w1681 AXWindow/AXStandardWindow 67 31 1324 374
+04:41:30.510 SCREEN finder (w1721) 340,119 920×436
+04:41:30.510 MACOS pid 19221 AXResized w1721 AXWindow/AXStandardWindow 340 119 920 436
+04:41:30.510 MACOS pid 19221 AXMoved w1721 AXWindow/AXStandardWindow 340 119 920 436
+04:41:30.511 MACOS pid 19221 AXResized w1721 AXWindow/AXStandardWindow 340 119 920 436
+04:41:30.545 MACOS pid 21899 AXTitleChanged w1731 AXWindow/AXStandardWindow 737 321 793 499
+04:41:30.546 MACOS pid 21899 AXResized w1731 AXWindow/AXStandardWindow 737 321 793 499
+04:41:30.546 MACOS pid 21899 AXMoved w1731 AXWindow/AXStandardWindow 737 321 793 499
+04:41:30.557 MACOS pid 21899 AXTitleChanged w1731 AXWindow/AXStandardWindow 737 321 863 499
+04:41:30.557 MACOS pid 21899 AXResized w1731 AXWindow/AXStandardWindow 737 321 863 499
+04:41:30.565 SCREEN terminal (w1731) 737,321 793×499
+04:41:30.575 SCREEN terminal (w1731) 737,321 863×499
+04:41:30.672 MACOS pid 20277 AXResized w1687 AXWindow/AXStandardWindow 22 53 1200 612
+04:41:30.681 MACOS pid 20277 AXMoved w1687 AXWindow/AXStandardWindow 22 53 1200 612
+04:41:30.684 SCREEN chrome (w1687) 0,212 1200×612
+04:41:30.690 MACOS pid 20277 AXResized w1687 AXWindow/AXStandardWindow 22 53 1200 747
+04:41:30.754 SCREEN chrome (w1687) 22,53 1200×747
+04:41:30.754 SCREEN firefox (w1699) 0,275 1280×549
+04:41:30.867 SCREEN firefox (w1699) 4,31 1280×549
+04:41:30.925 MACOS pid 20801 AXResized w1699 AXWindow/AXStandardWindow 4 31 1280 711
+04:41:30.926 MACOS pid 20801 AXMoved w1699 AXWindow/AXStandardWindow 4 31 1280 711
+04:41:30.929 SCREEN firefox (w1699) 4,31 1280×711
+04:41:30.929 MACOS pid 20801 AXResized w1699 AXWindow/AXStandardWindow 4 31 1280 711
+04:41:31.007 SCREEN edge (w1702) 0,212 1200×612
+04:41:31.020 SCREEN edge (w1702) 22,53 1200×612
+04:41:31.037 MACOS pid 21136 AXResized w1702 AXWindow/AXStandardWindow 22 53 1200 612
+04:41:31.038 MACOS pid 21136 AXMoved w1702 AXWindow/AXStandardWindow 22 53 1200 747
+04:41:31.038 MACOS pid 21136 AXResized w1702 AXWindow/AXStandardWindow 22 53 1200 747
+04:41:31.077 SCREEN edge (w1702) 22,53 1200×747
+04:41:31.119 MACOS pid 20042 AXResized w1736 AXWindow/AXStandardWindow 96 60 1324 374
+04:41:31.119 MACOS pid 20042 AXMoved w1736 AXWindow/AXStandardWindow 96 60 1324 374
+04:41:31.181 SCREEN chrome-2 (w1739) 0,212 1200×612
+04:41:31.181 SCREEN safari-2 (w1736) 96,60 1324×374
+04:41:31.186 MACOS pid 20277 AXResized w1739 AXWindow/AXStandardWindow 0 212 1200 612
+04:41:31.188 MACOS pid 20277 AXMoved w1739 AXWindow/AXStandardWindow 44 75 1200 612
+04:41:31.219 MACOS pid 20277 AXResized w1739 AXWindow/AXStandardWindow 44 75 1200 747
+04:41:31.237 SCREEN chrome-2 (w1739) 44,75 1200×747
+04:41:31.259 MACOS pid 21136 AXResized w1754 AXWindow/AXStandardWindow 44 75 1200 612
+04:41:31.303 MACOS pid 21136 AXMoved w1754 AXWindow/AXStandardWindow 44 75 1200 612
+04:41:31.305 SCREEN edge-2 (w1754) 44,75 1200×612
+04:41:31.336 MACOS pid 21136 AXResized w1754 AXWindow/AXStandardWindow 44 75 1200 747
+04:41:31.337 SCREEN edge-2 (w1754) 44,75 1200×747
+04:41:31.348 MACOS pid 26192 AXMoved w1769 AXWindow/AXStandardWindow 40 70 300 190
+04:41:31.352 MACOS pid 26209 AXMoved w1771 AXWindow/AXStandardWindow 360 70 300 190
+04:41:31.368 SCREEN desk-a (w1769) 40,70 300×190
+04:41:31.368 SCREEN desk-b (w1771) 360,70 300×190
+04:41:31.370 MACOS pid 33393 AXResized w1872 AXWindow/AXStandardWindow 165 65 673 439
+04:41:31.371 MACOS pid 33393 AXMoved w1872 AXWindow/AXStandardWindow 165 65 673 439
+04:41:31.377 INFO  trace day-2 ended: 1020 lines, Arbor stopped
+04:41:31.378 INFO  stopped; all windows returned to view
+04:41:31.379 INFO  Arbor quit
+04:41:31.422 SCREEN textedit (w1872) 165,65 673×439
+04:41:31.422 SCREEN w1877 of Arbor left the screen
+04:41:31.422 SCREEN w1880 of Arbor left the screen
+04:41:31.422 SCREEN w1879 of Arbor left the screen
+04:41:31.422 SCREEN w1928 of Arbor left the screen
+04:41:31.422 SCREEN w1803 of Arbor left the screen
+04:41:31.422 SCREEN w1878 of Arbor left the screen
+04:41:31.422 SCREEN front to back: terminal edge-2 chrome-2 edge chrome safari safari-2 textedit firefox finder desk-a desk-b
+04:41:31.518 SCREEN -- arbor gone
+04:41:32.452 SCREEN -- finding 61 -:crash FAIL Arbor's process ended, and nobody asked it to
+04:41:32.466 SCREEN -- end 61 act=quit-and-start settled=quiet:725 moves=any restores=all places=1 everything=1
+04:41:32.828 SCRIPT == 62 dock-icon-safari

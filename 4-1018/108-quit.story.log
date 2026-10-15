@@ -1,0 +1,65 @@
+108 quit: chooses Quit Arbor in Arbor's menu
+expected: {'act': 'quit-and-start', 'settled': 'quiet:860', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1'}
+FAIL rule -: Arbor's process ended, and nobody asked it to
+FAIL rule 5: firefox (w1699) is 4,31 1280×711; its own size was 598,43 500×220
+FAIL rule 5: finder (w1721) has its size back but not its place: 95,389 920×435, it was at 340,119 920×436
+FAIL rule 5: terminal (w1731) is 737,321 863×499; its own size was 737,321 877×499
+
+04:44:17.315 SCREEN -- begin 108 quit
+04:44:17.315 SCREEN -- text 108 chooses Quit Arbor in Arbor's menu
+04:44:17.932 DEBUG menu bar click: x 80.0 by the event, 80.0 by the screen, button 160.0 wide
+04:44:18.108 SCREEN w2036 of Arbor 1201,31 286×788 (level 101)
+04:44:19.225 SCREEN w2036 of Arbor left the screen
+04:44:19.309 MACOS pid 20801 AXResized w1699 AXWindow/AXStandardWindow 4 31 1280 711
+04:44:19.310 MACOS pid 20801 AXMoved w1699 AXWindow/AXStandardWindow 4 31 1280 711
+04:44:19.313 SCREEN firefox (w1699) 4,31 1280×711
+04:44:19.326 SCREEN terminal (w1731) 807,44 793×499
+04:44:19.333 MACOS pid 21899 AXTitleChanged w1731 AXWindow/AXStandardWindow 737 321 793 499
+04:44:19.337 MACOS pid 21899 AXResized w1731 AXWindow/AXStandardWindow 737 321 863 499
+04:44:19.337 MACOS pid 21899 AXMoved w1731 AXWindow/AXStandardWindow 737 321 863 499
+04:44:19.338 MACOS pid 21899 AXTitleChanged w1731 AXWindow/AXStandardWindow 737 321 863 499
+04:44:19.339 MACOS pid 21899 AXResized w1731 AXWindow/AXStandardWindow 737 321 863 499
+04:44:19.351 SCREEN terminal (w1731) 737,321 793×499
+04:44:19.366 SCREEN terminal (w1731) 737,321 863×499
+04:44:19.375 MACOS pid 20277 AXResized w1687 AXWindow/AXStandardWindow 22 53 1200 747
+04:44:19.394 MACOS pid 20277 AXMoved w1687 AXWindow/AXStandardWindow 22 53 1200 747
+04:44:19.396 MACOS pid 20277 AXResized w1687 AXWindow/AXStandardWindow 22 53 1200 747
+04:44:19.436 SCREEN edge (w1702) 22,53 1200×414
+04:44:19.436 SCREEN chrome (w1687) 22,53 1200×747
+04:44:19.437 MACOS pid 21136 AXResized w1702 AXWindow/AXStandardWindow 22 53 1200 414
+04:44:19.441 MACOS pid 21136 AXMoved w1702 AXWindow/AXStandardWindow 22 53 1200 414
+04:44:19.442 MACOS pid 21136 AXResized w1702 AXWindow/AXStandardWindow 22 53 1200 747
+04:44:19.489 SCREEN edge (w1702) 22,53 1200×747
+04:44:19.489 SCREEN chrome-2 (w1739) 44,75 1200×414
+04:44:19.508 MACOS pid 20277 AXResized w1739 AXWindow/AXStandardWindow 44 75 1200 747
+04:44:19.509 MACOS pid 20277 AXMoved w1739 AXWindow/AXStandardWindow 44 75 1200 747
+04:44:19.509 MACOS pid 20277 AXResized w1739 AXWindow/AXStandardWindow 44 75 1200 747
+04:44:19.558 SCREEN edge-2 (w1754) 44,75 1200×414
+04:44:19.558 SCREEN chrome-2 (w1739) 44,75 1200×747
+04:44:19.607 MACOS pid 21136 AXResized w1754 AXWindow/AXStandardWindow 44 75 1200 414
+04:44:19.609 MACOS pid 21136 AXMoved w1754 AXWindow/AXStandardWindow 44 75 1200 747
+04:44:19.611 SCREEN edge-2 (w1754) 44,75 1200×747
+04:44:19.611 MACOS pid 21136 AXResized w1754 AXWindow/AXStandardWindow 44 75 1200 747
+04:44:19.614 MACOS pid 26192 AXMoved w1769 AXWindow/AXStandardWindow 40 70 300 190
+04:44:19.618 MACOS pid 26209 AXMoved w1771 AXWindow/AXStandardWindow 360 70 300 190
+04:44:19.621 MACOS pid 33393 AXMoved w1872 AXWindow/AXStandardWindow 165 65 673 414
+04:44:19.624 MACOS pid 33393 AXResized w1872 AXWindow/AXStandardWindow 165 65 673 439
+04:44:19.634 SCREEN desk-a (w1769) 40,70 300×190
+04:44:19.634 SCREEN desk-b (w1771) 360,70 300×190
+04:44:19.634 SCREEN textedit (w1872) 165,65 673×414
+04:44:19.701 SCREEN safari (w2012) 96,60 1324×374
+04:44:19.701 SCREEN textedit (w1872) 165,65 673×439
+04:44:19.702 MACOS pid 48117 AXResized w2012 AXWindow/AXStandardWindow 96 60 1324 374
+04:44:19.703 MACOS pid 48117 AXMoved w2012 AXWindow/AXStandardWindow 96 60 1324 374
+04:44:19.707 INFO  trace day-4 ended: 405 lines, Arbor stopped
+04:44:19.707 INFO  stopped; all windows returned to view
+04:44:19.709 INFO  Arbor quit
+04:44:19.745 SCREEN w1941 of Arbor left the screen
+04:44:19.745 SCREEN w1943 of Arbor left the screen
+04:44:19.745 SCREEN w1942 of Arbor left the screen
+04:44:19.745 SCREEN w1939 of Arbor left the screen
+04:44:19.745 SCREEN front to back: desk-a finder desk-b terminal safari edge-2 edge textedit firefox chrome-2 chrome
+04:44:19.793 SCREEN -- arbor gone
+04:44:20.763 SCREEN -- finding 108 -:crash FAIL Arbor's process ended, and nobody asked it to
+04:44:20.771 SCREEN -- end 108 act=quit-and-start settled=quiet:860 moves=any restores=all places=1 everything=1
+04:44:20.980 SCRIPT == 109 input-after

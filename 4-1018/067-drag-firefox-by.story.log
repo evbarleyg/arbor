@@ -1,0 +1,65 @@
+67 drag-firefox-by: drags firefox, which floats, by its title bar 54 across and 57 down
+expected: {'act': 'drag', 'settled': 'quiet:1432', 'drags': '1699', 'front': '1699', 'own': '1699', 'floating': '1687,1702,1736,1739,1754,1769,1771,1872', 'docked': '1681,1699,1721,1731', 'first': '1'}
+FAIL rule 2: safari (w1681) moved, and the step did not name it
+FAIL rule 2: finder (w1721) moved, and the step did not name it
+FAIL rule 2: terminal (w1731) moved, and the step did not name it
+
+04:41:45.404 SCREEN -- begin 67 drag-firefox-by
+04:41:45.404 SCREEN -- text 67 drags firefox, which floats, by its title bar 54 across and 57 down
+04:41:45.544 SCRIPT drag w1699 from 648,43 to 702,100
+04:41:46.226 SCREEN front to back: firefox w1942 terminal edge-2 edge safari safari-2 chrome-2 chrome textedit finder desk-a desk-b w1939 w1940 w1941
+04:41:46.226 SCREEN the button is down 648 43
+04:41:46.470 SCREEN firefox (w1699) 5,32 1280×711
+04:41:46.522 DEBUG w1699 is being dragged
+04:41:46.531 SCREEN firefox (w1699) 7,34 1280×711
+04:41:46.531 DEBUG drag of w1699: waiting over beside(n4, ArborCore.Edge.top)
+04:41:46.539 MACOS pid 20801 AXMoved w1699 AXWindow/AXStandardWindow 7 34 1280 711
+04:41:46.561 SCREEN w1942 of Arbor left the screen
+04:41:46.561 SCREEN front to back: firefox terminal edge-2 edge safari safari-2 chrome-2 chrome textedit finder desk-a desk-b w1939 w1940 w1941
+04:41:46.612 SCREEN firefox (w1699) 9,36 1280×711
+04:41:46.703 MACOS pid 20801 AXMoved w1699 AXWindow/AXStandardWindow 11 38 1280 711
+04:41:46.725 SCREEN firefox (w1699) 11,38 1280×711
+04:41:46.754 DEBUG drag of w1699: on beside(n4, ArborCore.Edge.top)
+04:41:46.769 SCREEN firefox (w1699) 12,40 1280×711
+04:41:46.828 SCREEN w1948 of Arbor 12,43 782×108 (level 3)
+04:41:46.862 SCREEN firefox (w1699) 12,42 1280×711
+04:41:46.868 MACOS pid 20801 AXMoved w1699 AXWindow/AXStandardWindow 12 42 1280 711
+04:41:47.000 SCREEN firefox (w1699) 12,44 1280×711
+04:41:47.064 MACOS pid 20801 AXMoved w1699 AXWindow/AXStandardWindow 12 44 1280 711
+04:41:47.853 DEBUG drag of w1699: waiting over beside(n4, ArborCore.Edge.right)
+04:41:47.997 SCREEN w1948 of Arbor left the screen
+04:41:48.066 DEBUG drag of w1699: on beside(n4, ArborCore.Edge.right)
+04:41:48.112 SCREEN w1948 of Arbor 409,43 385×220 (level 3)
+04:41:49.045 SCREEN firefox (w1699) 13,44 1280×711
+04:41:49.129 MACOS pid 20801 AXMoved w1699 AXWindow/AXStandardWindow 13 44 1280 711
+04:41:49.888 SCREEN the button is up 702 100
+04:41:49.895 INFO  dropped w1699 on beside(n4, ArborCore.Edge.right), display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+04:41:49.938 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 12 stand-ins, 0.46 s
+04:41:49.938 DEBUG the stage kept the windows waiting 30 ms: its panel 0, 12 costumes 0 (0 not ready), the desktop 3, going up 26
+04:41:49.966 SCREEN w1944 of Arbor 0,0 1600×900 (level 4)
+04:41:50.018 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow 12 43 574 220
+04:41:50.028 SCREEN safari (w1681) 12,43 574×220
+04:41:50.098 SCREEN firefox (w1699) 409,43 500×220
+04:41:50.106 MACOS pid 20801 AXResized w1699 AXWindow/AXStandardWindow 409 43 500 220
+04:41:50.107 MACOS pid 20801 AXMoved w1699 AXWindow/AXStandardWindow 409 43 500 220
+04:41:50.112 INFO  made room for w1699, w1681
+04:41:50.114 MACOS pid 20801 AXMoved w1699 AXWindow/AXStandardWindow 598 43 500 220
+04:41:50.159 SCREEN firefox (w1699) 598,43 500×220
+04:41:50.178 MACOS pid 19221 AXResized w1721 AXWindow/AXStandardWindow 12 536 1086 277
+04:41:50.183 SCREEN finder (w1721) 12,536 1086×277
+04:41:50.207 MACOS pid 21899 AXTitleChanged w1731 AXWindow/AXStandardWindow 1110 43 478 769
+04:41:50.208 MACOS pid 21899 AXResized w1731 AXWindow/AXStandardWindow 1110 43 478 769
+04:41:50.209 MACOS pid 21899 AXMoved w1731 AXWindow/AXStandardWindow 1110 43 478 769
+04:41:50.223 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 12 stand-ins, 0.19061907291412356 s
+04:41:50.228 SCREEN terminal (w1731) 1110,43 478×769
+04:41:50.291 SCREEN w1942 of Arbor 589,34 518×238
+04:41:50.291 SCREEN w1939 of Arbor 586,43 12×220
+04:41:50.291 SCREEN w1949 of Arbor 12,263 1086×12
+04:41:50.291 SCREEN w1940 of Arbor 12,524 1086×12
+04:41:50.291 SCREEN w1941 of Arbor 1098,43 12×770
+04:41:50.291 SCREEN w1948 of Arbor left the screen
+04:41:50.291 SCREEN front to back: w1942 firefox terminal edge-2 edge safari safari-2 chrome-2 chrome textedit finder desk-a desk-b w1939 w1949 w1940 w1941
+04:41:50.603 DEBUG stage down
+04:41:50.634 SCREEN w1944 of Arbor left the screen
+04:41:51.427 SCREEN -- end 67 act=drag settled=quiet:1432 drags=1699 front=1699 own=1699 floating=1687,1702,1736,1739,1754,1769,1771,1872 docked=1681,1699,1721,1731 first=1
+04:41:51.771 SCRIPT == 68 view-frame

@@ -1,0 +1,31 @@
+57 minimize-notes: presses ⌘M
+expected: {'act': 'open-close', 'settled': 'quiet:987', 'moves': ',,', 'leaves': '1066'}
+FAIL rule 2: mail (w1076) moved and came back, and the step did not name it
+ODD rule 2: w1078 of Mail moved along with a window of its app
+
+04:34:50.297 SCREEN -- begin 57 minimize-notes
+04:34:50.297 SCREEN -- text 57 presses ⌘M
+04:34:50.837 SCREEN notes (w1066) 554,182 998×661
+04:34:50.844 SCREEN notes (w1066) 558,196 994×661
+04:34:50.866 SCREEN notes (w1066) 577,232 974×640
+04:34:50.888 SCREEN notes (w1066) 618,278 930×594
+04:34:50.911 SCREEN notes (w1066) 742,364 798×508
+04:34:50.928 SCREEN notes (w1066) 799,396 738×476
+04:34:50.962 SCREEN notes (w1066) 1074,530 445×342
+04:34:50.971 SCREEN notes (w1066) 1142,564 373×308
+04:34:50.996 SCREEN notes (w1066) 1262,629 245×243
+04:34:51.003 SCREEN notes (w1066) 1307,657 197×215
+04:34:51.037 SCREEN notes (w1066) 1423,759 74×113
+04:34:51.042 SCREEN notes (w1066) 1434,777 62×95
+04:34:51.062 SCREEN notes (w1066) 1445,809 50×63
+04:34:51.081 SCREEN notes (w1066) 1447,828 48×44
+04:34:51.095 SCREEN notes (w1066) 1447,833 48×39
+04:34:51.113 SCREEN notes (w1066) left the screen
+04:34:51.113 SCREEN front to back: safari preview terminal calendar w1078 mail finder settings desk-a desk-b textedit
+04:34:51.569 SCREEN (nothing was seen for 456 ms)
+04:34:51.569 SCREEN w1078 of Mail 929,219 470×416
+04:34:51.569 SCREEN mail (w1076) 728,31 872×793
+04:34:51.573 MACOS pid 99995 AXWindowMiniaturized w1066 AXWindow/AXDialog 552 161 1000 660 minimized
+04:34:51.576 MACOS pid 1432 AXResized w1076 AXWindow/AXStandardWindow 728 31 872 793
+04:34:52.588 SCREEN -- end 57 act=open-close settled=quiet:987 moves=,, leaves=1066
+04:34:53.318 SCRIPT == 58 dock-icon-finder

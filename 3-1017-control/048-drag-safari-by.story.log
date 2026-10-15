@@ -1,0 +1,18 @@
+48 drag-safari-by: drags safari, which floats, by its title bar -100 across and 91 down
+expected: {'act': 'drag', 'settled': 'quiet:1104', 'judge': 'no', 'performed': 'no', 'undone': 'drag_window', 'drags': '1049', 'front': '1049', 'own': '1049'}
+ODD rule -: the act was not performed: drag_window could not be done
+
+04:34:20.112 SCREEN -- begin 48 drag-safari-by
+04:34:20.112 SCREEN -- text 48 drags safari, which floats, by its title bar -100 across and 91 down
+04:34:20.239 SCRIPT drag w1049 from 738,467 to 638,558
+04:34:20.752 SCREEN front to back: safari preview terminal calendar w1078 mail finder notes settings desk-a desk-b textedit
+04:34:20.752 SCREEN the button is down 738 467
+04:34:20.883 MACOS pid 1031 AXApplicationDeactivated
+04:34:20.884 MACOS workspace didActivate pid 99192 com.apple.Safari regular
+04:34:20.884 MACOS workspace didDeactivate pid 1031 com.apple.Preview regular
+04:34:20.885 SCREEN in front: process 99192 com.apple.Safari
+04:34:20.885 MACOS pid 99192 AXApplicationActivated
+04:34:20.891 SCREEN (nothing was seen for 138 ms)
+04:34:23.910 SCREEN the button is up 638 558
+04:34:24.974 SCREEN -- end 48 act=drag settled=quiet:1104 judge=no performed=no undone=drag_window drags=1049 front=1049 own=1049
+04:34:25.529 SCRIPT == 49 display-unplug

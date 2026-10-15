@@ -1,0 +1,24 @@
+139 view-home: presses ⌃⌥0
+expected: {'act': 'view', 'settled': 'quiet:666', 'moves': 'any', 'everything': '1', 'tiles': '', 'keyboard': '976', 'floating': '218,230,235,236,237,242,245,266,268,976', 'docked': '240'}
+FAIL rule L: mail (w245) is out of view: 38% of it is on a display, at 855,278 1576×767
+
+04:28:33.632 SCREEN -- begin 139 view-home
+04:28:33.632 SCREEN -- text 139 presses ⌃⌥0
+04:28:33.835 INFO  home: showing everything
+04:28:33.835 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Showing everything
+04:28:33.858 DEBUG raised w237, which stays in view
+04:28:33.858 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:28:33.858 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:28:33.867 SCREEN w711 of Arbor 713,728 175×38 (level 6)
+04:28:34.088 DEBUG raised w237, which stays in view
+04:28:34.089 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:28:34.090 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:28:34.345 DEBUG raised w237, which stays in view
+04:28:34.346 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:28:34.348 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:28:35.682 SCREEN w711 of Arbor left the screen
+04:28:36.713 SCREEN -- end 139 act=view settled=quiet:666 moves=any everything=1 tiles= keyboard=976 floating=218,230,235,236,237,242,245,266,268,976 docked=240
+04:28:36.958 SCREEN -- chapter The end
+04:28:36.969 INFO  trace day-2 ended: 5759 lines, trace off
+04:28:36.981 INFO  trace day-3: recording to /tmp/arbor-shell.goospq/home/traces/2026-10-15-042836-day-3.jsonl
+04:28:37.052 SCRIPT == 140 view-home

@@ -1,0 +1,51 @@
+34 minimize-textedit: presses ⌘M
+expected: {'act': 'open-close', 'settled': 'quiet:1532', 'moves': '1721,1721,', 'leaves': '1723', 'floating': '1681,1687,1699,1702,1723,1731,1736,1739,1754,1769,1771', 'docked': '1721'}
+FAIL rule 2: terminal (w1731) a floating window, moved, and the step did not name it
+
+04:39:39.906 SCREEN -- begin 34 minimize-textedit
+04:39:39.906 SCREEN -- text 34 presses ⌘M
+04:39:40.144 SCREEN textedit (w1723) 463,31 676×391
+04:39:40.160 SCREEN textedit (w1723) 463,31 678×391
+04:39:40.180 SCREEN textedit (w1723) 463,31 685×391
+04:39:40.220 SCREEN textedit (w1723) 463,33 708×392
+04:39:40.231 SCREEN textedit (w1723) 463,42 724×392
+04:39:40.255 SCREEN textedit (w1723) 464,58 744×392
+04:39:40.261 SCREEN textedit (w1723) 465,69 756×392
+04:39:40.316 SCREEN textedit (w1723) 515,169 814×392
+04:39:40.330 SCREEN textedit (w1723) 533,188 816×392
+04:39:40.373 SCREEN textedit (w1723) 718,310 736×392
+04:39:40.416 SCREEN textedit (w1723) 939,420 560×392
+04:39:40.483 SCREEN textedit (w1723) 1271,603 230×268
+04:39:40.492 SCREEN textedit (w1723) 1336,650 166×221
+04:39:40.505 SCREEN textedit (w1723) 1363,672 139×199
+04:39:40.575 SCREEN textedit (w1723) 1455,807 47×64
+04:39:40.648 SCREEN textedit (w1723) 1457,838 45×33
+04:39:40.656 SCREEN textedit (w1723) left the screen
+04:39:40.656 SCREEN front to back: w1842 finder safari safari-2 chrome-2 chrome desk-a desk-b w1803 edge-2 edge firefox terminal w1841
+04:39:40.925 MACOS pid 21791 AXWindowMiniaturized w1723 AXWindow/AXDialog 463 31 674 391 minimized
+04:39:40.926 SCREEN (nothing was seen for 269 ms)
+04:39:40.947 SCREEN w1842 of Arbor left the screen
+04:39:40.947 SCREEN front to back: finder safari safari-2 chrome-2 chrome desk-a desk-b w1803 edge-2 edge firefox terminal w1841
+04:39:41.275 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 12 434 1576 379
+04:39:41.278 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 12 434 1576 379
+04:39:41.279 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 12 434 1576 379
+04:39:41.280 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 12 434 1576 379
+04:39:41.320 SCREEN in front: process 19221 com.apple.finder
+04:39:41.320 MACOS pid 21791 AXApplicationDeactivated
+04:39:41.320 MACOS workspace didActivate pid 19221 com.apple.finder regular
+04:39:41.320 MACOS workspace didDeactivate pid 21791 com.apple.TextEdit regular
+04:39:41.346 MACOS pid 19221 AXApplicationActivated
+04:39:41.348 DEBUG focus is on w1721
+04:39:41.349 DEBUG w1721 has the keyboard
+04:39:41.353 DEBUG focus is on w1721
+04:39:41.354 DEBUG w1721 has the keyboard
+04:39:41.405 INFO  displays changed: 1 display(s), 0 remembered
+04:39:41.409 SCREEN w1842 of Arbor 3,425 1594×397
+04:39:41.409 SCREEN front to back: w1842 finder safari safari-2 chrome-2 chrome desk-a desk-b w1803 edge-2 edge firefox terminal w1841
+04:39:41.422 MACOS pid 21899 AXTitleChanged w1731 AXWindow/AXStandardWindow 723 31 877 394
+04:39:41.422 MACOS pid 21899 AXResized w1731 AXWindow/AXStandardWindow 723 31 877 394
+04:39:41.484 SCREEN terminal (w1731) 723,31 877×394
+04:39:41.484 SCREEN w1841 of Arbor 12,423 1576×12
+04:39:41.484 SCREEN w1843 of Arbor 0,31 1600×796 (level -2147483602)
+04:39:42.725 SCREEN -- end 34 act=open-close settled=quiet:1532 moves=1721,1721, leaves=1723 floating=1681,1687,1699,1702,1723,1731,1736,1739,1754,1769,1771 docked=1721
+04:39:43.193 SCRIPT == 35 restore-textedit

@@ -1,0 +1,17 @@
+22 click-terminal: clicks terminal's title bar
+expected: {'act': 'switch', 'settled': 'quiet:384', 'front': '1065'}
+FAIL rule 4: terminal (w1065) is not wholly in view: 80% of it, at 2017,401 863×499 in 0,31 1600×791 and 1600,31 1280×769
+
+04:31:50.469 SCREEN -- begin 22 click-terminal
+04:31:50.469 SCREEN -- text 22 clicks terminal's title bar
+04:31:51.044 SCREEN front to back: terminal settings notes desk-a desk-b calendar textedit w1078 mail preview finder safari
+04:31:51.044 SCREEN the button is down 2451 413
+04:31:51.052 SCREEN in front: process 99611 com.apple.Terminal
+04:31:51.054 MACOS workspace didActivate pid 99611 com.apple.Terminal regular
+04:31:51.054 MACOS workspace didDeactivate pid 850 com.apple.systempreferences regular
+04:31:51.145 SCREEN (nothing was seen for 101 ms)
+04:31:51.145 SCREEN the button is up 2451 413
+04:31:51.203 MACOS pid 850 AXApplicationDeactivated
+04:31:51.203 MACOS pid 99611 AXApplicationActivated
+04:31:52.183 SCREEN -- end 22 act=switch settled=quiet:384 front=1065
+04:31:52.648 SCRIPT == 23 drag-notes-by

@@ -1,0 +1,17 @@
+63 dock-icon-settings: clicks settings's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:617', 'front': '1070'}
+FAIL rule 6: the button came up, and the apps heard of it 149 ms later
+
+04:35:17.881 SCREEN -- begin 63 dock-icon-settings
+04:35:17.881 SCREEN -- text 63 clicks settings's icon in the Dock
+04:35:18.525 SCREEN the button is down 1082 854
+04:35:18.720 SCREEN (nothing was seen for 160 ms)
+04:35:18.720 SCREEN the button is up 1082 854
+04:35:18.722 SCREEN in front: process 850 com.apple.systempreferences
+04:35:18.733 MACOS pid 1031 AXApplicationDeactivated
+04:35:18.737 MACOS workspace didActivate pid 850 com.apple.systempreferences regular
+04:35:18.738 MACOS workspace didDeactivate pid 1031 com.apple.Preview regular
+04:35:18.875 MACOS pid 850 AXApplicationActivated
+04:35:18.923 SCREEN front to back: settings preview notes finder safari terminal calendar w1078 mail desk-a desk-b textedit
+04:35:19.964 SCREEN -- end 63 act=switch settled=quiet:617 front=1070
+04:35:20.493 SCRIPT == 64 dock-icon-safari

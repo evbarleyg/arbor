@@ -1,0 +1,58 @@
+78 undo: presses ⌃⌥Z
+expected: {'act': 'dock-key', 'settled': 'quiet:1310', 'moves': 'any', 'floating': '1687,1702,1736,1739,1754,1769,1771,1872', 'docked': '1681,1699,1721,1731'}
+ODD rule 3: the last window came to rest 765 ms after the key or the button
+
+04:42:17.866 SCREEN -- begin 78 undo
+04:42:17.866 SCREEN -- text 78 presses ⌃⌥Z
+04:42:18.048 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 11 stand-ins, 0.46 s
+04:42:18.049 DEBUG the stage kept the windows waiting 13 ms: its panel 0, 11 costumes 0 (0 not ready), the desktop 3, going up 10
+04:42:18.098 SCREEN w1944 of Arbor 0,0 1600×900 (level 4)
+04:42:18.098 SCREEN chrome (w1687) 22,53 1200×612
+04:42:18.128 MACOS pid 20277 AXResized w1687 AXWindow/AXStandardWindow 22 53 1200 612
+04:42:18.131 MACOS pid 20277 AXMoved w1687 AXWindow/AXStandardWindow 22 53 1200 612
+04:42:18.140 SCREEN chrome (w1687) 22,53 1200×747
+04:42:18.140 MACOS pid 20277 AXResized w1687 AXWindow/AXStandardWindow 22 53 1200 747
+04:42:18.208 MACOS pid 21136 AXResized w1702 AXWindow/AXStandardWindow 22 53 1200 612
+04:42:18.209 MACOS pid 21136 AXMoved w1702 AXWindow/AXStandardWindow 22 53 1200 612
+04:42:18.211 SCREEN edge (w1702) 22,53 1200×612
+04:42:18.231 MACOS pid 21136 AXResized w1702 AXWindow/AXStandardWindow 22 53 1200 747
+04:42:18.256 SCREEN edge (w1702) 22,53 1200×747
+04:42:18.339 MACOS pid 20042 AXResized w1736 AXWindow/AXStandardWindow 96 60 1324 374
+04:42:18.339 MACOS pid 20042 AXMoved w1736 AXWindow/AXStandardWindow 96 60 1324 374
+04:42:18.361 SCREEN safari-2 (w1736) 0,275 1324×374
+04:42:18.367 SCREEN safari-2 (w1736) 96,60 1324×374
+04:42:18.405 SCREEN chrome-2 (w1739) 0,212 1200×612
+04:42:18.429 MACOS pid 20277 AXResized w1739 AXWindow/AXStandardWindow 44 75 1200 747
+04:42:18.429 MACOS pid 20277 AXMoved w1739 AXWindow/AXStandardWindow 44 75 1200 747
+04:42:18.430 MACOS pid 20277 AXResized w1739 AXWindow/AXStandardWindow 44 75 1200 747
+04:42:18.435 SCREEN chrome-2 (w1739) 44,75 1200×747
+04:42:18.458 SCREEN edge-2 (w1754) 44,75 1200×612
+04:42:18.519 MACOS pid 21136 AXResized w1754 AXWindow/AXStandardWindow 44 75 1200 612
+04:42:18.525 MACOS pid 21136 AXMoved w1754 AXWindow/AXStandardWindow 44 75 1200 612
+04:42:18.560 SCREEN edge-2 (w1754) 44,75 1200×747
+04:42:18.562 MACOS pid 21136 AXResized w1754 AXWindow/AXStandardWindow 44 75 1200 747
+04:42:18.574 MACOS pid 26192 AXMoved w1769 AXWindow/AXStandardWindow 40 70 300 190
+04:42:18.575 SCREEN desk-a (w1769) 40,70 300×190
+04:42:18.588 MACOS pid 26209 AXMoved w1771 AXWindow/AXStandardWindow 360 70 300 190
+04:42:18.597 SCREEN desk-b (w1771) 360,70 300×190
+04:42:18.603 MACOS pid 33393 AXResized w1872 AXWindow/AXStandardWindow 165 65 673 439
+04:42:18.604 MACOS pid 33393 AXMoved w1872 AXWindow/AXStandardWindow 165 65 673 439
+04:42:18.637 SCREEN textedit (w1872) 165,65 673×439
+04:42:18.646 SCREEN safari (w1681) 12,43 836×220
+04:42:18.649 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow 12 43 836 220
+04:42:18.672 MACOS pid 20801 AXResized w1699 AXWindow/AXStandardWindow 860 43 728 220
+04:42:18.678 MACOS pid 20801 AXMoved w1699 AXWindow/AXStandardWindow 860 43 728 220
+04:42:18.688 INFO  undo: undid dock w1872 right
+04:42:18.688 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Undid Dock
+04:42:18.696 SCREEN firefox (w1699) 860,43 728×220
+04:42:18.768 SCREEN w1940 of Arbor 848,43 12×220
+04:42:18.768 SCREEN w1939 of Arbor 12,263 1576×12
+04:42:18.768 SCREEN w1949 of Arbor 12,524 1576×12
+04:42:18.768 SCREEN w1941 of Arbor left the screen
+04:42:18.768 SCREEN front to back: w1942 finder edge-2 edge textedit chrome-2 chrome firefox terminal safari safari-2 desk-a desk-b w1940 w1939 w1949
+04:42:18.811 DEBUG stage down
+04:42:18.863 SCREEN w1952 of Arbor 741,731 118×38 (level 6)
+04:42:18.863 SCREEN w1944 of Arbor left the screen
+04:42:19.998 SCREEN -- end 78 act=dock-key settled=quiet:1310 moves=any floating=1687,1702,1736,1739,1754,1769,1771,1872 docked=1681,1699,1721,1731
+04:42:20.447 SCRIPT == 79 view-out
+04:42:20.471 SCREEN w1952 of Arbor left the screen

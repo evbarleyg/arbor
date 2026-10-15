@@ -1,0 +1,56 @@
+106 view-home: presses ⌃⌥0
+expected: {'act': 'view', 'settled': 'quiet:908', 'moves': 'any', 'everything': '1', 'tiles': '', 'keyboard': '1731', 'floating': '1687,1702,1721,1739,1754,1769,1771,1872,2012', 'docked': '1699,1731'}
+ODD rule 3: the last window came to rest 712 ms after the key or the button
+
+04:44:10.983 SCREEN -- begin 106 view-home
+04:44:10.983 SCREEN -- text 106 presses ⌃⌥0
+04:44:11.143 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 11 stand-ins, 0.46 s
+04:44:11.143 DEBUG the stage kept the windows waiting 3 ms: its panel 0, 11 costumes 0 (0 not ready), the desktop 1, going up 2
+04:44:11.150 SCREEN w1944 of Arbor 0,0 1600×900 (level 4)
+04:44:11.170 MACOS pid 20801 AXResized w1699 AXWindow/AXStandardWindow 12 43 782 356
+04:44:11.171 MACOS pid 20801 AXMoved w1699 AXWindow/AXStandardWindow 12 43 782 356
+04:44:11.184 MACOS pid 21899 AXTitleChanged w1731 AXWindow/AXStandardWindow 806 43 779 769
+04:44:11.187 MACOS pid 21899 AXResized w1731 AXWindow/AXStandardWindow 806 43 779 769
+04:44:11.187 MACOS pid 21899 AXMoved w1731 AXWindow/AXStandardWindow 807 44 779 769
+04:44:11.188 MACOS pid 21899 AXMoved w1731 AXWindow/AXStandardWindow 807 44 779 769
+04:44:11.269 SCREEN (nothing was seen for 113 ms)
+04:44:11.269 SCREEN terminal (w1731) 807,44 779×769
+04:44:11.269 SCREEN firefox (w1699) 12,43 782×356
+04:44:11.269 SCREEN chrome (w1687) 22,411 794×414
+04:44:11.272 MACOS pid 20277 AXResized w1687 AXWindow/AXStandardWindow 22 411 794 414
+04:44:11.274 MACOS pid 20277 AXMoved w1687 AXWindow/AXStandardWindow 0 411 794 414
+04:44:11.287 SCREEN chrome (w1687) 0,411 794×414
+04:44:11.319 MACOS pid 21136 AXResized w1702 AXWindow/AXStandardWindow 0 411 794 414
+04:44:11.320 MACOS pid 21136 AXMoved w1702 AXWindow/AXStandardWindow 0 411 794 414
+04:44:11.354 SCREEN edge (w1702) 0,411 794×414
+04:44:11.354 SCREEN chrome-2 (w1739) 44,411 794×414
+04:44:11.368 MACOS pid 20277 AXResized w1739 AXWindow/AXStandardWindow 0 411 794 414
+04:44:11.369 MACOS pid 20277 AXMoved w1739 AXWindow/AXStandardWindow 0 411 794 414
+04:44:11.418 MACOS pid 21136 AXResized w1754 AXWindow/AXStandardWindow 0 411 794 414
+04:44:11.419 MACOS pid 21136 AXMoved w1754 AXWindow/AXStandardWindow 0 411 794 414
+04:44:11.421 MACOS pid 33393 AXMoved w1872 AXWindow/AXStandardWindow 121 411 673 414
+04:44:11.439 SCREEN edge-2 (w1754) 0,411 794×414
+04:44:11.439 SCREEN textedit (w1872) 121,411 673×414
+04:44:11.439 SCREEN chrome-2 (w1739) 0,411 794×414
+04:44:11.470 MACOS pid 48117 AXResized w2012 AXWindow/AXStandardWindow 0 411 794 374
+04:44:11.470 MACOS pid 48117 AXMoved w2012 AXWindow/AXStandardWindow 0 411 794 374
+04:44:11.486 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 11 stand-ins, 0.15 s
+04:44:11.499 INFO  home: showing everything
+04:44:11.502 SCREEN safari (w2012) 0,411 794×374
+04:44:11.525 DEBUG raised w1721, which stays in view
+04:44:11.527 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:44:11.527 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:44:11.567 SCREEN w1942 of Arbor 798,35 797×787
+04:44:11.567 SCREEN w1939 of Arbor 12,399 782×12
+04:44:11.567 SCREEN w1941 of Arbor 794,43 12×770
+04:44:11.567 SCREEN front to back: w1942 terminal finder safari edge-2 edge textedit firefox chrome-2 chrome desk-a desk-b w1939 w1941
+04:44:11.814 DEBUG raised w1721, which stays in view
+04:44:11.816 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:44:11.816 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:44:11.851 DEBUG stage down
+04:44:11.862 SCREEN w1944 of Arbor left the screen
+04:44:12.049 DEBUG raised w1721, which stays in view
+04:44:12.050 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:44:12.052 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:44:12.691 SCREEN -- end 106 act=view settled=quiet:908 moves=any everything=1 tiles= keyboard=1731 floating=1687,1702,1721,1739,1754,1769,1771,1872,2012 docked=1699,1731
+04:44:12.948 SCRIPT == 107 input-last

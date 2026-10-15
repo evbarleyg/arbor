@@ -1,0 +1,35 @@
+50 display-plug: the second display: plug
+expected: {'act': 'display-change', 'settled': 'quiet:359', 'moves': 'any', 'leaves': 'any'}
+FAIL rule 3: terminal (w1065) moved 2 times
+FAIL rule 3: calendar (w1069) moved 2 times
+FAIL rule 3: preview (w1074) moved 2 times
+
+04:34:29.054 SCREEN -- begin 50 display-plug
+04:34:29.054 SCREEN -- text 50 the second display: plug
+04:34:29.266 SCREEN (nothing was seen for 190 ms)
+04:34:29.266 SCREEN preview (w1074) 0,81 708×424
+04:34:29.266 SCREEN terminal (w1065) -863,401 863×499
+04:34:29.266 SCREEN calendar (w1069) 662,299 938×601
+04:34:29.267 MACOS pid 1031 AXMoved w1074 AXWindow/AXStandardWindow 0 81 708 424
+04:34:29.268 MACOS pid 609 AXMoved w1069 AXWindow/AXStandardWindow 662 299 938 601
+04:34:29.602 MACOS pid 1432 AXMoved w1076 AXWindow/AXStandardWindow 728 31 872 791
+04:34:29.603 MACOS pid 99611 AXMoved w1065 AXWindow/AXStandardWindow -863 401 863 499
+04:34:29.603 MACOS pid 1432 AXMoved w1076 AXWindow/AXStandardWindow 728 31 872 791
+04:34:29.604 MACOS pid 99611 AXMoved w1065 AXWindow/AXStandardWindow -863 401 863 499
+04:34:29.609 SCREEN (nothing was seen for 343 ms)
+04:34:30.017 SCREEN (nothing was seen for 160 ms)
+04:34:30.017 SCREEN preview (w1074) -63,81 708×424
+04:34:30.017 SCREEN terminal (w1065) 2017,401 863×499
+04:34:30.017 SCREEN calendar (w1069) 1273,321 938×601
+04:34:30.018 MACOS pid 99611 AXMoved w1065 AXWindow/AXStandardWindow 2017 401 863 499
+04:34:30.019 MACOS pid 1031 AXMoved w1074 AXWindow/AXStandardWindow -63 81 708 424
+04:34:30.019 MACOS pid 609 AXMoved w1069 AXWindow/AXStandardWindow 1273 321 938 601
+04:34:30.020 MACOS pid 99611 AXMoved w1065 AXWindow/AXStandardWindow 2017 401 863 499
+04:34:30.036 MACOS pid 1432 AXMoved w1076 AXWindow/AXStandardWindow 728 32 872 791
+04:34:30.046 MACOS pid 1432 AXMoved w1076 AXWindow/AXStandardWindow 728 31 872 791
+04:34:30.099 SCREEN calendar (w1069) 2553,221 938×601
+04:34:30.112 MACOS pid 609 AXMoved w1069 AXWindow/AXStandardWindow 2553 221 938 601
+04:34:30.112 MACOS pid 609 AXMoved w1069 AXWindow/AXStandardWindow 2553 221 938 601
+04:34:30.261 SCREEN (nothing was seen for 120 ms)
+04:34:35.761 SCREEN -- end 50 act=display-change settled=quiet:359 moves=any leaves=any
+04:34:36.144 SCRIPT == 51 dock-icon-safari

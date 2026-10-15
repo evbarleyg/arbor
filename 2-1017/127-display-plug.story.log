@@ -1,0 +1,42 @@
+127 display-plug: the second display: plug
+expected: {'act': 'display-change', 'settled': 'quiet:428', 'moves': 'any', 'leaves': 'any', 'floating': '218,221,230,235,236,237,240,242,245,266,268', 'docked': ''}
+FAIL rule 3: textedit (w230) moved 2 times
+FAIL rule 3: terminal (w235) moved 2 times
+
+04:27:38.035 SCREEN -- begin 127 display-plug
+04:27:38.035 SCREEN -- text 127 the second display: plug
+04:27:38.229 SCREEN (nothing was seen for 212 ms)
+04:27:38.229 SCREEN calendar (w237) 1273,300 937×600
+04:27:38.229 SCREEN terminal (w235) 1450,438 247×379
+04:27:38.229 SCREEN textedit (w230) 165,65 656×422
+04:27:38.319 SCREEN w248 of Mail 1408,453 470×416
+04:27:38.319 SCREEN mail (w245) 855,278 1576×767
+04:27:38.510 SCREEN (nothing was seen for 190 ms)
+04:27:38.586 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 855 278 1576 767
+04:27:38.587 MACOS pid 60524 AXMoved w235 AXWindow/AXStandardWindow 1450 438 247 379
+04:27:38.587 MACOS pid 60670 AXMoved w237 AXWindow/AXStandardWindow 1273 300 937 600
+04:27:38.588 MACOS pid 61177 AXResized w242 AXWindow/AXStandardWindow 0 31 801 791
+04:27:38.589 MACOS pid 60155 AXMoved w230 AXWindow/AXStandardWindow 165 65 656 422
+04:27:38.590 MACOS pid 61236 AXResized w245 AXWindow/AXStandardWindow 855 278 1576 767
+04:27:38.591 MACOS pid 60524 AXTitleChanged w235 AXWindow/AXStandardWindow 1450 438 247 379
+04:27:38.592 MACOS pid 60670 AXMoved w237 AXWindow/AXStandardWindow 1273 300 937 600
+04:27:38.594 MACOS pid 61177 AXResized w242 AXWindow/AXStandardWindow 0 31 801 791
+04:27:38.594 MACOS pid 60155 AXResized w230 AXWindow/AXStandardWindow 165 65 656 422
+04:27:38.595 MACOS pid 60524 AXResized w235 AXWindow/AXStandardWindow 1450 438 247 379
+04:27:38.650 SCREEN w711 of Arbor 465,728 175×38 (level 6)
+04:27:38.933 SCREEN w711 of Arbor left the screen
+04:27:40.176 INFO  displays changed: 2 display(s), 0 remembered
+04:27:40.177 DEBUG w242 has the keyboard
+04:27:40.186 MACOS pid 60155 AXResized w230 AXWindow/AXStandardWindow 165 65 673 439
+04:27:40.197 SCREEN terminal (w235) 1450,438 800×379
+04:27:40.197 SCREEN textedit (w230) 165,65 673×439
+04:27:40.206 MACOS pid 60524 AXTitleChanged w235 AXWindow/AXStandardWindow 800 35 800 784
+04:27:40.206 MACOS pid 60524 AXResized w235 AXWindow/AXStandardWindow 800 35 800 784
+04:27:40.207 MACOS pid 60524 AXMoved w235 AXWindow/AXStandardWindow 800 35 800 784
+04:27:40.207 MACOS pid 60524 AXTitleChanged w235 AXWindow/AXStandardWindow 800 35 800 784
+04:27:40.208 MACOS pid 60524 AXResized w235 AXWindow/AXStandardWindow 800 35 800 784
+04:27:40.220 SCREEN terminal (w235) 800,35 800×784
+04:27:40.255 DEBUG got ready the stage of 27B00DA5-8EBF-4AC8-8F9A-BA4837DA99D4 in 8 ms, the desktop 1 of them
+04:27:45.928 SCREEN -- end 127 act=display-change settled=quiet:428 moves=any leaves=any floating=218,221,230,235,236,237,240,242,245,266,268 docked=
+04:27:46.107 SCREEN (nothing was seen for 112 ms)
+04:27:46.536 SCRIPT == 128 view-home

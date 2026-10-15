@@ -1,0 +1,17 @@
+21 display-plug: the second display: plug
+expected: {'act': 'display-change', 'settled': 'quiet:363', 'moves': 'any', 'leaves': 'any'}
+FAIL rule 3: terminal (w1065) moved 2 times
+
+04:31:43.330 SCREEN -- begin 21 display-plug
+04:31:43.330 SCREEN -- text 21 the second display: plug
+04:31:43.360 SCREEN terminal (w1065) -863,401 863×499
+04:31:43.598 MACOS pid 99611 AXMoved w1065 AXWindow/AXStandardWindow -863 401 863 499
+04:31:43.606 MACOS pid 99611 AXMoved w1065 AXWindow/AXStandardWindow -863 401 863 499
+04:31:43.609 SCREEN (nothing was seen for 249 ms)
+04:31:43.877 SCREEN (nothing was seen for 223 ms)
+04:31:44.205 SCREEN (nothing was seen for 135 ms)
+04:31:44.205 SCREEN terminal (w1065) 2017,401 863×499
+04:31:44.206 MACOS pid 99611 AXMoved w1065 AXWindow/AXStandardWindow 2017 401 863 499
+04:31:44.206 MACOS pid 99611 AXMoved w1065 AXWindow/AXStandardWindow 2017 401 863 499
+04:31:49.970 SCREEN -- end 21 act=display-change settled=quiet:363 moves=any leaves=any
+04:31:50.466 SCRIPT == 22 click-terminal

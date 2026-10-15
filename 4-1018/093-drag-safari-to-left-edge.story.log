@@ -1,0 +1,180 @@
+93 drag-safari-to-left-edge: drags safari by its title bar against the left edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:395', 'drags': '1681', 'moves': '1699,1731,1699,1731,', 'front': '1681', 'own': '1681', 'floating': '1681,1687,1702,1721,1736,1739,1754,1769,1771,1872', 'docked': '1699,1731'}
+ODD rule 3: safari (w1681) changed its size while it was being dragged
+
+04:43:29.985 SCREEN -- begin 93 drag-safari-to-left-edge
+04:43:29.985 SCREEN -- text 93 drags safari by its title bar against the left edge of the screen and lets go
+04:43:30.061 SCRIPT drag w1681 from 251,423 to 0,450
+04:43:30.745 SCREEN front to back: safari w1942 finder safari-2 chrome-2 chrome textedit edge-2 edge firefox terminal desk-a desk-b w1939 w1941
+04:43:30.745 SCREEN the button is down 251 423
+04:43:30.755 DEBUG raised w1721, which stays in view
+04:43:30.757 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:30.764 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:30.775 SCREEN front to back: safari finder w1942 safari-2 chrome-2 chrome textedit edge-2 edge firefox terminal desk-a desk-b w1939 w1941
+04:43:30.972 SCREEN safari (w1681) -10,411 795×414
+04:43:31.032 DEBUG w1681 is being dragged
+04:43:31.033 DEBUG drag of w1681: on float
+04:43:31.037 SCREEN safari (w1681) -18,413 795×414
+04:43:31.037 DEBUG raised w1721, which stays in view
+04:43:31.037 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:31.037 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:31.075 SCREEN safari (w1681) -18,413 783×411
+04:43:31.088 SCREEN safari (w1681) -15,412 783×411
+04:43:31.128 SCREEN safari (w1681) 25,412 652×377
+04:43:31.139 SCREEN safari (w1681) 17,413 652×377
+04:43:31.192 SCREEN safari (w1681) 26,414 594×362
+04:43:31.250 SCREEN safari (w1681) 30,414 581×358
+04:43:31.250 SCREEN w1942 of Arbor left the screen
+04:43:31.250 SCREEN front to back: safari finder safari-2 chrome-2 chrome textedit edge-2 edge firefox terminal desk-a desk-b w1939 w1941
+04:43:31.258 SCREEN safari (w1681) 22,415 581×358
+04:43:31.258 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow -18 413 602 364
+04:43:31.275 MACOS pid 20042 AXMoved w1681 AXWindow/AXStandardWindow 15 414 577 357
+04:43:31.279 SCREEN safari (w1681) 22,415 579×358
+04:43:31.304 SCREEN safari (w1681) 23,415 576×357
+04:43:31.304 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow 15 414 576 357
+04:43:31.305 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow 15 414 576 357
+04:43:31.307 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow 15 414 576 357
+04:43:31.308 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow 15 414 576 357
+04:43:31.308 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow 15 414 576 357
+04:43:31.324 DEBUG raised w1721, which stays in view
+04:43:31.324 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow 15 414 575 357
+04:43:31.324 MACOS pid 20042 AXMoved w1681 AXWindow/AXStandardWindow 15 414 575 357
+04:43:31.326 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:31.328 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow 15 414 575 357
+04:43:31.331 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:31.333 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow 15 414 575 357
+04:43:31.333 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow 15 414 575 357
+04:43:31.334 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow 15 414 575 357
+04:43:31.334 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow 15 414 575 357
+04:43:31.335 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow 15 414 575 357
+04:43:31.335 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow 15 414 575 357
+04:43:31.346 SCREEN safari (w1681) 15,416 575×357
+04:43:31.360 MACOS pid 20042 AXMoved w1681 AXWindow/AXStandardWindow 15 416 575 357
+04:43:31.441 SCREEN safari (w1681) 7,417 575×357
+04:43:31.484 SCREEN safari (w1681) -1,418 575×357
+04:43:31.535 MACOS pid 20042 AXMoved w1681 AXWindow/AXStandardWindow -1 418 575 357
+04:43:31.572 DEBUG raised w1721, which stays in view
+04:43:31.581 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:31.582 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:31.594 SCREEN safari (w1681) -10,419 575×357
+04:43:31.645 SCREEN safari (w1681) -18,420 575×357
+04:43:31.656 MACOS pid 20042 AXMoved w1681 AXWindow/AXStandardWindow -18 420 575 357
+04:43:31.734 SCREEN safari (w1681) -27,420 575×357
+04:43:31.783 SCREEN safari (w1681) -35,421 575×357
+04:43:31.827 MACOS pid 20042 AXMoved w1681 AXWindow/AXStandardWindow -35 421 575 357
+04:43:31.844 SCREEN safari (w1681) -43,422 575×357
+04:43:31.855 DEBUG raised w1721, which stays in view
+04:43:31.858 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:31.859 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:31.886 SCREEN safari (w1681) -52,423 575×357
+04:43:31.944 SCREEN safari (w1681) -60,424 575×357
+04:43:31.951 MACOS pid 20042 AXMoved w1681 AXWindow/AXStandardWindow -60 424 575 357
+04:43:32.001 SCREEN safari (w1681) -68,425 575×357
+04:43:32.069 SCREEN safari (w1681) -77,426 575×357
+04:43:32.074 MACOS pid 20042 AXMoved w1681 AXWindow/AXStandardWindow -77 426 575 357
+04:43:32.128 SCREEN safari (w1681) -85,427 575×357
+04:43:32.136 DEBUG raised w1721, which stays in view
+04:43:32.137 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:32.138 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:32.173 SCREEN safari (w1681) -94,428 575×357
+04:43:32.235 MACOS pid 20042 AXMoved w1681 AXWindow/AXStandardWindow -94 428 575 357
+04:43:32.288 SCREEN safari (w1681) -102,429 575×357
+04:43:32.335 SCREEN safari (w1681) -110,429 575×357
+04:43:32.358 MACOS pid 20042 AXMoved w1681 AXWindow/AXStandardWindow -110 429 575 357
+04:43:32.400 SCREEN safari (w1681) -119,430 575×357
+04:43:32.402 DEBUG raised w1721, which stays in view
+04:43:32.414 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:32.415 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:32.450 SCREEN safari (w1681) -127,431 575×357
+04:43:32.511 MACOS pid 20042 AXMoved w1681 AXWindow/AXStandardWindow -127 431 575 357
+04:43:32.541 SCREEN safari (w1681) -135,432 575×357
+04:43:32.608 SCREEN safari (w1681) -144,433 575×357
+04:43:32.626 DEBUG raised w1721, which stays in view
+04:43:32.636 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:32.638 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:32.651 MACOS pid 20042 AXMoved w1681 AXWindow/AXStandardWindow -144 433 575 357
+04:43:32.659 SCREEN safari (w1681) -152,434 575×357
+04:43:32.735 SCREEN safari (w1681) -160,435 575×357
+04:43:32.752 MACOS pid 20042 AXMoved w1681 AXWindow/AXStandardWindow -160 435 575 357
+04:43:32.800 SCREEN safari (w1681) -169,436 575×357
+04:43:32.820 DEBUG drag of w1681: on float, left to macOS’s tiling
+04:43:32.833 SCREEN w1994 of WindowManager -15,16 830×824
+04:43:32.833 SCREEN safari (w1681) -177,437 575×357
+04:43:32.833 SCREEN w1993 of WindowManager -15,16 830×824
+04:43:32.833 SCREEN front to back: w1994 safari w1993 finder safari-2 chrome-2 chrome textedit edge-2 edge firefox terminal desk-a desk-b w1939 w1941
+04:43:32.855 DEBUG raised w1721, which stays in view
+04:43:32.866 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:32.867 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:32.874 MACOS pid 20042 AXMoved w1681 AXWindow/AXStandardWindow -177 437 575 357
+04:43:33.118 DEBUG raised w1721, which stays in view
+04:43:33.119 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:33.130 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:33.131 DEBUG drag of w1681: on float
+04:43:33.167 SCREEN safari (w1681) -176,437 575×357
+04:43:33.223 DEBUG drag of w1681: on float, left to macOS’s tiling
+04:43:33.223 MACOS pid 20042 AXMoved w1681 AXWindow/AXStandardWindow -176 437 575 357
+04:43:33.226 SCREEN safari (w1681) -177,437 575×357
+04:43:33.337 MACOS pid 20042 AXMoved w1681 AXWindow/AXStandardWindow -177 437 575 357
+04:43:33.379 DEBUG raised w1721, which stays in view
+04:43:33.397 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:33.398 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:33.648 DEBUG raised w1721, which stays in view
+04:43:33.651 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:33.652 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:33.901 DEBUG raised w1721, which stays in view
+04:43:33.904 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:33.905 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:34.161 DEBUG raised w1721, which stays in view
+04:43:34.172 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:34.174 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:34.412 DEBUG raised w1721, which stays in view
+04:43:34.418 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:34.420 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:34.669 DEBUG raised w1721, which stays in view
+04:43:34.674 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:34.675 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:34.758 INFO  dropped w1681 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5, left to macOS’s tiling
+04:43:34.788 SCREEN safari (w1681) -177,437 576×358
+04:43:34.788 SCREEN w1993 of WindowManager left the screen
+04:43:34.788 SCREEN w1994 of WindowManager left the screen
+04:43:34.788 SCREEN front to back: safari finder safari-2 chrome-2 chrome textedit edge-2 edge firefox terminal desk-a desk-b w1939 w1941
+04:43:34.788 SCREEN the button is up 0 450
+04:43:34.791 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow -163 405 593 392
+04:43:34.792 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow -163 405 593 392
+04:43:34.795 SCREEN w1942 of Arbor -183,428 590×375
+04:43:34.795 SCREEN safari (w1681) -163,405 593×392
+04:43:34.795 SCREEN front to back: w1942 safari finder safari-2 chrome-2 chrome textedit edge-2 edge firefox terminal desk-a desk-b w1939 w1941
+04:43:34.829 SCREEN safari (w1681) -136,341 629×461
+04:43:34.896 SCREEN safari (w1681) -53,151 734×665
+04:43:34.953 DEBUG raised w1721, which stays in view
+04:43:34.954 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow -53 151 774 743
+04:43:34.955 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow -9 52 789 772
+04:43:34.956 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:34.957 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow -9 52 789 772
+04:43:34.958 SCREEN w1942 of Arbor -169,396 608×410
+04:43:34.958 SCREEN safari (w1681) -21,79 774×743
+04:43:34.958 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:34.969 SCREEN w1942 of Arbor -15,43 804×788
+04:43:34.969 SCREEN safari (w1681) -9,52 789×772
+04:43:34.991 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow -9 52 789 772
+04:43:35.029 SCREEN safari (w1681) -4,38 797×787
+04:43:35.069 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow -1 32 800 793
+04:43:35.070 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow -1 32 800 793
+04:43:35.071 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow -1 32 800 793
+04:43:35.073 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow -1 32 800 793
+04:43:35.074 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow -1 32 800 793
+04:43:35.074 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow -1 32 800 793
+04:43:35.104 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow -1 31 800 794
+04:43:35.105 SCREEN w1942 of Arbor -7,25 815×806
+04:43:35.105 SCREEN safari (w1681) -1,32 800×793
+04:43:35.115 SCREEN safari (w1681) -1,31 800×794
+04:43:35.279 DEBUG raised w1721, which stays in view
+04:43:35.280 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:35.283 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:35.285 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: macOS tiled this window; Arbor stood aside · ⌃⌥⌘← docks it · Check Setup… in the menu
+04:43:35.362 SCREEN w1952 of Arbor 465,731 670×38 (level 6)
+04:43:35.490 DEBUG raised w1721, which stays in view
+04:43:35.491 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:35.492 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:43:38.573 SCREEN -- end 93 act=drag-where-macos-tiles settled=quiet:395 drags=1681 moves=1699,1731,1699,1731, front=1681 own=1681 floating=1681,1687,1702,1721,1736,1739,1754,1769,1771,1872 docked=1699,1731
+04:43:38.799 SCRIPT == 94 dock-icon-firefox

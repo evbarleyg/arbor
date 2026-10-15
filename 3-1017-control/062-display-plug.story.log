@@ -1,0 +1,22 @@
+62 display-plug: the second display: plug
+expected: {'act': 'display-change', 'settled': 'quiet:400', 'moves': 'any', 'leaves': 'any'}
+FAIL rule 3: terminal (w1065) moved 2 times
+
+04:35:09.913 SCREEN -- begin 62 display-plug
+04:35:09.913 SCREEN -- text 62 the second display: plug
+04:35:10.026 SCREEN terminal (w1065) 3370,618 863×499
+04:35:10.026 SCREEN calendar (w1069) 3193,501 938×601
+04:35:10.452 SCREEN (nothing was seen for 426 ms)
+04:35:10.452 SCREEN terminal (w1065) 1600,438 863×499
+04:35:10.974 MACOS pid 1031 AXMoved w1074 AXWindow/AXStandardWindow 0 31 727 791
+04:35:10.975 MACOS pid 1031 AXMoved w1074 AXWindow/AXStandardWindow 0 31 727 791
+04:35:11.021 MACOS pid 1432 AXMoved w1076 AXWindow/AXStandardWindow 728 31 872 791
+04:35:11.022 MACOS pid 99611 AXMoved w1065 AXWindow/AXStandardWindow 1600 438 863 499
+04:35:11.024 MACOS pid 609 AXMoved w1069 AXWindow/AXStandardWindow 3193 501 938 601
+04:35:11.027 MACOS pid 1031 AXMoved w1074 AXWindow/AXStandardWindow 0 31 727 791
+04:35:11.028 MACOS pid 1432 AXMoved w1076 AXWindow/AXStandardWindow 728 31 872 791
+04:35:11.028 MACOS pid 609 AXMoved w1069 AXWindow/AXStandardWindow 3193 501 938 601
+04:35:11.099 SCREEN (nothing was seen for 647 ms)
+04:35:11.401 SCREEN (nothing was seen for 102 ms)
+04:35:17.098 SCREEN -- end 62 act=display-change settled=quiet:400 moves=any leaves=any
+04:35:17.875 SCRIPT == 63 dock-icon-settings

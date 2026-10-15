@@ -1,0 +1,12 @@
+18 display-unplug: the second display: unplug
+expected: {'act': 'display-change', 'settled': 'quiet:369', 'moves': 'any', 'leaves': 'any'}
+FAIL rule 3: terminal (w1065) moved 2 times
+
+04:31:29.908 SCREEN -- begin 18 display-unplug
+04:31:29.908 SCREEN -- text 18 the second display: unplug
+04:31:29.969 SCREEN terminal (w1065) -150,302 863×499
+04:31:30.470 MACOS pid 99611 AXMoved w1065 AXWindow/AXStandardWindow 737 401 863 499
+04:31:30.580 SCREEN (nothing was seen for 611 ms)
+04:31:30.580 SCREEN terminal (w1065) 737,401 863×499
+04:31:33.199 SCREEN -- end 18 act=display-change settled=quiet:369 moves=any leaves=any
+04:31:33.657 SCRIPT == 19 display-plug

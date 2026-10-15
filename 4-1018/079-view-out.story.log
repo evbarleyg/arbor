@@ -1,0 +1,29 @@
+79 view-out: presses ⌃⌥↑
+expected: {'act': 'view', 'settled': 'quiet:833', 'moves': 'any', 'floating': '1687,1702,1736,1739,1754,1769,1771,1872', 'docked': '1681,1699,1721,1731'}
+ODD rule 3: the last window came to rest 728 ms after the key or the button
+
+04:42:20.475 SCREEN -- begin 79 view-out
+04:42:20.475 SCREEN -- text 79 presses ⌃⌥↑
+04:42:20.714 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 12 stand-ins, 0.46 s
+04:42:20.714 DEBUG the stage kept the windows waiting 6 ms: its panel 0, 12 costumes 0 (0 not ready), the desktop 4, going up 2
+04:42:20.718 SCREEN w1944 of Arbor 0,0 1600×900 (level 4)
+04:42:20.791 SCREEN safari (w1681) 12,43 574×220
+04:42:20.792 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow 12 43 574 220
+04:42:20.822 MACOS pid 20801 AXResized w1699 AXWindow/AXStandardWindow 598 43 500 220
+04:42:20.823 MACOS pid 20801 AXMoved w1699 AXWindow/AXStandardWindow 598 43 500 220
+04:42:20.844 SCREEN firefox (w1699) 598,43 500×220
+04:42:20.884 MACOS pid 19221 AXResized w1721 AXWindow/AXStandardWindow 12 536 1086 277
+04:42:20.894 SCREEN finder (w1721) 12,536 1086×277
+04:42:20.904 MACOS pid 21899 AXMoved w1731 AXWindow/AXStandardWindow 1110 43 478 769
+04:42:20.912 SCREEN terminal (w1731) 1110,43 478×769
+04:42:20.921 INFO  out: stepped out to everything
+04:42:20.935 SCREEN w1942 of Arbor 3,527 1104×295
+04:42:20.935 SCREEN w1940 of Arbor 586,43 12×220
+04:42:20.935 SCREEN w1939 of Arbor 12,263 1086×12
+04:42:20.935 SCREEN w1949 of Arbor 12,524 1086×12
+04:42:20.935 SCREEN w1941 of Arbor 1098,43 12×770
+04:42:20.935 SCREEN front to back: w1942 finder edge-2 edge textedit chrome-2 chrome firefox terminal safari safari-2 desk-a desk-b w1940 w1939 w1949 w1941
+04:42:21.399 DEBUG stage down
+04:42:21.446 SCREEN w1944 of Arbor left the screen
+04:42:22.088 SCREEN -- end 79 act=view settled=quiet:833 moves=any floating=1687,1702,1736,1739,1754,1769,1771,1872 docked=1681,1699,1721,1731
+04:42:22.401 SCRIPT == 80 dock-icon-textedit

@@ -1,0 +1,39 @@
+59 restore-notes: clicks notes's icon in the Dock, which brings its minimized window back
+expected: {'act': 'open-close', 'settled': 'quiet:1038', 'moves': ',,', 'comes': '1066', 'front': '1066'}
+FAIL rule 2: mail (w1076) moved and came back, and the step did not name it
+ODD rule 2: w1078 of Mail moved along with a window of its app
+
+04:34:55.731 SCREEN -- begin 59 restore-notes
+04:34:55.731 SCREEN -- text 59 clicks notes's icon in the Dock, which brings its minimized window back
+04:34:56.260 SCREEN the button is down 722 855
+04:34:56.415 SCREEN (nothing was seen for 120 ms)
+04:34:56.415 SCREEN the button is up 722 855
+04:34:56.415 SCREEN in front: process 99995 com.apple.Notes
+04:34:56.423 MACOS workspace didActivate pid 99995 com.apple.Notes regular
+04:34:56.424 MACOS workspace didDeactivate pid 97965 com.apple.finder regular
+04:34:56.424 MACOS pid 97965 AXApplicationDeactivated
+04:34:56.466 SCREEN notes (w1066) 1447,834 48×38
+04:34:56.466 SCREEN front to back: notes finder safari preview terminal calendar w1078 mail settings desk-a desk-b textedit
+04:34:56.489 SCREEN notes (w1066) 1447,827 48×45
+04:34:56.514 SCREEN notes (w1066) 1440,793 55×79
+04:34:56.554 SCREEN notes (w1066) 1368,702 132×170
+04:34:56.572 SCREEN notes (w1066) 1331,673 172×199
+04:34:56.620 SCREEN notes (w1066) 898,446 632×426
+04:34:56.642 SCREEN notes (w1066) 832,413 703×459
+04:34:56.659 SCREEN notes (w1066) 717,349 825×523
+04:34:56.676 SCREEN notes (w1066) 633,291 914×581
+04:34:56.711 SCREEN notes (w1066) 584,242 966×630
+04:34:56.728 SCREEN notes (w1066) 553,176 999×661
+04:34:56.755 SCREEN notes (w1066) 552,162 1000×661
+04:34:56.811 SCREEN notes (w1066) 552,161 1000×660
+04:34:56.999 MACOS pid 99995 AXApplicationActivated
+04:34:57.003 MACOS pid 99995 AXFocusedWindowChanged w1066 AXWindow/AXStandardWindow 552 161 1000 660
+04:34:57.004 MACOS pid 99995 AXMainWindowChanged w1066 AXWindow/AXStandardWindow 552 161 1000 660
+04:34:57.169 SCREEN (nothing was seen for 219 ms)
+04:34:57.224 MACOS pid 99995 AXWindowDeminiaturized w1066 AXWindow/AXStandardWindow 552 161 1000 660
+04:34:57.235 MACOS pid 99995 AXWindowCreated w1066 AXWindow/AXStandardWindow 552 161 1000 660
+04:34:57.283 MACOS pid 1432 AXResized w1076 AXWindow/AXStandardWindow 728 31 872 791
+04:34:57.284 SCREEN w1078 of Mail 929,218 470×416
+04:34:57.284 SCREEN mail (w1076) 728,31 872×791
+04:34:58.328 SCREEN -- end 59 act=open-close settled=quiet:1038 moves=,, comes=1066 front=1066
+04:34:58.979 SCRIPT == 60 drag-preview-to-left-edge

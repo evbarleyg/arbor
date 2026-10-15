@@ -1,0 +1,23 @@
+47 display-plug: the second display: plug
+expected: {'act': 'display-change', 'settled': 'quiet:357', 'moves': 'any', 'leaves': 'any'}
+FAIL rule 3: calendar (w1069) went 946 points out of its way before it ended up
+
+04:34:12.740 SCREEN -- begin 47 display-plug
+04:34:12.740 SCREEN -- text 47 the second display: plug
+04:34:12.806 SCREEN terminal (w1065) 1600,438 863×499
+04:34:13.291 MACOS pid 1031 AXMoved w1074 AXWindow/AXStandardWindow 0 81 708 424
+04:34:13.337 SCREEN (nothing was seen for 530 ms)
+04:34:13.337 SCREEN preview (w1074) 0,81 708×424
+04:34:13.337 SCREEN calendar (w1069) 1273,321 938×601
+04:34:13.450 MACOS pid 1432 AXMoved w1076 AXWindow/AXStandardWindow 728 31 872 791
+04:34:13.452 MACOS pid 99611 AXMoved w1065 AXWindow/AXStandardWindow 1600 438 863 499
+04:34:13.477 SCREEN (nothing was seen for 140 ms)
+04:34:13.477 SCREEN calendar (w1069) 799,31 801×791
+04:34:13.486 MACOS pid 609 AXMoved w1069 AXWindow/AXStandardWindow 799 31 801 791
+04:34:13.486 MACOS pid 1432 AXMoved w1076 AXWindow/AXStandardWindow 728 31 872 791
+04:34:13.487 MACOS pid 609 AXResized w1069 AXWindow/AXStandardWindow 799 31 801 791
+04:34:13.487 MACOS pid 609 AXResized w1069 AXWindow/AXStandardWindow 799 31 801 791
+04:34:18.324 SCREEN (nothing was seen for 182 ms)
+04:34:19.251 SCREEN -- end 47 act=display-change settled=quiet:357 moves=any leaves=any
+04:34:19.496 SCREEN (nothing was seen for 114 ms)
+04:34:20.107 SCRIPT == 48 drag-safari-by

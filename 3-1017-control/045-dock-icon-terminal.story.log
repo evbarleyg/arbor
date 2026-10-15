@@ -1,0 +1,17 @@
+45 dock-icon-terminal: clicks terminal's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:364', 'front': '1065'}
+FAIL rule 4: terminal (w1065) is not wholly in view: 13% of it, at 1450,438 863×499 in 0,31 1600×791
+
+04:34:04.068 SCREEN -- begin 45 dock-icon-terminal
+04:34:04.068 SCREEN -- text 45 clicks terminal's icon in the Dock
+04:34:04.776 SCREEN the button is down 1218 854
+04:34:04.951 SCREEN (nothing was seen for 126 ms)
+04:34:04.951 SCREEN front to back: terminal calendar safari w1078 mail finder notes settings desk-a desk-b textedit preview
+04:34:04.951 SCREEN the button is up 1218 854
+04:34:04.954 SCREEN in front: process 99611 com.apple.Terminal
+04:34:04.955 MACOS pid 609 AXApplicationDeactivated
+04:34:04.962 MACOS workspace didActivate pid 99611 com.apple.Terminal regular
+04:34:04.962 MACOS workspace didDeactivate pid 609 com.apple.iCal regular
+04:34:04.967 MACOS pid 99611 AXApplicationActivated
+04:34:05.970 SCREEN -- end 45 act=switch settled=quiet:364 front=1065
+04:34:06.383 SCRIPT == 46 drag-preview-by

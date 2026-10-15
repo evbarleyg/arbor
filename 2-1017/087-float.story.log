@@ -1,0 +1,25 @@
+87 float: presses ⌃⌥F
+expected: {'act': 'dock-key', 'settled': 'quiet:842', 'moves': '218,221,230,235,236,237,240,242,266,268,218,230,235,236,237,240,242,266,268,', 'front': '221', 'restores': '221', 'floating': '221,245', 'docked': '218,230,235,236,237,240,242,266,268'}
+FAIL rule 2: mail (w245) a floating window, moved, and the step did not name it
+ODD rule 2: w248 of Mail moved along with a window of its app
+
+04:25:21.130 SCREEN -- begin 87 float
+04:25:21.130 SCREEN -- text 87 presses ⌃⌥F
+04:25:21.418 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 8 stand-ins, 0.46 s
+04:25:21.419 DEBUG the stage kept the windows waiting 17 ms: its panel 0, 8 costumes 0 (0 not ready), the desktop 13, going up 3
+04:25:21.469 SCREEN w701 of Arbor 0,0 1600×900 (level 4)
+04:25:21.549 SCREEN safari (w221) 138,31 1324×778
+04:25:21.573 MACOS pid 59949 AXResized w221 AXWindow/AXStandardWindow 138 31 1324 790
+04:25:21.574 MACOS pid 59949 AXMoved w221 AXWindow/AXStandardWindow 138 31 1324 790
+04:25:21.574 MACOS pid 59949 AXResized w221 AXWindow/AXStandardWindow 138 31 1324 790
+04:25:21.612 SCREEN safari (w221) 138,31 1324×790
+04:25:21.644 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 728 31 872 791
+04:25:21.646 SCREEN w248 of Mail 929,218 470×416
+04:25:21.646 SCREEN mail (w245) 728,31 872×791
+04:25:21.652 INFO  toggle-float: w221 is floating; showing the Desktop
+04:25:21.670 SCREEN w704 of Arbor 129,25 1342×803
+04:25:21.860 SCREEN w700 of Arbor left the screen
+04:25:22.096 DEBUG stage down
+04:25:22.111 SCREEN w701 of Arbor left the screen
+04:25:22.937 SCREEN -- end 87 act=dock-key settled=quiet:842 moves=218,221,230,235,236,237,240,242,266,268,218,230,235,236,237,240,242,266,268, front=221 restores=221 floating=221,245 docked=218,230,235,236,237,240,242,266,268
+04:25:23.988 SCRIPT == 88 view-frame

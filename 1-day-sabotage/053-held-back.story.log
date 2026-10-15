@@ -1,0 +1,10 @@
+53 held-back: OFFENCE: the button comes up, and an event tap keeps that from the apps for a fifth of a second
+expected: {'act': 'switch', 'settled': 'quiet:603', 'front': '46', 'offence': 'input-held', 'floating': '', 'docked': ''}
+FAIL rule 6: the button came up, and the apps heard of it 210 ms later
+
+04:18:01.033 SCREEN -- begin 53 held-back
+04:18:01.033 SCREEN -- text 53 OFFENCE: the button comes up, and an event tap keeps that from the apps for a fifth of a second
+04:18:02.250 SCREEN the button is down 385 91
+04:18:02.497 SCREEN the button is up 385 121
+04:18:03.554 SCREEN -- end 53 act=switch settled=quiet:603 front=46 offence=input-held floating= docked=
+04:18:07.856 SCRIPT == 54 input-started

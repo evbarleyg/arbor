@@ -1,0 +1,137 @@
+62 drag-mail-to-right-edge: drags mail by its title bar against the right edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:362', 'drags': '245', 'moves': '218,221,230,235,236,237,240,242,245,266,268,218,221,230,235,236,237,240,242,266,268,', 'front': '245', 'own': '245', 'floating': '245,607', 'docked': '218,221,230,235,236,237,240,242,266,268'}
+ODD rule 2: w248 of Mail moved along with a window of its app
+FAIL rule 3: w248 of Mail moved 2 times
+
+04:23:32.704 SCREEN -- begin 62 drag-mail-to-right-edge
+04:23:32.704 SCREEN -- text 62 drags mail by its title bar against the right edge of the screen and lets go
+04:23:32.761 SCRIPT drag w245 from 768,55 to 1599,450
+04:23:33.489 SCREEN the button is down 768 55
+04:23:33.493 SCREEN front to back: w248 mail w339 finder-new-60 finder notes terminal settings calendar desk-a desk-b w298 textedit preview safari
+04:23:33.534 MACOS pid 61236 AXFocusedWindowChanged w248 AXSheet/- 565 218 470 416
+04:23:33.542 SCREEN w339 of Arbor left the screen
+04:23:33.542 SCREEN front to back: w248 mail finder-new-60 finder notes terminal settings calendar desk-a desk-b w298 textedit preview safari
+04:23:33.650 DEBUG the press on w245 has moved nothing so far: looking less often
+04:23:33.662 SCREEN w248 of Mail 577,229 470×416
+04:23:33.662 SCREEN mail (w245) 24,54 1576×767
+04:23:33.708 SCREEN w248 of Mail 604,229 470×416
+04:23:33.708 SCREEN mail (w245) 51,54 1576×767
+04:23:33.750 SCREEN w248 of Mail 660,229 470×416
+04:23:33.750 SCREEN mail (w245) 107,54 1576×767
+04:23:33.755 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 107 54 1576 767
+04:23:33.791 SCREEN w248 of Mail 687,229 470×416
+04:23:33.791 SCREEN mail (w245) 134,54 1576×767
+04:23:33.802 DEBUG w245 is being dragged, which began late
+04:23:33.803 DEBUG drag of w245: on none
+04:23:33.895 SCREEN w248 of Mail 715,229 470×416
+04:23:33.895 SCREEN mail (w245) 162,54 1576×767
+04:23:33.903 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 162 54 1576 767
+04:23:33.920 SCREEN w248 of Mail 743,242 470×416
+04:23:33.920 SCREEN mail (w245) 190,67 1576×767
+04:23:34.020 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 217 94 1576 767
+04:23:34.023 SCREEN w248 of Mail 770,269 470×416
+04:23:34.023 SCREEN mail (w245) 217,94 1576×767
+04:23:34.143 SCREEN w248 of Mail 798,282 470×416
+04:23:34.143 SCREEN mail (w245) 245,107 1576×767
+04:23:34.151 SCREEN w248 of Mail 826,295 470×416
+04:23:34.151 SCREEN mail (w245) 273,120 1576×767
+04:23:34.200 SCREEN w248 of Mail 854,308 470×416
+04:23:34.200 SCREEN mail (w245) 301,133 1576×767
+04:23:34.203 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 301 133 1576 767
+04:23:34.287 SCREEN w248 of Mail 881,308 470×416
+04:23:34.287 SCREEN mail (w245) 328,133 1576×767
+04:23:34.359 SCREEN w248 of Mail 909,308 470×416
+04:23:34.359 SCREEN mail (w245) 356,133 1576×767
+04:23:34.386 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 356 133 1576 767
+04:23:34.407 SCREEN w248 of Mail 937,308 470×416
+04:23:34.407 SCREEN mail (w245) 384,133 1576×767
+04:23:34.450 SCREEN w248 of Mail 964,308 470×416
+04:23:34.450 SCREEN mail (w245) 411,133 1576×767
+04:23:34.505 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 411 133 1576 767
+04:23:34.533 SCREEN w248 of Mail 992,308 470×416
+04:23:34.533 SCREEN mail (w245) 439,133 1576×767
+04:23:34.637 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 467 133 1576 767
+04:23:34.666 SCREEN w248 of Mail 1047,308 470×416
+04:23:34.666 SCREEN mail (w245) 494,133 1576×767
+04:23:34.738 SCREEN w248 of Mail 1075,308 470×416
+04:23:34.738 SCREEN mail (w245) 522,133 1576×767
+04:23:34.754 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 522 133 1576 767
+04:23:34.833 SCREEN w248 of Mail 1103,308 470×416
+04:23:34.833 SCREEN mail (w245) 550,133 1576×767
+04:23:34.893 SCREEN w248 of Mail 1131,308 470×416
+04:23:34.893 SCREEN mail (w245) 578,133 1576×767
+04:23:34.935 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 578 133 1576 767
+04:23:35.002 SCREEN w248 of Mail 1158,321 470×416
+04:23:35.002 SCREEN mail (w245) 605,146 1576×767
+04:23:35.056 SCREEN w248 of Mail 1186,347 470×416
+04:23:35.056 SCREEN mail (w245) 633,172 1576×767
+04:23:35.083 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 633 172 1576 767
+04:23:35.107 SCREEN w248 of Mail 1214,360 470×416
+04:23:35.107 SCREEN mail (w245) 661,185 1576×767
+04:23:35.160 SCREEN w248 of Mail 1241,374 470×416
+04:23:35.160 SCREEN mail (w245) 688,199 1576×767
+04:23:35.206 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 688 199 1576 767
+04:23:35.223 SCREEN w248 of Mail 1269,387 470×416
+04:23:35.223 SCREEN mail (w245) 716,212 1576×767
+04:23:35.290 SCREEN w248 of Mail 1297,400 470×416
+04:23:35.290 SCREEN mail (w245) 744,225 1576×767
+04:23:35.322 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 744 225 1576 767
+04:23:35.399 SCREEN w248 of Mail 1324,413 470×416
+04:23:35.399 SCREEN mail (w245) 771,238 1576×767
+04:23:35.479 SCREEN w248 of Mail 1352,426 470×416
+04:23:35.479 SCREEN mail (w245) 799,251 1576×767
+04:23:35.487 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 799 251 1576 767
+04:23:35.549 SCREEN w248 of Mail 1380,439 470×416
+04:23:35.549 SCREEN mail (w245) 827,264 1576×767
+04:23:35.602 DEBUG drag of w245: on float, left to macOS’s tiling
+04:23:35.629 SCREEN w248 of Mail 1408,453 470×416
+04:23:35.629 SCREEN mail (w245) 855,278 1576×767
+04:23:35.651 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 855 278 1576 767
+04:23:35.807 SCREEN w614 of WindowManager 785,16 830×821
+04:23:35.807 SCREEN w613 of WindowManager 785,16 830×821
+04:23:35.807 SCREEN front to back: w614 w248 mail w613 finder-new-60 finder notes terminal settings calendar desk-a desk-b w298 textedit preview safari
+04:23:35.853 DEBUG drag of w245: on float, left to macOS’s tiling
+04:23:35.866 SCREEN w248 of Mail 1409,453 470×416
+04:23:35.866 SCREEN mail (w245) 856,278 1576×767
+04:23:35.965 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 856 278 1576 767
+04:23:35.972 DEBUG drag of w245: on float, left to macOS’s tiling
+04:23:37.399 SCREEN w248 of Mail 1408,453 470×416
+04:23:37.399 SCREEN mail (w245) 855,278 1576×767
+04:23:37.419 SCREEN the button is up 1599 450
+04:23:37.424 INFO  dropped w245 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5, left to macOS’s tiling
+04:23:37.425 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 855 278 1576 767
+04:23:37.483 SCREEN w614 of WindowManager left the screen
+04:23:37.483 SCREEN w613 of WindowManager left the screen
+04:23:37.483 SCREEN front to back: w248 mail finder-new-60 finder notes terminal settings calendar desk-a desk-b w298 textedit preview safari
+04:23:37.508 MACOS pid 61236 AXResized w245 AXWindow/AXStandardWindow 854 277 1576 768
+04:23:37.516 SCREEN w248 of Mail 1407,453 470×416
+04:23:37.516 SCREEN mail (w245) 854,277 1576×768
+04:23:37.522 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 3 stand-ins, 0.46 s
+04:23:37.522 DEBUG the stage kept the windows waiting 10 ms: its panel 0, 3 costumes 0 (0 not ready), the desktop 7, going up 3
+04:23:37.536 MACOS pid 60155 AXResized w230 AXWindow/AXStandardWindow 12 43 1576 352
+04:23:37.536 MACOS pid 60155 AXMoved w230 AXWindow/AXStandardWindow 12 43 1576 352
+04:23:37.551 SCREEN w300 of Arbor 0,0 1600×900 (level 4)
+04:23:37.551 SCREEN textedit (w230) 12,43 1576×352
+04:23:37.553 MACOS pid 60611 AXResized w236 AXWindow/AXStandardWindow 12 407 1576 403
+04:23:37.553 MACOS pid 60611 AXMoved w236 AXWindow/AXStandardWindow 12 407 1576 403
+04:23:37.594 SCREEN w248 of Mail 1090,297 470×416
+04:23:37.594 SCREEN mail (w245) 771,114 1107×783
+04:23:37.594 SCREEN notes (w236) 12,407 1576×403
+04:23:37.666 MACOS pid 61236 AXResized w245 AXWindow/AXStandardWindow 738 50 926 790
+04:23:37.667 MACOS pid 61236 AXResized w245 AXWindow/AXStandardWindow 738 50 926 790
+04:23:37.713 SCREEN w248 of Mail 966,237 470×416
+04:23:37.713 SCREEN mail (w245) 738,50 926×790
+04:23:37.713 SCREEN w330 of Arbor 12,395 1576×12
+04:23:37.713 SCREEN front to back: w248 mail finder-new-60 finder notes terminal settings calendar desk-a desk-b w298 textedit preview safari w330
+04:23:37.787 SCREEN w248 of Mail 935,221 470×416
+04:23:37.787 SCREEN mail (w245) 730,34 879×791
+04:23:37.802 MACOS pid 61236 AXResized w245 AXWindow/AXStandardWindow 729 32 872 791
+04:23:37.803 MACOS pid 61236 AXResized w245 AXWindow/AXStandardWindow 729 32 872 791
+04:23:37.814 SCREEN w248 of Mail 930,219 470×416
+04:23:37.814 SCREEN mail (w245) 729,32 872×791
+04:23:38.186 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: macOS tiled this window; Arbor stood aside · ⌃⌥⌘← docks it · Check Setup… in the menu
+04:23:38.201 DEBUG stage down
+04:23:38.233 SCREEN w341 of Arbor 465,728 670×38 (level 6)
+04:23:38.233 SCREEN w300 of Arbor left the screen
+04:23:41.563 SCREEN -- end 62 act=drag-where-macos-tiles settled=quiet:362 drags=245 moves=218,221,230,235,236,237,240,242,245,266,268,218,221,230,235,236,237,240,242,266,268, front=245 own=245 floating=245,607 docked=218,221,230,235,236,237,240,242,266,268
+04:23:41.940 SCRIPT == 63 display-left

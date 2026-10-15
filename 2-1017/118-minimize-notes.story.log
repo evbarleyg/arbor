@@ -1,0 +1,70 @@
+118 minimize-notes: presses ⌘M
+expected: {'act': 'open-close', 'settled': 'quiet:1501', 'moves': '242,242,', 'leaves': '236', 'floating': '218,221,230,235,236,237,240,245,266,268', 'docked': '242'}
+FAIL rule 2: terminal (w235) a floating window, moved and came back, and the step did not name it
+
+04:27:12.557 SCREEN -- begin 118 minimize-notes
+04:27:12.557 SCREEN -- text 118 presses ⌘M
+04:27:12.697 SCREEN notes (w236) 426,31 1001×390
+04:27:12.748 SCREEN notes (w236) 426,31 1003×390
+04:27:12.760 SCREEN notes (w236) 426,31 1004×390
+04:27:12.779 SCREEN notes (w236) 426,34 1007×391
+04:27:12.796 SCREEN notes (w236) 426,45 1010×391
+04:27:12.808 SCREEN notes (w236) 426,53 1012×391
+04:27:12.849 SCREEN notes (w236) 443,117 1008×391
+04:27:12.861 SCREEN notes (w236) 452,134 1003×391
+04:27:12.892 SCREEN notes (w236) 535,219 936×391
+04:27:12.906 SCREEN notes (w236) 569,243 906×391
+04:27:12.969 SCREEN notes (w236) 864,397 629×391
+04:27:12.976 SCREEN notes (w236) 978,452 516×391
+04:27:12.995 SCREEN notes (w236) 1086,507 408×358
+04:27:13.025 SCREEN notes (w236) 1231,588 264×277
+04:27:13.043 SCREEN notes (w236) 1305,638 190×227
+04:27:13.059 SCREEN notes (w236) 1362,684 133×181
+04:27:13.077 SCREEN notes (w236) 1401,724 94×141
+04:27:13.092 SCREEN notes (w236) 1416,743 79×122
+04:27:13.111 SCREEN notes (w236) 1434,776 61×89
+04:27:13.125 SCREEN notes (w236) 1444,803 51×62
+04:27:13.149 SCREEN notes (w236) 1447,823 48×42
+04:27:13.176 SCREEN notes (w236) 1448,839 47×26
+04:27:13.188 SCREEN notes (w236) 1447,841 48×24
+04:27:13.208 SCREEN notes (w236) left the screen
+04:27:13.208 SCREEN front to back: w704 calendar safari preview w248 mail terminal textedit finder settings desk-a desk-b w694
+04:27:13.376 SCREEN (nothing was seen for 167 ms)
+04:27:13.432 MACOS pid 60611 AXWindowMiniaturized w236 AXWindow/AXDialog 426 31 1000 390 minimized
+04:27:13.469 SCREEN w704 of Arbor left the screen
+04:27:13.469 SCREEN front to back: calendar safari preview w248 mail terminal textedit finder settings desk-a desk-b w694
+04:27:13.741 MACOS pid 59949 AXFocusedWindowChanged w221 AXWindow/AXStandardWindow 38 31 1324 390
+04:27:13.746 SCREEN in front: process 59949 com.apple.Safari
+04:27:13.746 MACOS pid 59949 AXMainWindowChanged w221 AXWindow/AXStandardWindow 38 31 1324 390
+04:27:13.747 MACOS workspace didActivate pid 59949 com.apple.Safari regular
+04:27:13.747 MACOS workspace didDeactivate pid 60611 com.apple.Notes regular
+04:27:13.747 MACOS pid 59949 AXFocusedWindowChanged w221 AXWindow/AXStandardWindow 38 31 1324 390
+04:27:13.748 DEBUG pid 59949 came forward, and macOS still names another app as the one in front
+04:27:13.748 MACOS pid 59949 AXMainWindowChanged w221 AXWindow/AXStandardWindow 38 31 1324 390
+04:27:13.771 MACOS pid 60611 AXApplicationDeactivated
+04:27:13.780 SCREEN front to back: safari calendar preview w248 mail terminal textedit finder settings desk-a desk-b w694
+04:27:13.794 MACOS pid 59949 AXApplicationActivated
+04:27:13.795 DEBUG focus is on w221
+04:27:13.796 DEBUG w221 has the keyboard
+04:27:13.817 INFO  displays changed: 2 display(s), 0 remembered
+04:27:13.846 SCREEN w704 of Arbor 29,25 1342×405
+04:27:13.846 SCREEN terminal (w235) 800,31 800×394
+04:27:13.846 SCREEN front to back: w704 safari calendar preview w248 mail terminal textedit finder settings desk-a desk-b w694
+04:27:13.855 MACOS pid 60524 AXTitleChanged w235 AXWindow/AXStandardWindow 800 31 800 394
+04:27:13.857 MACOS pid 60524 AXResized w235 AXWindow/AXStandardWindow 800 31 800 379
+04:27:13.858 SCREEN terminal (w235) 800,31 800×379
+04:27:13.858 MACOS pid 60524 AXTitleChanged w235 AXWindow/AXStandardWindow 800 31 800 379
+04:27:13.858 MACOS pid 60524 AXResized w235 AXWindow/AXStandardWindow 800 31 800 379
+04:27:13.876 DEBUG raised w237, which stays in view
+04:27:13.900 SCREEN w694 of Arbor 12,422 1576×12
+04:27:13.900 SCREEN w700 of Arbor 0,31 1600×793 (level -2147483602)
+04:27:13.901 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:13.901 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:14.141 DEBUG raised w237, which stays in view
+04:27:14.141 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:14.142 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:14.370 DEBUG raised w237, which stays in view
+04:27:14.371 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:14.373 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:27:15.067 SCREEN -- end 118 act=open-close settled=quiet:1501 moves=242,242, leaves=236 floating=218,221,230,235,236,237,240,245,266,268 docked=242
+04:27:15.422 SCRIPT == 119 dock-icon-finder

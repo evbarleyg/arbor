@@ -1,0 +1,13 @@
+60 stays-behind: OFFENCE: it is asked to quit and does, but a second process of its stays
+expected: {'act': 'quit-and-start', 'settled': 'quiet:429', 'offence': 'left-behind'}
+FAIL rule -: after Quit a process of Arbor's is still there: 57448
+FAIL rule -: Arbor's process ended, and nobody asked it to
+
+04:19:02.166 SCREEN -- begin 60 stays-behind
+04:19:02.166 SCREEN -- text 60 OFFENCE: it is asked to quit and does, but a second process of its stays
+04:19:02.796 SCREEN -- arbor gone
+04:19:02.888 SCREEN -- finding 60 -:left-behind FAIL after Quit a process of Arbor's is still there: 57448
+04:19:03.370 SCREEN -- finding 60 -:crash FAIL Arbor's process ended, and nobody asked it to
+04:19:03.375 SCREEN -- end 60 act=quit-and-start settled=quiet:429 offence=left-behind
+04:19:03.775 SCREEN -- arbor 57516
+04:19:04.918 SCRIPT == 61 ends-unasked

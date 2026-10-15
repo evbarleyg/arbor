@@ -1,0 +1,43 @@
+41 dropped-elsewhere: OFFENCE: a window is dragged and let go, and goes somewhere else altogether
+expected: {'act': 'drag', 'settled': 'quiet:1091', 'drags': '46', 'offence': 'stuck'}
+FAIL rule 3: textedit (w46) ended neither where it was let go nor where the preview was: let go at 119,79 600×420, no preview, now at 539,339 600×420
+
+04:17:23.417 SCREEN -- begin 41 dropped-elsewhere
+04:17:23.417 SCREEN -- text 41 OFFENCE: a window is dragged and let go, and goes somewhere else altogether
+04:17:23.486 SCRIPT drag w46 from 345,72 to 445,112
+04:17:24.101 SCREEN the button is down 345 72
+04:17:24.267 SCREEN textedit (w46) 54,61 600×420
+04:17:24.362 SCREEN textedit (w46) 57,62 600×420
+04:17:24.368 MACOS pid 44182 AXMoved w46 AXWindow/AXStandardWindow 57 62 600 420
+04:17:24.438 SCREEN textedit (w46) 61,64 600×420
+04:17:24.480 MACOS pid 44182 AXMoved w46 AXWindow/AXStandardWindow 64 65 600 420
+04:17:24.483 SCREEN textedit (w46) 64,65 600×420
+04:17:24.488 SCREEN textedit (w46) 67,66 600×420
+04:17:24.569 MACOS pid 44182 AXMoved w46 AXWindow/AXStandardWindow 67 66 600 420
+04:17:24.612 SCREEN textedit (w46) 71,68 600×420
+04:17:24.675 SCREEN textedit (w46) 74,69 600×420
+04:17:24.681 MACOS pid 44182 AXMoved w46 AXWindow/AXStandardWindow 74 69 600 420
+04:17:24.761 SCREEN textedit (w46) 77,70 600×420
+04:17:24.846 SCREEN textedit (w46) 81,72 600×420
+04:17:24.863 MACOS pid 44182 AXMoved w46 AXWindow/AXStandardWindow 81 72 600 420
+04:17:24.918 SCREEN textedit (w46) 84,73 600×420
+04:17:24.983 SCREEN textedit (w46) 91,76 600×420
+04:17:25.000 MACOS pid 44182 AXMoved w46 AXWindow/AXStandardWindow 91 76 600 420
+04:17:25.033 SCREEN textedit (w46) 94,77 600×420
+04:17:25.134 SCREEN textedit (w46) 97,78 600×420
+04:17:25.147 MACOS pid 44182 AXMoved w46 AXWindow/AXStandardWindow 97 78 600 420
+04:17:25.199 SCREEN textedit (w46) 101,79 600×420
+04:17:25.258 SCREEN textedit (w46) 104,79 600×420
+04:17:25.298 MACOS pid 44182 AXMoved w46 AXWindow/AXStandardWindow 107 79 600 420
+04:17:25.333 SCREEN textedit (w46) 107,79 600×420
+04:17:25.363 SCREEN textedit (w46) 111,79 600×420
+04:17:25.447 SCREEN textedit (w46) 114,79 600×420
+04:17:25.452 MACOS pid 44182 AXMoved w46 AXWindow/AXStandardWindow 114 79 600 420
+04:17:25.491 SCREEN textedit (w46) 117,79 600×420
+04:17:25.542 SCREEN textedit (w46) 119,79 600×420
+04:17:25.595 MACOS pid 44182 AXMoved w46 AXWindow/AXStandardWindow 119 79 600 420
+04:17:27.182 SCREEN the button is up 445 112
+04:17:27.260 MACOS pid 44182 AXMoved w46 AXWindow/AXStandardWindow 539 339 600 420
+04:17:27.287 SCREEN textedit (w46) 539,339 600×420
+04:17:28.353 SCREEN -- end 41 act=drag settled=quiet:1091 drags=46 offence=stuck
+04:17:28.672 SCRIPT == 42 honest-move-2

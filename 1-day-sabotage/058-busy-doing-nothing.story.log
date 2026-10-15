@@ -1,0 +1,9 @@
+58 busy-doing-nothing: OFFENCE: nobody does anything, and the process keeps a core busy
+expected: {'act': 'idle', 'settled': 'quiet:388', 'offence': 'busy', 'floating': '', 'docked': ''}
+FAIL rule -: with nothing to do Arbor used 100.7 % of a core
+
+04:18:46.446 SCREEN -- begin 58 busy-doing-nothing
+04:18:46.446 SCREEN -- text 58 OFFENCE: nobody does anything, and the process keeps a core busy
+04:18:52.537 SCREEN -- finding 58 -:busy FAIL with nothing to do Arbor used 100.7 % of a core
+04:18:52.956 SCREEN -- end 58 act=idle settled=quiet:388 offence=busy floating= docked=
+04:18:53.168 SCRIPT == 59 honest-idle-2

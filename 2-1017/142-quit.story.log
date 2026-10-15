@@ -1,0 +1,42 @@
+142 quit: chooses Quit Arbor in Arbor's menu
+expected: {'act': 'quit-and-start', 'settled': 'quiet:805', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1'}
+FAIL rule -: Arbor's process ended, and nobody asked it to
+FAIL rule 5: terminal (w235) is 1450,438 247×379; its own size was 800,35 800×784
+FAIL rule 5: calendar (w237) is 663,222 937×600; its own size was 800,32 801×791
+FAIL rule 5: preview (w242) has its size back but not its place: 560,31 801×790, it was at 2160,160 801×791
+FAIL rule 5: mail (w245) is 24,55 1576×767; its own size was 729,32 872×791
+FAIL rule 5: w248 of Mail has its size back but not its place: 577,230 470×416, it was at 565,179 470×416
+
+04:29:00.021 SCREEN -- begin 142 quit
+04:29:00.021 SCREEN -- text 142 chooses Quit Arbor in Arbor's menu
+04:29:00.678 DEBUG menu bar click: x 67.0 by the event, 67.0 by the screen, button 134.0 wide
+04:29:00.821 SCREEN w1006 of Arbor 1227,31 286×785 (level 101)
+04:29:02.058 SCREEN w1006 of Arbor left the screen
+04:29:02.174 MACOS pid 60732 AXResized w240 AXWindow/AXStandardWindow 437 85 723 625
+04:29:02.175 MACOS pid 60732 AXMoved w240 AXWindow/AXStandardWindow 437 85 723 625
+04:29:02.191 MACOS pid 60155 AXResized w230 AXWindow/AXStandardWindow 165 65 673 439
+04:29:02.200 SCREEN settings (w240) 437,85 723×625
+04:29:02.200 SCREEN textedit (w230) 165,65 673×439
+04:29:02.203 MACOS pid 60670 AXMoved w237 AXWindow/AXStandardWindow 663 222 937 600
+04:29:02.225 MACOS pid 61177 AXMoved w242 AXWindow/AXStandardWindow 560 31 801 790
+04:29:02.226 MACOS pid 61177 AXResized w242 AXWindow/AXStandardWindow 560 31 801 790
+04:29:02.270 SCREEN calendar (w237) 663,222 937×600
+04:29:02.270 SCREEN safari (w976) 38,447 1324×297
+04:29:02.270 SCREEN preview (w242) 560,31 801×790
+04:29:02.292 MACOS pid 92122 AXMoved w976 AXWindow/AXStandardWindow 38 447 1324 297
+04:29:02.293 MACOS pid 92122 AXResized w976 AXWindow/AXStandardWindow 38 447 1324 374
+04:29:02.303 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 24 55 1576 767
+04:29:02.309 INFO  trace day-3 ended: 765 lines, Arbor stopped
+04:29:02.310 INFO  stopped; all windows returned to view
+04:29:02.320 INFO  Arbor quit
+04:29:02.331 SCREEN safari (w976) 38,447 1324×374
+04:29:02.331 SCREEN w248 of Mail 577,230 470×416
+04:29:02.331 SCREEN mail (w245) 24,55 1576×767
+04:29:02.331 SCREEN w704 of Arbor left the screen
+04:29:02.331 SCREEN w694 of Arbor left the screen
+04:29:02.331 SCREEN w700 of Arbor left the screen
+04:29:02.331 SCREEN front to back: desk-a desk-b calendar safari settings preview notes finder w248 mail terminal textedit
+04:29:02.465 SCREEN -- arbor gone
+04:29:03.395 SCREEN -- finding 142 -:crash FAIL Arbor's process ended, and nobody asked it to
+04:29:03.399 SCREEN -- end 142 act=quit-and-start settled=quiet:805 moves=any restores=all places=1 everything=1
+04:29:03.699 SCRIPT == 143 input-after

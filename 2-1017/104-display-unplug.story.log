@@ -1,0 +1,58 @@
+104 display-unplug: the second display: unplug
+expected: {'act': 'display-change', 'settled': 'quiet:727', 'moves': 'any', 'leaves': 'any', 'floating': '218,221,230,235,236,237,240,242,245,266,268', 'docked': ''}
+FAIL rule 3: textedit (w230) moved 2 times
+FAIL rule 3: terminal (w235) moved 2 times
+FAIL rule 3: calendar (w237) moved 2 times
+FAIL rule 3: mail (w245) moved 2 times
+FAIL rule 3: w248 of Mail moved 2 times
+
+04:26:30.851 SCREEN -- begin 104 display-unplug
+04:26:30.851 SCREEN -- text 104 the second display: unplug
+04:26:31.265 SCREEN (nothing was seen for 431 ms)
+04:26:31.265 SCREEN safari (w221) 38,109 1324×791
+04:26:31.265 SCREEN calendar (w237) 1273,300 937×600
+04:26:31.265 SCREEN w248 of Mail 1408,453 470×416
+04:26:31.265 SCREEN mail (w245) 855,278 1576×767
+04:26:31.265 SCREEN terminal (w235) 1450,438 247×379
+04:26:31.265 SCREEN textedit (w230) 165,65 656×422
+04:26:31.266 MACOS pid 59949 AXMoved w221 AXWindow/AXStandardWindow 38 109 1324 791
+04:26:31.267 MACOS pid 59949 AXResized w221 AXWindow/AXStandardWindow 38 109 1324 791
+04:26:31.288 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 855 278 1576 767
+04:26:31.289 MACOS pid 60670 AXMoved w237 AXWindow/AXStandardWindow 1273 300 937 600
+04:26:31.289 MACOS pid 60524 AXMoved w235 AXWindow/AXStandardWindow 1450 438 247 379
+04:26:31.289 MACOS pid 60155 AXMoved w230 AXWindow/AXStandardWindow 165 65 656 422
+04:26:31.290 MACOS pid 61236 AXResized w245 AXWindow/AXStandardWindow 855 278 1576 767
+04:26:31.290 MACOS pid 60670 AXResized w237 AXWindow/AXStandardWindow 1273 300 937 600
+04:26:31.291 MACOS pid 60524 AXTitleChanged w235 AXWindow/AXStandardWindow 1450 438 247 379
+04:26:31.291 MACOS pid 60155 AXResized w230 AXWindow/AXStandardWindow 165 65 656 422
+04:26:31.293 MACOS pid 60524 AXResized w235 AXWindow/AXStandardWindow 1450 438 247 379
+04:26:31.386 SCREEN w711 of Arbor 465,728 402×38 (level 6)
+04:26:32.719 SCREEN w711 of Arbor left the screen
+04:26:32.993 INFO  displays changed: 1 display(s), 0 remembered
+04:26:32.993 DEBUG w221 has the keyboard
+04:26:32.999 MACOS pid 60155 AXResized w230 AXWindow/AXStandardWindow 165 65 673 439
+04:26:33.011 SCREEN terminal (w235) 1450,438 800×379
+04:26:33.011 SCREEN textedit (w230) 165,65 673×439
+04:26:33.014 MACOS pid 60524 AXTitleChanged w235 AXWindow/AXStandardWindow 800 35 800 784
+04:26:33.015 MACOS pid 60524 AXResized w235 AXWindow/AXStandardWindow 800 35 800 784
+04:26:33.016 MACOS pid 60670 AXMoved w237 AXWindow/AXStandardWindow 663 222 937 600
+04:26:33.016 MACOS pid 60524 AXMoved w235 AXWindow/AXStandardWindow 800 35 800 784
+04:26:33.017 MACOS pid 60524 AXTitleChanged w235 AXWindow/AXStandardWindow 800 35 800 784
+04:26:33.018 MACOS pid 60524 AXResized w235 AXWindow/AXStandardWindow 800 35 800 784
+04:26:33.041 SCREEN calendar (w237) 663,222 937×600
+04:26:33.041 SCREEN terminal (w235) 800,35 800×784
+04:26:33.083 MACOS pid 61236 AXResized w245 AXWindow/AXStandardWindow 728 31 872 791
+04:26:33.085 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 728 31 872 791
+04:26:33.101 DEBUG raised w237, which stays in view
+04:26:33.102 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 222 937 600
+04:26:33.114 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 222 937 600
+04:26:33.116 SCREEN w248 of Mail 929,218 470×416
+04:26:33.116 SCREEN mail (w245) 728,31 872×791
+04:26:33.348 DEBUG raised w237, which stays in view
+04:26:33.348 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 222 937 600
+04:26:33.350 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 222 937 600
+04:26:33.611 DEBUG raised w237, which stays in view
+04:26:33.619 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 222 937 600
+04:26:33.620 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 222 937 600
+04:26:34.259 SCREEN -- end 104 act=display-change settled=quiet:727 moves=any leaves=any floating=218,221,230,235,236,237,240,242,245,266,268 docked=
+04:26:34.568 SCRIPT == 105 view-home

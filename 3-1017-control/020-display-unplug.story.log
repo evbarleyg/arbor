@@ -1,0 +1,14 @@
+20 display-unplug: the second display: unplug
+expected: {'act': 'display-change', 'settled': 'quiet:402', 'moves': 'any', 'leaves': 'any'}
+FAIL rule 3: terminal (w1065) went 1774 points out of its way before it ended up
+
+04:31:40.349 SCREEN -- begin 20 display-unplug
+04:31:40.349 SCREEN -- text 20 the second display: unplug
+04:31:40.353 SCREEN terminal (w1065) -150,302 863×499
+04:31:40.353 SCREEN front to back: terminal settings notes desk-a desk-b calendar textedit w1078 mail preview finder safari
+04:31:40.514 MACOS pid 99611 AXMoved w1065 AXWindow/AXStandardWindow 737 401 863 499
+04:31:40.515 SCREEN (nothing was seen for 161 ms)
+04:31:40.515 SCREEN terminal (w1065) 737,401 863×499
+04:31:40.515 SCREEN front to back: settings notes desk-a desk-b calendar textedit w1078 mail preview terminal finder safari
+04:31:43.044 SCREEN -- end 20 act=display-change settled=quiet:402 moves=any leaves=any
+04:31:43.324 SCRIPT == 21 display-plug

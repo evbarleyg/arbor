@@ -1,0 +1,36 @@
+74 view-in: presses ⌃⌥↓
+expected: {'act': 'view', 'settled': 'quiet:1269', 'moves': 'any', 'floating': '1687,1702,1736,1739,1754,1769,1771,1961', 'docked': '1681,1699,1721,1731,1872'}
+ODD rule 3: the last window came to rest 852 ms after the key or the button
+
+04:42:07.243 SCREEN -- begin 74 view-in
+04:42:07.243 SCREEN -- text 74 presses ⌃⌥↓
+04:42:07.636 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+04:42:07.636 DEBUG the stage kept the windows waiting 34 ms: its panel 0, 9 costumes 0 (0 not ready), the desktop 5, going up 29
+04:42:07.652 MACOS pid 33393 AXMoved w1872 AXWindow/AXStandardWindow 1599 793 782 770
+04:42:07.684 SCREEN w1944 of Arbor 0,0 1600×900 (level 4)
+04:42:07.684 SCREEN textedit (w1872) 1599,793 782×770
+04:42:07.801 SCREEN (nothing was seen for 116 ms)
+04:42:07.822 SCREEN chrome (w1687) 0,53 1200×747
+04:42:07.853 MACOS pid 20277 AXResized w1687 AXWindow/AXStandardWindow 0 53 1200 747
+04:42:07.853 MACOS pid 20277 AXMoved w1687 AXWindow/AXStandardWindow 22 53 1200 747
+04:42:07.867 SCREEN chrome (w1687) 22,53 1200×747
+04:42:07.936 MACOS pid 21136 AXResized w1702 AXWindow/AXStandardWindow 22 53 1200 747
+04:42:07.938 MACOS pid 21136 AXMoved w1702 AXWindow/AXStandardWindow 22 53 1200 747
+04:42:07.943 SCREEN edge (w1702) 22,53 1200×747
+04:42:08.094 SCREEN safari-2 (w1736) 96,60 1324×374
+04:42:08.095 MACOS pid 20042 AXResized w1736 AXWindow/AXStandardWindow 96 60 1324 374
+04:42:08.095 MACOS pid 20042 AXMoved w1736 AXWindow/AXStandardWindow 96 60 1324 374
+04:42:08.162 MACOS pid 20277 AXResized w1739 AXWindow/AXStandardWindow 44 75 1200 747
+04:42:08.163 SCREEN chrome-2 (w1739) 44,75 1200×747
+04:42:08.165 MACOS pid 20277 AXMoved w1739 AXWindow/AXStandardWindow 44 75 1200 747
+04:42:08.223 MACOS pid 21136 AXResized w1754 AXWindow/AXStandardWindow 44 75 1200 747
+04:42:08.224 MACOS pid 21136 AXMoved w1754 AXWindow/AXStandardWindow 44 75 1200 747
+04:42:08.231 SCREEN edge-2 (w1754) 44,75 1200×747
+04:42:08.248 INFO  in: stepped in to the Desktop
+04:42:08.279 SCREEN w1949 of Arbor left the screen
+04:42:08.279 SCREEN front to back: w1942 edge-new-73 edge-2 edge textedit chrome-2 chrome firefox terminal safari safari-2 finder desk-a desk-b
+04:42:08.428 DEBUG stage down
+04:42:08.445 SCREEN w1944 of Arbor left the screen
+04:42:08.544 SCREEN w1943 of Arbor left the screen
+04:42:09.543 SCREEN -- end 74 act=view settled=quiet:1269 moves=any floating=1687,1702,1736,1739,1754,1769,1771,1961 docked=1681,1699,1721,1731,1872
+04:42:10.081 SCRIPT == 75 close-window

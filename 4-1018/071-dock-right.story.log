@@ -1,0 +1,47 @@
+71 dock-right: presses ⌃⌥⌘ and the right arrow
+expected: {'act': 'dock-key', 'settled': 'quiet:1065', 'moves': '1681,1699,1721,1731,1681,1699,1721,1731,1872,', 'front': '1872', 'floating': '1687,1702,1736,1739,1754,1769,1771', 'docked': '1681,1699,1721,1731,1872'}
+FAIL rule 2: chrome (w1687) a floating window, moved, and the step did not name it
+FAIL rule 2: edge (w1702) a floating window, moved, and the step did not name it
+FAIL rule 2: safari-2 (w1736) a floating window, moved, and the step did not name it
+FAIL rule 2: chrome-2 (w1739) a floating window, moved, and the step did not name it
+FAIL rule 2: edge-2 (w1754) a floating window, moved, and the step did not name it
+
+04:41:59.296 SCREEN -- begin 71 dock-right
+04:41:59.296 SCREEN -- text 71 presses ⌃⌥⌘ and the right arrow
+04:41:59.566 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 8 stand-ins, 0.46 s
+04:41:59.566 DEBUG the stage kept the windows waiting 3 ms: its panel 0, 8 costumes 0 (0 not ready), the desktop 1, going up 2
+04:41:59.596 MACOS pid 33393 AXResized w1872 AXWindow/AXStandardWindow 806 43 782 759
+04:41:59.596 MACOS pid 33393 AXMoved w1872 AXWindow/AXStandardWindow 806 43 782 770
+04:41:59.596 MACOS pid 33393 AXResized w1872 AXWindow/AXStandardWindow 806 43 782 770
+04:41:59.600 SCREEN w1944 of Arbor 0,0 1600×900 (level 4)
+04:41:59.600 SCREEN textedit (w1872) 806,43 782×770
+04:41:59.600 SCREEN chrome (w1687) 22,53 794×747
+04:41:59.654 MACOS pid 20277 AXResized w1687 AXWindow/AXStandardWindow 0 53 794 747
+04:41:59.655 MACOS pid 20277 AXMoved w1687 AXWindow/AXStandardWindow 0 53 794 747
+04:41:59.725 SCREEN chrome (w1687) 0,53 794×747
+04:41:59.756 SCREEN edge (w1702) 22,53 794×747
+04:41:59.772 MACOS pid 21136 AXResized w1702 AXWindow/AXStandardWindow 0 53 794 747
+04:41:59.773 MACOS pid 21136 AXMoved w1702 AXWindow/AXStandardWindow 0 53 794 747
+04:41:59.778 SCREEN edge (w1702) 0,53 794×747
+04:41:59.901 SCREEN safari-2 (w1736) 96,60 794×374
+04:41:59.908 MACOS pid 20042 AXResized w1736 AXWindow/AXStandardWindow 0 60 794 374
+04:41:59.909 MACOS pid 20042 AXMoved w1736 AXWindow/AXStandardWindow 0 60 794 374
+04:41:59.958 MACOS pid 20277 AXResized w1739 AXWindow/AXStandardWindow 0 75 794 747
+04:41:59.965 MACOS pid 20277 AXMoved w1739 AXWindow/AXStandardWindow 0 75 794 747
+04:41:59.983 SCREEN chrome-2 (w1739) 0,75 794×747
+04:41:59.983 SCREEN safari-2 (w1736) 0,60 794×374
+04:42:00.002 MACOS pid 21136 AXResized w1754 AXWindow/AXStandardWindow 0 75 794 747
+04:42:00.003 SCREEN edge-2 (w1754) 44,75 794×747
+04:42:00.003 MACOS pid 21136 AXMoved w1754 AXWindow/AXStandardWindow 0 75 794 747
+04:42:00.024 SCREEN edge-2 (w1754) 0,75 794×747
+04:42:00.029 INFO  dock right: docked w1872 at the right edge
+04:42:00.101 SCREEN w1942 of Arbor 797,34 800×788
+04:42:00.101 SCREEN w1949 of Arbor 794,43 12×770
+04:42:00.101 SCREEN w1943 of Arbor 0,31 1600×794 (level -2147483602)
+04:42:00.101 SCREEN front to back: textedit w1942 chrome-2 chrome firefox terminal edge-2 edge safari safari-2 finder desk-a desk-b w1949
+04:42:00.193 DEBUG stage down
+04:42:00.224 SCREEN w1944 of Arbor left the screen
+04:42:00.224 SCREEN front to back: w1942 textedit chrome-2 chrome firefox terminal edge-2 edge safari safari-2 finder desk-a desk-b w1949
+04:42:00.838 SCREEN (nothing was seen for 117 ms)
+04:42:01.382 SCREEN -- end 71 act=dock-key settled=quiet:1065 moves=1681,1699,1721,1731,1681,1699,1721,1731,1872, front=1872 floating=1687,1702,1736,1739,1754,1769,1771 docked=1681,1699,1721,1731,1872
+04:42:01.832 SCRIPT == 72 dock-icon-edge

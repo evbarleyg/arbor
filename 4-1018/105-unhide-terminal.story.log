@@ -1,0 +1,49 @@
+105 unhide-terminal: clicks its icon in the Dock
+expected: {'act': 'open-close', 'settled': 'quiet:358', 'moves': '1699,1731,1699,1731,', 'comes': '1731', 'lands': '1731', 'front': '1731', 'returns': '103', 'floating': '1687,1702,1721,1739,1754,1769,1771,1872,2012', 'docked': '1699,1731'}
+FAIL rule 2: chrome (w1687) is not back where it was after step 103: 22,411 1200×414, it was at 1599,784 1200×747
+FAIL rule 2: edge (w1702) is not back where it was after step 103: 22,411 1200×414, it was at 1599,784 1200×747
+FAIL rule 2: chrome-2 (w1739) is not back where it was after step 103: 44,411 1200×414, it was at 1599,784 1200×747
+FAIL rule 2: edge-2 (w1754) is not back where it was after step 103: 44,411 1200×414, it was at 1599,784 1200×747
+FAIL rule 2: desk-a (w1769) is not back where it was after step 103: 40,411 300×190, it was at 1599,793 300×190
+FAIL rule 2: desk-b (w1771) is not back where it was after step 103: 360,411 300×190, it was at 1599,793 300×190
+FAIL rule 2: textedit (w1872) is not back where it was after step 103: 165,411 673×414, it was at 1599,793 673×439
+FAIL rule 2: safari (w2012) is not back where it was after step 103: 96,411 1324×374, it was at 1599,773 1324×374
+
+04:44:08.832 SCREEN -- begin 105 unhide-terminal
+04:44:08.832 SCREEN -- text 105 clicks its icon in the Dock
+04:44:09.462 SCREEN the button is down 1243 856
+04:44:09.519 SCREEN the button is up 1243 856
+04:44:09.557 SCREEN terminal (w1731) 12,43 1577×769
+04:44:09.557 SCREEN front to back: terminal w1942 finder safari edge-2 edge textedit firefox chrome-2 chrome desk-a desk-b w1939
+04:44:09.559 MACOS pid 21899 AXApplicationShown
+04:44:09.564 MACOS workspace didActivate pid 21899 com.apple.Terminal regular
+04:44:09.565 SCREEN in front: process 21899 com.apple.Terminal
+04:44:09.565 MACOS workspace didDeactivate pid 19221 com.apple.finder regular
+04:44:09.565 MACOS workspace didUnhide pid 21899 com.apple.Terminal regular
+04:44:09.565 MACOS pid 19221 AXApplicationDeactivated
+04:44:09.565 MACOS pid 21899 AXApplicationActivated
+04:44:09.569 DEBUG focus is on w1731
+04:44:09.570 DEBUG focus report for w1731, which does not have the keyboard or takes no space; 4 checks left
+04:44:09.598 DEBUG raised w1721, which stays in view
+04:44:09.599 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:44:09.599 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:44:09.602 MACOS pid 20801 AXMoved w1699 AXWindow/AXStandardWindow 1599 793 1576 356
+04:44:09.604 DEBUG w1731 has the keyboard
+04:44:09.624 DEBUG raised w1721, which stays in view
+04:44:09.624 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:44:09.633 SCREEN w1942 of Arbor 3,34 1595×787
+04:44:09.633 SCREEN firefox (w1699) 1599,793 1576×356
+04:44:09.633 SCREEN w1939 of Arbor left the screen
+04:44:09.633 SCREEN front to back: w1942 terminal finder safari edge-2 edge textedit firefox chrome-2 chrome desk-a desk-b
+04:44:09.637 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:44:09.900 DEBUG raised w1721, which stays in view
+04:44:09.901 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:44:09.902 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:44:10.165 DEBUG raised w1721, which stays in view
+04:44:10.166 MACOS pid 19221 AXFocusedWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:44:10.168 MACOS pid 19221 AXMainWindowChanged w1721 AXWindow/AXStandardWindow 95 389 920 435
+04:44:10.756 SCREEN -- end 105 act=open-close settled=quiet:358 moves=1699,1731,1699,1731, comes=1731 lands=1731 front=1731 returns=103 floating=1687,1702,1721,1739,1754,1769,1771,1872,2012 docked=1699,1731
+04:44:10.903 SCREEN -- chapter The end
+04:44:10.910 INFO  trace day-3 ended: 3521 lines, trace off
+04:44:10.920 INFO  trace day-4: recording to /tmp/arbor-shell.cqYwLY/home/traces/2026-10-15-044410-day-4.jsonl
+04:44:10.974 SCRIPT == 106 view-home

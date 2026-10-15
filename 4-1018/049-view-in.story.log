@@ -1,0 +1,51 @@
+49 view-in: presses ⌃⌥↓
+expected: {'act': 'view', 'settled': 'quiet:1115', 'moves': 'any', 'floating': '1681,1687,1699,1702,1736,1739,1754,1769,1771,1872', 'docked': '1721,1731'}
+ODD rule 3: the last window came to rest 824 ms after the key or the button
+
+04:40:21.395 SCREEN -- begin 49 view-in
+04:40:21.395 SCREEN -- text 49 presses ⌃⌥↓
+04:40:21.649 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 10 stand-ins, 0.46 s
+04:40:21.649 DEBUG the stage kept the windows waiting 29 ms: its panel 0, 10 costumes 0 (0 not ready), the desktop 4, going up 25
+04:40:21.658 MACOS pid 19221 AXMoved w1721 AXWindow/AXStandardWindow 1599 773 1576 252
+04:40:21.755 SCREEN (nothing was seen for 132 ms)
+04:40:21.755 SCREEN w1804 of Arbor 0,0 1600×900 (level 4)
+04:40:21.755 SCREEN terminal (w1731) 1599,793 1577×244
+04:40:21.755 SCREEN finder (w1721) 1599,773 1576×252
+04:40:21.759 MACOS pid 21899 AXMoved w1731 AXWindow/AXStandardWindow 1599 793 1577 244
+04:40:21.835 SCREEN safari (w1681) 67,304 1324×374
+04:40:21.841 MACOS pid 20042 AXResized w1681 AXWindow/AXStandardWindow 67 304 1324 374
+04:40:21.880 SCREEN safari (w1681) 67,31 1324×374
+04:40:21.880 MACOS pid 20042 AXMoved w1681 AXWindow/AXStandardWindow 67 31 1324 374
+04:40:21.958 MACOS pid 20277 AXResized w1687 AXWindow/AXStandardWindow 22 53 1200 585
+04:40:21.960 MACOS pid 20277 AXMoved w1687 AXWindow/AXStandardWindow 22 53 1200 585
+04:40:21.973 SCREEN chrome (w1687) 22,53 1200×585
+04:40:22.000 MACOS pid 20277 AXResized w1687 AXWindow/AXStandardWindow 22 53 1200 747
+04:40:22.014 SCREEN chrome (w1687) 22,53 1200×747
+04:40:22.042 MACOS pid 20801 AXResized w1699 AXWindow/AXStandardWindow 4 31 1280 520
+04:40:22.043 MACOS pid 20801 AXMoved w1699 AXWindow/AXStandardWindow 4 31 1280 520
+04:40:22.055 MACOS pid 20801 AXResized w1699 AXWindow/AXStandardWindow 4 31 1280 711
+04:40:22.068 SCREEN firefox (w1699) 4,31 1280×711
+04:40:22.104 SCREEN safari-2 (w1736) 96,304 1324×374
+04:40:22.107 MACOS pid 20042 AXResized w1736 AXWindow/AXStandardWindow 96 60 1324 374
+04:40:22.107 MACOS pid 20042 AXMoved w1736 AXWindow/AXStandardWindow 96 60 1324 374
+04:40:22.118 SCREEN chrome-2 (w1739) 44,239 1200×585
+04:40:22.118 SCREEN safari-2 (w1736) 96,60 1324×374
+04:40:22.169 MACOS pid 20277 AXResized w1739 AXWindow/AXStandardWindow 44 75 1200 585
+04:40:22.170 MACOS pid 20277 AXMoved w1739 AXWindow/AXStandardWindow 44 75 1200 585
+04:40:22.192 MACOS pid 20277 AXResized w1739 AXWindow/AXStandardWindow 44 75 1200 747
+04:40:22.204 SCREEN chrome-2 (w1739) 44,75 1200×747
+04:40:22.230 SCREEN desk-a (w1769) 40,70 300×190
+04:40:22.241 MACOS pid 26192 AXMoved w1769 AXWindow/AXStandardWindow 40 70 300 190
+04:40:22.250 INFO  in: stepped in to the Desktop
+04:40:22.252 MACOS pid 26209 AXMoved w1771 AXWindow/AXStandardWindow 360 70 300 190
+04:40:22.253 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Your other windows are out of view, not closed · ⌃⌥Space shows everything
+04:40:22.283 SCREEN desk-b (w1771) 360,70 300×190
+04:40:22.283 SCREEN w1877 of Arbor left the screen
+04:40:22.283 SCREEN w1878 of Arbor left the screen
+04:40:22.283 SCREEN front to back: w1879 textedit chrome-2 chrome firefox terminal finder safari safari-2 desk-a desk-b w1803
+04:40:22.366 SCREEN w1866 of Arbor 512,731 576×38 (level 6)
+04:40:22.421 DEBUG stage down
+04:40:22.432 SCREEN w1804 of Arbor left the screen
+04:40:22.550 SCREEN w1880 of Arbor left the screen
+04:40:23.495 SCREEN -- end 49 act=view settled=quiet:1115 moves=any floating=1681,1687,1699,1702,1736,1739,1754,1769,1771,1872 docked=1721,1731
+04:40:24.732 SCRIPT == 50 click-wallpaper

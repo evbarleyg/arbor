@@ -1,0 +1,64 @@
+68 view-all: presses ⌃⌥Space
+expected: {'act': 'view', 'settled': 'quiet:1050', 'moves': 'any', 'floating': '245', 'docked': '218,221,230,235,236,237,240,242,266,268'}
+ODD rule 3: the last window came to rest 715 ms after the key or the button
+
+04:23:59.056 SCREEN -- begin 68 view-all
+04:23:59.056 SCREEN -- text 68 presses ⌃⌥Space
+04:23:59.285 DEBUG commands follow the keyboard: a shortcut, pointer idle 2.6 s, keys 6.0 s, focus 2.5 s
+04:23:59.293 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 11 stand-ins, 0.46 s
+04:23:59.293 DEBUG the stage kept the windows waiting 5 ms: its panel 0, 11 costumes 0 (0 not ready), the desktop 2, going up 2
+04:23:59.296 MACOS pid 60155 AXMoved w230 AXWindow/AXStandardWindow 270 43 709 352
+04:23:59.299 SCREEN w300 of Arbor 0,0 1600×900 (level 4)
+04:23:59.299 SCREEN textedit (w230) 270,43 709×352
+04:23:59.299 MACOS pid 60524 AXMoved w235 AXWindow/AXStandardWindow 1250 433 247 379
+04:23:59.302 MACOS pid 60611 AXMoved w236 AXWindow/AXStandardWindow 270 407 709 403
+04:23:59.304 MACOS pid 63184 AXMoved w266 AXWindow/AXStandardWindow 12 303 246 247
+04:23:59.306 MACOS pid 63200 AXMoved w268 AXWindow/AXStandardWindow 991 303 247 247
+04:23:59.308 MACOS pid 61177 AXMoved w242 AXWindow/AXStandardWindow 1599 770 1576 767
+04:23:59.327 SCREEN preview (w242) 1599,770 1576×767
+04:23:59.327 SCREEN w248 of Mail 929,218 470×416
+04:23:59.327 SCREEN mail (w245) 728,31 872×791
+04:23:59.327 SCREEN notes (w236) 270,407 709×403
+04:23:59.327 SCREEN terminal (w235) 1250,433 247×379
+04:23:59.327 SCREEN desk-a (w266) 12,303 246×247
+04:23:59.327 SCREEN desk-b (w268) 991,303 247×247
+04:23:59.340 MACOS pid 61236 AXMoved w245 AXWindow/AXStandardWindow 728 31 872 791
+04:23:59.371 MACOS pid 61236 AXFocusedWindowChanged w248 AXSheet/- 929 218 470 416
+04:23:59.373 MACOS pid 61236 AXMainWindowChanged w245 AXWindow/AXStandardWindow 728 31 872 791
+04:23:59.386 MACOS pid 61236 AXFocusedWindowChanged w248 AXSheet/- 929 218 470 416
+04:23:59.387 MACOS pid 61236 AXMainWindowChanged w245 AXWindow/AXStandardWindow 728 31 872 791
+04:23:59.478 INFO  show-all: showing everything
+04:23:59.479 SCREEN (nothing was seen for 102 ms)
+04:23:59.480 SCREEN in front: process 61236 com.apple.mail
+04:23:59.494 MACOS pid 61236 AXFocusedWindowChanged w248 AXSheet/- 929 218 470 416
+04:23:59.495 SCREEN front to back: w248 mail w339 preview finder notes terminal settings calendar desk-a desk-b w298 textedit safari
+04:23:59.496 MACOS workspace didActivate pid 61236 com.apple.mail regular
+04:23:59.496 MACOS workspace didDeactivate pid 61177 com.apple.Preview regular
+04:23:59.497 MACOS pid 61236 AXMainWindowChanged w245 AXWindow/AXStandardWindow 728 31 872 791
+04:23:59.497 MACOS pid 61177 AXApplicationDeactivated
+04:23:59.497 MACOS pid 61236 AXApplicationActivated
+04:23:59.601 SCREEN w331 of Arbor 12,291 246×12
+04:23:59.601 SCREEN w333 of Arbor 12,550 246×12
+04:23:59.601 SCREEN w335 of Arbor 270,395 709×12
+04:23:59.601 SCREEN w338 of Arbor 991,291 247×12
+04:23:59.601 SCREEN w334 of Arbor 991,550 247×12
+04:23:59.601 SCREEN w337 of Arbor 1250,421 246×12
+04:23:59.601 SCREEN w336 of Arbor 258,43 12×767
+04:23:59.601 SCREEN w332 of Arbor 979,43 12×767
+04:23:59.601 SCREEN w328 of Arbor 1238,43 12×767
+04:23:59.601 SCREEN w330 of Arbor 1496,43 12×767
+04:23:59.601 SCREEN w339 of Arbor left the screen
+04:23:59.601 SCREEN front to back: w248 mail preview finder notes terminal settings calendar desk-a desk-b w298 textedit safari w331 w333 w335 w338 w334 w337 w336 w332 w328 w330
+04:23:59.633 DEBUG peek: the key came up
+04:23:59.652 SCREEN w324 of Arbor 12,43 246×248
+04:23:59.652 SCREEN w325 of Arbor 12,562 246×248
+04:23:59.652 SCREEN w326 of Arbor 991,43 247×248
+04:23:59.652 SCREEN w321 of Arbor 991,562 247×248
+04:23:59.652 SCREEN w323 of Arbor 1250,43 246×378
+04:23:59.652 SCREEN w322 of Arbor 1508,43 80×767
+04:23:59.652 SCREEN front to back: w248 mail preview finder notes terminal settings calendar desk-a desk-b w298 textedit safari w324 w325 w326 w321 w323 w322 w331 w333 w335 w338 w334 w337 w336 w332 w328 w330
+04:23:59.951 DEBUG stage down
+04:24:00.008 SCREEN w300 of Arbor left the screen
+04:24:00.882 SCREEN -- end 68 act=view settled=quiet:1050 moves=any floating=245 docked=218,221,230,235,236,237,240,242,266,268
+04:24:01.258 SCREEN (nothing was seen for 121 ms)
+04:24:01.471 SCRIPT == 69 display-unplug

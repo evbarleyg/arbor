@@ -1,0 +1,10 @@
+56 both-previews: OFFENCE: a window is dragged against the menu bar, and a drop preview comes up beside macOS's own
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:375', 'judge': 'no', 'performed': 'no', 'undone': 'drag_window', 'drags': '46', 'own': '46', 'offence': 'fought', 'floating': '', 'docked': ''}
+ODD rule -: the act was not performed: drag_window could not be done
+
+04:18:43.285 SCREEN -- begin 56 both-previews
+04:18:43.285 SCREEN -- text 56 OFFENCE: a window is dragged against the menu bar, and a drop preview comes up beside macOS's own
+04:18:44.442 SCREEN w204 of Arbor 12,43 1576×400 (level 3)
+04:18:45.091 SCREEN w204 of Arbor left the screen
+04:18:45.506 SCREEN -- end 56 act=drag-where-macos-tiles settled=quiet:375 judge=no performed=no undone=drag_window drags=46 own=46 offence=fought floating= docked=
+04:18:45.772 SCRIPT == 57 honest-drag-back

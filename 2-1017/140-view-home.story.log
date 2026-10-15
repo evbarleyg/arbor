@@ -1,0 +1,21 @@
+140 view-home: presses ⌃⌥0
+expected: {'act': 'view', 'settled': 'quiet:745', 'moves': 'any', 'everything': '1', 'tiles': '', 'keyboard': '976', 'returns': '139', 'floating': '218,230,235,236,237,242,245,266,268,976', 'docked': '240'}
+FAIL rule L: mail (w245) is out of view: 38% of it is on a display, at 855,278 1576×767
+
+04:28:37.065 SCREEN -- begin 140 view-home
+04:28:37.065 SCREEN -- text 140 presses ⌃⌥0
+04:28:37.268 INFO  home: showing everything
+04:28:37.269 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Showing everything
+04:28:37.275 DEBUG raised w237, which stays in view
+04:28:37.276 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:28:37.277 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:28:37.288 SCREEN w711 of Arbor 713,728 175×38 (level 6)
+04:28:37.521 DEBUG raised w237, which stays in view
+04:28:37.521 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:28:37.522 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:28:37.754 DEBUG raised w237, which stays in view
+04:28:37.757 MACOS pid 60670 AXFocusedWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:28:37.758 MACOS pid 60670 AXMainWindowChanged w237 AXWindow/AXStandardWindow 663 300 937 600
+04:28:39.092 SCREEN w711 of Arbor left the screen
+04:28:40.127 SCREEN -- end 140 act=view settled=quiet:745 moves=any everything=1 tiles= keyboard=976 returns=139 floating=218,230,235,236,237,242,245,266,268,976 docked=240
+04:28:40.399 SCRIPT == 141 input-last

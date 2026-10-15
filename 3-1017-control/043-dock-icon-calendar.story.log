@@ -1,0 +1,17 @@
+43 dock-icon-calendar: clicks calendar's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:406', 'front': '1069'}
+FAIL rule 6: the button came up, and the apps heard of it 128 ms later
+
+04:33:55.406 SCREEN -- begin 43 dock-icon-calendar
+04:33:55.406 SCREEN -- text 43 clicks calendar's icon in the Dock
+04:33:56.047 SCREEN the button is down 580 854
+04:33:56.228 MACOS pid 99192 AXApplicationDeactivated
+04:33:56.230 SCREEN (nothing was seen for 154 ms)
+04:33:56.230 SCREEN front to back: calendar safari w1078 mail finder notes settings terminal desk-a desk-b textedit preview
+04:33:56.230 SCREEN the button is up 580 854
+04:33:56.232 SCREEN in front: process 609 com.apple.iCal
+04:33:56.232 MACOS workspace didActivate pid 609 com.apple.iCal regular
+04:33:56.232 MACOS workspace didDeactivate pid 99192 com.apple.Safari regular
+04:33:56.232 MACOS pid 609 AXApplicationActivated
+04:33:57.403 SCREEN -- end 43 act=switch settled=quiet:406 front=1069
+04:33:57.755 SCRIPT == 44 drag-calendar-to-right-edge
