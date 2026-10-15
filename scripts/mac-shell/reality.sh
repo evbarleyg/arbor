@@ -287,6 +287,9 @@ if wanted pointer; then
   does "drag W2 onto the right of W3" drag $(title_of "$W2") $(at "$W3" "x + w * 85 / 100" "y + h / 2")
   # shellcheck disable=SC2046
   does "double-click W3's title bar" dblclick $(title_of "$W3")
+  # macOS's zoom of a docked window stays, over everything else. A second double-click is how a person undoes it, and what comes after is about what lies beneath.
+  # shellcheck disable=SC2046
+  does "double-click W3's title bar again" dblclick $(title_of "$W3")
   # shellcheck disable=SC2046
   does "press inside W3 and move, held" drag $(middle_of "$W3") $(at "$W3" "x + w / 2 + 90" "y + h / 2 + 60") --no-release
   does "let go inside W3" release
