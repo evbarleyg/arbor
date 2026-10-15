@@ -83,7 +83,7 @@ extension Controller {
       return
     }
     let fits = !showsLessThanHalf(note.frame)
-    if let actual = system.setFrame(fits ? note.frame : note.frame.fitted(into: main.visibleFrame), of: window) {
+    if let actual = give(fits ? note.frame : note.frame.fitted(into: main.visibleFrame), to: window)?.frame {
       windows[window]?.frame = actual
     }
     guard isMostlyOffScreen(window) else {

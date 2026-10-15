@@ -128,7 +128,7 @@ extension Controller {
 
   /// Puts a window that was not docked after all back where its app opened it.
   private func returnToWhereItOpened(_ id: WindowID, _ frame: CGRect) {
-    guard let current = windows[id], current.frame != frame, let actual = system.setFrame(frame, of: id) else { return }
+    guard let current = windows[id], current.frame != frame, let actual = give(frame, to: id)?.frame else { return }
     windows[id]?.frame = actual
   }
 

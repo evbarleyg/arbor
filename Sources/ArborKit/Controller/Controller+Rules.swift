@@ -290,16 +290,16 @@ extension Controller {
     return true
   }
 
-  /// Puts a window that a rule docked back where its app opened it. Returns the frame it took.
+  /// Puts a window that a rule docked back where its app opened it. Returns the frame to remember as its own.
   @discardableResult
   private func returnToOpeningFrame(_ id: WindowID) -> CGRect? {
-    guard let frame = titleWatches[id]?.openingFrame, let actual = system.setFrame(frame, of: id) else {
+    guard let frame = titleWatches[id]?.openingFrame, let given = give(frame, to: id) else {
       return nil
     }
-    windows[id]?.frame = actual
-    settled[id] = actual
+    windows[id]?.frame = given.frame
+    settled[id] = given.frame
     parked.remove(id)
-    return actual
+    return given.own
   }
 
   /// Ends the wait for one window: it closed, or the user took it in hand (a drag, an edge resize, a

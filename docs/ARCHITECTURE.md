@@ -172,6 +172,16 @@ the eye a question, which in view only ever makes a window shrink, and the move 
 what grows is moved first). Tests look at the
 road a window takes (`FakeWindowSystem.detour`), and `Budget.questions` counts what it costs.
 
+**The screen's answer is not the window's** (`Controller+TheScreensAnswer.swift`; `ScreenLines` in ArborCore is the one model of how far macOS lets a window grow, which
+the controller, the fake and the nets share). A slot lies on the screen; a frame that a hand left, or a window's own size at the
+place where a hand let go of it, may hang over the bottom or the right edge, and a window cannot grow into such a frame once it stands there.
+Whoever gives a window a frame of that kind (a drop out of a slot, Quit, a pause, Float All, `float`, a pin, `summon`, a rule or an automatic dock
+taken back, the window let be at a start, the layout of what floats) does so through `give`, which plays the three calls beforehand: one `setFrame` wherever that will do, which is
+nearly always; where it will not, the window is **sized where the size fits, straight above or beside where it is going, and then only moved**, for a
+move is not held back. A cut nobody foresaw shows in an answer that is all macOS allows there, and is made good the same way, once. `give` returns two
+frames: the one the window has, and the one to write down as its own, in which a side that the screen kept short has the size that was asked for,
+down to the one point that a window as high as the visible frame falls short above a Dock, which no order of calls can give it and nobody asks for again.
+
 A window that gives no such sign is **asked again where nobody can see** (`Controller+LearnedSizes.swift`). A tile's
 window is parked anyway. So when a display is laid out, and the record that makes a window a tile has stood for
 `tileRetryMinutes` (10), `relayout` asks the window, between applying the layout and laying out again, to take the size of

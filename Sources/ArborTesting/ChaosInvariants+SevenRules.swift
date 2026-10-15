@@ -420,8 +420,14 @@ extension ChaosRunner {
       // Nobody in view is asked to grow where it stands: a window grows in its slot. That it cannot shows there, and it goes on to the
       // middle of the slot, at the size it took. Once: from then on Arbor knows. That hop is left out of the road.
       var mayLearn = floats.isEmpty && (!seven.refusedMore.contains(window) || seven.foundUnableToGrow.contains(window))
-      let road = Self.road(of: moves) { refusal, next in
-        guard mayLearn, Self.isTheWayToTheMiddle(next, after: refusal) else { return false }
+      // Nor can anybody grow into a frame that hangs over the edge of the screen: it is sized where the size fits, and then only moved.
+      var mayBeSizedElsewhere = true
+      let road = Self.road(of: moves) { move, next in
+        if mayBeSizedElsewhere, system.isSizedWhereItFits(move, then: next) {
+          mayBeSizedElsewhere = false
+          return true
+        }
+        guard mayLearn, Self.isTheWayToTheMiddle(next, after: move) else { return false }
         mayLearn = false
         return true
       }

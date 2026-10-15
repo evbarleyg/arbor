@@ -143,10 +143,11 @@ extension Controller {
   /// Gives a window that was just dropped to float on `displayID` the frame `droppedFrame` chose.
   func shrinkDropped(_ window: WindowID, to frame: CGRect, on displayID: DisplayID) {
     misfits[window] = nil
-    guard let actual = system.setFrame(frame, of: window) else { return }
+    guard let given = give(frame, to: window) else { return }
+    let actual = given.frame
     Log.debug("\(window) was dropped out of its slot and took its own size, \(Int(actual.width))×\(Int(actual.height))")
     windows[window]?.frame = actual
-    workspaces[displayID]?.floating[window] = actual
+    workspaces[displayID]?.floating[window] = given.own
   }
 
   // MARK: Arbor lets go
@@ -230,7 +231,7 @@ extension Controller {
     let wasParked = parked.remove(window) != nil
     let isThere = !wasParked && windows[window]?.frame == frame
     // A call to another app costs more than everything Arbor does itself: not for a window that is there already.
-    guard var actual = isThere ? frame : system.setFrame(frame, of: window) else {
+    guard let given = isThere ? Given(frame: frame, own: frame) : give(frame, to: window) else {
       // Its app does not answer, so it is where it was, out of view if it was. It still counts as that, or nothing
       // would ever fetch it, and it is placed when the app answers (`noteThatTheAppAnswers`).
       if wasParked { parked.insert(window) }
@@ -239,6 +240,7 @@ extension Controller {
       return
     }
     unplaced.remove(window)
+    var actual = given.frame
     // One that took the frame it was asked to is where its user had it, however little of it shows.
     let isSmaller = actual.width < frame.width - 2 || actual.height < frame.height - 2
     if actual.width > frame.width + 2 || actual.height > frame.height + 2
@@ -251,7 +253,7 @@ extension Controller {
       if isSmaller, let home = workspaceID(containing: window),
         workspaces[home]?.floating[window]?.approximatelyEquals(frame, tolerance: 1) == true
       {
-        workspaces[home]?.floating[window] = actual
+        workspaces[home]?.floating[window] = CGRect(origin: actual.origin, size: given.own.size)
       }
     }
     windows[window]?.frame = actual

@@ -165,7 +165,9 @@ extension Controller {
     for (window, way) in returning.sorted(by: { $0.key < $1.key }) where windows[window]?.frame == way.to {
       // An app that does not answer leaves its window where the trials put it, and that is what Arbor has to know:
       // when the app wakes, a frame that differs from the one on record is taken for its user's doing.
-      windows[window]?.frame = system.setFrame(way.to, of: window) ?? way.from
+      // And what `give` has to know to reckon the way.
+      windows[window]?.frame = way.from
+      _ = give(way.to, to: window)
     }
   }
 }

@@ -9,7 +9,8 @@ import CoreGraphics
 /// the same window for another frame. Not a jolt: asking again because the app answered with another size than it was asked for
 /// (nobody can know an app's limits before asking), two moves of which a person sees one, because the
 /// place in between is out of view like the place before or after it, and a question: a window of which Arbor does not know how small
-/// it goes is asked to shrink where it stands and goes to its place afterwards, which is one road (Roads.swift).
+/// it goes is asked to shrink where it stands and goes to its place afterwards, which is one road (Roads.swift). Nor a window sized where
+/// its size fits and then moved into a frame that hangs over the edge of the screen, into which macOS lets nobody grow (`isSizedWhereItFits`).
 public struct Jolt: Equatable, Sendable, CustomStringConvertible {
   public var window: WindowID
   public var from: CGRect
@@ -52,7 +53,8 @@ extension FakeWindowSystem {
         // Nobody else has had the window since.
         first.after == move.before,
         // Not a question: a size where it stood, and from there straight on.
-        first.after.origin != first.before.origin || Self.detour([first.before, first.after, move.after]) != nil
+        first.after.origin != first.before.origin || Self.detour([first.before, first.after, move.after]) != nil,
+        !isSizedWhereItFits(first, then: move)
       else { continue }
       let (before, between, after) = (shows(first.before), shows(first.after), shows(move.after))
       if between || (before && after) {
