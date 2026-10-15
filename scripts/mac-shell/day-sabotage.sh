@@ -66,6 +66,8 @@ place "$A" 220 100 600 420
 acted moves="$A" offence=jolt
 act dock-key elsewhere-first "OFFENCE: a window goes somewhere else before it goes where it ends up"
 place "$A" 700 300 600 420
+# Long enough to be seen: the sampler looks every 26 ms, and what is over sooner shows to nobody.
+sleep 0.1
 place "$A" 100 100 600 420
 acted moves="$A" offence=jolt
 act dock-key somebody-else "OFFENCE: a window that the step does not name is moved"
@@ -78,6 +80,7 @@ acted moves="$C"
 echo "parked at $(real_frame_of "$C")"
 act view flashes "OFFENCE: a window that is out of view shows for a moment"
 place "$C" 400 300 480 320
+sleep 0.1
 place "$C" "$((dx + dw - 1))" "$((dy + dh - 1))" 480 320
 acted moves=any offence=flash
 act view honest-return "it comes back into view"

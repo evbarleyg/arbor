@@ -198,15 +198,23 @@ switch_menu() {
 }
 
 tile_click() {
-  local window place x y w h tile
+  local window place x y w h tile px="" py=""
   arbor_acts || { left_out "tile_click: Arbor is not acting"; return; }
   day_ids
   tile=$(echo "$DAY_TILES" | tr ',' '\n' | sed -n "${1:-1}p")
   [ -n "$tile" ] || { left_out "tile_click ${1:-1}: no such tile stands in for a window"; return; }
   window=${tile%%@*} place=${tile#*@}
   IFS=: read -r x y w h <<< "$place"
+  # A floating window may lie over the tile, and would take the click.
+  for place in "2 2" "1 2" "3 2" "2 1" "2 3"; do
+    # In quarters of the tile: its middle first.
+    px=$((x + w * ${place% *} / 4)) py=$((y + h * ${place#* } / 4))
+    [ "$(apptool top-at "$px" "$py" 2>/dev/null | cut -d ' ' -f 2)" != "$ARBOR_PID" ] || break
+    px=""
+  done
+  [ -n "$px" ] || { left_out "tile_click ${1:-1}: something lies over the tile"; return; }
   walk_act tile-click click-tile "clicks the tile that stands in for a window"
-  click "$((x + w / 2))" "$((y + h / 2))"
+  click "$px" "$py"
   acted moves=any front="$window"
 }
 
@@ -266,19 +274,28 @@ minimize() {
   walk_act open-close "minimize-$name" "presses ⌘M"
   leaving "$name"
   key cmd+m
-  WALK_MINIMIZED="$WALK_MINIMIZED $name"
+  # An app does not obey every time: Calendar has been seen to take the key and keep its window where it was.
+  if must eventually minimized "$window" "$(pid_of "$name")"; then WALK_MINIMIZED="$WALK_MINIMIZED $name"; fi
   changed
   acted moves=docked leaves="$window"
 }
+minimized() { apptool windows "$2" 2> /dev/null | awk -v id="$1" '$1 == id' | grep -q minimized; }
 
 restore() {
   local x y window
   [ -n "${1:-}" ] && listed "$1" "$WALK_MINIMIZED" || set -- "${WALK_MINIMIZED##* }"
   [ -n "${1:-}" ] || { left_out "restore: nothing is minimized"; return; }
   window=$(window_of "$1")
-  walk_act open-close "restore-$1" "clicks its miniature in the Dock"
   read -r x y <<< "$(apptool dock-window "$window" 2>/dev/null)"
-  if [ -n "${x:-}" ]; then click "$x" "$y"; move "$x" "$((y - 200))"; else must false; fi
+  # The miniature is told by its name, which is not always the window's (Notes). A click on the app's icon brings the window back as well.
+  if [ -n "${x:-}" ]; then
+    walk_act open-close "restore-$1" "clicks its miniature in the Dock"
+    click "$x" "$y"
+    move "$x" "$((y - 200))"
+  else
+    walk_act open-close "restore-$1" "clicks $1's icon in the Dock, which brings its minimized window back"
+    must dock_click "$(bundle_of "$1")"
+  fi
   WALK_MINIMIZED=$(without "$1" "$WALK_MINIMIZED")
   # shellcheck disable=SC2046
   acted moves=docked comes="$window" front="$window" $(came_back "$1")
@@ -756,6 +773,8 @@ hold_view() {
 release_view() { left_out "release_view: hold_view lets go by itself"; }
 
 walk_quit() {
+  # What each event tap of the Mac's has cost so far, by the window server's own count: whose tap it is that holds an event back.
+  "$DAY_WITNESS" taps >> "$ARBOR_OUT/taps.txt" 2> /dev/null
   walk_act quit-and-start quit "chooses Quit Arbor in Arbor's menu"
   must arbor_menu up return
   want "Arbor ends within five seconds" day_gone
@@ -763,9 +782,13 @@ walk_quit() {
   acted moves=any restores=all places=1 everything=1
 }
 
+# After Quit every app still comes when it is called. `walk_roll_call 3`: every third one, and not the same ones each time.
 walk_roll_call() {
-  local name
-  for name in $WALK_CAST; do switch_dock "$name"; done
+  local name every=${1:-1} at=$WALK_ACTS
+  for name in $WALK_CAST; do
+    at=$((at + 1))
+    [ $((at % every)) -ne 0 ] || switch_dock "$name"
+  done
 }
 
 walk_start() {
@@ -788,7 +811,8 @@ walk_start() {
 quit_and_start() {
   with_arbor && arbor_answers && [ -z "$WALK_FULL_SCREEN" ] || { left_out "quit_and_start: Arbor is not running"; return; }
   walk_quit
-  walk_roll_call
+  # All of them at the journey's end.
+  walk_roll_call 3
   walk_start
 }
 
@@ -823,7 +847,7 @@ fills_the_display() {
 }
 
 walk_begin() {
-  local cast=${1:-stock} display=${2:-laptop} tiling=${3:-defaults} seed=${4:-} commit=${5:-} name listed probe seen
+  local cast=${1:-stock} display=${2:-laptop} tiling=${3:-defaults} seed=${4:-} commit=${5:-} name listed probe seen try
   apps_watchdog "${WALK_LIMIT:-1060}"
   step "the Mac"
   echo "macOS $(sw_vers -productVersion) ($(sw_vers -buildVersion)) on $(uname -m)"
@@ -884,18 +908,24 @@ walk_begin() {
   # A switch that is written and not obeyed proves nothing: before anything counts, macOS is seen to fill the screen, or not to.
   probe=$(window_of calendar)
   [ -n "$probe" ] || probe=$(window_of "${WALK_CAST##* }")
-  act drag-where-macos-tiles tiling-acts "without Arbor: drags a window by its title bar against the menu bar and lets go"
-  # All of it in front, so that the middle of its title bar is free.
-  dock_click "$(bundle_of "$(name_of_pid "$(pointer windows | awk -v id="$probe" '$1 == id { print $2 }')")")"
-  sleep 0.5
-  must drag_window "$probe" "$((WALK_X + WALK_W / 2))" "$WALK_Y" --hold 1
-  acted setup=1
-  if eventually fills_the_display "$probe"; then seen=true; else seen=false; fi
+  # macOS does not answer every drag: its preview has been seen to come, to go within 3 ms and to stay away, with the pointer at rest in the menu bar. So that it acts
+  # is said by one drag of three, and that it does not by two of two.
+  seen=false
+  for try in 1 2 3; do
+    act drag-where-macos-tiles tiling-acts "without Arbor: drags a window by its title bar against the menu bar and lets go"
+    # All of it in front, so that the middle of its title bar is free.
+    dock_click "$(bundle_of "$(name_of_pid "$(pointer windows | awk -v id="$probe" '$1 == id { print $2 }')")")"
+    sleep 0.5
+    must drag_window "$probe" "$((WALK_X + WALK_W / 2))" "$WALK_Y" --hold 1
+    acted setup=1
+    if eventually fills_the_display "$probe"; then seen=true; fi
+    act drag-where-macos-tiles tiling-acts-back "drags it away again, a hand's breadth down"
+    must drag_window "$probe" "$((WALK_X + WALK_W / 2))" "$((WALK_Y + 130))"
+    acted setup=1
+    if [ "$seen" = true ] || { [ "$tiling" = off ] && [ "$try" -ge 2 ]; }; then break; fi
+  done
   echo "macOS's tiling was seen to act: $seen"
   if [ "$tiling" = defaults ]; then check "macOS's own tiling acts" test "$seen" = true; else check "macOS's own tiling is off" test "$seen" = false; fi
-  act drag-where-macos-tiles tiling-acts-back "drags it away again, a hand's breadth down"
-  must drag_window "$probe" "$((WALK_X + WALK_W / 2))" "$((WALK_Y + 130))"
-  acted setup=1
   act idle look-around "looks at the screen"
   sleep 2
   acted setup=1 own=all
