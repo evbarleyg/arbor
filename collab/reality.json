@@ -5452,6 +5452,27 @@
    ]
   },
   {
+   "id": "doctor-fails-on-a-mac-as-it-comes",
+   "kind": "toolchain",
+   "layer": "test",
+   "expected": "`$(arborctl doctor)` holds the report, so a script can look for a row in it.",
+   "happened": "It was empty, with the whole report on the screen and the row looked for in it. A Mac as it comes has macOS's own tiling on, which is a ✘ row; with a ✘ among its rows `doctor` fails; and arborctl writes the answer of a command that failed to standard error, behind its own name. On Linux the facts a test hands to `doctor` are a healthy Mac's unless it says otherwise.",
+   "found": "`scripts/mac-shell/check-F13.sh`, run to its end for the first time, on macOS 26.6.2 on 2026-10-15: two of its four failures. A third was the harness's own: `lib.sh` has a function `arborctl`, for the checkout's debug build, and a function wins over PATH, so what meant the link in ~/.local/bin never asked it.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [
+    "e2e: doctor names the signature",
+    "e2e: arborctl is that link"
+   ],
+   "copes": "scripts/mac-shell/check-F13.sh reads both outputs of `doctor`, and `scripts/mac-shell/lib-F13.sh` takes the function away.",
+   "hurt": 4,
+   "sources": [
+    "scripts/mac-shell/check-F13.sh",
+    "scripts/mac-shell/lib-F13.sh",
+    "Sources/ArborKit/Controller/Controller+Doctor.swift"
+   ]
+  },
+  {
    "id": "during-a-pause-each-try-for-a-hung-apps-window-waits-for-the-app-itself",
    "kind": "timing",
    "layer": "at the seam",
@@ -11408,16 +11429,20 @@
    "kind": "toolchain",
    "layer": "test",
    "expected": "A path is spelt one way.",
-   "happened": "macOS's /tmp is a link to /private/tmp, and that is how `ps` spells the path of a program that runs from there: what was started from /tmp/arbor-x is listed under /private/tmp/arbor-x. On Linux, where the harness's own tests run, /tmp is /tmp.",
-   "found": "Writing the harness's clean-up for real Macs.",
+   "happened": "macOS's /tmp is a link to /private/tmp, and that is how `ps` spells the path of a program that runs from there: what was started from /tmp/arbor-x is listed under /private/tmp/arbor-x. On Linux, where the harness's own tests run, /tmp is /tmp. And perhaps the other way about: on 2026-10-15 a copy started from /private/tmp/… logged its watchdog's number, and a second later a search from `^/private/tmp/…` listed the app alone. Whether the watchdog, which Arbor starts from its bundle's own idea of the path, is listed under /tmp/…, or had ended, that run could not tell.",
+   "found": "Writing the harness's clean-up for real Macs; `scripts/mac-shell/check-F13.sh`'s first run to its end.",
    "modelled": "cannot",
    "knobs": [],
-   "guards": [],
-   "copes": "scripts/mac-shell/lib.sh takes both spellings, in what it may remove and in whose processes it ends.",
+   "guards": [
+    "tool: test-tooling.py",
+    "e2e: its watchdog runs beside it"
+   ],
+   "copes": "scripts/mac-shell/lib.sh takes both spellings, in what it may remove and in whose processes it ends; so does every search of `scripts/mac-shell/lib-F13.sh` (`spelled`), and its check of the watchdog goes by the number in the log, so the next run tells.",
    "hurt": 4,
    "sources": [
     "scripts/mac-shell/lib.sh",
-    "scripts/mac-shell/watchdog-bundle.sh"
+    "scripts/mac-shell/watchdog-bundle.sh",
+    "scripts/mac-shell/lib-F13.sh"
    ]
   },
   {

@@ -31,6 +31,9 @@ home="$sandbox/home"
 export HOME=$home # safe anywhere: nothing here is started with `open`, which is what would get the real one
 mkdir -p "$home/Library/Keychains" "$home/Library/Preferences" "$home/.local/bin"
 export PATH="$home/.local/bin:$PATH"
+# lib.sh has a function of this name, for the checkout's debug build, and a function wins over PATH. Here the word means what it means in a
+# person's shell: the link that `make install` puts into ~/.local/bin.
+unset -f arborctl
 # lib.sh points these at a session folder of its own.
 unset ARBOR_SOCKET # safe anywhere: with the next line it is $sandbox/arbor/arbor.sock
 export ARBOR_HOME="$sandbox/arbor"
@@ -69,7 +72,55 @@ differ() { [ -n "$1" ] && [ -n "$2" ] && [ "$1" != "$2" ]; }
 unchanged() { [ "$1" = "$2" ]; }
 without() { case "$1" in *"$2"*) return 1 ;; *) return 0 ;; esac; }
 with() { case "$1" in *"$2"*) return 0 ;; *) return 1 ;; esac; }
-gone() { ! pgrep -f "$1" > /dev/null; }
+# spelled <path in $sandbox> [what follows it]: the pattern by which pgrep and pkill find what runs from there, by either of the folder's two
+# names: /tmp is /private/tmp to some. Whole or not at all: of no path, and of one that is not in the folder, it prints nothing and fails. What
+# is left of a pattern without its beginning would find a person's own Arbor.
+spelled() {
+  case "$1" in
+    "${sandbox:?}"/*) printf '%s' "^(/private)?/tmp/${sandbox##*/}${1#"$sandbox"}${2:-}" ;;
+    *) echo "spelled: '$1' is not in $sandbox" >&2; return 1 ;;
+  esac
+}
+# listed <Arbor.app in $sandbox>: number and command line of all that runs of that copy, the app and its watchdog. Fails where nobody could look.
+listed() {
+  local pattern code=0
+  pattern=$(spelled "$1" /Contents/MacOS/Arbor) || return 2
+  # safe anywhere: the pattern begins with this run's folder, so it lists that copy and its watchdog and nothing of anybody's
+  pgrep -fl "${pattern:?}" || code=$?
+  # 1: nothing matched.
+  [ "$code" -le 1 ]
+}
+# The app alone: its watchdog runs from the same file.
+app_pid() { listed "$1" | awk '$3 != "--watchdog" { print $1; exit }'; }
+runs() { [ -n "$(app_pid "$1")" ]; }
+watchdog_runs() { case "$(listed "$1")" in *"/Contents/MacOS/Arbor --watchdog "*) return 0 ;; *) return 1 ;; esac; }
+# Neither of them; and not where nobody could look.
+gone() {
+  local all
+  all=$(listed "$1") || return 1
+  [ -z "$all" ]
+}
+# Before a copy is killed: its watchdog would take that for an accident and start it again.
+stop_watchdog() {
+  local pattern
+  # safe anywhere: a pattern to look by; nothing is started
+  pattern=$(spelled "$1" "/Contents/MacOS/Arbor --watchdog") || return 0
+  pkill -f "${pattern:?}" 2>/dev/null  # safe anywhere: only the copy in this run's folder in /tmp
+}
+# The watchdog that <arbor.log> names last, and what ps calls a process: nothing where there is none.
+logged_watchdog() { sed -n 's/.* watchdog started, pid \([0-9][0-9]*\)$/\1/p' "$1" | tail -n 1; }
+command_of() { [ -n "$1" ] && ps -ww -o command= -p "$1" 2>/dev/null; }
+# check_watchdog <arbor.log> <Arbor.app in $sandbox> <the app's number>. By the number Arbor logged, so that a watchdog that is spelled in a
+# way nobody thought of is told from one that is not there; asked once, so that what is printed is what is judged.
+check_watchdog() {
+  local pid called
+  pid=$(logged_watchdog "$1")
+  called=$(command_of "$pid")
+  echo "  the watchdog, by the log number ${pid:-unknown}: ${called:-no such process}"
+  echo "  all that runs of this copy: $(listed "$2" | tr '\n' '|')"
+  check "its watchdog runs beside it" with "$called" "/Contents/MacOS/Arbor --watchdog ${3:-of no app}"
+  check "and is found by where it runs from, as the clean-up and every \"nothing is left running\" look for it" watchdog_runs "$2"
+}
 # In the clone.
 change_the_source() { echo 'print("F13: a different build")' >> "$src/Sources/Arbor/main.swift"; }
 restore_the_source() { git -C "$src" checkout --quiet -- Sources/Arbor/main.swift; }
@@ -134,7 +185,7 @@ copy_has_gone() {
   [ -n "$copy_pid" ] || return 0
   if ! arbor_await_exit "$copy_pid" 50; then
     gone=1
-    pkill -f "^${copy:?}/Contents/MacOS/Arbor --watchdog" 2>/dev/null  # safe anywhere: only the copy in this run's folder in /tmp
+    stop_watchdog "$copy"
     kill -9 "$copy_pid" 2>/dev/null
     arbor_await_exit "$copy_pid" 20
   fi
@@ -163,12 +214,13 @@ window_shot() {
 # More to clean up: a script names a function of its own here.
 f13_also_clean=""
 f13_cleanup() {
+  local all
   f13_sandbox_is_ours || return 0
   [ -z "$feed_pid" ] || kill "$feed_pid" 2>/dev/null
   stop_copy
   [ -z "$f13_also_clean" ] || "$f13_also_clean"
   # safe anywhere: only what was started from this run's folder in /tmp, by either of the folder's two names
-  pkill -f "^(/private)?/tmp/${sandbox##*/}/" 2>/dev/null
+  all=$(spelled "$sandbox/") && pkill -f "${all:?}" 2>/dev/null
   hdiutil detach -quiet "$sandbox/mount" 2>/dev/null
   [ ! -f "$keychain" ] || drop_keychain "$keychain" 2>/dev/null
   cp "$sandbox/arbor/arbor.log" "$ARBOR_OUT/arbor.log" 2>/dev/null

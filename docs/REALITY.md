@@ -66,8 +66,8 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [input](#input) | 59 | 8 | 7 | 15 | 13 | 24 | 23 | 6 | 8 | 22 | 11 |
 | [looks](#looks) | 21 | 0 | 0 | 0 | 1 | 20 | 2 | 2 | 3 | 14 | 6 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
-| [toolchain](#toolchain) | 44 | 1 | 0 | 1 | 4 | 39 | 25 | 1 | 1 | 17 | 7 |
-| **all** | 460 | 62 | 90 | 124 | 70 | 176 | 233 | 19 | 59 | 149 | 109 |
+| [toolchain](#toolchain) | 45 | 1 | 0 | 1 | 4 | 40 | 26 | 1 | 2 | 16 | 7 |
+| **all** | 461 | 62 | 90 | 124 | 70 | 177 | 234 | 19 | 60 | 148 | 109 |
 
 **Where the difference bit**
 
@@ -76,7 +76,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 144 | 89 | 46 | 13 | 33 | 52 |
 | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 163 | 97 | 121 | 0 | 11 | 31 |
 | controller | in the controller or the core, given reports that were right | 27 | 14 | 15 | 0 | 1 | 11 |
-| test | in a test, a script or a harness that expected the wrong thing | 80 | 0 | 24 | 5 | 10 | 41 |
+| test | in a test, a script or a harness that expected the wrong thing | 81 | 0 | 25 | 5 | 11 | 40 |
 | machine | in the machine, the toolchain or the way things are built and installed | 46 | 3 | 27 | 1 | 4 | 14 |
 
 Each case is counted under the best guard it has: one that goes red on any machine (a test, a scenario, a replayed trace, a tool that `make check` or CI runs), one that needs CI's Macs (a test for macOS alone, a step of a real-window run that CI starts), one that somebody has to start, or none.
@@ -5505,6 +5505,18 @@ Toolchain and machines: compilers, runners and shells that differ from the ones 
 - **Arbor copes:** Sources/arbor-sim/Serve.swift runs the main run loop instead, as the app does.
 - **Read in:** `Sources/arbor-sim/Serve.swift`, `collab/BACKLOG.md`
 
+### doctor-fails-on-a-mac-as-it-comes
+
+*hurt 4 · test*
+
+- **Expected:** `$(arborctl doctor)` holds the report, so a script can look for a row in it.
+- **Happened:** It was empty, with the whole report on the screen and the row looked for in it. A Mac as it comes has macOS's own tiling on, which is a ✘ row; with a ✘ among its rows `doctor` fails; and arborctl writes the answer of a command that failed to standard error, behind its own name. On Linux the facts a test hands to `doctor` are a healthy Mac's unless it says otherwise.
+- **Found by:** `scripts/mac-shell/check-F13.sh`, run to its end for the first time, on macOS 26.6.2 on 2026-10-15: two of its four failures. A third was the harness's own: `lib.sh` has a function `arborctl`, for the checkout's debug build, and a function wins over PATH, so what meant the link in ~/.local/bin never asked it.
+- **Stand-ins play it:** cannot: it lies below or beside the seam
+- **Guard:** `e2e: doctor names the signature` (by hand); `e2e: arborctl is that link` (by hand)
+- **Arbor copes:** scripts/mac-shell/check-F13.sh reads both outputs of `doctor`, and `scripts/mac-shell/lib-F13.sh` takes the function away.
+- **Read in:** `scripts/mac-shell/check-F13.sh`, `scripts/mac-shell/lib-F13.sh`, `Sources/ArborKit/Controller/Controller+Doctor.swift`
+
 ### foundation-alone-brings-cgrect-without-its-members
 
 *hurt 4 · machine*
@@ -5774,12 +5786,12 @@ Toolchain and machines: compilers, runners and shells that differ from the ones 
 *hurt 4 · test*
 
 - **Expected:** A path is spelt one way.
-- **Happened:** macOS's /tmp is a link to /private/tmp, and that is how `ps` spells the path of a program that runs from there: what was started from /tmp/arbor-x is listed under /private/tmp/arbor-x. On Linux, where the harness's own tests run, /tmp is /tmp.
-- **Found by:** Writing the harness's clean-up for real Macs.
+- **Happened:** macOS's /tmp is a link to /private/tmp, and that is how `ps` spells the path of a program that runs from there: what was started from /tmp/arbor-x is listed under /private/tmp/arbor-x. On Linux, where the harness's own tests run, /tmp is /tmp. And perhaps the other way about: on 2026-10-15 a copy started from /private/tmp/… logged its watchdog's number, and a second later a search from `^/private/tmp/…` listed the app alone. Whether the watchdog, which Arbor starts from its bundle's own idea of the path, is listed under /tmp/…, or had ended, that run could not tell.
+- **Found by:** Writing the harness's clean-up for real Macs; `scripts/mac-shell/check-F13.sh`'s first run to its end.
 - **Stand-ins play it:** cannot: it lies below or beside the seam
-- **Guard:** **none**
-- **Arbor copes:** scripts/mac-shell/lib.sh takes both spellings, in what it may remove and in whose processes it ends.
-- **Read in:** `scripts/mac-shell/lib.sh`, `scripts/mac-shell/watchdog-bundle.sh`
+- **Guard:** `tool: test-tooling.py`; `e2e: its watchdog runs beside it` (by hand)
+- **Arbor copes:** scripts/mac-shell/lib.sh takes both spellings, in what it may remove and in whose processes it ends; so does every search of `scripts/mac-shell/lib-F13.sh` (`spelled`), and its check of the watchdog goes by the number in the log, so the next run tells.
+- **Read in:** `scripts/mac-shell/lib.sh`, `scripts/mac-shell/watchdog-bundle.sh`, `scripts/mac-shell/lib-F13.sh`
 
 ### two-scripts-that-begin-alike-share-one-tag-and-a-queued-job-takes-the-newest-commit
 

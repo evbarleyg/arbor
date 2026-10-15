@@ -57,7 +57,10 @@ fi
 grep -E "^Signed|^Installed|^Linked|^Started|^  " "$ARBOR_OUT/install.txt"
 check "it found the identity by itself" says "$ARBOR_OUT/install.txt" "with \"$identity\", this Mac's own certificate"
 check "it starts Arbor and prints its status" says "$ARBOR_OUT/install.txt" "Started Arbor: "
-check "Arbor runs from ~/Applications" pgrep -f "^$installed/Contents/MacOS/Arbor"
+check "Arbor runs from ~/Applications" runs "$installed"
+check "to this shell, as to a person's, arborctl is the link in ~/.local/bin" same "$(command -v arborctl)" "$home/.local/bin/arborctl"
+# As a person has it: started by macOS, with its watchdog.
+check_watchdog "$real_home/Library/Application Support/Arbor/arbor.log" "$installed" "$(app_pid "$installed")"
 check "the running app reports its version" same "$(arborctl version | head -n 1)" "Arbor $expected"
 echo "  without ARBOR_SOCKET, under this shell's HOME: $(env -u ARBOR_SOCKET arborctl status 2>&1 | head -n 1)"
 
@@ -118,7 +121,7 @@ check "the entry survives a new build copied over the old one" same "$(arborctl 
 
 step "5  the menu"
 wait "$pointer_build" || cat "$ARBOR_OUT/build-pointer.log"
-menu_pid=$(pgrep -f "^$installed/Contents/MacOS/Arbor" | head -n 1)
+menu_pid=$(app_pid "$installed")
 if item=$(pointer status-item "$menu_pid"); then
   # shellcheck disable=SC2086
   click $item
@@ -132,7 +135,7 @@ limit 120 make uninstall 2>&1 | tee "$ARBOR_OUT/uninstall.txt"
 check "make uninstall removed the login item" says "$ARBOR_OUT/uninstall.txt" "Arbor does not open at login"
 check "asked Arbor to quit" says "$ARBOR_OUT/uninstall.txt" "Asked the running Arbor to quit"
 check "removed the app" test ! -e "$installed"
-check "nothing of it is left running" gone "^$installed/Contents/MacOS/Arbor"
+check "nothing of it is left running" gone "$installed"
 echo "  login items that still mention Arbor: $(sudo sfltool dumpbtm 2>/dev/null | grep -ci "$bundle_id")"
 check "settings are still there" test -f "$real_home/Library/Application Support/Arbor/settings.json"
 
@@ -147,7 +150,8 @@ spctl --assess --type execute --verbose=4 "$download" 2>&1 | sed 's/^/    /'
 # In the background: `open` may wait for the answer to a dialog that nobody is there to answer.
 (limit 20 open "$download" 2>&1 | head -n 3) &
 shot_after 4 06-first-launch-of-a-download
-echo "  running after that? $(pgrep -fl "^$download" || echo no)"
+# macOS may run a copy that carries the mark of a download from a folder of its own making.
+echo "  running after that? $(listed "$download" | grep . || pgrep -fl "/AppTranslocation/[^ ]*/Arbor.app/Contents/MacOS/Arbor" || echo no)"
 killall CoreServicesUIAgent 2>/dev/null
 wait $!
 "$download/$tool" quit > /dev/null 2>&1
