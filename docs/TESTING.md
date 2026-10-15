@@ -823,7 +823,8 @@ sources of the tests** (`Tests/…`): where the tests are divided among machines
 `make gate` (`scripts/gate.sh`; `make check-fast` is the same) is everything a change must pass on Linux, each thing once: lint, the build,
 the tests as above, the smoke runs and the scenarios, then side by side the type-check of the macOS-only code, the tools' self-test and
 parity, which reads what the tests left instead of running them again. One line for each step; all output in `.build/gate/`. It goes on
-after a failure, so one round tells all. A step added to `make check` must be added there too: `make lint` says so.
+after a failure, so one round tells all. What `make check` runs besides lint, the build and the tests it reads from the Makefile, so a step
+added there is a step of the gate.
 
 The same script can divide the tests among several machines, the compiling too (`plan`, `cut`, `join`, `same`): its header says how.
 `scripts/test-fast-tests.py`, part of `make lint`, holds it to a table of Swift it must read rightly or refuse.

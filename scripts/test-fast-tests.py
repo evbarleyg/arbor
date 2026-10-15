@@ -322,46 +322,30 @@ row("run, whole: a refusal names the file", (code, "✘ fast-tests.py: Tests/T/B
 
 # MARK: the gate
 
-with open(os.path.join(shard.ROOT, "Makefile"), encoding="utf-8") as handle:
-    makefile = handle.read()
-with open(os.path.join(HERE, "gate.sh"), encoding="utf-8") as handle:
-    steps = [" ".join(line.split()[2:]).rstrip(" &") for line in handle if line.strip().startswith("step ")]
-
-
-def recipe(target):
-    """The commands of a target of the Makefile and of those it depends on, as gate.sh would write them."""
-    rule = re.search(rf"^{target}:(.*)\n((?:(?:\t|#).*\n)*)", makefile, re.M)
-    return [command for needed in rule.group(1).split() for command in recipe(needed)] + [
-        line.strip().lstrip("@") for line in rule.group(2).splitlines() if line.startswith("\t")]
-
-
-# `make lint` is a step, and the tests are built and run in their own way.
-instead = {command: "make lint" for command in recipe("lint")}
-instead.update({"swift build": "swift build --build-tests", "swift test": './scripts/fast-tests.py run --no-build --log "$logs/test-output.log"'})
-row("gate.sh: it has steps", len(steps) > 8, True)
-row("gate.sh: whatever `make check` runs is a step of it", [command for command in recipe("check") if instead.get(command, command) not in steps], [])
-row("gate.sh: and so are the type-check and parity", [wanted for wanted in ("make typecheck-mac", "python3 scripts/parity.py --test-log") if not any(
-    step.startswith(wanted) for step in steps)], [])
-
-# gate.sh itself, with a stand-in for everything it starts. Each says its name and fails if FAIL names it.
+# gate.sh itself, with a stand-in for everything it starts. Each says its name and fails if FAIL names it. The rule for `check` is the real
+# Makefile's, so these rows hold whatever steps it has.
 STAND_IN = '#!/bin/sh\nname="%s${1:+ $1}"\ncase ",$FAIL," in *",$name,"*) echo "$name says no"; exit 3;; esac\necho "$name is fine"\n'
 PYTHON_STAND_IN = 'import os, sys\nname = "%s"\nif name in os.environ["FAIL"].split(","):\n    print(name, "says no")\n    sys.exit(3)\nprint(name, "is fine")\n'
+with open(os.path.join(shard.ROOT, "Makefile"), encoding="utf-8") as handle:
+    CHECK = re.search(r"^check:.*\n(?:(?:\t|#).*\n)*", handle.read(), re.M).group()
+RECIPE = [line for line in CHECK.split("\n") if line.startswith("\t")]
+# lint, build, tests, typecheck-mac, parity, and the recipe.
+STEPS = 5 + len(RECIPE)
 
 
-def gate(fail="", *arguments):
+def gate(fail="", *arguments, rule=CHECK):
     """The exit code of gate.sh and what it printed when the steps FAIL names fail."""
     with tempfile.TemporaryDirectory() as folder:
         os.makedirs(os.path.join(folder, "scripts"))
         os.makedirs(os.path.join(folder, "bin"))
         shutil.copy(os.path.join(HERE, "gate.sh"), os.path.join(folder, "scripts", "gate.sh"))
-        for path in ("bin/make", "bin/swift", "scripts/fast-tests.py", "scripts/sim-smoke.sh", "scripts/privacy-smoke.sh", "scripts/scenarios.sh",
-                     "scripts/release-tools-test.sh"):
+        with open(os.path.join(folder, "Makefile"), "w", encoding="utf-8") as handle:
+            handle.write("lint:\n\t@true\n\n" + rule + "\nafter:\n\t@./scripts/not-of-check.sh\n")
+        for path in {"bin/make", "bin/swift", "scripts/fast-tests.py", "scripts/parity.py", *re.findall(r"scripts/[\w./-]+", rule)}:
+            run_by_python = path.endswith(".py") and path != "scripts/fast-tests.py"
             with open(os.path.join(folder, path), "w", encoding="utf-8") as handle:
-                handle.write(STAND_IN % os.path.basename(path))
+                handle.write((PYTHON_STAND_IN if run_by_python else STAND_IN) % os.path.basename(path))
             os.chmod(os.path.join(folder, path), 0o755)
-        for path in ("scripts/test-tooling.py", "scripts/parity.py"):
-            with open(os.path.join(folder, path), "w", encoding="utf-8") as handle:
-                handle.write(PYTHON_STAND_IN % os.path.basename(path))
         done = subprocess.run(["bash", os.path.join(folder, "scripts", "gate.sh"), *arguments], capture_output=True, text=True, check=False,
                               env={**os.environ, "PATH": os.path.join(folder, "bin") + os.pathsep + os.environ["PATH"], "FAIL": fail})
         return done.returncode, done.stdout + done.stderr
@@ -371,20 +355,33 @@ if platform.system() != "Linux":
     print("SKIPPED the rows that run gate.sh: it declines off Linux")
 else:
     code, said = gate()
-    row("gate.sh, run: all is well", (code, said.count("✔"), "the gate is open" in said), (0, len(steps), True))
+    row("gate.sh: all is well", (code, said.count("✔"), "the gate is open" in said), (0, STEPS, True))
+    row("gate.sh: every line of the recipe of `make check` is a step",
+        [line for line in RECIPE if f"✔ {os.path.splitext(os.path.basename(re.search(r'scripts/[\w./-]+', line).group()))[0]} " not in said], [])
+    row("gate.sh: and nothing of the rule after it", "not-of-check" in said, False)
+    code, said = gate(rule=CHECK + "\t@./scripts/brand-new.sh\n")
+    row("gate.sh: a step added to `make check` is a step of it", (code, said.count("✔"), "✔ brand-new " in said), (0, STEPS + 1, True))
+    code, said = gate("brand-new.sh --thoroughly", rule=CHECK + "# And then:\n\t@./scripts/brand-new.sh --thoroughly && ./scripts/scenarios.sh\n")
+    row("gate.sh: after a comment too, with its arguments, and it can fail", (code, "brand-new.sh --thoroughly says no" in said, "the gate is shut: brand-new (" in said), (1, True, True))
+    code, said = gate(rule=CHECK.replace("check: lint build test", "check: lint build test more"))
+    row("gate.sh: something `make check` depends on besides", (CHECK.startswith("check: lint build test\n"), code, said.count("✔"), "✔ more " in said), (True, 0, STEPS + 1, True))
+    code, said = gate(rule=CHECK + "\t@$(MAKE) more\n")
+    row("gate.sh: a line only make can read is refused, not left out", (code, "cannot run this line" in said), (1, True))
+    code, said = gate(rule="verify: lint\n\t@true\n")
+    row("gate.sh: no rule for check", (code, "the Makefile has no rule for check" in said), (1, True))
     code, said = gate("scenarios.sh")
-    row("gate.sh, run: a step fails", (code, "✘ scenarios" in said, "scenarios.sh says no" in said, "the gate is shut: scenarios (" in said), (1, True, True, True))
-    row("gate.sh, run: and all the others still run", said.count("✔"), len(steps) - 1)
+    row("gate.sh: a step fails", (code, "✘ scenarios" in said, "scenarios.sh says no" in said, "the gate is shut: scenarios (" in said), (1, True, True, True))
+    row("gate.sh: and all the others still run", said.count("✔"), STEPS - 1)
     code, said = gate("make typecheck-mac,test-tooling.py")
-    row("gate.sh, run: steps in the background fail", (code, "the gate is shut: tooling typecheck-mac (" in said), (1, True))
+    row("gate.sh: steps in the background fail", (code, "the gate is shut: test-tooling typecheck-mac (" in said), (1, True))
     code, said = gate("make lint")
-    row("gate.sh, run: lint fails, and the rest is still looked at", (code, said.count("✔"), "the gate is shut: lint (" in said), (1, len(steps) - 1, True))
+    row("gate.sh: lint fails, and the rest is still looked at", (code, said.count("✔"), "the gate is shut: lint (" in said), (1, STEPS - 1, True))
     code, said = gate("swift build")
-    row("gate.sh, run: it does not build, so nothing else is tried", (code, said.count("✔"), "it does not build" in said), (1, 1, True))
+    row("gate.sh: it does not build, so nothing else is tried", (code, said.count("✔"), "it does not build" in said), (1, 1, True))
     code, said = gate("fast-tests.py run")
-    row("gate.sh, run: the tests fail, so parity is not asked", (code, "parity                not asked" in said, "the gate is shut: tests (" in said), (1, True, True))
-    row("gate.sh, run: parity fails", gate("parity.py")[0], 1)
-    row("gate.sh, run: an argument it does not know", (gate("", "--fast")[0], "✔" in gate("", "--fast")[1]), (64, False))
+    row("gate.sh: the tests fail, so parity is not asked", (code, "not asked" in said, "the gate is shut: tests (" in said), (1, True, True))
+    row("gate.sh: parity fails", gate("parity.py")[0], 1)
+    row("gate.sh: an argument it does not know", (gate("", "--fast")[0], "✔" in gate("", "--fast")[1]), (64, False))
 
 # MARK: the real files
 
