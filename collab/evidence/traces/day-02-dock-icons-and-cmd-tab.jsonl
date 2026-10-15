@@ -1,0 +1,265 @@
+{"arbor":"dev","cursor":[800,130],"displays":[{"frame":[0,0,1600,900],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"name":"display-1","visible":[0,31,1600,791]}],"focusHistory":[121],"focused":121,"mouseDown":false,"name":"day-2","os":"macOS Version 26.6.2 (Build 25G83)","recorded":"2026-10-14T23:43:37Z","settings":{"allowAllURLCommands":false,"animationDuration":0.46,"appColourAmount":0.25,"appColours":true,"arrangeDesktopWeight":0.5,"autoDockMinimumHeight":300,"autoDockMinimumWidth":400,"automaticUpdateChecks":false,"bindings":{},"blurBehindArranged":0,"continuousZoom":false,"desktopEdge":0.05,"dimBehindArranged":0.25,"displays":[],"dropDwell":0.15,"excludedBundleIDs":[],"focusRing":true,"focusRingColour":"accent","focusRingRadius":0,"focusRingWidth":3,"frameRectangleModifier":"ctrl+opt","frameRectangleOnDesktop":true,"gap":12,"gapHandles":"shown","gesturesEnabled":true,"guardDesktopClicks":false,"historyButtons":true,"holdStillFor":[],"holdStillWhileCameraIsOn":false,"holdStillWhileMicrophoneIsOn":false,"hotkeysEnabled":true,"keepPushed":true,"makeRoom":true,"menuBarControls":true,"menuBarFill":0.25,"messages":"helpful","minimapDuration":0,"minimumUsableHeight":160,"minimumUsableWidth":240,"newWindows":"float","newWindowsWhileFramed":"guest","passThroughApps":[],"pauseForApps":[],"peek":true,"pinchThreshold":0.25,"previewDrags":true,"reflowWhileDragging":false,"resizeStep":40,"ruleTitleWait":2,"rules":[],"screenEdgeBand":12,"scrollOnDesktopZooms":false,"scrollZoom":true,"scrollZoomThreshold":40,"shareRemovedSpace":true,"shortcutsFollowLayout":true,"shrinkOutOfView":false,"soleFloatTakesDesktop":false,"stepInToward":"auto","summonStays":false,"tabsEnabled":false,"tileFade":0.2,"tileRetryMinutes":10,"tileStyle":"icon","tintBehindArranged":0,"windowEdgeFraction":0.3,"windowPictures":false},"thinning":0.05,"trace":1,"windows":[{"app":"Finder","bundle":"com.apple.finder","frame":[340,120,920,436],"id":95,"pid":13562,"title":"title[1]"},{"app":"Safari","bundle":"com.apple.Safari","frame":[138,31,1324,791],"id":98,"pid":14544,"title":"title[2]"},{"app":"TextEdit","bundle":"com.apple.TextEdit","frame":[165,65,673,439],"id":109,"pid":14768,"title":"title[3]"},{"app":"Terminal","bundle":"com.apple.Terminal","frame":[740,300,877,499],"id":112,"pid":14828,"title":"title[4]"},{"app":"Notes","bundle":"com.apple.Notes","frame":[300,105,1000,660],"id":115,"pid":14919,"title":"title[5]"},{"app":"Calendar","bundle":"com.apple.iCal","frame":[404,115,936,599],"id":121,"pid":15393,"title":"title[6]"},{"app":"System Settings","bundle":"com.apple.systempreferences","frame":[437,85,723,625],"id":124,"pid":15469,"title":""},{"app":"Preview","bundle":"com.apple.Preview","frame":[4,35,708,424],"id":128,"pid":15609,"title":"title[7]"}],"workspaces":{"07230EFA-7A8D-4E37-845C-19CC8737EEF5":{"back":[],"camera":0,"floating":{"109":[[165,65],[673,439]],"112":[[740,300],[877,499]],"115":[[300,105],[1000,660]],"121":[[404,115],[936,599]],"124":[[437,85],[723,625]],"128":[[4,35],[708,424]],"95":[[340,120],[920,436]],"98":[[138,31],[1324,791]]},"forward":[],"names":{},"savedViews":{},"tree":{"desktop":0,"loans":[],"nextRawID":1,"nodes":{"0":{"id":0,"kind":{"desktop":{}},"weight":1}},"root":0,"visits":[]}}}}
+# From `day-2`, by scripts/trace-to-test.py: 364 lines, without 33 questions of the script's.
+{"t":0.1109,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":0.1112,"note":"step 15 dock-icon-finder"}
+{"t":0.8368,"raw":"leftMouseDown 131,854"}
+{"t":0.8383,"event":"pointerPressed"}
+{"t":0.9508,"raw":"leftMouseUp 131,854"}
+{"t":1.0846,"raw":"AXApplicationDeactivated"}
+{"t":1.1082,"event":"keyboardFocusMoved"}
+{"t":1.1346,"call":"focusedWindow","result":95}
+{"t":1.1352,"call":"isMouseButtonDown","result":false}
+{"t":1.1369,"raw":"didActivateApplication pid 13562"}
+{"t":1.1383,"event":"focused","id":95}
+{"t":1.1396,"call":"focusedWindow","result":95}
+{"t":1.1415,"call":"focusedWindow","result":95}
+{"t":1.1417,"call":"isMouseButtonDown","result":false}
+{"t":1.1447,"raw":"AXApplicationActivated"}
+{"t":1.1454,"event":"keyboardFocusMoved"}
+{"t":1.1484,"call":"focusedWindow","result":95}
+{"t":1.1515,"call":"isMouseButtonDown","result":false}
+{"t":1.2657,"timer":"menu-bar"}
+{"t":1.2658,"call":"cursorLocation","result":[131,854]}
+{"t":1.5875,"timer":"focus-ring-again"}
+{"t":1.5878,"call":"isMouseButtonDown","result":false}
+{"t":2.1796,"timer":"accessibility"}
+{"t":2.1812,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":2.8620,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":2.8621,"note":"step 16 dock-icon-safari"}
+{"t":3.5394,"raw":"leftMouseDown 243,854"}
+{"t":3.5410,"event":"pointerPressed"}
+{"t":3.7057,"raw":"didActivateApplication pid 14544"}
+{"t":3.8238,"event":"focused","id":98}
+{"t":3.8255,"call":"focusedWindow","result":98}
+{"t":3.8269,"call":"focusedWindow","result":98}
+{"t":3.8294,"call":"isMouseButtonDown","result":false}
+{"t":3.8416,"raw":"AXApplicationDeactivated"}
+{"t":3.8443,"event":"keyboardFocusMoved"}
+{"t":3.8465,"call":"focusedWindow","result":98}
+{"t":3.8468,"call":"isMouseButtonDown","result":false}
+{"t":3.8476,"raw":"leftMouseUp 243,854"}
+{"t":3.8992,"raw":"AXApplicationActivated"}
+{"t":3.8994,"event":"keyboardFocusMoved"}
+{"t":3.9001,"call":"focusedWindow","result":98}
+{"t":3.9004,"call":"isMouseButtonDown","result":false}
+{"t":3.9008,"timer":"menu-bar"}
+{"t":3.9008,"call":"cursorLocation","result":[243,837.33]}
+{"t":4.1683,"timer":"focus-ring-again"}
+{"t":4.1705,"call":"isMouseButtonDown","result":false}
+{"t":4.9822,"timer":"accessibility"}
+{"t":4.9830,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":6.0079,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":6.0081,"note":"step 17 dock-icon-textedit"}
+{"t":6.6928,"raw":"leftMouseDown 1220,854"}
+{"t":6.6939,"event":"pointerPressed"}
+{"t":6.7874,"raw":"leftMouseUp 1220,854"}
+{"t":6.9075,"raw":"AXApplicationDeactivated"}
+{"t":6.9082,"event":"keyboardFocusMoved"}
+{"t":6.9100,"call":"focusedWindow","result":109}
+{"t":6.9105,"call":"isMouseButtonDown","result":false}
+{"t":6.9121,"raw":"didActivateApplication pid 14768"}
+{"t":6.9139,"event":"focused","id":109}
+{"t":6.9147,"call":"focusedWindow","result":109}
+{"t":6.9162,"call":"focusedWindow","result":109}
+{"t":6.9165,"call":"isMouseButtonDown","result":false}
+{"t":6.9171,"raw":"AXApplicationActivated"}
+{"t":6.9177,"event":"keyboardFocusMoved"}
+{"t":6.9193,"call":"focusedWindow","result":109}
+{"t":6.9201,"call":"isMouseButtonDown","result":false}
+{"t":6.9211,"timer":"menu-bar"}
+{"t":6.9214,"call":"cursorLocation","result":[1220,854]}
+{"t":7.2049,"timer":"focus-ring-again"}
+{"t":7.2061,"call":"isMouseButtonDown","result":false}
+{"t":8.0319,"timer":"accessibility"}
+{"t":8.0339,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":8.5523,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":8.5524,"note":"step 18 dock-icon-terminal"}
+{"t":9.1568,"raw":"leftMouseDown 1332,854"}
+{"t":9.1585,"event":"pointerPressed"}
+{"t":9.2402,"raw":"didActivateApplication pid 14828"}
+{"t":9.4178,"event":"focused","id":112}
+{"t":9.4183,"call":"focusedWindow","result":112}
+{"t":9.4212,"call":"focusedWindow","result":112}
+{"t":9.4215,"call":"isMouseButtonDown","result":false}
+{"t":9.4220,"raw":"AXApplicationDeactivated"}
+{"t":9.4226,"event":"keyboardFocusMoved"}
+{"t":9.4249,"call":"focusedWindow","result":112}
+{"t":9.4252,"call":"isMouseButtonDown","result":false}
+{"t":9.4254,"raw":"leftMouseUp 1332,854"}
+{"t":9.4260,"raw":"AXApplicationActivated"}
+{"t":9.4264,"event":"keyboardFocusMoved"}
+{"t":9.4276,"call":"focusedWindow","result":112}
+{"t":9.4278,"call":"isMouseButtonDown","result":false}
+{"t":9.4304,"timer":"menu-bar"}
+{"t":9.4310,"call":"cursorLocation","result":[1332,854]}
+{"t":9.7540,"timer":"focus-ring-again"}
+{"t":9.7542,"call":"isMouseButtonDown","result":false}
+{"t":10.5531,"timer":"accessibility"}
+{"t":10.5545,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":10.9409,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":10.9410,"note":"step 19 dock-icon-notes"}
+{"t":11.5832,"raw":"leftMouseDown 803,854"}
+{"t":11.5854,"event":"pointerPressed"}
+{"t":11.6969,"raw":"leftMouseUp 803,854"}
+{"t":11.7390,"raw":"AXApplicationDeactivated"}
+{"t":11.7394,"event":"keyboardFocusMoved"}
+{"t":11.8365,"call":"focusedWindow","result":115}
+{"t":11.8376,"call":"isMouseButtonDown","result":false}
+{"t":11.8400,"raw":"didActivateApplication pid 14919"}
+{"t":11.8409,"event":"focused","id":115}
+{"t":11.8414,"call":"focusedWindow","result":115}
+{"t":11.8421,"call":"focusedWindow","result":115}
+{"t":11.8424,"call":"isMouseButtonDown","result":false}
+{"t":11.8432,"raw":"AXApplicationActivated"}
+{"t":11.8437,"event":"keyboardFocusMoved"}
+{"t":11.8445,"call":"focusedWindow","result":115}
+{"t":11.8447,"call":"isMouseButtonDown","result":false}
+{"t":11.8450,"timer":"menu-bar"}
+{"t":11.8451,"call":"cursorLocation","result":[803,854]}
+{"t":12.1586,"timer":"focus-ring-again"}
+{"t":12.1589,"call":"isMouseButtonDown","result":false}
+{"t":13.0038,"timer":"accessibility"}
+{"t":13.0047,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":13.4716,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":13.4718,"note":"step 20 dock-icon-calendar"}
+{"t":14.0175,"raw":"leftMouseDown 635,854"}
+{"t":14.0193,"event":"pointerPressed"}
+{"t":14.0720,"raw":"leftMouseUp 635,854"}
+{"t":14.1516,"raw":"AXApplicationDeactivated"}
+{"t":14.1528,"event":"keyboardFocusMoved"}
+{"t":14.1639,"call":"focusedWindow","result":121}
+{"t":14.1643,"call":"isMouseButtonDown","result":false}
+{"t":14.1654,"raw":"didActivateApplication pid 15393"}
+{"t":14.1659,"event":"focused","id":121}
+{"t":14.1661,"call":"focusedWindow","result":121}
+{"t":14.1664,"call":"focusedWindow","result":121}
+{"t":14.1665,"call":"isMouseButtonDown","result":false}
+{"t":14.1666,"raw":"AXApplicationActivated"}
+{"t":14.1667,"event":"keyboardFocusMoved"}
+{"t":14.1671,"call":"focusedWindow","result":121}
+{"t":14.1672,"call":"isMouseButtonDown","result":false}
+{"t":14.1673,"timer":"menu-bar"}
+{"t":14.1674,"call":"cursorLocation","result":[635,854]}
+{"t":14.4222,"timer":"focus-ring-again"}
+{"t":14.4224,"call":"isMouseButtonDown","result":false}
+{"t":15.5685,"timer":"accessibility"}
+{"t":15.5690,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":15.7154,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":15.7158,"note":"step 21 dock-icon-settings"}
+{"t":16.2895,"raw":"leftMouseDown 1139,854"}
+{"t":16.2907,"event":"pointerPressed"}
+{"t":16.4075,"raw":"leftMouseUp 1139,854"}
+{"t":16.4470,"raw":"didActivateApplication pid 15469"}
+{"t":16.8701,"event":"focused","id":124}
+{"t":16.8725,"call":"focusedWindow","result":124}
+{"t":16.8735,"call":"focusedWindow","result":124}
+{"t":16.8736,"call":"isMouseButtonDown","result":false}
+{"t":16.8737,"raw":"AXApplicationDeactivated"}
+{"t":16.8739,"event":"keyboardFocusMoved"}
+{"t":16.8740,"call":"focusedWindow","result":124}
+{"t":16.8741,"call":"isMouseButtonDown","result":false}
+{"t":16.8741,"raw":"AXApplicationActivated"}
+{"t":16.8742,"event":"keyboardFocusMoved"}
+{"t":16.8746,"call":"focusedWindow","result":124}
+{"t":16.8749,"call":"isMouseButtonDown","result":false}
+{"t":16.9142,"timer":"menu-bar"}
+{"t":16.9143,"call":"cursorLocation","result":[1139,720.67]}
+{"t":17.2275,"timer":"focus-ring-again"}
+{"t":17.2278,"call":"isMouseButtonDown","result":false}
+{"t":17.7830,"timer":"accessibility"}
+{"t":17.7837,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":18.2883,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":18.2885,"note":"step 22 dock-icon-preview"}
+{"t":18.9551,"raw":"leftMouseDown 1276,854"}
+{"t":18.9560,"event":"pointerPressed"}
+{"t":19.1389,"raw":"didActivateApplication pid 15609"}
+{"t":19.1759,"event":"focused","id":128}
+{"t":19.1766,"call":"focusedWindow","result":128}
+{"t":19.1786,"call":"focusedWindow","result":128}
+{"t":19.1789,"call":"isMouseButtonDown","result":false}
+{"t":19.1795,"raw":"AXApplicationDeactivated"}
+{"t":19.1800,"event":"keyboardFocusMoved"}
+{"t":19.1806,"call":"focusedWindow","result":128}
+{"t":19.1807,"call":"isMouseButtonDown","result":false}
+{"t":19.1808,"raw":"leftMouseUp 1276,854"}
+{"t":19.1810,"raw":"AXApplicationActivated"}
+{"t":19.1812,"event":"keyboardFocusMoved"}
+{"t":19.1816,"call":"focusedWindow","result":128}
+{"t":19.1816,"call":"isMouseButtonDown","result":false}
+{"t":19.1819,"timer":"menu-bar"}
+{"t":19.1821,"call":"cursorLocation","result":[1276,854]}
+{"t":19.4886,"timer":"focus-ring-again"}
+{"t":19.4888,"call":"isMouseButtonDown","result":false}
+{"t":20.3138,"timer":"accessibility"}
+{"t":20.3141,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":20.9282,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":20.9297,"note":"step 23 dock-icon-mail"}
+{"t":21.4977,"raw":"leftMouseDown 355,854"}
+{"t":21.4987,"event":"pointerPressed"}
+{"t":21.6045,"raw":"leftMouseUp 355,854"}
+{"t":22.0792,"raw":"didActivateApplication pid 20389"}
+{"t":23.1113,"event":"keyboardFocusMoved"}
+{"t":23.1116,"call":"focusedWindow","result":null}
+{"t":23.1116,"call":"isMouseButtonDown","result":false}
+{"t":24.0278,"event":"appeared","window":{"app":"Mail","bundle":"com.apple.mail","frame":[240,72,1120,630],"id":189,"pid":20389,"title":"title[8]"}}
+{"t":24.0299,"call":"isMouseButtonDown","result":false}
+{"t":24.0403,"timer":"accessibility"}
+{"t":24.0408,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":24.0410,"raw":"AXApplicationDeactivated"}
+{"t":24.0412,"event":"keyboardFocusMoved"}
+{"t":24.0513,"call":"focusedWindow","result":191}
+{"t":24.0516,"call":"isMouseButtonDown","result":false}
+{"t":24.0918,"timer":"menu-bar"}
+{"t":24.0919,"call":"cursorLocation","result":[355,654]}
+{"t":24.3432,"timer":"focus-ring-again"}
+{"t":24.3435,"call":"isMouseButtonDown","result":false}
+{"t":24.5884,"timer":"save"}
+{"t":24.5930,"event":"settingsFileMayHaveChanged"}
+{"t":24.5933,"event":"settingsFileMayHaveChanged"}
+{"t":24.9671,"timer":"settings-file"}
+{"t":26.1287,"timer":"accessibility"}
+{"t":26.1337,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":26.1357,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":26.1359,"note":"step 24 cmd-tab"}
+{"t":26.2414,"raw":"flagsChanged"}
+{"t":26.8984,"raw":"AXApplicationActivated"}
+{"t":26.8992,"event":"keyboardFocusMoved"}
+{"t":26.9008,"call":"focusedWindow","result":128}
+{"t":26.9011,"call":"isMouseButtonDown","result":false}
+{"t":26.9026,"raw":"didActivateApplication pid 15609"}
+{"t":26.9118,"event":"focused","id":128}
+{"t":26.9120,"call":"focusedWindow","result":128}
+{"t":26.9155,"call":"focusedWindow","result":128}
+{"t":26.9158,"call":"isMouseButtonDown","result":false}
+{"t":26.9160,"raw":"AXApplicationDeactivated"}
+{"t":26.9163,"event":"keyboardFocusMoved"}
+{"t":26.9173,"call":"focusedWindow","result":128}
+{"t":26.9174,"call":"isMouseButtonDown","result":false}
+{"t":26.9191,"timer":"menu-bar"}
+{"t":26.9192,"call":"cursorLocation","result":[355,654]}
+{"t":27.1733,"timer":"focus-ring-again"}
+{"t":27.1735,"call":"isMouseButtonDown","result":false}
+{"t":28.2990,"timer":"accessibility"}
+{"t":28.2996,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":28.3911,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":28.3912,"note":"step 25 cmd-tab-twice"}
+{"t":28.4073,"raw":"flagsChanged"}
+{"t":29.5622,"raw":"AXApplicationDeactivated"}
+{"t":29.5682,"event":"keyboardFocusMoved"}
+{"t":29.5693,"call":"focusedWindow","result":191}
+{"t":29.5695,"call":"isMouseButtonDown","result":false}
+{"t":29.5725,"raw":"didActivateApplication pid 20389"}
+{"t":29.5740,"event":"keyboardFocusMoved"}
+{"t":29.5746,"call":"focusedWindow","result":191}
+{"t":29.5746,"call":"isMouseButtonDown","result":false}
+{"t":29.5748,"raw":"AXApplicationActivated"}
+{"t":29.5750,"event":"keyboardFocusMoved"}
+{"t":29.5754,"call":"focusedWindow","result":191}
+{"t":29.5754,"call":"isMouseButtonDown","result":false}
+{"t":29.5760,"timer":"menu-bar"}
+{"t":29.5762,"call":"cursorLocation","result":[355,654]}
+{"t":29.8873,"timer":"focus-ring-again"}
+{"t":29.8874,"call":"isMouseButtonDown","result":false}
+{"t":30.4909,"timer":"accessibility"}
+{"t":30.4914,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":30.9498,"args":[false],"read":"mayUseAccessibility","result":true}

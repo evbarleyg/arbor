@@ -1,0 +1,14 @@
+# Five windows of two apps are arranged, and one app stops answering for twenty seconds while the view goes to a window and back six times. A setFrame on a hung app's window comes back after a second with nothing; its windows follow into their slots when it wakes.
+# ---- what Arbor did, written by scripts/trace-to-test.py on 2026-10-15; `--again` writes it anew, and what stands above this line stays ----
+moved 31 6 at 4? 4 67 126 158 203 465
+frame 31 120 120 420 300
+moved 32 6 at 4? 4 67 126 158 203 465
+frame 32 200 180 420 300
+moved 33 12 at 4? 4 67 126 158 203 236 279 305 346 372 413 465
+frame 33 170 220 480 348
+moved 34 12 at 4? 4 67 126 158 203 236 279 305 346 372 413 465
+frame 34 220 180 480 348
+moved 35 12 at 4? 4 67 126 158 203 236 279 305 346 372 413 465
+frame 35 270 140 480 348
+asked-focus 31 33 34 33 34 33
+focused 33

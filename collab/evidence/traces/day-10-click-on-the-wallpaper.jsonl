@@ -1,0 +1,47 @@
+{"appPlaced":{"189":[240,72,1120,630],"286":[165,65,673,439]},"arbor":"dev","cursor":[1518,175],"displays":[{"frame":[0,0,1600,900],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"name":"display-1","visible":[0,31,1600,791]}],"focusHistory":[98,286,95,121,128,124,115,112],"focused":98,"minimumSizes":{"115":[709,0],"121":[680,0],"124":[723,0],"128":[708,0],"189":[871,0],"95":[501,0],"98":[574,0]},"mouseDown":false,"name":"day-10","os":"macOS Version 26.6.2 (Build 25G83)","recorded":"2026-10-14T23:46:37Z","settings":{"allowAllURLCommands":false,"animationDuration":0.46,"appColourAmount":0.25,"appColours":true,"arrangeDesktopWeight":0.5,"autoDockMinimumHeight":300,"autoDockMinimumWidth":400,"automaticUpdateChecks":false,"bindings":{},"blurBehindArranged":0,"continuousZoom":false,"desktopEdge":0.05,"dimBehindArranged":0.25,"displays":[],"dropDwell":0.15,"excludedBundleIDs":[],"focusRing":true,"focusRingColour":"accent","focusRingRadius":0,"focusRingWidth":3,"frameRectangleModifier":"ctrl+opt","frameRectangleOnDesktop":true,"gap":12,"gapHandles":"shown","gesturesEnabled":true,"guardDesktopClicks":false,"historyButtons":true,"holdStillFor":[],"holdStillWhileCameraIsOn":false,"holdStillWhileMicrophoneIsOn":false,"hotkeysEnabled":true,"keepPushed":true,"makeRoom":true,"menuBarControls":true,"menuBarFill":0.25,"messages":"helpful","minimapDuration":0,"minimumUsableHeight":160,"minimumUsableWidth":240,"newWindows":"float","newWindowsWhileFramed":"guest","passThroughApps":[],"pauseForApps":[],"peek":true,"pinchThreshold":0.25,"previewDrags":true,"reflowWhileDragging":false,"resizeStep":40,"ruleTitleWait":2,"rules":[],"screenEdgeBand":12,"scrollOnDesktopZooms":false,"scrollZoom":true,"scrollZoomThreshold":40,"shareRemovedSpace":true,"shortcutsFollowLayout":true,"shrinkOutOfView":false,"soleFloatTakesDesktop":false,"stepInToward":"auto","summonStays":false,"tabsEnabled":false,"tileFade":0.2,"tileRetryMinutes":10,"tileStyle":"icon","tintBehindArranged":0,"windowEdgeFraction":0.3,"windowPictures":false},"thinning":0.05,"trace":1,"windows":[{"app":"Finder","bundle":"com.apple.finder","frame":[12,43,501,767],"id":95,"pid":13562,"title":"title[1]"},{"app":"Safari","bundle":"com.apple.Safari","frame":[1014,43,574,767],"id":98,"pid":14544,"title":"title[2]"},{"app":"Terminal","bundle":"com.apple.Terminal","frame":[525,239,478,499],"id":112,"pid":14828,"title":"title[3]"},{"app":"Notes","bundle":"com.apple.Notes","frame":[409,105,709,660],"id":115,"pid":14919,"title":"title[4]"},{"app":"Calendar","bundle":"com.apple.iCal","frame":[423,115,680,599],"id":121,"pid":15393,"title":"title[5]"},{"app":"System Settings","bundle":"com.apple.systempreferences","frame":[402,85,723,625],"id":124,"pid":15469,"title":""},{"app":"Preview","bundle":"com.apple.Preview","frame":[409,35,708,424],"id":128,"pid":15609,"title":"title[6]"},{"app":"Mail","bundle":"com.apple.mail","frame":[328,72,871,630],"id":189,"pid":20389,"title":"title[7]"},{"app":"TextEdit","bundle":"com.apple.TextEdit","frame":[525,65,477,439],"id":286,"pid":29468,"title":"title[8]"}],"workspaces":{"07230EFA-7A8D-4E37-845C-19CC8737EEF5":{"back":[2,1,3,1,0,2,3,2,0,2,3],"camera":2,"floating":{"112":[[97,239],[877,499]],"115":[[300,105],[1000,660]],"121":[[404,115],[936,599]],"124":[[437,85],[723,625]],"128":[[4,35],[708,424]],"189":[[240,72],[1120,630]],"286":[[165,65],[673,439]]},"forward":[],"names":{},"savedViews":{},"tree":{"desktop":0,"loans":[{"borrower":1,"giver":0,"receiver":1,"weight":0.5540483003903609},{"borrower":1,"giver":3,"receiver":1,"weight":0.0005740393626991747},{"borrower":3,"giver":0,"receiver":3,"weight":0.3490711607979651}],"nextRawID":6,"nodes":{"0":{"id":0,"kind":{"desktop":{}},"parent":2,"weight":0.9220360824742269},"1":{"id":1,"kind":{"stack":{"active":0,"windows":[95]}},"parent":2,"weight":0.9684278350515464},"2":{"id":2,"kind":{"split":{"axis":"horizontal","children":[1,0,3]}},"weight":1},"3":{"id":3,"kind":{"stack":{"active":0,"windows":[98]}},"parent":2,"weight":1.1095360824742269}},"root":2,"visits":[]},"undockedFrames":{"95":[[340,120],[920,436]],"98":[[138,31],[1324,791]]}}}}
+# From `day-10`, by scripts/trace-to-test.py: 62 lines, without 5 questions of the script's.
+{"t":2.0803,"timer":"accessibility"}
+{"t":2.0883,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":4.2254,"timer":"accessibility"}
+{"t":4.2257,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":5.5579,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":5.5580,"note":"step 85 click-wallpaper"}
+{"t":6.1486,"raw":"leftMouseDown 560,780"}
+{"t":6.1512,"event":"pointerPressed"}
+{"t":6.1525,"raw":"AXApplicationActivated"}
+{"t":6.1531,"event":"keyboardFocusMoved"}
+{"t":6.1545,"call":"focusedWindow","result":98}
+{"t":6.1547,"call":"isMouseButtonDown","result":true}
+{"t":6.1550,"call":"focusedWindow","result":98}
+{"t":6.1553,"raw":"AXFocusedWindowChanged"}
+{"t":6.2028,"raw":"AXMainWindowChanged"}
+{"t":6.2054,"timer":"menu-bar"}
+{"t":6.2055,"call":"cursorLocation","result":[560,780]}
+{"t":6.3952,"raw":"didActivateApplication pid 13562"}
+{"t":6.4045,"event":"keyboardFocusMoved"}
+{"t":6.4136,"call":"focusedWindow","result":null}
+{"t":6.4137,"call":"isMouseButtonDown","result":false}
+{"t":6.4420,"call":"focusedWindow","result":null}
+{"t":6.4457,"raw":"AXApplicationDeactivated"}
+{"t":6.4464,"event":"keyboardFocusMoved"}
+{"t":6.4511,"call":"focusedWindow","result":null}
+{"t":6.4519,"call":"isMouseButtonDown","result":false}
+{"t":6.4533,"call":"focusedWindow","result":null}
+{"t":6.4551,"raw":"leftMouseUp 560,780"}
+{"t":6.4579,"timer":"menu-bar"}
+{"t":6.4580,"call":"cursorLocation","result":[560,780]}
+{"t":6.7758,"timer":"focus-ring-again"}
+{"t":6.7765,"call":"isMouseButtonDown","result":false}
+{"t":6.7779,"call":"focusedWindow","result":null}
+{"t":7.6008,"timer":"accessibility"}
+{"t":7.6020,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":8.3642,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":8.3643,"note":"step 86 click-wallpaper-again"}
+{"t":8.8871,"raw":"leftMouseDown 560,780"}
+{"t":8.8911,"event":"pointerPressed"}
+{"t":8.8915,"raw":"leftMouseDown 560,780"}
+{"t":8.8938,"event":"pointerPressed"}
+{"t":8.9366,"raw":"leftMouseUp 560,780"}
+{"t":10.4151,"timer":"accessibility"}
+{"t":10.4160,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":10.7790,"args":[false],"read":"mayUseAccessibility","result":true}

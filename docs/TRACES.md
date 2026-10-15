@@ -436,8 +436,10 @@ and Linux. Other tests there keep the folder honest: titles are tokens, files ar
 folder's `README.md`.
 
 **Ways back.** Arbor keeps windows out of view, so from whatever state it is in there must be a way back to a Mac with every window in sight. `everyWayBackReturnsEveryWindowFromEveryStateOfATrace` cuts each
-trace before every stimulus, also in the middle of drags, which gives some three thousand states that real apps and a real pointer brought about, and from each tries `float-all`, quitting, and quitting, starting again and
-`float-all`. Afterwards every window that is not minimized, hidden or on another Space must be at least half on a display. The one exception is a window that is being dragged, which `float-all` leaves in the hand that holds it.
+trace before every stimulus since the last of which something may have changed (not after a timer that looked and did nothing, or a report that moved nothing: the state is the one before), also in the middle of drags, which gives some
+thousand states that real apps and a real pointer brought about, and from each tries `float-all`, quitting, and quitting, starting again and
+`float-all`. Afterwards every window that is not minimized, hidden or on another Space must be at least half on a display. The one exception is a window that is being dragged, which `float-all` leaves in the hand that holds it; and a
+floating one that was moved with the button down without a drag being reported, until macOS, which tiles it when it is let go of at an edge, has stopped moving it for half a second.
 
 **Expectations.** `<name>.expect` beside `<name>.jsonl` is checked against the state at the end of the replay. Its lines are
 arbor-sim's `expect` forms (`collab/README.md`, "Scenarios"), with or without the word `expect`; `#` starts a remark.

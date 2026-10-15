@@ -31,40 +31,87 @@ import Testing
       See what happened with: make replay FILE=collab/evidence/traces/\(name).jsonl
       "No problem containing … was reported" is good news: your change fixed a known bug. Delete that `problem` line from \
       collab/evidence/traces/\(name).expect, and the trace holds your fix in place from now on.
+      Lines below the mark in that file say what Arbor did when they were written. If it does something else now, and rightly: \
+      scripts/trace-to-test.py --again \(name), and read what changed: each line is something a person at that Mac would have seen.
       """)
     #expect(!trace.entries.isEmpty)
   }
 
+  /// A control: a test on a recording is worth what it says when the fault is there. `app-switch-unreported` was recorded with an `AXWindowSystem` that
+  /// dropped the only sign of a switch of apps, and holds one line, added by hand, for what that layer reports since its cure. Without the line it
+  /// is what the Mac's Arbor was told that day, and the window that has the keyboard stays out of view.
+  @Test func withoutTheReportThatWasLostTheSwitchOfAppsFails() throws {
+    var lines = try #require(text("app-switch-unreported", ".jsonl")).split(separator: "\n", omittingEmptySubsequences: false)
+    let remark = try #require(lines.firstIndex { $0.hasPrefix("# The next line was added by hand") })
+    let added = try #require(lines[remark...].firstIndex { !$0.hasPrefix("#") })
+    #expect(lines[added].contains(#""event":"focused""#))
+    lines.remove(at: added)
+    let report = TraceReplayer(try Trace(text: lines.joined(separator: "\n"))).run(expectations: text("app-switch-unreported", ".expect"))
+    let failed = report.problems.filter { $0.kind == .expectation }.map(\.text)
+    for expectation in ["`visible 75`", "`camera 75`", "`moved 75 2 at "] {
+      #expect(failed.contains { $0.hasPrefix(expectation) }, "\(expectation) holds without the report, so it does not tell: \(failed)")
+    }
+  }
+
   /// Arbor keeps windows out of view, so whatever state it is in there must be a way back to a Mac with every window in sight. Each
-  /// trace is cut before every stimulus, also in the middle of drags, which gives some thousand states that real apps and a real pointer
-  /// brought about, and from each one every way back is tried.
+  /// trace is cut wherever something may have changed, also in the middle of drags, which gives some thousand states that real apps and a real
+  /// pointer brought about, and from each one every way back is tried.
   @Test(arguments: names)
   func everyWayBackReturnsEveryWindowFromEveryStateOfATrace(name: String) throws {
     let text = try #require(text(name, ".jsonl"))
     let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
-    let cuts = try Trace(text: text).entries.filter { $0.line.isStimulus && !$0.nested }.map(\.number) + [lines.count + 1]
+    // Before every stimulus since the last of which something may have changed: where a window is, or what Arbor knows or has done. In a trace of real
+    // apps two stimuli in three are a timer that looked and did nothing or a report that moved nothing, and the state after it is the state before it.
+    let whole = try Trace(text: text)
+    var cuts: [Int] = []
+    var somethingHappened = true
+    for entry in whole.entries {
+      if entry.line.isStimulus, !entry.nested {
+        if somethingHappened { cuts.append(entry.number) }
+        switch entry.line {
+        case .timer, .keyboardFocusMoved, .other(.event, "pointerPressed", _, _), .other(.event, "settingsFileMayHaveChanged", _, _): somethingHappened = false
+        default: somethingHappened = true
+        }
+      } else if entry.line.isEffect || entry.line.isStimulus {
+        somethingHappened = true
+      }
+    }
+    cuts.append(lines.count + 1)
     var states = 0
     for cut in cuts where cut > 2 {
-      let prefix = try Trace(text: lines.prefix(cut - 1).joined(separator: "\n"))
+      // Read once: reading the first lines anew for every cut took longer than replaying them.
+      let prefix = Trace(header: whole.header, entries: whole.entries.filter { $0.number < cut })
       // A window that is being dragged is where the hand holds it, which can be half off the screen. Nobody misses it, and no way
       // back takes it out of the hand: a quit gives back what Arbor took and touches nothing else, and the next start finds it
       // there. Exactly there: moved anywhere else out of view, it is lost.
       var inHand: WindowID?
+      // Not every drag is reported as one (`day-11-drags-to-the-edges`: Notes goes to the left edge with the button down, and all Arbor hears is that it
+      // moved). Let go of there, macOS tiles it, which takes a third of a second of further reports. Until they have stopped for half a second it is in macOS's hand.
+      var buttonIsDown = false
+      var carried: (window: WindowID, at: Double)?
       for entry in prefix.entries {
         switch entry.line {
         case .dragBegan(let id, _): inHand = id
         case .dragEnded, .other(.event, "dragCancelled", _, _): inHand = nil
+        case .raw(let text) where text.hasPrefix("leftMouse"): buttonIsDown = !text.hasPrefix("leftMouseUp")
+        case .changed(let window, true):
+          if buttonIsDown || (carried?.window == window.id && entry.t - carried!.at < 0.5) { carried = (window.id, entry.t) }
         default: break
         }
       }
+      // Only while it floats: where a floating window lies is its person's business, where a docked one lies is Arbor's.
+      var inMacOSsHand: WindowID?
+      if inHand == nil, let carried, let last = prefix.entries.last, last.t - carried.at < 0.5 { inMacOSsHand = carried.window }
       for way in ["float-all", "quit", "quit, start again, float-all"] {
-        let replayer = TraceReplayer(prefix)
+        let replayer = TraceReplayer(prefix, silent: true)
         replayer.run()
         let h = replayer.harness
         // A trace ends when Arbor pauses or quits.
         guard h.controller.isRunning else { continue }
         states += 1
         let held = inHand.flatMap { h.system.frame(of: $0) }
+        let wasFloating = inMacOSsHand.map { id in h.controller.workspaces.values.contains { $0.isFloating(id) } } ?? false
+        let carriedTo = inMacOSsHand.flatMap { h.system.frame(of: $0) }
         // "Nothing is docked" is an answer too. What counts is what can be seen afterwards.
         if way == "float-all" { h.run("float-all") }
         if way != "float-all" { h.controller.shutdown() }
@@ -76,6 +123,9 @@ import Testing
         h.scheduler.runPending()
         let lost = h.system.windows.values.map(\.snapshot)
           .filter { $0.isPresent && !h.system.isVisible($0.id) && !($0.id == inHand && (way == "float-all" || $0.frame == held)) }
+          .filter { window in
+            !(window.id == inMacOSsHand && wasFloating && (way == "float-all" || window.frame == carriedTo))
+          }
           .map { "\($0.id) \($0.appName) at \(traceText($0.frame))" }.sorted()
         #expect(
           lost == [],
