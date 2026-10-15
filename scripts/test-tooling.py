@@ -430,6 +430,12 @@ def check_mac_shell_lint():
             '  echo "GITHUB_ACTIONS is true, but the Mac is somebody\'s"\n', 'if [ -n "${GITHUB_ACTIONS:-}" ]; then echo "::notice::x"; fi  # safe anywhere: only how a line is printed\n',
             'source "$(dirname "$0")/lib.sh"\nif [ "${GITHUB_ACTIONS:-}" = true ]; then macos_tiling off; fi\n')], [[], [], [], [], []])
     # The fault of 2026-10-14 08:20 UTC: a full disk, an empty variable, and the clean-up takes the checkout or every process.
+    row("mac-shell lint: a variable with a letter that is not ASCII right after it, which macOS's bash takes into the name",
+        [found(text) for text in ('echo "the key “$name” is there"\n', 'echo "$count×"\n', 'echo "the key “${name}” is there"\n', 'echo "“$name ” and $name."\n',
+                                  "awk '{ print $name” }'\n", '# “$name”\n')], [1, 1, 0, 0, 0, 0])
+    row("mac-shell lint: on whosever Mac: it is the script that ends there, so a script for GitHub's Macs alone is read as well, and no comment waives it",
+        [found(text) for text in ('source lib.sh\nneeds_throwaway_mac "look"\necho "“$name”"\n', 'f() {\n  echo "“$name”"\n}\n',
+                                  '# safe anywhere: it only prints\necho "“$name”"\n')], [1, 1, 1])
     row("mac-shell lint: mktemp unchecked", found('dir=$(mktemp -d /tmp/arbor-x.XXXXXX)\n'), 1)
     row("mac-shell lint: mktemp checked", found('dir=$(mktemp -d /tmp/arbor-x.XXXXXX) || die "no folder"\n'), 0)
     row("mac-shell lint: rm -rf of a variable nobody checked", found('rm -rf "$dir"\n'), 1)
