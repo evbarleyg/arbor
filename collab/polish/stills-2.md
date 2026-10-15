@@ -9,10 +9,14 @@
 
 | | cells | seen | pass | miss | points |
 |---|---|---|---|---|---|
-| What ships, first round | 74 | 30 | 18 | 12 | 50 of 206 |
-| **What ships, second round** | 74 | 30 | **26** | **4** | **70 of 206** |
+| What ships, first round, as it was counted then: with the menu | 74 | 30 | 18 | 12 | 50 of 206 |
+| What ships, first round, without the menu: like for like with the next row | 74 | 23 | 14 | 9 | 40 of 206 |
+| **What ships, second round**, without the menu | 74 | 30 | **26** | **4** | **70 of 206** |
+| (What ships, second round, had the menu been counted) | 74 | 38 | 29 | 9 | 75 of 206 |
 | The options, first round | 51 | 26 | 20 | 6 | 48 of 135 |
 | **The options, second round** | 51 | 34 | **31** | **3** | **79 of 135** |
+
+**Like for like, what ships went from 40 points to 70, not from 50.** And of the nine misses that became four, **three are cured** (Go to… on glass in both looks, the heads-up line on glass in the light look) and **two are no longer pictured**: the settings window on glass in the light look (S4) and with Increase Contrast (S6) missed in the first round and are in no picture of the second. They are unseen now, which counts like a miss; nobody has mended them that these pictures know of.
 
 More than half of what ships is still unseen: the tile, the coach and the setup check have never been pictured as they ship, and the menu has changed since it was.
 
@@ -54,7 +58,7 @@ More than half of what ships is still unseen: the tile, the coach and the setup 
 | 11 | no cell | The Shortcuts pane's list runs to the window's very foot and a point beyond; as the pane opens, the last row's keys are cut through in the window's last row of pixels. | `light-shortcuts` | the settings window |
 | 12 | no cell | The pointer stays a plain arrow over the handle in all eight pictures of it. The paused glyph in the menu bar 1.80 to 2.22. An alert of Arbor's ends "server..". | `light-06-gap-hover`, `light-21-line-hint` | the lines; the menu bar |
 
-The other remarks, about forty, are in `stills-2.json` under `other`.
+The other remarks, fifty of them, are in `stills-2.json` under `other`.
 
 ## Three rulings of the judge's
 
