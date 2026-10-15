@@ -1301,7 +1301,7 @@ shows `binding.label` is right. `KeyboardLayoutWatcher` reads the layout macOS h
 What is registered at a given moment is `Controller.activeBindings`: the effective table, cut down to the
 shortcuts that end a pause while paused (`KeyBindings.whilePaused`), or to `toggle-pause` and `pass-through`
 while an app on `passThroughApps` is frontmost (`whilePassingThrough`), and the `summon` of that app while its window is summoned. `Controller.inputSettings` does the
-same for the pointer taps. `FrontmostAppWatcher` reports every app that comes to the front
+same for the pointer taps, and leaves them nothing for as long as `pointerGestures` is off: the taps, `doctor`, the panel of shortcuts and the zones of the Desktop all go by it, so that one switch takes every tap out. `FrontmostAppWatcher` reports every app that comes to the front
 (`applicationActivated`), also during a pause, when `AXWindowSystem` is not observing; the controller
 compares, and tells the app with `Change.input` only when the answer differs, so switching between two
 ordinary apps registers nothing. A new tap or key source follows these two properties and that change, and needs no

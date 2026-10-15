@@ -714,7 +714,9 @@ private let side = DisplaySnapshot(
   }
 
   @Test func inAnAppThatKeepsItsOwnKeysOnlyTheShortcutsStillHeldAreNamed() {
-    let (h, _, _, _) = makeHarness(settings: settings { $0.passThroughApps = ["org.gnu.Emacs"] }, taught: false)
+    var own = Settings.withGestures  // which go with the keys, further down
+    own.passThroughApps = ["org.gnu.Emacs"]
+    let (h, _, _, _) = makeHarness(settings: own, taught: false)
     h.controller.applicationActivated(FrontmostApp(bundleID: "org.gnu.Emacs", name: "Emacs"))
     h.run("dock left", from: .menu)
     #expect(lines(h) == ["Docked"], "⌃⌥↩ is Emacs's for now (F41)")

@@ -79,6 +79,7 @@ File). There are four ways to change one, and each takes effect at once and show
 
 | Key | Default | Values | What it does |
 |---|---|---|---|
+| `pointerGestures` | `true` | true or false | **Trackpad and mouse gestures.** The pinch, ⌃⌥ and scroll, and rectangles drawn with the pointer. Off, Arbor holds back no click, scroll or pinch of the Mac, whatever the switches below say. Dragging windows, gaps and tiles works either way. |
 | `gesturesEnabled` | `true` | true or false | **Pinch to zoom.** A trackpad pinch with ⌥ held, or over the Desktop, zooms the view in and out. |
 | `pinchThreshold` | `0.25` | 0.05 to 2 | **Pinch travel for one step.** How far a pinch must travel for one step; smaller is more sensitive. *Advanced.* |
 | `frameRectangleModifier` | `ctrl+opt` | modifier keys joined by +, such as shift+cmd, or none | **Frame a rectangle with.** Hold these keys and drag a rectangle to frame what it covers; none turns this off. |

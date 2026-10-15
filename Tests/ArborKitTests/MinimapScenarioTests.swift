@@ -1064,7 +1064,7 @@ private let side = DisplaySnapshot(
   /// A click in a minimap over bare Desktop is the minimap's, not one to keep from macOS.
   @Test func oneThatTakesClicksIsAmongTheGuardsPanelsAndSaysWhenThatChanges() throws {
     var settings = passing
-    settings.guardDesktopClicks = true
+    (settings.guardDesktopClicks, settings.pointerGestures) = (true, true)
     let (h, a, b, _) = makeHarness(settings: settings)
     var published = h.controller.desktopGuardZones()
     h.controller.observe { if $0.mayChangeDesktopGuardZones { published = h.controller.desktopGuardZones() } }

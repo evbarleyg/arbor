@@ -679,6 +679,7 @@ extension Settings {
   /// the Desktop. For a test that is about one of them.
   static var withGestures: Settings {
     var settings = Settings()
+    settings.pointerGestures = true
     settings.gesturesEnabled = true
     settings.scrollZoom = true
     settings.frameRectangleModifier = "ctrl+opt"

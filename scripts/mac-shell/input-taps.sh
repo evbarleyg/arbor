@@ -294,6 +294,19 @@ with_gestures '{}'
 ctl reload-settings
 check "and back" test "$(arbor_taps | wc -l)" -eq 4
 
+step "pointerGestures off: no tap is left, whatever the other settings say"
+with_gestures '{"pointerGestures": false, "guardDesktopClicks": true, "continuousZoom": true, "scrollOnDesktopZooms": true}'
+ctl reload-settings
+arbor_taps
+check "Arbor holds no event tap" test "$(arbor_taps | wc -l)" -eq 0
+mark "a shift drag with the switch off"
+drag "$BARE_X" "$BARE_Y" "$((BARE_X + 80))" "$((BARE_Y + 80))" --mods shift --steps 10
+check "a ⇧-drag on the Desktop is Finder's: the mouse-down arrived as it was" test "$(count '^down .*mark=none')" -eq 1
+check "and the drag" test "$(count '^dragged ')" -ge 10
+with_gestures '{}'
+ctl reload-settings
+check "switched on again all four are back" test "$(arbor_taps | wc -l)" -eq 4
+
 step "continuousZoom: ⌃⌥-scroll and pinch are streamed, every other scroll is left alone"
 read -r x y w h <<< "$(frame_of "$W2")"
 pointer move "$((x + w / 2))" "$((y + h / 2))"

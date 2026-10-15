@@ -10,6 +10,7 @@ extension Settings {
   /// keys, the permission gone): with nothing to take away it would prove nothing.
   static var withGestures: Settings {
     var settings = Settings()
+    settings.pointerGestures = true
     settings.gesturesEnabled = true
     settings.scrollZoom = true
     settings.frameRectangleModifier = "ctrl+opt"

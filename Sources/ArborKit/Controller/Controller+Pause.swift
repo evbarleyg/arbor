@@ -158,9 +158,11 @@ extension Controller {
   /// The settings the pointer taps should follow: the user's, with pinch and rectangle framing off
   /// while paused, while an app that keeps its own ⌃⌥ is frontmost (Controller+PassThrough.swift) and
   /// without Accessibility permission, so that no event passes through Arbor; and while the view is held, so
-  /// that a slip of the fingers draws no band on a shared screen.
+  /// that a slip of the fingers draws no band on a shared screen. And for as long as `pointerGestures` is off.
   public var inputSettings: Settings {
-    guard isPaused || isPassingThrough || !accessibilityGranted || holdLevel == .view else { return settings }
+    guard !settings.pointerGestures || isPaused || isPassingThrough || !accessibilityGranted || holdLevel == .view else {
+      return settings
+    }
     var quiet = settings
     quiet.gesturesEnabled = false
     quiet.frameRectangleModifier = "none"
