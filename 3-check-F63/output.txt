@@ -1,0 +1,122 @@
+# mac-shell: scripts/mac-shell/check-F63.sh at 6d0c59d, macOS 26.6.2, 2026-10-15T04:18Z
+built Arbor, the pointer tool and the app bundles in 5s
+3|/bin/bash|2
+4|/opt/hca/hosted-compute-agent|2
+5|/opt/hca/start_hca.sh|2
+6|/usr/bin/osascript|2
+7|/usr/libexec/sshd-keygen-wrapper|2
+8|/usr/local/opt/runner/provisioner/provisioner|2
+9|/usr/local/opt/runner/runprovisioner.sh|2
+10|com.apple.Terminal|2
+11|com.apple.dt.Xcode-Helper|2
+
+== the first minute: launched without the permission, then granted
+1792037959.40 Accessibility set to 0 for entries 3,4,5,6,7,8,9,10,11, the daemon restarted, the change announced
+session 1: Arbor pid 28097, launched without the permission
+  after .03 s
+  ✔ Arbor waits for the permission
+  ✔ it holds no event tap
+  ✔ it has not spoken of a loss
+shot: mac-shell/00-waiting.png
+1792037965.43 Accessibility set to 2 for entries 3,4,5,6,7,8,9,10,11, the daemon restarted, the change announced
+  after 6.60 s
+  ✔ it starts by itself when the permission arrives
+  ✔ no window has moved
+  a process that was given the permission while it ran may make event taps at once
+  ✔ ten seconds later it is still running: no false alarm in front of the welcome window
+  ✔ and has still not spoken of a loss
+shot: mac-shell/00-granted.png
+
+== [1 | Desktop with 3 | 2], framed on 1: 2 and 3 are out of view
+> dock 202 left
+docked w202 at the left edge
+> dock 203 right
+docked w203 at the right edge
+> zoom 202
+framed w202
+  ✔ 2 is out of view
+  ✔ 3 is out of view
+  ✔ the event taps are installed
+shot: mac-shell/01-framed.png
+
+== the permission goes
+1792037987.05 Accessibility set to 0 for entries 3,4,5,6,7,8,9,10,11, the daemon restarted, the change announced
+  after .03 s
+  ✔ Arbor notices
+> status
+Arbor's Accessibility permission was taken away, so it cannot move windows. 2 windows (ArborTestWindows) are out of view and come back as soon as it is granted again: System Settings → Privacy & Security → Accessibility
+Arbor dev
+  ✔ it counts the windows out of view
+  ✔ no event tap is left
+  ✔ only the four ways home are registered
+  ✔ nothing Arbor draws over the Desktop is left on screen
+  ✔ the window that asks for the permission back is up
+> show-all
+arborctl: Arbor's Accessibility permission was taken away, so it cannot move windows. 2 windows (ArborTestWindows) are out of view and come back as soon as it is granted again: System Settings → Privacy & Security → Accessibility
+  ✔ a command fails
+  ✔ 2 is still out of view: nothing could be done
+state: accessibility False running False windows 0
+shot: mac-shell/02-lost.png
+2026-10-15T04:19:21.388Z INFO  waiting for Accessibility permission
+2026-10-15T04:19:31.940Z INFO  Accessibility permission granted
+2026-10-15T04:19:32.001Z INFO  started: 1 display(s), 3 managed window(s)
+2026-10-15T04:19:32.017Z INFO  registered 52 shortcuts in 2511 µs
+2026-10-15T04:19:45.223Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+2026-10-15T04:19:45.224Z ERROR Accessibility permission was taken away with 2 window(s) out of view
+2026-10-15T04:19:45.230Z INFO  registered 4 shortcuts in 3428 µs
+2026-10-15T04:19:45.230Z INFO  stopped; no window was moved
+
+== the permission returns
+1792037990.45 Accessibility set to 2 for entries 3,4,5,6,7,8,9,10,11, the daemon restarted, the change announced
+  after 5.78 s
+  ✔ Arbor starts again
+  ✔ every window is in view
+  ✔ the event taps are back
+  ✔ all the shortcuts are registered again
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back yes
+  Desktop          349 43 326 653
+  w202 12 43 325 653        docked focused
+  w203 687 43 325 653       docked
+  w204 349 140 326 348      floating
+shot: mac-shell/03-back.png
+> back
+back to ArborTestWindows (n1)
+  ✔ Back returns to the view it had: 2 is out of view
+> click 512 369
+> key ctrl+opt+space
+  ✔ ⌃⌥Space shows everything, with a real key
+
+== with nothing out of view Arbor keeps quiet
+1792038001.21 Accessibility set to 0 for entries 3,4,5,6,7,8,9,10,11, the daemon restarted, the change announced
+  after 4.92 s
+  ✔ Arbor notices
+  ✔ no shortcut is left
+shot: mac-shell/04-lost-with-nothing-missing.png
+1792038009.38 Accessibility set to 2 for entries 3,4,5,6,7,8,9,10,11, the daemon restarted, the change announced
+  after 7.79 s
+  ✔ Arbor starts again
+  ✔ the windows are where they were
+2026-10-15T04:19:45.230Z INFO  stopped; no window was moved
+2026-10-15T04:19:56.088Z INFO  Accessibility permission is back: installing the pinch and rectangle event taps
+2026-10-15T04:19:56.089Z INFO  Accessibility permission is back
+2026-10-15T04:19:56.124Z INFO  started: 1 display(s), 3 managed window(s)
+2026-10-15T04:19:56.138Z INFO  registered 52 shortcuts in 2739 µs
+2026-10-15T04:20:06.116Z INFO  Accessibility permission is gone (AXIsProcessTrusted says no): removed the pinch and rectangle event taps
+2026-10-15T04:20:06.116Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+2026-10-15T04:20:06.127Z INFO  stopped; no window was moved
+2026-10-15T04:20:17.087Z INFO  Accessibility permission is back: installing the pinch and rectangle event taps
+2026-10-15T04:20:17.089Z INFO  Accessibility permission is back
+2026-10-15T04:20:17.119Z INFO  started: 1 display(s), 3 managed window(s)
+2026-10-15T04:20:17.138Z INFO  registered 52 shortcuts in 1674 µs
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+shot: mac-shell/05-after-quit.png
+
+32 passed, 0 failed
+exit code 0

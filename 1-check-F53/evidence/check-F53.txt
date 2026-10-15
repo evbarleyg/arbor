@@ -1,0 +1,157 @@
+# check-F53 2026-10-15T04:15Z on macOS 26.6.2, commit 6d0c59d
+
+== an editor and a browser from one app, a scratch window from another; ⌃⌥` summons it
+  ✔ Arbor arranges the other app's window too
+  ✔ framed on the editor: the scratch window is out of view with the Desktop
+  ✔ the editor has the keyboard
+
+== 1: the shortcut
+  ✔ summoned: in view
+  ✔ summoned: Arbor says summoned
+  ✔ summoned: it has the keyboard
+  ✔ summoned: nothing covers it
+  ✔ summoned: and it stays
+  ✔ summoned: the view did not move
+  ✔ the editor has not moved
+
+== 2: the shortcut again
+  ✔ sent away: out of view
+  ✔ sent away: Arbor says stashed
+  ✔ sent away: the keyboard is in 32
+  ✔ sent away: the view did not move
+  ✔ the editor has not moved
+
+== 4: it remembers where it was put
+  ✔ summoned again: in view
+  ✔ summoned again: Arbor says summoned
+  ✔ summoned again: it has the keyboard
+  ✔ summoned again: nothing covers it
+  ✔ summoned again: and it stays
+  ✔ summoned again: the view did not move
+  ✔ dragged over the editor's edge: no preview
+  ✔ dropped, it is still summoned
+
+== 3: a real click on another app's window sends it away
+  ✔ after a click on the editor: out of view
+  ✔ after a click on the editor: Arbor says stashed
+  ✔ after a click on the editor: the keyboard is in 32
+  ✔ after a click on the editor: the view did not move
+  ✔ summoned a third time: in view
+  ✔ summoned a third time: Arbor says summoned
+  ✔ summoned a third time: it has the keyboard
+  ✔ summoned a third time: nothing covers it
+  ✔ summoned a third time: and it stays
+  ✔ summoned a third time: the view did not move
+  ✔ where it was put
+  ✔ sent away: out of view
+  ✔ sent away: Arbor says stashed
+  ✔ sent away: the keyboard is in 32
+  ✔ sent away: the view did not move
+
+== where the Desktop is in view it goes out of view all the same
+  ✔ showing everything, it is still out of view
+  ✔ summoned over everything: in view
+  ✔ summoned over everything: Arbor says summoned
+  ✔ summoned over everything: it has the keyboard
+  ✔ summoned over everything: nothing covers it
+  ✔ summoned over everything: and it stays
+  ✔ summoned over everything: the view did not move
+  ✔ sent away: out of view
+  ✔ sent away: Arbor says stashed
+  ✔ sent away: the keyboard is in 32
+  ✔ sent away: the view did not move
+
+== framing a window that was sent away summons it; float makes it an ordinary window again
+  ✔ framed: in view
+  ✔ framed: Arbor says summoned
+  ✔ framed: it has the keyboard
+  ✔ framed: nothing covers it
+  ✔ framed: and it stays
+  ✔ framed: the view did not move
+  ✔ where it was put
+  ✔ sent away: out of view
+  ✔ sent away: Arbor says stashed
+  ✔ sent away: the keyboard is in 32
+  ✔ sent away: the view did not move
+  ✔ floated: in view, on the Desktop
+  ✔ floated: no longer stashed
+  ✔ floated: nor summoned
+  ✔ floated: the keyboard is still in the editor
+  ✔ summoned from the Desktop: in view
+  ✔ summoned from the Desktop: Arbor says summoned
+  ✔ summoned from the Desktop: it has the keyboard
+  ✔ summoned from the Desktop: nothing covers it
+  ✔ summoned from the Desktop: and it stays
+  ✔ summoned from the Desktop: the view did not move
+  ✔ sent away: out of view
+  ✔ sent away: Arbor says stashed
+  ✔ sent away: the keyboard is in 32
+  ✔ sent away: the view did not move
+
+== ⌃⌥0 brings it back to the Desktop as an ordinary window
+  ✔ in view
+  ✔ no longer stashed
+
+== a docked window has a place
+  ✔ framed
+
+== summonStays
+  ✔ summoned: in view
+  ✔ summoned: Arbor says summoned
+  ✔ summoned: it has the keyboard
+  ✔ summoned: nothing covers it
+  ✔ summoned: and it stays
+  ✔ summoned: the view did not move
+  ✔ it lies over the editor
+  ✔ after a click on the editor the editor has the keyboard
+  ✔ it is still summoned
+  ✔ where it was
+  ✘ and nothing covers it
+  ✘ after a second click on the editor nothing covers it either
+  ✔ the editor still has the keyboard
+  ✔ summoned away: out of view
+  ✔ summoned away: Arbor says stashed
+  ✔ summoned away: the keyboard is in 32
+  ✔ summoned away: the view did not move
+
+== pause and resume
+  ✔ summoned: in view
+  ✔ summoned: Arbor says summoned
+  ✔ summoned: it has the keyboard
+  ✔ summoned: nothing covers it
+  ✔ summoned: and it stays
+  ✔ summoned: the view did not move
+  ✔ paused: it has not moved
+  ✔ running again
+  ✔ resumed with the keyboard still in it: summoned again
+  ✔ where it was
+  ✔ the click was the editor's: macOS has swept nothing aside
+  ✔ running again
+  ✘ resumed: out of view
+  ✘ resumed: stashed
+
+== 4: quit and launch again on the same windows
+  ✔ Arbor exits
+  ✔ quit: the scratch window is back in view
+  ✔ running again
+  ✔ relaunched: an ordinary window
+  ✔ relaunched: still in view, where the quit put it
+  ✔ relaunched and summoned: in view
+  ✔ relaunched and summoned: Arbor says summoned
+  ✔ relaunched and summoned: it has the keyboard
+  ✔ relaunched and summoned: nothing covers it
+  ✔ relaunched and summoned: and it stays
+  ✔ relaunched and summoned: the view did not move
+  ✔ where it was put before the restart
+  ✔ float-all: an ordinary window again
+  ✔ float-all: in view
+
+== 5: apps without a window
+  ✔ Calculator was launched by its name
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+122 passed, 4 failed
