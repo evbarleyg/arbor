@@ -173,10 +173,12 @@ def witness():
 
 def picture_time():
     print("scale 1.0\nlist 30.0 12\nlist 6.0 12")
-    for count in (1, 4, 8):
-        if count <= len(ARGUMENTS):
-            print(f"pictures {count} in-turn {20.0 * count} 0 each", *["20.0"] * count)
-            print(f"pictures {count} at-once {20.0 + 2 * count} 0")
+    for turn in (1, 2, 3):
+        print(f"round {turn}")
+        for count in (1, 4, 8):
+            if count <= len(ARGUMENTS):
+                print(f"pictures {count} in-turn {20.0 * count} 0 each", *["20.0"] * count)
+                print(f"pictures {count} at-once {20.0 + 2 * count} 0")
 
 
 {"open": open_app, "swiftc": swiftc, "apptool": apptool, "sampler": sampler, "witness": witness, "picture-time": picture_time}.get(TOOL, refuse)()

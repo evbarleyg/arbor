@@ -17,7 +17,7 @@
 # To look at: film-glide-<n>.png, a pair on its way, about 70 ms apart; <nnn>-open-<app>.jpg, what each app put up.
 #
 # Only on GitHub's Macs: it opens real apps, moves and resizes their windows, quits them, and switches Reduce Motion and the display's size.
-# The apps alone come first: what is cut off is the pairs, the film and the pictures, and what is there can still be judged.
+# The apps alone come first, then the pictures' times: what is cut off is the pairs and the film, and what is there can still be judged.
 ARBOR_TIME_LIMIT=480
 # Twice the display's rate: a place that was there for a whole frame cannot fall between two samples.
 DAY_HZ=120
@@ -162,16 +162,18 @@ if [ -n "$SERVER" ]; then
 fi
 
 for name in $WALK_CAST; do alone "$name"; done
-pair pair1 "$1" "$2"
-pair pair2 "$3" "$4"
-[ $# -lt 8 ] || { pair pair3 "$5" "$6"; pair pair4 "$7" "$8"; }
-FILM=film-glide pair film "$1" "$2"
 
+# After the glides that have a vote, which it cannot disturb then, and before what a cut may cost.
 step "how long pictures take"
 if [ -x "$TOOLS/picture-time" ]; then
   # shellcheck disable=SC2046
   limit 90 "$TOOLS/picture-time" $(for name in $WALK_CAST; do window_of "$name"; done) | tee "$ARBOR_OUT/pictures.txt"
 fi
+
+pair pair1 "$1" "$2"
+pair pair2 "$3" "$4"
+[ $# -lt 8 ] || { pair pair3 "$5" "$6"; pair pair4 "$7" "$8"; }
+FILM=film-glide pair film "$1" "$2"
 
 sampler_stop
 step "the judge"

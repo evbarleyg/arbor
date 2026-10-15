@@ -307,7 +307,7 @@ def make_up(folder, cast, blind=(), bar=None):
     """Logs as a Mac would leave them. cast: {name: manner}. Each app plays a control and two glides of 18 steps in 300 ms in which its left edge moves and its right edge is to stand
     still, and the sampler looks 120 times a second. Manners: smooth (both askings show at once); torn (the second asking takes 10 ms, and what lies between shows); late (20 ms an
     asking); slow (one asking of 350 ms); elsewhere (20 points off a moment after the end); never (so after its control too); skips (the window server shows every third frame);
-    fixed (it keeps its size, whatever is asked); overslept (not the app: the tool begins a step 60 ms late); a number (one asking takes so long that the window stands still for that
+    fixed (it keeps its size, whatever is asked); silent (it answers nothing within the second it is given, and glide asks it no more); overslept (not the app: the tool begins a step 60 ms late); a number (one asking takes so long that the window stands still for that
     many ms). bar: macOS's own glide of the last window, 18 frames with one wait of that many ms."""
     log, shown, clock = [], defaultdict(list), 1_000_000.0
     text = lambda frame: " ".join(f"{number:.0f}" for number in frame)  # noqa: E731
@@ -323,6 +323,10 @@ def make_up(folder, cast, blind=(), bar=None):
                 due = clock + duration * step / steps
                 left = round(frame[0] + (goal[0] - frame[0]) * step / steps)
                 following = (left, 80.0, 1200.0 - left, 400.0)
+                if manner == "silent":
+                    log.append(f"{due:.2f} call {act} {window} place {step} 1000.00 -25204 0.00 {text(following)}")
+                    free = due + 1000
+                    break
                 for turn, kind in enumerate(("place", "size") if goal[2] > frame[2] else ("size", "place")):
                     began = max(due, free) + (60 if manner == "overslept" and step == 4 and turn == 0 else 0)
                     took = manner - 300 / 18 if isinstance(manner, int) and step == 9 and turn == 0 else 350.0 if manner == "slow" and step == 3 and turn == 0 else 20.0 if manner == "late" else 10.0 if manner == "torn" and turn == 1 else 1.0
@@ -336,7 +340,7 @@ def make_up(folder, cast, blind=(), bar=None):
             if manner == "never" or (manner == "elsewhere" and steps > 1):
                 shown[window].append((free + 30, (goal[0], goal[1] + 20, goal[2], goal[3])))
             log.append(f"{free:.2f} done {act} 5.00")
-            frame, clock = goal, free + 600
+            frame, clock = frame if manner == "silent" else goal, free + 600
     if bar is not None:
         log += [f"{clock:.2f} act {name}.4 0 0 macos", f"{clock:.2f} ask {name}.4 {window} 7 glides {text(frame)} 0 31 720 800"]
         for step in range(1, 19):
@@ -375,6 +379,7 @@ def self_test():
     expect("one whose far edge is seen to give way between the askings", {"a": "torn", "b": "smooth"}, ["a"], "alive")
     expect("one that answers late", {"a": "smooth", "b": "late"}, ["b"], "alive")
     expect("one asking longer than the glide", {"a": "slow"}, ["a"], "alive")
+    expect("one that does not answer, and is not asked again", {"a": "silent", "b": "smooth"}, ["a"], "alive", says="an asking took 1000 ms, longer than the whole glide")
     expect("one that ends elsewhere", {"a": "elsewhere", "b": "smooth"}, ["a"], "alive")
     expect("one that skips frames", {"a": "skips", "b": "smooth"}, ["a"], "alive")
     expect("two of them: dead", {"a": "skips", "b": "smooth", "c": "torn"}, ["a", "c"], "dead")

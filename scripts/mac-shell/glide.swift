@@ -31,7 +31,8 @@
 //   ask <act> <window> <pid> glides|jumps <x y w h> <x y w h>      the frame the window has, and the frame asked for (of the bar: the one it had in the end)
 //   call <act> <window> place|size <step> <took ms> <AXError> <late ms> <x y w h>
 //                                                    at the moment the asking began, which is <late ms> after the step was due; the frame of that step.
-//                                                    AXError 0 is success, -25204 an app that did not answer within a second
+//                                                    AXError 0 is success, -25204 an app that did not answer within a second: IT IS NOT ASKED AGAIN in this
+//                                                    act. 36 askings of a second each, act after act, would cost the apps that come after it their turn
 //   read <act> <window> <took ms> <x y w h>          the frame read back when the last asking had returned
 //   sum <act> <window> <askings> <mean ms> <p95 ms> <worst ms> <late ms, all together> <points between the frame read back and the one asked for>
 //   done <act> <ms of processor time this process used>
@@ -200,6 +201,11 @@ func placeComesFirst(from: CGRect, to: CGRect, order: String) -> Bool {
     private func put(_ values: [CGFloat], at index: Int) -> Int32 {
       var all = fields()
       guard all.count >= 7 else { return -25202 }
+      // As Accessibility does with an app that takes longer than it is given: a second, and nothing has changed.
+      if (Double(all[6]) ?? 0) >= 1000 {
+        Thread.sleep(forTimeInterval: 1)
+        return -25204
+      }
       Thread.sleep(forTimeInterval: (Double(all[6]) ?? 0) / 1000)
       for (offset, value) in values.enumerated() { all[index + offset] = String(Int(value)) }
       return (try? all.joined(separator: " ").write(toFile: path, atomically: true, encoding: .utf8)) == nil ? -25200 : 0
@@ -325,19 +331,26 @@ if let menu {
 
 // MARK: The journey
 
-/// One step for one window: the askings that the road needs, in the order that suits this step.
-@Sendable func set(_ target: Target, from last: CGRect, to next: CGRect, step: Int, due: Double) {
-  let place = { () -> Void in
-    guard target.from.origin != target.to.origin else { return }
+/// kAXErrorCannotComplete: the app did not answer within the time it is given.
+let noAnswer: Int32 = -25204
+
+/// One step for one window: the askings that the road needs, in the order that suits this step. False if the app did not answer one of them.
+@Sendable func set(_ target: Target, from last: CGRect, to next: CGRect, step: Int, due: Double) -> Bool {
+  let place = { () -> Bool in
+    guard target.from.origin != target.to.origin else { return true }
     let began = now()
-    journal.call(target.window.number, "place", step: step, began: began, due: due, error: target.window.set(position: next.origin), next)
+    let error = target.window.set(position: next.origin)
+    journal.call(target.window.number, "place", step: step, began: began, due: due, error: error, next)
+    return error != noAnswer
   }
-  let size = { () -> Void in
-    guard target.from.size != target.to.size else { return }
+  let size = { () -> Bool in
+    guard target.from.size != target.to.size else { return true }
     let began = now()
-    journal.call(target.window.number, "size", step: step, began: began, due: due, error: target.window.set(size: next.size), next)
+    let error = target.window.set(size: next.size)
+    journal.call(target.window.number, "size", step: step, began: began, due: due, error: error, next)
+    return error != noAnswer
   }
-  if placeComesFirst(from: last, to: next, order: order) { place(); size() } else { size(); place() }
+  return placeComesFirst(from: last, to: next, order: order) ? place() && size() : size() && place()
 }
 
 journal.note(now(), "act \(act) \(steps) \(Int(duration)) \(order)")
@@ -363,12 +376,12 @@ onAThread {
     let early = due - now()
     if early > 0 { Thread.sleep(forTimeInterval: early / 1000) }
     let next = onTheRoad(from: target.from, to: target.to, atStep: step, of: steps)
-    set(target, from: last, to: next, step: step, due: due)
+    guard set(target, from: last, to: next, step: step, due: due) else { break }
     last = next
   }
 }
 if targets.count > 1 {
-  onAThread { for target in targets.dropFirst() { set(target, from: target.from, to: target.to, step: 1, due: start) } }
+  onAThread { for target in targets.dropFirst() { _ = set(target, from: target.from, to: target.to, step: 1, due: start) } }
 }
 arrived.wait()
 
