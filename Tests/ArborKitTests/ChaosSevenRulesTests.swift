@@ -589,6 +589,37 @@ private let b = WindowID(102)
     #expect(nets(after: overlapping + ["focus 101", "react"], then: "settle") { $0.raise(b) }.contains("switched-to-behind"))
   }
 
+  // MARK: After a person's own act macOS decides
+
+  /// As `nets`, for one net about the keyboard alone: whether it spoke from `last` on.
+  private func theKeyboardNetSpeaks(
+    _ rule: String = "keyboard-handed-on-unasked", after lines: [String], then last: String, _ later: String...,
+    fault: ((FakeWindowSystem) -> Void)? = nil
+  ) -> Bool {
+    let runner = ChaosRunner()
+    for line in lines { _ = runner.step(ChaosAction(text: line)) }
+    if let fault { runner.beforeTheNextCheck = { fault($0.system) } }
+    return ([last] + later).flatMap { runner.step(ChaosAction(text: $0)) }.contains { $0.rule == rule }
+  }
+
+  @Test func theKeyboardIsHandedOnToNobodyUnasked() {
+    let typing = oneDocked + ["focus 101", "react", "advance 1"]
+    for going in ["close 101", "minimize 101", "quit-app 1001", "focus-nothing"] {
+      #expect(!theKeyboardNetSpeaks(after: typing, then: going, "advance 1"), "\(going)")
+      #expect(theKeyboardNetSpeaks(after: typing + [going], then: "advance 1") { $0.focus(b) }, "\(going)")
+    }
+    // Whoever asks Arbor for something may get the keyboard with it, and whoever clicks a window has moved it.
+    for asking in ["zoom 102", "focus 102", "open 103 Safari pid 1003 at 300 300 500 400"] {
+      #expect(!theKeyboardNetSpeaks(after: typing + ["focus-nothing"], then: asking) { $0.focus(b) }, "\(asking)")
+    }
+    // A summon waits for its app's window, which is on another Space, and is answered when that is back and something stirs.
+    let waiting = [
+      "launch", "open 104 Finder pid 1005 at 100 100 700 500", "open 109 Music pid 1006 at 300 200 700 500", "space 104 off",
+      "open 110 Notes pid 1001 at 200 300 400 300", "close 110", "summon Finder", "space 104 on",
+    ]
+    #expect(!theKeyboardNetSpeaks(after: waiting, then: "close 109"))
+  }
+
   // MARK: The ways home
 
   @Test(arguments: ["float-all", "quit", "pause"]) func aWayOutGivesEveryWindowItsOwnSizeBack(way: String) {
@@ -687,12 +718,13 @@ private let b = WindowID(102)
   }
 
   @Test func withNothingDockedAndNothingAskedArborSendsTheKeyboardNowhere() {
-    #expect(!numbers(after: twoFloating + ["focus 101", "react"], then: "flush").contains("keyboard-taken-unasked"))
-    #expect(numbers(after: twoFloating + ["focus 101", "react"], then: "flush") { $0.focus(b) }.contains("keyboard-taken-unasked"))
+    let taken = "keyboard-taken-unasked"
+    #expect(!theKeyboardNetSpeaks(taken, after: twoFloating + ["focus 101", "react"], then: "flush"))
+    #expect(theKeyboardNetSpeaks(taken, after: twoFloating + ["focus 101", "react"], then: "flush") { $0.focus(b) })
     // Asked for: a key that turns to a window.
-    #expect(!numbers(after: twoFloating + ["focus 101", "react"], then: "focus right") { $0.focus(b) }.contains("keyboard-taken-unasked"))
+    #expect(!theKeyboardNetSpeaks(taken, after: twoFloating + ["focus 101", "react"], then: "focus right") { $0.focus(b) })
     // With something docked the keyboard is another rule's.
-    #expect(!numbers(after: oneDocked, then: "flush") { $0.focus(b) }.contains("keyboard-taken-unasked"))
+    #expect(!theKeyboardNetSpeaks(taken, after: oneDocked, then: "flush") { $0.focus(b) })
   }
 
   @Test func aKeyThatDocksTakesNoWindowOutOfView() {
@@ -796,6 +828,19 @@ private let b = WindowID(102)
     let shipped = ChaosRunner()
     for line in ["settings {}", "launch"] { _ = shipped.step(ChaosAction(text: line)) }
     #expect(shipped.controller.settings == Settings())
+  }
+
+  /// Whether anybody is handed the keyboard unasked, in the wild walks, which also click the desktop. The floor is under half of what
+  /// forty of them gave when this was written.
+  @Test func wildWalksAskWhoWasHandedTheKeyboard() {
+    let before = ChaosRunner.questionsAsked["handed-on"] ?? 0
+    for seed in UInt64(1)...40 {
+      let runner = ChaosRunner()
+      var generator = ChaosGenerator(seed: seed)
+      for _ in 0..<200 { _ = runner.step(generator.next(runner)) }
+    }
+    let asked = (ChaosRunner.questionsAsked["handed-on"] ?? 0) - before
+    #expect(asked >= 100, "asked \(asked) times")
   }
 
   private static let floors = [

@@ -459,10 +459,10 @@ private let side = DisplaySnapshot(
     h.system.mouseDown = false
     h.scheduler.advance(by: 0.2)
     expectNoRing(h)
-    // With nothing focused Arbor focuses a window in view, and the ring goes there.
+    // Nobody is handed the keyboard (Q29: after a person's own act macOS decides), so there is nothing to draw a line round.
     h.scheduler.advance(by: 1)
-    #expect(h.system.focusedWindow() != nil)
-    if let focused = h.system.focusedWindow() { expectRing(h, around: focused) }
+    #expect(h.system.focusedWindow() == nil)
+    expectNoRing(h)
   }
 
   // MARK: The flash

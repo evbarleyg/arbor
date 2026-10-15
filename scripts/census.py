@@ -70,7 +70,7 @@ DOCUMENT = "docs/CENSUS.md"
 # The fake sends Arbor a report, or changes the world behind Arbor's back: macOS, an app or a hand acts.
 SYSTEM_REPORTS = """
 close setMinimized setHidden unhideApp setOnActiveSpace userMove setTitle userFocus drag activate activateApp setDisplays
-setListed openUnlisted finishSlowFocus userResize releaseMouse backgroundFocus setFullScreen userFocusesNothing
+setListed openUnlisted finishSlowFocus userResize releaseMouse backgroundFocus setFullScreen userFocusesNothing sheetTakesTheKeyboard
 userSwitchesApp appsSettle setUnresponsive openTab selectTab closeTab dragAndLoseTheRelease quit quitApp comesForward
 settleFocus click userClick beginDrag moveDrag holdDrag holdModifierKeys endDrag loseTheReleaseOfTheDrag appsReact grab
 carry letGo loseTheRelease moveSilently report renumber finishRestoring openStrayDialog forgetSession type keyDown keyUp
@@ -1211,7 +1211,8 @@ EVIDENCE = {
     "system.defersFocus=": (["focused, answering Arbor's focus"], ""),
     "system.backgroundFocus": (["focused, a window of another app"], ""),
     "system.userSwitchesApp": (["event keyboardFocusMoved"], ""),
-    "system.userFocusesNothing": (["event keyboardFocusMoved"], ""),
+    "system.userFocusesNothing": (["event keyboardFocusMoved", "event applicationActivated"], ""),
+    "system.sheetTakesTheKeyboard": (["event keyboardFocusMoved"], ""),
     "system.activate": (["event applicationActivated"], ""),
     "system.activateApp": (["event applicationActivated"], ""),
     "system.drag": (["event dragBegan"], "rows 6 and 7: on a Mac `dragBegan` comes 0.3 s late with the window already moved, frames lag "

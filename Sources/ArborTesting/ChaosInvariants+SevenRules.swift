@@ -11,6 +11,7 @@ import Foundation
 /// | Nothing moves until the person docks something | `moved-before-any-dock`, `fetched-before-any-dock`, `moved-at-launch`, `moved-at-launch-after-a-crash`, `moved-at-resume`, `start-took-out-of-view`, `pause-and-resume-moved`, `there-and-back-moved`, `moved-out-of-its-zoom`, `moved-unasked` |
 /// | No jolts: a window moves once, to where it ends up | `moved-twice`, `moved-again`; both with `-sizing` where its app refused a size, `-sizing-again` where it had refused before, `-floating` for a floating window; `moved-twice-floating-windows-first` (with `soleFloatTakesDesktop`, where macOS reported the window before the displays); `flashed-into-view`, `flashed-out-of-view`, `moved-over-and-over` |
 /// | The window you switch to comes to the front and into view | `switched-to-out-of-view`, `app-switch-out-of-view`, `switched-to-partly-out`, `switched-to-behind` |
+/// | After a person's own act macOS decides who has the keyboard | `keyboard-handed-on-unasked` |
 /// | Quitting, Float All and pause give windows their own earlier sizes back | `size-not-given-back` |
 /// | After any way home no window is less than wholly in view | `home-not-whole`, `home-behind-the-dock`, `home-leaves-out` |
 extension ChaosRunner {
@@ -103,6 +104,9 @@ extension ChaosRunner {
     var deskWasEmpty = false
     /// The displays have changed since a window was last seen in view at rest.
     var displaysChangedSinceSomethingShowed = false
+    /// No window that Arbor knows had the keyboard when the step began, and this is how often Arbor had focused one.
+    var nobodyBefore = false
+    var focusCallsBefore = 0
   }
 
   /// The detector of docs/VIABLE.md, section 5, that a rule of the walks stands for: one vocabulary on Linux and on a Mac.
@@ -110,7 +114,7 @@ extension ChaosRunner {
     let table: [(prefix: String, detector: String)] = [
       ("moved-twice", "jolt"), ("moved-again", "jolt"), ("sized-there-and-back", "jolt"), ("set-right-", "jolt"), ("strayed-between", "jolt"), ("eye-", "jolt"), ("flashed-", "flash"), ("flipped", "jolt"), ("moved-over-and-over", "stuck"), ("moved-", "moved-unasked"), ("fetched-", "moved-unasked"), ("there-and-back", "moved-unasked"), ("dragged-gap", "moved-unasked"), ("same-windows", "moved-unasked"), ("displays-out-and-back", "moved-unasked"), ("taken-", "moved-unasked"), ("floating-taken", "lost"), ("dock-took", "lost"), ("keyboard-taken", "focus"), ("plain-drag", "moved-unasked"), ("nothing-in-view", "lost"), ("docked-at-a-start", "moved-unasked"),
       ("pause-and-resume", "moved-unasked"), ("left-its-place", "moved-unasked"), ("start-took", "lost"), ("quit-left", "lost"), ("displays-left", "lost"), ("switched-to-behind", "behind"),
-      ("switched-to", "focus"), ("app-switch", "focus"), ("size-", "size-lost"), ("home-", "lost"), ("lost", "lost"), ("out-of-reach", "lost"),
+      ("switched-to", "focus"), ("app-switch", "focus"), ("keyboard-", "focus"), ("size-", "size-lost"), ("home-", "lost"), ("lost", "lost"), ("out-of-reach", "lost"),
       ("placed-", "lost"), ("vanished", "lost"), ("parked-on-the-desktop", "lost"), ("restless", "stuck"), ("given-up", "stuck"),
     ]
     return table.first { rule.hasPrefix($0.prefix) }?.detector
@@ -139,6 +143,8 @@ extension ChaosRunner {
     seven.layoutsBefore = controller.layouts
     seven.letBeBefore = controller.windowsLeftWhereADoubleClickPutThem
     seven.focusedBefore = system.focused
+    seven.focusCallsBefore = system.focusLog.count
+    seven.nobodyBefore = system.focused == nil
     seven.pausedBefore = isPaused
     seven.fullScreenBefore = Set(system.windows.values.lazy.filter(\.snapshot.isFullScreen).map(\.snapshot.id))
     // Asked now: `settle` lets go of the mouse, and afterwards nothing shows that somebody held it.
@@ -378,6 +384,7 @@ extension ChaosRunner {
     untouchedByTheChangeViolations(after: action, &problems)
     keyboardViolations(after: action, &problems)
     plainDragViolations(&problems)
+    handedOnViolations(after: action, &problems)
   }
 
   // MARK: No jolts: a window moves once, to where it ends up
@@ -867,6 +874,26 @@ extension ChaosRunner {
   func noteAPauseThatEnded() {
     guard seven.pausedBefore, isRunning, let before = seven.beforeThePause else { return }
     seven.backDue = (before, "pause", "pause-and-resume-moved", nil, [])
+  }
+
+  // MARK: After a person's own act macOS decides
+
+  /// A window closes, goes into the Dock, is hidden or quit, somebody clicks the desktop, time passes: nobody asks Arbor for anything. Where
+  /// no window that Arbor knows has the keyboard then, macOS has decided so (the app stays in front with its menu bar; Finder has it),
+  /// and Arbor gives it to nobody. Where macOS picked a window that Arbor keeps out of view, that is Arbor's doing, and another story.
+  func handedOnViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
+    switch action {
+    case .focusNothing, .close, .quitApp, .minimize(_, true), .hide(_, true), .cursor, .title, .backgroundFocus: break
+    default: guard seven.timeOnly else { return }
+    }
+    guard isRunning, wasRunningBefore, seven.nobodyBefore else { return }
+    asked("handed-on")
+    // A summon that waited for its app's window is somebody's asking, answered late (F53).
+    let summonedBefore = Set(workspacesBefore.values.compactMap { $0.summoned?.window })
+    let summoned = Set(controller.workspaces.values.compactMap { $0.summoned?.window }).subtracting(summonedBefore)
+    for focus in system.focusLog.dropFirst(seven.focusCallsBefore) where !summoned.contains(focus.window) {
+      problems.append(.init("keyboard-handed-on-unasked", "nobody Arbor knows had the keyboard, nobody asked for anything, and Arbor focused \(focus.window)"))
+    }
   }
 
   // MARK: The window you switch to comes to the front and into view

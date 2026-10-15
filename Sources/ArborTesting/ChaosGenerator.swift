@@ -573,7 +573,13 @@ public struct ChaosGenerator {
     case .cursor: return .cursor(point(in: world))
     case .focus: return .focus(window(in: world))
     case .switchApp: return .switchApp(window(in: world))
-    case .focusNothing: return .focusNothing
+    case .focusNothing:
+      // Somebody is busy on the desktop for a while, and the window they came from goes meanwhile (`keyboard-handed-on-unasked`).
+      if let window = world.system.focused, let pid = world.system.windows[window]?.snapshot.pid, random.chance(50) {
+        let going = random.pick([ChaosAction.close(window), .minimize(window, true), .hide(pid: pid, true), .quitApp(pid: pid)])!
+        planned.insert(contentsOf: [.advance(2), going, .advance(1)], at: 0)
+      }
+      return .focusNothing
     case .backgroundFocus: return .backgroundFocus(window(in: world))
     case .press: return .press
     case .drag:

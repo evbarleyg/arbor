@@ -14,7 +14,7 @@ public enum ScenarioExpectation {
     + "left-of <a> <b>, above <a> <b>, camera root|desktop|<id>, count docked <n>, ok, fail, "
     + "ring <id>|none, outline <id>|desktop|none, shortcut <keys> on|off, shortcut <keys> shows <label>, "
     + "shortcut <keys> key <code>, app-got <keys>|nothing, pinned <id>, in-front <id>, size <id> <w>x<h>, summoned <id>, space <name>, no-space <name>, "
-    + "field open|closed, held view|still|no, focused <id>, said <words>, silent, "
+    + "field open|closed, held view|still|no, focused <id>|none, said <words>, silent, "
     + "minimap none|everything|desktop|<id>, still [<id>], moved-once, jolt <id>, at <id> <x> <y> [<w>x<h>], "
     + "replied <words>, preview none|showing"
 
@@ -195,6 +195,7 @@ public enum ScenarioExpectation {
       return controller.holdLevel == expected ? nil : "held: \(controller.holdLevel?.rawValue ?? "no"), not \(words[1])"
 
     case ("focused", 2):
+      if words[1].lowercased() == "none" { return h.system.focused.map { "\($0) has the keyboard, and no window should" } }
       guard let id = window(1) else { return usage(words) }
       return h.system.focused == id ? nil : "\(h.system.focused.map { "\($0)" } ?? "no window") has the keyboard, not \(id)"
 

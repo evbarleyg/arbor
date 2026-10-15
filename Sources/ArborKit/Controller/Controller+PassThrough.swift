@@ -64,6 +64,8 @@ extension Controller {
   public func applicationActivated(_ app: FrontmostApp?) {
     guard app != frontmostApp else { return }
     frontmostApp = app
+    // Somebody has gone elsewhere: to Finder, to an app with no window.
+    keyboardHandOver.wentOn = nil
     holdNotesActivation(of: app)
     followFrontmostApp(justActivated: true)
   }

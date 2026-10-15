@@ -22,25 +22,56 @@ import Testing
     return (h, a, b, c)
   }
 
-  /// The control: its app's last window closes, macOS picks nobody, and nobody reports anything.
-  @Test func afterTheLastWindowOfAnAppClosesAWindowInViewGetsTheKeyboard() {
+  /// Its app's last window closes, macOS picks nobody, and nobody reports anything. After a person's own act macOS decides
+  /// (`collab/QUESTIONS.md`, Q29; board 0.20). This said "…AWindowInViewGetsTheKeyboard".
+  @Test func afterTheLastWindowOfAnAppClosesNobodyIsHandedTheKeyboard() {
     let (h, a, _, _) = makeHarness()
+    let asked = h.system.focusLog.count
     h.system.close(a)
     #expect(h.system.focusedWindow() == nil, "macOS picked none")
+    h.scheduler.advance(by: 3)
+    #expect(h.system.focusedWindow() == nil && h.system.focusLog.count == asked)
+    #expect(waiting(h).isEmpty)
+  }
+
+  /// `[a / c2 | Desktop | b / c]` with the view on the right column and the keyboard in `c`. `c2` is a second window of its app.
+  private func withASiblingOutOfView() -> (Harness, a: WindowID, b: WindowID, c: WindowID, c2: WindowID) {
+    let (h, a, b, c) = makeHarness()
+    let c2 = h.system.open(app: "Mail", pid: 1003)
+    h.run("dock \(c2.rawValue) beside \(a.rawValue) bottom")
+    h.run("zoom \(c.rawValue)")
+    h.run("out")
+    h.system.userFocus(c)
+    h.scheduler.advance(by: 1)
+    #expect(isInView(b, h) && isInView(c, h) && !isInView(c2, h))
+    return (h, a, b, c, c2)
+  }
+
+  /// `c` closes, and macOS gives the keyboard to `c2` without a word.
+  private func closeInSilence(_ c: WindowID, heir c2: WindowID, _ h: Harness) {
+    h.system.echoes.keyboard = false
+    h.system.close(c)
+    h.system.focused = c2
+  }
+
+  /// The control: that the window macOS picked is out of view is Arbor's doing, and a window in view gets the keyboard.
+  @Test func afterALossThatNobodyReportsAWindowInViewGetsTheKeyboard() {
+    let (h, _, b, c, c2) = withASiblingOutOfView()
+    closeInSilence(c, heir: c2, h)
     h.scheduler.advance(by: 0.3)
-    #expect(h.system.focusedWindow() != nil)
+    #expect(h.system.focusedWindow() == b)
   }
 
   @Test func aBackgroundAppsReportDoesNotPutOffTheLookAfterALoss() {
-    let (h, a, _, c) = makeHarness()
-    h.system.close(a)
+    let (h, a, b, c, c2) = withASiblingOutOfView()
+    closeInSilence(c, heir: c2, h)
     h.scheduler.advance(by: 0.1)
-    h.system.backgroundFocus(c)
-    #expect(h.system.focusedWindow() == nil, "a report, not the keyboard")
+    h.system.backgroundFocus(a)
+    #expect(h.system.focusedWindow() == c2, "a report, not the keyboard")
     h.scheduler.advance(by: 0.2)
-    #expect(h.system.focusedWindow() != nil, "a quarter of a second after the loss")
+    #expect(h.system.focusedWindow() == b, "a quarter of a second after the loss")
     h.scheduler.advance(by: 3)
-    #expect(h.system.focusedWindow() != nil, "or ever")
+    #expect(h.system.focusedWindow() == b && !isInView(c2, h))
     #expect(waiting(h).isEmpty)
   }
 
@@ -129,13 +160,12 @@ import Testing
 
   /// No race is needed. A report is not the keyboard: the window that has it is still the one whose going is a loss.
   @Test func aBackgroundAppsReportLongAgoDoesNotMakeArborForgetWhoHasTheKeyboard() {
-    let (h, a, b, _) = makeHarness()
+    let (h, _, b, c, c2) = withASiblingOutOfView()
     h.system.backgroundFocus(b)
     h.scheduler.advance(by: 5)
-    #expect(h.system.focusedWindow() == a)
-    h.system.close(a)
-    #expect(h.system.focusedWindow() == nil, "macOS picked none")
+    #expect(h.system.focusedWindow() == c)
+    closeInSilence(c, heir: c2, h)
     h.scheduler.advance(by: 1)
-    #expect(h.system.focusedWindow() != nil)
+    #expect(h.system.focusedWindow() == b && !isInView(c2, h))
   }
 }

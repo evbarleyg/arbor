@@ -486,7 +486,8 @@ final class World {
 
   /// The keyboard goes to something Arbor knows no window for: the Desktop, a panel, a sheet, a dialog.
   func keyboardLeavesTheWindows() {
-    if system.focused != nil { system.userFocusesNothing() }
+    // Which app is in front is this world's to say (`bringForward`).
+    if system.focused != nil { system.sheetTakesTheKeyboard() }
     keyboardSeen = nil
   }
 
