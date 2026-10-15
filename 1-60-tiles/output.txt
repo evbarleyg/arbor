@@ -1,0 +1,159 @@
+# mac-shell: scripts/mac-shell/suite/60-tiles.sh at a57322a, macOS 26.6.2, 2026-10-15T14:49Z
+built Arbor, the pointer tool and the app bundles in 8s
+session 1: Arbor pid 4264, test windows 30 31 32 33 (pid 4231)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 30 left
+docked w30 at the left edge
+> test windows: move 31 532 63 480 348
+> test windows: move 33 532 63 480 348
+
+▸ drop a window that refuses to shrink into a slot too small for it: a tile takes its place
+> click 524 420
+> drag 546 152 259 612
+  ✔ the window is docked
+  ✔ a tile stands in for it
+  ✔ it is a window's tile
+  ✔ Arbor draws the tile where the slot is
+  ✔ the window itself is out of view
+  ✔ the camera stayed where it was
+  ✔ the window above it is in view
+  ✔ nothing overlaps
+  ✔ windows match Arbor's layout
+
+▸ click the tile: the camera frames its window
+> click 259 533
+  ✔ the window fills the screen
+  ✔ the camera is on it
+  ✔ the other docked window is out of view
+  ✔ it has the keyboard
+
+▸ go back from a tile's window: the tile returns
+> back
+back to everything
+  ✔ a tile stands in for it again
+  ✔ Arbor draws it
+  ✔ the window is out of view
+  ✔ the window above it is back
+  ✔ windows match Arbor's layout
+
+▸ drag a floating window over a tile and resize under it by command: it stays in front, and a click where the tile lies is the window's
+> test windows: open size=300x160 at=615,288 title=Over the tile
+> drag 801 300 259 533 --steps 60
+  ✔ the window floats
+  ✔ it lies over the tile
+> resize 30 right -20
+  ✔ the first resize succeeds
+> resize 30 right 20
+  ✔ and the one that takes it back
+  ✔ the floating window has stayed where it was put
+  ✔ Arbor still draws the tile
+  ✔ the window is in front of the tile
+> click 224 624
+  ✔ the floating window got the click
+  ✔ the camera has not gone to the tile's window
+  ✔ a tile still stands in for it
+  ✔ windows match Arbor's layout
+> test windows: close 41
+
+▸ dock a window that refuses to shrink by command: the camera stays and a tile takes its place
+> float 32
+w32 is floating
+  ✔ the window floats
+> click 248 383
+> dock 32 beside 30 bottom
+docked w32 below w30; its space is too small to show it, so it is a tile
+  ✔ a tile stands in for it
+  ✔ the camera stays on everything
+  ✔ the window above it stays in view
+
+▸ shrink a space below the smallest usable size: one tile stands in for the whole group
+> show-all
+showing everything
+> drag 512 202 208 202
+  ✔ a tile stands in for the first window
+  ✔ it is a group's tile
+  ✔ the same tile holds the other window
+  ✔ there is one tile
+  ✔ Arbor draws it
+  ✔ both windows are out of view
+
+▸ click the group's tile: the camera goes into the group
+> click 107 368
+  ✔ the first window is in view
+  ✔ it is as wide as the screen
+  ✔ the floating windows left with the Desktop
+> show-all
+showing everything
+
+▸ a floating window that cannot shrink stays on the screen when the Desktop gets narrow
+> float-all
+floated 2 windows
+> dock 30 left
+docked w30 at the left edge
+  ✔ the window floats
+  ✔ all of it is on the screen
+
+▸ a window made to refuse its slot while docked becomes a tile at the next layout
+> float-all
+floated 1 window
+> dock 31 left
+docked w31 at the left edge
+> dock 33 beside 31 bottom
+docked w33 below w31
+  ✔ it fits its slot at first
+> test windows: min-size 33 716 537
+> zoom 33
+framed w33
+> back
+back to everything
+  ✔ a tile stands in for it
+  ✔ nothing overlaps
+
+== before quitting
+> dock 32 right
+docked w32 at the right edge; its space is too small to show it, so it is a tile
+> show-all
+showing everything
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+session 2: Arbor pid 6521, test windows 44 45 46 (pid 6504)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 44 left
+docked w44 at the left edge
+
+▸ drag a window too wide for a third of the screen to the edge: the gaps move to make room, and it is no tile
+> click 528 496
+> drag 496 192 1021 368
+  ✔ the window is docked
+  ✔ no tile stands in for it
+  ✔ it is in view
+  ✔ in its slot
+  ✔ which is as wide as the window needs
+  ✔ it reaches the right edge of the screen
+  ✔ the Desktop is still between the two
+  ✔ nothing overlaps
+  ✔ the log says that it made room
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+66 passed, 0 failed
+mac-shell: put back after 60-tiles.sh: window-manager
+exit code 0

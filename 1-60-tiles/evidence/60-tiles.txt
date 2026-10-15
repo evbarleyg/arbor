@@ -1,0 +1,95 @@
+# 60-tiles 2026-10-15T14:49Z on macOS 26.6.2, commit a57322a
+
+▸ drop a window that refuses to shrink into a slot too small for it: a tile takes its place
+  ✔ the window is docked
+  ✔ a tile stands in for it
+  ✔ it is a window's tile
+  ✔ Arbor draws the tile where the slot is
+  ✔ the window itself is out of view
+  ✔ the camera stayed where it was
+  ✔ the window above it is in view
+  ✔ nothing overlaps
+  ✔ windows match Arbor's layout
+
+▸ click the tile: the camera frames its window
+  ✔ the window fills the screen
+  ✔ the camera is on it
+  ✔ the other docked window is out of view
+  ✔ it has the keyboard
+
+▸ go back from a tile's window: the tile returns
+  ✔ a tile stands in for it again
+  ✔ Arbor draws it
+  ✔ the window is out of view
+  ✔ the window above it is back
+  ✔ windows match Arbor's layout
+
+▸ drag a floating window over a tile and resize under it by command: it stays in front, and a click where the tile lies is the window's
+  ✔ the window floats
+  ✔ it lies over the tile
+  ✔ the first resize succeeds
+  ✔ and the one that takes it back
+  ✔ the floating window has stayed where it was put
+  ✔ Arbor still draws the tile
+  ✔ the window is in front of the tile
+  ✔ the floating window got the click
+  ✔ the camera has not gone to the tile's window
+  ✔ a tile still stands in for it
+  ✔ windows match Arbor's layout
+
+▸ dock a window that refuses to shrink by command: the camera stays and a tile takes its place
+  ✔ the window floats
+  ✔ a tile stands in for it
+  ✔ the camera stays on everything
+  ✔ the window above it stays in view
+
+▸ shrink a space below the smallest usable size: one tile stands in for the whole group
+  ✔ a tile stands in for the first window
+  ✔ it is a group's tile
+  ✔ the same tile holds the other window
+  ✔ there is one tile
+  ✔ Arbor draws it
+  ✔ both windows are out of view
+
+▸ click the group's tile: the camera goes into the group
+  ✔ the first window is in view
+  ✔ it is as wide as the screen
+  ✔ the floating windows left with the Desktop
+
+▸ a floating window that cannot shrink stays on the screen when the Desktop gets narrow
+  ✔ the window floats
+  ✔ all of it is on the screen
+
+▸ a window made to refuse its slot while docked becomes a tile at the next layout
+  ✔ it fits its slot at first
+  ✔ a tile stands in for it
+  ✔ nothing overlaps
+
+== before quitting
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+▸ drag a window too wide for a third of the screen to the edge: the gaps move to make room, and it is no tile
+  ✔ the window is docked
+  ✔ no tile stands in for it
+  ✔ it is in view
+  ✔ in its slot
+  ✔ which is as wide as the window needs
+  ✔ it reaches the right edge of the screen
+  ✔ the Desktop is still between the two
+  ✔ nothing overlaps
+  ✔ the log says that it made room
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+66 passed, 0 failed

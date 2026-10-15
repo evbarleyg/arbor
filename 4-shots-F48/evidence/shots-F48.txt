@@ -1,0 +1,58 @@
+# shots-F48 2026-10-15T14:53Z on macOS 26.6.2, commit a57322a
+
+== float: the old size, in the old place
+  ✔ the floated window has its old size
+  ✔ and is where it was
+
+== float a framed window: the old size, and the Desktop in view
+  ✔ the floated window has its old size
+  ✔ the Desktop is in view
+  ✔ another floating window is back in view with it
+
+== drag it out of its slot, slowly, grabbed in the middle
+  ✔ it floats
+  ✔ it has its old size
+  ✔ the pointer is as far below its top as it was held, or as far as a title bar reaches
+  ✔ and as far along as it was held
+
+== drag it out fast, grabbed near the left end, released without a pause
+  ✔ it floats
+  ✘ it has its old size
+  ✔ the pointer is still on its title bar
+  ✔ about as far along as it was grabbed
+
+== arrange, frame one, float-all: everything exactly where it was
+  ✔ w107 is where it was dropped
+  ✔ w108 is where it started
+  ✔ w109 (cannot grow) is where it started
+  ✔ w110 is where it started
+
+== framed on a window, a pause lets go as a quit does: every window is back where it was, at its own size
+  ✔ the framed window is where it started
+  ✔ w107 is back where it was
+  ✔ w110 is back where it was
+  ✔ the framed window is framed again
+  ✔ w107 is out of view again
+
+== a minimized window comes back as it was, not in the shape of its slot
+  ✔ restored, it is where it started
+
+== kill -9 with windows out of view, start again: the sizes are still known
+  ✔ Arbor is back
+  ✔ w107 is still docked
+  ✘ floated after the relaunch, it has its old size
+
+== quit: everything exactly where it was
+  ✔ Arbor exits within 5 s of quit
+  ✔ w107 is where it floated last
+  ✔ w108 is where it started
+  ✔ w109 is where it started
+
+== quit during a pause: the pause has left no window in the shape of its slot, and the quit moves nothing
+  ✔ in view, w146 is where it started as soon as Arbor is paused
+  ✔ Arbor exits within 5 s of quit
+  ✔ w146 is where it started
+  ✔ w147 is where it started
+  ✔ w148 is where it started
+
+33 passed, 2 failed
