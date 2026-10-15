@@ -1703,7 +1703,11 @@ esac
     row("run.sh: five are too many for one", started("a.sh", "b.sh", "c.sh", "d.sh", "e.sh", "feat/x")[1][3], '[{"parts":"1-3","of":5,"scripts":"a.sh b.sh c.sh"},{"parts":"4-5","of":5,"scripts":"d.sh e.sh"}]')
     row("run.sh: --macs 3", started("--macs", "3", "a.sh", "b.sh", "c.sh", "d.sh", "feat/x")[1][3], '[{"parts":"1-2","of":4,"scripts":"a.sh b.sh"},{"parts":"3-3","of":4,"scripts":"c.sh"},{"parts":"4-4","of":4,"scripts":"d.sh"}]')
     row("run.sh: more Macs than scripts", started("--macs", "9", "a.sh", "b.sh", "feat/x")[1][3], '[{"parts":"1-1","of":2,"scripts":"a.sh"},{"parts":"2-2","of":2,"scripts":"b.sh"}]')
-    row("run.sh: one script for three Macs to share", started("--macs", "3", "a.sh", "feat/x")[1][3], '[{"parts":"1-1","of":3,"scripts":"a.sh"},{"parts":"2-2","of":3,"scripts":"a.sh"},{"parts":"3-3","of":3,"scripts":"a.sh"}]')
+    row("run.sh: one script for three Macs to share: each is told its share", started("--macs", "3", "a.sh", "feat/x")[1][3],
+        '[{"parts":"1-1","of":3,"scripts":"a.sh","share":"1/3"},{"parts":"2-2","of":3,"scripts":"a.sh","share":"2/3"},{"parts":"3-3","of":3,"scripts":"a.sh","share":"3/3"}]')
+    row("run.sh: Macs with different scripts have no share: each does all of its scripts' work",
+        ["share" in (started(*arguments, "feat/x")[1][3] or "share") for arguments in [("--macs", "2", "a.sh", "b.sh"), ("a.sh", "b.sh", "c.sh", "d.sh", "e.sh"), ("a.sh",)]], [False] * 3)
+    row("run.sh: nor has the same script played twice, which is two playings and not two halves", "share" in (started("--macs", "2", "a.sh", "a.sh", "feat/x")[1][3] or "share"), False)
     row("run.sh: the ordinary Mac, set up, unless something else is asked for",
         [started("a.sh", "feat/x")[2].get(key) for key in ("inputs[runner]", "inputs[bare]")], ["macos-26", "false"])
     row("run.sh: --on and --bare, and a tag of its own for another kind of Mac",
@@ -1788,6 +1792,16 @@ esac
     row("run.sh: a whole run: it ends when the output branch appears, with the script's exit code", (done.returncode, "exit code: 0" in done.stdout), (0, True))
     row("run.sh: a whole run: GitHub was not asked once whether it had ended", polls, [])
     row("run.sh: a whole run: ten calls at most", len(made) <= 10, True)
+    # How long it waits goes by what the run may rightly take.
+    def waits(*arguments, tags=("t",)):
+        both = "\n".join(pushes.replace("mac-shell-out/t ", f"mac-shell-out/{tag} ") for tag in tags)
+        said = ran(*arguments, "feat/x", GOES=both, MAC_SHELL_TAG="t")[0].stdout
+        return [word for line in said.splitlines() if line.startswith("started ") for word in [line.split("; waits ")[-1]]]
+
+    row("run.sh: it waits 2700 s for one script, as it always has", waits("a.sh"), ["2700 s at most"])
+    row("run.sh: twenty minutes more for each further script of that Mac", waits("a.sh", "b.sh", "c.sh"), ["5100 s at most"])
+    row("run.sh: Macs side by side take no longer than the one that has most", waits("--macs", "2", "a.sh", "b.sh", "c.sh", tags=("t.1", "t.2")), ["3900 s at most"])
+    row("run.sh: one after the other they do", waits("--macs", "2", "--at-once", "1", "a.sh", "b.sh", tags=("t.1", "t.2")), ["3900 s at most"])
     shutil.rmtree(os.path.join(checkout, ".mac-shell"), ignore_errors=True)
     world.cleanup()
 

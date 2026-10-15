@@ -99,6 +99,7 @@ jobs:
           TAG: ${{ inputs.tag || github.run_id }}
           PARTS: ${{ matrix.mac.parts }}
           OF: ${{ matrix.mac.of }}
+          SHARE: ${{ matrix.mac.share }}
           INDEX: ${{ strategy.job-index }}
           TOTAL: ${{ strategy.job-total }}
         run: |
@@ -124,8 +125,10 @@ jobs:
           fi
           if [ "$TOTAL" -gt 1 ]; then TAG=$TAG.$((INDEX + 1)); fi
           echo "TAG=$TAG" >> "$GITHUB_ENV"
-          # For a script that is given to several Macs and shares its work out among them: "2/3" on the second of three.
-          echo "MAC_SHELL_SHARE=$((INDEX + 1))/$TOTAL" >> "$GITHUB_ENV"
+          # For ONE script that is given to several Macs and shares its work out among them: "2/3" on the second of three (run.sh says so). A Mac
+          # whose neighbours run other scripts has all of its own scripts' work to do: what it left out, taking itself for a share, nobody would do.
+          [[ "$SHARE" =~ ^[1-9][0-9]?/[1-9][0-9]?$ ]] || SHARE=1/1
+          echo "MAC_SHELL_SHARE=$SHARE" >> "$GITHUB_ENV"
           # Which playings of the whole dispatch this Mac has, and of how many (scripts/ci-mac-shell.sh). Started by hand: its own, from 1.
           case "$PARTS-$OF" in
             *[!0-9-]* | -* | *--* | *-0) ;;
@@ -153,9 +156,12 @@ jobs:
           persist-credentials: false
       - name: Which Git need not see
         run: echo .ci >> .git/info/exclude
+      # Limits of their own for what comes before the first script: the job's is for four scripts, and a download or a build that hangs would hold a Mac
+      # all that time. Without any cache the two together have taken four minutes.
       - name: Set up
         id: setup
         if: ${{ !inputs.bare }}
+        timeout-minutes: 15
         uses: ./.ci/.github/actions/mac-setup
         with:
           build-cache: ${{ inputs.configuration == 'release' && 'release' || 'products' }}
@@ -163,6 +169,7 @@ jobs:
       - name: Build
         id: build
         if: ${{ !inputs.bare }}
+        timeout-minutes: 15
         run: |
           swift --version
           .ci/scripts/ci-build.sh -c "$ARBOR_CONFIGURATION" && echo "passed=true" >> "$GITHUB_OUTPUT" || echo "::warning::swift build failed"
