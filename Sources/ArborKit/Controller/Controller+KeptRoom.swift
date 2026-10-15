@@ -84,6 +84,9 @@ extension Controller {
   /// display closes.
   func renumber(_ old: WindowID, as new: WindowID) {
     undoHistory.renumber(old, as: new)
+    // Another tab of a window that was there all along is that window still (Controller+PendingSlots.swift). And what the file
+    // knew of a docked window goes with its place, to the stand-in and on to whoever takes it: its old number is free again.
+    if let known = windowsTheFileKnew.removeValue(forKey: old) { windowsTheFileKnew[new] = known }
     for display in keptRoom.keys { keptRoom[display]!.tree.replaceWindow(old, with: new) }
   }
 

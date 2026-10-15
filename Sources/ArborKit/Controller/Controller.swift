@@ -349,6 +349,10 @@ public final class Controller {
   var overdueSlots: Set<WindowID> = []
   /// Those that a layout dropped since `beginUndoStep`.
   var slotsDroppedDuringUndoStep: [WindowID] = []
+  /// What the file said of the windows it knew under real numbers, docked or floating, on whatever display. One that is met
+  /// again under its own number, with its own app, is itself, and not the window that a slot waits for, unless its title
+  /// says otherwise (`isItselfAsTheFileKnewIt`). Kept while slots wait.
+  var windowsTheFileKnew: [WindowID: WindowHint] = [:]
   /// Waiting places that are laid out as if their windows were there (Controller+KeptRoom.swift).
   var keptRoom: [DisplayID: KeptRoom] = [:]
   /// Whether at the last start some saved window still existed under its own number: the Mac has not been restarted
@@ -528,6 +532,7 @@ public final class Controller {
     var leftAt = saved?.leftAt ?? [:]
     self.leftAt = nil
     hints = saved?.hints ?? [:]
+    noteTheWindowsTheFileKnew()
     // Or just now, before this start: a launch without the permission begins with the welcome window.
     // Or in an earlier run whose file could not be used: whoever had a state file has been here before.
     hasWelcomed = hasWelcomed || saved?.welcomed == true || (stateNews != nil && stateNews?.problem != .repaired)
@@ -726,6 +731,7 @@ public final class Controller {
     saveNow()
     // Saved with their hints; the next start finds them again.
     keptRoom.removeAll()
+    windowsTheFileKnew.removeAll()
     pendingSlots.removeAll()
     overdueSlots.removeAll()
     provisionalSlots.removeAll()

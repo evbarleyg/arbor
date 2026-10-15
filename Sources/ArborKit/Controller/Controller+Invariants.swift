@@ -274,6 +274,9 @@ extension Controller {
       }
       if parked.contains(slot) { problems.append(.init("pending", "the waiting slot \(slot) is parked")) }
     }
+    if pendingSlots.isEmpty, provisionalSlots.isEmpty, !windowsTheFileKnew.isEmpty {
+      problems.append(.init("leak", "\(windowsTheFileKnew.count) windows are remembered as the file knew them, and no slot waits"))
+    }
     if pendingSlots.isEmpty, provisionalSlots.isEmpty, !keptRoom.isEmpty {
       problems.append(.init("leak", "room is kept on \(keptRoom.keys.sorted()), and no slot waits"))
     }

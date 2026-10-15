@@ -83,7 +83,7 @@ extension Controller {
     for id in managedWindowIDs where !pendingSlots.isEmpty {
       if let window = windows[id] { _ = claimPendingSlot(for: window) }
     }
-    guard !isWaitOver else { return }
+    guard !isWaitOver else { return windowsTheFileKnew.removeAll() }
     Log.info("keeping \(pendingSlots.count) saved slot(s) for windows that are not in sight yet")
     scheduleCheckOfPendingSlots()
   }
@@ -206,7 +206,7 @@ extension Controller {
       provisionalSlots[window.id] = nil
       endWaitIfOver()
     }
-    guard !hasSlot(window.id),
+    guard !hasSlot(window.id), !isItselfAsTheFileKnewIt(window),
       AppRule.firstMatch(in: settings.rules, bundleID: window.bundleID, title: window.title)?.action != .ignore
     else { return false }
     let exact = slot(withTitleOf: window)
@@ -243,6 +243,28 @@ extension Controller {
     overdueSlots.remove(slot)
     settle(window, on: display)
     return true
+  }
+
+  /// Called by `start()` with the hints as they were loaded. Only of windows that exist now, listed or not: what comes later
+  /// under such a number was not there all along, and after a restart of the Mac numbers come round again.
+  func noteTheWindowsTheFileKnew() {
+    let existing = system.existingWindowIDs()
+    windowsTheFileKnew = hints.filter { !Self.isStandIn($0.key) && $0.value.bundleID != nil && existing.contains($0.key) }
+  }
+
+  /// Like `reconcile()`: a window that was there all along, floating, does not stand in for one of the same app that has closed
+  /// since. Nobody docked it. Wherever it was at the start: on another macOS Space, on a display that has gone, excluded.
+  ///
+  /// So it takes no place for being its app's only window. **By its title it may**, now or later: if that is no longer the one the
+  /// file has for its number, and exactly the one that a stand-in waits for, or waited for till another window took the place
+  /// for now. That is a window that came during an earlier wait as "Untitled" and floats in the file; or one that got the number
+  /// after a restart of the Mac; or the window that was there all along showing the document that was closed, which is then as
+  /// good as that document opened again. A slot that waits under its own number waits for that very window.
+  private func isItselfAsTheFileKnewIt(_ window: WindowSnapshot) -> Bool {
+    guard let known = windowsTheFileKnew[window.id], known.bundleID == window.bundleID else { return false }
+    guard known.title != window.title else { return true }
+    let wanted = WindowHint(bundleID: window.bundleID, title: window.title)
+    return !(slot(withTitleOf: window).map(Self.isStandIn) == true || provisionalSlots.values.contains { $0.hint == wanted })
   }
 
   /// The waiting slots of the app of `window`: stand-ins first, in the order they were made.
@@ -343,6 +365,7 @@ extension Controller {
     guard isWaitOver else { return }
     scheduler.cancel("pending-slots")
     giveUpAllRoom()
+    windowsTheFileKnew.removeAll()
   }
 
   /// Gives `window`, which has the title a slot was waiting for, that slot in place of the window that

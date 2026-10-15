@@ -343,6 +343,301 @@ import Testing
     #expect(!late.scheduler.pendingKeys.contains("pending-slots"))
   }
 
+  /// Two windows of one app, one docked and one that never was. Arbor is quit, the docked one is closed, Arbor is started.
+  func siblingLeftBehind() -> (h: Harness, report: WindowSnapshot, photo: WindowID, at: CGRect) {
+    let first = Harness()
+    let report = first.system.open(
+      app: "Preview", title: "Report", pid: 1007, frame: CGRect(x: 750, y: 429, width: 484, height: 308))
+    let at = CGRect(x: 800, y: 100, width: 405, height: 386)
+    let photo = first.system.open(app: "Preview", title: "Photo", pid: 1007, frame: at)
+    first.start()
+    #expect(first.run("dock \(report.rawValue) left").ok)
+    first.scheduler.advance(by: 2)
+    let snapshot = first.controller.windows[report]!
+    first.controller.shutdown()
+    #expect(first.frame(photo) == at)
+    first.system.close(report)
+    let h = first.newProcess()
+    h.start()
+    h.scheduler.advance(by: 2)
+    return (h, snapshot, photo, at)
+  }
+
+  /// A place waits for the window it was kept for. A window of the same app that was there all along, floating, under its own number, is
+  /// not that window: nobody docked it, and nothing moves that nobody asked to (found by a hunter in the chaos lab).
+  @Test func aWindowThatWasThereAllAlongDoesNotTakeItsSiblingsPlace() {
+    let (h, _, photo, at) = siblingLeftBehind()
+    #expect(h.workspace.isFloating(photo) && !h.workspace.isDocked(photo))
+    #expect(h.frame(photo) == at)
+    #expect(!h.system.moveLog.contains { $0.window == photo && $0.before != $0.after && $0.after != at }, "it has been nowhere else")
+    #expect(h.run("status").message.contains("1 place kept"), "the document may be opened again")
+    #expect(h.controller.invariantViolations().isEmpty, "\(h.controller.invariantViolations())")
+    expectWindowsMatchLayout(h)
+    // Docked and floated again by its person it has its own size, not that of a window that is gone.
+    #expect(h.run("dock \(photo.rawValue) right").ok && h.run("float \(photo.rawValue)").ok)
+    h.scheduler.advance(by: 2)
+    #expect(h.frame(photo)?.size == at.size)
+  }
+
+  /// By its title it may: the window that was there all along now shows the document that was closed. That is as good as the document
+  /// opened again, and what a waiting place has always gone by.
+  @Test func aWindowThatTakesOnTheSavedTitleIsTakenAtItsWord() {
+    let (h, report, photo, _) = siblingLeftBehind()
+    h.system.setTitle(photo, "Something else")
+    h.scheduler.advance(by: 2)
+    #expect(h.workspace.isFloating(photo), "another title alone is nothing")
+    h.system.setTitle(photo, report.title)
+    h.scheduler.advance(by: 2)
+    #expect(h.workspace.isDocked(photo))
+    #expect(h.controller.invariantViolations().isEmpty, "\(h.controller.invariantViolations())")
+  }
+
+  /// A second start while the place still waits: a quit, a crash, a pause. The sibling is as much itself as at the first.
+  @Test(arguments: ["pause", "crash", "quit"]) func theSiblingTakesNoPlaceAtASecondStartEither(how: String) {
+    var (h, _, photo, at) = siblingLeftBehind()
+    switch how {
+    case "pause": #expect(h.run("pause").ok && h.run("resume").ok)
+    case "crash":
+      h.scheduler.advance(by: 2)
+      h = h.newProcess(byTheWatchdog: true)
+      h.start()
+    default:
+      h.controller.shutdown()
+      h = h.newProcess()
+      h.start()
+    }
+    h.scheduler.advance(by: 2)
+    #expect(h.workspace.isFloating(photo) && h.frame(photo) == at, "\(h.frame(photo)!)")
+    #expect(h.run("status").message.contains("1 place kept"))
+  }
+
+  /// A place that waits under its own number, for a window on another macOS Space, waits for that very window, whatever a sibling
+  /// is called by now.
+  @Test func aPlaceThatWaitsUnderItsOwnNumberIsNotTakenByTitle() {
+    let first = Harness()
+    let report = first.system.open(app: "Preview", title: "Report", pid: 1007, frame: CGRect(x: 750, y: 429, width: 484, height: 308))
+    let photo = first.system.open(app: "Preview", title: "Photo", pid: 1007, frame: CGRect(x: 800, y: 100, width: 405, height: 386))
+    first.start()
+    #expect(first.run("dock \(report.rawValue) left").ok)
+    first.scheduler.advance(by: 2)
+    first.controller.shutdown()
+    first.system.setListed(report, false)
+    first.system.setTitle(photo, "Report")
+    let h = first.newProcess()
+    h.start()
+    h.scheduler.advance(by: 2)
+    #expect(h.workspace.isFloating(photo))
+    h.system.setListed(report, true)
+    h.scheduler.advance(by: 2)
+    #expect(h.workspace.isDocked(report) && h.workspace.isFloating(photo))
+  }
+
+  /// After a restart of the Mac Arbor is up first, and numbers come round again: the document that was docked comes under the number its
+  /// floating sibling had. It was not there all along.
+  @Test(arguments: ["titled", "another title", "untitled at first", "after its sibling"])
+  func aLateWindowUnderAnOldNumberStillGetsItsPlace(how: String) {
+    let first = Harness()
+    let report = first.system.open(app: "Preview", title: "Report", pid: 1007, frame: CGRect(x: 750, y: 429, width: 484, height: 308))
+    let photo = first.system.open(app: "Preview", title: "Photo", pid: 1007, frame: CGRect(x: 800, y: 100, width: 405, height: 386))
+    first.start()
+    #expect(first.run("dock \(report.rawValue) left").ok)
+    first.scheduler.advance(by: 2)
+    first.controller.shutdown()
+
+    let h = Harness(saved: first.store.saved)
+    h.start()
+    h.scheduler.advance(by: 1)
+    func open(_ id: WindowID, _ title: String) {
+      h.system.open(
+        id: id, app: "Preview", bundleID: "com.example.preview", title: title, pid: 2007,
+        frame: CGRect(x: 300, y: 200, width: 484, height: 308))
+      h.scheduler.advance(by: 1)
+    }
+    switch how {
+    case "titled": open(photo, "Report")
+    case "another title": open(photo, "Report (edited)")
+    case "untitled at first":
+      open(photo, "Untitled")
+      h.system.setTitle(photo, "Report")
+    default:
+      // The sibling first, under the number the document had: it holds the place for now, and gives it up.
+      open(report, "Photo")
+      #expect(h.workspace.isDocked(report), "the situation")
+      open(photo, "Report")
+      #expect(h.workspace.isFloating(report))
+    }
+    h.scheduler.advance(by: 2)
+    #expect(h.workspace.isDocked(photo), "\(how)")
+    #expect(h.controller.invariantViolations().isEmpty, "\(h.controller.invariantViolations())")
+  }
+
+  /// The docked window was on a display that is unplugged while Arbor is off, and is closed. Its sibling of the same title floats on the
+  /// main display. Plugged in again, the display does not carry it off.
+  @Test func aSiblingOfTheSameTitleIsNotCarriedOffToADisplayThatComesBack() {
+    let both = [FakeWindowSystem.standardDisplay, LifecycleTests.second]
+    let first = Harness(displays: both)
+    let docked = first.system.open(
+      app: "Terminal", title: "zsh", pid: 1003,
+      frame: CGRect(x: both[1].frame.minX + 100, y: both[1].frame.minY + 100, width: 500, height: 300))
+    let at = CGRect(x: 800, y: 100, width: 405, height: 386)
+    let sibling = first.system.open(app: "Terminal", title: "zsh", pid: 1003, frame: at)
+    first.start()
+    #expect(first.run("dock \(docked.rawValue) left").ok)
+    first.scheduler.advance(by: 2)
+    first.controller.shutdown()
+    first.system.close(docked)
+    first.system.setDisplays([both[0]])
+    let h = first.newProcess()
+    h.start()
+    h.scheduler.advance(by: 2)
+    h.system.setDisplays(both)
+    h.scheduler.advance(by: 2)
+    #expect(h.workspace.isFloating(sibling) && h.frame(sibling) == at, "\(h.frame(sibling)!)")
+  }
+
+  /// The document is opened again: a new window, with the saved title. That is who the place waits for.
+  @Test func thePlaceStillGoesToTheWindowItWaitsFor() {
+    let (h, report, photo, at) = siblingLeftBehind()
+    let again = h.system.open(
+      app: report.appName, bundleID: report.bundleID, title: report.title, pid: report.pid,
+      frame: CGRect(x: 300, y: 200, width: 484, height: 308))
+    h.scheduler.advance(by: 2)
+    #expect(h.workspace.isDocked(again))
+    #expect(h.workspace.isFloating(photo) && h.frame(photo) == at)
+    #expect(!h.run("status").message.contains("kept"))
+    #expect(h.controller.invariantViolations().isEmpty, "nothing is remembered once nothing waits: \(h.controller.invariantViolations())")
+    expectWindowsMatchLayout(h)
+  }
+
+  /// ⌘N a minute later: a new document that has nothing to do with the one that was closed. A sibling still under its own number shows
+  /// that the app never quit, so that one was closed on purpose. With two windows of the app not docked there is no telling,
+  /// and nothing is guessed at: it floats where it opened, and nothing moves.
+  @Test func aNewDocumentOfTheAppIsNotDockedUnasked() {
+    let (h, report, photo, at) = siblingLeftBehind()
+    let opened = CGRect(x: 300, y: 200, width: 500, height: 400)
+    let mark = h.system.moveLog.count
+    let letter = h.system.open(app: report.appName, bundleID: report.bundleID, title: "Letter", pid: report.pid, frame: opened)
+    h.scheduler.advance(by: 2)
+    #expect(h.workspace.isFloating(letter) && h.frame(letter) == opened)
+    #expect(h.frame(photo) == at)
+    #expect(h.system.moveLog[mark...].allSatisfy { $0.before == $0.after })
+  }
+
+  /// ⌘T in the window that was there all along: macOS gives it another number. It is that window still.
+  @Test func anotherTabOfTheWindowThatWasThereAllAlongTakesNoPlaceEither() throws {
+    let (h, _, photo, at) = siblingLeftBehind()
+    let tab = try #require(h.system.openTab(in: photo))
+    h.scheduler.advance(by: 2)
+    h.system.setTitle(tab, "Other")
+    h.scheduler.advance(by: 2)
+    #expect(h.workspace.isFloating(tab) && h.frame(tab) == at)
+  }
+
+  /// Wherever it was when Arbor started: on another macOS Space, or of an app that was excluded then.
+  @Test(arguments: ["another Space", "excluded"]) func whereverTheSiblingWasAtTheStart(how: String) {
+    let first = Harness()
+    let report = first.system.open(app: "Preview", title: "Report", pid: 1007, frame: CGRect(x: 750, y: 429, width: 484, height: 308))
+    let at = CGRect(x: 800, y: 100, width: 405, height: 386)
+    let photo = first.system.open(app: "Preview", title: "Photo", pid: 1007, frame: at)
+    first.start()
+    #expect(first.run("dock \(report.rawValue) left").ok)
+    first.scheduler.advance(by: 2)
+    first.controller.shutdown()
+    first.system.close(report)
+    if how == "another Space" { first.system.setListed(photo, false) }
+    let h = first.newProcess()
+    var settings = h.controller.settings
+    if how == "excluded" {
+      settings.excludedBundleIDs = ["com.example.preview"]
+      h.controller.apply(settings: settings)
+    }
+    h.start()
+    h.scheduler.advance(by: 2)
+    if how == "another Space" {
+      h.system.setListed(photo, true)
+    } else {
+      settings.excludedBundleIDs = []
+      h.controller.apply(settings: settings)
+    }
+    h.scheduler.advance(by: 2)
+    #expect(h.workspace.isFloating(photo) && h.frame(photo) == at, "\(h.frame(photo)!)")
+    expectWindowsMatchLayout(h)
+  }
+
+  /// It floated on a display that was unplugged while Arbor was not running.
+  @Test func theSiblingFloatedOnADisplayThatHasGone() {
+    let both = [FakeWindowSystem.standardDisplay, LifecycleTests.second]
+    let first = Harness(displays: both)
+    let report = first.system.open(app: "Preview", title: "Report", pid: 1007, frame: CGRect(x: 750, y: 429, width: 484, height: 308))
+    let photo = first.system.open(
+      app: "Preview", title: "Photo", pid: 1007,
+      frame: CGRect(x: both[1].frame.minX + 200, y: both[1].frame.minY + 200, width: 405, height: 386))
+    first.start()
+    #expect(first.run("dock \(report.rawValue) left").ok)
+    first.scheduler.advance(by: 2)
+    first.controller.shutdown()
+    first.system.close(report)
+    first.system.setDisplays([both[0]])
+    let h = first.newProcess()
+    h.start()
+    h.scheduler.advance(by: 2)
+    #expect(h.workspace.isFloating(photo) && h.frame(photo)?.size == CGSize(width: 405, height: 386))
+  }
+
+  /// A second start while places wait. Two windows of one app were docked; after a restart of the Mac both come as "Untitled" and float,
+  /// there being no telling which is which. A pause and a resume, a crash or a quit later they are in the file, floating,
+  /// under their own numbers. They are still who the places wait for, and get them when their titles come.
+  @Test(arguments: ["pause", "crash", "quit"]) func windowsThatCameDuringTheWaitAreStillWaitedForAfterASecondStart(how: String) {
+    let (saved, left, right) = lifecycle.savedPairOfOneApp()
+    var h = Harness(saved: saved)
+    for _ in 0..<4 { h.system.open(app: "Filler", pid: 700) }
+    h.start()
+    let (a, b) = (lifecycle.reopen(left, in: h, title: "Untitled"), lifecycle.reopen(right, in: h, title: "Untitled"))
+    h.scheduler.advance(by: 1)
+    #expect(h.workspace.isFloating(a) && h.workspace.isFloating(b), "the situation")
+    switch how {
+    case "pause": #expect(h.run("pause").ok && h.run("resume").ok)
+    case "crash":
+      h = h.newProcess(byTheWatchdog: true)
+      h.start()
+    default:
+      h.controller.shutdown()
+      h = h.newProcess()
+      h.start()
+    }
+    h.scheduler.advance(by: 1)
+    h.system.setTitle(a, left.title)
+    h.system.setTitle(b, right.title)
+    h.scheduler.advance(by: 2)
+    #expect(h.workspace.isDocked(a) && h.workspace.isDocked(b))
+    #expect(h.controller.invariantViolations().isEmpty, "\(h.controller.invariantViolations())")
+  }
+
+  /// After a restart of the Mac a number comes round again, to the same app: the document that was docked gets the number its floating
+  /// sibling had. It has another title than the file has for that number, and exactly the one the place waits for.
+  @Test func aNumberThatComesRoundAgainDoesNotCostTheDocumentItsPlace() {
+    let first = Harness()
+    let report = first.system.open(app: "Preview", title: "Report", pid: 1007, frame: CGRect(x: 750, y: 429, width: 484, height: 308))
+    let photo = first.system.open(app: "Preview", title: "Photo", pid: 1007, frame: CGRect(x: 800, y: 100, width: 405, height: 386))
+    first.start()
+    #expect(first.run("dock \(report.rawValue) left").ok)
+    first.scheduler.advance(by: 2)
+    first.controller.shutdown()
+
+    let h = Harness(saved: first.store.saved)
+    h.system.open(
+      id: photo, app: "Preview", bundleID: "com.example.preview", title: "Report", pid: 2007,
+      frame: CGRect(x: 750, y: 429, width: 484, height: 308))
+    h.system.open(
+      id: WindowID(120), app: "Preview", bundleID: "com.example.preview", title: "Photo", pid: 2007,
+      frame: CGRect(x: 800, y: 100, width: 405, height: 386))
+    h.start()
+    h.scheduler.advance(by: 2)
+    #expect(h.workspace.isDocked(photo), "the number is the sibling's of yesterday, the window is the report")
+    #expect(h.workspace.isFloating(WindowID(120)))
+    #expect(h.controller.invariantViolations().isEmpty, "\(h.controller.invariantViolations())")
+  }
+
   @Test func aPlaceOnAnUnpluggedDisplayIsTakenOverAsWell() {
     let (saved, safari, _) = lifecycle.savedPairOnTheSecondDisplay()
     let h = Harness(saved: saved)

@@ -589,6 +589,8 @@ extension Controller {
     // windows a dormant workspace already lists under their own number.
     var taken = Set(workspaces.values.flatMap(\.tree.allWindows))
     taken.formUnion(dormant.values.flatMap(\.workspace.allWindows).filter(isValid))
+    // Nor does a window that was there all along, floating on a display that is connected, stand in for one that has closed.
+    taken.formUnion(windowsTheFileKnew.filter { windows[$0.key]?.bundleID == $0.value.bundleID }.keys)
     var rematched: [WindowID: WindowID] = [:]
     var unmatched = Set<WindowID>()
     let existing = system.existingWindowIDs()
