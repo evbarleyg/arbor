@@ -188,7 +188,7 @@ visit "$W3"
 visit "$V1"
 visit "$W2"
 visit "$W1"
-claim "↑ in the palette goes round from the first row to the last, and ⇥ and ⇧⇥ step as ↓ and ↑ do"
+claim "↑ in the palette goes round from the first row to the last; ⇥ and ⇧⇥ are the commands' keys, and move nothing where none is listed"
 proves A27
 check "⌃⌥G opens the palette" opens_the_palette
 types up up
@@ -197,9 +197,9 @@ check "two rows up from the first is the last but one" eventually is focused "$W
 check "the palette is gone" eventually palette_closed
 # Now the first, the second, the other app's, the third, then the fourth.
 check "⌃⌥G opens the palette" opens_the_palette
-types tab tab shift+tab
+types down tab tab shift+tab
 key return
-check "two steps on and one back is the second row" eventually is focused "$W2"
+check "one step on is the second row, whatever ⇥ was pressed after it" eventually is focused "$W2"
 check "the palette is gone" eventually palette_closed
 check "all were in view, so nothing moved" everything_shows
 

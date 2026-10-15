@@ -217,10 +217,14 @@ final class FinderPanel: NSPanel, NSTextFieldDelegate {
 
   func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
     switch commandSelector {
-    case #selector(NSResponder.moveDown(_:)), #selector(NSResponder.insertTab(_:)):
+    case #selector(NSResponder.moveDown(_:)):
       session?.moveSelection(by: 1)
-    case #selector(NSResponder.moveUp(_:)), #selector(NSResponder.insertBacktab(_:)):
+    case #selector(NSResponder.moveUp(_:)):
       session?.moveSelection(by: -1)
+    case #selector(NSResponder.insertTab(_:)):
+      session?.tab(by: 1)
+    case #selector(NSResponder.insertBacktab(_:)):
+      session?.tab(by: -1)
     case #selector(NSResponder.scrollPageDown(_:)), #selector(NSResponder.pageDown(_:)):
       session?.pageSelection(by: 1)
     case #selector(NSResponder.scrollPageUp(_:)), #selector(NSResponder.pageUp(_:)):
@@ -243,14 +247,14 @@ final class FinderPanel: NSPanel, NSTextFieldDelegate {
     dismiss()
   }
 
-  /// ⌘1–⌘9 choose a row. ⌘A, ⌘X, ⌘C and ⌘V are an Edit menu's work in other apps; Arbor has no menu bar.
+  /// ⌘1–⌘9 choose a place. ⌘A, ⌘X, ⌘C and ⌘V are an Edit menu's work in other apps; Arbor has no menu bar.
   override func performKeyEquivalent(with event: NSEvent) -> Bool {
     guard event.type == .keyDown,
       event.modifierFlags.intersection([.command, .option, .control, .shift]) == .command,
       let key = event.charactersIgnoringModifiers
     else { return super.performKeyEquivalent(with: event) }
     if let digit = Int(key), (1...9).contains(digit) {
-      choose(session?.destination(atVisible: digit - 1))
+      choose(session?.destination(atDigit: digit))
       return true
     }
     guard let editor = field.currentEditor() else { return super.performKeyEquivalent(with: event) }

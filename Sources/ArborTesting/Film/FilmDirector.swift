@@ -359,7 +359,8 @@ public final class FilmDirector {
     case "return": ok = overlays.chooseInFinder()
     case "escape": overlays.dismissFinder()
     case "up": overlays.moveFinderSelection(by: -1)
-    default: overlays.moveFinderSelection(by: 1)
+    case "down": overlays.moveFinderSelection(by: 1)
+    default: overlays.tabInFinder(by: 1)
     }
     settle()
     pass(time)

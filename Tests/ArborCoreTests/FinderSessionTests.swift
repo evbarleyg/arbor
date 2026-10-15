@@ -515,7 +515,7 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     var session = session(places: [])
     #expect(session.items.isEmpty && session.message == "No windows")
     session.type("undo")
-    #expect(session.items.first?.row.destination == .command("undo") && session.message == "↓ picks a command, ↩ runs it")
+    #expect(session.items.first?.row.destination == .command("undo") && session.message == "⇥ picks a command, ↩ runs it")
     session.type("zzz")
     #expect(session.items.isEmpty && session.message == "No windows")
   }
@@ -523,7 +523,7 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
   @Test func aFreshListKeepsTheCommandThatWasSelected() {
     var session = session()
     session.type("dock")
-    session.moveSelection(by: 1)
+    session.tab(by: 1)
     #expect(session.selected == .command("dock left"))
     session.replace(model: FinderModel(display: main, screen: screen, rows: [places[0]], commands: commands))
     #expect(session.query == "dock" && session.selected == .command("dock left"))
@@ -532,8 +532,8 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
   @Test func asTextARowShowsItsFirstWordItsNameAndItsNote() {
     var session = session()
     session.type("new")
-    #expect(session.text == "go to: new\n  1 command toggle-auto-dock  Dock New Windows  (command ✓)\n  ↓ picks a command, ↩ runs it")
-    session.moveSelection(by: 1)
+    #expect(session.text == "go to: new\n  1 command toggle-auto-dock  Dock New Windows  (command ✓)\n  ⇥ picks a command, ↩ runs it")
+    session.tab(by: 1)
     #expect(session.text == "go to: new\n> 1 command toggle-auto-dock  Dock New Windows  (command ✓)")
   }
 
@@ -579,8 +579,8 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     #expect(session.items.first?.match.nameRanges == [0..<3, 4..<5], "the letters are set off, the apostrophe is not")
   }
 
-  /// Whatever is typed: the same places in the same order, the same one selected and the same under each digit, as far as there are places.
-  /// Then the commands. ↑, ⇧⇥ and the Page keys do among the places what they did; so does ↓ as far as the last place.
+  /// Whatever is typed: the same places in the same order, and then the commands. Return, the arrows, the Page keys and ⌘ with a digit do
+  /// what they did before commands were listed, whatever stands below the places.
   @Test func theListIsWhatItWasWithTheCommandsAfterIt() {
     let places = [
       window(101, "Safari", "Arbor: a window manager, docs and all, left to be read"), window(102, "Notes", "Shopping, balance of the month"),
@@ -604,19 +604,24 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
       #expect(now.matches.dropFirst(count).allSatisfy { $0.index >= places.count }, "\(text)")
       #expect(now.selected == before.selected, "Return: \(text)")
       if count > 0, now.matches.count > count { mixed += 1 }
-      for place in 0..<min(count, 9) {
-        #expect(now.destination(atVisible: place) == before.destination(atVisible: place), "⌘\(place + 1): \(text)")
-        #expect(now.selected == before.selected, "↓ \(place) times: \(text)")
-        if place + 1 < count {
-          now.moveSelection(by: 1)
-          before.moveSelection(by: 1)
+      for digit in 0...10 { #expect(now.destination(atDigit: digit) == before.destination(atDigit: digit), "⌘\(digit): \(text)") }
+      for place in 0..<min(count, 9) { #expect(now.destination(atVisible: place) == before.destination(atVisible: place), "a click: \(text)") }
+      guard count > 0 else {
+        // Nothing to go to: every one of those keys did nothing, and does.
+        for press: (inout FinderSession) -> Void in [
+          { $0.moveSelection(by: 1) }, { $0.moveSelection(by: -1) }, { $0.pageSelection(by: 1) }, { $0.pageSelection(by: -1) },
+        ] {
+          press(&now)
+          #expect(now.selected == nil && now.items.allSatisfy { !$0.isSelected }, "\(text)")
         }
+        continue
       }
-      guard count > 0 else { continue }
       // From the top, from the bottom and from between, more often than there are places.
       for start in 0..<count {
         for keys: [(name: String, press: (inout FinderSession) -> Void)] in [
           Array(repeating: ("↑", { $0.moveSelection(by: -1) }), count: count + 2),
+          Array(repeating: ("↓", { $0.moveSelection(by: 1) }), count: count + 2),
+          [("↓↓↓", { $0.moveSelection(by: 3) }), ("far down", { $0.moveSelection(by: 1000) }), ("↓", { $0.moveSelection(by: 1) })],
           [("↑↑↑", { $0.moveSelection(by: -3) }), ("far up", { $0.moveSelection(by: -1000) })],
           [("Page Down", { $0.pageSelection(by: 1) }), ("Page Down", { $0.pageSelection(by: 1) }), ("↑", { $0.moveSelection(by: -1) })],
           [("Page Up", { $0.pageSelection(by: -1) }), ("↑", { $0.moveSelection(by: -1) }), ("Page Down", { $0.pageSelection(by: 3) })],
@@ -630,6 +635,7 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
             key.press(&now)
             #expect(now.selected == before.selected, "\(text), ↓ \(start) times, then \(keys.map(\.name)) as far as \(key.name)")
             #expect(now.items.filter(\.isSelected).map(\.row) == before.items.filter(\.isSelected).map(\.row))
+            for digit in 1...9 { #expect(now.destination(atDigit: digit) == before.destination(atDigit: digit), "⌘\(digit) after \(key.name): \(text)") }
           }
         }
       }
@@ -648,41 +654,149 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     let keys: [(inout FinderSession) -> Void] = [
       { $0.pageSelection(by: 1) }, { $0.pageSelection(by: 1) }, { $0.pageSelection(by: 1) }, { $0.pageSelection(by: 1) }, { $0.moveSelection(by: -1) },
       { $0.pageSelection(by: -1) }, { $0.pageSelection(by: -5) }, { $0.moveSelection(by: -1) }, { $0.moveSelection(by: -1) }, { $0.pageSelection(by: 9) },
+      { $0.moveSelection(by: 1) }, { $0.moveSelection(by: 1) }, { $0.moveSelection(by: -2) }, { $0.moveSelection(by: 3) },
     ]
     for (step, key) in keys.enumerated() {
       key(&before)
       key(&now)
       #expect(now.selected == before.selected, "key \(step)")
       #expect(now.items == before.items, "key \(step)")
+      for digit in 1...9 { #expect(now.destination(atDigit: digit) == before.destination(atDigit: digit), "⌘\(digit) after key \(step)") }
     }
   }
 
-  /// The one way from the places to the commands, and the ways back.
-  @Test func onlyTheArrowDownPastTheLastPlaceLeadsToTheCommands() {
+  /// ⇥ is the commands' own key (the product owner, board 1.94): every other key meant places before commands were listed.
+  @Test func onlyTabLeadsToTheCommandsAndShiftTabBack() {
     var session = session(places: [window(103, "Docker", "Containers"), window(104, "Docker", "Images")])
     session.type("dock")
     #expect(session.items.map(\.row.place) == [.outOfView, .outOfView, .command, .command, .command])
-    session.moveSelection(by: -1)
-    #expect(session.selected == .window(WindowID(104)), "↑ from the top: round to the last place, as ever")
-    session.pageSelection(by: 1)
-    #expect(session.selected == .window(WindowID(104)), "Page Down stops at the last place, as ever")
+    #expect(session.message == "⇥ picks a command, ↩ runs it", "nobody guesses the key")
     session.moveSelection(by: 1)
-    #expect(session.selected == .command("dock left"))
-    // Among the commands the keys are a list's.
-    session.pageSelection(by: 1)
+    #expect(session.selected == .window(WindowID(104)))
+    session.moveSelection(by: 1)
+    #expect(session.selected == .window(WindowID(103)), "↓ from the last place: round, as ever")
+    session.tab(by: -1)
+    #expect(session.selected == .window(WindowID(103)), "⇧⇥ among the places: nothing")
+    session.moveSelection(by: 1)
+    session.tab(by: 1)
+    #expect(session.selected == .command("dock left") && session.message == nil)
+    #expect(session.items.map(\.isSelected) == [false, false, true, false, false])
+    // Among the commands ⇥ and the arrows step from one to the next, round, and the Page keys stop at the ends.
+    session.tab(by: 1)
+    #expect(session.selected == .command(Command.toggleAutoDock.text))
+    session.moveSelection(by: 1)
     #expect(session.selected == .command("undo"))
     session.moveSelection(by: 1)
-    #expect(session.selected == .window(WindowID(103)), "round")
-    session.moveSelection(by: 2)
+    #expect(session.selected == .command("dock left"), "↓ from the last command")
     session.moveSelection(by: -1)
-    #expect(session.selected == .window(WindowID(104)), "↑ from the first command")
-    session.moveSelection(by: 2)
+    #expect(session.selected == .command("undo"), "↑ from the first")
+    session.tab(by: 1)
+    #expect(session.selected == .command("dock left"), "⇥ from the last")
+    session.pageSelection(by: 1)
+    #expect(session.selected == .command("undo"))
+    session.pageSelection(by: -3)
+    #expect(session.selected == .command("dock left"))
+    session.tab(by: 2)
+    session.tab(by: -1)
     #expect(session.selected == .command(Command.toggleAutoDock.text))
-    session.moveSelection(by: -4)
-    #expect(session.selected == .window(WindowID(104)), "once among the places it stays among them: 104, 103, 104")
-    session.moveSelection(by: 3)
-    session.pageSelection(by: -1)
-    #expect(session.selected == .window(WindowID(103)))
+    // Back to the place it left.
+    session.tab(by: -2)
+    #expect(session.selected == .window(WindowID(104)) && session.message == "⇥ picks a command, ↩ runs it")
+    session.tab(by: 3)
+    #expect(session.selected == .command("undo"))
+    session.tab(by: Int.min)
+    #expect(session.selected == .window(WindowID(104)))
+    session.tab(by: Int.max)
+    #expect(session.selected == .command("dock left"), "Int.max - 1 is a multiple of three")
+  }
+
+  /// Row, scroll position, picked or not: ⇥ and ⇧⇥ leave no trace.
+  @Test func shiftTabLeavesThePlacesAsTabFoundThem() {
+    let many = (1...25).map { window(UInt32(100 + $0), "Docker", "Container \($0)") }
+    for keys: [(inout FinderSession) -> Void] in [
+      [], [{ $0.moveSelection(by: 1) }], [{ $0.pageSelection(by: 2) }, { $0.moveSelection(by: -3) }], [{ $0.moveSelection(by: -1) }],
+    ] {
+      var session = session(places: many)
+      session.type("dock")
+      for key in keys { key(&session) }
+      let before = session
+      session.tab(by: 1)
+      #expect(session.selected == .command("dock left"))
+      session.moveSelection(by: 1)
+      session.tab(by: -2)
+      #expect(session == before, "\(keys.count) keys")
+    }
+    // Nothing was selected; a key picked a place; ⇥ and back: that place is still picked.
+    var session = session(places: many)
+    session.type("dock")
+    session.replace(model: FinderModel(display: main, screen: screen, rows: Array(many.dropFirst()), commands: commands, notice: "That window has closed"))
+    #expect(session.selected == nil)
+    session.moveSelection(by: 1)
+    let picked = session
+    session.tab(by: 1)
+    session.tab(by: -1)
+    #expect(session == picked && session.selected == .window(WindowID(102)))
+  }
+
+  /// Below a palette full of places: all the commands that fit come into view at once, not one at a time at the bottom.
+  @Test func tabBringsTheCommandsIntoView() {
+    let many = (1...25).map { window(UInt32(100 + $0), "Docker", "Container \($0)") }
+    var session = session(places: many)
+    session.type("dock")
+    session.tab(by: 1)
+    #expect(session.items.suffix(3).map(\.row.place) == [.command, .command, .command])
+    #expect(session.items.suffix(3).map(\.isSelected) == [true, false, false])
+    // The digits go by what shows, and still choose places only.
+    let rows = session.items.count
+    #expect(session.destination(atDigit: rows - 3) == .window(WindowID(125)))
+    for digit in (rows - 2)...rows { #expect(session.destination(atDigit: digit) == nil, "\(digit)") }
+    // More commands than fit: the first of them at the top.
+    let views = (1...30).map { FinderModel.Row.command(.saveView($0), name: "Dock View \($0)", display: main) }
+    session = FinderSession(model: FinderModel(display: main, screen: screen, rows: many, commands: views))
+    session.type("dock")
+    session.tab(by: 1)
+    #expect(session.items.first?.isSelected == true && session.items.allSatisfy { $0.row.place == .command })
+    for digit in 1...9 { #expect(session.destination(atDigit: digit) == nil) }
+  }
+
+  /// A command that was refused stays picked in the fresh list. There is nothing to go back to then: the top, picked by nobody.
+  @Test func afterAFreshListThatKeptTheCommandTheKeysStillKnowTheirParts() {
+    var session = session()
+    session.type("dock")
+    session.tab(by: 2)
+    session.replace(model: FinderModel(display: main, screen: screen, rows: places, commands: commands, notice: "“Dock New Windows” can do nothing just now"))
+    #expect(session.selected == .command(Command.toggleAutoDock.text))
+    #expect(session.message == "“Dock New Windows” can do nothing just now", "a notice comes before the line about ⇥")
+    session.moveSelection(by: -1)
+    #expect(session.selected == .command("dock left"))
+    session.moveSelection(by: -1)
+    #expect(session.selected == .command("undo"), "round among the commands")
+    session.tab(by: -3)
+    #expect(session.selected == .window(WindowID(103)) && !session.hasPicked)
+  }
+
+  @Test func whereNoCommandIsListedTabDoesNothing() {
+    var session = session()
+    for text in ["", "notes", "zzz"] {
+      session.type(text)
+      let before = session
+      session.tab(by: 1)
+      session.tab(by: -1)
+      session.tab(by: 0)
+      #expect(session == before, "\(text)")
+    }
+  }
+
+  /// `pa` ⌘2 is the second of Pages' windows, or a beep.
+  @Test func aDigitChoosesAPlaceAndNeverACommand() {
+    var session = session()
+    session.type("dock")
+    #expect(session.items.map(\.row.place) == [.outOfView, .command, .command, .command])
+    #expect(session.destination(atDigit: 1) == .window(WindowID(103)))
+    for digit in [-1, 0, 2, 3, 4, 5, 9, Int.max, Int.min] { #expect(session.destination(atDigit: digit) == nil, "\(digit)") }
+    session.tab(by: 1)
+    #expect(session.destination(atDigit: 2) == nil, "nor when one is picked")
+    #expect(session.destination(atVisible: 1) == .command("dock left"), "a click points at what is seen")
   }
 
   /// Letters and Return do what they did before commands were listed: they go to a place, or beep.
@@ -692,7 +806,7 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     #expect(session.items.map(\.row.name) == ["Arrangement ▸ Balance Sizes"])
     #expect(session.selected == nil, "it is shown")
     #expect(session.items.allSatisfy { !$0.isSelected }, "and not selected")
-    #expect(session.message == "↓ picks a command, ↩ runs it")
+    #expect(session.message == "⇥ picks a command, ↩ runs it")
     #expect(session.layout.hasMessage)
   }
 
@@ -700,21 +814,20 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     var session = session(places: [])
     session.type("dock")
     #expect(session.selected == nil)
-    session.moveSelection(by: 1)
-    #expect(session.selected == .command("dock left"), "↓ picks the first, not the second")
+    session.tab(by: 1)
+    #expect(session.selected == .command("dock left"), "⇥ picks the first, not the second")
     #expect(session.items.map(\.isSelected) == [true, false, false])
     #expect(session.message == nil)
-    session.moveSelection(by: 1)
+    session.tab(by: 1)
     #expect(session.selected == .command(Command.toggleAutoDock.text))
-    session.type("dock")
-    session.moveSelection(by: -1)
-    #expect(session.selected == .command("undo"), "↑ picks the last")
-    session.type("dock")
-    session.pageSelection(by: 1)
-    #expect(session.selected != nil)
+    // Back out of them: nothing is selected again.
+    session.tab(by: -2)
+    #expect(session.selected == nil && session.items.allSatisfy { !$0.isSelected } && session.message == "⇥ picks a command, ↩ runs it")
+    session.tab(by: -1)
+    #expect(session.selected == nil)
   }
 
-  @Test func aClickAndADigitPointAtARowAndNeedNoPicking() {
+  @Test func aClickPointsAtARowAndNeedsNoPicking() {
     var session = session(places: [])
     session.type("dock")
     #expect(session.destination(atVisible: 1) == .command(Command.toggleAutoDock.text))
@@ -723,19 +836,19 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
   @Test func whatIsTypedAfterwardsUnpicks() {
     var session = session(places: [])
     session.type("doc")
-    session.moveSelection(by: 1)
+    session.tab(by: 1)
     #expect(session.selected != nil)
     session.type("dock")
     #expect(session.selected == nil && session.items.allSatisfy { !$0.isSelected })
   }
 
-  @Test func underAPlaceACommandIsReachedWithTheArrowAndThenChosen() {
+  @Test func underAPlaceACommandIsReachedWithTabAndThenChosen() {
     var session = session()
     session.type("dock")
     #expect(session.selected == .window(WindowID(103)), "Docker")
-    #expect(session.message == nil)
-    session.moveSelection(by: 1)
-    #expect(session.selected == .command("dock left"))
+    #expect(session.message == "⇥ picks a command, ↩ runs it")
+    session.tab(by: 1)
+    #expect(session.selected == .command("dock left") && session.message == nil)
   }
 
   /// Return went to this window until commands were listed, and goes there.
@@ -743,8 +856,8 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     var session = session(places: [window(101, "Numbers", "Big tables all over, nicely coloured, every size")])
     session.type("balance")
     #expect(session.items.map(\.row.place) == [.outOfView, .command])
-    #expect(session.selected == .window(WindowID(101)) && session.message == nil)
-    session.moveSelection(by: 1)
+    #expect(session.selected == .window(WindowID(101)))
+    session.tab(by: 1)
     #expect(session.selected == .command(Command.equalize(all: false).text))
   }
 
@@ -841,27 +954,37 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     #expect(session.selected == nil && !session.hasPicked)
     session.pageSelection(by: 0)
     #expect(session.selected == nil && !session.hasPicked)
+    session.tab(by: 0)
+    #expect(session.selected == nil && !session.hasPicked)
   }
 
-  /// As from above the list, like the arrows: not a palette's length further down.
-  @Test func thePageKeysPickTheFirstOfTheCommandsThatWait() {
+  /// `pa` ↓ Return for Pages, which is not open: until commands were listed the list was empty, and the keys did nothing.
+  @Test func whereNoPlaceMatchesTheArrowsAndThePageKeysDoNothing() {
     let many = (1...30).map { FinderModel.Row.command(.saveView($0), name: "Save View \($0)", display: main) }
-    for pages in [1, -1] {
-      var session = FinderSession(model: FinderModel(display: main, screen: screen, rows: [], commands: many))
-      session.type("save")
-      #expect(session.selected == nil)
-      session.pageSelection(by: pages)
-      #expect(session.selected == .command("save-view 1"), "\(pages)")
+    var session = FinderSession(model: FinderModel(display: main, screen: screen, rows: [], commands: many))
+    session.type("save")
+    let before = session
+    for press: (inout FinderSession) -> Void in [
+      { $0.moveSelection(by: 1) }, { $0.moveSelection(by: -1) }, { $0.moveSelection(by: 7) }, { $0.pageSelection(by: 1) }, { $0.pageSelection(by: -1) },
+    ] {
+      press(&session)
+      #expect(session == before && session.selected == nil)
     }
+    session.tab(by: 1)
+    #expect(session.selected == .command("save-view 1"))
+    session.pageSelection(by: 1)
+    #expect(session.selected == .command("save-view 10"), "picked, the keys are a list's")
   }
 
   @Test func aFreshListUnpicksUnlessThePickedRowIsStillThere() {
     var session = session()
     session.type("dock")
-    session.moveSelection(by: 1)
+    session.tab(by: 1)
     #expect(session.selected == .command("dock left"))
     session.replace(model: FinderModel(display: main, screen: screen, rows: [], commands: commands, notice: "“Left” can do nothing just now"))
     #expect(session.selected == .command("dock left"), "it was picked, and is")
+    session.tab(by: -1)
+    #expect(session.selected == nil, "there is no place to go back to")
     // The place that was selected goes, and a command takes its row.
     session = self.session()
     session.type("dock")
@@ -1001,7 +1124,7 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     ]
     var session = FinderSession(model: FinderModel(display: main, screen: screen, rows: [], commands: twins))
     session.type("release")
-    session.moveSelection(by: 2)
+    session.tab(by: 2)
     #expect(session.items.filter(\.isSelected).map(\.row.name) == ["Release It"])
     session.replace(model: FinderModel(display: main, screen: screen, rows: [], commands: twins, notice: "“Release It” can do nothing just now"))
     #expect(session.items.filter(\.isSelected).map(\.row.name) == ["Release It"])
@@ -1018,21 +1141,28 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
       #expect(lost.selected == nil)
       return lost
     }
-    for (name, press, place, command): (String, (inout FinderSession) -> Void, UInt32, String) in [
-      ("↓", { $0.moveSelection(by: 1) }, 103, "dock left"), ("↓↓", { $0.moveSelection(by: 2) }, 104, Command.toggleAutoDock.text),
-      ("↑", { $0.moveSelection(by: -1) }, 105, "undo"), ("↑↑", { $0.moveSelection(by: -2) }, 104, Command.toggleAutoDock.text),
-      ("Page Down", { $0.pageSelection(by: 1) }, 103, "dock left"), ("Page Up", { $0.pageSelection(by: -1) }, 103, "dock left"),
-      ("Page Down twice at once", { $0.pageSelection(by: 2) }, 105, "undo"),
+    for (name, press, place): (String, (inout FinderSession) -> Void, UInt32) in [
+      ("↓", { $0.moveSelection(by: 1) }, 103), ("↓↓", { $0.moveSelection(by: 2) }, 104), ("↑", { $0.moveSelection(by: -1) }, 105),
+      ("↑↑", { $0.moveSelection(by: -2) }, 104), ("Page Down", { $0.pageSelection(by: 1) }, 103), ("Page Up", { $0.pageSelection(by: -1) }, 103),
+      ("Page Down twice at once", { $0.pageSelection(by: 2) }, 105),
     ] {
       var session = lost(places: three)
       press(&session)
       #expect(session.selected == .window(WindowID(place)), "\(name)")
       session = lost(places: [])
       press(&session)
-      #expect(session.selected == .command(command), "with commands only: \(name)")
+      #expect(session.selected == nil, "with commands only: \(name)")
+    }
+    for places in [three, []] {
+      var session = lost(places: places)
+      session.tab(by: 1)
+      #expect(session.selected == .command("dock left"))
+      session.tab(by: -1)
+      #expect(session.selected == nil, "back to nothing selected")
     }
     // A click and a digit point at a row that is there to be seen.
     #expect(lost(places: three).destination(atVisible: 1) == .window(WindowID(104)))
+    #expect(lost(places: three).destination(atDigit: 2) == .window(WindowID(104)))
     // The same text again is nobody's doing: an input method, Backspace in an empty field.
     var session = lost(places: three)
     session.type("dock")
@@ -1043,7 +1173,7 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     var quiet = self.session(places: [])
     quiet.type("dock")
     quiet.replace(model: FinderModel(display: main, screen: screen, rows: [], commands: commands))
-    #expect(quiet.selected == nil && quiet.message == "↓ picks a command, ↩ runs it")
+    #expect(quiet.selected == nil && quiet.message == "⇥ picks a command, ↩ runs it")
   }
 
 }

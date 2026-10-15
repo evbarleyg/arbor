@@ -1,4 +1,4 @@
-# Story: somebody who knows nine keys wants the rest. They press ⌃⌥G and type what the thing is called in the menu: a few letters, ↓, Return.
+# Story: somebody who knows nine keys wants the rest. They press ⌃⌥G and type what the thing is called in the menu: a few letters, ⇥, Return.
 # It acts on the window they were in, is answered on screen as a key is, and one undo takes it back. Before they type, Go to… lists
 # places as ever; whoever types a piece of a window's name still goes to the window; and `find <text>`, which shows nothing, goes to
 # places and runs nothing.
@@ -14,7 +14,7 @@ expect floating 103
 find
 expect ok
 finder-type dock left
-finder-move 1
+finder-tab 1
 finder-choose
 expect docked 103
 expect left-of 103 101
@@ -24,31 +24,31 @@ grow
 grow
 find
 finder-type bal
-finder-move 1
+finder-tab 1
 finder-choose
 expect size 103 345x851
 expect size 101 345x851
 # "Undo…", whatever it is called just now: the balancing, the growing, the dock.
 find
 finder-type undo
-finder-move 1
+finder-tab 1
 finder-choose
 find
 finder-type undo
-finder-move 1
+finder-tab 1
 finder-choose
 expect docked 103
 expect size 103 345x851
 find
 finder-type undo
-finder-move 1
+finder-tab 1
 finder-choose
 expect floating 103
 expect docked 101
 # "Float All Windows", one of the ways back.
 find
 finder-type float all
-finder-move 1
+finder-tab 1
 finder-choose
 expect floating 101
 expect floating 102
@@ -56,7 +56,7 @@ expect floating 102
 flush
 find
 finder-type step out
-finder-move 1
+finder-tab 1
 finder-choose
 expect silent
 finder-cancel
@@ -84,6 +84,12 @@ expect docked 101
 find
 finder-type pa
 finder-choose
+expect fail
+# Nor with ↓ or ⌘ and a digit before it, for the next of its windows: in an empty list those keys did nothing. ⇥ is the commands' key.
+finder-move 1
+finder-choose
+expect fail
+finder-digit 1
 expect fail
 finder-cancel
 expect docked 101

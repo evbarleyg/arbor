@@ -1,6 +1,6 @@
 /// Which row of the window finder's list is selected, and which rows show when the list is longer
-/// than the palette. The palette and the tests' stand-in for it share this, so arrow keys, Tab and ⌘1–9
-/// mean the same in both.
+/// than the palette. The palette and the tests' stand-in for it share this, so the keys mean the same
+/// in both. Which rows a key may go to is `FinderSession`'s business.
 public struct FinderSelection: Equatable, Sendable {
   /// How many rows the list has.
   public private(set) var count: Int

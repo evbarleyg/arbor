@@ -435,12 +435,12 @@ apps you told it not to arrange, every named space and every saved view. Type to
 - The best match is on top: beginnings of words, letters that follow each other and the app's name count for more. Between
   equals, the most recently used window comes first.
 
-↑ ↓ or ⇥ ⇧⇥ move the selection, Return goes there, ⌘1–⌘9 or a click choose a row directly, Escape or ⌃⌥G again closes the palette. At the right
+↑ ↓ move the selection, Return goes there, ⌘1–⌘9 or a click choose one directly, Escape or ⌃⌥G again closes the palette. At the right
 of each row is where the window is now: in view, out of view, tab, tile, floating, kept in view, summoned, out of view until summoned, minimised, hidden, full screen, on another macOS Space, not arranged, and on
 which display if there are several.
 
-**It finds commands too.** Type the beginning of what a thing is called in the menu, go down to it with ↓ and press Return: `bal` ↓ ↩ is Arrangement ▸ Balance Sizes, `dock left` Dock Focused Window ▸ Left, `float all` Float All Windows.
-Return alone never runs a command: letters and Return go to a window, a space or a saved view, or beep. What matches of those comes first, then the commands. Every row of
+**It finds commands too.** Type the beginning of what a thing is called in the menu, go to it with ⇥ and press Return: `bal` ⇥ ↩ is Arrangement ▸ Balance Sizes, `dock left` Dock Focused Window ▸ Left, `float all` Float All Windows.
+Return alone never runs a command: letters and Return go to a window, a space or a saved view, or beep. What matches of those comes first, then the commands, which have a key of their own: ⇥ goes to them, ⇧⇥ back. Until ⇥ is pressed the arrows stay among the places, and ⌘1–⌘9 always do. Every row of
 the menu that runs a command is there, and the commands that have no row there (Space to the Left, Window Above). A command's row says `command` at the right, with its shortcut if it has one, or `not now` where
 the menu would grey it out. It acts on the window you were in. Before you type, the list holds places only, and a piece of a window's name still finds the window first.
 

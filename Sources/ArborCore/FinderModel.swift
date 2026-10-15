@@ -167,9 +167,12 @@ public struct FinderSession: Equatable, Sendable {
   /// **Return alone never runs a command.** ⌃⌥G, a few letters, Return, without a look, is what Go to… is for, and the fingers do it also when
   /// the app they mean is not open: `pa` for Pages must not pause Arbor, `shortcuts` for the app of that name not switch Arbor's off. Letters and
   /// Return do what they did before commands were listed: they go to the best place, or beep. So the places come first, however they were
-  /// found, and where there is none the command on top is shown, not selected, until a key picks it; a click and ⌘ with a digit
-  /// point at a row and need no picking. There is no list of commands that are too weighty for a reflex: none is run by one.
+  /// found, and where there is none the command on top is shown, not selected, until ⇥ picks it; a click points at a row and needs no
+  /// picking. There is no list of commands that are too weighty for a reflex: none is run by one.
   public private(set) var hasPicked = false
+  /// How things stood among the places when ⇥ left them, for ⇧⇥ to go back to.
+  private var beforeTheCommands: FinderSelection?
+  private var hadPicked = false
   /// The list changed by itself, and the row that was selected is no more. **Return runs only what the person has seen selected**
   /// (the product owner, board 0.25): whatever took its place was on screen for no time, so nothing is selected, a place no more than a
   /// command, until a key picks a row or something is typed.
@@ -208,6 +211,7 @@ public struct FinderSession: Equatable, Sendable {
     selection = FinderSelection(count: matches.count, pageSize: selection.pageSize)
     hasPicked = false
     hasLostItsRow = false
+    (beforeTheCommands, hadPicked) = (nil, false)
   }
 
   /// A fresh list while the palette stays open. What was typed stays, and so does the selection if it is still listed. Otherwise nothing
@@ -237,33 +241,57 @@ public struct FinderSession: Equatable, Sendable {
   /// How many of `matches` are places. They come first.
   private var places: Int { matches.prefix { $0.index < model.rows.count }.count }
 
-  /// ↓ and ↑, going round at the ends. **Only ↓ past the last place leads from the places to the commands.** ↑ from the top goes round to the
-  /// last place, as it did before commands were listed: `pa` ↑ Return is the last of Pages' windows, not Pause Arbor, which stands below it.
-  /// Coming up out of the commands it stays among the places likewise. Where nothing is selected the arrows come from outside the list: ↓
-  /// picks the first row and ↑ the last place, or the last command where there is no place.
+  /// A command is selected: ⇥ led there.
+  private var isAmongTheCommands: Bool { !awaitsPicking && !matches.isEmpty && selection.index >= places }
+
+  /// The part of the list the arrows and the Page keys move in. **They stay in it**: among the places they do what they did before commands
+  /// were listed, whatever stands below. `pa` ↓ Return, for the second of Pages' windows when there is one, goes round to that one and does
+  /// not pause Arbor. Where nothing is selected it is the places.
+  private var part: Range<Int> { isAmongTheCommands ? places..<matches.count : 0..<places }
+
+  /// ↓ and ↑, going round at the ends of the part. Where nothing is selected they come from outside it: ↓ picks the first place and ↑
+  /// the last. Where no place matches they do nothing, as in an empty list.
   public mutating func moveSelection(by rows: Int) {
-    guard rows != 0 else { return }
-    let waited = awaitsPicking
+    let (waited, part) = (awaitsPicking, part)
+    guard rows != 0, !part.isEmpty else { return }
     hasPicked = true
-    let places = places
-    guard rows < 0, places > 0 else { return selection.move(by: waited && rows > 0 ? rows - 1 : rows) }
-    let up = rows.magnitude
-    let toTheLastPlace = UInt(max(selection.index - (places - 1), 0))
-    guard up >= toTheLastPlace else { return selection.select(selection.index - Int(up)) }
-    selection.select((min(selection.index, places - 1) - Int((up - toTheLastPlace) % UInt(places)) + places) % places)
+    let from = waited ? (rows > 0 ? -1 : 0) : selection.index - part.lowerBound
+    // Reduced first, so that no number of rows overflows.
+    selection.select(part.lowerBound + ((from + rows % part.count) % part.count + part.count) % part.count)
   }
 
-  /// Page Down and Page Up, stopping at the ends; among the places, at the last of them, however often it is pressed. Where nothing is
-  /// selected, either picks the first row.
+  /// Page Down and Page Up, stopping at the ends of the part. Where nothing is selected, either picks the first place.
   public mutating func pageSelection(by pages: Int) {
-    guard pages != 0 else { return }
-    let waited = awaitsPicking
+    let (waited, part) = (awaitsPicking, part)
+    guard pages != 0, !part.isEmpty else { return }
     hasPicked = true
-    let (places, before) = (places, selection)
-    selection.page(by: waited && pages > 0 ? pages - 1 : pages)
-    if before.index < places, selection.index >= places {
-      selection = before
-      selection.select(places - 1)
+    let jump = min(max(waited && pages > 0 ? pages - 1 : pages, -part.count), part.count) * selection.pageSize
+    selection.select(min(max(selection.index + jump, part.lowerBound), part.upperBound - 1))
+  }
+
+  /// ⇥ and ⇧⇥: **the commands' own key** (the product owner, board 1.94). Every other key of the palette meant places before commands were
+  /// listed, and the fingers know them. ⇥ goes to the first command and on from one to the next, round; ⇧⇥ goes back up, and from the first
+  /// command back to the places as they were left. Among the places ⇧⇥ does nothing, and ⇥ nothing where no command is listed.
+  public mutating func tab(by steps: Int) {
+    let commands = places..<matches.count
+    guard steps != 0, !commands.isEmpty else { return }
+    guard isAmongTheCommands else {
+      guard steps > 0 else { return }
+      (beforeTheCommands, hadPicked) = (selection, hasPicked)
+      hasPicked = true
+      // As many of them as fit come into view at once, not one at a time at the bottom of a palette full of places.
+      selection.select(commands.upperBound - 1)
+      selection.select(commands.lowerBound)
+      return selection.select(commands.lowerBound + (steps - 1) % commands.count)
+    }
+    let at = selection.index - commands.lowerBound
+    if steps > 0 || UInt(at) >= steps.magnitude {
+      selection.select(commands.lowerBound + (at + steps % commands.count + commands.count) % commands.count)
+    } else {
+      // After a fresh list that kept the command there is nothing to go back to: then the top, picked by nobody.
+      selection = beforeTheCommands ?? FinderSelection(count: matches.count, pageSize: selection.pageSize)
+      hasPicked = beforeTheCommands != nil && hadPicked
+      (beforeTheCommands, hadPicked) = (nil, false)
     }
   }
 
@@ -286,17 +314,23 @@ public struct FinderSession: Equatable, Sendable {
     awaitsPicking ? nil : selection.selected.map { everything[matches[$0].index].destination }
   }
 
-  /// What shows at `place` from the top, counted from 0: what a click there, or ⌘ and the digit
-  /// `place + 1`, chooses.
+  /// What shows at `place` from the top, counted from 0: what a click there chooses.
   public func destination(atVisible place: Int) -> FinderDestination? {
     selection.row(atVisible: place).map { everything[matches[$0].index].destination }
+  }
+
+  /// What ⌘ and `digit` choose: the row that shows there, counted from 1, if it is a place. `pa` ⌘2 is the second of Pages' windows, or a beep.
+  public func destination(atDigit digit: Int) -> FinderDestination? {
+    guard digit >= 1, let row = selection.row(atVisible: digit - 1), row < places else { return nil }
+    return everything[matches[row].index].destination
   }
 
   /// A line to show under the rows, if there is something to say.
   public var message: String? {
     if let notice = model.notice { return notice }
     if model.rows.isEmpty, matches.isEmpty { return "No windows" }
-    if awaitsPicking, places == 0 { return "↓ picks a command, ↩ runs it" }
+    // Wherever a command is listed and none is picked: no other key leads there, and nobody guesses this one.
+    if places < matches.count, !isAmongTheCommands { return "⇥ picks a command, ↩ runs it" }
     return matches.isEmpty ? "Nothing matches" : nil
   }
 

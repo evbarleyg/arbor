@@ -214,7 +214,7 @@ With the keyboard it is quicker still.
 Most of your windows are out of view most of the time. That is the point, and it is why **⌃⌥G**, Go to…, exists. Press it, type a few letters of the app or of the window's title, press Return: the view moves to that window
 and it has the keyboard. It does not matter what kept it out of view: another space, another tab, the Dock, ⌘H, another display, another macOS Space.
 If you were framed on one window, the one you go to is framed in its place; from a group, the view steps out just far enough to show both.
-The same field finds what Arbor can do: type the beginning of what it is called in the menu, `bal` for Balance Sizes or `float all`, go down to it with ↓, and Return runs it on the window you were in. Windows, spaces and saved views come first in the list, and letters with Return alone only ever go to one of those.
+The same field finds what Arbor can do: type the beginning of what it is called in the menu, `bal` for Balance Sizes or `float all`, go to it with ⇥, and Return runs it on the window you were in. Windows, spaces and saved views come first in the list; without ⇥, letters, the arrows and Return only ever go to one of those.
 
 ```
  ⌃⌥G   inb ↩

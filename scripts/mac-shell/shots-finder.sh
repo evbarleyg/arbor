@@ -294,13 +294,18 @@ ctl find zebra
 ctl reveal "$W3"
 check "reveal focused window 3" eventually is focused "$W3"
 
-step "it finds commands: real keys spell one, ↓ picks it, Return runs it on the window behind the palette (board 0.14)"
+step "it finds commands: real keys spell one, ⇥ picks it, Return runs it on the window behind the palette (board 0.14, 1.94)"
 ctl show-all
 # shellcheck disable=SC2046
 click $(center_of "$W4")
 check "the floating window has the keyboard" eventually is focused "$W4"
 key ctrl+opt+g
 check "open" eventually palette
+keys w i n
+# LOOK: windows first, one of them selected; then commands, each with its sign; and under them all the one line that says which key leads
+# to the commands.
+shot 15b-places-and-commands
+keys delete delete delete
 keys d o c k
 # LOOK: the sign where an icon would be, the arrows in the names, the notes with their keys at the right, nothing cut off; NO ROW IS
 # SELECTED, and the line under the rows says how to pick one.
@@ -312,14 +317,18 @@ key return
 check "Return alone runs nothing: the palette stays up" stays palette
 check "and the window still floats" stays is floating "$W4"
 key down
+key return
+check "nor after ↓, which is for places: the palette stays up" stays palette
+check "and the window still floats" stays is floating "$W4"
+key tab
 shot 17b-picked
 key return
-check "picked with ↓, Return closed the palette" eventually no_palette
+check "picked with ⇥, Return closed the palette" eventually no_palette
 check "the window behind it was docked" eventually is docked "$W4"
 check "and still has the keyboard" eventually is focused "$W4"
 key ctrl+opt+g
 check "open" eventually palette
-keys u n d o down
+keys u n d o tab
 key return
 check "closed" eventually no_palette
 check "Undo, by its name, took it back" eventually is floating "$W4"
