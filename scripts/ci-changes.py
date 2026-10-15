@@ -3,7 +3,7 @@
 
 A Mac is left out when it could prove nothing new, or nothing that will not be proved soon anyway:
 
-  1. everything the pull request changes (for a push: everything since the commit before it) is
+  1. everything the pull request changes (for a merge train: everything it adds to the trunk) is
      prose, or data the Linux job checks just as well: collab/, docs/, *.md, scripts/typecheck-mac/ and
      scripts/mac-on-linux/ (which only Linux runs), Sources/arbor-fakemac/ (which Package.swift leaves out on a Mac unless ARBOR_FAKEMAC is set, and
      nothing a Mac runs here sets it: no Mac's compiler sees it; these rules' self-test looks that this stays so),
@@ -28,6 +28,10 @@ What a merge train changes is what it adds to the trunk, whether it is pushed fo
 commit before it: that would be unclear, and a train of more commits than rule 3 looks back would get every test, built from nothing, each
 time. Pushed again, the commit before it is the train as it was, which may never have seen a Mac: the first train there was had a line
 of a self-test mended and was pushed again before its Mac began, and "only prose since the commit before" spared the whole of it.
+A push to `main` has no such measure: all there is to hold it against is the commit before it, and rule 1 would trust that a Mac has seen that one. It need
+not have: its run may have been red, or cancelled, which the very next push does to a run under way. Code comes with one push, a line of prose with the
+next, "only prose since the commit before", and `main` shows no red though no Mac ever passed that code. So rule 1 does not hold for a push to `main`, and rule 3
+does its work honestly: no Mac if only prose has changed since a commit that did pass.
 So a train of prose takes no Mac, even upon a trunk that moved forward without one having passed. `main` is covered all the same: the trunk's own
 pull request into it is integration, and counts only a commit that passed on a Mac built from nothing.
 
@@ -228,9 +232,11 @@ def decide(name, event, repo, sha):
         changed = lambda: files_of_pull_request(repo, pull["number"])
         labels = {label.get("name") for label in pull.get("labels", [])}
         draft = bool(pull.get("draft"))
+        measured = True
     elif name == "push":
         head, whole, integration, labels, draft = sha, "the push", True, set(), False
         train = event.get("ref", "").startswith(TRAINS)
+        measured = train
         changed = lambda: files_between(repo, INTEGRATION_BRANCH if train else event["before"], head)
     elif name == "schedule":
         return FULL, "every night: every test, built from nothing, as a backstop"
@@ -255,7 +261,8 @@ def decide(name, event, repo, sha):
     # Whoever asks for a Mac above gets one, on a draft too: a probe stays possible.
     if draft:
         return None, "a draft: the Mac runs when its author marks it ready for review, or when the label or the marker asks for it"
-    if names and not beyond(names, *prose):
+    # `measured`: against something that does not depend on what a Mac has seen. A push to main is held against the commit before it, which may have seen none.
+    if names and measured and not beyond(names, *prose):
         return None, f"{whole} changes only prose, data that the Linux job checks too, and scripts the macOS job cannot reach"
     if names and not integration and not beyond(names, *prose, HEADLESS):
         return None, f"{whole} changes only code that Linux builds and tests too; a Mac sees it when it is integrated"
@@ -269,8 +276,10 @@ def decide(name, event, repo, sha):
             return None, f"nothing a Mac could check has changed since {commit[:7]} {passed}"
     if not names:
         return FULL, f"it is unclear what changed, and none of the last {LOOK_BACK} commits has {passed} on a Mac: every test, built from nothing"
-    what = some(beyond(names, *prose) if integration else beyond(names, *prose, HEADLESS))
-    return how, f"changed: {what}; none of the last {LOOK_BACK} commits has {passed} on a Mac; {HOW[how]}"
+    rest = beyond(names, *prose) if integration else beyond(names, *prose, HEADLESS)
+    if not rest:
+        return how, f"{whole} changes only prose, but none of the last {LOOK_BACK} commits has {passed} on a Mac: what came before it was never proved; {HOW[how]}"
+    return how, f"changed: {some(rest)}; none of the last {LOOK_BACK} commits has {passed} on a Mac; {HOW[how]}"
 
 
 def answers(how, reason):
