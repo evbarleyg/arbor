@@ -360,6 +360,8 @@ day_launch() {
   note "arbor $ARBOR_PID"
   DAY_SINCE_START=0
   day_trace
+  # Arbor has started, whatever became of the trace.
+  return 0
 }
 
 day_gone() {
