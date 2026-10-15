@@ -134,7 +134,7 @@ extension Controller {
       _ = home()
     }
     // As after a pause: Arbor was not looking when the keyboard went where it is now.
-    if isRunning, let focused = system.focusedWindow() { windowFocused(focused) }
+    if isRunning, let focused = system.focusedWindow() { keyboardIs(in: focused, saysMacOS: false) }
   }
 
   /// Whether a shortcut that failed for want of the permission should open the Accessibility pane now. Someone

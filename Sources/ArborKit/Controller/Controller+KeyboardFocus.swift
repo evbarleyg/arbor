@@ -160,7 +160,7 @@ extension Controller {
     system.focus(window)
     // macOS reports the change a moment later. Hearing of it now puts it in the history and tells the
     // observers before the command returns; hearing it again from macOS does no harm.
-    windowFocused(window)
+    keyboardIs(in: window, saysMacOS: false)
     noteFocusRequest(for: window, replacing: replaced)
   }
 

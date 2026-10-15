@@ -10,11 +10,12 @@ import Testing
 /// the end of one, which can come by itself. They come in when the view next moves.
 @Suite @MainActor struct HoldRescueTests {
   /// [keynote | Desktop | mail], framed on keynote, which has the keyboard.
-  func stage() -> (h: Harness, keynote: WindowID, mail: WindowID) {
+  /// `apart`: Keynote is a process of its own, as a story about ⌘Tab needs. Otherwise they are one, and a switch among them is ⌘`.
+  func stage(apart: Bool = false) -> (h: Harness, keynote: WindowID, mail: WindowID) {
     var settings = Settings()
     settings.holdStillWhileCameraIsOn = true  // it ships off
     let h = Harness(settings: settings)
-    let keynote = h.system.open(app: "Keynote")
+    let keynote = h.system.open(app: "Keynote", pid: apart ? 11 : 1000)
     let mail = h.system.open(app: "Mail")
     h.start()
     h.run("dock \(keynote.rawValue) left")
@@ -368,7 +369,7 @@ import Testing
   }
 
   @Test func afterReleaseSwitchingToItBringsItIntoView() {
-    let (h, _, mail) = stage()
+    let (h, _, mail) = stage(apart: true)
     h.run("hold")
     let message = h.system.open(app: "Mail", frame: besideMail(h, mail))
     h.run("release")
@@ -414,7 +415,7 @@ import Testing
   }
 
   @Test(arguments: ["release", "toggle-hold", "hold still"]) func lettingGoOfTheViewAloneDoesNotLetThemIn(text: String) {
-    let (h, _, mail) = stage()
+    let (h, _, mail) = stage(apart: true)
     h.run("hold")
     h.run(text)
     #expect(h.system.leavesStrayDialogs)

@@ -73,7 +73,7 @@ import Testing
 
   /// Not the focus ring's own (`focus-ring`, `focus-ring-again`).
   private func waiting(_ h: Harness) -> [String] {
-    h.scheduler.pendingKeys.filter { $0 == "focus-after-loss" || $0.hasPrefix("focus-again-") }.sorted()
+    h.scheduler.pendingKeys.filter { $0 == "focus-after-loss" || $0 == "focus-within-one-app" || $0.hasPrefix("focus-again-") }.sorted()
   }
 
   /// The other way round: the look after a loss does not put off the second look at a window.

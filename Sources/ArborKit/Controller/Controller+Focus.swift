@@ -59,8 +59,9 @@ extension Controller {
   }
 
   /// Moves the camera to show `id` if it has the keyboard. If it does not (yet), looks again
-  /// `retries` times.
-  func bringIntoViewIfFocused(_ id: WindowID, retries: Int = Controller.focusCheckRetries) {
+  /// `retries` times. `saysMacOS`: this is a report, which the going of the window that had the keyboard may be about to
+  /// overtake (`waitsForAGoing`), and not something Arbor found out or has waited for already.
+  func bringIntoViewIfFocused(_ id: WindowID, retries: Int = Controller.focusCheckRetries, saysMacOS: Bool = false) {
     guard isRunning, isManaged(id) else { return }
     runPostponedRelayouts()
     guard system.focusedWindow() == id, windows[id]?.isPresent == true else {
@@ -70,10 +71,13 @@ extension Controller {
       return
     }
     Log.debug("\(id) has the keyboard")
+    // Said again. The moment is counted from the first time.
+    if saysMacOS, keyboardHandOver.waiting?.window == id { return }
     // Only now. A report is not the keyboard: an app in the background reports its windows too, and taking one of those for the
     // window in use made the going of the one that was no loss (`hadKeyboard`), so that nobody got the keyboard.
     recordFocus(id)
     cancelFocusLooks()
+    let opened = keyboardHandOver.newcomers.removeValue(forKey: id)
     // macOS picks once. Whatever this report is, the next one is somebody's own doing.
     let loss = keyboardHandOver.loss
     keyboardHandOver.loss = nil
@@ -87,6 +91,7 @@ extension Controller {
     {
       return
     }
+    if saysMacOS, opened.map({ now().timeIntervalSince($0) < Self.handOverTime }) != true, waitsForAGoing(id) { return }
     let camera = workspaces[display]?.camera
     let floatingInView = (workspaces[display]?.floating.keys.sorted() ?? []).filter { !parked.contains($0) }
       .compactMap { window in windows[window].map { (window: window, frame: $0.frame) } }
@@ -108,6 +113,7 @@ extension Controller {
   ///
   /// macOS was seen to report the new focus a millisecond BEFORE the close or the minimize, and after a hide, and
   /// not at all when another app comes forward whose own focused window did not change. All three are covered.
+  /// Both orders were recorded at a close: test windows name the next one up to 12 ms before, Safari and Finder 4 to 91 ms after.
   ///
   /// After a close or a minimize macOS picks a window of the same app, or none. Another app's window taking the
   /// keyboard then is the user's own ⌘Tab or click in the Dock, however soon it comes, and is followed.
@@ -128,21 +134,67 @@ extension Controller {
     var loss: (display: DisplayID, app: Int32?, time: Date)?
     /// The windows that are going to be looked at again (`scheduleFocusCheck`).
     var secondLooks: Set<WindowID> = []
+    /// `window`, out of view, has taken the keyboard from `holder`, a window of the same app, and the view has not followed yet
+    /// (`waitsForAGoing`). `views`: what each display's view was on then.
+    var waiting: (window: WindowID, holder: WindowID, views: [DisplayID: NodeID])?
+    /// The windows that have opened and have not had the keyboard yet, and when they opened.
+    var newcomers: [WindowID: Date] = [:]
   }
 
-  /// Reports this close together belong to one event. The ones recorded were within 10 ms.
+  /// Reports this close together belong to one event. The ones recorded were within 91 ms, most of them within 13.
   static let handOverTime: TimeInterval = 0.3
 
-  /// Whether `id` had the keyboard until now, or until the report that just moved the view. Ask before
+  /// How long the view waits before it follows the keyboard from one window of an app to another that is out of view.
+  /// At a close the report of the going was recorded 12 ms behind the one that names the next window, at a minimize 7 ms.
+  public static let timeForAGoing: TimeInterval = 0.05
+
+  /// The keyboard went from one window of an app to another, which is out of view. That is what ⌘` looks like, and it is what a
+  /// close or a minimize looks like until the going is reported, a few milliseconds later. Followed at once and taken back,
+  /// the whole view went there and back for one ⌘W. So the view waits that long: if the window goes, this was macOS's pick, and
+  /// all is as if the going had been reported first (`keyboardLeft`).
+  ///
+  /// Only a report waits, and only within one app: after a going macOS picks no other, so ⌘Tab, a click and the Dock are followed
+  /// at once, as are Arbor's own commands. Nor does macOS pick a window that has only just opened and takes the keyboard for
+  /// the first time: ⌘N is shown in the same breath. What a hold turns away moves no view, and the keyboard goes back the
+  /// sooner the better. But holding still lets in what follows a key, and ⌘W is one.
+  private func waitsForAGoing(_ id: WindowID) -> Bool {
+    // Who had the keyboard at the last look, also a window that Arbor does not arrange, or nobody: ⌘Tab out of such an app is a
+    // switch between apps, whatever the history of the arranged ones says.
+    guard !isHeld || (holdLevel == .still && hold.askedFor == id), let holder = following.focus?.window, holder != id,
+      let had = windows[holder], had.isPresent, had.pid == windows[id]?.pid
+    else { return false }
+    keyboardHandOver.waiting = (id, holder, workspaces.mapValues(\.camera))
+    scheduler.schedule(Self.lookWithinOneApp, after: Self.timeForAGoing) { [weak self] in
+      guard let self, let waiting = self.keyboardHandOver.waiting else { return }
+      self.keyboardHandOver.waiting = nil
+      // Whoever has moved a view meanwhile has said where it goes, and the keyboard is on its way there.
+      if self.workspaces.mapValues(\.camera) == waiting.views { self.bringIntoViewIfFocused(id) }
+    }
+    return true
+  }
+
+  private func stopWaitingForAGoing() {
+    scheduler.cancel(Self.lookWithinOneApp)
+    keyboardHandOver.waiting = nil
+  }
+
+  /// Whether `id` had the keyboard until now, or until the report that just moved the view or is waiting to. Ask before
   /// forgetting the window.
   func hadKeyboard(_ id: WindowID) -> Bool {
-    focusHistory.first == id || keyboardHandOver.reveal?.holder == id
+    focusHistory.first == id || keyboardHandOver.reveal?.holder == id || keyboardHandOver.waiting?.holder == id
   }
 
   /// Call after `id`, which `hadKeyboard`, closed or stopped taking space, and `display` was laid out without it.
   /// `app` is its process, or nil if the whole app was hidden.
   func keyboardLeft(_ id: WindowID, of app: Int32?, on display: DisplayID) {
     guard isRunning else { return }
+    // Its heir was named first and has waited for this. From here on it is the order in which the going comes first.
+    let heir = keyboardHandOver.waiting.flatMap { $0.holder == id ? $0.window : nil }
+    defer { if let heir { bringIntoViewIfFocused(heir, retries: 0) } }
+    if heir != nil {
+      stopWaitingForAGoing()
+      keyboardHandOver.reveal = nil
+    }
     if let reveal = keyboardHandOver.reveal, reveal.holder == id {
       keyboardHandOver.reveal = nil
       guard now().timeIntervalSince(reveal.time) < Self.handOverTime, app == nil || app == windows[reveal.window]?.pid
@@ -223,6 +275,7 @@ extension Controller {
   /// look after a loss, and the keyboard stayed with nobody; or the look at the window that was taking the keyboard, which
   /// stayed out of view and was typed into (K1473).
   private static let lookAfterLoss = "focus-after-loss"
+  private static let lookWithinOneApp = "focus-within-one-app"
   private func secondLook(at id: WindowID) -> String { "focus-again-\(id.rawValue)" }
 
   /// A newer report about the same window replaces the look that is due at it.
@@ -237,6 +290,7 @@ extension Controller {
   /// A window has the keyboard and has said so, or Arbor stops: nothing is left to find out.
   func cancelFocusLooks() {
     scheduler.cancel(Self.lookAfterLoss)
+    stopWaitingForAGoing()
     for id in keyboardHandOver.secondLooks.sorted() { scheduler.cancel(secondLook(at: id)) }
     keyboardHandOver.secondLooks.removeAll()
   }

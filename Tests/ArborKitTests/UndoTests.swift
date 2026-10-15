@@ -852,6 +852,8 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     let steps = undoLabels(h)
 
     h.system.userFocus(a)
+    // The windows of this file are one process, and within one app the view follows a moment later.
+    h.scheduler.advance(by: Controller.timeForAGoing)
     #expect(h.workspace.tree.activeWindow(of: stack) == a)
     #expect(undoLabels(h) == steps, "switching tabs rearranges nothing")
 
@@ -860,6 +862,7 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     h.run("undo")
     #expect(h.workspace.tree.activeWindow(of: stack) == a)
     h.system.userFocus(b)
+    h.scheduler.advance(by: Controller.timeForAGoing)
     h.run("redo")
     #expect(h.workspace.tree.activeWindow(of: stack) == b)
     h.run("undo")

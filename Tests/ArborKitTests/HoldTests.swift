@@ -21,8 +21,9 @@ private let cameraCommands = [
     let keynote, mail, slack, notes: WindowID
   }
 
+  /// `apart`: each app is a process of its own, as a story about ⌘Tab needs. Otherwise they are one, and a switch among them is ⌘`.
   func stage(
-    displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], configure: (inout Settings) -> Void = { _ in }
+    displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], apart: Bool = false, configure: (inout Settings) -> Void = { _ in }
   ) -> Stage {
     var settings = Settings.withGestures  // which a hold switches off
     // Both ship off (`outOfTheBoxNothingStartsAHoldByItself`). The tests about calls are about someone who has switched them on.
@@ -30,10 +31,10 @@ private let cameraCommands = [
     settings.holdStillFor = ["us.zoom.xos Zoom Meeting"]
     configure(&settings)
     let h = Harness(displays: displays, settings: settings)
-    let keynote = h.system.open(app: "Keynote")
-    let mail = h.system.open(app: "Mail")
-    let slack = h.system.open(app: "Slack")
-    let notes = h.system.open(app: "Notes")
+    let keynote = h.system.open(app: "Keynote", pid: apart ? 11 : 1000)
+    let mail = h.system.open(app: "Mail", pid: apart ? 12 : 1000)
+    let slack = h.system.open(app: "Slack", pid: apart ? 13 : 1000)
+    let notes = h.system.open(app: "Notes", pid: apart ? 14 : 1000)
     h.start()
     h.run("dock \(keynote.rawValue) left")
     h.run("dock \(mail.rawValue) right")
@@ -1406,7 +1407,7 @@ private let cameraCommands = [
   }
 
   @Test func holdingStillTheViewFollowsAWindowTheUserSwitchedTo() {
-    let s = stage()
+    let s = stage(apart: true)
     s.h.run("hold still")
     // ⌘Tab, a click in the Dock or on a notification.
     s.h.system.userFocus(s.slack)
@@ -1416,7 +1417,7 @@ private let cameraCommands = [
 
   @Test(arguments: [(0.0, true), (0.4, true), (0.6, false), (30.0, false)])
   func onlyAFocusChangeRightAfterAClickOrAModifierKeyCountsAsAsked(seconds: Double, follows: Bool) {
-    let s = stage()
+    let s = stage(apart: true)
     s.h.run("hold still")
     s.h.system.secondsSinceInput = seconds
     s.h.system.comesForward(s.slack)
@@ -1426,7 +1427,7 @@ private let cameraCommands = [
 
   /// The report of a window reached by ⌘Tab comes before the view has followed it (the product owner's finding 8).
   @Test func holdingStillTheKeyboardGoesBackToTheWindowJustSwitchedTo() {
-    let s = stage()
+    let s = stage(apart: true)
     let h = s.h
     h.run("zoom \(s.mail.rawValue)")
     h.run("out")  // mail above slack
@@ -1446,7 +1447,7 @@ private let cameraCommands = [
 
   /// The same with F53, where it was found: losing the keyboard sends a summoned window away.
   @Test func holdingStillASummonedWindowReachedByCommandTabIsNotSentAway() {
-    let s = stage()
+    let s = stage(apart: true)
     let h = s.h
     h.run("hold still")
     h.run("summon Notes")

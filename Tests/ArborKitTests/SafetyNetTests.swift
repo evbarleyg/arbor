@@ -11,13 +11,14 @@ import Testing
     id: DisplayID("side"), frame: CGRect(x: 1440, y: 0, width: 1280, height: 800),
     visibleFrame: CGRect(x: 1440, y: 25, width: 1280, height: 775), isMain: false)
 
+  /// `apart`: each app is a process of its own, as a story about ⌘Tab needs. Otherwise they are one, and a switch among them is ⌘`.
   func makeHarness(
-    displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Settings()
+    displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Settings(), apart: Bool = false
   ) -> (Harness, WindowID, WindowID, WindowID) {
     let h = Harness(displays: displays, settings: settings)
-    let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
-    let b = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 600, height: 400))
-    let c = h.system.open(app: "Mail", frame: CGRect(x: 500, y: 300, width: 600, height: 400))
+    let a = h.system.open(app: "Safari", pid: apart ? 11 : 1000, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
+    let b = h.system.open(app: "Notes", pid: apart ? 12 : 1000, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
+    let c = h.system.open(app: "Mail", pid: apart ? 13 : 1000, frame: CGRect(x: 500, y: 300, width: 600, height: 400))
     h.start()
     return (h, a, b, c)
   }
@@ -144,7 +145,7 @@ import Testing
   }
 
   @Test func revealingAWindowZoomsOutJustFarEnough() {
-    let (h, a, b, c) = makeHarness()
+    let (h, a, b, c) = makeHarness(apart: true)
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
     h.run("dock \(c.rawValue) beside \(a.rawValue) bottom")
@@ -170,6 +171,7 @@ import Testing
     h.run("dock \(b.rawValue) right")
     #expect(h.overlays.tiles[h.display]?.count == 1)
     h.system.userFocus(b)  // ⌘` to it: a tile cannot take the keyboard
+    h.scheduler.advance(by: Controller.timeForAGoing)  // within one app the view follows a moment later
     #expect(h.workspace.camera == h.workspace.tree.leaf(containing: b))
     #expect(h.system.isVisible(b))
   }
@@ -235,11 +237,13 @@ import Testing
     // Focus following is off during a drag; it has to be back on.
     h.run("zoom \(a.rawValue)")
     h.system.userFocus(b)
+    // One process: within one app the view follows a moment later.
+    h.scheduler.advance(by: Controller.timeForAGoing)
     #expect(h.system.isVisible(b))
   }
 
   @Test func focusFollowingWorksAgainAfterADrag() {
-    let (h, a, b, c) = makeHarness()
+    let (h, a, b, c) = makeHarness(apart: true)
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
     h.system.drag(c, through: [titleBar(h, c), h.layout!.desktopFrame!.center])

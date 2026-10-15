@@ -1,0 +1,72 @@
+# Proposed by a fixer (2026-10-15), from the random walks' finds; the documenter may edit or drop it.
+# Story: whoever presses ⌘W or ⌘M asked to be rid of a window, not to be taken elsewhere. macOS hands the keyboard to the app's next
+# window and says so a few milliseconds BEFORE it reports the closing. If that window is out of view, the view stays, nothing
+# moves, and a window in view gets the keyboard.
+# Reference: T07 T32. Decided in collab/QUESTIONS.md (product owner, 2026-10-15, "after ⌘W and ⌘M").
+#
+# Someone writes in Terminal, framed on its own, with a note floating over it. Safari is docked beside it, out of view.
+open Notes 500x400
+open Terminal
+open Safari
+dock 102 left
+dock 103 right
+zoom 102
+# Into the Dock and out again: the note has come into view meanwhile and stays over the framed window.
+minimize 102
+flush
+restore 102
+flush
+expect fills 102
+expect visible 101
+expect hidden 103
+# A link opens a second Safari window over all that. It is read and closed.
+open Safari 600x400
+expect visible 104
+close 104
+flush
+expect fills 102
+expect hidden 103
+# The note was swept out of view when the view went to Safari's other window and came back.
+expect visible 101
+# The same with the yellow button.
+open Safari 600x400
+minimize 105
+flush
+expect fills 102
+expect hidden 103
+expect visible 101
+close 105
+float-all
+close 101
+close 102
+close 103
+#
+# A group is in view: a browser over notes and mail. The browser's other window is docked beside the group, out of view.
+open Safari
+open Notes
+open Mail
+open Safari
+dock 106 right
+dock 107 beside 106 bottom
+dock 108 beside 107 right
+dock 109 right
+zoom 106
+out
+focus 106
+expect visible 107
+expect visible 108
+expect hidden 109
+# What is left of the group is no group of its own any more. The view used to end on everything, with notes and mail too small to show.
+close 106
+flush
+expect visible 107
+expect visible 108
+expect hidden 109
+# ⌘` to the browser's window out of view: nothing goes, so the view follows, a moment later.
+open Safari 600x400
+expect visible 110
+focus 109
+expect hidden 109
+wait 0.05
+expect visible 109
+expect focused 109

@@ -1576,6 +1576,8 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
     let h = harness("Safari", "Mail")
     h.run("layout --open [Safari Chrome Mail] | Desktop")
     h.system.userFocus(w(102))
+    // The windows of this file are one process, and within one app the view follows a moment later.
+    h.scheduler.advance(by: Controller.timeForAGoing)
     let chrome = openInBackground(h, "Chrome")
     let leaf = try #require(h.workspace.tree.leaf(containing: chrome))
     #expect(h.workspace.tree[leaf]?.kind == .stack(windows: [w(101), chrome, w(102)], active: 2))
