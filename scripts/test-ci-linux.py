@@ -11,7 +11,11 @@ reads .github/workflows/linux.yml, ci.yml, which calls it, and the Makefile, and
   every job of linux.yml is named linux-…, has a shorter name for its check, and `linux-verdict` needs it, and needs no other;
   `linux-verdict` runs whatever became of them, and before anything else fails unless each succeeded: that script is run
   here, on made-up results;
-  no Linux job and no step of one has a condition that could skip it, and none may fail and pass all the same;
+  no Linux job and no step of one has a condition that could skip it, and none may fail and pass all the same. But for ONE switch:
+  ci.yml may ask for lint alone (`all: false`, for a pull request that is still a draft). Then every job but lint is skipped and the
+  verdict with them: whenever there is a verdict, all it waits for has run. The switch is used in the jobs' conditions and nowhere
+  else. Marking the draft ready must start a run, and nothing else may be said about which pull requests start one. What in
+  ci.yml goes by Linux's record, or vouches for a run, does not run for a draft either;
   every command of `make check`, as it stands there, is a command of some Linux job, and so is what ALSO lists;
   the jobs that use an image use the same, which scripts/linux.sh takes from the first in linux.yml. But `oldest-swift` in ci.yml,
   which is there for the oldest Swift that README.md promises: it has another, compiles everything and type-checks the
@@ -68,6 +72,17 @@ JOB = re.compile(r"""^  ["']?([A-Za-z_][\w-]*)["']?:\s*(?:#.*)?$""")
 KEY = re.compile(r"^(\s*)(?:- )?([\w-]+):\s*(.*)$")
 # They only widen when something runs.
 HARMLESS = {"${{ !cancelled() }}", "${{ always() }}"}
+# The one switch: what a job may say, what the verdict must then say, what ci.yml may hand over, and the job that runs whatever it hands over.
+SWITCH, SWITCHED_VERDICT = "${{ inputs.all }}", "${{ inputs.all && !cancelled() }}"
+NOT_A_DRAFT = "github.event_name != 'pull_request' || !github.event.pull_request.draft"
+WHEN_ALL = "${{ " + NOT_A_DRAFT + " }}"
+# What is said of pull requests, no more and no less. A filter (paths, branches, fewer types) stops runs without a word, and a commit
+# without a run has no check that failed.
+FOR_PULL_REQUESTS = ["types: [opened, synchronize, reopened, ready_for_review]"]
+WHOLE_WHEN = "${{ github.event_name != 'pull_request' || (github.base_ref == 'main' && !github.event.pull_request.draft) }}"
+# They go by the record Linux leaves, or say that a run was complete.
+NOT_FOR_DRAFTS = ("tests-accounted-for", "macos-from-nothing")
+ALWAYS = "linux-lint"
 
 
 def jobs_of(workflow):
@@ -154,6 +169,20 @@ def steps_of(makefile, target, seen=()):
     return steps + [plain(line) for line in rule.group(2).splitlines() if line.startswith("\t")]
 
 
+def events_of(caller):
+    """What starts a workflow: the event → the lines under it, remarks left out."""
+    events, name = {}, None
+    for line in (re.search(r"^on:\n((?:(?: .*)?\n)*)", caller, re.M) or [None, ""])[1].split("\n"):
+        if not line.strip() or line.strip().startswith("#"):
+            continue
+        if re.match(r"  \S", line):
+            name, _, rest = line.strip().partition(":")
+            events[name] = [rest.strip()] if rest.strip() else []
+        elif name:
+            events[name].append(line.strip())
+    return events
+
+
 def verdict_on(script, results):
     """The exit code of the verdict's script when the jobs it waits for ended like this."""
     needs = json.dumps({name: {"result": result, "outputs": {}} for name, result in results.items()})
@@ -166,8 +195,16 @@ def problems_in(workflow, makefile, caller):
     found = []
     if values_of(others.get(CALLER, []), "uses", 4) != [CALLED]:
         found.append(f"ci.yml has no job `{CALLER}` that uses {CALLED}")
+    elif [line.strip() for line in others[CALLER][1:]] not in ([], ["with:", f"all: {WHEN_ALL}"]):
+        found.append(f"ci.yml's job `{CALLER}` says more than what it uses, and that drafts get lint alone: it must run always, and wait for nothing")
     elif len(others[CALLER]) > 1:
-        found.append(f"ci.yml's job `{CALLER}` says more than what it uses: it must run always, and wait for nothing")
+        if events_of(caller).get("pull_request") != FOR_PULL_REQUESTS:
+            found.append(f"a draft gets lint alone, so `pull_request:` must say `{FOR_PULL_REQUESTS[0]}` and nothing else: without the last of them "
+                         "marking a draft ready starts no run, and a filter stops runs without a word")
+        if values_of(others.get(WHOLE_JOB, []), "if", 4) != [WHOLE_WHEN]:
+            found.append(f"`{WHOLE_JOB}` must say `if: {WHOLE_WHEN}`: where work is integrated, and not for a draft, which has no parts to hold it against")
+        found += [f"{name} runs for a draft too, where Linux left no record: its condition lacks `({NOT_A_DRAFT})`" for name in NOT_FOR_DRAFTS
+                  if name in others and not any(f"({NOT_A_DRAFT})" in condition for condition in values_of(others[name], "if", 4))]
     found += [f"{name} in ci.yml runs on Linux, so nobody waits for it: it belongs in linux.yml" for name, lines in others.items()
               if name not in (*NOT_A_CHECK, *OF_THE_MAC) and any("ubuntu" in value for value in values_of(lines, "runs-on"))]
     found += [f"{name} in ci.yml calls another workflow, whose jobs nothing here looks at" for name, lines in others.items()
@@ -187,8 +224,8 @@ def problems_in(workflow, makefile, caller):
     found += [f"`{OLDEST_JOB}` does not run `{command}`" for command in OLDEST_RUNS if command not in ran]
     if "ALL: 1" not in [line.strip() for line in oldest]:
         found.append(f"`{OLDEST_JOB}` type-checks only a part of the macOS-only code (ALL: 1)")
-    if values_of(oldest, "if") or values_of(oldest, "needs", 4):
-        found.append(f"{OLDEST_JOB} has a condition, or waits for a job that may be skipped: what is skipped proves nothing")
+    if values_of(oldest, "if") != ([WHEN_ALL] if len(others.get(CALLER, [])) > 1 else []) or values_of(oldest, "needs", 4):
+        found.append(f"{OLDEST_JOB} has a condition other than that drafts get lint alone, or waits for a job that may be skipped: what is skipped proves nothing")
     if values_of(oldest, "continue-on-error"):
         found.append(f"{OLDEST_JOB} may fail and pass all the same (continue-on-error)")
     if VERDICT not in jobs:
@@ -200,8 +237,18 @@ def problems_in(workflow, makefile, caller):
     found += [f"`{VERDICT}` waits for {name}, which is no Linux job" for name in needs if name not in parts]
     if not parts:
         found.append(f"`{VERDICT}` has nothing to wait for")
-    if not set(values_of(jobs[VERDICT], "if", 4)) & HARMLESS:
-        found.append(f"`{VERDICT}` is skipped when a job it waits for fails: it needs `if: ${{{{ !cancelled() }}}}`")
+    switched = sorted(name for name in parts if values_of(jobs[name], "if", 4) == [SWITCH])
+    if not set(values_of(jobs[VERDICT], "if", 4)) & ({SWITCHED_VERDICT} if switched else HARMLESS):
+        found.append(f"`{VERDICT}` is skipped when a job it waits for fails: it needs `if: ${{{{ !cancelled() }}}}`" if not switched else
+                     f"`{VERDICT}` must say `if: {SWITCHED_VERDICT}`: with lint alone it would ask jobs that did not run, or be skipped at the first failure")
+    if switched:
+        if ALWAYS in switched or ALWAYS not in parts:
+            found.append(f"{ALWAYS} must run whatever ci.yml asks for")
+        found += [f"{name} runs even when ci.yml asks for lint alone" for name in parts if name not in (*switched, ALWAYS)]
+        if not re.search(r"^      all:\n        type: boolean\n        default: true$", workflow, re.M):
+            found.append("whoever calls linux.yml and says nothing must get all of it: `all` needs `type: boolean` and `default: true`, and no more")
+    found += [f"the switch is used elsewhere than in a job's own condition, where nothing here can follow it: `{line.strip()}`" for line in workflow.split("\n")
+              if re.search(r"\binputs\s*[.\[]", line) and not line.strip().startswith("#") and line not in (f"    if: {SWITCH}", f"    if: {SWITCHED_VERDICT}")]
     told = [index for index, line in enumerate(jobs[VERDICT]) if line.strip() == "RESULTS: ${{ toJSON(needs) }}"]
     if not told:
         found.append(f"`{VERDICT}` is not told how the jobs it waits for ended (RESULTS: ${{{{ toJSON(needs) }}}})")
@@ -222,7 +269,10 @@ def problems_in(workflow, makefile, caller):
             if needed not in parts:
                 found.append(f"{name} waits for {needed}, which is no Linux job and may be skipped, and then so is {name}")
     for name in jobs:
-        for condition in values_of(jobs[name], "if"):
+        # The job's own may be the switch. A step's may not: the job would report success without it.
+        own, every = values_of(jobs[name], "if", 4), values_of(jobs[name], "if")
+        of_steps = every[len(own):] if every[:len(own)] == own else every
+        for condition in (*(each for each in own if each != (SWITCHED_VERDICT if name == VERDICT else SWITCH)), *of_steps):
             if condition not in HARMLESS:
                 found.append(f"{name} has a condition, `{condition}`: what is skipped proves nothing")
         if values_of(jobs[name], "continue-on-error"):
@@ -330,6 +380,14 @@ check: lint build test
 typecheck-mac:
 \t@./scripts/typecheck-mac/check.sh
 """
+# The same two with the one switch: linux-lint stands for linux-a there.
+DRAFTS = (GOOD.replace("linux-a", "linux-lint").replace("jobs:\n", "on:\n  workflow_call:\n    inputs:\n      all:\n        type: boolean\n        default: true\njobs:\n", 1)
+          .replace("    name: b\n", "    name: b\n    if: ${{ inputs.all }}\n").replace("    if: ${{ !cancelled() }}\n", "    if: ${{ inputs.all && !cancelled() }}\n"))
+CI_DRAFTS = ("on:\n  pull_request:\n    types: [opened, synchronize, reopened, ready_for_review]\n"
+             + CI.replace("linux.yml\n", "linux.yml\n    with:\n      all: " + WHEN_ALL + "\n").replace("${{ github.event_name == 'push' }}", WHOLE_WHEN)
+             .replace("    container: swift:0\n", "    container: swift:0\n    if: " + WHEN_ALL + "\n")
+             + "  tests-accounted-for:\n    if: ${{ !cancelled() && (" + NOT_A_DRAFT + ") }}\n    runs-on: ubuntu-latest\n")
+TYPES = "    types: [opened, synchronize, reopened, ready_for_review]\n"
 WHOLE = "      - run: ./scripts/ci-step.py --report test.jsonl test swift test\n"
 WITH_A_RECORD = "\t@rm -f $(TEST_REPORT)\n\tswift test --event-stream-output-path $(TEST_REPORT) --event-stream-version 0 $(TEST_ARGS)\n"
 TOOLING = "      - run: ./scripts/ci-step.py tooling python3 scripts/test-tooling.py\n"
@@ -374,6 +432,40 @@ TABLE = [
     ("tests-whole may fail and pass", "the whole may fail", GOOD, MAKEFILE, changed("    container: swift:1\n", "    container: swift:1\n    continue-on-error: true\n", CI)),
     ("does not hand on", "the record is handed on under another name", changed("name: tests-linux", "name: linux-tests"), MAKEFILE),
     ("does not hand on", "the record is not handed on", changed("          path: linux.tsv\n", "          path: other.tsv\n"), MAKEFILE),
+    (None, "drafts get lint alone", DRAFTS, MAKEFILE, CI_DRAFTS),
+    (None, "linux.yml has the switch and ci.yml does not use it", DRAFTS, MAKEFILE),
+    ("starts no run", "marking a draft ready starts nothing", DRAFTS, MAKEFILE, changed(", ready_for_review", "", CI_DRAFTS)),
+    ("starts no run", "no types at all: the usual three, and marking ready is none of them", DRAFTS, MAKEFILE, changed(TYPES, "", CI_DRAFTS)),
+    ("starts no run", "a push to a pull request starts nothing", DRAFTS, MAKEFILE, changed("synchronize, ", "", CI_DRAFTS)),
+    ("starts no run", "it is said of another event", DRAFTS, MAKEFILE, changed("  pull_request:\n" + TYPES, "  pull_request:\n  pull_request_review:\n" + TYPES, CI_DRAFTS)),
+    ("a filter stops runs", "only pull requests that touch some paths", DRAFTS, MAKEFILE, changed(TYPES, TYPES + "    paths: [Sources/**]\n", CI_DRAFTS)),
+    ("a filter stops runs", "all but some paths", DRAFTS, MAKEFILE, changed(TYPES, TYPES + "    paths-ignore:\n      - docs/**\n", CI_DRAFTS)),
+    ("a filter stops runs", "only pull requests into main", DRAFTS, MAKEFILE, changed(TYPES, "    branches: [main]\n" + TYPES, CI_DRAFTS)),
+    (None, "a remark among them", DRAFTS, MAKEFILE, changed(TYPES, "    # Why.\n" + TYPES, CI_DRAFTS)),
+    ("`tests-whole` must say", "the whole runs for a draft into main, and finds no record", DRAFTS, MAKEFILE,
+     changed(WHOLE_WHEN, "${{ github.event_name != 'pull_request' || github.base_ref == 'main' }}", CI_DRAFTS)),
+    ("`tests-whole` must say", "the whole never runs", DRAFTS, MAKEFILE, changed(WHOLE_WHEN, "${{ false }}", CI_DRAFTS)),
+    ("`tests-whole` must say", "the whole always runs", DRAFTS, MAKEFILE, changed("    if: " + WHOLE_WHEN + "\n", "", CI_DRAFTS)),
+    ("oldest-swift has a condition", "eleven minutes of the oldest Swift for every push to a draft", DRAFTS, MAKEFILE, changed("    container: swift:0\n    if: " + WHEN_ALL + "\n", "    container: swift:0\n", CI_DRAFTS)),
+    ("oldest-swift has a condition", "the oldest Swift only where work is integrated: not before trains are how work lands", DRAFTS, MAKEFILE,
+     changed("    container: swift:0\n    if: " + WHEN_ALL + "\n", "    container: swift:0\n    if: " + WHOLE_WHEN + "\n", CI_DRAFTS)),
+    ("tests-accounted-for runs for a draft too", "the account is asked for where Linux left no record", DRAFTS, MAKEFILE, changed(" && (" + NOT_A_DRAFT + ")", "", CI_DRAFTS)),
+    ("`type: boolean`", "the switch is a text, and \"false\" is true", changed("type: boolean", "type: string", DRAFTS), MAKEFILE, CI_DRAFTS),
+    ("used elsewhere", "a step that asks the switch itself, and leaves", changed(SMOKE, SMOKE + "        env:\n          ALL: ${{ inputs.all }}\n", DRAFTS), MAKEFILE, CI_DRAFTS),
+    ("used elsewhere", "a list of parts that is empty for a draft", changed("    name: b\n", "    name: b\n    strategy:\n      matrix:\n        part: ${{ fromJSON(inputs['all'] && '[1]' || '[]') }}\n", DRAFTS), MAKEFILE, CI_DRAFTS),
+    ("says more than what it uses", "ci.yml asks for lint alone on another ground", DRAFTS, MAKEFILE, changed(WHEN_ALL, "${{ github.actor != 'somebody' }}", CI_DRAFTS)),
+    ("says more than what it uses", "ci.yml never asks for all of it", DRAFTS, MAKEFILE, changed(WHEN_ALL, "false", CI_DRAFTS)),
+    ("says more than what it uses", "ci.yml hands over something more", DRAFTS, MAKEFILE, changed("all: " + WHEN_ALL + "\n", "all: " + WHEN_ALL + "\n      more: true\n", CI_DRAFTS)),
+    ("must say `if: ${{ inputs.all && !cancelled() }}`", "with the switch, the verdict runs on a draft too", changed("inputs.all && !cancelled()", "!cancelled()", DRAFTS), MAKEFILE, CI_DRAFTS),
+    ("must say `if: ${{ inputs.all && !cancelled() }}`", "with the switch, the verdict is skipped at the first failure",
+     changed("    if: ${{ inputs.all && !cancelled() }}\n", "    if: ${{ inputs.all }}\n", DRAFTS), MAKEFILE, CI_DRAFTS),
+    ("linux-lint must run whatever", "lint is switched off with the rest", changed("    name: a\n", "    name: a\n    if: ${{ inputs.all }}\n", DRAFTS), MAKEFILE, CI_DRAFTS),
+    ("linux-c runs even when", "a heavy job that drafts run too",
+     changed("needs: [linux-lint, linux-b]", "needs: [linux-lint, linux-b, linux-c]", DRAFTS) + "  linux-c:\n    name: c\n    steps:\n      - run: true\n", MAKEFILE, CI_DRAFTS),
+    ("linux-b has a condition", "a job switched by something else", changed("    if: ${{ inputs.all }}\n", "    if: ${{ inputs.some }}\n", DRAFTS), MAKEFILE, CI_DRAFTS),
+    ("linux-b has a condition", "a STEP on the switch, in a job that reports success", changed(SMOKE, "      - if: ${{ inputs.all }}\n  " + SMOKE.replace("- ", "  "), DRAFTS), MAKEFILE, CI_DRAFTS),
+    ("and `default: true`", "whoever says nothing gets lint alone", changed("default: true", "default: false", DRAFTS), MAKEFILE, CI_DRAFTS),
+    ("and `default: true`", "no default", changed("        default: true\n", "", DRAFTS), MAKEFILE, CI_DRAFTS),
     ("says more than what it uses", "ci.yml calls it on a condition", GOOD, MAKEFILE, changed("linux.yml\n", "linux.yml\n    if: ${{ false }}\n", CI)),
     ("says more than what it uses", "ci.yml calls it after a job that may be skipped", GOOD, MAKEFILE, changed("  linux:\n", "  linux:\n    needs: changes\n", CI)),
     (None, "a job on Linux that speaks for the Mac job", GOOD, MAKEFILE, CI + "  real-windows:\n    needs: macos\n    runs-on: ubuntu-latest\n    steps:\n      - run: false\n"),
