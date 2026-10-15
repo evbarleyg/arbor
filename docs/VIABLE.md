@@ -279,9 +279,11 @@ The five moves are those of the reference's public how-it-works page, watched an
 
 A move Arbor cannot make yet counts as failed, not as left out. So the gate waits for all four trains of the board's section 3.
 
+**"In the look that ships" means the look and the switches** (decided 2026-10-15). The gate reads films made as Arbor ships, on a Mac as it comes: every setting at its default, macOS's own tiling on. A move that does nothing there scores nothing. On the day this was written that was two and a half of the five: the rectangle and the pinch behind `pointerGestures`, and the drag to a side or the top edge, which is macOS's while its tiling is on (the board's 1.52 and 1.53). The judge keeps a second column, with everything switched on and with macOS's tiling off: it says how good a move will be on the day it ships, and it never passes a gate.
+
 Every measure is first tried on a metronome: a square of the camera's own that moves rightly once and wrongly in known ways. If the judge misreads it, that run's score is void. The judge builds nothing it judges.
 
-**What no hosted Mac can show:** every system material comes out there as one flat colour, so translucency and blur are not scored. What is scored is the flat look, which is what a person with Reduce Transparency sees; and nothing in Arbor may rest on the rest (`collab/QUESTIONS.md`, "materials").
+**Both looks are scored.** Hosted Macs come with Reduce Transparency switched on, which is why every system material came out there as one flat colour and this page once said that no hosted Mac can show glass. Switched off, they draw blur and translucency. So the look that ships is scored, and the flat look beside it, which is what a person with Reduce Transparency sees; nothing in Arbor may rest on translucency (`collab/QUESTIONS.md`, "materials"). In the look that ships, over the worst grounds (a saturated red, a saturated blue, white, black), measured on pictures: words a person must read to act are at least 4.5 to 1, secondary words at least 3 to 1, and nothing Arbor draws as text is under 3.
 
 What the product owner asks of the rubric, whatever else it holds. The first five are measured, from the sampler, the stage's own log of frames and the film; the rest are judged from the film by an agent that has the rubric and no stake in the answer.
 
