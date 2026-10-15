@@ -3,9 +3,12 @@ import AppKit
 // ArborTestWindows: opens plain, labelled windows for the end-to-end runner
 // to arrange, without touching anyone's real windows.
 //
-//   ArborTestWindows --count 3 [--min-size 2:700x500] [--max-size 1:300x200] [--regular] [--extras]
+//   ArborTestWindows --count 3 [--first 2] [--min-size 2:700x500] [--max-size 1:300x200] [--regular] [--window-menu] [--extras]
 //
+// --first n numbers the windows from n on, and with the number go the title, the colour and the place: so several processes can
+// open between them what one opens alone, each window another app's.
 // --regular makes it an ordinary app with a Dock icon, which ⌘Tab can switch to, and with menus: ⌘W closes the window that has the keyboard.
+// --window-menu gives it a Window menu as well, which macOS fills with its own tiling (Fill, Move & Resize): so what macOS alone does with these windows can be seen.
 // --extras also opens windows Arbor must leave alone: a utility panel, and a sheet on the first window.
 // SIGUSR1 brings the app to the front, as a click on its Dock icon would if it had one.
 // SIGUSR2 opens one more window, as ⌘N would.
@@ -17,9 +20,11 @@ import AppKit
 
 struct Options {
   var count = 3
+  var first = 1
   var minimumSizes: [Int: NSSize] = [:]
   var maximumSizes: [Int: NSSize] = [:]
   var regular = false
+  var windowMenu = false
   var extras = false
 }
 
@@ -31,6 +36,9 @@ func parseOptions() -> Options {
     switch flag {
     case "--count":
       if let value = arguments.first.flatMap(Int.init) { options.count = value }
+      if !arguments.isEmpty { arguments.removeFirst() }
+    case "--first":
+      if let value = arguments.first.flatMap(Int.init), value >= 1 { options.first = value }
       if !arguments.isEmpty { arguments.removeFirst() }
     case "--min-size", "--max-size":
       // index:WxH, 1-based
@@ -45,6 +53,8 @@ func parseOptions() -> Options {
       }
     case "--regular":
       options.regular = true
+    case "--window-menu":
+      options.windowMenu = true
     case "--extras":
       options.extras = true
     default:
@@ -73,7 +83,7 @@ func mainMenu() -> NSMenu {
 func openWindows(_ options: Options) -> [NSWindow] {
   let colours: [NSColor] = [.systemRed, .systemBlue, .systemGreen, .systemOrange, .systemPurple, .systemTeal]
   var windows: [NSWindow] = []
-  for index in 1...max(options.count, 1) {
+  for index in options.first...(options.first + max(options.count, 1) - 1) {
     let window = NSWindow(
       contentRect: NSRect(x: 120 + index * 50, y: 160 + index * 40, width: 480, height: 320),
       styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
@@ -145,6 +155,12 @@ MainActor.assumeIsolated {
   if options.regular, let file = mainMenu().items.last {
     file.menu?.removeItem(file)
     application.mainMenu?.addItem(file)
+  }
+  if options.windowMenu {
+    let window = NSMenuItem()
+    window.submenu = NSMenu(title: "Window")
+    application.mainMenu?.addItem(window)
+    application.windowsMenu = window.submenu
   }
   let windows = openWindows(options)
   // Not reported below: the runner arranges only the standard windows.

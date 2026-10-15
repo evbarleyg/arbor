@@ -1,13 +1,16 @@
 // breath: gives several apps' windows new frames through Accessibility in one of three ways, and says how long the display
 // showed something in between. For scripts/mac-shell/probe-breath.sh. Arbor is not involved: this asks macOS what is possible.
 //
-//   breath <way> <rounds> <pid>…
+//   breath <way> <rounds | grid | pile> <pid>…
 //     one-by-one    as Arbor does today: a window at a time, each answer waited for (size, position, size, then the frame read back)
 //     side-by-side  a thread to an app; within an app a window at a time; the caller waits for all of them
 //     no-wait       every size and position is sent with a time limit of a millisecond, so that nobody is waited for (a call that
 //                   times out is still delivered); then the limit is put back and every frame is read, which waits for its app
+//     one-by-one-in-two, side-by-side-in-two    the same with two calls where two will do: what grows is moved and then grows, what
+//                   shrinks shrinks and is then moved, so that no state lies outside both the old frame and the new
 //
-// Each round takes the windows from a pile to a grid or back. Meanwhile a thread of its own asks the window server for these windows'
+// Each round takes the windows from a pile to a grid or back. `grid` or `pile` for a number: that one act from wherever the windows
+// are, for a film. Meanwhile a thread of its own asks the window server for these windows'
 // bounds as fast as it answers. A line a round: how long the calls took, when the first and the last change showed, in how many
 // sixtieths of a second something changed ("pieces"), and how many windows ended where they were sent.
 //
@@ -71,11 +74,30 @@ func frame(of element: AXUIElement) -> CGRect? {
 
 func now() -> Double { ProcessInfo.processInfo.systemUptime }
 
-/// As `AXWindowSystem.setFrame` does it for a window that changes its size (`FramePlan.full`).
+nonisolated(unsafe) var inTwo = false
+
+/// As `AXWindowSystem.setFrame` does it for a window that changes its size (`FramePlan.full`), or in two calls.
 func move(_ window: Window, to target: CGRect) {
-  set(window.element, size: target.size)
-  set(window.element, position: target.origin)
-  set(window.element, size: target.size)
+  if inTwo, let now = frame(of: window.element) {
+    let (grows, shrinks) = (
+      target.width >= now.width && target.height >= now.height, target.width <= now.width && target.height <= now.height
+    )
+    if grows {
+      set(window.element, position: target.origin)
+      set(window.element, size: target.size)
+    } else if shrinks {
+      set(window.element, size: target.size)
+      set(window.element, position: target.origin)
+    } else {
+      set(window.element, size: CGSize(width: min(now.width, target.width), height: min(now.height, target.height)))
+      set(window.element, position: target.origin)
+      set(window.element, size: target.size)
+    }
+  } else {
+    set(window.element, size: target.size)
+    set(window.element, position: target.origin)
+    set(window.element, size: target.size)
+  }
   _ = frame(of: window.element)
 }
 
@@ -132,11 +154,14 @@ final class Watcher: @unchecked Sendable {
 // MARK: The rounds
 
 let arguments = Array(CommandLine.arguments.dropFirst())
-guard arguments.count >= 3, let rounds = Int(arguments[1]), rounds > 0 else {
-  fail("usage: breath <one-by-one|side-by-side|no-wait> <rounds> <pid>…")
+guard arguments.count >= 3, let rounds = ["grid": 1, "pile": 1][arguments[1]] ?? Int(arguments[1]), rounds > 0 else {
+  fail("usage: breath <one-by-one|side-by-side|no-wait|one-by-one-in-two|side-by-side-in-two> <rounds|grid|pile> <pid>…")
 }
-let way = arguments[0]
-guard ["one-by-one", "side-by-side", "no-wait"].contains(way) else { fail("no such way: \(way)") }
+let oneAct = Int(arguments[1]) == nil ? arguments[1] : nil
+inTwo = arguments[0].hasSuffix("-in-two")
+let name = arguments[0]
+let way = inTwo ? String(name.dropLast("-in-two".count)) : name
+guard ["one-by-one", "side-by-side", "no-wait"].contains(way), !(inTwo && way == "no-wait") else { fail("no such way: \(name)") }
 guard AXIsProcessTrusted() else { fail("no Accessibility permission") }
 let all = arguments.dropFirst(2).compactMap { pid_t($0) }.flatMap { windows(of: $0) }
 guard all.count > 1 else { fail("found \(all.count) windows") }
@@ -160,12 +185,15 @@ let pile = all.indices.map { index in
 }
 let apps = Dictionary(grouping: all.indices, by: { all[$0].pid }).values.map { $0.sorted() }.sorted { $0[0] < $1[0] }
 
-for (index, window) in all.enumerated() { move(window, to: pile[index]) }
-Thread.sleep(forTimeInterval: 0.5)
-print("\(way): \(all.count) windows of \(apps.count) apps, cells of \(Int(cell.width))×\(Int(cell.height))")
+if oneAct == nil {
+  for (index, window) in all.enumerated() { move(window, to: pile[index]) }
+  Thread.sleep(forTimeInterval: 0.5)
+}
+print("\(name): \(all.count) windows of \(apps.count) apps, cells of \(Int(cell.width))×\(Int(cell.height))")
 
 for round in 1...rounds {
-  let targets = round % 2 == 1 ? grid : pile
+  let toTheGrid = oneAct.map { $0 == "grid" } ?? (round % 2 == 1)
+  let targets = toTheGrid ? grid : pile
   let watcher = Watcher(all.map(\.id))
   watcher.start()
   Thread.sleep(forTimeInterval: 0.1)
@@ -203,7 +231,7 @@ for round in 1...rounds {
   let pieces = Set(after.map { Int(($0.at - began) * 60) }).count
   let span = after.isEmpty ? "-" : String(format: "%.1f", (after.last!.at - after.first!.at) * 1000)
   print(
-    "  round \(round) to the \(round % 2 == 1 ? "grid" : "pile"): answered \(ms(answered)) ms"
+    "  round \(round) to the \(toTheGrid ? "grid" : "pile"): answered \(ms(answered)) ms"
       + (way == "no-wait" ? " (sent \(ms(sent)))" : "")
       + ", first change \(after.first.map { ms($0.at) } ?? "-"), last \(after.last.map { ms($0.at) } ?? "-"), span \(span) ms, "
       + "\(pieces) pieces, \(after.count) changes, \(arrived) of \(all.count) arrived, \(looks) looks")
