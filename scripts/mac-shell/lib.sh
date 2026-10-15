@@ -1448,6 +1448,8 @@ ARBOR_ID=com.evbarleyg.arbor
 # safe anywhere: a name; nothing is done with it here
 ARBOR_TCC="/Library/Application Support/com.apple.TCC/TCC.db"
 ARBOR_ANNOUNCE="$ARBOR_APPS/announce-accessibility"
+# FOR A TRIAL ON A PLAIN BRANCH, NEVER TO LAND: on unless somebody says otherwise, so that the run can use the trunk's workflow and what it has kept.
+ARBOR_AS_A_PERSON=${ARBOR_AS_A_PERSON:-1}
 arbor_as_a_person() { [ "${ARBOR_AS_A_PERSON:-}" = 1 ] && [ -z "${ARBOR_REHEARSAL:-}" ] && on_throwaway_mac; }
 arbor_tcc() {
   arbor_may "write to the privacy database" || return 1
