@@ -335,6 +335,31 @@ import Testing
     #expect(!h.system.raiseLog.contains(f), "Mail is being typed in")
   }
 
+  /// The view is on two docked windows, so both floating windows are out of view. Their user switches to one of them. The view steps out, both
+  /// come back, the other one is too wide for the Desktop, hangs over a docked window and is raised for that: it used to end in front of
+  /// the window that was switched to.
+  @Test func notOverAFloatingWindowThatHasTheKeyboardEither() {
+    let h = Harness()
+    let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 700, height: 500))
+    let wide = h.system.open(
+      app: "Preview", pid: 12, frame: CGRect(x: 500, y: 38, width: 800, height: 689), minimumSize: CGSize(width: 800, height: 400))
+    let wanted = h.system.open(app: "Finder", pid: 13, frame: CGRect(x: 600, y: 261, width: 700, height: 453))
+    h.start()
+    h.run("dock \(a.rawValue) left")
+    h.run("zoom \(a.rawValue)")
+    let b = h.system.open(app: "Terminal", pid: 14, frame: CGRect(x: 279, y: 190, width: 600, height: 354))
+    h.run("dock \(b.rawValue) right")
+    #expect(h.controller.parked.isSuperset(of: [wide, wanted]), "\(h.ascii())")
+    h.system.userFocus(wanted)
+    #expect(h.controller.parked.isDisjoint(with: [wide, wanted]), "\(h.ascii())")
+    #expect(h.frame(wide)!.overlaps(h.frame(b)!.insetBy(dx: 2, dy: 2)) && h.frame(wide)!.overlaps(h.frame(wanted)!), "\(h.ascii())")
+    let order = h.system.windowsFrontToBack()
+    #expect(order.first == wanted, "the window switched to is in front: \(order)")
+    // And the wide one is still in front of the docked window it hangs over, which is what it was raised for.
+    #expect(order.firstIndex(of: wide)! < order.firstIndex(of: b)!)
+    #expect(h.system.focusedWindow() == wanted)
+  }
+
   @Test func notWhileHoldingStill() {
     let (h, _, _, c, f) = withAWindowTooWideForTheDesktop { a, _, _ in a }
     h.run("hold still")

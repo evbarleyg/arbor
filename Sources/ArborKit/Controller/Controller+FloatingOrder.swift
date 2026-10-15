@@ -7,7 +7,8 @@ import CoreGraphics
 ///
 /// Arbor brings it to the front then, and only then: when the layout itself has just moved it there. The keyboard stays
 /// where it is. And not over the window that has the keyboard, which is the one just clicked, docked or typed in:
-/// covering part of that would be worse than being covered by it.
+/// covering part of that would be worse than being covered by it. If that one floats as well, it may be on its way back into view
+/// in the same layout, so where it will lie cannot be asked yet: it goes back in front of what was raised.
 extension Controller {
   /// Called by `placeFloatingWindows` for a window it has just moved to `frame`.
   func raiseIfLeftHangingOverDockedWindows(_ window: WindowID, at frame: CGRect, in layout: Layout) {
@@ -25,5 +26,9 @@ extension Controller {
     }
     system.raise(window)
     Log.debug("raised \(window), which was left hanging over docked windows")
+    // The window its user switched to stays in front of every other.
+    if let focused = system.focusedWindow(), focused != window, workspaces.values.contains(where: { $0.isFloating(focused) }) {
+      system.raise(focused)
+    }
   }
 }
