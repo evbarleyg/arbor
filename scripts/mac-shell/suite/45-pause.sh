@@ -15,6 +15,10 @@ no_overlays() {
 }
 
 arbor_start 3 ARBOR_NO_HOTKEYS=0
+# Where each window is before Arbor touches it, and how large: what a pause gives back.
+own1=$(real_frame_of "$W1")
+own2=$(real_frame_of "$W2")
+own3=$(real_frame_of "$W3")
 ctl dock "$W1" left
 ctl dock "$W2" right
 ctl dock "$W3" beside "$W2" bottom
@@ -53,6 +57,13 @@ check "status says paused" eventually paused
 check "the first window is in view" eventually in_view "$W1"
 check "the second window is in view" eventually in_view "$W2"
 check "the third window is in view" eventually in_view "$W3"
+# As after a quit: not in the shape of a slot, and the framed one no longer over the whole screen.
+# shellcheck disable=SC2086
+check "the first window is where it was before it was docked, in its own size" eventually frame_is "$W1" $own1
+# shellcheck disable=SC2086
+check "and so is the second" eventually frame_is "$W2" $own2
+# shellcheck disable=SC2086
+check "and the framed one" eventually frame_is "$W3" $own3
 check "none of Arbor's own windows is on screen" eventually no_overlays
 check "only the shortcut that ends the pause is still registered" eventually logged "registered 1 shortcuts"
 check "a command is refused" fails ctl dock "$W1" right
@@ -60,8 +71,10 @@ check "a command is refused" fails ctl dock "$W1" right
 claim "while paused Arbor reacts to nothing: no shortcut, no drag"
 proves A40
 second=$(real_frame_of "$W2")
+keys=$(events_of "$W3" key)
 key ctrl+opt+space
 check "⌃⌥Space does not reach Arbor" stays fails ran show-all
+check "it goes to the window that was framed, which still has the keyboard" eventually received "$W3" key -gt "$keys"
 # shellcheck disable=SC2086
 drag_window "$W1" $left_edge --no-release
 check "a drag to the left screen edge shows no preview" stays no_overlays
@@ -106,6 +119,29 @@ sleep 4
 check "it has resumed" eventually running
 settled
 
+claim "close a docked window and open another while paused: Arbor leaves both alone, and resumes without the one and with the other floating"
+proves A40
+open_window N1 size=300x200 title=Short lived
+ctl dock "$N1" beside "$W1" bottom
+check "the new window is docked below the first" eventually above "$W1" "$N1"
+take "x y" desktop_point
+click_window "$W1"
+key ctrl+opt+escape
+check "Arbor is paused" eventually paused
+tw close "$N1"
+forget_window "$N1"
+open_window N2 size=300x200 "at=$((x - 150)),$((y - 100))" title=Opened meanwhile
+check "the window opened meanwhile stays where its app put it" stays corner_is "$N2" "$((x - 150))" "$((y - 100))"
+key ctrl+opt+escape
+check "Arbor runs again" eventually running
+check "Arbor no longer knows the closed window" eventually fails is known "$N1"
+check "its neighbour has the whole column" eventually at_edge "$W1" bottom
+check "three are docked, as before" count docked 3
+check "the window opened meanwhile floats" eventually is floating "$N2"
+settled
+tw close "$N2"
+forget_window "$N2"
+
 claim "⌃⌥⇧F floats every window, from wherever the camera is"
 proves T17
 ctl zoom "$W1"
@@ -132,4 +168,8 @@ check "it kept its own width" test "${w%.*}" -le 300
 check "it is centred across" about "$((${x%.*} + ${w%.*} / 2))" "$((sx + sw / 2))"
 check "it is centred down" about "$((${y%.*} + ${h%.*} / 2))" "$((sy + sh / 2))"
 check "Arbor leaves it there" stays frame_is "$W1" "$x" "$y" "$w" "$h"
+width=$(width_of "$W2")
+ctl resize "$W2" left 60
+check "its neighbour is resized by command" eventually wider_than "$W2" "$((width + 40))"
+check "it does not twitch when a neighbour is resized" stays frame_is "$W1" "$x" "$y" "$w" "$h"
 arbor_stop

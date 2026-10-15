@@ -14,6 +14,7 @@ arbor_settings '{"bindings": {"ctrl+opt+cmd+h": "dock left", "ctrl+opt+d": null,
 check "reload-settings succeeds" ctl reload-settings
 check "⌃⌥⌘H runs dock left" pressed ctrl+opt+cmd+h dock left
 check "the focused window docked at the left edge" eventually at_edge "$W1" left
+check "the menu shows the new keys beside Left" says "Left  ⌃⌥⌘H" arborctl menu
 settled
 
 claim "remove a default shortcut with null: Arbor no longer takes the key"
@@ -24,11 +25,14 @@ key_to "$W1" ctrl+opt+d
 check "⌃⌥D does not reach Arbor" stays fails ran desktop
 check "the app with the keyboard gets the key instead" eventually received "$W1" key -gt "$keys"
 check "the camera stayed" camera_on root
+check "the menu no longer shows ⌃⌥D" fails says "⌃⌥D" arborctl menu
 
 claim "give a default shortcut another command"
 proves A03
 check "⌃⌥Space runs desktop now" pressed ctrl+opt+space desktop
 check "the docked window left the screen" eventually out_of_view "$W1"
+check "the menu shows ⌃⌥Space beside Show the Desktop" says "Show the Desktop  ⌃⌥Space" arborctl menu
+check "and no longer beside Show Everything" fails says "Show Everything  ⌃⌥Space" arborctl menu
 ctl show-all
 
 claim "arborctl bindings lists the shortcuts in effect"

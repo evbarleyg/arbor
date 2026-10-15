@@ -127,3 +127,6 @@ claim "arborctl without Arbor says so and exits with 2"
 proves A02
 check "the exit code is 2" exits_with 2 arborctl status
 check "it says that Arbor is not running" says "Arbor is not running" arborctl status
+check "and how to start it" says "start it with \`open -a Arbor\`" arborctl status
+check "help needs no running Arbor" says "Arbor commands" arborctl help
+check "and exits with 0" exits_with 0 arborctl help
