@@ -30,7 +30,8 @@ of it, **the right answer is that nothing differs.** What differs is one of thre
 
 Each is a failure at the weight of a lost window. **Each difference is counted once**, at the act where it first shows: by how much a window differs is remembered for the whole walk, so one that stays
 where Arbor put it, leaves the screen and comes back, or coincides for an act (both playings fill the screen) is not found again; one that Arbor moves again, otherwise, is. What differs
-before the walk begins is the scene's and nobody's doing. An act that could not be performed in one of the playings (a press that did not take hold, which happens without Arbor too) is listed and not
+before Arbor is started for the first time is the scene's or the Mac's, and nobody's doing: it is listed under THE TWO DID NOT BEGIN ALIKE and not counted. **Such a pair is a poor one**: what follows from it later (a window
+held elsewhere at an edge, an act that finds nothing to click on) is still counted, and what Arbor does by just that much is not seen. An act that could not be performed in one of the playings (a press that did not take hold, which happens without Arbor too) is listed and not
 judged, and what it leaves behind is nobody's doing either. A window that Arbor moves and puts back within one act is not seen here: that is `jolts.py`'s to find.
 
 **Where a walk asks something of Arbor** (`--stranger --docked`): an act of a kind that is Arbor's alone (`ASKED` below), which the control cannot play. The windows it is about, and those its `moves=` says it may
@@ -252,6 +253,12 @@ def judged(with_arbor, without, within=2.0):
     if quit_at is not None and all(act.slug.startswith(("dock-icon-", "input-")) for act in with_arbor[quit_at + 1:]):
         with_arbor = with_arbor[:quit_at + 1] + [act for act in with_arbor[quit_at + 1:] if act.slug.startswith("input-")]
     matcher = difflib.SequenceMatcher(a=[act.slug for act in with_arbor], b=[act.slug for act in without], autojunk=False)
+    # Before it is started for the first time Arbor has done nothing: what differs by then is how the two playings found the Mac. It is said, so that nobody takes what follows from it for
+    # Arbor's: a window that lies elsewhere is held elsewhere at an edge, covers what another act wants to click on, and comes forward in another turn.
+    # A playing whose first such act is a Quit had Arbor from the outset.
+    first = next((act for act in with_arbor if act.kind == "quit-and-start"), None)
+    first = first if first is not None and first.slug == "launch" else None
+    started, otherwise = first is None, []
 
     def find(judgement, act, window, sentence, playing="with"):
         findings.append({"judgement": judgement, "playing": playing, "act": act.number, "slug": act.slug, "window": window, "words": sentence})
@@ -317,29 +324,53 @@ def judged(with_arbor, without, within=2.0):
         alive.clear()
         alive.update(old for old in excused if old == front or old in inverted)
 
-    last = None
+    def parted(here, there):
+        """In what the two screens differ, in words."""
+        told = [f"{label}: with Arbor {words(a) if a else 'not on the screen'}, without {words(b) if b else 'not on the screen'}"
+                for label, a, b in ((label, here.frames.get(label), there.frames.get(label)) for label in sorted(set(here.frames) | set(there.frames)))
+                if a is None or b is None or max(abs(x - y) for x, y in zip(a, b)) > within]
+        if here.front != there.front or here.app != there.app:
+            told.append(f"in front: with Arbor {here.front} of {here.app}, without {there.front} of {there.app}")
+        both = [label for label in here.pile if label in there.pile]
+        place = {label: index for index, label in enumerate(there.pile)}
+        if turns := sum(place[over] > place[under] for index, over in enumerate(both) for under in both[index + 1:]):
+            told.append(f"{turns} pairs of windows lie the other way round")
+        return told
+
+    def starts(here):
+        nonlocal started, otherwise
+        if here is first:
+            started, otherwise = True, parted(before, last) if before is not None and last is not None else []
+
+    last = before = None
     for tag, a1, a2, b1, b2 in matcher.get_opcodes():
         if tag == "equal":
             for here, there in zip(with_arbor[a1:a2], without[b1:b2]):
+                starts(here)
                 performed = here.judged and there.judged
                 if not performed and not here.setup:
                     undone.append({"act": here.number, "slug": here.slug, "playing": "with" if not here.judged else "without"})
                 # The scene is nobody's doing. A round of input is no act, and where it finds the windows Arbor put them all the same: after the last Quit it is the one look there is.
                 # Whom a round clicks on depends on who lies where when it begins. Begun over what an earlier round left, which the control has not had and which still shows, it ends as it does
                 # by the rounds' doing, if either pressed on anything. That is so in four walks of five: there nobody looks at who is in front after the last Quit, only at Quit itself.
-                look(here, there, performed and (here.instrument or not here.setup), set() if here.instrument else here.names | there.names,
+                look(here, there, performed and started and (here.instrument or not here.setup), set() if here.instrument else here.names | there.names,
                      pile=not (here.instrument and alive and (here.presses or there.presses)))
-                last = there
+                last, before = there, here
         else:
             for here in with_arbor[a1:a2]:
                 # The Mac without Arbor as it stands at that point of the journey. Before its first act there is nothing to hold Arbor against: what differs from the end of that act is remembered.
                 there, begun = (last, True) if last is not None else (without[0] if without else None, False)
                 if there is None:
                     continue
-                if here.kind == "quit-and-start" or here.instrument:
+                starts(here)
+                before = here
+                if not started:
+                    look(here, there, False, set())
+                elif here.kind == "quit-and-start" or here.instrument:
                     # Arbor's own start and Quit, and the round of input after the start, are no part of the person's journey. What differs after them nobody asked for.
-                    # A round of input clicks on windows: which is in front after it is the round's doing, unless the control has just had such a round itself.
-                    look(here, there, begun, set(), pile=not here.instrument or there.instrument)
+                    # A round of input clicks on windows: which is in front after it is the round's doing, if it pressed on any. So if the control has just had a round itself: a round presses
+                    # only on title bars of which a free point shows, so the second over one pile does not click as the first did. (A control that plays every round has no such act.)
+                    look(here, there, begun, set(), pile=not (here.instrument and here.presses))
                 elif here.setup:
                     look(here, there, False, set())
                 elif here.kind in ASKED:
@@ -349,7 +380,7 @@ def judged(with_arbor, without, within=2.0):
                 else:
                     find("IN FRONT", here, None, "played with Arbor alone: without it the act did not apply")
             for there in without[b1:b2]:
-                if not there.setup:
+                if not there.setup and started:
                     find("IN FRONT", there, None, "played without Arbor alone: with it the act did not apply", playing="without")
                 last = there
 
@@ -360,7 +391,7 @@ def judged(with_arbor, without, within=2.0):
                 "seconds": round(sum(act.rest - act.began for act in counted) / 1000, 1),
                 "waiting": round(sum(max(0, act.rest - act.hand) for act in counted if act.hand is not None) / 1000, 1), "asked": len(mine) - len(counted)}
 
-    return findings, {"with": cost(with_arbor), "without": cost(without), "not_performed": undone}
+    return findings, {"with": cost(with_arbor), "without": cost(without), "not_performed": undone, "began_otherwise": otherwise}
 
 
 def unfit(with_arbor, without):
@@ -382,6 +413,9 @@ def verdict(findings, costs, everything):
             lines.append(f"    {finding['act']}{' (of the playing without)' if finding['playing'] == 'without' else ''} {finding['slug']}: " + (f"{finding['window']}: " if finding["window"] else "") + finding["words"])
         if not everything and len(mine) > 6:
             lines.append(f"    … and {len(mine) - 6} more (--all)")
+    if costs["began_otherwise"]:
+        lines.append("THE TWO DID NOT BEGIN ALIKE. Before Arbor was started, so nobody's doing and not counted; what follows from it is among the above all the same, and what hides behind it is not seen:")
+        lines += [f"    {sentence}" for sentence in costs["began_otherwise"]]
     for act in costs["not_performed"]:
         lines.append(f"not performed {act['playing']} Arbor, so not judged: {act['act']} {act['slug']}")
     for side in ("with", "without"):
@@ -467,7 +501,7 @@ def self_test():
     costs = judge("what a journey costs", start + step(1, "key", "2100 K 1", "2200 K 1", "2300 B down 1 1", "2300 B up 1 1"), other + step(1, "key", "2100 K 1"))
     # Until the screen was at rest: the last key at 2200 and the press at 2300, not the script's `end` at 3000.
     if costs != {"with": {"acts": 1, "keys": 2, "presses": 1, "seconds": 0.3, "waiting": 0.0, "asked": 0}, "without": {"acts": 1, "keys": 1, "presses": 0, "seconds": 0.1, "waiting": 0.0, "asked": 0},
-                 "not_performed": []}:
+                 "not_performed": [], "began_otherwise": []}:
         failures.append(f"what a journey costs: {costs}")
 
     def waits(what, lines, seconds, waiting):
@@ -517,19 +551,77 @@ def self_test():
           + step(3, "input-after", "2500 W 2 20 0 0 400 300 200 Two", end="act=instrument round=after front=1"), other + step(1, "look") + step(2, "input-after", end="act=instrument round=after front=71"),
           ("UNASKED", 3, "two"))
     judge("a round of input that the control has not leaves in front what it clicked last, and a window it finds elsewhere Arbor moved all the same",
-          start + step(1, "look") + step(2, "input-last", "2500 Z 2,1", "2500 W 1 10 0 0 400 400 300 One", end="act=instrument round=last front=2") + step(3, "quit", end="act=quit-and-start"),
+          start + step(1, "look") + step(2, "input-last", "2400 B down 10 10", "2500 Z 2,1", "2500 W 1 10 0 0 400 400 300 One", end="act=instrument round=last front=2") + step(3, "quit", end="act=quit-and-start"),
           other + step(1, "look"), ("UNASKED", 2, "one"))
     before, vorher = step(1, "input-before", end="act=instrument round=before front=1"), step(1, "input-before", end="act=instrument round=before front=71")
-    judge("after a round of its own the control stands as a round leaves it: another window in front after the round with Arbor is Arbor's doing",
-          start + before + step(2, "launch", end="act=quit-and-start") + step(3, "input-started", "2500 Z 2,1", end="act=instrument round=started front=1") + step(4, "look"), other + vorher + step(2, "look"),
-          ("IN FRONT", 3, "two"))
-    judge("so are two windows the other way round below it", start + ["1000 W 3 30 0 100 400 400 300 Three", "1000 Z 1,2,3", "1000 M label 3 three"] + before + step(2, "launch", end="act=quit-and-start")
-          + step(3, "input-started", "2500 Z 1,3,2", end="act=instrument round=started front=1"), other + ["5000 W 73 30 0 100 400 400 300 Three", "5000 Z 71,72,73", "5000 M label 73 three"] + vorher,
-          ("IN FRONT", 3, "three"))
+    judge("a round is not the same twice: after a round of its own the control does not stand as a second round would leave it",
+          start + before + step(2, "launch", end="act=quit-and-start") + step(3, "input-started", "2400 B down 10 10", "2500 Z 2,1", end="act=instrument round=started front=1") + step(4, "look"), other + vorher + step(2, "look"))
+    judge("nor as to two windows below the one in front", start + ["1000 W 3 30 0 100 400 400 300 Three", "1000 Z 1,2,3", "1000 M label 3 three"] + before + step(2, "launch", end="act=quit-and-start")
+          + step(3, "input-started", "2400 B down 10 10", "2500 Z 1,3,2", end="act=instrument round=started front=1"), other + ["5000 W 73 30 0 100 400 400 300 Three", "5000 Z 71,72,73", "5000 M label 73 three"] + vorher)
+    started = step(3, "input-started", "2400 B down 10 10", "2500 Z 2,1", end="act=instrument round=started front=2")
+    judge("where the control plays that round too, the two begin alike, and another window in front at its end is Arbor's doing",
+          start + before + step(2, "launch", end="act=quit-and-start") + started, other + vorher + step(2, "input-started", "6400 B down 10 10", end="act=instrument round=started front=71"), ("IN FRONT", 3, "two"))
+    judge("before it is started Arbor has done nothing: how the two playings found the Mac is nobody's doing",
+          start + step(1, "input-before", "2400 B down 10 10", "2500 Z 2,1", "2500 W 1 10 0 0 400 400 300 One", end="act=instrument round=before front=2") + step(2, "launch", end="act=quit-and-start") + step(3, "look"),
+          other + step(1, "input-before", "6400 B down 10 10", end="act=instrument round=before front=71") + step(2, "look"))
+    judge("from its start on it has", start + before + step(2, "launch", "2500 W 1 10 0 0 400 400 300 One", end="act=quit-and-start") + step(3, "look"), other + vorher + step(2, "look"), ("UNASKED", 2, "one"))
+    launch = step(2, "launch", end="act=quit-and-start")
+    judge("nor has it at an act before its start that is no round", start + step(1, "look", "2500 W 1 10 0 0 400 400 300 One") + launch + step(3, "look-again"), other + step(1, "look") + step(2, "look-again"))
+    judge("nor at one that only one playing has", start + step(1, "drag", "2500 Z 2,1", end="act=drag") + launch + step(3, "look"), other + step(1, "look"))
+    judge("whichever", start + before + launch + step(3, "look"), other + step(1, "drag", end="act=drag") + step(2, "input-before", end="act=instrument round=before front=71") + step(3, "look"))
+    judge("one of the control's alone where Arbor has its start comes after it: the walk's first act may be the one that did not apply", start + before + launch + step(3, "look"),
+          other + vorher + step(2, "drag", end="act=drag") + step(3, "look"), ("IN FRONT", 2, None))
+    judge("it is the first start that counts", start + before + launch + step(3, "quit", end="act=quit-and-start") + step(4, "look", "2500 W 1 10 0 0 400 400 300 One") + step(5, "launch", end="act=quit-and-start"),
+          other + vorher + step(2, "look"), ("UNASKED", 4, "one"))
+    judge("and where it stands in the walk, not what the acts are numbered", start + step(7, "input-before", end="act=instrument round=before front=1") + step(8, "launch", end="act=quit-and-start")
+          + step(3, "look", "2500 W 1 10 0 0 400 400 300 One"), other + vorher + step(2, "look"), ("UNASKED", 3, "one"))
+    judge("the start that turns the pile right after the round that both have had", start + before + step(2, "launch", "2500 Z 2,1", end="act=quit-and-start"), other + vorher, ("IN FRONT", 2, "two"))
+    judge("a round of Arbor's alone that pressed on nothing has brought nobody forward", start + before + launch + step(3, "input-started", "2500 Z 2,1", end="act=instrument round=started front=2"),
+          other + vorher, ("IN FRONT", 3, "two"))
+    costs = judge("how the two found the Mac is said", start + step(1, "input-before", "2500 Z 2,1", "2500 W 1 10 0 0 400 400 300 One", end="act=instrument round=before front=2") + launch + step(3, "look"),
+                  other + vorher + step(2, "look"))
+    if costs["began_otherwise"] != ["one: with Arbor 0,400 400×300, without 0,0 400×300", "in front: with Arbor two of None, without one of None", "1 pairs of windows lie the other way round"]:
+        failures.append(f"how the two found the Mac is said: {costs['began_otherwise']}")
+    if "THE TWO DID NOT BEGIN ALIKE" not in "\n".join(verdict([], costs, False)):
+        failures.append("how the two found the Mac is said: not in the verdict")
+    if "    one: with Arbor 0,400 400×300, without 0,0 400×300" not in verdict([], costs, False):
+        failures.append("how the two found the Mac is said: the headline alone")
+
+    def began(what, with_arbor, without, told, *wanted):
+        costs = judge(what, with_arbor, without, *wanted)
+        if costs["began_otherwise"] != told:
+            failures.append(f"{what}: {costs['began_otherwise']}, not {told}")
+
+    moved = step(3, "look", "2500 W 1 10 0 0 400 400 300 One")
+    began("what Arbor does after its start is no part of it, nor at Quit", start + before + launch + moved + step(4, "quit", end="act=quit-and-start"), other + vorher + step(2, "look"), [], ("UNASKED", 3, "one"))
+    began("nor at a second start", start + before + launch + moved + step(4, "quit", end="act=quit-and-start") + step(5, "launch", end="act=quit-and-start"), other + vorher + step(2, "look"), [],
+          ("UNASKED", 3, "one"))
+    began("a playing that begins with a Quit had Arbor from the outset", start + step(1, "look", "2500 W 1 10 0 0 400 400 300 One") + step(2, "quit", end="act=quit-and-start") + step(3, "launch", end="act=quit-and-start"),
+          other + step(1, "look"), [], ("UNASKED", 1, "one"))
+    began("a start that both have is a start", start + before + launch + moved, other + vorher + step(2, "launch", end="act=quit-and-start") + step(3, "look"), [], ("UNASKED", 3, "one"))
+    began("it is the screen right before the start that counts: what the two agree on again by then is over", start + step(1, "open", "2500 W 1 10 0 0 400 400 300 One", end="act=open-close setup=1")
+          + step(2, "input-before", "2500 W 1 10 0 0 0 400 300 One", end="act=instrument round=before front=1") + step(3, "launch", end="act=quit-and-start"),
+          other + step(1, "open", end="act=open-close setup=1") + step(2, "input-before", end="act=instrument round=before front=71"), [])
+    began("an act of the scene that the playing with Arbor alone has, too", start + before + step(2, "tiling-acts", "2500 W 1 10 0 0 400 400 300 One", end="act=drag setup=1") + step(3, "launch", end="act=quit-and-start"),
+          other + vorher, ["one: with Arbor 0,400 400×300, without 0,0 400×300"])
+    began("two points are no difference there either", start + step(1, "input-before", "2500 W 1 10 0 2 0 400 300 One", end="act=instrument round=before front=1") + launch, other + vorher, [])
+    began("a window that one playing alone has", start + step(1, "input-before", "2500 G 2", end="act=instrument round=before front=1") + launch, other + vorher, ["two: with Arbor not on the screen, without 500,0 400×300"])
+    began("whichever", start + before + launch, other + step(1, "input-before", "6500 G 72", end="act=instrument round=before front=71"), ["two: with Arbor 500,0 400×300, without not on the screen"])
+    began("another app in front with the same window", start + ["1000 A 10 app.one"] + step(1, "input-before", "2500 A 20 app.two", end="act=instrument round=before front=1") + launch,
+          other + ["5000 A 10 app.one"] + vorher, ["in front: with Arbor one of app.two, without one of app.one"])
+    judge("a round of Arbor's alone that pressed on nothing, after one of the control's that did",  start + step(1, "input-before", "2400 B down 10 10", end="act=instrument round=before front=1") + launch
+          + step(3, "input-started", "2500 Z 2,1", end="act=instrument round=started front=2"), other + step(1, "input-before", "6400 B down 10 10", end="act=instrument round=before front=71"), ("IN FRONT", 3, "two"))
+    judge("what the control alone tries again while a scene is set is no act, after the start either", start + before + launch + step(3, "look"),
+          other + vorher + step(2, "tiling-acts", end="act=drag setup=1") + step(3, "look"))
+    costs = judge("what the start does is no part of that", start + before + step(2, "launch", "2500 W 1 10 0 0 400 400 300 One", end="act=quit-and-start"), other + vorher, ("UNASKED", 2, "one"))
+    if costs["began_otherwise"] or "BEGIN ALIKE" in "\n".join(verdict([], costs, False)):
+        failures.append(f"what the start does is no part of how the two found the Mac: {costs['began_otherwise']}")
     judge("what the start brings to the front", start + step(1, "look") + step(2, "launch", "2500 Z 2,1", end="act=quit-and-start") + step(3, "look-again"), other + step(1, "look") + step(2, "look-again"),
           ("IN FRONT", 2, "two"))
     judge("what Quit brings to the front", start + step(1, "look") + step(2, "quit", "2500 Z 2,1", end="act=quit-and-start"), other + step(1, "look"), ("IN FRONT", 2, "two"))
-    rounds = step(2, "input-last", "2500 Z 2,1", end="act=instrument round=last front=2")
+    judge("chosen from the menu with a press, too: a Quit is no round", start + step(1, "look") + step(2, "quit", "2400 B down 900 10", "2500 Z 2,1", end="act=quit-and-start"), other + step(1, "look"),
+          ("IN FRONT", 2, "two"))
+    rounds = step(2, "input-last", "2400 B down 10 10", "2500 Z 2,1", end="act=instrument round=last front=2")
     judge("what a round left is excused for as long as it lasts", start + step(1, "look") + rounds + step(3, "look-again") + step(4, "and-again"), other + step(1, "look") + step(2, "look-again") + step(3, "and-again"))
     both = (start + ["1000 W 3 30 0 100 400 400 300 Three", "1000 Z 1,2,3", "1000 M label 3 three"] + step(1, "look"), other + ["5000 W 73 30 0 100 400 400 300 Three", "5000 Z 71,72,73", "5000 M label 73 three"] + step(1, "look"))
     judge("a round that both have, begun over what a round of Arbor's alone left, ends as it does by the rounds' doing",
@@ -559,17 +651,17 @@ def self_test():
     again = step(3, "click-one", "2500 Z 1,2", end="act=switch front=1") + step(4, "leave-alone", "2500 Z 2,1") + step(5, "click-one", "2500 Z 1,2", end="act=switch front=1") + step(6, "leave-alone", "2500 Z 2,1")
     wieder = step(2, "click-one", end="act=switch front=71") + step(3, "leave-alone") + step(4, "click-one", end="act=switch front=71") + step(5, "leave-alone")
     judge("and from then on it is counted once, like any other", start + step(1, "look") + rounds + again, other + step(1, "look") + wieder, ("IN FRONT", 4, "two"))
-    judge("a round excuses what it left, not what was there before it", start + step(1, "look", "2500 Z 2,1") + step(2, "input-last", end="act=instrument round=last front=2") + again, other + step(1, "look") + wieder,
+    judge("a round excuses what it left, not what was there before it", start + step(1, "look", "2500 Z 2,1") + step(2, "input-last", "2400 B down 10 10", end="act=instrument round=last front=2") + again, other + step(1, "look") + wieder,
           ("IN FRONT", 1, "two"))
-    judge("nor another app that was in front before it", start + ["1000 A 10 app.one"] + step(1, "look", "2500 A 20 app.two") + step(2, "input-last", end="act=instrument round=last front=1")
+    judge("nor another app that was in front before it", start + ["1000 A 10 app.one"] + step(1, "look", "2500 A 20 app.two") + step(2, "input-last", "2400 B down 10 10", end="act=instrument round=last front=1")
           + step(3, "click-one", "2500 A 10 app.one", end="act=switch front=1") + step(4, "leave-alone", "2500 A 20 app.two"),
           other + ["5000 A 10 app.one"] + step(1, "look") + step(2, "click-one", end="act=switch front=71") + step(3, "leave-alone"), ("IN FRONT", 1, "one"))
-    judge("a round after the scene, which is no round, is excused as any", start + step(1, "look-around", end="act=idle setup=1") + step(2, "input-started", "2500 Z 2,1", end="act=instrument round=started front=2"),
+    judge("a round after the scene, which is no round, is excused as any", start + step(1, "look-around", end="act=idle setup=1") + step(2, "input-started", "2400 B down 10 10", "2500 Z 2,1", end="act=instrument round=started front=2"),
           other + step(1, "look-around", end="act=idle setup=1"))
     judge("what the scene left is nobody's doing for good", start + step(1, "look") + step(2, "close-welcome", "2500 Z 2,1", end="act=open-close setup=1") + step(3, "click-one", "2500 Z 1,2", end="act=switch front=1")
           + step(4, "leave-alone", "2500 Z 2,1"), other + step(1, "look") + step(2, "click-one", end="act=switch front=71") + step(3, "leave-alone"))
     judge("of two windows that are not both to be seen nobody can say that they agree", start + ["1000 W 3 30 0 100 400 400 300 Three", "1000 Z 1,2,3", "1000 M label 3 three"] + step(1, "look")
-          + step(2, "input-last", "2500 Z 3,2,1", end="act=instrument round=last front=3") + step(3, "full-screen", "2500 G 1", "2500 G 2", "2500 Z 3", end="act=macos-own leaves=any")
+          + step(2, "input-last", "2400 B down 10 10", "2500 Z 3,2,1", end="act=instrument round=last front=3") + step(3, "full-screen", "2500 G 1", "2500 G 2", "2500 Z 3", end="act=macos-own leaves=any")
           + step(4, "leave-full-screen", "2500 W 1 10 0 0 0 400 300 One", "2500 W 2 20 0 500 0 400 300 Two", "2500 Z 3,2,1", end="act=macos-own leaves=any comes=3 front=3"),
           other + ["5000 W 73 30 0 100 400 400 300 Three", "5000 Z 71,72,73", "5000 M label 73 three"] + step(1, "look") + step(2, "full-screen", "2500 G 71", "2500 G 72", "2500 Z 73", end="act=macos-own leaves=any")
           + step(3, "leave-full-screen", "2500 W 71 10 0 0 0 400 300 One", "2500 W 72 20 0 500 0 400 300 Two", "2500 Z 73,71,72", end="act=macos-own leaves=any comes=73 front=73"))
@@ -579,11 +671,11 @@ def self_test():
     judge("whichever of the two", start + step(1, "look") + rounds + step(3, "hide-two", "2500 G 2", "2500 Z 1", end="act=open-close leaves=2")
           + step(4, "show-two", "2500 W 2 20 0 500 0 400 300 Two", "2500 Z 2,1", end="act=open-close comes=2"),
           other + step(1, "look") + step(2, "hide-two", "2500 G 72", "2500 Z 71", end="act=open-close leaves=72") + step(3, "show-two", "2500 W 72 20 0 500 0 400 300 Two", "2500 Z 71,72", end="act=open-close comes=72"))
-    judge("nor another app in front over the same pile", start + ["1000 A 10 app.one"] + step(1, "look") + step(2, "input-last", "2500 A 20 app.two", end="act=instrument round=last front=1")
+    judge("nor another app in front over the same pile", start + ["1000 A 10 app.one"] + step(1, "look") + step(2, "input-last", "2400 B down 10 10", "2500 A 20 app.two", end="act=instrument round=last front=1")
           + step(3, "look-again") + step(4, "click-one", "2500 A 10 app.one", end="act=switch front=1") + step(5, "leave-alone", "2500 A 20 app.two"),
           other + ["5000 A 10 app.one"] + step(1, "look") + step(2, "look-again") + step(3, "click-one", end="act=switch front=71") + step(4, "leave-alone"), ("IN FRONT", 5, "one"))
     judge("nor a pair below the front", start + ["1000 W 3 30 0 100 400 400 300 Three", "1000 Z 1,2,3", "1000 M label 3 three"] + step(1, "look")
-          + step(2, "input-last", "2500 Z 1,3,2", end="act=instrument round=last front=1") + step(3, "click", "2500 Z 1,2,3", end="act=switch front=1") + step(4, "leave-alone", "2500 Z 1,3,2"),
+          + step(2, "input-last", "2400 B down 10 10", "2500 Z 1,3,2", end="act=instrument round=last front=1") + step(3, "click", "2500 Z 1,2,3", end="act=switch front=1") + step(4, "leave-alone", "2500 Z 1,3,2"),
           other + ["5000 W 73 30 0 100 400 400 300 Three", "5000 Z 71,72,73", "5000 M label 73 three"] + step(1, "look") + step(2, "click", end="act=switch front=71") + step(3, "leave-alone"),
           ("IN FRONT", 4, "three"))
 
@@ -673,7 +765,7 @@ def self_test():
     judge("what is asked later, against the control as it stands by then", start + step(1, "look") + step(2, "drag", "2500 W 2 20 0 600 0 400 300 Two", end="act=drag drags=2")
           + step(3, "dock-left", "2500 W 1 10 0 0 0 500 800 One", end="act=dock-key moves=,1, front=1") + step(4, "look-again"),
           other + step(1, "look") + step(2, "drag", "2500 W 72 20 0 600 0 400 300 Two", end="act=drag drags=72") + step(3, "look-again"))
-    judge("a round of input forgets nothing of what was asked", start + step(1, "look") + docks + step(3, "input-last", end="act=instrument round=last front=1") + step(4, "look-again"), plain)
+    judge("a round of input forgets nothing of what was asked", start + step(1, "look") + docks + step(3, "input-last", "2400 B down 10 10", end="act=instrument round=last front=1") + step(4, "look-again"), plain)
     judge("what is asked while the scene is set is the scene's", start + step(1, "look") + step(2, "dock-left", "2500 W 1 10 0 0 0 500 800 One", "2500 W 2 20 0 500 0 500 300 Two", end="act=dock-key setup=1 moves=,1, front=1")
           + step(3, "click-one", end="act=switch front=1"), other + step(1, "look") + step(2, "click-one", end="act=switch front=71"))
     asks = start + step(1, "look", "2100 K 1") + step(2, "dock-left", "2100 K 3", "2200 B down 1 1", "2200 B up 1 1", "2500 W 1 10 0 0 0 500 800 One", "2500 W 2 20 0 500 0 500 300 Two", end="act=dock-key moves=,1, front=1")

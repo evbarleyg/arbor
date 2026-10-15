@@ -4013,6 +4013,23 @@
    "certainty": "suspected"
   },
   {
+   "id": "an-app-opens-its-next-window-at-the-frame-the-last-one-was-closed-at",
+   "kind": "second-actor",
+   "layer": "machine",
+   "expected": "An app that is quit and started again on the same Mac opens its window where it opened it the time before, so that three playings of one walk begin alike.",
+   "happened": "Notes was closed with ⌘W while it was framed, at 12,43 1576×767, and Safari while it was docked, at 12,43 782×767. Arbor quit, both apps were quit, and the next script started them anew without Arbor: Notes opened at 12,43 1576×767 and Safari at 12,43 782×767. In the two playings before they had opened at 300,105 1000×660 and at 138,31 1324×791. Notes now covered the wallpaper, so that the click on it was left out for want of a bare spot, and the two playings without Arbor parted in frames from their first act. After the round of input before the walk Notes was in front, not Preview; at every act that all three playings have, the app in front was the same. What Arbor gives back at Quit it can give only to windows that are still there.",
+   "found": "A walk with two windows docked, played without Arbor, with it and without it again on one hosted Mac, macOS 26.6.2, on 2026-10-15.",
+   "modelled": "no",
+   "knobs": [],
+   "guards": [],
+   "copes": "scripts/mac-shell/who-comes-forward-docked.sh notes every window's frame as the walk begins, and at its end opens what ⌘W closed again and gives it that frame, before the apps are quit. That cure has not been played. scripts/mac-shell/walk-diff.py says in what the two playings differed before Arbor was started, and charges nobody with it. A person who closes a docked window finds the app's next one in the shape of the slot: nothing in Arbor sees to that.",
+   "hurt": 4,
+   "sources": [
+    "scripts/mac-shell/who-comes-forward-docked.sh",
+    "scripts/mac-shell/walk-diff.py"
+   ]
+  },
+  {
    "id": "an-app-settles-its-size-after-the-mouse-is-up",
    "kind": "late-or-partial-answer",
    "layer": "at the seam",
