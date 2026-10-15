@@ -1,0 +1,8 @@
+Made the code-signing certificate "Arbor Local Signing" in /private/tmp/arbor-f13.4MHnm0/home/Library/Keychains/arbor-f13.keychain-db
+  SHA-1 E19EDB82AFD2E9144B14C0C9349963FC0510DB59, valid until Oct 12 11:29:09 2036 GMT
+/var/folders/n6/hn37q6pj7sj_9dmqqc2113800000gn/T/tmp.r9twUhczWl/probe: replacing existing signature
+make-signing-identity.sh: codesign cannot sign with the new certificate.
+  It had no answer in 60 seconds: macOS asks in a dialog, and nobody is at a terminal here. Run this from a terminal and
+  answer with Always Allow.
+  The certificate and its key were taken out of the keychain again: builds are signed ad hoc as before.
+  A dialog of macOS's may still be on screen. It asks about a key that is gone: close it with Deny.

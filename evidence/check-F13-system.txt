@@ -1,0 +1,45 @@
+# check-F13-system 2026-10-15T11:29Z on macOS 26.6.2, commit 1d3d905
+
+== the Mac
+
+== a clone to build in
+
+== 1  the identity, in a keychain on the search list
+
+== a keychain of its own
+  ✔ the account's own search list and default keychain are as they were
+  ✘ codesign could use the key at once, without a dialog
+  ✘ the identity is found through the search list, as sign.sh looks for it
+
+== 2  make install, as a person runs it
+  ✘ it found the identity by itself
+  ✔ it starts Arbor and prints its status
+  ✔ Arbor runs from ~/Applications
+  ✔ to this shell, as to a person's, arborctl is the link in ~/.local/bin
+  ✔ its watchdog runs beside it
+  ✔ and is found by where it runs from, as the clean-up and every "nothing is left running" look for it
+  ✔ the running app reports its version
+
+== 3  does the permission survive a rebuild?
+  ✔ started by macOS and never granted anything, Arbor waits for permission
+  ✘ with the grant, this build runs
+  ✔ what is installed now is different code
+  ✘ THE NEXT BUILD, SIGNED WITH THE SAME IDENTITY, RUNS WITHOUT BEING GRANTED ANYTHING
+  ✔ an ad-hoc build does not inherit the grant: the stale-signature case
+  ✔ make install explains that case
+  ✘ tccutil reset removes the entry
+
+== 4  launch at login
+  ✔ off to begin with
+  ✔ launch-at-login on, from ~/Applications
+  ✔ the binary agrees, without asking the running app
+  ✔ the entry survives a new build copied over the old one
+
+== 5  the menu
+  ✔ make uninstall removed the login item
+  ✔ asked Arbor to quit
+  ✔ removed the app
+  ✔ nothing of it is left running
+  ✔ settings are still there
+
+== 6  a downloaded copy
