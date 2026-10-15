@@ -1,0 +1,183 @@
+# mac-shell: scripts/mac-shell/probe-an-app-that-is-ended.sh at c52e4a3, macOS 26.6.2, 2026-10-15T13:27Z
+
+== TextEdit, ended by kill
+session 1: Arbor pid 27121, test windows 177 (pid 27107,26764)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 174 left
+docked w174 at the left edge
+> dock 177 right
+docked w177 at the right edge
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          349 43 326 655
+  w174 12 43 325 655        docked
+  w177 687 43 325 655       docked focused
+> trace on an-app-ended-kill
+recording /tmp/arbor-shell.LqSl4c/home/traces/2026-10-15-132754-an-app-ended-kill.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+  kill: the process is gone; Arbor forgot the window after: 0.1 s
+  kill: the neighbour was at 687 43 325 655 and is at 518 43 494 655
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          12 43 494 655
+  w177 518 43 494 655       docked focused
+> show-all
+  kill: after Show Everything Arbor does not know it
+> trace off
+trace saved: /tmp/arbor-shell.LqSl4c/home/traces/2026-10-15-132754-an-app-ended-kill.jsonl: 35 lines, trace off
+shot: mac-shell/ended-by-kill.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+
+== TextEdit, ended by term
+session 2: Arbor pid 27753, test windows 193 (pid 27731,27674)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 190 left
+docked w190 at the left edge
+> dock 193 right
+docked w193 at the right edge
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          349 43 326 655
+  w190 12 43 325 655        docked
+  w193 687 43 325 655       docked focused
+> trace on an-app-ended-term
+recording /tmp/arbor-shell.aSo2cO/home/traces/2026-10-15-132810-an-app-ended-term.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+  term: the process is gone; Arbor forgot the window after: 0.1 s
+  term: the neighbour was at 687 43 325 655 and is at 518 43 494 655
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          12 43 494 655
+  w193 518 43 494 655       docked focused
+> show-all
+  term: after Show Everything Arbor does not know it
+> trace off
+trace saved: /tmp/arbor-shell.aSo2cO/home/traces/2026-10-15-132810-an-app-ended-term.jsonl: 35 lines, trace off
+shot: mac-shell/ended-by-term.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+
+== TextEdit, ended by quit
+session 3: Arbor pid 28430, test windows 209 (pid 28368,28296)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 206 left
+docked w206 at the left edge
+> dock 209 right
+docked w209 at the right edge
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          349 43 326 655
+  w206 12 43 325 655        docked
+  w209 687 43 325 655       docked focused
+> trace on an-app-ended-quit
+recording /tmp/arbor-shell.0LpJgV/home/traces/2026-10-15-132825-an-app-ended-quit.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+  quit: the process is gone; Arbor forgot the window after: 1.5 s
+  quit: the neighbour was at 687 43 325 655 and is at 518 43 494 655
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          12 43 494 655
+  w209 518 43 494 655       docked focused
+> show-all
+  quit: after Show Everything Arbor does not know it
+> trace off
+trace saved: /tmp/arbor-shell.0LpJgV/home/traces/2026-10-15-132825-an-app-ended-quit.jsonl: 37 lines, trace off
+shot: mac-shell/ended-by-quit.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+
+== what Arbor was told
+an-app-ended-kill.jsonl
+  +  0.06  {"t": 0.0718, "event": "destroyed", "id": 174}
+  +  0.06  {"t": 0.0722, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0, 
+  +  0.06  {"t": 0.0732, "read": "stackedWindows", "result": [{"frame": [[687, 43], [325, 655]], "id": 177}]}
+  +  0.07  {"t": 0.0786, "call": "setFrame", "frame": [518, 43, 494, 655], "id": 177, "result": [518, 43, 494, 655], "took": 0.0051}
+  +  0.07  {"t": 0.0792, "call": "isMouseButtonDown", "result": false}
+  +  0.07  {"t": 0.0797, "call": "focusedWindow", "result": 177}
+  +  0.07  {"t": 0.082, "raw": "AXMoved w177"}
+  +  0.07  {"t": 0.0848, "event": "changed", "user": false, "window": {"app": "ArborTestWindows", "bundle": "dev.arbor.testwindows", "frame": [518, 43, 494, 655], "id": 177, "pid": 
+  +  0.07  {"t": 0.0852, "raw": "AXResized w177"}
+  +  0.07  {"t": 0.0853, "event": "changed", "user": false, "window": {"app": "ArborTestWindows", "bundle": "dev.arbor.testwindows", "frame": [518, 43, 494, 655], "id": 177, "pid": 
+  +  0.09  {"t": 0.0979, "call": "focusedWindow", "result": 177}
+  +  0.20  {"t": 0.2116, "call": "focusedWindow", "result": 177}
+  +  0.25  {"t": 0.2583, "command": "show-all", "from": "script"}
+  +  0.25  {"t": 0.2611, "read": "inputActivity", "result": {"keyPresses": 42, "keyboardIdle": 19.441629208, "pointerIdle": 8.254035125}}
+  +  0.25  {"t": 0.2622, "call": "focusedWindow", "result": 177}
+  +  0.25  {"t": 0.2627, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0, 
+  +  0.25  {"t": 0.2635, "call": "isMouseButtonDown", "result": false}
+  +  0.25  {"t": 0.2638, "call": "focusedWindow", "result": 177}
+  +  0.25  {"t": 0.2646, "call": "focusedWindow", "result": 177}
+  +  0.25  {"t": 0.2649, "done": "show-all", "message": "showing everything", "ok": true}
+  +  0.76  {"t": 0.7673, "timer": "save"}
+  +  0.76  {"t": 0.7689, "event": "settingsFileMayHaveChanged"}
+  +  0.76  {"t": 0.7698, "event": "settingsFileMayHaveChanged"}
+  +  1.06  {"t": 1.0747, "timer": "settings-file"}
+  +  1.35  {"t": 1.3565, "call": "focusedWindow", "result": 177}
+  +  1.38  {"t": 1.3945, "end": "trace off", "lines": 34, "thinned": 0}
+an-app-ended-quit.jsonl
+  +  1.39  {"t": 1.4046, "event": "destroyed", "id": 206}
+  +  1.39  {"t": 1.405, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0, 3
+  +  1.40  {"t": 1.406, "read": "stackedWindows", "result": [{"frame": [[687, 43], [325, 655]], "id": 209}]}
+  +  1.40  {"t": 1.4112, "call": "setFrame", "frame": [518, 43, 494, 655], "id": 209, "result": [518, 43, 494, 655], "took": 0.005}
+  +  1.40  {"t": 1.412, "call": "isMouseButtonDown", "result": false}
+  +  1.40  {"t": 1.4133, "call": "focusedWindow", "result": 209}
+  +  1.41  {"t": 1.4169, "raw": "AXMoved w209"}
+  +  1.42  {"t": 1.4314, "event": "changed", "user": false, "window": {"app": "ArborTestWindows", "bundle": "dev.arbor.testwindows", "frame": [518, 43, 494, 655], "id": 209, "pid": 
+  +  1.42  {"t": 1.4319, "raw": "AXResized w209"}
+  +  1.43  {"t": 1.4372, "event": "changed", "user": false, "window": {"app": "ArborTestWindows", "bundle": "dev.arbor.testwindows", "frame": [518, 43, 494, 655], "id": 209, "pid": 
+  +  1.43  {"t": 1.4409, "call": "focusedWindow", "result": 209}
+  +  1.58  {"t": 1.5911, "call": "focusedWindow", "result": 209}
+  +  1.63  {"t": 1.6441, "command": "show-all", "from": "script"}
+  +  1.63  {"t": 1.6452, "read": "inputActivity", "result": {"keyPresses": 42, "keyboardIdle": 51.369031083, "pointerIdle": 40.181439875}}
+  +  1.64  {"t": 1.6457, "call": "focusedWindow", "result": 209}
+  +  1.64  {"t": 1.6458, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0, 
+  +  1.64  {"t": 1.6462, "call": "isMouseButtonDown", "result": false}
+  +  1.64  {"t": 1.6464, "call": "focusedWindow", "result": 209}
+  +  1.64  {"t": 1.6472, "call": "focusedWindow", "result": 209}
+  +  1.64  {"t": 1.6475, "done": "show-all", "message": "showing everything", "ok": true}
+  +  2.15  {"t": 2.1588, "timer": "save"}
+  +  2.15  {"t": 2.1598, "event": "settingsFileMayHaveChanged"}
+  +  2.15  {"t": 2.1606, "event": "settingsFileMayHaveChanged"}
+  +  2.46  {"t": 2.4668, "timer": "settings-file"}
+  +  2.68  {"t": 2.6862, "call": "focusedWindow", "result": 209}
+  +  2.72  {"t": 2.7321, "end": "trace off", "lines": 36, "thinned": 0}
+an-app-ended-term.jsonl
+  +  0.06  {"t": 0.065, "event": "destroyed", "id": 190}
+  +  0.06  {"t": 0.0659, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0, 
+  +  0.06  {"t": 0.0673, "read": "stackedWindows", "result": [{"frame": [[687, 43], [325, 655]], "id": 193}]}
+  +  0.06  {"t": 0.072, "call": "setFrame", "frame": [518, 43, 494, 655], "id": 193, "result": [518, 43, 494, 655], "took": 0.0044}
+  +  0.06  {"t": 0.0724, "call": "isMouseButtonDown", "result": false}
+  +  0.07  {"t": 0.0731, "call": "focusedWindow", "result": 193}
+  +  0.07  {"t": 0.0761, "raw": "AXMoved w193"}
+  +  0.07  {"t": 0.0773, "event": "changed", "user": false, "window": {"app": "ArborTestWindows", "bundle": "dev.arbor.testwindows", "frame": [518, 43, 494, 655], "id": 193, "pid": 
+  +  0.07  {"t": 0.0776, "raw": "AXResized w193"}
+  +  0.07  {"t": 0.0777, "event": "changed", "user": false, "window": {"app": "ArborTestWindows", "bundle": "dev.arbor.testwindows", "frame": [518, 43, 494, 655], "id": 193, "pid": 
+  +  0.07  {"t": 0.0824, "call": "focusedWindow", "result": 193}
+  +  0.19  {"t": 0.1977, "call": "focusedWindow", "result": 193}
+  +  0.24  {"t": 0.2514, "command": "show-all", "from": "script"}
+  +  0.25  {"t": 0.2533, "read": "inputActivity", "result": {"keyPresses": 42, "keyboardIdle": 34.957688375, "pointerIdle": 23.77010175}}
+  +  0.25  {"t": 0.2543, "call": "focusedWindow", "result": 193}
+  +  0.25  {"t": 0.2545, "call": "displays", "result": [{"frame": [0, 0, 1024, 768], "id": "07230EFA-7A8D-4E37-845C-19CC8737EEF5", "main": true, "name": "display-1", "visible": [0, 
+  +  0.25  {"t": 0.2552, "call": "isMouseButtonDown", "result": false}
+  +  0.25  {"t": 0.2556, "call": "focusedWindow", "result": 193}
+  +  0.25  {"t": 0.2567, "call": "focusedWindow", "result": 193}
+  +  0.25  {"t": 0.257, "done": "show-all", "message": "showing everything", "ok": true}
+  +  0.76  {"t": 0.772, "timer": "save"}
+  +  0.77  {"t": 0.7737, "event": "settingsFileMayHaveChanged"}
+  +  0.77  {"t": 0.7745, "event": "settingsFileMayHaveChanged"}
+  +  1.07  {"t": 1.0761, "timer": "settings-file"}
+  +  1.30  {"t": 1.3104, "call": "focusedWindow", "result": 193}
+  +  1.35  {"t": 1.3543, "end": "trace off", "lines": 34, "thinned": 0}
+
+6 passed, 0 failed
+exit code 0

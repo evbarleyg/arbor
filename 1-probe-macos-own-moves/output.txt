@@ -1,0 +1,475 @@
+# mac-shell: scripts/mac-shell/probe-macos-own-moves.sh at c52e4a3, macOS 26.6.2, 2026-10-15T13:20Z
+built Arbor, the pointer tool and the app bundles in 10s
+the sampler writes mac-shell/samples.log (pid 7090), the witness mac-shell/witness.log (pid 7099)
+macOS 26.6.2; tiling by keys: 0 settings written
+
+== session: a test window
+session 1: Arbor pid 7160, test windows 29 30 (pid 7120)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+
+== test: Arbor paused: macOS by itself
+> pause
+paused until `resume`; windows are back in view, in their own sizes
+no free point of w29's title bar shows
+> click 224 234 --mods opt
+  opt-green: 170 220 480 348 -> 170 220 480 348 (quiet:1016)
+> click 224 234 --mods opt
+  opt-green-again: 170 220 480 348 -> 170 220 480 348 (quiet:1051)
+ArborTestWindows has no Window menu
+  menu-zoom: could not be played
+ArborTestWindows has no Window menu
+  menu-fill: could not be played
+ArborTestWindows has no Window menu
+  menu-left: could not be played
+ArborTestWindows has no Window menu
+  menu-return: could not be played
+> key fn+ctrl+left
+  key-left: 170 220 480 348 -> 170 220 480 348 (quiet:928)
+> key fn+ctrl+right
+  key-right: 170 220 480 348 -> 170 220 480 348 (quiet:956)
+> key fn+ctrl+up
+  key-up: 170 220 480 348 -> 17 359 465 337 (quiet:1095)
+> key fn+ctrl+down
+  key-down: 17 359 465 337 -> 170 220 480 348 (quiet:872)
+> key fn+ctrl+f
+  key-f: 170 220 480 348 -> 170 220 480 348 (quiet:1017)
+> key fn+ctrl+c
+  key-c: 170 220 480 348 -> 170 220 480 348 (quiet:857)
+> key fn+ctrl+r
+  key-r: 170 220 480 348 -> 170 220 480 348 (quiet:873)
+shot: mac-shell/test-paused-at-the-end.png
+> resume
+resumed
+
+== test: docked, Arbor running: what it does today
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  Desktop          349 43 326 653
+  w29 12 43 325 653        docked
+  w30 687 43 325 653       docked focused
+> trace on macos-own-moves-test
+recording /tmp/arbor-shell.goq2Lg/home/traces/2026-10-15-132146-macos-own-moves-test.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> click 180 55
+> move 180 175
+> click 66 57 --mods opt
+  opt-green: 12 43 325 653 -> 0 31 1024 677 (quiet:1157); Arbor says: docked letBe 
+> show-all
+> click 66 57 --mods opt
+  opt-green-again: 12 43 325 653 -> 0 31 1024 677 (quiet:1303); Arbor says: docked letBe 
+> show-all
+ArborTestWindows has no Window menu
+  menu-zoom: could not be played
+> show-all
+ArborTestWindows has no Window menu
+  menu-fill: could not be played
+> show-all
+ArborTestWindows has no Window menu
+  menu-left: could not be played
+> show-all
+ArborTestWindows has no Window menu
+  menu-return: could not be played
+> show-all
+> key fn+ctrl+left
+  key-left: 12 43 325 653 -> 12 43 325 653 (quiet:883); Arbor says: docked 
+> show-all
+> key fn+ctrl+right
+  key-right: 12 43 325 653 -> 12 43 325 653 (quiet:909); Arbor says: docked 
+> show-all
+> key fn+ctrl+up
+  key-up: 12 43 325 653 -> 38 83 306 614 (quiet:890); Arbor says: docked 
+> show-all
+> key fn+ctrl+down
+  key-down: 38 83 306 614 -> 12 43 325 653 (quiet:824); Arbor says: docked 
+> show-all
+> key fn+ctrl+f
+  key-f: 12 43 325 653 -> 12 43 325 653 (quiet:935); Arbor says: docked 
+> show-all
+> key fn+ctrl+c
+  key-c: 12 43 325 653 -> 12 43 325 653 (quiet:1074); Arbor says: docked 
+> show-all
+> key fn+ctrl+r
+  key-r: 12 43 325 653 -> 12 43 325 653 (quiet:883); Arbor says: docked 
+> show-all
+> trace off
+trace saved: /tmp/arbor-shell.goq2Lg/home/traces/2026-10-15-132146-macos-own-moves-test.jsonl: 448 lines, trace off
+shot: mac-shell/test-running-at-the-end.png
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  Desktop          349 43 326 653
+  w29 12 43 325 653        docked focused
+  w30 687 43 325 653       docked
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+== session: TextEdit
+session 2: Arbor pid 12290, test windows 68 (pid 12267,12186)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+
+== TextEdit: Arbor paused: macOS by itself
+> pause
+paused until `resume`; windows are back in view, in their own sizes
+> click 387 68
+> move 387 188
+> click 141 72 --mods opt
+  opt-green: 79 56 603 505 -> 0 31 1024 677 (quiet:1142)
+> click 62 47 --mods opt
+  opt-green-again: 0 31 1024 677 -> 79 56 603 505 (quiet:1143)
+> click 350 15
+> click 441 72
+  menu-zoom: 79 56 603 505 -> 0 31 1024 677 (quiet:1500)
+> click 350 15
+> click 441 96
+  menu-fill: 0 31 1024 677 -> 0 31 1024 677 (quiet:1081)
+> click 350 15
+> move 441 155
+> click 708 179
+  menu-left: 0 31 1024 677 -> 0 31 513 677 (quiet:1846)
+> click 350 15
+> move 441 155
+> click 708 572
+  menu-return: 0 31 513 677 -> 0 31 513 677 (quiet:1140)
+> key fn+ctrl+left
+  key-left: 0 31 513 677 -> 0 31 513 677 (quiet:954)
+> key fn+ctrl+right
+  key-right: 0 31 513 677 -> 0 31 513 677 (quiet:1019)
+> key fn+ctrl+up
+  key-up: 0 31 513 677 -> 17 93 456 602 (quiet:966)
+> key fn+ctrl+down
+  key-down: 17 93 456 602 -> 0 31 513 677 (quiet:1284)
+> key fn+ctrl+f
+  key-f: 0 31 513 677 -> 0 31 513 677 (quiet:945)
+> key fn+ctrl+c
+  key-c: 0 31 513 677 -> 0 31 513 677 (quiet:778)
+> key fn+ctrl+r
+  key-r: 0 31 513 677 -> 0 31 513 677 (quiet:917)
+shot: mac-shell/TextEdit-paused-at-the-end.png
+> resume
+resumed
+
+== TextEdit: docked, Arbor running: what it does today
+> dock 65 left
+docked w65 at the left edge
+> dock 68 right
+docked w68 at the right edge
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  Desktop          349 43 326 653
+  w65 12 43 325 653        docked
+  w68 687 43 325 653       docked focused
+> trace on macos-own-moves-TextEdit
+recording /tmp/arbor-shell.toLmME/home/traces/2026-10-15-132353-macos-own-moves-TextEdit.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> click 180 55
+> move 180 175
+> click 74 59 --mods opt
+  opt-green: 12 43 325 653 -> 0 31 1024 677 (quiet:1086); Arbor says: docked letBe 
+> show-all
+> click 74 59 --mods opt
+  opt-green-again: 12 43 325 653 -> 0 31 1024 677 (quiet:1281); Arbor says: docked letBe 
+> show-all
+> click 350 15
+> click 448 72
+  menu-zoom: 12 43 325 653 -> 0 31 1024 677 (quiet:1527); Arbor says: docked letBe 
+> show-all
+> click 350 15
+> click 441 96
+  menu-fill: 12 43 325 653 -> 0 31 1024 677 (quiet:1842); Arbor says: docked letBe 
+> show-all
+> click 350 15
+> move 441 155
+> click 708 179
+  menu-left: 12 43 325 653 -> 0 31 512 677 (quiet:2013); Arbor says: floating 
+> dock 65 left
+> show-all
+> click 350 15
+> move 441 155
+> click 708 572
+  menu-return: 12 43 325 653 -> 12 43 325 653 (quiet:1158); Arbor says: docked 
+> show-all
+> key fn+ctrl+left
+  key-left: 12 43 325 653 -> 12 43 325 653 (quiet:893); Arbor says: docked 
+> show-all
+> key fn+ctrl+right
+  key-right: 12 43 325 653 -> 12 43 325 653 (quiet:1019); Arbor says: docked 
+> show-all
+> key fn+ctrl+up
+  key-up: 12 43 325 653 -> 38 83 306 614 (quiet:892); Arbor says: docked 
+> show-all
+> key fn+ctrl+down
+  key-down: 38 83 306 614 -> 12 43 325 653 (quiet:954); Arbor says: docked 
+> show-all
+> key fn+ctrl+f
+  key-f: 12 43 325 653 -> 12 43 325 653 (quiet:1043); Arbor says: docked 
+> show-all
+> key fn+ctrl+c
+  key-c: 12 43 325 653 -> 12 43 325 653 (quiet:1043); Arbor says: docked 
+> show-all
+> key fn+ctrl+r
+  key-r: 12 43 325 653 -> 12 43 325 653 (quiet:1018); Arbor says: docked 
+> show-all
+> trace off
+trace saved: /tmp/arbor-shell.toLmME/home/traces/2026-10-15-132353-macos-own-moves-TextEdit.jsonl: 798 lines, trace off
+shot: mac-shell/TextEdit-running-at-the-end.png
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  Desktop          349 43 326 653
+  w65 12 43 325 653        docked
+  w68 687 43 325 653       docked focused
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+
+== session: Terminal
+session 3: Arbor pid 19645, test windows 123 (pid 19624,19287)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+
+== Terminal: Arbor paused: macOS by itself
+> pause
+paused until `resume`; windows are back in view, in their own sizes
+> click 474 63
+> move 474 183
+> click 102 67 --mods opt
+  opt-green: 40 51 877 499 -> 0 31 1024 679 (quiet:1012)
+> click 62 47 --mods opt
+  opt-green-again: 0 31 1024 679 -> 40 51 877 499 (quiet:1028)
+> click 298 15
+> click 390 72
+  menu-zoom: 40 51 877 499 -> 0 31 1024 679 (quiet:1578)
+> click 298 15
+> click 389 96
+  menu-fill: 0 31 1024 679 -> 0 31 1024 679 (quiet:1121)
+> click 298 15
+> move 389 155
+> click 656 179
+  menu-left: 0 31 1024 679 -> 0 31 513 679 (quiet:1833)
+> click 298 15
+> move 389 155
+> click 656 572
+  menu-return: 0 31 513 679 -> 0 31 513 679 (quiet:1161)
+> key fn+ctrl+left
+  key-left: 0 31 513 679 -> 0 31 513 679 (quiet:906)
+> key fn+ctrl+right
+  key-right: 0 31 513 679 -> 0 31 513 679 (quiet:959)
+> key fn+ctrl+up
+  key-up: 0 31 513 679 -> 17 93 455 603 (quiet:922)
+> key fn+ctrl+down
+  key-down: 17 93 455 603 -> 0 31 513 679 (quiet:1201)
+> key fn+ctrl+f
+  key-f: 0 31 513 679 -> 0 31 513 679 (quiet:1018)
+> key fn+ctrl+c
+  key-c: 0 31 513 679 -> 0 31 513 679 (quiet:951)
+> key fn+ctrl+r
+  key-r: 0 31 513 679 -> 0 31 513 679 (quiet:994)
+shot: mac-shell/Terminal-paused-at-the-end.png
+> resume
+resumed
+
+== Terminal: docked, Arbor running: what it does today
+> dock 120 left
+docked w120 at the left edge
+> dock 123 right
+docked w123 at the right edge
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          349 43 326 655
+  w120 12 43 326 655        docked
+  w123 687 43 325 655       docked focused
+> trace on macos-own-moves-Terminal
+recording /tmp/arbor-shell.Ncq26P/home/traces/2026-10-15-132618-macos-own-moves-Terminal.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> click 180 55
+> move 180 175
+> click 74 59 --mods opt
+  opt-green: 12 43 326 655 -> 0 31 1024 679 (quiet:1153); Arbor says: docked letBe 
+> show-all
+> click 74 62 --mods opt
+  opt-green-again: 12 46 324 649 -> 0 31 1024 679 (quiet:1247); Arbor says: docked letBe 
+> show-all
+> click 298 15
+> click 396 72
+  menu-zoom: 12 46 324 649 -> 0 31 1024 679 (quiet:1537); Arbor says: docked letBe 
+> show-all
+> click 298 15
+> click 389 96
+  menu-fill: 12 46 324 649 -> 0 31 1024 679 (quiet:1781); Arbor says: docked letBe 
+> show-all
+> click 298 15
+> move 389 155
+> click 656 179
+  menu-left: 12 43 325 655 -> 0 31 512 679 (quiet:2094); Arbor says: floating 
+> dock 120 left
+> show-all
+> click 298 15
+> move 389 155
+> click 656 572
+  menu-return: 12 43 325 655 -> 12 43 325 655 (quiet:1201); Arbor says: docked 
+> show-all
+> key fn+ctrl+left
+  key-left: 12 43 325 655 -> 12 43 325 655 (quiet:832); Arbor says: docked 
+> show-all
+> key fn+ctrl+right
+  key-right: 12 43 325 655 -> 12 43 325 655 (quiet:963); Arbor says: docked 
+> show-all
+> key fn+ctrl+up
+  key-up: 12 43 325 655 -> 38 83 306 616 (quiet:1080); Arbor says: docked 
+> show-all
+> key fn+ctrl+down
+  key-down: 38 83 306 616 -> 12 43 325 655 (quiet:1262); Arbor says: docked 
+> show-all
+> key fn+ctrl+f
+  key-f: 12 43 325 655 -> 12 43 325 655 (quiet:1011); Arbor says: docked 
+> show-all
+> key fn+ctrl+c
+  key-c: 12 43 325 655 -> 12 43 325 655 (quiet:841); Arbor says: docked 
+> show-all
+> key fn+ctrl+r
+  key-r: 12 43 325 655 -> 12 43 325 655 (quiet:1056); Arbor says: docked 
+> show-all
+> trace off
+trace saved: /tmp/arbor-shell.Ncq26P/home/traces/2026-10-15-132618-macos-own-moves-Terminal.jsonl: 906 lines, trace off
+shot: mac-shell/Terminal-running-at-the-end.png
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          349 43 326 655
+  w120 12 43 325 655        docked
+  w123 687 43 325 655       docked focused
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+
+== the table
+subject    round    act               first ms  last ms  steps   road
+test       paused   opt-green                -        -      0   no new frame
+test       paused   opt-green-again          -        -      0   no new frame
+test       paused   menu-zoom        not played
+test       paused   menu-fill        not played
+test       paused   menu-left        not played
+test       paused   menu-return      not played
+test       paused   key-left                 -        -      0   no new frame
+test       paused   key-right                -        -      0   no new frame
+test       paused   key-up                  97       97      1   17 359 465 337
+test       paused   key-down                 0        0      1   170 220 480 348
+test       paused   key-f                    -        -      0   no new frame
+test       paused   key-c                    -        -      0   no new frame
+test       paused   key-r                    -        -      0   no new frame
+test       running  opt-green               23       23      1   0 31 1024 677
+test       running  opt-green-again        244      244      1   0 31 1024 677
+test       running  menu-zoom        not played
+test       running  menu-fill        not played
+test       running  menu-left        not played
+test       running  menu-return      not played
+test       running  key-left                 -        -      0   no new frame
+test       running  key-right                -        -      0   no new frame
+test       running  key-up                  26       26      1   38 83 306 614
+test       running  key-down                 0        0      1   12 43 325 653
+test       running  key-f                    -        -      0   no new frame
+test       running  key-c                    -        -      0   no new frame
+test       running  key-r                    -        -      0   no new frame
+TextEdit   paused   opt-green               80       80      1   0 31 1024 677
+TextEdit   paused   opt-green-again          0        0      1   79 56 603 505
+TextEdit   paused   menu-zoom              425      425      1   0 31 1024 677
+TextEdit   paused   menu-fill                -        -      0   no new frame
+TextEdit   paused   menu-left              442      709      7   0 31 866 677 | 0 31 784 677 | … | 0 31 516 677 | 0 31 513 677
+TextEdit   paused   menu-return              -        -      0   no new frame
+TextEdit   paused   key-left                 -        -      0   no new frame
+TextEdit   paused   key-right                -        -      0   no new frame
+TextEdit   paused   key-up                   0        0      1   17 93 456 602
+TextEdit   paused   key-down                 0        0      1   0 31 513 677
+TextEdit   paused   key-f                    -        -      0   no new frame
+TextEdit   paused   key-c                    -        -      0   no new frame
+TextEdit   paused   key-r                    -        -      0   no new frame
+TextEdit   running  opt-green                6        6      1   0 31 1024 677
+TextEdit   running  opt-green-again        215      215      1   0 31 1024 677
+TextEdit   running  menu-zoom              394      394      1   0 31 1024 677
+TextEdit   running  menu-fill              370      721      9   10 41 413 657 | 8 40 528 660 | … | 0 31 1023 677 | 0 31 1024 677
+TextEdit   running  menu-left              384      623      6   10 42 345 656 | 8 40 375 660 | … | 0 31 508 677 | 0 31 512 677
+TextEdit   running  menu-return              -        -      0   no new frame
+TextEdit   running  key-left                 -        -      0   no new frame
+TextEdit   running  key-right                -        -      0   no new frame
+TextEdit   running  key-up                  67       67      1   38 83 306 614
+TextEdit   running  key-down                 0        0      1   12 43 325 653
+TextEdit   running  key-f                    -        -      0   no new frame
+TextEdit   running  key-c                    -        -      0   no new frame
+TextEdit   running  key-r                    -        -      0   no new frame
+Terminal   paused   opt-green                0        0      1   0 31 1024 679
+Terminal   paused   opt-green-again         23       23      1   40 51 877 499
+Terminal   paused   menu-zoom              438      438      1   0 31 1024 679
+Terminal   paused   menu-fill                -        -      0   no new frame
+Terminal   paused   menu-left              425      715      9   0 31 890 679 | 0 31 628 679 | … | 0 31 515 679 | 0 31 513 679
+Terminal   paused   menu-return              -        -      0   no new frame
+Terminal   paused   key-left                 -        -      0   no new frame
+Terminal   paused   key-right                -        -      0   no new frame
+Terminal   paused   key-up                  54       54      1   17 93 455 603
+Terminal   paused   key-down                 0        0      1   0 31 513 679
+Terminal   paused   key-f                    -        -      0   no new frame
+Terminal   paused   key-c                    -        -      0   no new frame
+Terminal   paused   key-r                    -        -      0   no new frame
+Terminal   running  opt-green               60       60      1   0 31 1024 679
+Terminal   running  opt-green-again        169      169      1   0 31 1024 679
+Terminal   running  menu-zoom              405      405      1   0 31 1024 679
+Terminal   running  menu-fill              435      716     10   7 41 575 660 | 3 35 842 672 | … | 0 31 1023 679 | 0 31 1024 679
+Terminal   running  menu-left              407      681      9   11 42 335 657 | 7 39 394 664 | … | 0 31 511 679 | 0 31 512 679
+Terminal   running  menu-return              -        -      0   no new frame
+Terminal   running  key-left                 -        -      0   no new frame
+Terminal   running  key-right                -        -      0   no new frame
+Terminal   running  key-up                   0        0      1   38 83 306 616
+Terminal   running  key-down                 0        0      1   12 43 325 655
+Terminal   running  key-f                    -        -      0   no new frame
+Terminal   running  key-c                    -        -      0   no new frame
+Terminal   running  key-r                    -        -      0   no new frame
+
+the slowest first frame with Arbor paused: 442 ms after the release or the key
+
+== what Arbor asked for meanwhile
+subject    act               on it  on others   which
+Terminal   opt-green             0          0   
+Terminal   opt-green-again       0          0   
+Terminal   menu-zoom             0          0   
+Terminal   menu-fill             0          0   
+Terminal   menu-left             0          1   w123: 1
+Terminal   menu-return           0          0   
+Terminal   key-left              0          0   
+Terminal   key-right             0          0   
+Terminal   key-up                0          0   
+Terminal   key-down              0          0   
+Terminal   key-f                 0          0   
+Terminal   key-c                 0          0   
+Terminal   key-r                 0          0   
+test       opt-green             0          0   
+test       opt-green-again       0          0   
+test       key-left              0          0   
+test       key-right             0          0   
+test       key-up                0          0   
+test       key-down              0          0   
+test       key-f                 0          0   
+test       key-c                 0          0   
+test       key-r                 0          0   
+TextEdit   opt-green             0          0   
+TextEdit   opt-green-again       0          0   
+TextEdit   menu-zoom             0          0   
+TextEdit   menu-fill             0          0   
+TextEdit   menu-left             0          1   w68: 1
+TextEdit   menu-return           0          0   
+TextEdit   key-left              0          0   
+TextEdit   key-right             0          0   
+TextEdit   key-up                0          0   
+TextEdit   key-down              0          0   
+TextEdit   key-f                 0          0   
+TextEdit   key-c                 0          0   
+TextEdit   key-r                 0          0   
+
+7 passed, 0 failed
+exit code 0
