@@ -179,8 +179,9 @@ func owner(of window: UInt32) -> pid_t? {
 /// The frontmost window at the ordinary level under a point: the list comes front to back. `ringAround` looks through Arbor's focus
 /// ring: a window at the ordinary level, right in front of the focused window and a few points larger all round, that lets presses
 /// through. Arbor's other windows (its welcome, its settings) take presses like anybody's.
-func topWindow(at point: CGPoint, ringAround framed: CGRect? = nil) -> (id: UInt32, pid: pid_t)? {
-  for info in windowList([.optionOnScreenOnly, .excludeDesktopElements]) where number(info, kCGWindowLayer) == 0 {
+/// `among`: the list, for whoever asks about many points at one moment.
+func topWindow(at point: CGPoint, ringAround framed: CGRect? = nil, among list: [[String: Any]]? = nil) -> (id: UInt32, pid: pid_t)? {
+  for info in list ?? windowList([.optionOnScreenOnly, .excludeDesktopElements]) where number(info, kCGWindowLayer) == 0 {
     guard let rect = bounds(info), rect.contains(point), let id = number(info, kCGWindowNumber) else { continue }
     if let framed, info[kCGWindowOwnerName as String] as? String == "Arbor", rect.contains(framed),
       framed.insetBy(dx: -24, dy: -24).contains(rect)
@@ -271,6 +272,7 @@ func grabPoint(_ window: AXUIElement, id: UInt32, pid: pid_t) -> (CGPoint, Strin
   // AppKit counts from the bottom of the main display.
   let height = NSScreen.screens.first?.frame.maxY ?? 0
   let displays = NSScreen.screens.map { CGRect(x: $0.frame.minX, y: height - $0.frame.maxY, width: $0.frame.width, height: $0.frame.height) }
+  let onScreen = windowList([.optionOnScreenOnly, .excludeDesktopElements])
   var columns: [CGFloat] = []
   var x = frame.minX + 84  // past the traffic lights
   while x < frame.maxX - 20 {
@@ -288,7 +290,7 @@ func grabPoint(_ window: AXUIElement, id: UInt32, pid: pid_t) -> (CGPoint, Strin
       // A window takes presses a few points beyond its frame, where its border can be dragged: a point that close to another window's edge
       // resizes or raises that one instead. So the window has to be the frontmost all round the point as well.
       let around = [(0, 0), (-10, 0), (10, 0), (0, 8)].map { CGPoint(x: point.x + CGFloat($0.0), y: point.y + CGFloat($0.1)) }
-      guard around.allSatisfy({ topWindow(at: $0, ringAround: frame)?.id == id }) else { continue }
+      guard around.allSatisfy({ topWindow(at: $0, ringAround: frame, among: onScreen)?.id == id }) else { continue }
       var found: AXUIElement?
       guard AXUIElementCopyElementAtPosition(app, Float(point.x), Float(point.y), &found) == .success,
         let element = found
