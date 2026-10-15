@@ -128,6 +128,26 @@
         }
         #expect(reachedAccent)
       }
+      // Whether ANY of the ground shows between them: above, only a pixel that is all ground would be noticed. Black, white and a blue,
+      // however mixed, never have more red than blue; so over a ground that has, red less blue is the ground's share. Lines stroked
+      // side by side, and bands that only meet, let 0.08 through on this diagonal.
+      try OffscreenPicture.each(size: size, item: "accent", name: "three-lines-on-orange", scales: [2], modes: [.light]) { picture in
+        picture.draw { _ in
+          NSColor(srgbRed: 0.9, green: 0.3, blue: 0.1, alpha: 1).setFill()
+          NSRect(origin: .zero, size: size).fill()
+          AccentInk.mark(
+            NSRect(x: 20, y: 10, width: 80, height: 60), radius: 17, fill: 0.18, width: 2, accent: accent, increasesContrast: true)
+        }
+        // From the first pixel that is all the mark's to the accent's line, pixel by pixel.
+        var (began, reachedAccent) = (false, false)
+        for step in stride(from: 0.0, to: 16, by: 0.5) where !reachedAccent {
+          let pixel = picture.pixel(20 + step, 10 + step)
+          if pixel.blue - pixel.red > 0.4 { reachedAccent = true }
+          if began { #expect(pixel.red - pixel.blue <= 0.04, "the ground shows through, \(step) points in: \(pixel)") }
+          if pixel.red - pixel.blue <= 0.02 { began = true }
+        }
+        #expect(began && reachedAccent)
+      }
     }
 
     /// The rectangle of a drag begins a point high and a point wide.
