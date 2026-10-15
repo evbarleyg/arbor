@@ -139,10 +139,17 @@
 
             let what = "\(name), \(look.name), \(Int(scale))x"
             #expect(picture.ink(in: placement.textFrame, isDark: look.isDark) > 40, "letters that stand out: \(what)")
-            // Between the text's frame and the panel's edge there is nothing: no letter is cut off or hangs out.
-            let whole = NSRect(origin: .zero, size: placement.frame.size).insetBy(dx: 6, dy: 4)
-            let all = picture.ink(in: whole, isDark: look.isDark)
-            #expect(all == picture.ink(in: placement.textFrame.intersection(whole), isDark: look.isDark), "nothing in the padding: \(what)")
+            // Between the text's frame and the panel's edge there is nothing: no letter is cut off or hangs out. Looked for
+            // above and below the text over its whole width, and beside it over its height: the corners are round, and
+            // what shows there is what the panel floats over.
+            let panel = NSRect(origin: .zero, size: placement.frame.size)
+            let text = placement.textFrame
+            let tall = NSRect(x: text.minX, y: 4, width: text.width, height: panel.height - 8)
+            let wide = NSRect(x: 6, y: text.minY + 6, width: panel.width - 12, height: text.height - 12)
+            for whole in [tall, wide] {
+              let all = picture.ink(in: whole, isDark: look.isDark)
+              #expect(all == picture.ink(in: text.intersection(whole), isDark: look.isDark), "nothing in the padding: \(what)")
+            }
           }
         }
       }

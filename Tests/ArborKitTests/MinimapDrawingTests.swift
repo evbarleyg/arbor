@@ -145,7 +145,8 @@
       let canvas = try Canvas(size: model.frame.size, scale: scale)
       canvas.draw(isDark: isDark) {
         backing(isDark: isDark).colour.setFill()
-        NSBezierPath(roundedRect: CGRect(origin: .zero, size: model.frame.size), xRadius: 12, yRadius: 12).fill()
+        let radius = PanelLook.Corner.panel
+        NSBezierPath(roundedRect: CGRect(origin: .zero, size: model.frame.size), xRadius: radius, yRadius: radius).fill()
         MinimapDrawing.draw(model, accent: accent.colour, ink: ink(isDark: isDark).colour) { paint(of: $0).colour }
       }
       return canvas

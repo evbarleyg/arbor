@@ -6,13 +6,12 @@
 
   @testable import ArborKit
 
-  /// What Arbor's panels stand on (`PanelGround`), drawn by AppKit. Whether the numbers are the right ones is `PanelLookTests`' business.
+  /// What Arbor's panels stand on (`PanelGround`), drawn by AppKit. Whether the numbers are the right ones is
+  /// `PanelLookTests`' business.
   @Suite @MainActor struct PanelGroundPictureTests {
     private let size = CGSize(width: 160, height: 90)
     private let panel = NSRect(x: 30, y: 20, width: 100, height: 50)
     private let radius = PanelLook.Corner.panel
-
-    private func colour(_ pixel: OffscreenPicture.Pixel) -> RGBA { RGBA(red: pixel.red, green: pixel.green, blue: pixel.blue) }
 
     /// Seen on a hosted Mac: the light panel on a light wallpaper had no edge but its shadow.
     @Test func aHairlineTellsThePanelFromAWindowOfItsOwnBrightness() throws {
@@ -24,7 +23,8 @@
           PanelOutlineView.draw(in: panel, radius: radius, increasesContrast: false)
         }
         let line = picture.pixel(panel.minX + 0.5, panel.midY), around = picture.pixel(panel.minX - 4, panel.midY)
-        #expect(abs(line.brightness - around.brightness) > 0.04, "\(picture.mode) at \(picture.scale)x: \(line) on \(around)")
+        #expect(
+          abs(line.brightness - around.brightness) > 0.04, "\(picture.mode) at \(picture.scale)x: \(line) on \(around)")
       }
     }
 
@@ -38,7 +38,8 @@
     @Test func theVeilIsWhatTheTableSaysAndHasThePanelsCorners() throws {
       // What `.hudWindow` was measured to be over a red window, light and dark.
       let grounds: [OffscreenPicture.Mode: RGBA] = [
-        .light: RGBA(red: 239 / 255, green: 131 / 255, blue: 136 / 255), .dark: RGBA(red: 163 / 255, green: 44 / 255, blue: 49 / 255),
+        .light: RGBA(red: 239 / 255, green: 131 / 255, blue: 136 / 255),
+        .dark: RGBA(red: 163 / 255, green: 44 / 255, blue: 49 / 255),
       ]
       try OffscreenPicture.each(size: size, item: "panels", name: "veil-over-red") { picture in
         let ground = try #require(grounds[picture.mode])
@@ -78,6 +79,14 @@
             "\(ink), \(picture.mode): \(picture.pixel(x, 30)), not \(expected)")
         }
       }
+    }
+
+    /// `PanelGround()` once meant `NSView.init()`: no material, no mask, no veil, no line.
+    @Test func madeWithoutAWordItIsStillAGround() {
+      let ground = PanelGround()
+      #expect(ground.material == .hudWindow && ground.blendingMode == .behindWindow && ground.state == .active)
+      #expect(ground.maskImage != nil)
+      #expect(ground.subviews.contains { $0 is PanelVeilView } && ground.subviews.contains { $0 is PanelOutlineView })
     }
 
     @Test func theVeilLiesUnderWhatThePanelHoldsTheLineOverItAndNeitherTakesAClick() throws {

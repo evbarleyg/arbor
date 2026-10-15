@@ -28,7 +28,8 @@
 
     /// Seen on a hosted Mac: in the window Arbor laid out itself the buttons touched the bottom edge.
     @Test func theButtonsStandClearOfTheEdges() throws {
-      let alert = UpdateWindow.alert(for: UpdateCheck.decide(current: "0.9.0", lookup: .latest(tag: "v9.9.9")), current: build)
+      let decision = UpdateCheck.decide(current: "0.9.0", lookup: .latest(tag: "v9.9.9"))
+      let alert = UpdateWindow.alert(for: decision, current: build)
       alert.layout()
       let content = try #require(alert.window.contentView)
       content.layoutSubtreeIfNeeded()

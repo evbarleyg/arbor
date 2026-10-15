@@ -334,28 +334,30 @@ private final class FinderView: NSView {
       ).draw(in: NSRect(x: frame.minX + 12, y: frame.midY - 8, width: max(frame.width - 24, 0), height: 16))
     }
     // Here and not on the ground, so that it is in the pictures the tests take of this view.
-    PanelOutlineView.draw(in: bounds, radius: Self.cornerRadius, increasesContrast: effectiveAppearance.increasesContrast)
+    PanelOutlineView.draw(
+      in: bounds, radius: Self.cornerRadius, increasesContrast: effectiveAppearance.increasesContrast)
   }
 
   private func draw(_ item: FinderSession.Item, in frame: NSRect) {
     let selected = item.isSelected
+    let selection = PanelInk.selection()
     if selected {
-      NSColor.controlAccentColor.setFill()
+      selection.fill.setFill()
       // Side by side with the panel's own corner.
       let radius = PanelLook.Corner.inside(Self.cornerRadius, inset: frame.minX)
       NSBezierPath(roundedRect: frame, xRadius: radius, yRadius: radius).fill()
     }
-    // The title is in the main ink too: it is what tells six windows of one app apart. The app's name is set off by its weight,
-    // and the letters that matched by theirs: the accent colour cannot be read on every ground.
-    let primary: NSColor = selected ? .white : PanelInk.main
-    let faint: NSColor = selected ? NSColor.white.withAlphaComponent(0.85) : PanelInk.second
+    // The title is in the main ink too: it is what tells six windows of one app apart. The app's name is set off by its
+    // weight, and the letters that matched by theirs: the accent colour cannot be read on every ground.
+    let primary: NSColor = selected ? selection.ink : PanelInk.main
+    let faint: NSColor = selected ? selection.ink.withAlphaComponent(0.85) : PanelInk.second
 
     let iconFrame = NSRect(x: frame.minX + 10, y: frame.midY - 12, width: 24, height: 24)
     if let pid = item.row.pid {
       icon(for: pid)?.draw(
         in: iconFrame, from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
     } else if let badge = item.row.badge {
-      (selected ? NSColor.white.withAlphaComponent(0.25) : NSColor.quaternaryLabelColor).setFill()
+      (selected ? selection.ink.withAlphaComponent(0.25) : NSColor.quaternaryLabelColor).setFill()
       NSBezierPath(roundedRect: iconFrame, xRadius: 6, yRadius: 6).fill()
       let text = NSAttributedString(
         string: badge, attributes: [.font: NSFont.systemFont(ofSize: 13, weight: .semibold), .foregroundColor: primary])
@@ -384,8 +386,11 @@ private final class FinderView: NSView {
     line.draw(in: NSRect(x: left, y: frame.midY - 9, width: max(noteFrame.minX - 12 - left, 0), height: 18))
   }
 
-  /// `text` with the characters in `ranges` (character offsets) set off: heavy, and underlined, which shows in the app's name too.
-  private func styled(_ text: String, _ ranges: [Range<Int>], font: NSFont, colour: NSColor) -> NSMutableAttributedString {
+  /// `text` with the characters in `ranges` (character offsets) set off: heavy, and underlined, which shows in the app's
+  /// name too.
+  private func styled(
+    _ text: String, _ ranges: [Range<Int>], font: NSFont, colour: NSColor
+  ) -> NSMutableAttributedString {
     let result = NSMutableAttributedString(string: text, attributes: [.font: font, .foregroundColor: colour])
     let bold = NSFont.systemFont(ofSize: font.pointSize, weight: .heavy)
     for range in FinderMatch.utf16Ranges(ranges, in: text) where range.upperBound <= result.length {

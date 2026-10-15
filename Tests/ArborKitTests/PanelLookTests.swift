@@ -17,8 +17,9 @@ import Testing
     }
   }
 
-  /// What a material comes to over what lies behind the panel. Read off pictures of the real panels on a hosted Mac with macOS
-  /// 26.6 and Reduce Transparency off (2026-10-15, run 38669956766), over test windows of (255, 56, 60) and (0, 136, 255).
+  /// What a material comes to over what lies behind the panel. Read off pictures of the real panels on a hosted Mac
+  /// with macOS 26.6 and Reduce Transparency off (2026-10-15, run 38669956766), over test windows of (255, 56, 60) and
+  /// (0, 136, 255).
   static let measured: [Ground] = [
     Ground("hudWindow over red", 239, 131, 136), Ground("hudWindow over blue", 119, 197, 242),
     Ground("hudWindow over green hills", 129, 172, 150), Ground("popover over red", 237, 156, 160),
@@ -34,8 +35,8 @@ import Testing
     Ground("hudWindow over white", dark: true, 164, 164, 164), Ground("hudWindow over black", dark: true, 21, 21, 21),
   ]
 
-  /// On a picture thin strokes never reach their colour: 15-point text that is 6.9 to 1 by its colours measured 5.3. So the colours have
-  /// to promise a third more than the picture is asked for.
+  /// On a picture thin strokes never reach their colour: 15-point text that is 6.9 to 1 by its colours measured 5.3. So
+  /// the colours have to promise a third more than the picture is asked for.
   static let lostToThinStrokes = 4.0 / 3
 
   func contrast(of ink: PanelLook.Ink, on ground: Ground, veiled: Bool = true) -> Double {
@@ -53,12 +54,15 @@ import Testing
 
   /// The control: what the veil is for.
   @Test func withoutTheVeilTheyWouldNot() {
-    let bare = (Self.measured + Self.reckoned).filter { contrast(of: .second, on: $0, veiled: false) < 3 * Self.lostToThinStrokes }
+    let bare = (Self.measured + Self.reckoned).filter {
+      contrast(of: .second, on: $0, veiled: false) < 3 * Self.lostToThinStrokes
+    }
     #expect(bare.contains { $0.description == "hudWindow over red" && $0.isDark })
     #expect(bare.contains { $0.description == "hudWindow over white" && $0.isDark })
   }
 
-  /// And the greys that were there: macOS's secondary label colour came out as (129, 127, 128) in the light look and (124, 124, 124) in the dark one.
+  /// And the greys that were there: macOS's secondary label colour came out as (129, 127, 128) in the light look and
+  /// (124, 124, 124) in the dark one.
   @Test func norDidTheGreysThatStayedGrey() {
     for ground in Self.measured where ground.description.hasSuffix("over red") {
       let grey = RGBA(white: (ground.isDark ? 124 : 128) / 255)
@@ -79,11 +83,34 @@ import Testing
     for isDark in [false, true] {
       let flat = RGBA(white: isDark ? 0.04 : 0.87)  // what the panels' grounds were with it on
       for ink in PanelLook.Ink.allCases {
-        let plain = PanelLook.ink(ink, isDark: isDark), strong = PanelLook.ink(ink, isDark: isDark, increasesContrast: true)
+        let plain = PanelLook.ink(ink, isDark: isDark)
+        let strong = PanelLook.ink(ink, isDark: isDark, increasesContrast: true)
         #expect(strong.alpha > plain.alpha)
         #expect(strong.over(flat).contrast(with: flat) >= 7, "\(ink), dark: \(isDark)")
       }
     }
+  }
+
+  /// About macOS's colours for a selected row, by accent colour, in the light look.
+  @Test func onASelectedRowTheInkIsWhiteWhereWhiteCanBeRead() {
+    let blue = RGBA(red: 0, green: 0.39, blue: 0.88), purple = RGBA(red: 0.49, green: 0.16, blue: 0.49)
+    let yellow = RGBA(red: 0.87, green: 0.62, blue: 0.08), green = RGBA(red: 0.26, green: 0.57, blue: 0.14)
+    for fill in [blue, purple] { #expect(PanelLook.ink(onSelection: fill) == .white) }
+    #expect(PanelLook.ink(onSelection: yellow) == .black)
+    for fill in [blue, purple, yellow, green] {
+      let ink = PanelLook.ink(onSelection: fill)
+      #expect(ink.contrast(with: fill) >= 4.5, "\(fill)")
+      #expect(ink.withAlpha(0.85).over(fill).contrast(with: fill) >= 3, "the note: \(fill)")
+    }
+  }
+
+  /// No red can be read on red: a problem is said in the main ink.
+  @Test func aRedForWhatIsWrongCouldNotBeRead() {
+    let systemRed = RGBA(red: 1, green: 0.22, blue: 0.24)
+    let worst = Self.measured.filter { !$0.isDark }.map {
+      systemRed.contrast(with: PanelLook.veil(isDark: false).over($0.colour))
+    }.min()
+    #expect((worst ?? 9) < 3)
   }
 
   @Test func oneTableOfCorners() {
