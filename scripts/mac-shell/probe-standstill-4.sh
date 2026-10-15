@@ -6,6 +6,7 @@
 ARBOR_TIME_LIMIT=1000
 source "$(dirname "$0")/lib-apps.sh"
 source "$(dirname "$0")/lib-standstill.sh"
+needs_throwaway_mac "film the whole display, change Accessibility settings and the test apps' defaults, and sample every process as root"
 
 # The fake Mac has no real apps, and lib-apps.sh's tools are compiled against AppKit.
 [ -z "${ARBOR_REHEARSAL:-}" ] || { echo "real apps cannot be rehearsed"; exit 64; }

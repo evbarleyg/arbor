@@ -6,6 +6,7 @@
 # and does a plain tool that does the same to the same windows get the same?
 ARBOR_TIME_LIMIT=1150
 source "$(dirname "$0")/lib-standstill.sh"
+needs_throwaway_mac "film the whole display, change Accessibility settings and the test apps' defaults, and sample every process as root"
 
 still_build
 still_begin

@@ -5,7 +5,7 @@ With pulse.swift's strip on the display every frame differs from the one before,
 picture for that long, whatever else was or was not meant to move.
 
   standstill.py table <run folder>             a line for each film: the longest wait that begins between the cause and 1.5 s after it, every wait of
-                                               100 ms and more, what the processes burnt meanwhile; then a line for each group of films
+                                               100 ms and more, the longest wait before the cause (nothing is being done then), what the processes burnt meanwhile; then a line for each group of films
   standstill.py longest <film folder>          that film's longest wait, in ms: for a script that decides what to keep
   standstill.py worst <run folder> <n>         `<from> <to> <film>` in seconds since 1970, outwards to whole seconds, for the n longest waits
   standstill.py story <run folder> <film>      everything that is known about that film on one clock, ms after the cause: frames, marks, the mover's steps,
@@ -56,6 +56,11 @@ class Film:
         times = [time for time, _, _ in self.frames]
         return [(a - self.cause, b - a) for a, b in zip(times, times[1:]) if SINCE <= a - self.cause <= UNTIL and b - a >= least]
 
+    def before(self):
+        """The longest wait that ends before the cause: what this Mac does with nothing being done, in the same film."""
+        times = [time for time, _, _ in self.frames]
+        return max((b - a for a, b in zip(times, times[1:]) if b <= self.cause + SINCE), default=0)
+
     def longest(self):
         return max(self.waits(), key=lambda wait: wait[1], default=(0, 0))
 
@@ -93,7 +98,7 @@ def table(run):
         others = ", ".join(f"{long} from {at:+d}" for at, long in film.waits(100) if (at, long) != (start, length))
         shown = sum(1 for time, _, _ in film.frames if 0 <= time - film.cause <= UNTIL)
         burnt = " ".join(f"{name} {ms}" for name, ms in sorted(film.burnt().items()))
-        print(f"{length:5d} ms from {start:+5d}  {film.name:34s} {shown:3d} frames in 1.5 s ({film.how})" + (f"; also {others}" if others else "") + (f"; cpu ms: {burnt}" if burnt else ""))
+        print(f"{length:5d} ms from {start:+5d}  {film.name:34s} {shown:3d} frames in 1.5 s ({film.how}); {film.before()} before" + (f"; also {others}" if others else "") + (f"; cpu ms: {burnt}" if burnt else ""))
         groups.setdefault(re.sub(r"-\d+(?=-|$)", "", film.name, count=1), []).append(length)
     print()
     for name, lengths in groups.items():

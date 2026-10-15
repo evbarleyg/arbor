@@ -17,10 +17,10 @@ STILL_PULSE="$ARBOR_ROOT/.build/mac-shell/pulse"
 STILL_MOVER="$ARBOR_ROOT/.build/mac-shell/mover"
 STILL_PY="$ARBOR_ROOT/scripts/mac-shell/standstill.py"
 STILL_PULSE_PID=""
-# Shortcuts on, as a person has them.
-STILL_FACE="ARBOR_NO_HOTKEYS=0"
+# Shortcuts and the menu bar item on, as a person has them.
+STILL_FACE="ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0"
 # How long a film goes on after the thing was done. With the strip up every frame is kept, and the camera has room for six seconds of those.
-STILL_REST=2
+STILL_REST=1.6
 
 still_build() {
   local tool

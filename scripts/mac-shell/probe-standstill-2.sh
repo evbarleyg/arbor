@@ -6,6 +6,7 @@
 # Settings are changed in a running session, and the session ends as it began: with everything as it ships.
 ARBOR_TIME_LIMIT=1150
 source "$(dirname "$0")/lib-standstill.sh"
+needs_throwaway_mac "film the whole display, change Accessibility settings and the test apps' defaults, and sample every process as root"
 
 still_build
 still_begin
@@ -53,8 +54,10 @@ away_and_back stage-alone 3
 for key in focusRing dimBehindArranged desktopEdge gapHandles messages tileFade; do ctl reset "$key"; done
 
 step "a slower stage: does the standstill begin with the move or end with the stage?"
-ctl set animationDuration 1.2
+ctl set animationDuration 0.9
+STILL_REST=2.2
 away_and_back slow-stage 2
+STILL_REST=1.6
 ctl reset animationDuration
 
 step "by command instead of by key"
@@ -122,6 +125,24 @@ still_press "$W3"
 away_and_back one-app 3
 cast_stop
 FILM_CAST=$STILL_CAST
+
+step "no menu bar item"
+cast_start 4 ARBOR_NO_HOTKEYS=0
+sleep 3
+still_arrange
+still_press "$W3"
+away_and_back no-item 3
+cast_stop
+
+step "apps that macOS may not put to sleep while none of their windows shows (no App Nap)"
+for name in $FILM_CAST_NAMES; do defaults write "dev.arbor.cast.$name" NSAppSleepDisabled -bool YES; done
+cast_start 4 $STILL_FACE
+sleep 3
+still_arrange
+still_press "$W3"
+away_and_back no-nap 3
+cast_stop
+for name in $FILM_CAST_NAMES; do defaults delete "dev.arbor.cast.$name" NSAppSleepDisabled; done
 
 step "with Reduce Transparency, as GitHub's Macs come"
 glass off

@@ -13,6 +13,7 @@
 # One cast, one Mac, one after the other: with Arbor; Arbor quits; the control and what is added to it, a step at a time; Arbor again.
 ARBOR_TIME_LIMIT=1150
 source "$(dirname "$0")/lib-standstill.sh"
+needs_throwaway_mac "film the whole display, change Accessibility settings and the test apps' defaults, and sample every process as root"
 
 still_build
 still_begin
@@ -48,8 +49,11 @@ pulse_stop
 away_and_back bare 2
 pulse_start
 
-step "2. THE CONTROL: no Arbor"
+step "1c. and with no trace being recorded, so that no stage logs its frames"
 trace_ends
+away_and_back untraced 2
+
+step "2. THE CONTROL: no Arbor"
 arbor_quit
 sleep 1
 for n in 1 2 3 4; do
