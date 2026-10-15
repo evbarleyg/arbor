@@ -5,7 +5,8 @@
 // compiles this in the place where Arbor's program would be, calls it Arbor's process, and tells it which offence to commit.
 //
 //   impostor            reads commands from its standard input, one per line, until that ends:
-//     panel <level> x y w h    put up a panel at that window level and frame (global points, origin top-left); 3 is the level of Arbor's drop preview
+//     panel <level> x y w h [alpha]   put up a panel at that window level and frame (global points, origin top-left); 3 is the level of Arbor's drop
+//                              preview, 4 of its stage. alpha 0: it is there and nobody can see it
 //     unpanel                  put it away
 //     spin <seconds>           keep one core busy that long
 //     hold <ms> <seconds>      for that many seconds every left mouse-up waits that many milliseconds in an event tap before it goes on
@@ -30,7 +31,7 @@ app.setActivationPolicy(.accessory)
 nonisolated(unsafe) var tapPort: CFMachPort?
 nonisolated(unsafe) var holdMilliseconds = 0.0
 
-@MainActor func show(level: Int, frame: CGRect) {
+@MainActor func show(level: Int, frame: CGRect, alpha: Double) {
   // AppKit counts from the bottom of the main display.
   let height = NSScreen.screens.first?.frame.maxY ?? 0
   let flipped = CGRect(x: frame.minX, y: height - frame.maxY, width: frame.width, height: frame.height)
@@ -39,6 +40,7 @@ nonisolated(unsafe) var holdMilliseconds = 0.0
   made.ignoresMouseEvents = true
   made.backgroundColor = NSColor.systemOrange.withAlphaComponent(0.4)
   made.isOpaque = false
+  made.alphaValue = alpha
   made.orderFrontRegardless()
   panel = made
 }
@@ -66,10 +68,12 @@ let listening = Thread {
     let words = line.split(separator: " ").map(String.init)
     let numbers = words.dropFirst().compactMap(Double.init)
     switch words.first {
-    case "panel" where numbers.count == 5:
+    case "panel" where numbers.count == 5 || numbers.count == 6:
       DispatchQueue.main.async {
         MainActor.assumeIsolated {
-          show(level: Int(numbers[0]), frame: CGRect(x: numbers[1], y: numbers[2], width: numbers[3], height: numbers[4]))
+          show(
+            level: Int(numbers[0]), frame: CGRect(x: numbers[1], y: numbers[2], width: numbers[3], height: numbers[4]),
+            alpha: numbers.count == 6 ? numbers[5] : 1)
         }
       }
     case "unpanel":
