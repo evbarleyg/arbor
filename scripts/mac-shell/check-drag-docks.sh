@@ -31,9 +31,14 @@ unmoved() { [ "$(real_frame_of "$1")" = "$2" ]; }
 # left_where <window> "<x y w h>": as in e2e-drag.sh: where the hand had it, or, if that was with its title bar behind the Dock, where macOS pulls
 # such a window up to at the release (docs/REALITY.md, a-title-bar-let-go-behind-the-dock-is-pulled-up).
 left_where() {
-  local x y w h line=$((sy + sh - 28))
+  local x y w h bar
   read -r x y w h <<< "$2"
-  arbor_close "$(real_frame_of "$1")" "$2" || { [ "${y%.*}" -gt "$line" ] && arbor_close "$(real_frame_of "$1")" "$x $line $w $h"; }
+  arbor_close "$(real_frame_of "$1")" "$2" && return
+  # By the height of its title bar: 28 points, and 32 where the test windows are built with macOS 26's own SDK, as CI's Xcode builds them.
+  for bar in 28 32; do
+    [ "${y%.*}" -gt $((sy + sh - bar)) ] && arbor_close "$(real_frame_of "$1")" "$x $((sy + sh - bar)) $w $h" && return
+  done
+  return 1
 }
 middle() { echo "$((sx + sw * 3 / 5)) $((sy + sh / 3))"; }
 # The bottom edge is Arbor's at every setting of macOS's tiling (Q23).

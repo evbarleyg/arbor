@@ -6,7 +6,7 @@ A.. items are Arbor-only. Levels are explained in `collab/README.md`.
 
 **TrellisWM parity: 39 of 52 reference items shipped (75%), 17 verified on real windows.**
 
-Levels: verified 49, tested 71, partial 9, planned 7, missing 1, not-planned 3.
+Levels: verified 49, tested 72, partial 9, planned 7, missing 1, not-planned 3.
 
 Real-window evidence: mac-shell: scripts/mac-shell/proof.sh at ab40b20, macOS 26.6.2, 2026-10-14T06:48Z.
 
@@ -188,3 +188,4 @@ Real-window evidence: the real-window suite, 33 sections, the newest 2026-10-15T
 | A232 | A few windows side by side, in one step |  | In Go to…: ⌘↩ (⌘-click, ⇧-click) ticks two to four windows, wherever they are; ↩ docks them side by side in the order ticked and fills the view with them. `side-by-side <window> <window> […]`. What was docked stays docked; nobody asked for is a tile; together too wide, nothing moves and Arbor says who; a window in the Dock comes back into a place kept open for it; one undo for windows, view and keyboard. On a hosted Mac `check-side-by-side.sh` passed 32 checks of 32, with real keys, clicks and the Dock (`collab/evidence/side-by-side-latest.txt`), and the ticks have been looked at; a refusal, a hidden app and two displays are played headlessly only | tested | tests 46/46 | [F27](features/F27-window-finder.md) |
 | A234 | A plain drag only moves a window |  | Nothing of Arbor's shows and nothing else moves; ⌘ held during the drag, from the start or on the way, brings the previews (at a screen edge at once, beside a window after the hold that every target there wants, counted from the key) and docks what was shown: no preview seen, no dock; a docked window dragged plainly comes out at its own size, a click that slips takes nothing out. `dragDocks`: `held` (ships), `always`, `never`. No event tap (Q29) | tested | tests 34/34 | [F09](features/F09-drag-polish.md) |
 | A241 | The Desktop is what is left over |  | Two docks are two halves and the first does not move at the second; Arrange Windows leaves nothing over; whoever is left alone stays as it is; the menu, Go to… and `desktop` still reach the Desktop. `desktopColumn` brings the first build's thirds and column back | tested | tests 85/85 | [F68](features/F68-the-desktop-is-what-is-left-over.md) |
+| A269 | What cannot fit overlaps: a dock takes nobody out of view |  | Docked windows whose smallest sizes do not fit side by side overlap instead of one of them leaving as a tile: room first, then whoever does not fit at its smallest, flush with the outer side of its place, the window the key named in front; one that fits keeps at least an even share of its row. `windowsThatDoNotFit` (`tile`) brings the tiles back | tested | tests 79/79, real windows 0/1 | [F69](features/F69-what-cannot-fit-overlaps.md) |

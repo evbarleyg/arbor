@@ -121,9 +121,14 @@ unmoved() { [ "$(real_frame_of "$1")" = "$2" ]; }
 # pulls such a window up within milliseconds of the release, to 28 points above the end of the visible frame, and asks nobody
 # (docs/REALITY.md, a-title-bar-let-go-behind-the-dock-is-pulled-up). The fake Mac leaves it hanging.
 left_where() {
-  local x y w h line=$((sy + sh - 28))
+  local x y w h bar
   read -r x y w h <<< "$2"
-  arbor_close "$(real_frame_of "$1")" "$2" || { [ "${y%.*}" -gt "$line" ] && arbor_close "$(real_frame_of "$1")" "$x $line $w $h"; }
+  arbor_close "$(real_frame_of "$1")" "$2" && return
+  # By the height of its title bar: 28 points, and 32 where the test windows are built with macOS 26's own SDK, as CI's Xcode builds them.
+  for bar in 28 32; do
+    [ "${y%.*}" -gt $((sy + sh - bar)) ] && arbor_close "$(real_frame_of "$1")" "$x $((sy + sh - bar)) $w $h" && return
+  done
+  return 1
 }
 
 # plainly <window> <x> <y> <where, in words>: dragged there with nothing held and let go. Nothing of Arbor's shows, it floats where it was
