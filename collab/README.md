@@ -195,7 +195,7 @@ around that window, where the window is; there is none), `outline <id>|desktop|n
 `map <id>|desktop|beside` clicks in it),
 `held view|still|no` (F58), `focused <id>` (that window has the keyboard),
 `still` / `still <id>` (during the line before, Arbor moved no window, or not that one), `moved-once` (it moved something, and nothing twice),
-`at <id> <x> <y>` (the window's top-left corner), `replied <words>` (what the line before printed contains those words, ignoring case),
+`at <id> <x> <y>` (the window's top-left corner), `at <id> <x> <y> <w>x<h>` (its whole frame, to the point), `replied <words>` (what the line before printed contains those words, ignoring case),
 `preview none|showing` (the drop preview), `jolt <id>` (see below),
 `said <words>` / `silent` (the heads-up line on screen now contains those words, ignoring
 case; there is none. A line stays until `flush` or `wait`). `press <command>` runs a command as its shortcut would, which is what

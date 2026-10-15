@@ -152,6 +152,19 @@ import Testing
     }
   }
 
+  @Test func atWithASizeIsToThePoint() {
+    let h = Harness()
+    let a = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 400, height: 300))
+    h.start()
+    #expect(expect("at \(a.rawValue) 300 200 400x300", h) == nil)
+    #expect(expect("at \(a.rawValue) 301 200 400x300", h) == "w\(a.rawValue) at (300,200 400×300) is not at 301,200 400x300", "to the point")
+    #expect(expect("at \(a.rawValue) 300 200 400x301", h) != nil)
+    #expect(expect("at 999 300 200 400x300", h) == "there is no window w999")
+    for line in ["at \(a.rawValue) 300 200 400", "at \(a.rawValue) x 200 400x300", "at x 1 1 1x1"] {
+      #expect(expect(line, h)?.hasPrefix("cannot read") == true, "\(line)")
+    }
+  }
+
   @Test func repliedAndPreview() {
     let h = Harness()
     let a = h.system.open(app: "Safari")

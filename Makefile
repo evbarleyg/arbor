@@ -1,4 +1,4 @@
-.PHONY: public-check hooks lint build test check sim scenarios parity linux run app install uninstall release e2e e2e-drag day typecheck-mac typecheck-mac-selftest rehearse trace trace-check replay film fuzz attack clean
+.PHONY: public-check hooks lint build test test-making-way check sim scenarios parity linux run app install uninstall release e2e e2e-drag day typecheck-mac typecheck-mac-selftest rehearse trace trace-check replay film fuzz attack clean
 
 # Files that would compile on Linux but not on macOS, and Mac shell scripts that would change a person's Mac,
 # found without a Mac. And a ledger of macOS's surprises (docs/REALITY.md) that names what is no longer there.
@@ -48,6 +48,11 @@ TEST_REPORT ?= .build/test-report.jsonl
 test:
 	@rm -f $(TEST_REPORT)
 	swift test --event-stream-output-path $(TEST_REPORT) --event-stream-version 0 $(TEST_ARGS)
+
+# The same tests with floatingWindowsMakeWay on wherever a test does not choose its settings: as they ran until Q20
+# (docs/features/F64-a-floating-windows-frame-is-its-persons.md). Not part of `check`; after a change to how floating windows are placed.
+test-making-way:
+	ARBOR_TEST_MAKING_WAY=1 swift test
 
 # Check the imports, build, test, run the simulator through a dock/zoom/back script, run the scenarios, check that
 # the tools that report all this can also report a failure, and test the release tooling.

@@ -30,6 +30,7 @@ addresses, paths on a particular machine, internal hosts, cost, names of models,
 ```bash
 make build      # swift build (debug)
 make test       # swift test: core unit tests + controller scenario tests
+make test-making-way  # the same tests with floatingWindowsMakeWay on wherever a test does not choose its settings (F64)
 make check      # build + test + the arbor-sim smoke run + the scenarios + the tools' self-test; must pass before every commit
 make gate       # on Linux: check, scenarios, parity, typecheck-mac and lint, each once and on every core: 4 minutes instead of 9
 make sim ARGS='"open Safari" "dock 101 left"'   # drive the real controller headlessly

@@ -44,3 +44,14 @@ func isOnDesktop(_ window: WindowID, _ h: Harness) -> Bool {
   return h.visibleFrame.contains(frame) && !layout.windowFrames.values.contains { $0.overlaps(frame) }
     && !layout.tiles.contains { $0.frame.overlaps(frame) }
 }
+
+extension Settings {
+  /// The settings as they ship, but with `floatingWindowsMakeWay` on: floating windows are kept on the Desktop, where docked windows
+  /// push them aside and squeeze them, as they did until Q20 (collab/QUESTIONS.md). For the tests of that behaviour, which
+  /// the setting keeps alive. As Arbor ships, a floating window's frame is its person's (`FloatingFrameTests`).
+  static var makingWay: Settings {
+    var settings = Settings()
+    settings.floatingWindowsMakeWay = true
+    return settings
+  }
+}

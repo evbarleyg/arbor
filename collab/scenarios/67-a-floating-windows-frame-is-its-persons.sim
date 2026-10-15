@@ -1,0 +1,84 @@
+# Written by an executor for Q20 (collab/QUESTIONS.md); the documenter may edit or drop it.
+# Story: an ordinary desk, as it stood on the first day played with real apps on a hosted Mac: a display 1600 points wide, Finder,
+# Safari and TextEdit to be docked, and Terminal, Notes, Calendar and Mail floating where their person left them. On that day a
+# dock squeezed Safari from 1324 to 794 points, and ⌘M, ⌘H and ⌘Q of a docked window shoved the others about.
+# Arbor sets a floating window's frame only to take it out of view and to put it back exactly where it was.
+# Reference: rules 2, 3 and 5 of the product direction.
+display-size 1600x822 31
+open Finder 920x436 min 501x200
+open Safari 1324x791 min 574x200
+open TextEdit 673x439 min 252x200
+open Terminal 877x499 min 240x200
+open Notes 1000x660 min 709x200
+open Calendar 935x598 min 680x200
+open Mail 1120x630 min 871x200
+move 102 138 31 1324 791
+move 103 165 65 673 439
+move 104 40 51 877 499
+move 105 300 105 1000 660
+move 106 200 86 935 598
+move 107 240 72 1120 630
+# The first dock. Nobody else moves, and nobody is made smaller.
+dock 101 left
+expect at 102 138 31 1324x791
+expect at 103 165 65 673x439
+expect at 104 40 51 877x499
+expect at 105 300 105 1000x660
+expect at 106 200 86 935x598
+expect at 107 240 72 1120x630
+expect focused 101
+dock 102 right
+dock 103 right
+expect at 104 40 51 877x499
+expect at 105 300 105 1000x660
+expect at 106 200 86 935x598
+expect at 107 240 72 1120x630
+# Frame, then Show Everything: there and back is nothing.
+zoom 102
+expect hidden 104
+expect hidden 105
+expect hidden 106
+expect hidden 107
+show-all
+expect at 104 40 51 877x499
+expect at 105 300 105 1000x660
+expect at 106 200 86 935x598
+expect at 107 240 72 1120x630
+# ⌘M in Safari, and back out of the Dock.
+minimize 102
+expect at 104 40 51 877x499
+expect at 105 300 105 1000x660
+restore 102
+expect at 104 40 51 877x499
+expect at 105 300 105 1000x660
+# ⌘H in Finder, and back.
+hide Finder
+flush
+expect at 104 40 51 877x499
+expect at 107 240 72 1120x630
+unhide Finder
+flush
+expect at 104 40 51 877x499
+expect at 107 240 72 1120x630
+# ⌘Q in TextEdit.
+close 103
+expect at 104 40 51 877x499
+expect at 105 300 105 1000x660
+expect at 106 200 86 935x598
+expect at 107 240 72 1120x630
+# Left hanging over the edge of the screen and over Finder by hand, it comes back to that.
+move 105 -300 200 1000 560
+zoom 102
+show-all
+expect at 105 -300 200 1000x560
+# ⌃⌥D shows all that floats.
+desktop
+expect camera desktop
+expect at 104 40 51 877x499
+expect at 105 -300 200 1000x560
+back
+# Whoever liked it better before can have it back: the next time the Desktop comes into view its windows are gathered on it.
+set floatingWindowsMakeWay true
+zoom 101
+show-all
+expect left-of 101 104

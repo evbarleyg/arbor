@@ -15,7 +15,7 @@ public enum ScenarioExpectation {
     + "ring <id>|none, outline <id>|desktop|none, shortcut <keys> on|off, shortcut <keys> shows <label>, "
     + "shortcut <keys> key <code>, app-got <keys>|nothing, pinned <id>, in-front <id>, size <id> <w>x<h>, summoned <id>, space <name>, no-space <name>, "
     + "field open|closed, held view|still|no, focused <id>, said <words>, silent, "
-    + "minimap none|everything|desktop|<id>, still [<id>], moved-once, jolt <id>, at <id> <x> <y>, "
+    + "minimap none|everything|desktop|<id>, still [<id>], moved-once, jolt <id>, at <id> <x> <y> [<w>x<h>], "
     + "replied <words>, preview none|showing"
 
   /// Checks the words after `expect`. `lastCommandOK` is whether the previous
@@ -250,6 +250,16 @@ public enum ScenarioExpectation {
       case "showing": return h.overlays.preview == nil ? "no drop preview is showing" : nil
       default: return usage(words)
       }
+
+    case ("at", 5):
+      // To the point: this is for windows that nobody is meant to have moved.
+      let numbers = words[4].lowercased().split(separator: "x", omittingEmptySubsequences: false).map { Double($0) }
+      guard let id = window(1), let x = Double(words[2]), let y = Double(words[3]), numbers.count == 2,
+        let width = numbers[0], let height = numbers[1]
+      else { return usage(words) }
+      guard let frame = frame(id) else { return "there is no window \(id)" }
+      return frame == CGRect(x: x, y: y, width: width, height: height)
+        ? nil : "\(place(id)) is not at \(words[2]),\(words[3]) \(words[4])"
 
     case ("said", 2...):
       // The heads-up line on screen now, on any display. It stays until its time is up (`flush`).

@@ -27,12 +27,22 @@ public final class Harness {
   /// Records traces into memory (`trace on`, then `lastTrace`).
   public let recorder: TraceRecorder
 
+  /// As Arbor ships. With `ARBOR_TEST_MAKING_WAY=1` in the environment (`make test-making-way`), with `floatingWindowsMakeWay` on: every
+  /// test that does not choose its settings then runs as it did until Q20 (collab/QUESTIONS.md), when floating windows were kept
+  /// on the Desktop. That is how the setting is known to be the way back it is meant to be. A test of how Arbor ships
+  /// gives its settings, `Settings()`, in so many words.
+  public nonisolated static var settingsWhenNoneAreGiven: Settings {
+    var settings = Settings()
+    settings.floatingWindowsMakeWay = ProcessInfo.processInfo.environment["ARBOR_TEST_MAKING_WAY"] == "1"
+    return settings
+  }
+
   /// `interpose` puts a window system between the controller and the fake one; trace replays use it.
   /// - Parameter system: the windows and displays of an earlier harness, for a new run of Arbor
   ///   on the same Mac; `displays` is then ignored.
   /// - Parameter mac: that Mac's switches, and what Arbor wrote down about them.
   public init(
-    displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Settings(),
+    displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Harness.settingsWhenNoneAreGiven,
     saved: PersistedState? = nil, system: FakeWindowSystem? = nil, mac: FakeMacSwitchboard? = nil,
     interpose: ((FakeWindowSystem) -> any WindowSystem)? = nil
   ) {
