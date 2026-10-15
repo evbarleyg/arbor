@@ -1,0 +1,34 @@
+53 display-plug: the second display: plug
+expected: {'act': 'display-change', 'settled': 'quiet:396', 'moves': 'any', 'leaves': 'any'}
+FAIL rule 3: terminal (w1272) moved 2 times
+FAIL rule 3: calendar (w1276) moved 2 times
+FAIL rule 3: preview (w1281) moved 2 times
+FAIL rule 3: mail (w1284) moved 2 times
+FAIL rule 3: w1286 of Mail moved 2 times
+
+14:45:31.884 SCREEN -- begin 53 display-plug
+14:45:31.884 SCREEN -- text 53 the second display: plug
+14:45:32.023 MACOS pid 56091 AXMoved w1284 AXWindow/AXStandardWindow 480 270 1120 630
+14:45:32.024 SCREEN (nothing was seen for 149 ms)
+14:45:32.024 SCREEN preview (w1281) 0,81 708×424
+14:45:32.024 SCREEN terminal (w1272) 737,398 863×499
+14:45:32.024 SCREEN calendar (w1276) -909,9 909×791
+14:45:32.024 SCREEN w1286 of Mail 805,377 470×416
+14:45:32.024 SCREEN mail (w1284) 480,270 1120×630
+14:45:32.024 MACOS pid 55452 AXMoved w1272 AXWindow/AXStandardWindow 737 398 863 499
+14:45:32.024 MACOS pid 56043 AXMoved w1281 AXWindow/AXStandardWindow 0 81 708 424
+14:45:32.033 SCREEN calendar (w1276) -909,31 909×769
+14:45:32.034 MACOS pid 55572 AXResized w1276 AXWindow/AXStandardWindow -909 31 909 769
+14:45:32.168 SCREEN (nothing was seen for 100 ms)
+14:45:32.294 SCREEN (nothing was seen for 125 ms)
+14:45:32.294 SCREEN preview (w1281) -63,81 708×424
+14:45:32.294 SCREEN terminal (w1272) 1165,398 863×499
+14:45:32.294 SCREEN calendar (w1276) 1971,31 909×769
+14:45:32.294 SCREEN w1286 of Mail 1365,377 470×416
+14:45:32.294 SCREEN mail (w1284) 1040,270 1120×630
+14:45:32.294 MACOS pid 55452 AXMoved w1272 AXWindow/AXStandardWindow 1165 398 863 499
+14:45:32.295 MACOS pid 56043 AXMoved w1281 AXWindow/AXStandardWindow -63 81 708 424
+14:45:32.295 MACOS pid 56091 AXMoved w1284 AXWindow/AXStandardWindow 1040 270 1120 630
+14:45:32.295 MACOS pid 55572 AXMoved w1276 AXWindow/AXStandardWindow 1971 31 909 769
+14:45:38.068 SCREEN -- end 53 act=display-change settled=quiet:396 moves=any leaves=any
+14:45:38.294 SCRIPT == 54 dock-icon-safari

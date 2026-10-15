@@ -1,0 +1,23 @@
+98 dock-icon-safari: clicks safari's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:415', 'front': '588', 'floating': '585,588,596,602,603,606,607,611,612', 'docked': ''}
+FAIL rule 4: safari (w588) is not wholly in view: 90% of it, at 0,109 1324×791 in 0,31 1600×791 and 1600,31 1280×769
+
+14:38:53.064 SCREEN -- begin 98 dock-icon-safari
+14:38:53.064 SCREEN -- text 98 clicks safari's icon in the Dock
+14:38:53.645 DEBUG the button went down at 243,854, the pointer is at 243,854: it is on w588
+14:38:53.652 DEBUG raised w606, which stays in view
+14:38:53.655 MACOS pid 23997 AXFocusedWindowChanged w606 AXWindow/AXStandardWindow 663 300 937 600
+14:38:53.657 MACOS pid 23997 AXMainWindowChanged w606 AXWindow/AXStandardWindow 663 300 937 600
+14:38:53.675 SCREEN the button is down 243 854
+14:38:53.780 SCREEN the button is up 243 854
+14:38:53.920 DEBUG raised w606, which stays in view
+14:38:53.921 MACOS pid 23997 AXFocusedWindowChanged w606 AXWindow/AXStandardWindow 663 300 937 600
+14:38:53.921 MACOS pid 23997 AXMainWindowChanged w606 AXWindow/AXStandardWindow 663 300 937 600
+14:38:54.148 DEBUG raised w606, which stays in view
+14:38:54.149 MACOS pid 23997 AXFocusedWindowChanged w606 AXWindow/AXStandardWindow 663 300 937 600
+14:38:54.152 MACOS pid 23997 AXMainWindowChanged w606 AXWindow/AXStandardWindow 663 300 937 600
+14:38:54.384 DEBUG raised w606, which stays in view
+14:38:54.387 MACOS pid 23997 AXFocusedWindowChanged w606 AXWindow/AXStandardWindow 663 300 937 600
+14:38:54.389 MACOS pid 23997 AXMainWindowChanged w606 AXWindow/AXStandardWindow 663 300 937 600
+14:38:54.992 SCREEN -- end 98 act=switch settled=quiet:415 front=588 floating=585,588,596,602,603,606,607,611,612 docked=
+14:38:55.183 SCRIPT == 99 new-window-safari

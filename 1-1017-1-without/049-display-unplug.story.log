@@ -1,0 +1,21 @@
+49 display-unplug: the second display: unplug
+expected: {'act': 'display-change', 'settled': 'quiet:364', 'moves': 'any', 'leaves': 'any'}
+FAIL rule 3: mail (w64) went 1054 points out of its way before it ended up
+ODD rule 3: w66 of Mail went 1116 points out of its way before it ended up
+
+14:31:49.550 SCREEN -- begin 49 display-unplug
+14:31:49.550 SCREEN -- text 49 the second display: unplug
+14:31:49.697 SCREEN (nothing was seen for 184 ms)
+14:31:49.697 SCREEN calendar (w59) 1266,355 936×599
+14:31:49.697 SCREEN w66 of Mail 836,167 470×416
+14:31:49.697 SCREEN mail (w64) 542,-149 1058×1049
+14:31:49.700 MACOS pid 4737 AXResized w50 AXWindow/AXStandardWindow 799 31 801 791
+14:31:49.701 MACOS pid 4964 AXMoved w59 AXWindow/AXStandardWindow 1266 355 936 599
+14:31:49.701 MACOS pid 4737 AXResized w50 AXWindow/AXStandardWindow 799 31 801 791
+14:31:49.814 MACOS pid 5446 AXResized w64 AXWindow/AXStandardWindow 1069 270 1120 630
+14:31:49.814 MACOS pid 4964 AXMoved w59 AXWindow/AXStandardWindow 1266 355 936 599
+14:31:49.815 MACOS pid 5446 AXResized w64 AXWindow/AXStandardWindow 1069 270 1120 630
+14:31:49.861 SCREEN w66 of Mail 1394,377 470×416
+14:31:49.861 SCREEN mail (w64) 1069,270 1120×630
+14:31:52.184 SCREEN -- end 49 act=display-change settled=quiet:364 moves=any leaves=any
+14:31:52.368 SCRIPT == 50 display-plug

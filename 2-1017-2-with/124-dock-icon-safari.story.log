@@ -1,0 +1,31 @@
+124 dock-icon-safari: clicks safari's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:443', 'front': '588', 'floating': '585,588,596,602,603,606,611,612', 'docked': '607'}
+FAIL rule 4: safari (w588) is not wholly in view: 90% of it, at 0,109 1324×791 in 0,31 1600×791 and 1600,31 1920×1049
+
+14:40:01.560 SCREEN -- begin 124 dock-icon-safari
+14:40:01.560 SCREEN -- text 124 clicks safari's icon in the Dock
+14:40:02.192 DEBUG the button went down at 243,854, the pointer is at 243,854: it is on w588
+14:40:02.204 SCREEN the button is down 243 854
+14:40:02.361 SCREEN front to back: safari w974 settings preview calendar notes textedit finder terminal w614 mail w973
+14:40:02.361 SCREEN the button is up 243 854
+14:40:02.361 SCREEN in front: process 23418 com.apple.Safari
+14:40:02.366 DEBUG focus is on w588
+14:40:02.366 DEBUG w588 has the keyboard
+14:40:02.388 MACOS pid 24051 AXApplicationDeactivated
+14:40:02.388 MACOS workspace didActivate pid 23418 com.apple.Safari regular
+14:40:02.389 MACOS workspace didDeactivate pid 24051 com.apple.systempreferences regular
+14:40:02.389 MACOS pid 23418 AXApplicationActivated
+14:40:02.394 DEBUG raised w606, which stays in view
+14:40:02.399 SCREEN w974 of Arbor -6,100 1339×806
+14:40:02.399 SCREEN front to back: w974 safari settings preview calendar notes textedit finder terminal w614 mail w973
+14:40:02.402 SCREEN front to back: w974 safari calendar settings preview notes textedit finder terminal w614 mail w973
+14:40:02.409 MACOS pid 23997 AXFocusedWindowChanged w606 AXWindow/AXStandardWindow 1284 300 801 780
+14:40:02.409 MACOS pid 23997 AXMainWindowChanged w606 AXWindow/AXStandardWindow 1284 300 801 780
+14:40:02.692 DEBUG raised w606, which stays in view
+14:40:02.693 MACOS pid 23997 AXFocusedWindowChanged w606 AXWindow/AXStandardWindow 1284 300 801 780
+14:40:02.694 MACOS pid 23997 AXMainWindowChanged w606 AXWindow/AXStandardWindow 1284 300 801 780
+14:40:02.980 DEBUG raised w606, which stays in view
+14:40:02.981 MACOS pid 23997 AXFocusedWindowChanged w606 AXWindow/AXStandardWindow 1284 300 801 780
+14:40:02.982 MACOS pid 23997 AXMainWindowChanged w606 AXWindow/AXStandardWindow 1284 300 801 780
+14:40:05.120 SCREEN -- end 124 act=switch settled=quiet:443 front=588 floating=585,588,596,602,603,606,611,612 docked=607
+14:40:05.393 SCRIPT == 125 quit-safari

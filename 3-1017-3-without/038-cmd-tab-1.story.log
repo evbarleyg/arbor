@@ -1,0 +1,14 @@
+38 cmd-tab-1: holds ⌘ and presses Tab 1 time(s)
+expected: {'act': 'switch', 'settled': 'quiet:458', 'front': '1286'}
+FAIL rule 4: w1286 of Mail is not wholly in view: 50% of it, at 1365,377 470×416 in 0,31 1600×791
+
+14:44:10.512 SCREEN -- begin 38 cmd-tab-1
+14:44:10.512 SCREEN -- text 38 holds ⌘ and presses Tab 1 time(s)
+14:44:11.015 SCREEN front to back: w1286 mail finder notes settings terminal safari calendar textedit preview
+14:44:11.015 MACOS pid 56091 AXApplicationActivated
+14:44:11.016 MACOS workspace didActivate pid 56091 com.apple.mail regular
+14:44:11.016 MACOS workspace didDeactivate pid 53628 com.apple.finder regular
+14:44:11.017 MACOS pid 53628 AXApplicationDeactivated
+14:44:11.019 SCREEN in front: process 56091 com.apple.mail
+14:44:12.015 SCREEN -- end 38 act=switch settled=quiet:458 front=1286
+14:44:12.189 SCRIPT == 39 dock-icon-safari

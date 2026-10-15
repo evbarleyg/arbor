@@ -1,0 +1,27 @@
+47 display-plug: the second display: plug
+expected: {'act': 'display-change', 'settled': 'quiet:358', 'moves': 'any', 'leaves': 'any'}
+FAIL rule 3: mail (w64) moved 2 times
+FAIL rule 3: w66 of Mail moved 2 times
+
+14:31:37.534 SCREEN -- begin 47 display-plug
+14:31:37.534 SCREEN -- text 47 the second display: plug
+14:31:37.736 SCREEN (nothing was seen for 195 ms)
+14:31:37.736 SCREEN terminal (w50) 799,31 801×791
+14:31:37.736 SCREEN calendar (w59) 3186,535 936×599
+14:31:37.736 SCREEN w66 of Mail 1394,377 470×416
+14:31:37.736 SCREEN mail (w64) 1069,270 1120×630
+14:31:37.914 MACOS pid 4737 AXMoved w50 AXWindow/AXStandardWindow 799 31 801 791
+14:31:38.029 MACOS pid 4964 AXMoved w59 AXWindow/AXStandardWindow 3186 535 936 599
+14:31:38.030 MACOS pid 4737 AXResized w50 AXWindow/AXStandardWindow 799 31 801 791
+14:31:38.059 SCREEN (nothing was seen for 323 ms)
+14:31:38.676 SCREEN w66 of Mail 2756,347 470×416
+14:31:38.676 SCREEN mail (w64) 2462,31 1058×1049
+14:31:38.678 MACOS pid 5446 AXMoved w64 AXWindow/AXStandardWindow 2462 31 1058 1049
+14:31:38.679 MACOS pid 4964 AXResized w59 AXWindow/AXStandardWindow 3186 535 936 599
+14:31:38.679 MACOS pid 5446 AXResized w64 AXWindow/AXStandardWindow 2462 31 1058 1049
+14:31:38.680 MACOS pid 4964 AXMoved w59 AXWindow/AXStandardWindow 3186 535 936 599
+14:31:38.680 MACOS pid 5446 AXResized w64 AXWindow/AXStandardWindow 2462 31 1058 1049
+14:31:38.680 MACOS pid 4964 AXMoved w59 AXWindow/AXStandardWindow 3186 535 936 599
+14:31:38.681 MACOS pid 5446 AXResized w64 AXWindow/AXStandardWindow 2462 31 1058 1049
+14:31:43.799 SCREEN -- end 47 act=display-change settled=quiet:358 moves=any leaves=any
+14:31:44.215 SCRIPT == 48 drag-safari-by

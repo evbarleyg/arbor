@@ -1,0 +1,12 @@
+121 float-all: chooses `float-all` from Arbor's menu
+expected: {'act': 'way-out', 'settled': 'quiet:361', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1', 'floating': '585,588,596,602,603,606,607,611,612', 'docked': ''}
+FAIL rule 5: safari (w588) is 0,109 1324×791; its own size was 104,43 574×378
+FAIL rule 5: textedit (w596) is 165,65 656×422; its own size was 165,65 673×439
+FAIL rule 5: terminal (w602) is 803,31 797×791; its own size was 803,33 797×788
+FAIL rule 5: calendar (w606) is 1284,300 801×780; its own size was 800,32 801×791
+
+14:39:52.283 SCREEN -- begin 121 float-all
+14:39:52.283 SCREEN -- text 121 chooses `float-all` from Arbor's menu
+14:39:52.291 DEBUG float-all failed: nothing is docked
+14:39:54.354 SCREEN -- end 121 act=way-out settled=quiet:361 moves=any restores=all places=1 everything=1 floating=585,588,596,602,603,606,607,611,612 docked=
+14:39:54.567 SCRIPT == 122 dock-icon-settings

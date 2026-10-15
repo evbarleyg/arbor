@@ -1,0 +1,4029 @@
+{
+ "sampler": "samples 17458 seconds 438.6 hz 39.8 cost-ms 2.83 late 35 longest-gap-ms 462 whole-samples 19109 whole-seconds 480.0 whole-late 47",
+ "input": {
+  "events": 253,
+  "p50_us": 421,
+  "p99_us": 41194,
+  "max_us": 80798,
+  "kinds": {
+   "down": {
+    "events": 17,
+    "p50_us": 636,
+    "p99_us": 4115,
+    "max_us": 4115
+   },
+   "dragged": {
+    "events": 164,
+    "p50_us": 413,
+    "p99_us": 2744,
+    "max_us": 6593
+   },
+   "forward": {
+    "events": 13,
+    "p50_us": 1335,
+    "p99_us": 80798,
+    "max_us": 80798
+   },
+   "key": {
+    "events": 29,
+    "p50_us": 240,
+    "p99_us": 629,
+    "max_us": 629
+   },
+   "up": {
+    "events": 30,
+    "p50_us": 937,
+    "p99_us": 39707,
+    "max_us": 39707
+   }
+  },
+  "rounds": {
+   "before": {
+    "forward": {
+     "events": 8,
+     "p50_us": 36958,
+     "p99_us": 45168,
+     "max_us": 45168
+    },
+    "up": {
+     "events": 8,
+     "p50_us": 259,
+     "p99_us": 1400,
+     "max_us": 1400
+    }
+   },
+   "started": {
+    "forward": {
+     "events": 8,
+     "p50_us": 37098,
+     "p99_us": 52817,
+     "max_us": 52817
+    },
+    "up": {
+     "events": 8,
+     "p50_us": 973,
+     "p99_us": 4078,
+     "max_us": 4078
+    }
+   },
+   "last": {
+    "forward": {
+     "events": 14,
+     "p50_us": 32289,
+     "p99_us": 56138,
+     "max_us": 56138
+    },
+    "up": {
+     "events": 14,
+     "p50_us": 744,
+     "p99_us": 2752,
+     "max_us": 2752
+    }
+   },
+   "after": {
+    "forward": {
+     "events": 12,
+     "p50_us": 32186,
+     "p99_us": 38481,
+     "max_us": 38481
+    },
+    "up": {
+     "events": 12,
+     "p50_us": 881,
+     "p99_us": 6018,
+     "max_us": 6018
+    }
+   }
+  },
+  "judged": [],
+  "silent": {
+   "down": "fewer than 10 such events in a round without Arbor",
+   "forward": "fewer than 10 such events in a round without Arbor",
+   "up": "fewer than 10 such events in a round without Arbor",
+   "key": "fewer than 10 such events in a round without Arbor",
+   "dragged": "fewer than 10 such events in a round without Arbor",
+   "scroll": "fewer than 10 such events in a round without Arbor"
+  }
+ },
+ "stage_seen": true,
+ "witnessed": true,
+ "steps": [
+  {
+   "number": 13,
+   "slug": "input-before",
+   "chapter": "Before Arbor: the apps are open already",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792074837506,
+   "milliseconds": 9137,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 14,
+   "slug": "launch",
+   "chapter": "The walk",
+   "text": "starts Arbor",
+   "act": "quit-and-start",
+   "judged": true,
+   "performed": true,
+   "began": 1792074846837,
+   "milliseconds": 1971,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 15,
+   "slug": "input-started",
+   "chapter": "The walk",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792074849075,
+   "milliseconds": 9583,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 16,
+   "slug": "dock-icon-notes",
+   "chapter": "The walk",
+   "text": "clicks notes's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792074858921,
+   "milliseconds": 1669,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 17,
+   "slug": "arrange",
+   "chapter": "The walk",
+   "text": "chooses `arrange` from Arbor's menu",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792074860780,
+   "milliseconds": 2440,
+   "moved": {
+    "585": [
+     1,
+     1,
+     0
+    ],
+    "588": [
+     1,
+     1,
+     0
+    ],
+    "596": [
+     1,
+     1,
+     0
+    ],
+    "602": [
+     1,
+     1,
+     0
+    ],
+    "603": [
+     1,
+     1,
+     0
+    ],
+    "606": [
+     1,
+     1,
+     0
+    ],
+    "607": [
+     1,
+     1,
+     0
+    ],
+    "611": [
+     1,
+     1,
+     0
+    ],
+    "612": [
+     1,
+     1,
+     0
+    ],
+    "614": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 18,
+   "slug": "display-plug",
+   "chapter": "The walk",
+   "text": "the second display: plug",
+   "act": "display-change",
+   "judged": false,
+   "performed": true,
+   "began": 1792074863603,
+   "milliseconds": 6544,
+   "moved": {
+    "585": [
+     2,
+     3,
+     2041
+    ],
+    "588": [
+     2,
+     2,
+     2389
+    ],
+    "596": [
+     2,
+     2,
+     2318
+    ],
+    "602": [
+     2,
+     2,
+     2389
+    ],
+    "603": [
+     2,
+     3,
+     2060
+    ],
+    "606": [
+     2,
+     2,
+     2141
+    ],
+    "607": [
+     2,
+     2,
+     1829
+    ],
+    "611": [
+     2,
+     2,
+     2141
+    ],
+    "612": [
+     2,
+     2,
+     1897
+    ],
+    "614": [
+     2,
+     2,
+     1897
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "finder (w585)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 400,43 709×252 · +558 ms 340,120 920×436 · +2528 ms 340,120 709×252 · +2599 ms 400,43 709×252"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "safari (w588)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1599,770 574×247 · +210 ms 67,31 1324×791 · +2599 ms -1323,770 1324×791"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "textedit (w596)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 12,562 376×248 · +210 ms 165,65 656×422 · +2528 ms 12,562 376×248"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "terminal (w602)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1121,562 377×248 · +210 ms 799,31 860×503 · +2599 ms 1121,562 377×248"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "notes (w603)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 400,490 709×320 · +558 ms 426,218 1000×600 · +2599 ms 426,218 709×320 · +2618 ms 400,490 709×320"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "calendar (w606)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1599,770 709×503 · +477 ms 403,112 937×600 · +2618 ms -936,770 937×600"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "settings (w607)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1599,770 723×470 · +789 ms 437,85 723×625 · +2618 ms -722,770 723×625"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "preview (w611)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1599,770 708×248 · +477 ms 4,35 708×424 · +2618 ms -707,770 708×424"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "mail (w612)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1599,770 871×247 · +757 ms 480,192 1120×630 · +2654 ms -1119,770 1120×630"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "w614 of Mail",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1800,822 470×416 · +757 ms 805,299 470×416 · +2654 ms -794,877 470×416"
+    }
+   ]
+  },
+  {
+   "number": 19,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "chooses `home` from Arbor's menu",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792074870621,
+   "milliseconds": 517,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 20,
+   "slug": "view-back",
+   "chapter": "The walk",
+   "text": "presses ctrl+opt+[",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792074871676,
+   "milliseconds": 1300,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 21,
+   "slug": "float-all",
+   "chapter": "The walk",
+   "text": "chooses `float-all` from Arbor's menu",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792074873306,
+   "milliseconds": 1581,
+   "moved": {
+    "585": [
+     1,
+     1,
+     0
+    ],
+    "588": [
+     1,
+     1,
+     0
+    ],
+    "596": [
+     1,
+     1,
+     0
+    ],
+    "602": [
+     1,
+     1,
+     0
+    ],
+    "603": [
+     1,
+     1,
+     0
+    ],
+    "606": [
+     1,
+     1,
+     0
+    ],
+    "607": [
+     1,
+     1,
+     0
+    ],
+    "611": [
+     1,
+     1,
+     0
+    ],
+    "612": [
+     1,
+     1,
+     0
+    ],
+    "614": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "terminal (w602)",
+     "what": "is 800,34 797×788; its own size was 800,35 800×784",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 22,
+   "slug": "dock-icon-settings",
+   "chapter": "The walk",
+   "text": "clicks settings's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792074875180,
+   "milliseconds": 1825,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 23,
+   "slug": "undo",
+   "chapter": "The walk",
+   "text": "presses ctrl+opt+z",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792074877224,
+   "milliseconds": 1775,
+   "moved": {
+    "585": [
+     1,
+     1,
+     0
+    ],
+    "588": [
+     1,
+     1,
+     0
+    ],
+    "596": [
+     1,
+     1,
+     0
+    ],
+    "602": [
+     1,
+     1,
+     0
+    ],
+    "603": [
+     1,
+     1,
+     0
+    ],
+    "606": [
+     1,
+     1,
+     0
+    ],
+    "607": [
+     1,
+     1,
+     0
+    ],
+    "611": [
+     1,
+     1,
+     0
+    ],
+    "612": [
+     1,
+     1,
+     0
+    ],
+    "614": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "4",
+     "detector": "focus",
+     "level": "FAIL",
+     "window": null,
+     "what": "the app in front changed (to process 23940), and nobody switched",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 24,
+   "slug": "hold",
+   "chapter": "The walk",
+   "text": "holds the view, as for a shared screen",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792074879274,
+   "milliseconds": 1205,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 25,
+   "slug": "show-everything-while-held",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥Space, which would show everything: the view is held",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792074880772,
+   "milliseconds": 1336,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 26,
+   "slug": "release",
+   "chapter": "The walk",
+   "text": "lets the view go again",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792074882523,
+   "milliseconds": 1300,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 27,
+   "slug": "display-unplug",
+   "chapter": "The walk",
+   "text": "the second display: unplug",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792074884225,
+   "milliseconds": 3270,
+   "moved": {
+    "585": [
+     2,
+     3,
+     1825
+    ],
+    "588": [
+     2,
+     2,
+     1876
+    ],
+    "596": [
+     2,
+     3,
+     1825
+    ],
+    "602": [
+     2,
+     2,
+     1825
+    ],
+    "603": [
+     2,
+     3,
+     1876
+    ],
+    "606": [
+     2,
+     2,
+     1876
+    ],
+    "607": [
+     2,
+     2,
+     1876
+    ],
+    "611": [
+     2,
+     2,
+     1876
+    ],
+    "612": [
+     2,
+     2,
+     1876
+    ],
+    "614": [
+     2,
+     2,
+     1876
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "finder (w585)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 400,43 709×252 · +197 ms 340,120 920×436 · +1972 ms 340,120 709×252 · +2022 ms 400,43 709×252"
+    },
+    {
+     "rule": "3",
+     "detector": "flash",
+     "level": "FAIL",
+     "window": "safari (w588)",
+     "what": "is out of view before and after, and 100% of it showed in between",
+     "trace": "+0 ms -1323,770 1324×791 · +197 ms 67,31 1324×791 · +2073 ms 1599,770 1324×791"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "textedit (w596)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 12,562 376×248 · +197 ms 165,65 656×422 · +1979 ms 165,65 376×248 · +2022 ms 12,562 376×248"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "terminal (w602)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1121,562 377×248 · +197 ms 799,31 860×503 · +2022 ms 1121,562 377×248"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "notes (w603)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 400,490 709×320 · +197 ms 426,218 1000×600 · +2035 ms 426,218 709×320 · +2073 ms 400,490 709×320"
+    },
+    {
+     "rule": "3",
+     "detector": "flash",
+     "level": "FAIL",
+     "window": "calendar (w606)",
+     "what": "is out of view before and after, and 100% of it showed in between",
+     "trace": "+0 ms -936,770 937×600 · +197 ms 403,112 937×600 · +2073 ms 1599,770 937×600"
+    },
+    {
+     "rule": "3",
+     "detector": "flash",
+     "level": "FAIL",
+     "window": "settings (w607)",
+     "what": "is out of view before and after, and 100% of it showed in between",
+     "trace": "+0 ms -722,770 723×625 · +197 ms 437,85 723×625 · +2073 ms 1599,770 723×625"
+    },
+    {
+     "rule": "3",
+     "detector": "flash",
+     "level": "FAIL",
+     "window": "preview (w611)",
+     "what": "is out of view before and after, and 100% of it showed in between",
+     "trace": "+0 ms -707,770 708×424 · +197 ms 4,35 708×424 · +2073 ms 1599,770 708×424"
+    },
+    {
+     "rule": "3",
+     "detector": "flash",
+     "level": "FAIL",
+     "window": "mail (w612)",
+     "what": "is out of view before and after, and 100% of it showed in between",
+     "trace": "+0 ms -1119,770 1120×630 · +197 ms 480,192 1120×630 · +2073 ms 1599,770 1120×630"
+    },
+    {
+     "rule": "3",
+     "detector": "flash",
+     "level": "FAIL",
+     "window": "w614 of Mail",
+     "what": "is out of view before and after, and 100% of it showed in between",
+     "trace": "+0 ms -794,877 470×416 · +197 ms 805,299 470×416 · +2073 ms 1924,877 470×416"
+    }
+   ]
+  },
+  {
+   "number": 28,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "chooses `home` from Arbor's menu",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792074887950,
+   "milliseconds": 562,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "safari (w588)",
+     "what": "is out of view: 0% of it is on a display, at 1599,770 1324×791",
+     "trace": null
+    },
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "calendar (w606)",
+     "what": "is out of view: 0% of it is on a display, at 1599,770 937×600",
+     "trace": null
+    },
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "mail (w612)",
+     "what": "is out of view: 0% of it is on a display, at 1599,770 1120×630",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 29,
+   "slug": "display-plug",
+   "chapter": "The walk",
+   "text": "the second display: plug",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792074888797,
+   "milliseconds": 6356,
+   "moved": {
+    "585": [
+     2,
+     3,
+     1940
+    ],
+    "588": [
+     2,
+     2,
+     2241
+    ],
+    "596": [
+     2,
+     3,
+     2170
+    ],
+    "602": [
+     2,
+     2,
+     2170
+    ],
+    "603": [
+     2,
+     2,
+     2011
+    ],
+    "606": [
+     2,
+     2,
+     2241
+    ],
+    "607": [
+     2,
+     2,
+     2011
+    ],
+    "611": [
+     2,
+     2,
+     2241
+    ],
+    "612": [
+     2,
+     2,
+     2241
+    ],
+    "614": [
+     2,
+     2,
+     2241
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "finder (w585)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 400,43 709×252 · +259 ms 340,120 920×436 · +2155 ms 340,120 709×252 · +2199 ms 400,43 709×252"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "safari (w588)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1599,770 1324×791 · +29 ms 67,31 1324×791 · +2270 ms -1323,770 1324×791"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "textedit (w596)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 12,562 376×248 · +29 ms 165,65 656×422 · +2155 ms 165,65 376×248 · +2199 ms 12,562 376×248"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "terminal (w602)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1121,562 377×248 · +29 ms 799,31 860×503 · +2199 ms 1121,562 377×248"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "notes (w603)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 400,490 709×320 · +259 ms 426,218 1000×600 · +2270 ms 400,490 709×320"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "calendar (w606)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1599,770 937×600 · +29 ms 403,112 937×600 · +2270 ms -936,770 937×600"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "settings (w607)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1599,770 723×625 · +259 ms 437,85 723×625 · +2270 ms -722,770 723×625"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "preview (w611)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1599,770 708×424 · +29 ms 4,35 708×424 · +2270 ms -707,770 708×424"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "mail (w612)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1599,770 1120×630 · +29 ms 480,192 1120×630 · +2270 ms -1119,770 1120×630"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "w614 of Mail",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1924,877 470×416 · +29 ms 805,299 470×416 · +2270 ms -794,877 470×416"
+    }
+   ]
+  },
+  {
+   "number": 30,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "chooses `home` from Arbor's menu",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792074895483,
+   "milliseconds": 527,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 31,
+   "slug": "display-unplug",
+   "chapter": "The walk",
+   "text": "the second display: unplug",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792074896293,
+   "milliseconds": 3055,
+   "moved": {
+    "585": [
+     2,
+     2,
+     1725
+    ],
+    "588": [
+     2,
+     2,
+     1784
+    ],
+    "596": [
+     2,
+     2,
+     1725
+    ],
+    "602": [
+     2,
+     2,
+     1725
+    ],
+    "603": [
+     2,
+     3,
+     1784
+    ],
+    "606": [
+     2,
+     2,
+     1784
+    ],
+    "607": [
+     2,
+     2,
+     1754
+    ],
+    "611": [
+     2,
+     2,
+     1784
+    ],
+    "612": [
+     2,
+     2,
+     1784
+    ],
+    "614": [
+     2,
+     2,
+     1784
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "finder (w585)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 400,43 709×252 · +149 ms 340,120 920×436 · +1874 ms 400,43 709×252"
+    },
+    {
+     "rule": "3",
+     "detector": "flash",
+     "level": "FAIL",
+     "window": "safari (w588)",
+     "what": "is out of view before and after, and 100% of it showed in between",
+     "trace": "+0 ms -1323,770 1324×791 · +149 ms 67,31 1324×791 · +1933 ms 1599,770 1324×791"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "textedit (w596)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 12,562 376×248 · +149 ms 165,65 656×422 · +1874 ms 12,562 376×248"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "terminal (w602)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1121,562 377×248 · +149 ms 799,31 860×503 · +1874 ms 1121,562 377×248"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "notes (w603)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 400,490 709×320 · +149 ms 426,218 1000×600 · +1886 ms 426,218 709×320 · +1933 ms 400,490 709×320"
+    },
+    {
+     "rule": "3",
+     "detector": "flash",
+     "level": "FAIL",
+     "window": "calendar (w606)",
+     "what": "is out of view before and after, and 100% of it showed in between",
+     "trace": "+0 ms -936,770 937×600 · +149 ms 403,112 937×600 · +1933 ms 1599,770 937×600"
+    },
+    {
+     "rule": "3",
+     "detector": "flash",
+     "level": "FAIL",
+     "window": "settings (w607)",
+     "what": "is out of view before and after, and 100% of it showed in between",
+     "trace": "+0 ms -722,770 723×625 · +179 ms 437,85 723×625 · +1933 ms 1599,770 723×625"
+    },
+    {
+     "rule": "3",
+     "detector": "flash",
+     "level": "FAIL",
+     "window": "preview (w611)",
+     "what": "is out of view before and after, and 100% of it showed in between",
+     "trace": "+0 ms -707,770 708×424 · +149 ms 4,35 708×424 · +1933 ms 1599,770 708×424"
+    },
+    {
+     "rule": "3",
+     "detector": "flash",
+     "level": "FAIL",
+     "window": "mail (w612)",
+     "what": "is out of view before and after, and 100% of it showed in between",
+     "trace": "+0 ms -1119,770 1120×630 · +149 ms 480,192 1120×630 · +1933 ms 1599,770 1120×630"
+    },
+    {
+     "rule": "3",
+     "detector": "flash",
+     "level": "FAIL",
+     "window": "w614 of Mail",
+     "what": "is out of view before and after, and 100% of it showed in between",
+     "trace": "+0 ms -794,877 470×416 · +149 ms 805,299 470×416 · +1933 ms 1924,877 470×416"
+    }
+   ]
+  },
+  {
+   "number": 32,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "chooses `home` from Arbor's menu",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792074899644,
+   "milliseconds": 642,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "safari (w588)",
+     "what": "is out of view: 0% of it is on a display, at 1599,770 1324×791",
+     "trace": null
+    },
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "calendar (w606)",
+     "what": "is out of view: 0% of it is on a display, at 1599,770 937×600",
+     "trace": null
+    },
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "mail (w612)",
+     "what": "is out of view: 0% of it is on a display, at 1599,770 1120×630",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 33,
+   "slug": "display-plug",
+   "chapter": "The walk",
+   "text": "the second display: plug",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792074900568,
+   "milliseconds": 6540,
+   "moved": {
+    "585": [
+     2,
+     3,
+     2520
+    ],
+    "588": [
+     2,
+     2,
+     2569
+    ],
+    "596": [
+     2,
+     2,
+     2490
+    ],
+    "602": [
+     3,
+     3,
+     2520
+    ],
+    "603": [
+     2,
+     2,
+     2349
+    ],
+    "606": [
+     2,
+     2,
+     2588
+    ],
+    "607": [
+     2,
+     2,
+     2370
+    ],
+    "611": [
+     2,
+     2,
+     2588
+    ],
+    "612": [
+     2,
+     2,
+     2588
+    ],
+    "614": [
+     2,
+     2,
+     2588
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "finder (w585)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 400,43 709×252 · +16 ms 340,120 920×436 · +2506 ms 340,120 709×252 · +2536 ms 400,43 709×252"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "safari (w588)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1599,770 1324×791 · +16 ms 67,31 1324×791 · +2585 ms -1323,770 1324×791"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "textedit (w596)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 12,562 376×248 · +16 ms 165,65 656×422 · +2506 ms 12,562 376×248"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "terminal (w602)",
+     "what": "moved 3 times",
+     "trace": "+0 ms 1121,562 377×248 · +16 ms 799,31 860×503 · +663 ms 740,31 860×503 · +2536 ms 1121,562 377×248"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "notes (w603)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 400,490 709×320 · +226 ms 426,218 1000×600 · +2575 ms 400,490 709×320"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "calendar (w606)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1599,770 937×600 · +16 ms 403,112 937×600 · +2604 ms -936,770 937×600"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "settings (w607)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1599,770 723×625 · +234 ms 437,85 723×625 · +2604 ms -722,770 723×625"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "preview (w611)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1599,770 708×424 · +16 ms 4,35 708×424 · +2604 ms -707,770 708×424"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "mail (w612)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1599,770 1120×630 · +16 ms 480,192 1120×630 · +2604 ms -1119,770 1120×630"
+    },
+    {
+     "rule": "3",
+     "detector": "flash",
+     "level": "FAIL",
+     "window": "w614 of Mail",
+     "what": "is out of view before and after, and 100% of it showed in between",
+     "trace": "+0 ms 1924,877 470×416 · +16 ms 805,299 470×416 · +2604 ms -794,877 470×416"
+    }
+   ]
+  },
+  {
+   "number": 34,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "chooses `home` from Arbor's menu",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792074907492,
+   "milliseconds": 604,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "safari (w588)",
+     "what": "is out of view: 0% of it is on a display, at -1323,770 1324×791",
+     "trace": null
+    },
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "calendar (w606)",
+     "what": "is out of view: 0% of it is on a display, at -936,770 937×600",
+     "trace": null
+    },
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "mail (w612)",
+     "what": "is out of view: 0% of it is on a display, at -1119,770 1120×630",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 35,
+   "slug": "view-in",
+   "chapter": "The walk",
+   "text": "chooses `in` from Arbor's menu",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792074908498,
+   "milliseconds": 1506,
+   "moved": {
+    "585": [
+     1,
+     1,
+     0
+    ],
+    "596": [
+     1,
+     1,
+     0
+    ],
+    "602": [
+     1,
+     1,
+     0
+    ],
+    "603": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 36,
+   "slug": "view-all",
+   "chapter": "The walk",
+   "text": "presses ctrl+opt+space",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792074910255,
+   "milliseconds": 1462,
+   "moved": {
+    "585": [
+     1,
+     1,
+     0
+    ],
+    "596": [
+     1,
+     1,
+     0
+    ],
+    "602": [
+     1,
+     1,
+     0
+    ],
+    "603": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 37,
+   "slug": "click-terminal",
+   "chapter": "The walk",
+   "text": "clicks terminal's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792074912212,
+   "milliseconds": 1848,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 38,
+   "slug": "undo",
+   "chapter": "The walk",
+   "text": "presses ctrl+opt+z",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792074914331,
+   "milliseconds": 1858,
+   "moved": {
+    "585": [
+     1,
+     1,
+     0
+    ],
+    "588": [
+     1,
+     1,
+     0
+    ],
+    "596": [
+     1,
+     1,
+     0
+    ],
+    "602": [
+     1,
+     1,
+     0
+    ],
+    "603": [
+     1,
+     1,
+     0
+    ],
+    "606": [
+     1,
+     1,
+     0
+    ],
+    "607": [
+     1,
+     1,
+     0
+    ],
+    "611": [
+     1,
+     1,
+     0
+    ],
+    "612": [
+     1,
+     1,
+     0
+    ],
+    "614": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 39,
+   "slug": "view-back",
+   "chapter": "The walk",
+   "text": "presses ctrl+opt+[",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792074916424,
+   "milliseconds": 1215,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 40,
+   "slug": "dock-icon-calendar",
+   "chapter": "The walk",
+   "text": "clicks calendar's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792074917977,
+   "milliseconds": 1856,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 41,
+   "slug": "dock-icon-notes",
+   "chapter": "The walk",
+   "text": "clicks notes's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792074920214,
+   "milliseconds": 1848,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 42,
+   "slug": "drag-notes-by",
+   "chapter": "The walk",
+   "text": "drags notes, which floats, by its title bar 126 across and 53 down",
+   "act": "drag",
+   "judged": false,
+   "performed": false,
+   "began": 1792074922369,
+   "milliseconds": 4985,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "script",
+     "level": "ODD",
+     "window": null,
+     "what": "the act was not performed: drag_window could not be done",
+     "trace": null,
+     "explained": "not performed, so not judged"
+    }
+   ]
+  },
+  {
+   "number": 43,
+   "slug": "click-settings",
+   "chapter": "The walk",
+   "text": "clicks settings's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792074927651,
+   "milliseconds": 1723,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 44,
+   "slug": "pin",
+   "chapter": "The walk",
+   "text": "chooses Keep This Window in View in Arbor's menu, or takes the tick off",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792074929601,
+   "milliseconds": 452,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 45,
+   "slug": "dock-icon-finder",
+   "chapter": "The walk",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792074930277,
+   "milliseconds": 2004,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 46,
+   "slug": "redo",
+   "chapter": "The walk",
+   "text": "chooses `redo` from Arbor's menu",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792074932642,
+   "milliseconds": 1659,
+   "moved": {
+    "585": [
+     1,
+     1,
+     0
+    ],
+    "588": [
+     1,
+     1,
+     0
+    ],
+    "596": [
+     1,
+     1,
+     0
+    ],
+    "602": [
+     1,
+     1,
+     0
+    ],
+    "603": [
+     1,
+     1,
+     0
+    ],
+    "606": [
+     1,
+     1,
+     0
+    ],
+    "607": [
+     1,
+     1,
+     0
+    ],
+    "611": [
+     1,
+     1,
+     0
+    ],
+    "612": [
+     1,
+     1,
+     0
+    ],
+    "614": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 47,
+   "slug": "display-right",
+   "chapter": "The walk",
+   "text": "the second display: right",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792074934792,
+   "milliseconds": 5670,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 48,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "chooses `home` from Arbor's menu",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792074940855,
+   "milliseconds": 552,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 49,
+   "slug": "leave-alone",
+   "chapter": "The walk",
+   "text": "does nothing for half a minute",
+   "act": "idle",
+   "judged": true,
+   "performed": true,
+   "began": 1792074941700,
+   "milliseconds": 30641,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 50,
+   "slug": "view-frame",
+   "chapter": "The walk",
+   "text": "presses ctrl+opt+return",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792074972894,
+   "milliseconds": 1634,
+   "moved": {
+    "585": [
+     1,
+     1,
+     0
+    ],
+    "596": [
+     1,
+     1,
+     0
+    ],
+    "602": [
+     1,
+     1,
+     0
+    ],
+    "603": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 51,
+   "slug": "dock-icon-settings",
+   "chapter": "The walk",
+   "text": "clicks settings's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792074974773,
+   "milliseconds": 2109,
+   "moved": {
+    "585": [
+     1,
+     1,
+     0
+    ],
+    "607": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 52,
+   "slug": "dock-down",
+   "chapter": "The walk",
+   "text": "chooses `dock bottom` from Arbor's menu",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792074977168,
+   "milliseconds": 501,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 53,
+   "slug": "dock-icon-notes",
+   "chapter": "The walk",
+   "text": "clicks notes's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792074977973,
+   "milliseconds": 2037,
+   "moved": {
+    "603": [
+     1,
+     1,
+     0
+    ],
+    "607": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 54,
+   "slug": "dock-left",
+   "chapter": "The walk",
+   "text": "presses ctrl+opt+left",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792074980288,
+   "milliseconds": 1367,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 55,
+   "slug": "dock-icon-finder",
+   "chapter": "The walk",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792074981856,
+   "milliseconds": 2033,
+   "moved": {
+    "585": [
+     1,
+     1,
+     0
+    ],
+    "603": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 56,
+   "slug": "new-window-finder",
+   "chapter": "The walk",
+   "text": "presses ⌘N in finder",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "began": 1792074984155,
+   "milliseconds": 1773,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 57,
+   "slug": "display-left",
+   "chapter": "The walk",
+   "text": "the second display: left",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792074986219,
+   "milliseconds": 5984,
+   "moved": {
+    "585": [
+     2,
+     3,
+     1942
+    ],
+    "588": [
+     2,
+     2,
+     1962
+    ],
+    "596": [
+     2,
+     2,
+     1962
+    ],
+    "602": [
+     2,
+     2,
+     1753
+    ],
+    "603": [
+     2,
+     2,
+     1962
+    ],
+    "606": [
+     2,
+     2,
+     1753
+    ],
+    "607": [
+     2,
+     2,
+     1753
+    ],
+    "611": [
+     2,
+     2,
+     1962
+    ],
+    "612": [
+     2,
+     2,
+     1753
+    ],
+    "614": [
+     2,
+     2,
+     1753
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "finder (w585)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 12,43 1576×767 · +36 ms 340,120 920×436 · +1973 ms 12,43 920×436 · +1978 ms 12,43 1576×767"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "safari (w588)",
+     "what": "moved 2 times",
+     "trace": "+0 ms -1323,770 1324×791 · +36 ms 67,31 1324×791 · +1998 ms 1599,770 1324×791"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "textedit (w596)",
+     "what": "moved 2 times",
+     "trace": "+0 ms -375,790 376×248 · +36 ms 165,65 656×422 · +1998 ms 1599,790 656×422"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "terminal (w602)",
+     "what": "moved 2 times",
+     "trace": "+0 ms -376,790 377×248 · +245 ms 799,31 860×503 · +1998 ms 1599,790 860×503"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "notes (w603)",
+     "what": "moved 2 times",
+     "trace": "+0 ms -1575,770 1576×767 · +36 ms 426,218 1000×600 · +1998 ms 1599,770 1000×600"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "calendar (w606)",
+     "what": "moved 2 times",
+     "trace": "+0 ms -936,770 937×600 · +245 ms 403,112 937×600 · +1998 ms 1599,770 937×600"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "settings (w607)",
+     "what": "moved 2 times",
+     "trace": "+0 ms -722,770 723×767 · +245 ms 437,85 723×625 · +1998 ms 1599,770 723×625"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "preview (w611)",
+     "what": "moved 2 times",
+     "trace": "+0 ms -707,770 708×424 · +36 ms 4,35 708×424 · +1998 ms 1599,770 708×424"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "mail (w612)",
+     "what": "moved 2 times",
+     "trace": "+0 ms -1119,770 1120×630 · +245 ms 480,192 1120×630 · +1998 ms 1599,770 1120×630"
+    },
+    {
+     "rule": "3",
+     "detector": "flash",
+     "level": "FAIL",
+     "window": "w614 of Mail",
+     "what": "is out of view before and after, and 100% of it showed in between",
+     "trace": "+0 ms -794,877 470×416 · +245 ms 805,299 470×416 · +1998 ms 1924,877 470×416"
+    }
+   ]
+  },
+  {
+   "number": 58,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "chooses `home` from Arbor's menu",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792074992524,
+   "milliseconds": 1463,
+   "moved": {
+    "585": [
+     1,
+     1,
+     0
+    ],
+    "596": [
+     1,
+     1,
+     0
+    ],
+    "602": [
+     1,
+     1,
+     0
+    ],
+    "603": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 59,
+   "slug": "close-window",
+   "chapter": "The walk",
+   "text": "presses ⌘W",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "began": 1792074994478,
+   "milliseconds": 1610,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 60,
+   "slug": "drag-gap-beside-terminal",
+   "chapter": "The walk",
+   "text": "drags the gap to the right of terminal by -40 points",
+   "act": "resize",
+   "judged": true,
+   "performed": true,
+   "began": 1792074996632,
+   "milliseconds": 4551,
+   "moved": {
+    "602": [
+     3,
+     16,
+     2011
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "terminal (w602)",
+     "what": "moved 3 times",
+     "trace": "+0 ms 1121,562 377×248 · +746 ms 1121,562 370×248 · +799 ms 1123,562 370×248 · +865 ms 1121,562 370×248 · +1084 ms 1123,562 363×248 · +1140 ms 1122,562 363×248 · … 6 more … · +2191 ms 1123,562 342×248 · +2247 ms 1121,562 342×248 · +2574 ms 1121,562 335×248 · +2650 ms 1122,562 335×248 · +2757 ms 1121,562 335×248"
+    }
+   ]
+  },
+  {
+   "number": 61,
+   "slug": "view-all",
+   "chapter": "The walk",
+   "text": "presses ctrl+opt+space",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792075001607,
+   "milliseconds": 1268,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 62,
+   "slug": "display-unplug",
+   "chapter": "The walk",
+   "text": "the second display: unplug",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792075003251,
+   "milliseconds": 3336,
+   "moved": {
+    "585": [
+     2,
+     2,
+     2037
+    ],
+    "588": [
+     2,
+     2,
+     2151
+    ],
+    "596": [
+     2,
+     2,
+     2037
+    ],
+    "602": [
+     2,
+     2,
+     2037
+    ],
+    "603": [
+     2,
+     3,
+     2151
+    ],
+    "606": [
+     2,
+     2,
+     2151
+    ],
+    "607": [
+     2,
+     2,
+     1957
+    ],
+    "611": [
+     2,
+     2,
+     2151
+    ],
+    "612": [
+     2,
+     2,
+     2151
+    ],
+    "614": [
+     2,
+     2,
+     2151
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "finder (w585)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 400,43 709×252 · +11 ms 340,120 920×436 · +2048 ms 400,43 709×252"
+    },
+    {
+     "rule": "3",
+     "detector": "flash",
+     "level": "FAIL",
+     "window": "safari (w588)",
+     "what": "is out of view before and after, and 100% of it showed in between",
+     "trace": "+0 ms 1599,770 1324×791 · +11 ms 67,31 1324×791 · +2162 ms 1599,770 1324×791"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "textedit (w596)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 12,562 376×248 · +11 ms 165,65 656×422 · +2048 ms 12,562 376×248"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "terminal (w602)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1121,562 335×248 · +11 ms 799,31 860×503 · +2048 ms 1121,562 335×248"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "notes (w603)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 400,490 709×320 · +11 ms 426,218 1000×600 · +2099 ms 426,218 709×320 · +2162 ms 400,490 709×320"
+    },
+    {
+     "rule": "3",
+     "detector": "flash",
+     "level": "FAIL",
+     "window": "calendar (w606)",
+     "what": "is out of view before and after, and 100% of it showed in between",
+     "trace": "+0 ms 1599,770 937×600 · +11 ms 403,112 937×600 · +2162 ms 1599,770 937×600"
+    },
+    {
+     "rule": "3",
+     "detector": "flash",
+     "level": "FAIL",
+     "window": "settings (w607)",
+     "what": "is out of view before and after, and 100% of it showed in between",
+     "trace": "+0 ms 1599,770 723×625 · +205 ms 437,85 723×625 · +2162 ms 1599,770 723×625"
+    },
+    {
+     "rule": "3",
+     "detector": "flash",
+     "level": "FAIL",
+     "window": "preview (w611)",
+     "what": "is out of view before and after, and 100% of it showed in between",
+     "trace": "+0 ms 1599,770 708×424 · +11 ms 4,35 708×424 · +2162 ms 1599,770 708×424"
+    },
+    {
+     "rule": "3",
+     "detector": "flash",
+     "level": "FAIL",
+     "window": "mail (w612)",
+     "what": "is out of view before and after, and 100% of it showed in between",
+     "trace": "+0 ms 1599,770 1120×630 · +11 ms 480,192 1120×630 · +2162 ms 1599,770 1120×630"
+    },
+    {
+     "rule": "3",
+     "detector": "flash",
+     "level": "FAIL",
+     "window": "w614 of Mail",
+     "what": "is out of view before and after, and 100% of it showed in between",
+     "trace": "+0 ms 1924,877 470×416 · +11 ms 805,299 470×416 · +2162 ms 1924,877 470×416"
+    }
+   ]
+  },
+  {
+   "number": 63,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "chooses `home` from Arbor's menu",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792075007008,
+   "milliseconds": 556,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "calendar (w606)",
+     "what": "is out of view: 0% of it is on a display, at 1599,770 937×600",
+     "trace": null
+    },
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "mail (w612)",
+     "what": "is out of view: 0% of it is on a display, at 1599,770 1120×630",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 64,
+   "slug": "cmd-tab-1",
+   "chapter": "The walk",
+   "text": "holds ⌘ and presses Tab 1 time(s)",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075008004,
+   "milliseconds": 1854,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 65,
+   "slug": "dock-icon-safari",
+   "chapter": "The walk",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075010384,
+   "milliseconds": 2331,
+   "moved": {
+    "585": [
+     1,
+     1,
+     0
+    ],
+    "588": [
+     1,
+     1,
+     0
+    ],
+    "596": [
+     1,
+     1,
+     0
+    ],
+    "602": [
+     1,
+     1,
+     0
+    ],
+    "603": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 66,
+   "slug": "full-screen",
+   "chapter": "The walk",
+   "text": "presses ⌃⌘F in Safari",
+   "act": "macos-own",
+   "judged": true,
+   "performed": true,
+   "began": 1792075012944,
+   "milliseconds": 2969,
+   "moved": {
+    "588": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 67,
+   "slug": "leave-full-screen",
+   "chapter": "The walk",
+   "text": "presses ⌃⌘F again",
+   "act": "macos-own",
+   "judged": true,
+   "performed": true,
+   "began": 1792075016113,
+   "milliseconds": 2936,
+   "moved": {
+    "588": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 68,
+   "slug": "leave-alone",
+   "chapter": "The walk",
+   "text": "does nothing for half a minute",
+   "act": "idle",
+   "judged": true,
+   "performed": true,
+   "began": 1792075019242,
+   "milliseconds": 30511,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 69,
+   "slug": "grow",
+   "chapter": "The walk",
+   "text": "chooses `grow` from Arbor's menu",
+   "act": "resize",
+   "judged": true,
+   "performed": true,
+   "began": 1792075050055,
+   "milliseconds": 467,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 70,
+   "slug": "view-out",
+   "chapter": "The walk",
+   "text": "chooses `out` from Arbor's menu",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792075050731,
+   "milliseconds": 1273,
+   "moved": {
+    "588": [
+     1,
+     1,
+     0
+    ],
+    "596": [
+     1,
+     1,
+     0
+    ],
+    "611": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 71,
+   "slug": "save-view-2",
+   "chapter": "The walk",
+   "text": "chooses `save-view 2` from Arbor's menu",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792075052237,
+   "milliseconds": 470,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 72,
+   "slug": "quit",
+   "chapter": "The walk",
+   "text": "chooses Quit Arbor in Arbor's menu",
+   "act": "quit-and-start",
+   "judged": true,
+   "performed": true,
+   "began": 1792075052920,
+   "milliseconds": 3120,
+   "moved": {
+    "585": [
+     1,
+     1,
+     0
+    ],
+    "588": [
+     1,
+     2,
+     5
+    ],
+    "596": [
+     1,
+     1,
+     0
+    ],
+    "602": [
+     1,
+     1,
+     0
+    ],
+    "603": [
+     1,
+     1,
+     0
+    ],
+    "606": [
+     1,
+     1,
+     0
+    ],
+    "607": [
+     1,
+     1,
+     0
+    ],
+    "611": [
+     1,
+     1,
+     0
+    ],
+    "612": [
+     1,
+     1,
+     0
+    ],
+    "614": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "terminal (w602)",
+     "what": "is 800,34 797×788; its own size was 800,35 800×784",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 73,
+   "slug": "dock-icon-safari",
+   "chapter": "The walk",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075056209,
+   "milliseconds": 1653,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 74,
+   "slug": "dock-icon-notes",
+   "chapter": "The walk",
+   "text": "clicks notes's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075058020,
+   "milliseconds": 1927,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 75,
+   "slug": "dock-icon-preview",
+   "chapter": "The walk",
+   "text": "clicks preview's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075060101,
+   "milliseconds": 1648,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 76,
+   "slug": "launch",
+   "chapter": "The walk",
+   "text": "starts Arbor",
+   "act": "quit-and-start",
+   "judged": true,
+   "performed": true,
+   "began": 1792075061893,
+   "milliseconds": 1833,
+   "moved": {
+    "585": [
+     1,
+     2,
+     41
+    ],
+    "588": [
+     2,
+     2,
+     257
+    ],
+    "596": [
+     1,
+     2,
+     41
+    ],
+    "602": [
+     1,
+     3,
+     150
+    ],
+    "603": [
+     1,
+     2,
+     170
+    ],
+    "606": [
+     1,
+     2,
+     176
+    ],
+    "607": [
+     1,
+     2,
+     120
+    ],
+    "611": [
+     1,
+     2,
+     199
+    ],
+    "612": [
+     1,
+     2,
+     235
+    ],
+    "614": [
+     1,
+     2,
+     235
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "safari (w588)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 67,31 1324×790 · +223 ms 67,31 574×247 · +480 ms 1599,770 574×247"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "preview (w611)",
+     "what": "went 352 points out of its way before it ended up",
+     "trace": "+0 ms 4,35 708×424 · +396 ms 4,35 708×248 · +595 ms 4,35 708×424"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "ODD",
+     "window": "w614 of Mail",
+     "what": "moved along with a window of its app",
+     "trace": "+0 ms 805,299 470×416 · +271 ms 681,244 470×416 · +506 ms 1800,822 470×416",
+     "explained": "follows its window"
+    },
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "safari (w588)",
+     "what": "is out of view: 0% of it is on a display, at 1599,770 574×247",
+     "trace": null
+    },
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "calendar (w606)",
+     "what": "is out of view: 0% of it is on a display, at 1599,770 680×503",
+     "trace": null
+    },
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "settings (w607)",
+     "what": "is out of view: 0% of it is on a display, at 1599,770 723×470",
+     "trace": null
+    },
+    {
+     "rule": "L",
+     "detector": "lost",
+     "level": "FAIL",
+     "window": "mail (w612)",
+     "what": "is out of view: 0% of it is on a display, at 1599,770 871×247",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 77,
+   "slug": "view-in",
+   "chapter": "The walk",
+   "text": "chooses `in` from Arbor's menu",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792075064094,
+   "milliseconds": 1566,
+   "moved": {
+    "585": [
+     1,
+     1,
+     0
+    ],
+    "588": [
+     1,
+     1,
+     0
+    ],
+    "596": [
+     1,
+     1,
+     0
+    ],
+    "602": [
+     1,
+     1,
+     0
+    ],
+    "603": [
+     1,
+     1,
+     0
+    ],
+    "611": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 78,
+   "slug": "click-safari",
+   "chapter": "The walk",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075065983,
+   "milliseconds": 1753,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 79,
+   "slug": "float",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥F",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792075067996,
+   "milliseconds": 1358,
+   "moved": {
+    "588": [
+     1,
+     1,
+     0
+    ],
+    "596": [
+     1,
+     1,
+     0
+    ],
+    "611": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 80,
+   "slug": "view-frame",
+   "chapter": "The walk",
+   "text": "presses ctrl+opt+return",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792075069638,
+   "milliseconds": 1510,
+   "moved": {
+    "588": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 81,
+   "slug": "dock-icon-calendar",
+   "chapter": "The walk",
+   "text": "clicks calendar's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075071392,
+   "milliseconds": 1829,
+   "moved": {
+    "596": [
+     1,
+     1,
+     0
+    ],
+    "606": [
+     1,
+     1,
+     0
+    ],
+    "611": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 82,
+   "slug": "pin",
+   "chapter": "The walk",
+   "text": "chooses Keep This Window in View in Arbor's menu, or takes the tick off",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792075073445,
+   "milliseconds": 1341,
+   "moved": {
+    "585": [
+     1,
+     1,
+     0
+    ],
+    "603": [
+     1,
+     1,
+     0
+    ],
+    "606": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 83,
+   "slug": "drag-calendar-to-right-edge",
+   "chapter": "The walk",
+   "text": "drags calendar by its title bar against the right edge of the screen and lets go",
+   "act": "drag-where-macos-tiles",
+   "judged": true,
+   "performed": true,
+   "began": 1792075075099,
+   "milliseconds": 8533,
+   "moved": {
+    "606": [
+     1,
+     10,
+     351
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "pulled",
+     "level": "FAIL",
+     "window": "calendar (w606)",
+     "what": "was 52 points ahead of the pointer's travel and 0 behind it at the most",
+     "trace": "+0 ms 394,147 937×600 · +125 ms 425,158 937×600 · +131 ms 456,168 937×600 · +192 ms 487,178 937×600 · +211 ms 518,189 937×600 · +284 ms 549,199 937×600 · … 18 more … · +1642 ms 1221,294 937×600 · +1698 ms 1252,300 937×600 · +1833 ms 1284,300 937×600 · +2074 ms 1285,300 937×600 · +2241 ms 1284,300 937×600"
+    }
+   ]
+  },
+  {
+   "number": 84,
+   "slug": "dock-icon-notes",
+   "chapter": "The walk",
+   "text": "clicks notes's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075083906,
+   "milliseconds": 1749,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 85,
+   "slug": "view-all",
+   "chapter": "The walk",
+   "text": "presses ctrl+opt+space",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792075085985,
+   "milliseconds": 1487,
+   "moved": {
+    "585": [
+     1,
+     1,
+     0
+    ],
+    "588": [
+     1,
+     1,
+     0
+    ],
+    "596": [
+     1,
+     1,
+     0
+    ],
+    "602": [
+     1,
+     1,
+     0
+    ],
+    "603": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 86,
+   "slug": "dock-icon-terminal",
+   "chapter": "The walk",
+   "text": "clicks terminal's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075087799,
+   "milliseconds": 1962,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 87,
+   "slug": "drag-terminal-to-right-edge",
+   "chapter": "The walk",
+   "text": "drags terminal by its title bar against the right edge of the screen and lets go",
+   "act": "drag-where-macos-tiles",
+   "judged": true,
+   "performed": true,
+   "began": 1792075090054,
+   "milliseconds": 8665,
+   "moved": {
+    "602": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 88,
+   "slug": "display-plug",
+   "chapter": "The walk",
+   "text": "the second display: plug",
+   "act": "display-change",
+   "judged": false,
+   "performed": true,
+   "began": 1792075099020,
+   "milliseconds": 7902,
+   "moved": {
+    "585": [
+     2,
+     2,
+     2021
+    ],
+    "588": [
+     1,
+     1,
+     0
+    ],
+    "596": [
+     2,
+     2,
+     2302
+    ],
+    "602": [
+     1,
+     1,
+     0
+    ],
+    "603": [
+     2,
+     2,
+     2059
+    ],
+    "606": [
+     1,
+     1,
+     0
+    ],
+    "607": [
+     2,
+     2,
+     1736
+    ],
+    "611": [
+     2,
+     2,
+     2059
+    ],
+    "612": [
+     2,
+     2,
+     1720
+    ],
+    "614": [
+     2,
+     2,
+     1720
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "finder (w585)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 400,43 709×380 · +310 ms 340,120 920×436 · +2331 ms 400,43 709×380"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "textedit (w596)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 12,433 376×377 · +29 ms 165,65 656×422 · +2331 ms 12,433 376×377"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "notes (w603)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 400,435 709×375 · +310 ms 426,218 1000×600 · +2369 ms 400,435 709×375"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "settings (w607)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1599,770 723×470 · +633 ms 437,85 723×625 · +2369 ms -722,770 723×625"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "preview (w611)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1599,770 1576×378 · +310 ms 4,35 708×424 · +2369 ms -707,770 708×424"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "mail (w612)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1599,770 871×247 · +649 ms 480,192 1120×630 · +2369 ms -1119,770 1120×630"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "w614 of Mail",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1800,822 470×416 · +649 ms 805,299 470×416 · +2369 ms -794,877 470×416"
+    }
+   ]
+  },
+  {
+   "number": 89,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "chooses `home` from Arbor's menu",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792075107268,
+   "milliseconds": 2104,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 90,
+   "slug": "drag-safari-by",
+   "chapter": "The walk",
+   "text": "drags safari, which floats, by its title bar -100 across and 91 down",
+   "act": "drag",
+   "judged": false,
+   "performed": true,
+   "began": 1792075109915,
+   "milliseconds": 7398,
+   "moved": {
+    "585": [
+     1,
+     1,
+     0
+    ],
+    "588": [
+     1,
+     1,
+     0
+    ],
+    "596": [
+     1,
+     1,
+     0
+    ],
+    "603": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "finder (w585)",
+     "what": "moved, and the step did not name it",
+     "trace": "+0 ms 400,43 709×380 · +4843 ms 690,43 709×380"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "textedit (w596)",
+     "what": "moved, and the step did not name it",
+     "trace": "+0 ms 12,433 376×377 · +4843 ms 12,433 666×377"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "notes (w603)",
+     "what": "moved, and the step did not name it",
+     "trace": "+0 ms 400,435 709×375 · +4843 ms 690,435 709×375"
+    }
+   ]
+  },
+  {
+   "number": 91,
+   "slug": "float-all",
+   "chapter": "The walk",
+   "text": "chooses `float-all` from Arbor's menu",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792075117641,
+   "milliseconds": 1740,
+   "moved": {
+    "585": [
+     1,
+     1,
+     0
+    ],
+    "588": [
+     1,
+     1,
+     0
+    ],
+    "596": [
+     1,
+     1,
+     0
+    ],
+    "603": [
+     1,
+     1,
+     0
+    ],
+    "606": [
+     1,
+     4,
+     133
+    ],
+    "607": [
+     1,
+     1,
+     0
+    ],
+    "611": [
+     1,
+     1,
+     0
+    ],
+    "612": [
+     1,
+     1,
+     0
+    ],
+    "614": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "safari (w588)",
+     "what": "is 67,31 1324×790; its own size was 104,43 574×378",
+     "trace": null
+    },
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "terminal (w602)",
+     "what": "is 803,31 797×791; its own size was 803,33 797×788",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 92,
+   "slug": "view-out",
+   "chapter": "The walk",
+   "text": "chooses `out` from Arbor's menu",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792075119608,
+   "milliseconds": 527,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 93,
+   "slug": "view-frame",
+   "chapter": "The walk",
+   "text": "presses ctrl+opt+return",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792075120383,
+   "milliseconds": 1319,
+   "moved": {
+    "588": [
+     1,
+     2,
+     45
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 94,
+   "slug": "display-unplug",
+   "chapter": "The walk",
+   "text": "the second display: unplug",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792075121896,
+   "milliseconds": 2950,
+   "moved": {
+    "588": [
+     1,
+     1,
+     0
+    ],
+    "596": [
+     1,
+     1,
+     0
+    ],
+    "606": [
+     2,
+     2,
+     1716
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "calendar (w606)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 800,32 801×790 · +132 ms 1284,300 937×600 · +1848 ms 663,222 937×600"
+    }
+   ]
+  },
+  {
+   "number": 95,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "chooses `home` from Arbor's menu",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792075125072,
+   "milliseconds": 471,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 96,
+   "slug": "display-plug",
+   "chapter": "The walk",
+   "text": "the second display: plug",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792075125725,
+   "milliseconds": 6376,
+   "moved": {
+    "606": [
+     2,
+     2,
+     385
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "calendar (w606)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 663,222 937×600 · +148 ms 1284,300 937×600 · +533 ms 663,300 937×600"
+    }
+   ]
+  },
+  {
+   "number": 97,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "chooses `home` from Arbor's menu",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792075132366,
+   "milliseconds": 494,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 98,
+   "slug": "dock-icon-safari",
+   "chapter": "The walk",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075133064,
+   "milliseconds": 1928,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "4",
+     "detector": "focus",
+     "level": "FAIL",
+     "window": "safari (w588)",
+     "what": "is not wholly in view: 90% of it, at 0,109 1324×791 in 0,31 1600×791 and 1600,31 1280×769",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 99,
+   "slug": "new-window-safari",
+   "chapter": "The walk",
+   "text": "presses ⌘N in safari",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "began": 1792075135191,
+   "milliseconds": 1741,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 100,
+   "slug": "dock-icon-preview",
+   "chapter": "The walk",
+   "text": "clicks preview's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075137207,
+   "milliseconds": 1827,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 101,
+   "slug": "dock-down",
+   "chapter": "The walk",
+   "text": "chooses `dock bottom` from Arbor's menu",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792075139281,
+   "milliseconds": 1567,
+   "moved": {
+    "611": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 102,
+   "slug": "click-new-window",
+   "chapter": "The walk",
+   "text": "clicks the title bar of the window that ⌘N opened",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075141427,
+   "milliseconds": 1793,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 103,
+   "slug": "close-window",
+   "chapter": "The walk",
+   "text": "presses ⌘W",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "began": 1792075143417,
+   "milliseconds": 1358,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 104,
+   "slug": "view-all",
+   "chapter": "The walk",
+   "text": "presses ctrl+opt+space",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792075145003,
+   "milliseconds": 1225,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 105,
+   "slug": "peek",
+   "chapter": "The walk",
+   "text": "holds ⌃⌥Space for a second and a half and lets go",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792075146430,
+   "milliseconds": 2487,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 106,
+   "slug": "dock-icon-notes",
+   "chapter": "The walk",
+   "text": "clicks notes's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075149247,
+   "milliseconds": 1914,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 107,
+   "slug": "minimize-notes",
+   "chapter": "The walk",
+   "text": "presses ⌘M",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "began": 1792075151374,
+   "milliseconds": 1831,
+   "moved": {
+    "603": [
+     1,
+     19,
+     478
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 108,
+   "slug": "dock-icon-finder",
+   "chapter": "The walk",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075153439,
+   "milliseconds": 1990,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 109,
+   "slug": "click-textedit",
+   "chapter": "The walk",
+   "text": "clicks textedit's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075155687,
+   "milliseconds": 1944,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 110,
+   "slug": "restore-notes",
+   "chapter": "The walk",
+   "text": "clicks notes's icon in the Dock, which brings its minimized window back",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "began": 1792075157871,
+   "milliseconds": 2384,
+   "moved": {
+    "603": [
+     1,
+     12,
+     470
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 111,
+   "slug": "hold",
+   "chapter": "The walk",
+   "text": "holds the view, as for a shared screen",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792075160448,
+   "milliseconds": 465,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 112,
+   "slug": "show-everything-while-held",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥Space, which would show everything: the view is held",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792075161115,
+   "milliseconds": 1344,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 113,
+   "slug": "release",
+   "chapter": "The walk",
+   "text": "lets the view go again",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792075162642,
+   "milliseconds": 445,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 114,
+   "slug": "dock-icon-preview",
+   "chapter": "The walk",
+   "text": "clicks preview's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075163325,
+   "milliseconds": 1851,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 115,
+   "slug": "drag-preview-to-left-edge",
+   "chapter": "The walk",
+   "text": "drags preview by its title bar against the left edge of the screen and lets go",
+   "act": "drag-where-macos-tiles",
+   "judged": true,
+   "performed": true,
+   "began": 1792075165454,
+   "milliseconds": 9108,
+   "moved": {
+    "611": [
+     1,
+     10,
+     274
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "pulled",
+     "level": "FAIL",
+     "window": "preview (w611)",
+     "what": "was 52 points ahead of the pointer's travel and 0 behind it at the most",
+     "trace": "+0 ms 0,433 1576×377 · +89 ms -26,433 1576×377 · +93 ms -77,433 1576×377 · +194 ms -103,433 1576×377 · +261 ms -128,433 1576×377 · +314 ms -154,434 1576×377 · … 17 more … · +1792 ms -717,437 1576×377 · +1893 ms -743,437 1576×377 · +1962 ms -768,438 1576×377 · +2228 ms -767,438 1576×377 · +2348 ms -768,438 1576×377"
+    }
+   ]
+  },
+  {
+   "number": 116,
+   "slug": "display-unplug",
+   "chapter": "The walk",
+   "text": "the second display: unplug",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792075174771,
+   "milliseconds": 3195,
+   "moved": {
+    "606": [
+     2,
+     2,
+     1895
+    ],
+    "611": [
+     1,
+     2,
+     192
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "calendar (w606)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 663,300 937×600 · +172 ms 1284,300 937×600 · +2067 ms 663,222 937×600"
+    }
+   ]
+  },
+  {
+   "number": 117,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "chooses `home` from Arbor's menu",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792075178217,
+   "milliseconds": 534,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 118,
+   "slug": "display-plug",
+   "chapter": "The walk",
+   "text": "the second display: plug",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792075178960,
+   "milliseconds": 7667,
+   "moved": {
+    "606": [
+     1,
+     2,
+     247
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 119,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "chooses `home` from Arbor's menu",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792075186903,
+   "milliseconds": 2142,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 120,
+   "slug": "send-across",
+   "chapter": "The walk",
+   "text": "sends the window in front to the other display",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792075189270,
+   "milliseconds": 2793,
+   "moved": {
+    "611": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 121,
+   "slug": "float-all",
+   "chapter": "The walk",
+   "text": "chooses `float-all` from Arbor's menu",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792075192283,
+   "milliseconds": 2071,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "safari (w588)",
+     "what": "is 0,109 1324×791; its own size was 104,43 574×378",
+     "trace": null
+    },
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "textedit (w596)",
+     "what": "is 165,65 656×422; its own size was 165,65 673×439",
+     "trace": null
+    },
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "terminal (w602)",
+     "what": "is 803,31 797×791; its own size was 803,33 797×788",
+     "trace": null
+    },
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "calendar (w606)",
+     "what": "is 1284,300 801×780; its own size was 800,32 801×791",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 122,
+   "slug": "dock-icon-settings",
+   "chapter": "The walk",
+   "text": "clicks settings's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075194575,
+   "milliseconds": 3427,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 123,
+   "slug": "dock-up",
+   "chapter": "The walk",
+   "text": "chooses `dock top` from Arbor's menu",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792075198280,
+   "milliseconds": 3008,
+   "moved": {
+    "607": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 124,
+   "slug": "dock-icon-safari",
+   "chapter": "The walk",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075201560,
+   "milliseconds": 3560,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "4",
+     "detector": "focus",
+     "level": "FAIL",
+     "window": "safari (w588)",
+     "what": "is not wholly in view: 90% of it, at 0,109 1324×791 in 0,31 1600×791 and 1600,31 1920×1049",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 125,
+   "slug": "quit-safari",
+   "chapter": "The walk",
+   "text": "presses ⌘Q in safari",
+   "act": "open-close",
+   "judged": true,
+   "performed": true,
+   "began": 1792075205405,
+   "milliseconds": 3049,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 126,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "chooses `home` from Arbor's menu",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792075208746,
+   "milliseconds": 2132,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 127,
+   "slug": "reopen-safari",
+   "chapter": "The walk",
+   "text": "opens safari's document again",
+   "act": "open-close",
+   "judged": false,
+   "performed": true,
+   "began": 1792075211076,
+   "milliseconds": 4707,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 128,
+   "slug": "display-unplug",
+   "chapter": "The walk",
+   "text": "the second display: unplug",
+   "act": "display-change",
+   "judged": false,
+   "performed": true,
+   "began": 1792075216063,
+   "milliseconds": 4786,
+   "moved": {
+    "606": [
+     2,
+     2,
+     1724
+    ],
+    "607": [
+     2,
+     2,
+     1724
+    ],
+    "611": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "calendar (w606)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 1284,300 801×780 · +404 ms 1284,300 937×600 · +2128 ms 663,222 937×600"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "settings (w607)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 438,43 723×470 · +404 ms 437,85 723×625 · +2128 ms 438,43 723×470"
+    }
+   ]
+  },
+  {
+   "number": 129,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "chooses `home` from Arbor's menu",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792075221124,
+   "milliseconds": 2128,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 130,
+   "slug": "input-last",
+   "chapter": "The end",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792075223463,
+   "milliseconds": 17186,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 131,
+   "slug": "quit",
+   "chapter": "The end",
+   "text": "chooses Quit Arbor in Arbor's menu",
+   "act": "quit-and-start",
+   "judged": true,
+   "performed": true,
+   "began": 1792075240846,
+   "milliseconds": 3083,
+   "moved": {
+    "606": [
+     1,
+     2,
+     9
+    ],
+    "607": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "textedit (w596)",
+     "what": "is 165,65 656×422; its own size was 165,65 673×439",
+     "trace": null
+    },
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "terminal (w602)",
+     "what": "is 803,31 797×791; its own size was 803,33 797×788",
+     "trace": null
+    },
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "preview (w611)",
+     "what": "is -768,438 1576×377; its own size was 2159,160 804×791",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 132,
+   "slug": "input-after",
+   "chapter": "The end",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792075244102,
+   "milliseconds": 13569,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 133,
+   "slug": "dock-icon-finder",
+   "chapter": "The end",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075257836,
+   "milliseconds": 1770,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 134,
+   "slug": "dock-icon-safari",
+   "chapter": "The end",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075259763,
+   "milliseconds": 1948,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 135,
+   "slug": "dock-icon-textedit",
+   "chapter": "The end",
+   "text": "clicks textedit's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075261876,
+   "milliseconds": 1863,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 136,
+   "slug": "dock-icon-terminal",
+   "chapter": "The end",
+   "text": "clicks terminal's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075263907,
+   "milliseconds": 1798,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 137,
+   "slug": "dock-icon-notes",
+   "chapter": "The end",
+   "text": "clicks notes's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075265862,
+   "milliseconds": 1761,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 138,
+   "slug": "dock-icon-calendar",
+   "chapter": "The end",
+   "text": "clicks calendar's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075267780,
+   "milliseconds": 1758,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 139,
+   "slug": "dock-icon-settings",
+   "chapter": "The end",
+   "text": "clicks settings's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075269721,
+   "milliseconds": 1831,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 140,
+   "slug": "dock-icon-preview",
+   "chapter": "The end",
+   "text": "clicks preview's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075271725,
+   "milliseconds": 1800,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 141,
+   "slug": "dock-icon-mail",
+   "chapter": "The end",
+   "text": "clicks mail's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792075273704,
+   "milliseconds": 1788,
+   "moved": {},
+   "findings": []
+  }
+ ]
+}

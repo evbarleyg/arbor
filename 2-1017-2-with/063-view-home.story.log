@@ -1,0 +1,10 @@
+63 view-home: chooses `home` from Arbor's menu
+expected: {'act': 'view', 'settled': 'quiet:367', 'moves': 'any', 'everything': '1', 'tiles': '611@12:43:376:248,588@12:303:376:247,606@400:307:709:171,607@1121:43:335:248,612@1121:303:335:247', 'keyboard': '585', 'floating': '', 'docked': '585,588,596,602,603,606,607,611,612'}
+FAIL rule L: calendar (w606) is out of view: 0% of it is on a display, at 1599,770 937×600
+FAIL rule L: mail (w612) is out of view: 0% of it is on a display, at 1599,770 1120×630
+
+14:36:47.008 SCREEN -- begin 63 view-home
+14:36:47.008 SCREEN -- text 63 chooses `home` from Arbor's menu
+14:36:47.033 INFO  home: showing everything
+14:36:47.564 SCREEN -- end 63 act=view settled=quiet:367 moves=any everything=1 tiles=611@12:43:376:248,588@12:303:376:247,606@400:307:709:171,607@1121:43:335:248,612@1121:303:335:247 keyboard=585 floating= docked=585,588,596,602,603,606,607,611,612
+14:36:47.990 SCRIPT == 64 cmd-tab-1

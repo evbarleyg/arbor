@@ -1,0 +1,33 @@
+94 display-unplug: the second display: unplug
+expected: {'act': 'display-change', 'settled': 'quiet:587', 'moves': 'any', 'leaves': 'any', 'floating': '585,588,596,602,603,606,607,611,612', 'docked': ''}
+FAIL rule 3: calendar (w606) moved 2 times
+
+14:38:41.896 SCREEN -- begin 94 display-unplug
+14:38:41.896 SCREEN -- text 94 the second display: unplug
+14:38:42.023 MACOS pid 23418 AXMoved w588 AXWindow/AXStandardWindow 0 109 1324 791
+14:38:42.026 MACOS pid 23418 AXResized w588 AXWindow/AXStandardWindow 0 109 1324 791
+14:38:42.026 MACOS pid 23786 AXResized w602 AXWindow/AXStandardWindow 803 31 797 791
+14:38:42.027 MACOS pid 23997 AXMoved w606 AXWindow/AXStandardWindow 1284 300 937 600
+14:38:42.028 SCREEN (nothing was seen for 134 ms)
+14:38:42.028 SCREEN safari (w588) 0,109 1324×791
+14:38:42.028 SCREEN calendar (w606) 1284,300 937×600
+14:38:42.028 SCREEN textedit (w596) 165,65 656×422
+14:38:42.028 MACOS pid 23471 AXMoved w596 AXWindow/AXStandardWindow 165 65 656 422
+14:38:42.029 MACOS pid 23786 AXResized w602 AXWindow/AXStandardWindow 803 31 797 791
+14:38:42.029 MACOS pid 23997 AXResized w606 AXWindow/AXStandardWindow 1284 300 937 600
+14:38:42.029 MACOS pid 23471 AXResized w596 AXWindow/AXStandardWindow 165 65 656 422
+14:38:43.693 INFO  displays changed: 1 display(s), 0 remembered
+14:38:43.694 DEBUG w588 has the keyboard
+14:38:43.697 MACOS pid 23997 AXMoved w606 AXWindow/AXStandardWindow 663 222 937 600
+14:38:43.724 DEBUG raised w606, which stays in view
+14:38:43.725 MACOS pid 23997 AXFocusedWindowChanged w606 AXWindow/AXStandardWindow 663 222 937 600
+14:38:43.726 MACOS pid 23997 AXMainWindowChanged w606 AXWindow/AXStandardWindow 663 222 937 600
+14:38:43.744 SCREEN calendar (w606) 663,222 937×600
+14:38:43.950 DEBUG raised w606, which stays in view
+14:38:43.952 MACOS pid 23997 AXFocusedWindowChanged w606 AXWindow/AXStandardWindow 663 222 937 600
+14:38:43.954 MACOS pid 23997 AXMainWindowChanged w606 AXWindow/AXStandardWindow 663 222 937 600
+14:38:44.195 DEBUG raised w606, which stays in view
+14:38:44.195 MACOS pid 23997 AXFocusedWindowChanged w606 AXWindow/AXStandardWindow 663 222 937 600
+14:38:44.196 MACOS pid 23997 AXMainWindowChanged w606 AXWindow/AXStandardWindow 663 222 937 600
+14:38:44.846 SCREEN -- end 94 act=display-change settled=quiet:587 moves=any leaves=any floating=585,588,596,602,603,606,607,611,612 docked=
+14:38:45.064 SCRIPT == 95 view-home

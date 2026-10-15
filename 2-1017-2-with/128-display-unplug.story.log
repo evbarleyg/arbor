@@ -1,0 +1,42 @@
+128 display-unplug: the second display: unplug
+expected: {'act': 'display-change', 'settled': 'quiet:567', 'moves': 'any', 'leaves': 'any', 'floating': '585,596,602,603,606,611,612,1214', 'docked': '607'}
+FAIL rule 3: calendar (w606) moved 2 times
+FAIL rule 3: settings (w607) moved 2 times
+
+14:40:16.063 SCREEN -- begin 128 display-unplug
+14:40:16.063 SCREEN -- text 128 the second display: unplug
+14:40:16.467 SCREEN (nothing was seen for 416 ms)
+14:40:16.467 SCREEN settings (w607) 437,85 723×625
+14:40:16.467 SCREEN calendar (w606) 1284,300 937×600
+14:40:16.467 SCREEN preview (w611) -768,438 1576×377
+14:40:16.468 MACOS pid 23786 AXResized w602 AXWindow/AXStandardWindow 803 31 797 791
+14:40:16.469 MACOS pid 23997 AXMoved w606 AXWindow/AXStandardWindow 1284 300 937 600
+14:40:16.469 MACOS pid 24146 AXMoved w611 AXWindow/AXStandardWindow -768 438 1576 377
+14:40:16.470 MACOS pid 23786 AXResized w602 AXWindow/AXStandardWindow 803 31 797 791
+14:40:16.470 MACOS pid 24051 AXMoved w607 AXWindow/AXStandardWindow 437 85 723 625
+14:40:16.470 MACOS pid 23997 AXResized w606 AXWindow/AXStandardWindow 1284 300 937 600
+14:40:16.471 MACOS pid 24146 AXResized w611 AXWindow/AXStandardWindow -768 438 1576 377
+14:40:16.471 MACOS pid 24051 AXResized w607 AXWindow/AXStandardWindow 437 85 723 625
+14:40:16.502 SCREEN w974 of Arbor -5,-511 1342×803
+14:40:16.502 SCREEN w973 of Arbor 1456,798 1576×12
+14:40:18.123 INFO  display 81CC6833-5DE3-4712-B6A2-4FC8B088A8A9 disconnected; remembering 1 window(s)
+14:40:18.123 INFO  displays changed: 1 display(s), 1 remembered
+14:40:18.124 DEBUG w1214 has the keyboard
+14:40:18.145 MACOS pid 24051 AXResized w607 AXWindow/AXStandardWindow 438 43 723 470
+14:40:18.146 MACOS pid 24051 AXMoved w607 AXWindow/AXStandardWindow 438 43 723 470
+14:40:18.148 MACOS pid 23997 AXMoved w606 AXWindow/AXStandardWindow 663 222 937 600
+14:40:18.165 DEBUG raised w606, which stays in view
+14:40:18.166 MACOS pid 23997 AXFocusedWindowChanged w606 AXWindow/AXStandardWindow 663 222 937 600
+14:40:18.166 MACOS pid 23997 AXMainWindowChanged w606 AXWindow/AXStandardWindow 663 222 937 600
+14:40:18.191 SCREEN w974 of Arbor 20,25 1342×803
+14:40:18.191 SCREEN calendar (w606) 663,222 937×600
+14:40:18.191 SCREEN settings (w607) 438,43 723×470
+14:40:18.191 SCREEN front to back: w974 safari calendar settings preview notes textedit finder terminal w614 mail w973
+14:40:18.405 DEBUG raised w606, which stays in view
+14:40:18.407 MACOS pid 23997 AXFocusedWindowChanged w606 AXWindow/AXStandardWindow 663 222 937 600
+14:40:18.407 MACOS pid 23997 AXMainWindowChanged w606 AXWindow/AXStandardWindow 663 222 937 600
+14:40:18.623 DEBUG raised w606, which stays in view
+14:40:18.627 MACOS pid 23997 AXFocusedWindowChanged w606 AXWindow/AXStandardWindow 663 222 937 600
+14:40:18.628 MACOS pid 23997 AXMainWindowChanged w606 AXWindow/AXStandardWindow 663 222 937 600
+14:40:20.849 SCREEN -- end 128 act=display-change settled=quiet:567 moves=any leaves=any floating=585,596,602,603,606,611,612,1214 docked=607
+14:40:21.113 SCRIPT == 129 view-home

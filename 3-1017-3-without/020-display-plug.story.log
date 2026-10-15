@@ -1,0 +1,18 @@
+20 display-plug: the second display: plug
+expected: {'act': 'display-change', 'settled': 'quiet:353', 'moves': 'any', 'leaves': 'any'}
+FAIL rule 3: terminal (w1272) went 132 points out of its way before it ended up
+
+14:42:45.422 SCREEN -- begin 20 display-plug
+14:42:45.422 SCREEN -- text 20 the second display: plug
+14:42:45.545 SCREEN (nothing was seen for 110 ms)
+14:42:45.545 SCREEN terminal (w1272) 737,31 863×499
+14:42:45.545 SCREEN calendar (w1276) 415,109 909×791
+14:42:45.546 MACOS pid 55572 AXMoved w1276 AXWindow/AXStandardWindow 415 109 909 791
+14:42:45.546 MACOS pid 55452 AXMoved w1272 AXWindow/AXStandardWindow 737 31 863 499
+14:42:45.659 SCREEN (nothing was seen for 110 ms)
+14:42:45.791 SCREEN terminal (w1272) 803,31 863×499
+14:42:45.791 SCREEN calendar (w1276) 415,112 909×791
+14:42:45.791 MACOS pid 55452 AXMoved w1272 AXWindow/AXStandardWindow 803 31 863 499
+14:42:45.791 MACOS pid 55572 AXMoved w1276 AXWindow/AXStandardWindow 415 112 909 791
+14:42:51.458 SCREEN -- end 20 act=display-change settled=quiet:353 moves=any leaves=any
+14:42:51.731 SCRIPT == 21 click-terminal

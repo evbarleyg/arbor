@@ -1,0 +1,11 @@
+34 view-home: chooses `home` from Arbor's menu
+expected: {'act': 'view', 'settled': 'quiet:413', 'moves': 'any', 'everything': '1', 'tiles': '611@12:43:376:248,588@12:303:376:247,606@400:307:709:171,607@1121:43:375:248,612@1121:303:375:247', 'keyboard': '603', 'floating': '', 'docked': '585,588,596,602,603,606,607,611,612'}
+FAIL rule L: safari (w588) is out of view: 0% of it is on a display, at -1323,770 1324×791
+FAIL rule L: calendar (w606) is out of view: 0% of it is on a display, at -936,770 937×600
+FAIL rule L: mail (w612) is out of view: 0% of it is on a display, at -1119,770 1120×630
+
+14:35:07.492 SCREEN -- begin 34 view-home
+14:35:07.492 SCREEN -- text 34 chooses `home` from Arbor's menu
+14:35:07.536 INFO  home: showing everything on every display
+14:35:08.096 SCREEN -- end 34 act=view settled=quiet:413 moves=any everything=1 tiles=611@12:43:376:248,588@12:303:376:247,606@400:307:709:171,607@1121:43:375:248,612@1121:303:375:247 keyboard=603 floating= docked=585,588,596,602,603,606,607,611,612
+14:35:08.487 SCRIPT == 35 view-in

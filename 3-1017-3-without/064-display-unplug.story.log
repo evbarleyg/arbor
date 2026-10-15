@@ -1,0 +1,22 @@
+64 display-unplug: the second display: unplug
+expected: {'act': 'display-change', 'settled': 'quiet:375', 'moves': 'any', 'leaves': 'any'}
+FAIL rule 3: calendar (w1276) went 1172 points out of its way before it ended up
+
+14:46:02.386 SCREEN -- begin 64 display-unplug
+14:46:02.386 SCREEN -- text 64 the second display: unplug
+14:46:02.387 SCREEN calendar (w1276) 691,131 909×769
+14:46:02.387 SCREEN front to back: calendar preview notes finder safari terminal w1286 mail settings textedit
+14:46:02.572 MACOS pid 56043 AXMoved w1281 AXWindow/AXStandardWindow 0 31 800 791
+14:46:02.573 MACOS pid 56091 AXMoved w1284 AXWindow/AXStandardWindow 480 270 1120 630
+14:46:02.573 MACOS pid 55452 AXMoved w1272 AXWindow/AXStandardWindow 737 398 863 499
+14:46:02.573 MACOS pid 55572 AXMoved w1276 AXWindow/AXStandardWindow 1277 438 909 791
+14:46:02.574 MACOS pid 55572 AXResized w1276 AXWindow/AXStandardWindow 1277 438 909 791
+14:46:02.575 SCREEN (nothing was seen for 188 ms)
+14:46:02.575 SCREEN preview (w1281) 0,31 800×791
+14:46:02.575 SCREEN terminal (w1272) 737,398 863×499
+14:46:02.575 SCREEN calendar (w1276) 1277,438 909×791
+14:46:02.575 SCREEN w1286 of Mail 805,377 470×416
+14:46:02.575 SCREEN mail (w1284) 480,270 1120×630
+14:46:02.575 SCREEN front to back: preview notes finder safari terminal calendar w1286 mail settings textedit
+14:46:05.075 SCREEN -- end 64 act=display-change settled=quiet:375 moves=any leaves=any
+14:46:05.238 SCRIPT == 65 display-plug

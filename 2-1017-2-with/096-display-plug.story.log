@@ -1,0 +1,31 @@
+96 display-plug: the second display: plug
+expected: {'act': 'display-change', 'settled': 'quiet:363', 'moves': 'any', 'leaves': 'any', 'floating': '585,588,596,602,603,606,607,611,612', 'docked': ''}
+FAIL rule 3: calendar (w606) moved 2 times
+
+14:38:45.725 SCREEN -- begin 96 display-plug
+14:38:45.725 SCREEN -- text 96 the second display: plug
+14:38:45.868 MACOS pid 23786 AXResized w602 AXWindow/AXStandardWindow 803 31 797 791
+14:38:45.869 MACOS pid 23997 AXMoved w606 AXWindow/AXStandardWindow 1284 300 937 600
+14:38:45.869 MACOS pid 23786 AXResized w602 AXWindow/AXStandardWindow 803 31 797 791
+14:38:45.870 MACOS pid 23997 AXMoved w606 AXWindow/AXStandardWindow 1284 300 937 600
+14:38:45.873 SCREEN (nothing was seen for 133 ms)
+14:38:45.873 SCREEN calendar (w606) 1284,300 937×600
+14:38:45.990 SCREEN (nothing was seen for 101 ms)
+14:38:46.257 MACOS pid 23786 AXResized w602 AXWindow/AXStandardWindow 803 31 797 791
+14:38:46.257 MACOS pid 23997 AXMoved w606 AXWindow/AXStandardWindow 663 300 937 600
+14:38:46.258 SCREEN calendar (w606) 663,300 937×600
+14:38:46.258 MACOS pid 23786 AXResized w602 AXWindow/AXStandardWindow 803 31 797 791
+14:38:48.089 INFO  displays changed: 2 display(s), 0 remembered
+14:38:48.091 DEBUG w588 has the keyboard
+14:38:48.096 DEBUG raised w606, which stays in view
+14:38:48.100 MACOS pid 23997 AXFocusedWindowChanged w606 AXWindow/AXStandardWindow 663 300 937 600
+14:38:48.101 MACOS pid 23997 AXMainWindowChanged w606 AXWindow/AXStandardWindow 663 300 937 600
+14:38:48.118 DEBUG got ready the stage of 81CC6833-5DE3-4712-B6A2-4FC8B088A8A9 in 13 ms, the desktop 1 of them
+14:38:48.328 DEBUG raised w606, which stays in view
+14:38:48.329 MACOS pid 23997 AXFocusedWindowChanged w606 AXWindow/AXStandardWindow 663 300 937 600
+14:38:48.329 MACOS pid 23997 AXMainWindowChanged w606 AXWindow/AXStandardWindow 663 300 937 600
+14:38:48.576 DEBUG raised w606, which stays in view
+14:38:48.577 MACOS pid 23997 AXFocusedWindowChanged w606 AXWindow/AXStandardWindow 663 300 937 600
+14:38:48.577 MACOS pid 23997 AXMainWindowChanged w606 AXWindow/AXStandardWindow 663 300 937 600
+14:38:52.101 SCREEN -- end 96 act=display-change settled=quiet:363 moves=any leaves=any floating=585,588,596,602,603,606,607,611,612 docked=
+14:38:52.357 SCRIPT == 97 view-home

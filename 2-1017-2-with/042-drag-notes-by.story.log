@@ -1,0 +1,13 @@
+42 drag-notes-by: drags notes, which floats, by its title bar 126 across and 53 down
+expected: {'act': 'drag', 'settled': 'quiet:1004', 'judge': 'no', 'performed': 'no', 'undone': 'drag_window', 'drags': '603', 'front': '603', 'own': '603', 'floating': '585,588,596,602,603,606,607,611,612', 'docked': ''}
+ODD rule -: the act was not performed: drag_window could not be done
+
+14:35:22.369 SCREEN -- begin 42 drag-notes-by
+14:35:22.369 SCREEN -- text 42 drags notes, which floats, by its title bar 126 across and 53 down
+14:35:22.413 SCRIPT drag w603 from 930,230 to 1056,283
+14:35:22.971 DEBUG the button went down at 930,230, the pointer is at 930,230: it is on w603
+14:35:22.997 SCREEN the button is down 930 230
+14:35:23.597 DEBUG the press on w603 has moved nothing so far: looking less often
+14:35:26.265 SCREEN the button is up 1056 283
+14:35:27.354 SCREEN -- end 42 act=drag settled=quiet:1004 judge=no performed=no undone=drag_window drags=603 front=603 own=603 floating=585,588,596,602,603,606,607,611,612 docked=
+14:35:27.641 SCRIPT == 43 click-settings

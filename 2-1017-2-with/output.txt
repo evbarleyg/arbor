@@ -1,0 +1,1083 @@
+# mac-shell: scripts/mac-shell/1017-2-with.sh at acf38b7, macOS 26.6.2, 2026-10-15T14:33Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64
+built Arbor, the pointer tool and the app bundles in 8s
+1600 900 1600 900
+display: 1 0 0 1600 900 1600 900 1
+macOS's own window management, as it comes:
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+com.apple.WindowManager EnableStandardClickToShowDesktop: not set
+Reduce Motion: false
+the sampler writes mac-shell/samples.log (pid 23333), the witness mac-shell/witness.log (pid 23342)
+
+== Before Arbor: the apps are open already
+
+-- 1 open-finder: opens finder
+> open -g -b com.apple.finder /tmp/arbor-apps.Y0homL/scratch/told/…-grove
+pid 21950 lists (id role subrole x y w h flags):
+  585 AXWindow AXStandardWindow 340 120 920 436 main,toolbar
+  0 AXScrollArea - 0 0 1600 900 fixed-size,fixed-position,no-close,no-minimize,no-zoom
+  w585 is finder
+  (quiet:1119 ms) setup=1
+
+-- 2 open-safari: opens safari
+> open -g -b com.apple.Safari /tmp/arbor-apps.Y0homL/scratch/told/…-page.html
+pid 23418 lists (id role subrole x y w h flags):
+  588 AXWindow AXStandardWindow 67 31 1324 791 main,toolbar
+  w588 is safari
+  (quiet:645 ms) setup=1
+
+-- 3 open-textedit: opens textedit
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.Y0homL/scratch/told/…-oak.txt
+pid 23471 lists (id role subrole x y w h flags):
+  596 AXWindow AXStandardWindow 165 65 673 439 main
+  w596 is textedit
+  (quiet:855 ms) setup=1
+
+-- 4 open-terminal: opens terminal
+> open -g -b com.apple.Terminal 
+pid 23786 lists (id role subrole x y w h flags):
+  602 AXWindow AXStandardWindow 800 35 800 784 main
+  w602 is terminal
+  (quiet:1035 ms) setup=1
+
+-- 5 open-notes: opens notes
+> open -g -b com.apple.Notes 
+pid 23940 lists (id role subrole x y w h flags):
+  603 AXWindow AXStandardWindow 426 218 1000 600 main,toolbar
+  w603 is notes
+  (quiet:1044 ms) setup=1
+
+-- 6 open-calendar: opens calendar
+> open -g -b com.apple.iCal 
+pid 23997 lists (id role subrole x y w h flags):
+  606 AXWindow AXStandardWindow 664 223 936 599 main,toolbar
+  w606 is calendar
+  (quiet:1404 ms) setup=1
+
+-- 7 open-settings: opens settings
+> open -g -b com.apple.systempreferences 
+pid 24051 lists (id role subrole x y w h flags):
+  607 AXWindow AXStandardWindow 437 85 723 625 main,toolbar
+  w607 is settings
+  (quiet:969 ms) setup=1
+
+-- 8 open-preview: opens preview
+> open -g -b com.apple.Preview /tmp/arbor-apps.Y0homL/scratch/told/…-leaf.png
+pid 24146 lists (id role subrole x y w h flags):
+  611 AXWindow AXStandardWindow 4 35 708 424 main,toolbar
+  w611 is preview
+  (quiet:1071 ms) setup=1
+
+-- 9 open-mail: opens mail
+> open -g -b com.apple.mail 
+pid 24527 lists (id role subrole x y w h flags):
+  612 AXWindow AXStandardWindow 480 192 1120 630 main,close-disabled,sheets=1,toolbar
+  w612 is mail
+  (quiet:885 ms) setup=1
+the cast: finder safari textedit terminal notes calendar settings preview mail
+
+-- 10 tiling-acts: without Arbor: drags a window by its title bar against the menu bar and lets go
+> click 635 854
+> move 635 654
+> drag 1000 235 800 0 --no-release
+> release
+  (quiet:1417 ms) setup=1
+
+-- 11 tiling-acts-back: drags it away again, a hand's breadth down
+> drag 672 43 800 130 --no-release
+> release
+  (quiet:1105 ms) setup=1
+macOS's tiling was seen to act: true
+  ✔ macOS's own tiling acts
+
+-- 12 look-around: looks at the screen
+  (quiet:391 ms) setup=1 own=all
+
+-- 13 input-before: a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+> click 739 38
+> click 1416 47
+> click 445 43
+> click 1416 47
+> click 445 43
+> click 1416 47
+> click 445 43
+> click 1416 47
+  8 presses on windows behind; textedit shows no free point of its title bar, so that is all
+  (quiet:510 ms) round=before posted=press:8,up:8
+
+== The walk
+
+-- 14 launch: starts Arbor
+session 1: Arbor pid 26120, ARBOR_LIMIT=none: running: 1 display, 0 docked and 9 floating, 0 out of view
+Arbor dev
+recording traces/2026-10-15-143407-day-1.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+  (quiet:1200 ms) moves=,, everything=1 floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 15 input-started: a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+> click 445 43
+> click 1416 47
+> click 445 43
+> click 1416 47
+> click 445 43
+> click 1416 47
+> click 445 43
+> click 1416 47
+  8 presses on windows behind; textedit shows no free point of its title bar, so that is all
+  (quiet:563 ms) round=started posted=press:8,up:8 floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 16 dock-icon-notes: clicks notes's icon in the Dock
+> click 803 854
+> move 803 654
+  (quiet:481 ms) front=603 floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 17 arrange: chooses `arrange` from Arbor's menu
+> arrange
+arranged 9 windows
+  (quiet:1063 ms) moves=any floating= docked=585,588,596,602,603,606,607,611,612 first=1
+
+-- 18 display-plug: the second display: plug
+> display_add 1920 1080: display 8, 81CC6833-5DE3-4712-B6A2-4FC8B088A8A9
+> display_move right: now at 1600 0 1920 1080
+  (quiet:379 ms) moves=any leaves=any floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 19 view-home: chooses `home` from Arbor's menu
+> home
+showing everything on every display
+  (quiet:360 ms) moves=any everything=1 tiles=611@12:43:376:248,588@12:303:376:247,606@400:307:709:171,607@1121:43:375:248,612@1121:303:375:247 keyboard=603 floating= docked=585,588,596,602,603,606,607,611,612
+
+-- left out: drag_onto textedit safari bottom: safari is not docked and in view
+
+-- 20 view-back: presses ctrl+opt+[
+> key ctrl+opt+[
+  (quiet:695 ms) moves=any floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 21 float-all: chooses `float-all` from Arbor's menu
+> float-all
+floated 9 windows
+  (quiet:1114 ms) moves=any restores=all places=1 everything=1 floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 22 dock-icon-settings: clicks settings's icon in the Dock
+> click 1139 854
+> move 1139 654
+  (quiet:491 ms) front=607 floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 23 undo: presses ctrl+opt+z
+> key ctrl+opt+z
+  (quiet:1174 ms) moves=any floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 24 hold: holds the view, as for a shared screen
+> hold
+holding this view until `release`
+  (quiet:1056 ms) floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 25 show-everything-while-held: presses ⌃⌥Space, which would show everything: the view is held
+> key ctrl+opt+space
+  (quiet:604 ms) floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 26 release: lets the view go again
+> release
+released
+  (quiet:1114 ms) moves=any floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 27 display-unplug: the second display: unplug
+> display_remove
+  (quiet:828 ms) moves=any leaves=any floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 28 view-home: chooses `home` from Arbor's menu
+> home
+showing everything
+  (quiet:401 ms) moves=any everything=1 tiles=611@12:43:376:248,588@12:303:376:247,606@400:307:709:171,607@1121:43:375:248,612@1121:303:375:247 keyboard=603 floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 29 display-plug: the second display: plug
+> display_add 1920 1080: display 9, 81CC6833-5DE3-4712-B6A2-4FC8B088A8A9
+> display_move right: now at 1600 0 1920 1080
+  (quiet:368 ms) moves=any leaves=any floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 30 view-home: chooses `home` from Arbor's menu
+> home
+showing everything on every display
+  (quiet:365 ms) moves=any everything=1 tiles=611@12:43:376:248,588@12:303:376:247,606@400:307:709:171,607@1121:43:375:248,612@1121:303:375:247 keyboard=603 floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 31 display-unplug: the second display: unplug
+> display_remove
+  (quiet:700 ms) moves=any leaves=any floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 32 view-home: chooses `home` from Arbor's menu
+> home
+showing everything
+  (quiet:398 ms) moves=any everything=1 tiles=611@12:43:376:248,588@12:303:376:247,606@400:307:709:171,607@1121:43:375:248,612@1121:303:375:247 keyboard=603 floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 33 display-plug: the second display: plug
+> display_add 1280 800: display 10, 81CC6833-5DE3-4712-B6A2-4FC8B088A8A9
+> display_move right: now at 1600 0 1280 800
+  (quiet:385 ms) moves=any leaves=any floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 34 view-home: chooses `home` from Arbor's menu
+> home
+showing everything on every display
+  (quiet:413 ms) moves=any everything=1 tiles=611@12:43:376:248,588@12:303:376:247,606@400:307:709:171,607@1121:43:375:248,612@1121:303:375:247 keyboard=603 floating= docked=585,588,596,602,603,606,607,611,612
+only 0 % of it is to be seen: -936 770 937 600
+
+-- left out: drag_onto calendar settings right: nothing to take hold of
+
+-- 35 view-in: chooses `in` from Arbor's menu
+> in
+stepped in to Finder, Calendar and Notes (n8)
+  (quiet:1178 ms) moves=any floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 36 view-all: presses ctrl+opt+space
+> key ctrl+opt+space
+  (quiet:843 ms) moves=any floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 37 click-terminal: clicks terminal's title bar
+> click 1303 574
+> move 1303 694
+  (quiet:373 ms) front=602 floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 38 undo: presses ctrl+opt+z
+> key ctrl+opt+z
+  (quiet:1256 ms) moves=any floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 39 view-back: presses ctrl+opt+[
+> key ctrl+opt+[
+  (quiet:607 ms) moves=any floating=585,588,596,602,603,606,607,611,612 docked=
+it is managed at 67 31 1324 791
+
+-- left out: drag_out safari: it is not docked and in reach
+
+-- 40 dock-icon-calendar: clicks calendar's icon in the Dock
+> click 635 854
+> move 635 654
+  (quiet:405 ms) front=606 floating=585,588,596,602,603,606,607,611,612 docked=
+it is managed at 800 34 797 788
+
+-- left out: drag_onto calendar terminal top: terminal is not docked and in view
+
+-- 41 dock-icon-notes: clicks notes's icon in the Dock
+> click 803 854
+> move 803 654
+  (quiet:449 ms) front=603 floating=585,588,596,602,603,606,607,611,612 docked=
+it is managed at 426 218 1000 600
+
+-- 42 drag-notes-by: drags notes, which floats, by its title bar 126 across and 53 down
+> drag 930 230 1056 283 --no-release
+> release
+the press at 930,230 (AXToolbar) did not take hold of w603
+  ✘ the act was not performed: drag_window
+  (quiet:1004 ms) judge=no performed=no undone=drag_window drags=603 front=603 own=603 floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 43 click-settings: clicks settings's title bar
+> click 773 92
+> move 773 212
+  (quiet:364 ms) front=607 floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 44 pin: chooses Keep This Window in View in Arbor's menu, or takes the tick off
+> toggle-pin
+keeping w607 in view
+  (quiet:363 ms) moves=,, front=607 floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 45 dock-icon-finder: clicks finder's icon in the Dock
+> click 131 854
+> move 131 654
+  (quiet:381 ms) front=585 floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 46 redo: chooses `redo` from Arbor's menu
+> redo
+redid arrange
+  (quiet:925 ms) moves=any floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 47 display-right: the second display: right
+> display_move right: now at 1600 0 1280 800
+  (quiet:410 ms) moves=any leaves=any floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 48 view-home: chooses `home` from Arbor's menu
+> home
+showing everything on every display
+  (quiet:377 ms) moves=any everything=1 tiles=611@12:43:376:248,588@12:303:376:247,606@400:307:709:171,607@1121:43:375:248,612@1121:303:375:247 keyboard=585 floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 49 leave-alone: does nothing for half a minute
+  with nothing to do Arbor used 0.4 % of a core and wrote 0 lines a minute
+  (quiet:422 ms) floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 50 view-frame: presses ctrl+opt+return
+> key ctrl+opt+return
+  (quiet:1067 ms) moves=any front=585 floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 51 dock-icon-settings: clicks settings's icon in the Dock
+> click 1139 854
+> move 1139 654
+  (quiet:629 ms) front=607 floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 52 dock-down: chooses `dock bottom` from Arbor's menu
+> dock bottom
+arborctl: w607 fills the view; `show-all` first
+  ✔ it is docked
+  (quiet:352 ms) moves=585,588,596,602,603,606,607,611,612,585,588,596,602,603,606,607,611,612, front=607 floating= docked=585,588,596,602,603,606,607,611,612
+only 0 % of it is to be seen: -376 790 377 248
+
+-- left out: drag_onto terminal mail left: nothing to take hold of
+
+-- 53 dock-icon-notes: clicks notes's icon in the Dock
+> click 803 854
+> move 803 654
+  (quiet:516 ms) front=603 floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 54 dock-left: presses ctrl+opt+left
+> key ctrl+opt+left
+  ✔ it is docked
+  (quiet:684 ms) moves=585,588,596,602,603,606,607,611,612,585,588,596,602,603,606,607,611,612, front=603 floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 55 dock-icon-finder: clicks finder's icon in the Dock
+> click 131 854
+> move 131 654
+  (quiet:618 ms) front=585 floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 56 new-window-finder: presses ⌘N in finder
+> key cmd+n
+  w902 is finder-new-56
+  (quiet:1077 ms) front=902 floating=902 docked=585,588,596,602,603,606,607,611,612
+only 0 % of it is to be seen: -1119 770 1120 630
+
+-- left out: drag_edge mail right: nothing to take hold of
+
+-- 57 display-left: the second display: left
+> display_move left: now at -1280 0 1280 800
+  (quiet:372 ms) moves=any leaves=any floating=902 docked=585,588,596,602,603,606,607,611,612
+
+-- 58 view-home: chooses `home` from Arbor's menu
+> home
+showing everything on every display
+  (quiet:994 ms) moves=any everything=1 tiles=611@12:43:376:248,588@12:303:376:247,606@400:307:709:171,607@1121:43:375:248,612@1121:303:375:247 keyboard=902 floating=902 docked=585,588,596,602,603,606,607,611,612
+
+-- 59 close-window: presses ⌘W
+> key cmd+w
+  (quiet:1130 ms) leaves=902 moves=585,588,596,602,603,606,607,611,612,585,588,596,602,603,606,607,611,612, floating= docked=585,588,596,602,603,606,607,611,612
+it is managed docked at 1121 562 377 248
+
+-- 60 drag-gap-beside-terminal: drags the gap to the right of terminal by -40 points
+> drag 1504 686 1464 686
+  (quiet:1124 ms) moves=585,588,596,602,603,606,607,611,612,585,588,596,602,603,606,607,611,612, floating= docked=585,588,596,602,603,606,607,611,612
+only 0 % of it is to be seen: 1599 770 708 424
+
+-- left out: drag_onto preview finder top: nothing to take hold of
+
+-- 61 view-all: presses ctrl+opt+space
+> key ctrl+opt+space
+  (quiet:685 ms) moves=any floating= docked=585,588,596,602,603,606,607,611,612
+
+-- left out: resize_edge mail top 30: it is not docked and in view
+
+-- 62 display-unplug: the second display: unplug
+> display_remove
+  (quiet:637 ms) moves=any leaves=any floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 63 view-home: chooses `home` from Arbor's menu
+> home
+showing everything
+  (quiet:367 ms) moves=any everything=1 tiles=611@12:43:376:248,588@12:303:376:247,606@400:307:709:171,607@1121:43:335:248,612@1121:303:335:247 keyboard=585 floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 64 cmd-tab-1: holds ⌘ and presses Tab 1 time(s)
+> key cmd+tab --down
+> key cmd+tab --up
+  (quiet:428 ms) front=603 floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 65 dock-icon-safari: clicks safari's icon in the Dock
+> click 243 854
+> move 243 654
+  (quiet:770 ms) front=588 floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 66 full-screen: presses ⌃⌘F in Safari
+> key ctrl+cmd+f
+  (quiet:368 ms) moves=any leaves=any floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 67 leave-full-screen: presses ⌃⌘F again
+> key ctrl+cmd+f
+  (quiet:363 ms) moves=any leaves=any comes=588 front=588 returns=65 floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 68 leave-alone: does nothing for half a minute
+  with nothing to do Arbor used 0.4 % of a core and wrote 0 lines a minute
+  (quiet:381 ms) floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 69 grow: chooses `grow` from Arbor's menu
+> grow
+arborctl: w588 has nothing beside it in view to trade room with
+  (quiet:378 ms) moves=585,588,596,602,603,606,607,611,612,585,588,596,602,603,606,607,611,612, front=588 floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 70 view-out: chooses `out` from Arbor's menu
+> out
+stepped out to Preview, Safari and TextEdit (n4)
+  (quiet:1082 ms) moves=any floating= docked=585,588,596,602,603,606,607,611,612
+only 0 % of it is to be seen: 1599 770 937 600
+
+-- left out: drag_out calendar: it is not docked and in reach
+
+-- 71 save-view-2: chooses `save-view 2` from Arbor's menu
+> save-view 2
+saved view 2: Preview, Safari and TextEdit (n4)
+  (quiet:370 ms) floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 72 quit: chooses Quit Arbor in Arbor's menu
+> click 1295 15 --right
+> key up
+> key return
+  ✔ Arbor ends within five seconds
+  (quiet:852 ms) moves=any restores=all places=1 everything=1
+
+-- 73 dock-icon-safari: clicks safari's icon in the Dock
+> click 243 854
+> move 243 654
+  (quiet:363 ms) front=588
+
+-- 74 dock-icon-notes: clicks notes's icon in the Dock
+> click 803 854
+> move 803 654
+  (quiet:424 ms) front=603
+
+-- 75 dock-icon-preview: clicks preview's icon in the Dock
+> click 1332 854
+> move 1332 654
+  (quiet:353 ms) front=611
+
+-- 76 launch: starts Arbor
+session 2: Arbor pid 39057, ARBOR_LIMIT=none: running: 1 display, 9 docked and 0 floating, 4 out of view
+Arbor dev
+recording traces/2026-10-15-143742-day-2.jsonl: 1 lines, 5 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+  (quiet:864 ms) moves=,585,588,596,602,603,606,607,611,612, everything=1 floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 77 view-in: chooses `in` from Arbor's menu
+> in
+stepped in to Preview, Safari and TextEdit (n4)
+  (quiet:1241 ms) moves=any floating= docked=585,588,596,602,603,606,607,611,612 first=1
+
+-- 78 click-safari: clicks safari's title bar
+> click 474 315
+> move 474 435
+  (quiet:400 ms) front=588 floating= docked=585,588,596,602,603,606,607,611,612
+
+-- 79 float: presses ⌃⌥F
+> key ctrl+opt+f
+  (quiet:688 ms) moves=585,588,596,602,603,606,607,611,612,585,596,602,603,606,607,611,612, front=588 restores=588 floating=588 docked=585,596,602,603,606,607,611,612
+only 0 % of it is to be seen: 1599 770 871 247
+
+-- left out: drag_onto mail safari left: nothing to take hold of
+
+-- 80 view-frame: presses ctrl+opt+return
+> key ctrl+opt+return
+  (quiet:801 ms) moves=any front=588 floating=588 docked=585,596,602,603,606,607,611,612
+
+-- 81 dock-icon-calendar: clicks calendar's icon in the Dock
+> click 635 854
+> move 635 654
+  (quiet:593 ms) front=606 floating=588 docked=585,596,602,603,606,607,611,612
+
+-- 82 pin: chooses Keep This Window in View in Arbor's menu, or takes the tick off
+> toggle-pin
+keeping w606 in view
+  (quiet:1101 ms) moves=585,596,602,603,606,607,611,612,585,596,602,603,607,611,612, front=606 floating=588,606 docked=585,596,602,603,607,611,612
+
+-- 83 drag-calendar-to-right-edge: drags calendar by its title bar against the right edge of the screen and lets go
+> drag 668 139 1599 450 --no-release
+> release
+it is managed at 800 32 801 791
+  (quiet:396 ms) drags=606 moves=585,596,602,603,607,611,612,585,596,602,603,607,611,612, front=606 own=606 floating=588,606 docked=585,596,602,603,607,611,612
+
+-- 84 dock-icon-notes: clicks notes's icon in the Dock
+> click 803 854
+> move 803 654
+  (quiet:373 ms) front=603 floating=588,606 docked=585,596,602,603,607,611,612
+
+-- left out: drag_out notes: the Desktop is out of view
+
+-- 85 view-all: presses ctrl+opt+space
+> key ctrl+opt+space
+  (quiet:877 ms) moves=any everything=1 tiles=611@12:43:376:378,607@1121:43:335:248,612@1121:303:335:247 keyboard=603 floating=588,606 docked=585,596,602,603,607,611,612
+
+-- 86 dock-icon-terminal: clicks terminal's icon in the Dock
+> click 1276 854
+> move 1276 654
+  (quiet:399 ms) front=602 floating=588,606 docked=585,596,602,603,607,611,612
+
+-- 87 drag-terminal-to-right-edge: drags terminal by its title bar against the right edge of the screen and lets go
+> drag 1289 574 1599 450 --no-release
+> release
+it is managed at 803 33 797 788
+  (quiet:420 ms) drags=602 moves=585,596,602,603,607,611,612,585,596,603,607,611,612, front=602 own=602 floating=588,602,606 docked=585,596,603,607,611,612
+only 0 % of it is to be seen: 1599 770 1576 378
+
+-- left out: drag_by preview -112 46 click: nothing to take hold of
+
+-- 88 display-plug: the second display: plug
+> display_add 1920 1080: display 11, 81CC6833-5DE3-4712-B6A2-4FC8B088A8A9
+> display_move right: now at 1600 0 1920 1080
+  (quiet:368 ms) moves=any leaves=any floating=588,602,606 docked=585,596,603,607,611,612
+
+-- 89 view-home: chooses `home` from Arbor's menu
+> home
+showing everything on every display
+  (quiet:366 ms) moves=any everything=1 tiles=611@12:43:376:378,607@1121:43:335:378,612@1121:433:335:377 keyboard=602 floating=588,602,606 docked=585,596,603,607,611,612
+
+-- left out: close_new: no window that open_new opened is within reach
+it is managed at 67 31 1324 791
+
+-- 90 drag-safari-by: drags safari, which floats, by its title bar -100 across and 91 down
+> drag 445 43 345 134 --no-release
+> release
+  (quiet:1503 ms) drags=588 front=588 own=588 floating=602,606 docked=585,588,596,603,607,611,612
+
+-- left out: close_new: no window that open_new opened is within reach
+
+-- 91 float-all: chooses `float-all` from Arbor's menu
+> float-all
+floated 7 windows; 1 saved view is gone
+  (quiet:1228 ms) moves=any restores=all places=1 everything=1 floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 92 view-out: chooses `out` from Arbor's menu
+> out
+arborctl: already showing everything on the display under the pointer
+  (quiet:434 ms) moves=any floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 93 view-frame: presses ctrl+opt+return
+> key ctrl+opt+return
+  (quiet:798 ms) moves=any front=588 floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 94 display-unplug: the second display: unplug
+> display_remove
+  (quiet:587 ms) moves=any leaves=any floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 95 view-home: chooses `home` from Arbor's menu
+> home
+showing everything
+  (quiet:369 ms) moves=any everything=1 tiles= keyboard=588 floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 96 display-plug: the second display: plug
+> display_add 1280 800: display 12, 81CC6833-5DE3-4712-B6A2-4FC8B088A8A9
+> display_move right: now at 1600 0 1280 800
+  (quiet:363 ms) moves=any leaves=any floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 97 view-home: chooses `home` from Arbor's menu
+> home
+showing everything on every display
+  (quiet:374 ms) moves=any everything=1 tiles= keyboard=588 floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- left out: focus_key up: it has no key
+
+-- 98 dock-icon-safari: clicks safari's icon in the Dock
+> click 243 854
+> move 243 654
+  (quiet:415 ms) front=588 floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 99 new-window-safari: presses ⌘N in safari
+> key cmd+n
+  w1108 is safari-new-99
+  (quiet:984 ms) front=1108 floating=585,588,596,602,603,606,607,611,612,1108 docked=
+
+-- 100 dock-icon-preview: clicks preview's icon in the Dock
+> click 1332 854
+> move 1332 654
+  (quiet:416 ms) front=611 floating=585,588,596,602,603,606,607,611,612,1108 docked=
+
+-- 101 dock-down: chooses `dock bottom` from Arbor's menu
+> dock bottom
+docked w611 at the bottom edge
+  ✔ it is docked
+  (quiet:1053 ms) moves=,611, front=611 floating=585,588,596,602,603,606,607,612,1108 docked=611
+
+-- 102 click-new-window: clicks the title bar of the window that ⌘N opened
+> click 967 43
+> move 967 163
+  (quiet:351 ms) front=1108 floating=585,588,596,602,603,606,607,612,1108 docked=611
+
+-- 103 close-window: presses ⌘W
+> key cmd+w
+  (quiet:881 ms) leaves=1108 moves=611,611, floating=585,588,596,602,603,606,607,612 docked=611
+
+-- 104 view-all: presses ctrl+opt+space
+> key ctrl+opt+space
+  (quiet:689 ms) moves=any floating=585,588,596,602,603,606,607,612 docked=611
+
+-- 105 peek: holds ⌃⌥Space for a second and a half and lets go
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+  (quiet:363 ms) moves=any floating=585,588,596,602,603,606,607,612 docked=611
+
+-- 106 dock-icon-notes: clicks notes's icon in the Dock
+> click 803 854
+> move 803 654
+  (quiet:399 ms) front=603 floating=585,588,596,602,603,606,607,612 docked=611
+
+-- 107 minimize-notes: presses ⌘M
+> key cmd+m
+  (quiet:1049 ms) moves=611,611, leaves=603 floating=585,588,596,602,603,606,607,612 docked=611
+it is managed at 165 65 656 422
+
+-- left out: resize_gap textedit -40: it is not docked and in view
+
+-- 108 dock-icon-finder: clicks finder's icon in the Dock
+> click 103 854
+> move 103 654
+  (quiet:409 ms) front=585 floating=585,588,596,602,603,606,607,612 docked=611
+
+-- 109 click-textedit: clicks textedit's title bar
+> click 417 77
+> move 417 197
+  (quiet:466 ms) front=596 floating=585,588,596,602,603,606,607,612 docked=611
+
+-- 110 restore-notes: clicks notes's icon in the Dock, which brings its minimized window back
+> click 775 854
+> move 775 654
+  (quiet:1003 ms) moves=611,611, comes=603 front=603 floating=585,588,596,602,603,606,607,612 docked=611
+
+-- 111 hold: holds the view, as for a shared screen
+> hold
+holding this view until `release`
+  (quiet:379 ms) floating=585,588,596,602,603,606,607,612 docked=611
+
+-- 112 show-everything-while-held: presses ⌃⌥Space, which would show everything: the view is held
+> key ctrl+opt+space
+  (quiet:750 ms) floating=585,588,596,602,603,606,607,612 docked=611
+
+-- 113 release: lets the view go again
+> release
+released
+  (quiet:357 ms) moves=any floating=585,588,596,602,603,606,607,612 docked=611
+
+-- 114 dock-icon-preview: clicks preview's icon in the Dock
+> click 1332 854
+> move 1332 654
+  (quiet:492 ms) front=611 floating=585,588,596,602,603,606,607,612 docked=611
+
+-- 115 drag-preview-to-left-edge: drags preview by its title bar against the left edge of the screen and lets go
+> drag 768 445 0 450 --no-release
+> release
+it is managed at -1 31 804 791
+  (quiet:404 ms) drags=611 moves=611,, front=611 own=611 floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 116 display-unplug: the second display: unplug
+> display_remove
+  (quiet:625 ms) moves=any leaves=any floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 117 view-home: chooses `home` from Arbor's menu
+> home
+showing everything
+  (quiet:418 ms) moves=any everything=1 tiles= keyboard=611 floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 118 display-plug: the second display: plug
+> display_add 1920 1080: display 13, 81CC6833-5DE3-4712-B6A2-4FC8B088A8A9
+> display_move right: now at 1600 0 1920 1080
+  (quiet:389 ms) moves=any leaves=any floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 119 view-home: chooses `home` from Arbor's menu
+> home
+showing everything on every display
+  (quiet:393 ms) moves=any everything=1 tiles= keyboard=611 floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 120 send-across: sends the window in front to the other display
+> move-to-display next
+moved w611 to display 2
+  (quiet:1053 ms) moves=,,,611 front=611 place=611 floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 121 float-all: chooses `float-all` from Arbor's menu
+> float-all
+arborctl: nothing is docked
+  (quiet:361 ms) moves=any restores=all places=1 everything=1 floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 122 dock-icon-settings: clicks settings's icon in the Dock
+> click 1139 854
+> move 1139 654
+  (quiet:454 ms) front=607 floating=585,588,596,602,603,606,607,611,612 docked=
+
+-- 123 dock-up: chooses `dock top` from Arbor's menu
+> dock top
+docked w607 at the top edge
+  ✔ it is docked
+  (quiet:1188 ms) moves=,607, front=607 floating=585,588,596,602,603,606,611,612 docked=607
+
+-- 124 dock-icon-safari: clicks safari's icon in the Dock
+> click 243 854
+> move 243 654
+  (quiet:443 ms) front=588 floating=585,588,596,602,603,606,611,612 docked=607
+
+-- 125 quit-safari: presses ⌘Q in safari
+> key cmd+q
+  (quiet:799 ms) moves=607,607, leaves=588, floating=585,596,602,603,606,611,612 docked=607
+
+-- left out: view right: it has no key
+
+-- 126 view-home: chooses `home` from Arbor's menu
+> home
+showing everything on every display
+  (quiet:379 ms) moves=any everything=1 tiles= keyboard=607 floating=585,596,602,603,606,611,612 docked=607
+
+-- 127 reopen-safari: opens safari's document again
+> open -g -b com.apple.Safari /tmp/arbor-apps.Y0homL/scratch/told/…-page.html
+pid 48276 lists (id role subrole x y w h flags):
+  1214 AXWindow AXStandardWindow 29 31 1324 791 main,focused,toolbar
+  w1214 is safari
+  (quiet:555 ms) moves=607,607, front=1214 floating=585,596,602,603,606,611,612,1214 docked=607
+
+-- 128 display-unplug: the second display: unplug
+> display_remove
+  (quiet:567 ms) moves=any leaves=any floating=585,596,602,603,606,611,612,1214 docked=607
+
+-- 129 view-home: chooses `home` from Arbor's menu
+> home
+showing everything
+  (quiet:373 ms) moves=any everything=1 tiles= keyboard=1214 floating=585,596,602,603,606,611,612,1214 docked=607
+
+== The end
+recording traces/2026-10-15-144023-day-3.jsonl: 1 lines, 4 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+
+-- 130 input-last: a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+> click 1391 43
+> click 761 234
+> click 2 445
+> click 407 43
+> click 1391 43
+> click 761 234
+> click 2 445
+> click 407 43
+> click 1391 43
+> click 761 234
+> click 2 445
+> click 407 43
+> click 1391 43
+> click 761 234
+  14 presses on windows behind; textedit shows no free point of its title bar, so that is all
+  (quiet:686 ms) round=last posted=press:14,up:14 floating=585,596,602,603,606,611,612,1214 docked=607
+
+-- 131 quit: chooses Quit Arbor in Arbor's menu
+> click 1308 15 --right
+> key up
+> key return
+  ✔ Arbor ends within five seconds
+  (quiet:944 ms) moves=any restores=all places=1 everything=1
+
+-- 132 input-after: a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+> click 407 43
+> click 1374 44
+> click 2 445
+> click 407 43
+> click 1374 44
+> click 2 445
+> click 407 43
+> click 1374 44
+> click 2 445
+> click 407 43
+> click 1374 44
+> click 2 445
+  12 presses on windows behind; textedit shows no free point of its title bar, so that is all
+  (quiet:713 ms) round=after posted=press:12,up:12
+
+-- 133 dock-icon-finder: clicks finder's icon in the Dock
+> click 131 854
+> move 131 654
+  (quiet:409 ms) front=585
+
+-- 134 dock-icon-safari: clicks safari's icon in the Dock
+> click 243 854
+> move 243 654
+  (quiet:519 ms) front=1214
+
+-- 135 dock-icon-textedit: clicks textedit's icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:351 ms) front=596
+
+-- 136 dock-icon-terminal: clicks terminal's icon in the Dock
+> click 1276 854
+> move 1276 654
+  (quiet:355 ms) front=602
+
+-- 137 dock-icon-notes: clicks notes's icon in the Dock
+> click 803 854
+> move 803 654
+  (quiet:402 ms) front=603
+
+-- 138 dock-icon-calendar: clicks calendar's icon in the Dock
+> click 635 854
+> move 635 654
+  (quiet:494 ms) front=606
+
+-- 139 dock-icon-settings: clicks settings's icon in the Dock
+> click 1139 854
+> move 1139 654
+  (quiet:518 ms) front=607
+
+-- 140 dock-icon-preview: clicks preview's icon in the Dock
+> click 1332 854
+> move 1332 654
+  (quiet:418 ms) front=611
+
+-- 141 dock-icon-mail: clicks mail's icon in the Dock
+> click 355 854
+> move 355 654
+  (quiet:448 ms) front=614
+
+125 acts, 17 left out because they did not apply
+
+== the report (all of it: mac-shell/day-report.md)
+141 steps in 479 s, 123 of them judged, 29 with a rule broken. The sampler: samples 17458 seconds 438.6 hz 39.8 cost-ms 2.83 late 35 longest-gap-ms 462 whole-samples 19109 whole-seconds 480.0 whole-late 47.
+Input: 253 presses, releases, keys and scrolls reached the apps, half of them within 421 µs, 99 in 100 within 41194 µs, the latest after 80798 µs.
+By kind, listed only (events, half within, 99 in 100 within, µs): down 17, 636, 4115; dragged 164, 413, 2744; forward 13, 1335, 80798; key 29, 240, 629; up 30, 937, 39707. `forward`: a press on a window of an app that was not in front.
+The round of input `before` (events, half within µs): forward 8, 36958; up 8, 259.
+The round of input `started` (events, half within µs): forward 8, 37098; up 8, 973.
+The round of input `last` (events, half within µs): forward 14, 32289; up 14, 744.
+The round of input `after` (events, half within µs): forward 12, 32186; up 12, 881.
+Judged: no kind. Not down: fewer than 10 such events in a round without Arbor. Not forward: fewer than 10 such events in a round without Arbor. Not up: fewer than 10 such events in a round without Arbor. Not key: fewer than 10 such events in a round without Arbor. Not dragged: fewer than 10 such events in a round without Arbor. Not scroll: fewer than 10 such events in a round without Arbor.
+
+## Per rule
+
+| Rule | | Steps that checked it | Steps that broke it | Which |
+|---|---|---|---|---|
+| 1 | never fight macOS: where it answers a drag, Arbor stands aside | 4 | 0 |  |
+| 2 | nothing moves that the person did not move | 73 | 1 | 90 drag-safari-by |
+| 3 | no jolts: a window moves once, to where it ends up | 128 | 16 | 18 display-plug, 27 display-unplug, 29 display-plug, 31 display-unplug, 33 display-plug, 57 display-left, 60 drag-gap-beside-terminal, 62 display-unplug, 76 launch, 83 drag-calendar-to-right-edge, 88 display-plug, 94 display-unplug … |
+| 4 | the window you switch to comes to the front and into view | 65 | 3 | 23 undo, 98 dock-icon-safari, 124 dock-icon-safari |
+| 5 | quitting, Float All and pause give windows their own sizes back | 6 | 5 | 21 float-all, 72 quit, 91 float-all, 121 float-all, 131 quit |
+| 6 | what a person presses reaches the apps, at once | 46 | 0 |  |
+| L | no window is lost or stuck | 128 | 5 | 28 view-home, 32 view-home, 34 view-home, 63 view-home, 76 launch |
+| - | what the script itself checked | 128 | 0 |  |
+
+## Findings
+
+### Rule 2: nothing moves that the person did not move
+
+- ~ **76 launch** (starts Arbor): w614 of Mail moved along with a window of its app [moved-unasked]
+  - +0 ms 805,299 470×416 · +271 ms 681,244 470×416 · +506 ms 1800,822 470×416
+- ✘ **90 drag-safari-by** (drags safari, which floats, by its title bar -100 across and 91 down): finder (w585) moved, and the step did not name it [moved-unasked]
+  - +0 ms 400,43 709×380 · +4843 ms 690,43 709×380
+- ✘ **90 drag-safari-by** (drags safari, which floats, by its title bar -100 across and 91 down): textedit (w596) moved, and the step did not name it [moved-unasked]
+  - +0 ms 12,433 376×377 · +4843 ms 12,433 666×377
+- ✘ **90 drag-safari-by** (drags safari, which floats, by its title bar -100 across and 91 down): notes (w603) moved, and the step did not name it [moved-unasked]
+  - +0 ms 400,435 709×375 · +4843 ms 690,435 709×375
+
+### Rule 3: no jolts: a window moves once, to where it ends up
+
+- ✘ **18 display-plug** (the second display: plug): finder (w585) moved 2 times [jolt]
+  - +0 ms 400,43 709×252 · +558 ms 340,120 920×436 · +2528 ms 340,120 709×252 · +2599 ms 400,43 709×252
+- ✘ **18 display-plug** (the second display: plug): safari (w588) moved 2 times [jolt]
+  - +0 ms 1599,770 574×247 · +210 ms 67,31 1324×791 · +2599 ms -1323,770 1324×791
+- ✘ **18 display-plug** (the second display: plug): textedit (w596) moved 2 times [jolt]
+  - +0 ms 12,562 376×248 · +210 ms 165,65 656×422 · +2528 ms 12,562 376×248
+- ✘ **18 display-plug** (the second display: plug): terminal (w602) moved 2 times [jolt]
+  - +0 ms 1121,562 377×248 · +210 ms 799,31 860×503 · +2599 ms 1121,562 377×248
+- ✘ **18 display-plug** (the second display: plug): notes (w603) moved 2 times [jolt]
+  - +0 ms 400,490 709×320 · +558 ms 426,218 1000×600 · +2599 ms 426,218 709×320 · +2618 ms 400,490 709×320
+- ✘ **18 display-plug** (the second display: plug): calendar (w606) moved 2 times [jolt]
+  - +0 ms 1599,770 709×503 · +477 ms 403,112 937×600 · +2618 ms -936,770 937×600
+- ✘ **18 display-plug** (the second display: plug): settings (w607) moved 2 times [jolt]
+  - +0 ms 1599,770 723×470 · +789 ms 437,85 723×625 · +2618 ms -722,770 723×625
+- ✘ **18 display-plug** (the second display: plug): preview (w611) moved 2 times [jolt]
+  - +0 ms 1599,770 708×248 · +477 ms 4,35 708×424 · +2618 ms -707,770 708×424
+- ✘ **18 display-plug** (the second display: plug): mail (w612) moved 2 times [jolt]
+  - +0 ms 1599,770 871×247 · +757 ms 480,192 1120×630 · +2654 ms -1119,770 1120×630
+- ✘ **18 display-plug** (the second display: plug): w614 of Mail moved 2 times [jolt]
+  - +0 ms 1800,822 470×416 · +757 ms 805,299 470×416 · +2654 ms -794,877 470×416
+- ✘ **27 display-unplug** (the second display: unplug): finder (w585) moved 2 times [jolt]
+  - +0 ms 400,43 709×252 · +197 ms 340,120 920×436 · +1972 ms 340,120 709×252 · +2022 ms 400,43 709×252
+- ✘ **27 display-unplug** (the second display: unplug): safari (w588) is out of view before and after, and 100% of it showed in between [flash]
+  - +0 ms -1323,770 1324×791 · +197 ms 67,31 1324×791 · +2073 ms 1599,770 1324×791
+- ✘ **27 display-unplug** (the second display: unplug): textedit (w596) moved 2 times [jolt]
+  - +0 ms 12,562 376×248 · +197 ms 165,65 656×422 · +1979 ms 165,65 376×248 · +2022 ms 12,562 376×248
+- ✘ **27 display-unplug** (the second display: unplug): terminal (w602) moved 2 times [jolt]
+  - +0 ms 1121,562 377×248 · +197 ms 799,31 860×503 · +2022 ms 1121,562 377×248
+- ✘ **27 display-unplug** (the second display: unplug): notes (w603) moved 2 times [jolt]
+  - +0 ms 400,490 709×320 · +197 ms 426,218 1000×600 · +2035 ms 426,218 709×320 · +2073 ms 400,490 709×320
+- ✘ **27 display-unplug** (the second display: unplug): calendar (w606) is out of view before and after, and 100% of it showed in between [flash]
+  - +0 ms -936,770 937×600 · +197 ms 403,112 937×600 · +2073 ms 1599,770 937×600
+- ✘ **27 display-unplug** (the second display: unplug): settings (w607) is out of view before and after, and 100% of it showed in between [flash]
+  - +0 ms -722,770 723×625 · +197 ms 437,85 723×625 · +2073 ms 1599,770 723×625
+- ✘ **27 display-unplug** (the second display: unplug): preview (w611) is out of view before and after, and 100% of it showed in between [flash]
+  - +0 ms -707,770 708×424 · +197 ms 4,35 708×424 · +2073 ms 1599,770 708×424
+- ✘ **27 display-unplug** (the second display: unplug): mail (w612) is out of view before and after, and 100% of it showed in between [flash]
+  - +0 ms -1119,770 1120×630 · +197 ms 480,192 1120×630 · +2073 ms 1599,770 1120×630
+- ✘ **27 display-unplug** (the second display: unplug): w614 of Mail is out of view before and after, and 100% of it showed in between [flash]
+  - +0 ms -794,877 470×416 · +197 ms 805,299 470×416 · +2073 ms 1924,877 470×416
+- ✘ **29 display-plug** (the second display: plug): finder (w585) moved 2 times [jolt]
+  - +0 ms 400,43 709×252 · +259 ms 340,120 920×436 · +2155 ms 340,120 709×252 · +2199 ms 400,43 709×252
+- ✘ **29 display-plug** (the second display: plug): safari (w588) moved 2 times [jolt]
+  - +0 ms 1599,770 1324×791 · +29 ms 67,31 1324×791 · +2270 ms -1323,770 1324×791
+- ✘ **29 display-plug** (the second display: plug): textedit (w596) moved 2 times [jolt]
+  - +0 ms 12,562 376×248 · +29 ms 165,65 656×422 · +2155 ms 165,65 376×248 · +2199 ms 12,562 376×248
+- ✘ **29 display-plug** (the second display: plug): terminal (w602) moved 2 times [jolt]
+  - +0 ms 1121,562 377×248 · +29 ms 799,31 860×503 · +2199 ms 1121,562 377×248
+- ✘ **29 display-plug** (the second display: plug): notes (w603) moved 2 times [jolt]
+  - +0 ms 400,490 709×320 · +259 ms 426,218 1000×600 · +2270 ms 400,490 709×320
+- ✘ **29 display-plug** (the second display: plug): calendar (w606) moved 2 times [jolt]
+  - +0 ms 1599,770 937×600 · +29 ms 403,112 937×600 · +2270 ms -936,770 937×600
+- ✘ **29 display-plug** (the second display: plug): settings (w607) moved 2 times [jolt]
+  - +0 ms 1599,770 723×625 · +259 ms 437,85 723×625 · +2270 ms -722,770 723×625
+- ✘ **29 display-plug** (the second display: plug): preview (w611) moved 2 times [jolt]
+  - +0 ms 1599,770 708×424 · +29 ms 4,35 708×424 · +2270 ms -707,770 708×424
+- ✘ **29 display-plug** (the second display: plug): mail (w612) moved 2 times [jolt]
+  - +0 ms 1599,770 1120×630 · +29 ms 480,192 1120×630 · +2270 ms -1119,770 1120×630
+- ✘ **29 display-plug** (the second display: plug): w614 of Mail moved 2 times [jolt]
+  - +0 ms 1924,877 470×416 · +29 ms 805,299 470×416 · +2270 ms -794,877 470×416
+- ✘ **31 display-unplug** (the second display: unplug): finder (w585) moved 2 times [jolt]
+  - +0 ms 400,43 709×252 · +149 ms 340,120 920×436 · +1874 ms 400,43 709×252
+- ✘ **31 display-unplug** (the second display: unplug): safari (w588) is out of view before and after, and 100% of it showed in between [flash]
+  - +0 ms -1323,770 1324×791 · +149 ms 67,31 1324×791 · +1933 ms 1599,770 1324×791
+- ✘ **31 display-unplug** (the second display: unplug): textedit (w596) moved 2 times [jolt]
+  - +0 ms 12,562 376×248 · +149 ms 165,65 656×422 · +1874 ms 12,562 376×248
+- ✘ **31 display-unplug** (the second display: unplug): terminal (w602) moved 2 times [jolt]
+  - +0 ms 1121,562 377×248 · +149 ms 799,31 860×503 · +1874 ms 1121,562 377×248
+- ✘ **31 display-unplug** (the second display: unplug): notes (w603) moved 2 times [jolt]
+  - +0 ms 400,490 709×320 · +149 ms 426,218 1000×600 · +1886 ms 426,218 709×320 · +1933 ms 400,490 709×320
+- ✘ **31 display-unplug** (the second display: unplug): calendar (w606) is out of view before and after, and 100% of it showed in between [flash]
+  - +0 ms -936,770 937×600 · +149 ms 403,112 937×600 · +1933 ms 1599,770 937×600
+- ✘ **31 display-unplug** (the second display: unplug): settings (w607) is out of view before and after, and 100% of it showed in between [flash]
+  - +0 ms -722,770 723×625 · +179 ms 437,85 723×625 · +1933 ms 1599,770 723×625
+- ✘ **31 display-unplug** (the second display: unplug): preview (w611) is out of view before and after, and 100% of it showed in between [flash]
+  - +0 ms -707,770 708×424 · +149 ms 4,35 708×424 · +1933 ms 1599,770 708×424
+- ✘ **31 display-unplug** (the second display: unplug): mail (w612) is out of view before and after, and 100% of it showed in between [flash]
+  - +0 ms -1119,770 1120×630 · +149 ms 480,192 1120×630 · +1933 ms 1599,770 1120×630
+- ✘ **31 display-unplug** (the second display: unplug): w614 of Mail is out of view before and after, and 100% of it showed in between [flash]
+  - +0 ms -794,877 470×416 · +149 ms 805,299 470×416 · +1933 ms 1924,877 470×416
+- ✘ **33 display-plug** (the second display: plug): finder (w585) moved 2 times [jolt]
+  - +0 ms 400,43 709×252 · +16 ms 340,120 920×436 · +2506 ms 340,120 709×252 · +2536 ms 400,43 709×252
+- ✘ **33 display-plug** (the second display: plug): safari (w588) moved 2 times [jolt]
+  - +0 ms 1599,770 1324×791 · +16 ms 67,31 1324×791 · +2585 ms -1323,770 1324×791
+- ✘ **33 display-plug** (the second display: plug): textedit (w596) moved 2 times [jolt]
+  - +0 ms 12,562 376×248 · +16 ms 165,65 656×422 · +2506 ms 12,562 376×248
+- ✘ **33 display-plug** (the second display: plug): terminal (w602) moved 3 times [jolt]
+  - +0 ms 1121,562 377×248 · +16 ms 799,31 860×503 · +663 ms 740,31 860×503 · +2536 ms 1121,562 377×248
+- ✘ **33 display-plug** (the second display: plug): notes (w603) moved 2 times [jolt]
+  - +0 ms 400,490 709×320 · +226 ms 426,218 1000×600 · +2575 ms 400,490 709×320
+- ✘ **33 display-plug** (the second display: plug): calendar (w606) moved 2 times [jolt]
+  - +0 ms 1599,770 937×600 · +16 ms 403,112 937×600 · +2604 ms -936,770 937×600
+- ✘ **33 display-plug** (the second display: plug): settings (w607) moved 2 times [jolt]
+  - +0 ms 1599,770 723×625 · +234 ms 437,85 723×625 · +2604 ms -722,770 723×625
+- ✘ **33 display-plug** (the second display: plug): preview (w611) moved 2 times [jolt]
+  - +0 ms 1599,770 708×424 · +16 ms 4,35 708×424 · +2604 ms -707,770 708×424
+- ✘ **33 display-plug** (the second display: plug): mail (w612) moved 2 times [jolt]
+  - +0 ms 1599,770 1120×630 · +16 ms 480,192 1120×630 · +2604 ms -1119,770 1120×630
+- ✘ **33 display-plug** (the second display: plug): w614 of Mail is out of view before and after, and 100% of it showed in between [flash]
+  - +0 ms 1924,877 470×416 · +16 ms 805,299 470×416 · +2604 ms -794,877 470×416
+- ✘ **57 display-left** (the second display: left): finder (w585) moved 2 times [jolt]
+  - +0 ms 12,43 1576×767 · +36 ms 340,120 920×436 · +1973 ms 12,43 920×436 · +1978 ms 12,43 1576×767
+- ✘ **57 display-left** (the second display: left): safari (w588) moved 2 times [jolt]
+  - +0 ms -1323,770 1324×791 · +36 ms 67,31 1324×791 · +1998 ms 1599,770 1324×791
+- ✘ **57 display-left** (the second display: left): textedit (w596) moved 2 times [jolt]
+  - +0 ms -375,790 376×248 · +36 ms 165,65 656×422 · +1998 ms 1599,790 656×422
+- ✘ **57 display-left** (the second display: left): terminal (w602) moved 2 times [jolt]
+  - +0 ms -376,790 377×248 · +245 ms 799,31 860×503 · +1998 ms 1599,790 860×503
+- ✘ **57 display-left** (the second display: left): notes (w603) moved 2 times [jolt]
+  - +0 ms -1575,770 1576×767 · +36 ms 426,218 1000×600 · +1998 ms 1599,770 1000×600
+- ✘ **57 display-left** (the second display: left): calendar (w606) moved 2 times [jolt]
+  - +0 ms -936,770 937×600 · +245 ms 403,112 937×600 · +1998 ms 1599,770 937×600
+- ✘ **57 display-left** (the second display: left): settings (w607) moved 2 times [jolt]
+  - +0 ms -722,770 723×767 · +245 ms 437,85 723×625 · +1998 ms 1599,770 723×625
+- ✘ **57 display-left** (the second display: left): preview (w611) moved 2 times [jolt]
+  - +0 ms -707,770 708×424 · +36 ms 4,35 708×424 · +1998 ms 1599,770 708×424
+- ✘ **57 display-left** (the second display: left): mail (w612) moved 2 times [jolt]
+  - +0 ms -1119,770 1120×630 · +245 ms 480,192 1120×630 · +1998 ms 1599,770 1120×630
+- ✘ **57 display-left** (the second display: left): w614 of Mail is out of view before and after, and 100% of it showed in between [flash]
+  - +0 ms -794,877 470×416 · +245 ms 805,299 470×416 · +1998 ms 1924,877 470×416
+- ✘ **60 drag-gap-beside-terminal** (drags the gap to the right of terminal by -40 points): terminal (w602) moved 3 times [jolt]
+  - +0 ms 1121,562 377×248 · +746 ms 1121,562 370×248 · +799 ms 1123,562 370×248 · +865 ms 1121,562 370×248 · +1084 ms 1123,562 363×248 · +1140 ms 1122,562 363×248 · … 6 more … · +2191 ms 1123,562 342×248 · +2247 ms 1121,562 342×248 · +2574 ms 1121,562 335×248 · +2650 ms 1122,562 335×248 · +2757 ms 1121,562 335×248
+- ✘ **62 display-unplug** (the second display: unplug): finder (w585) moved 2 times [jolt]
+  - +0 ms 400,43 709×252 · +11 ms 340,120 920×436 · +2048 ms 400,43 709×252
+- ✘ **62 display-unplug** (the second display: unplug): safari (w588) is out of view before and after, and 100% of it showed in between [flash]
+  - +0 ms 1599,770 1324×791 · +11 ms 67,31 1324×791 · +2162 ms 1599,770 1324×791
+- ✘ **62 display-unplug** (the second display: unplug): textedit (w596) moved 2 times [jolt]
+  - +0 ms 12,562 376×248 · +11 ms 165,65 656×422 · +2048 ms 12,562 376×248
+- ✘ **62 display-unplug** (the second display: unplug): terminal (w602) moved 2 times [jolt]
+  - +0 ms 1121,562 335×248 · +11 ms 799,31 860×503 · +2048 ms 1121,562 335×248
+- ✘ **62 display-unplug** (the second display: unplug): notes (w603) moved 2 times [jolt]
+  - +0 ms 400,490 709×320 · +11 ms 426,218 1000×600 · +2099 ms 426,218 709×320 · +2162 ms 400,490 709×320
+- ✘ **62 display-unplug** (the second display: unplug): calendar (w606) is out of view before and after, and 100% of it showed in between [flash]
+  - +0 ms 1599,770 937×600 · +11 ms 403,112 937×600 · +2162 ms 1599,770 937×600
+- ✘ **62 display-unplug** (the second display: unplug): settings (w607) is out of view before and after, and 100% of it showed in between [flash]
+  - +0 ms 1599,770 723×625 · +205 ms 437,85 723×625 · +2162 ms 1599,770 723×625
+- ✘ **62 display-unplug** (the second display: unplug): preview (w611) is out of view before and after, and 100% of it showed in between [flash]
+  - +0 ms 1599,770 708×424 · +11 ms 4,35 708×424 · +2162 ms 1599,770 708×424
+- ✘ **62 display-unplug** (the second display: unplug): mail (w612) is out of view before and after, and 100% of it showed in between [flash]
+  - +0 ms 1599,770 1120×630 · +11 ms 480,192 1120×630 · +2162 ms 1599,770 1120×630
+- ✘ **62 display-unplug** (the second display: unplug): w614 of Mail is out of view before and after, and 100% of it showed in between [flash]
+  - +0 ms 1924,877 470×416 · +11 ms 805,299 470×416 · +2162 ms 1924,877 470×416
+- ✘ **76 launch** (starts Arbor): safari (w588) moved 2 times [jolt]
+  - +0 ms 67,31 1324×790 · +223 ms 67,31 574×247 · +480 ms 1599,770 574×247
+- ✘ **76 launch** (starts Arbor): preview (w611) went 352 points out of its way before it ended up [jolt]
+  - +0 ms 4,35 708×424 · +396 ms 4,35 708×248 · +595 ms 4,35 708×424
+- ✘ **83 drag-calendar-to-right-edge** (drags calendar by its title bar against the right edge of the screen and lets go): calendar (w606) was 52 points ahead of the pointer's travel and 0 behind it at the most [pulled]
+  - +0 ms 394,147 937×600 · +125 ms 425,158 937×600 · +131 ms 456,168 937×600 · +192 ms 487,178 937×600 · +211 ms 518,189 937×600 · +284 ms 549,199 937×600 · … 18 more … · +1642 ms 1221,294 937×600 · +1698 ms 1252,300 937×600 · +1833 ms 1284,300 937×600 · +2074 ms 1285,300 937×600 · +2241 ms 1284,300 937×600
+- ✘ **88 display-plug** (the second display: plug): finder (w585) moved 2 times [jolt]
+  - +0 ms 400,43 709×380 · +310 ms 340,120 920×436 · +2331 ms 400,43 709×380
+- ✘ **88 display-plug** (the second display: plug): textedit (w596) moved 2 times [jolt]
+  - +0 ms 12,433 376×377 · +29 ms 165,65 656×422 · +2331 ms 12,433 376×377
+- ✘ **88 display-plug** (the second display: plug): notes (w603) moved 2 times [jolt]
+  - +0 ms 400,435 709×375 · +310 ms 426,218 1000×600 · +2369 ms 400,435 709×375
+- ✘ **88 display-plug** (the second display: plug): settings (w607) moved 2 times [jolt]
+  - +0 ms 1599,770 723×470 · +633 ms 437,85 723×625 · +2369 ms -722,770 723×625
+- ✘ **88 display-plug** (the second display: plug): preview (w611) moved 2 times [jolt]
+  - +0 ms 1599,770 1576×378 · +310 ms 4,35 708×424 · +2369 ms -707,770 708×424
+- ✘ **88 display-plug** (the second display: plug): mail (w612) moved 2 times [jolt]
+  - +0 ms 1599,770 871×247 · +649 ms 480,192 1120×630 · +2369 ms -1119,770 1120×630
+- ✘ **88 display-plug** (the second display: plug): w614 of Mail moved 2 times [jolt]
+  - +0 ms 1800,822 470×416 · +649 ms 805,299 470×416 · +2369 ms -794,877 470×416
+- ✘ **94 display-unplug** (the second display: unplug): calendar (w606) moved 2 times [jolt]
+  - +0 ms 800,32 801×790 · +132 ms 1284,300 937×600 · +1848 ms 663,222 937×600
+- ✘ **96 display-plug** (the second display: plug): calendar (w606) moved 2 times [jolt]
+  - +0 ms 663,222 937×600 · +148 ms 1284,300 937×600 · +533 ms 663,300 937×600
+- ✘ **115 drag-preview-to-left-edge** (drags preview by its title bar against the left edge of the screen and lets go): preview (w611) was 52 points ahead of the pointer's travel and 0 behind it at the most [pulled]
+  - +0 ms 0,433 1576×377 · +89 ms -26,433 1576×377 · +93 ms -77,433 1576×377 · +194 ms -103,433 1576×377 · +261 ms -128,433 1576×377 · +314 ms -154,434 1576×377 · … 17 more … · +1792 ms -717,437 1576×377 · +1893 ms -743,437 1576×377 · +1962 ms -768,438 1576×377 · +2228 ms -767,438 1576×377 · +2348 ms -768,438 1576×377
+- ✘ **116 display-unplug** (the second display: unplug): calendar (w606) moved 2 times [jolt]
+  - +0 ms 663,300 937×600 · +172 ms 1284,300 937×600 · +2067 ms 663,222 937×600
+- ✘ **128 display-unplug** (the second display: unplug): calendar (w606) moved 2 times [jolt]
+  - +0 ms 1284,300 801×780 · +404 ms 1284,300 937×600 · +2128 ms 663,222 937×600
+- ✘ **128 display-unplug** (the second display: unplug): settings (w607) moved 2 times [jolt]
+  - +0 ms 438,43 723×470 · +404 ms 437,85 723×625 · +2128 ms 438,43 723×470
+
+### Rule 4: the window you switch to comes to the front and into view
+
+- ✘ **23 undo** (presses ctrl+opt+z): the app in front changed (to process 23940), and nobody switched [focus]
+- ✘ **98 dock-icon-safari** (clicks safari's icon in the Dock): safari (w588) is not wholly in view: 90% of it, at 0,109 1324×791 in 0,31 1600×791 and 1600,31 1280×769 [focus]
+- ✘ **124 dock-icon-safari** (clicks safari's icon in the Dock): safari (w588) is not wholly in view: 90% of it, at 0,109 1324×791 in 0,31 1600×791 and 1600,31 1920×1049 [focus]
+
+### Rule 5: quitting, Float All and pause give windows their own sizes back
+
+- ✘ **21 float-all** (chooses `float-all` from Arbor's menu): terminal (w602) is 800,34 797×788; its own size was 800,35 800×784 [size-lost]
+- ✘ **72 quit** (chooses Quit Arbor in Arbor's menu): terminal (w602) is 800,34 797×788; its own size was 800,35 800×784 [size-lost]
+- ✘ **91 float-all** (chooses `float-all` from Arbor's menu): safari (w588) is 67,31 1324×790; its own size was 104,43 574×378 [size-lost]
+- ✘ **91 float-all** (chooses `float-all` from Arbor's menu): terminal (w602) is 803,31 797×791; its own size was 803,33 797×788 [size-lost]
+- ✘ **121 float-all** (chooses `float-all` from Arbor's menu): safari (w588) is 0,109 1324×791; its own size was 104,43 574×378 [size-lost]
+- ✘ **121 float-all** (chooses `float-all` from Arbor's menu): textedit (w596) is 165,65 656×422; its own size was 165,65 673×439 [size-lost]
+- ✘ **121 float-all** (chooses `float-all` from Arbor's menu): terminal (w602) is 803,31 797×791; its own size was 803,33 797×788 [size-lost]
+- ✘ **121 float-all** (chooses `float-all` from Arbor's menu): calendar (w606) is 1284,300 801×780; its own size was 800,32 801×791 [size-lost]
+- ✘ **131 quit** (chooses Quit Arbor in Arbor's menu): textedit (w596) is 165,65 656×422; its own size was 165,65 673×439 [size-lost]
+- ✘ **131 quit** (chooses Quit Arbor in Arbor's menu): terminal (w602) is 803,31 797×791; its own size was 803,33 797×788 [size-lost]
+- ✘ **131 quit** (chooses Quit Arbor in Arbor's menu): preview (w611) is -768,438 1576×377; its own size was 2159,160 804×791 [size-lost]
+
+### Rule L: no window is lost or stuck
+
+- ✘ **28 view-home** (chooses `home` from Arbor's menu): safari (w588) is out of view: 0% of it is on a display, at 1599,770 1324×791 [lost]
+- ✘ **28 view-home** (chooses `home` from Arbor's menu): calendar (w606) is out of view: 0% of it is on a display, at 1599,770 937×600 [lost]
+- ✘ **28 view-home** (chooses `home` from Arbor's menu): mail (w612) is out of view: 0% of it is on a display, at 1599,770 1120×630 [lost]
+- ✘ **32 view-home** (chooses `home` from Arbor's menu): safari (w588) is out of view: 0% of it is on a display, at 1599,770 1324×791 [lost]
+- ✘ **32 view-home** (chooses `home` from Arbor's menu): calendar (w606) is out of view: 0% of it is on a display, at 1599,770 937×600 [lost]
+- ✘ **32 view-home** (chooses `home` from Arbor's menu): mail (w612) is out of view: 0% of it is on a display, at 1599,770 1120×630 [lost]
+- ✘ **34 view-home** (chooses `home` from Arbor's menu): safari (w588) is out of view: 0% of it is on a display, at -1323,770 1324×791 [lost]
+- ✘ **34 view-home** (chooses `home` from Arbor's menu): calendar (w606) is out of view: 0% of it is on a display, at -936,770 937×600 [lost]
+- ✘ **34 view-home** (chooses `home` from Arbor's menu): mail (w612) is out of view: 0% of it is on a display, at -1119,770 1120×630 [lost]
+- ✘ **63 view-home** (chooses `home` from Arbor's menu): calendar (w606) is out of view: 0% of it is on a display, at 1599,770 937×600 [lost]
+- ✘ **63 view-home** (chooses `home` from Arbor's menu): mail (w612) is out of view: 0% of it is on a display, at 1599,770 1120×630 [lost]
+- ✘ **76 launch** (starts Arbor): safari (w588) is out of view: 0% of it is on a display, at 1599,770 574×247 [lost]
+- ✘ **76 launch** (starts Arbor): calendar (w606) is out of view: 0% of it is on a display, at 1599,770 680×503 [lost]
+- ✘ **76 launch** (starts Arbor): settings (w607) is out of view: 0% of it is on a display, at 1599,770 723×470 [lost]
+- ✘ **76 launch** (starts Arbor): mail (w612) is out of view: 0% of it is on a display, at 1599,770 871×247 [lost]
+
+### Rule -: what the script itself checked
+
+- ~ **42 drag-notes-by** (drags notes, which floats, by its title bar 126 across and 53 down): the act was not performed: drag_window could not be done [script]
+
+
+7 passed, 1 failed
+still running when the script had ended, and stopped now:
+  22317 sleep
+mac-shell: put back after 1017-2-with.sh: reduce-motion
+exit code 1

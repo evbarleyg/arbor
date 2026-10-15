@@ -1,0 +1,63 @@
+21 float-all: chooses `float-all` from Arbor's menu
+expected: {'act': 'way-out', 'settled': 'quiet:1114', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1', 'floating': '585,588,596,602,603,606,607,611,612', 'docked': ''}
+FAIL rule 5: terminal (w602) is 800,34 797×788; its own size was 800,35 800×784
+
+14:34:33.306 SCREEN -- begin 21 float-all
+14:34:33.306 SCREEN -- text 21 chooses `float-all` from Arbor's menu
+14:34:33.322 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+14:34:33.322 DEBUG the stage kept the windows waiting 4 ms: its panel 0, 9 costumes 0 (0 not ready), the desktop 1, going up 3
+14:34:33.324 MACOS pid 24146 AXMoved w611 AXWindow/AXStandardWindow 4 35 708 424
+14:34:33.330 MACOS pid 23418 AXMoved w588 AXWindow/AXStandardWindow 67 31 1324 791
+14:34:33.341 MACOS pid 23471 AXMoved w596 AXWindow/AXStandardWindow 165 65 673 439
+14:34:33.341 MACOS pid 23471 AXResized w596 AXWindow/AXStandardWindow 165 65 673 439
+14:34:33.347 SCREEN w646 of Arbor 0,0 1600×900 (level 4)
+14:34:33.347 SCREEN safari (w588) 67,31 1324×791
+14:34:33.347 SCREEN textedit (w596) 165,65 376×248
+14:34:33.347 SCREEN preview (w611) 4,35 708×424
+14:34:33.356 SCREEN textedit (w596) 165,65 673×439
+14:34:33.356 SCREEN finder (w585) 340,120 920×436
+14:34:33.399 MACOS pid 21950 AXMoved w585 AXWindow/AXStandardWindow 340 120 920 436
+14:34:33.400 MACOS pid 21950 AXResized w585 AXWindow/AXStandardWindow 340 120 920 436
+14:34:33.405 MACOS pid 23997 AXMoved w606 AXWindow/AXStandardWindow 403 112 937 600
+14:34:33.407 SCREEN calendar (w606) 403,112 937×600
+14:34:33.426 SCREEN notes (w603) 426,218 709×320
+14:34:33.478 MACOS pid 23940 AXMoved w603 AXWindow/AXStandardWindow 426 218 1000 600
+14:34:33.479 MACOS pid 23940 AXResized w603 AXWindow/AXStandardWindow 426 218 1000 600
+14:34:33.492 SCREEN notes (w603) 426,218 1000×600
+14:34:33.492 SCREEN settings (w607) 437,85 723×625
+14:34:33.494 MACOS pid 24051 AXMoved w607 AXWindow/AXStandardWindow 437 85 723 625
+14:34:33.513 MACOS pid 24527 AXMoved w612 AXWindow/AXStandardWindow 480 192 1120 630
+14:34:33.524 MACOS pid 23786 AXMoved w602 AXWindow/AXStandardWindow 800 35 797 788
+14:34:33.524 MACOS pid 23786 AXTitleChanged w602 AXWindow/AXStandardWindow 800 35 797 788
+14:34:33.530 MACOS pid 23786 AXResized w602 AXWindow/AXStandardWindow 800 35 797 788
+14:34:33.531 MACOS pid 23786 AXMoved w602 AXWindow/AXStandardWindow 800 34 797 788
+14:34:33.541 SCREEN terminal (w602) 800,35 377×248
+14:34:33.541 SCREEN w614 of Mail 805,299 470×416
+14:34:33.541 SCREEN mail (w612) 480,192 1120×630
+14:34:33.543 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.2491969680786133 s
+14:34:33.559 SCREEN terminal (w602) 800,34 797×788
+14:34:33.561 INFO  float-all: floated 9 windows
+14:34:33.581 SCREEN w672 of Arbor left the screen
+14:34:33.581 SCREEN w665 of Arbor left the screen
+14:34:33.581 SCREEN w663 of Arbor left the screen
+14:34:33.581 SCREEN w668 of Arbor left the screen
+14:34:33.581 SCREEN w671 of Arbor left the screen
+14:34:33.581 SCREEN w667 of Arbor left the screen
+14:34:33.581 SCREEN w670 of Arbor left the screen
+14:34:33.581 SCREEN w664 of Arbor left the screen
+14:34:33.581 SCREEN w669 of Arbor left the screen
+14:34:33.581 SCREEN w666 of Arbor left the screen
+14:34:33.581 SCREEN front to back: notes terminal safari w645 calendar textedit w614 mail preview settings finder w657 w658 w659 w660 w661 w662
+14:34:33.775 SCREEN w660 of Arbor left the screen
+14:34:33.775 SCREEN w661 of Arbor left the screen
+14:34:33.775 SCREEN w657 of Arbor left the screen
+14:34:33.775 SCREEN w658 of Arbor left the screen
+14:34:33.775 SCREEN w662 of Arbor left the screen
+14:34:33.775 SCREEN w659 of Arbor left the screen
+14:34:33.775 SCREEN w673 of Arbor left the screen
+14:34:33.775 SCREEN front to back: notes terminal safari w645 calendar textedit w614 mail preview settings finder
+14:34:33.926 DEBUG stage down
+14:34:33.973 SCREEN w742 of Arbor left the screen
+14:34:33.973 SCREEN w646 of Arbor left the screen
+14:34:34.887 SCREEN -- end 21 act=way-out settled=quiet:1114 moves=any restores=all places=1 everything=1 floating=585,588,596,602,603,606,607,611,612 docked=
+14:34:35.169 SCRIPT == 22 dock-icon-settings
