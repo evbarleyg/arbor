@@ -1,0 +1,104 @@
+# 45-pause 2026-10-15T07:40Z on macOS 26.6.2, commit bdbe25c
+
+▸ ⌃⌥↩ pressed again returns to where the camera was
+  ✔ ⌃⌥↩ reaches Arbor
+  ✘ the focused window fills the screen — it is at 343 203 337 330, not 12 43 1000 650
+  ✔ the others are out of view
+  ✔ ⌃⌥↩ again
+  ✔ the camera is back on everything
+  ✔ the others are back in view
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥0 goes home: everything is in view
+  ✔ the others are out of view
+  ✔ ⌃⌥0 reaches Arbor
+  ✔ the camera is on everything
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⎋ pauses Arbor while zoomed in: every window comes back and Arbor lets go of the Mac
+  ✔ the others are out of view
+  ✔ ⌃⌥⎋ reaches Arbor
+  ✔ status says paused
+  ✔ the first window is in view
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ the first window is where it was before it was docked, in its own size
+  ✔ and so is the second
+  ✔ and the framed one
+  ✔ none of Arbor's own windows is on screen
+  ✔ only the shortcut that ends the pause is still registered
+  ✔ a command is refused
+
+▸ while paused Arbor reacts to nothing: no shortcut, no drag
+  ✔ ⌃⌥Space does not reach Arbor
+  ✔ it goes to the window that was framed, which still has the keyboard
+  ✔ a drag to the left screen edge shows no preview
+  ✔ Arbor is still paused
+  ✔ the second window has not moved
+
+▸ ⌃⌥⎋ again resumes: the arrangement and the view are back
+  ✔ ⌃⌥⎋ reaches Arbor
+  ✔ status says running
+  ✘ the view is back on the third window — it is at 85 75 853 586, not 12 43 1000 650
+  ✔ the first window is out of view again
+  ✔ the second window is out of view again
+  ✔ all the shortcuts are registered again
+  ✔ ⌃⌥Space works again
+  ✔ the window dragged away during the pause is back in its slot
+  ✔ windows match Arbor's layout
+
+▸ resume with the keyboard in a window the view left out: the view moves to show it
+  ✔ the first window is out of view
+  ✔ Arbor is paused
+  ✔ Arbor runs again
+  ✔ the window with the keyboard is in view
+  ✔ windows match Arbor's layout
+
+▸ pause for a while by command: Arbor resumes by itself
+  ✔ pause 0.05, three seconds, succeeds
+  ✔ status says paused
+  ✔ it has resumed
+  ✔ windows match Arbor's layout
+
+▸ close a docked window and open another while paused: Arbor leaves both alone, and resumes without the one and with the other floating
+  ✔ the new window is docked below the first
+  ✔ Arbor is paused
+  ✔ the window opened meanwhile stays where its app put it
+  ✔ Arbor runs again
+  ✔ Arbor no longer knows the closed window
+  ✔ its neighbour has the whole column
+  ✔ three are docked, as before
+  ✔ the window opened meanwhile floats
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⇧F floats every window, from wherever the camera is
+  ✔ the others are out of view
+  ✔ ⌃⌥⇧F reaches Arbor
+  ✔ nothing is docked
+  ✔ the first window is in view
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ the window that was framed no longer covers the screen
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+▸ a docked window that cannot grow sits in the middle of its slot
+  ✔ it kept its own width
+  ✔ it is centred across
+  ✔ it is centred down
+  ✔ Arbor leaves it there
+  ✔ its neighbour is resized by command
+  ✔ it does not twitch when a neighbour is resized
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+75 passed, 2 failed

@@ -1,0 +1,191 @@
+# mac-shell: scripts/mac-shell/suite/45-pause.sh at bdbe25c, macOS 26.6.2, 2026-10-15T07:40Z
+built Arbor, the pointer tool and the app bundles in 9s
+session 1: Arbor pid 10631, test windows 62 63 64 (pid 10591)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 62 left
+docked w62 at the left edge
+> dock 63 right
+docked w63 at the right edge
+> dock 64 beside 63 bottom
+docked w64 below w63
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  w62 12 79 325 578        docked
+  w63 687 43 325 319       docked
+  w64 687 374 325 319      docked focused
+
+▸ ⌃⌥↩ pressed again returns to where the camera was
+> click 851 552
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ reaches Arbor
+  ✘ the focused window fills the screen — it is at 343 203 337 330, not 12 43 1000 650
+      picture: mac-shell/fail-45-pause-1.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n4, back yes
+      |   w62 1023 677 325 578     docked parked
+      |   w63 1023 677 325 319     docked parked
+      |   w64 343 203 337 330      docked focused
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  zoom: framed w64
+      log | DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Your other windows are out of view, not closed · ⌃⌥Space shows everything
+  ✔ the others are out of view
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ again
+  ✔ the camera is back on everything
+  ✔ the others are back in view
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥0 goes home: everything is in view
+> zoom 62
+framed w62
+  ✔ the others are out of view
+> key ctrl+opt+0
+  ✔ ⌃⌥0 reaches Arbor
+  ✔ the camera is on everything
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⎋ pauses Arbor while zoomed in: every window comes back and Arbor lets go of the Mac
+> zoom 64
+framed w64
+  ✔ the others are out of view
+> key ctrl+opt+escape
+  ✔ ⌃⌥⎋ reaches Arbor
+  ✔ status says paused
+  ✔ the first window is in view
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ the first window is where it was before it was docked, in its own size
+  ✔ and so is the second
+  ✔ and the framed one
+  ✔ none of Arbor's own windows is on screen
+  ✔ only the shortcut that ends the pause is still registered
+> dock 62 right
+  ✔ a command is refused
+
+▸ while paused Arbor reacts to nothing: no shortcut, no drag
+> key ctrl+opt+space
+  ✔ ⌃⌥Space does not reach Arbor
+  ✔ it goes to the window that was framed, which still has the keyboard
+> drag 266 232 3 368 --no-release
+  ✔ a drag to the left screen edge shows no preview
+> release
+  ✔ Arbor is still paused
+  ✔ the second window has not moved
+
+▸ ⌃⌥⎋ again resumes: the arrangement and the view are back
+> click 512 330
+> key ctrl+opt+escape
+  ✔ ⌃⌥⎋ reaches Arbor
+  ✔ status says running
+  ✘ the view is back on the third window — it is at 85 75 853 586, not 12 43 1000 650
+      picture: mac-shell/fail-45-pause-2.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n4, back yes
+      |   w62 1023 677 480 348     docked parked
+      |   w63 1023 677 480 348     docked parked
+      |   w64 85 75 853 586        docked focused
+      log | INFO  started: 1 display(s), 3 managed window(s)
+      log | INFO  registered 52 shortcuts in 1741 µs
+      log | DEBUG w64 has the keyboard
+      log | INFO  resumed
+      log | DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Resumed
+  ✔ the first window is out of view again
+  ✔ the second window is out of view again
+  ✔ all the shortcuts are registered again
+> key ctrl+opt+space
+  ✔ ⌃⌥Space works again
+  ✔ the window dragged away during the pause is back in its slot
+  ✔ windows match Arbor's layout
+
+▸ resume with the keyboard in a window the view left out: the view moves to show it
+> zoom 64
+framed w64
+  ✔ the first window is out of view
+> key ctrl+opt+escape
+  ✔ Arbor is paused
+> click 412 494
+> key ctrl+opt+escape
+  ✔ Arbor runs again
+  ✔ the window with the keyboard is in view
+> show-all
+showing everything
+  ✔ windows match Arbor's layout
+
+▸ pause for a while by command: Arbor resumes by itself
+> pause 0.05
+  ✔ pause 0.05, three seconds, succeeds
+  ✔ status says paused
+  ✔ it has resumed
+  ✔ windows match Arbor's layout
+
+▸ close a docked window and open another while paused: Arbor leaves both alone, and resumes without the one and with the other floating
+> test windows: open size=300x200 title=Short lived
+> dock 92 beside 62 bottom
+docked w92 below w62
+  ✔ the new window is docked below the first
+> click 176 221
+> key ctrl+opt+escape
+  ✔ Arbor is paused
+> test windows: close 92
+> test windows: open size=300x200 at=362,268 title=Opened meanwhile
+  ✔ the window opened meanwhile stays where its app put it
+> key ctrl+opt+escape
+  ✔ Arbor runs again
+  ✔ Arbor no longer knows the closed window
+  ✔ its neighbour has the whole column
+  ✔ three are docked, as before
+  ✔ the window opened meanwhile floats
+  ✔ windows match Arbor's layout
+> test windows: close 95
+
+▸ ⌃⌥⇧F floats every window, from wherever the camera is
+> zoom 62
+framed w62
+  ✔ the others are out of view
+> key ctrl+opt+shift+f
+  ✔ ⌃⌥⇧F reaches Arbor
+  ✔ nothing is docked
+  ✔ the first window is in view
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ the window that was framed no longer covers the screen
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+session 2: Arbor pid 12875, test windows 102 103 (pid 12853)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+
+▸ a docked window that cannot grow sits in the middle of its slot
+> dock 102 left
+docked w102 at the left edge
+> dock 103 right
+docked w103 at the right edge
+its slot is at 12 43 325 650, the window at 24 248 300 240
+  ✔ it kept its own width
+  ✔ it is centred across
+  ✔ it is centred down
+  ✔ Arbor leaves it there
+> resize 103 left 60
+resized w103
+  ✔ its neighbour is resized by command
+  ✔ it does not twitch when a neighbour is resized
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+75 passed, 2 failed
+exit code 1

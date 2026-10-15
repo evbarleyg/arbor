@@ -1,0 +1,178 @@
+# 40-keys 2026-10-15T07:39Z on macOS 26.6.2, commit bdbe25c
+
+▸ Arbor registers every shortcut it lists
+  ✔ there are at least the 35 defaults
+  ✔ all of them were registered with macOS
+
+▸ ⌃⌥⌘← and ⌃⌥⌘→ dock the focused window at that edge
+  ✔ the click gave the window the keyboard
+  ✔ ⌃⌥⌘← reaches Arbor
+  ✔ the window is docked at the left edge
+  ✔ ⌃⌥⌘→ reaches Arbor
+  ✔ the other window is docked at the right edge
+  ✔ the Desktop stays between them
+  ✘ windows match Arbor's layout — w31 expected 12 43 325 650 actual 12 79 325 578; w32 expected 687 43 325 650 actual 687 106 325 524
+
+▸ ⌃⌥⌘ and an arrow move a docked window one place at a time
+  ✔ ⌃⌥⌘← docks the third window at the left edge
+  ✔ it is left of the first
+  ✔ ⌃⌥⌘→ again
+  ✔ it traded places with the first
+  ✔ the first is at the left edge now
+  ✘ windows match Arbor's layout — w32 expected 771 43 241 650 actual 771 69 241 598; w33 expected 265 43 241 650 actual 265 59 241 618
+
+▸ ⌃⌥⌘↓ and ⌃⌥⌘↑ take a docked window to the bottom and the top of the view
+  ✔ ⌃⌥⌘↓ reaches Arbor
+  ✔ the window is at the bottom edge
+  ✔ below the others
+  ✔ ⌃⌥⌘↑ reaches Arbor
+  ✔ ⌃⌥⌘↓ brings it back down
+  ✔ the window is at the bottom edge again
+  ✘ windows match Arbor's layout — w33 expected 12 374 1000 319 actual 33 374 958 319
+
+▸ ⌃⌥↩ frames the focused window, and the others leave the screen
+  ✔ ⌃⌥↩ reaches Arbor
+  ✘ the focused window fills the screen — it is at 16 46 991 645, not 12 43 1000 650
+  ✔ the first window is out of view
+  ✔ the second window is out of view
+  ✔ Arbor says they are parked
+
+▸ ⌃⌥[ goes back and ⌃⌥] forward
+  ✔ ⌃⌥[ reaches Arbor
+  ✔ everything is back in view
+  ✔ the second window too
+  ✔ windows match Arbor's layout
+  ✔ ⌃⌥] reaches Arbor
+  ✔ the window fills the screen again
+  ✔ the others are out of view again
+
+▸ ⌃⌥Space shows everything
+  ✔ ⌃⌥Space reaches Arbor
+  ✔ the camera is on everything
+  ✔ the first window is in view
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥↓ steps in toward the pointer and ⌃⌥↑ steps out
+  ✔ ⌃⌥↓ reaches Arbor
+  ✔ the row under the pointer fills the screen: the window below it left
+  ✔ the row's windows are in view
+  ✔ ⌃⌥↓ again
+  ✔ the window under the pointer fills the screen
+  ✔ ⌃⌥↑ reaches Arbor
+  ✔ its row is back
+  ✔ ⌃⌥↑ again
+  ✔ everything is back
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥→ and ⌃⌥← go to the neighbouring space, ⌃⌥⇧↓ and ⌃⌥⇧↑ to the one below and above
+  ✔ the first window fills the screen
+  ✔ ⌃⌥→ reaches Arbor
+  ✔ the camera is on the Desktop, its neighbour
+  ✔ ⌃⌥→ again
+  ✔ the second window fills the screen
+  ✔ ⌃⌥← reaches Arbor
+  ✔ the camera is back on the Desktop
+  ✔ ⌃⌥⇧↓ reaches Arbor
+  ✔ the window below fills the screen
+  ✔ ⌃⌥⇧↑ reaches Arbor
+  ✔ the window below has left again
+
+▸ ⌃⌥⇧ and a digit save a view, ⌃⌥ and the digit recall it
+  ✔ ⌃⌥⇧1 reaches Arbor
+  ✔ ⌃⌥⇧2 reaches Arbor
+  ✔ ⌃⌥1 reaches Arbor
+  ✔ the saved window fills the screen
+  ✔ the others are out of view
+  ✔ ⌃⌥2 reaches Arbor
+  ✔ everything is in view
+  ✔ the first window is back
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥D shows the Desktop alone
+  ✔ ⌃⌥D reaches Arbor
+  ✔ the first window is out of view
+  ✔ the second window is out of view
+  ✔ the third window is out of view
+  ✔ they all come back
+
+▸ ⌃⌥F floats the focused window and docks it again
+  ✔ ⌃⌥F reaches Arbor
+  ✔ the window floats
+  ✔ ⌃⌥F again
+  ✔ the window is docked
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥A arranges every window
+  ✔ nothing is docked
+  ✔ ⌃⌥A reaches Arbor
+  ✔ all three are docked
+  ✔ nothing overlaps
+  ✔ the first window is in view
+  ✔ windows match Arbor's layout
+
+▸ the app with the keyboard sees none of Arbor's shortcuts
+  ✔ the first window got no key press
+  ✔ the second window got no key press
+  ✔ the third window got no key press
+
+▸ every shortcut in arborctl bindings reaches Arbor
+  ✔ ctrl+opt+a runs arrange
+  ✔ ctrl+opt+n runs ask-name
+  ✔ ctrl+opt+[ runs back
+  ✔ ctrl+opt+cmd+0 runs balance
+  ✔ ctrl+opt+d runs desktop
+  ✔ ctrl+opt+cmd+down runs dock bottom
+  ✔ ctrl+opt+cmd+left runs dock left
+  ✔ ctrl+opt+cmd+right runs dock right
+  ✔ ctrl+opt+cmd+up runs dock top
+  ✔ ctrl+opt+g runs find
+  ✔ ctrl+opt+shift+f runs float-all
+  ✔ ctrl+opt+shift+down runs focus down
+  ✔ ctrl+opt+shift+left runs focus left
+  ✔ ctrl+opt+shift+right runs focus right
+  ✔ ctrl+opt+shift+up runs focus up
+  ✔ ctrl+opt+] runs forward
+  ✔ ctrl+opt+cmd+= runs grow
+  ✔ ctrl+opt+0 runs home
+  ✔ ctrl+opt+down runs in
+  ✔ ctrl+opt+m runs minimap
+  ✔ ctrl+opt+shift+r runs mirror
+  ✔ ctrl+opt+left runs neighbor left
+  ✔ ctrl+opt+right runs neighbor right
+  ✔ ctrl+opt+up runs out
+  ✔ ctrl+opt+shift+z runs redo
+  ✔ ctrl+opt+r runs rotate
+  ✔ ctrl+opt+shift+1 runs save-view 1
+  ✔ ctrl+opt+shift+2 runs save-view 2
+  ✔ ctrl+opt+shift+3 runs save-view 3
+  ✔ ctrl+opt+shift+4 runs save-view 4
+  ✔ ctrl+opt+shift+5 runs save-view 5
+  ✔ ctrl+opt+shift+6 runs save-view 6
+  ✔ ctrl+opt+shift+7 runs save-view 7
+  ✔ ctrl+opt+shift+8 runs save-view 8
+  ✔ ctrl+opt+shift+9 runs save-view 9
+  ✔ ctrl+opt+space runs show-all
+  ✔ ctrl+opt+shift+/ runs show-shortcuts
+  ✔ ctrl+opt+cmd+- runs shrink
+  ✔ ctrl+opt+f runs toggle-float
+  ✔ ctrl+opt+z runs undo
+  ✔ ctrl+opt+1 runs view 1
+  ✔ ctrl+opt+2 runs view 2
+  ✔ ctrl+opt+3 runs view 3
+  ✔ ctrl+opt+4 runs view 4
+  ✔ ctrl+opt+5 runs view 5
+  ✔ ctrl+opt+6 runs view 6
+  ✔ ctrl+opt+7 runs view 7
+  ✔ ctrl+opt+8 runs view 8
+  ✔ ctrl+opt+9 runs view 9
+  ✔ ctrl+opt+return runs zoom
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+139 passed, 4 failed

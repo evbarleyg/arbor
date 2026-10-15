@@ -1,0 +1,94 @@
+# check-F41 2026-10-15T07:42Z on macOS 26.6.2, commit bdbe25c
+
+== what hot keys cost, before anything else holds any
+
+== an app with a bundle id that writes down its keys
+
+== [1 | Desktop | 2], the app on passThroughApps, shortcuts, taps and the menu bar item on
+
+== the app's window, in the middle of the Desktop between them, where neither covers it
+
+== in an ordinary app the shortcuts are Arbor's
+  ✔ the event taps are installed
+  ✔ ⌃⌥↩ frames window 1: 2 goes out of view
+  ✔ ⌃⌥Space shows everything
+
+== in the listed app they are the app's
+  ✔ a click brings the app to the front
+  ✔ status says that shortcuts are off, and why
+  ✔ one shortcut is left registered
+  ✔ no event tap is left
+  ✔ ⌃⌥F reached the app
+  ✔ ⌃⌥Space reached the app
+  ✔ ⌃⌥↩ reached the app
+  ✔ ⌃⌥⌘← reached the app
+  ✔ Arbor did not move: both windows docked and in view
+
+== a ⌃⌥-drag inside the app is the app's too
+  ✔ nothing was framed
+  ✔ no frame-rect command ran
+
+== the menu says so
+  ✔ the app is still in front after the menu
+
+== ⌃⌥⎋ answers everywhere
+  ✔ ⌃⌥⎋ pauses Arbor from inside the app
+  ✔ and resumes it
+  ✘ the app never saw ⎋
+  ✔ after resuming the shortcuts are still off here
+  ✔ ⌃⌥Space still reaches the app
+
+== ⌘Tab away and they are back
+  ✘ ⌘Tab leads to the test windows
+  ✔ status no longer says off
+  ✔ the event taps are back
+  ✘ ⌃⌥↩ frames window 1 again — it is managed docked at 687 43 325 655
+  ✔ ⌃⌥Space shows everything
+  ✔ the app saw neither
+
+== the command, with the app in front
+  ✔ settings.json no longer lists the app
+  ✔ the shortcuts are registered again at once
+  ✔ and the taps installed
+  ✔ ⌃⌥D shows the Desktop: the docked windows go out of view
+  ✔ the app did not see it
+  ✔ ⌃⌥Space shows everything
+  ✔ the same ⌃⌥-drag is Arbor's now
+  ✘ settings.json lists the app again
+  ✔ and the taps are gone again
+
+== for the record: how soon after the switch Arbor has let go
+
+== for the record: a key pressed straight after the switch, ten times each way
+
+== for the record: keeping the hot key and passing the press on with postToPid
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+== the same app on pauseForApps
+  ✔ running while another app is in front
+  ✔ framed on 1: 2 is out of view
+  ✔ the app comes to the front
+  ✔ Arbor pauses
+  ✔ every window is in view
+  ✔ no event tap is left
+  ✔ ⌃⌥Space reaches the app
+  ✔ ⌘Tab away resumes
+  ✔ the view is back on 1: 2 is out of view again
+  ✔ 1 is in view
+  ✔ the app comes to the front
+  ✔ a pause started by hand is not ended by leaving the app
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+== for F44: can a script switch the keyboard layout here?
+
+== for F44: what the keys type
+
+49 passed, 4 failed

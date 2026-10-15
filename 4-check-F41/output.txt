@@ -1,0 +1,322 @@
+# mac-shell: scripts/mac-shell/check-F41.sh at bdbe25c, macOS 26.6.2, 2026-10-15T07:42Z
+built Arbor, the pointer tool and the app bundles in 6s
+
+== what hot keys cost, before anything else holds any
+register 45 hot keys: min 1156 median 1418 max 2211 µs
+unregister 45 hot keys: min 1067 median 1459 max 2081 µs
+register 1 hot keys: min 11 median 30 max 70 µs
+unregister 1 hot keys: min 10 median 27 max 58 µs
+
+== an app with a bundle id that writes down its keys
+
+== [1 | Desktop | 2], the app on passThroughApps, shortcuts, taps and the menu bar item on
+session 1: Arbor pid 19976, test windows 157 158 (pid 19951)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 157 left
+docked w157 at the left edge
+> dock 158 right
+docked w158 at the right edge
+
+== the app's window, in the middle of the Desktop between them, where neither covers it
+07:43:50.266 ready pid=20049 bundle=dev.arbor.test.keys
+07:43:50.319 active
+
+== in an ordinary app the shortcuts are Arbor's
+> click 174 369
+
+> status
+running: 1 display, 2 docked and 0 floating, 0 out of view
+Arbor dev
+> bindings
+Letters, digits and signs mean the keys that type them on the U.S. keyboard layout.
+  ✔ the event taps are installed
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ frames window 1: 2 goes out of view
+> key ctrl+opt+space
+  ✔ ⌃⌥Space shows everything
+
+== in the listed app they are the app's
+> click 512 369
+  ✔ a click brings the app to the front
+  ✔ status says that shortcuts are off, and why
+> status
+running: 1 display, 2 docked and 0 floating, 0 out of view; shortcuts and gestures are off in ArborKeys
+Arbor dev
+> bindings
+Right now: all but 1 off in ArborKeys.
+  ✔ one shortcut is left registered
+  ✔ no event tap is left
+> key ctrl+opt+f
+> key ctrl+opt+space
+> key ctrl+opt+return
+> key ctrl+opt+cmd+left
+  ✔ ⌃⌥F reached the app
+  ✔ ⌃⌥Space reached the app
+  ✔ ⌃⌥↩ reached the app
+  ✔ ⌃⌥⌘← reached the app
+  ✔ Arbor did not move: both windows docked and in view
+07:43:57.315 down code=3 mods=ctrl+opt chars=66 repeat=false
+07:43:57.491 up code=3 mods=ctrl+opt chars=66 repeat=false
+07:43:57.962 down code=49 mods=ctrl+opt chars=20 repeat=false
+07:43:58.091 up code=49 mods=ctrl+opt chars=20 repeat=false
+07:43:58.508 down code=36 mods=ctrl+opt chars=d repeat=false
+07:43:58.632 up code=36 mods=ctrl+opt chars=d repeat=false
+07:43:59.199 down code=123 mods=ctrl+opt+cmd chars=f702 repeat=false
+07:43:59.270 up code=123 mods=ctrl+opt+cmd chars=f702 repeat=false
+shot: mac-shell/01-listed-app-in-front.png
+
+== a ⌃⌥-drag inside the app is the app's too
+> drag 452 349 572 409 --mods ctrl+opt
+  ✔ nothing was framed
+  ✔ no frame-rect command ran
+
+== the menu says so
+> click 732 15
+shot: mac-shell/02-menu-ticked.png
+> key escape
+  ✔ the app is still in front after the menu
+
+== ⌃⌥⎋ answers everywhere
+> key ctrl+opt+escape
+  ✔ ⌃⌥⎋ pauses Arbor from inside the app
+> key ctrl+opt+escape
+  ✔ and resumes it
+  ✘ the app never saw ⎋
+      picture: mac-shell/fail-check-F41-1.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n0, back yes
+      |   Desktop          12 43 1000 655
+      |   w157 1023 682 480 348     docked parked
+      |   w158 1023 682 480 348     docked parked
+      log | INFO  stopped; all windows returned to view
+      log | INFO  paused
+      log | DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Arbor is paused: its keys are the apps’ again · ⌃⌥⎋ resumes
+      log | INFO  started: 1 display(s), 2 managed window(s)
+      log | INFO  resumed
+      log | DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Resumed
+  ✔ after resuming the shortcuts are still off here
+> key ctrl+opt+space
+  ✔ ⌃⌥Space still reaches the app
+
+== ⌘Tab away and they are back
+> key cmd+tab
+  ✘ ⌘Tab leads to the test windows
+      picture: mac-shell/fail-check-F41-2.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n1, back yes
+      |   w157 12 43 1000 655       docked focused
+      |   w158 1023 682 480 348     docked parked
+      log | INFO  shortcuts and gestures are on again: dev.arbor.testwindows is frontmost
+      log | INFO  registered 52 shortcuts in 7896 µs
+      log | INFO  pinch event tap installed
+      log | INFO  scroll event tap installed
+      log | INFO  rectangle event taps installed
+      log | DEBUG focus is on w157
+      log | DEBUG w157 has the keyboard
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG pinch event tap installed
+      log | DEBUG scroll event tap installed
+      log | DEBUG rectangle event tap installed
+      log | DEBUG rectangle drag event tap installed
+  ✔ status no longer says off
+  ✔ the event taps are back
+> click 512 370
+> key ctrl+opt+return
+  ✘ ⌃⌥↩ frames window 1 again — it is managed docked at 687 43 325 655
+      picture: mac-shell/fail-check-F41-3.png
+> key ctrl+opt+space
+  ✔ ⌃⌥Space shows everything
+  ✔ the app saw neither
+
+== the command, with the app in front
+> click 512 369
+> pass-through
+shortcuts and gestures work in ArborKeys again
+  ✔ settings.json no longer lists the app
+  ✔ the shortcuts are registered again at once
+  ✔ and the taps installed
+> key ctrl+opt+d
+  ✔ ⌃⌥D shows the Desktop: the docked windows go out of view
+  ✔ the app did not see it
+> key ctrl+opt+space
+  ✔ ⌃⌥Space shows everything
+> drag 452 349 572 409 --mods ctrl+opt
+  ✔ the same ⌃⌥-drag is Arbor's now
+> home
+showing everything
+> pass-through
+shortcuts and gestures are off in ArborTestWindows, except ⌃⌥⎋
+  ✘ settings.json lists the app again
+      picture: mac-shell/fail-check-F41-4.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n2, back yes
+      |   Desktop          349 43 326 655
+      |   w157 12 43 325 655        docked focused
+      |   w158 687 43 325 655       docked
+      log | INFO  shortcuts and gestures are on again: dev.arbor.test.keys is frontmost
+      log | INFO  registered 52 shortcuts in 2735 µs
+      log | INFO  pinch event tap installed
+      log | INFO  scroll event tap installed
+      log | INFO  rectangle event taps installed
+      log | INFO  pass-through: shortcuts and gestures work in ArborKeys again
+      log | DEBUG pinch event tap installed
+      log | DEBUG scroll event tap installed
+      log | DEBUG rectangle event tap installed
+      log | DEBUG rectangle drag event tap installed
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  desktop: showing the Desktop
+      log | DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Your other windows are out of view, not closed · ⌃⌥Space shows everything
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  show-all: showing everything
+      log | DEBUG focus is on w157
+      log | DEBUG w157 has the keyboard
+      log | DEBUG peek: the key came up
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  frame-rect 452 349 120 60: framed the Desktop
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  home: showing everything
+      log | INFO  shortcuts and gestures are off: dev.arbor.testwindows is frontmost
+      log | INFO  registered 1 shortcuts in 2901 µs: 51 of the map's 52 are the apps' in the app in front
+      log | INFO  pass-through: shortcuts and gestures are off in ArborTestWindows, except ⌃⌥⎋
+  ✔ and the taps are gone again
+
+== for the record: how soon after the switch Arbor has let go
+07:43:50.319 active
+07:43:51.098 resigned
+07:43:56.752 active
+07:44:08.961 resigned
+07:44:19.530 active
+07:44:20.299 resigned
+2026-10-15T07:44:08.991Z DEBUG scroll event tap installed
+2026-10-15T07:44:08.991Z DEBUG rectangle event tap installed
+2026-10-15T07:44:08.991Z DEBUG rectangle drag event tap installed
+2026-10-15T07:44:19.596Z INFO  shortcuts and gestures are off: dev.arbor.test.keys is frontmost
+2026-10-15T07:44:19.602Z INFO  registered 1 shortcuts in 2650 µs: 51 of the map's 52 are the apps' in the app in front
+2026-10-15T07:44:19.705Z INFO  shortcuts and gestures are on again: dev.arbor.test.keys is frontmost
+2026-10-15T07:44:19.709Z INFO  registered 52 shortcuts in 2735 µs
+2026-10-15T07:44:19.710Z INFO  pinch event tap installed
+2026-10-15T07:44:19.710Z INFO  scroll event tap installed
+2026-10-15T07:44:19.711Z DEBUG pinch event tap installed
+2026-10-15T07:44:19.711Z DEBUG scroll event tap installed
+2026-10-15T07:44:19.711Z DEBUG rectangle event tap installed
+2026-10-15T07:44:19.711Z DEBUG rectangle drag event tap installed
+2026-10-15T07:44:24.580Z INFO  shortcuts and gestures are off: dev.arbor.testwindows is frontmost
+2026-10-15T07:44:24.585Z INFO  registered 1 shortcuts in 2901 µs: 51 of the map's 52 are the apps' in the app in front
+2026-10-15T07:44:24.586Z INFO  pass-through: shortcuts and gestures are off in ArborTestWindows, except ⌃⌥⎋
+
+== for the record: a key pressed straight after the switch, ten times each way
+> click 174 370
+
+into the listed app: the app got 0 of 10, Arbor 10
+> home
+showing everything
+> click 512 369
+out of the listed app: Arbor got 0 of 10; the rest went to the app just clicked
+> home
+showing everything
+
+== for the record: keeping the hot key and passing the press on with postToPid
+> click 512 369
+holding ⌃⌥J
+> key ctrl+opt+j
+07:45:39.039 hot key pressed: passed on to pid 20049
+07:45:39.209 hot key released: passed on to pid 20049
+> key ctrl+opt+j
+07:45:40.104 hot key pressed: passed on to pid 20049
+07:45:40.237 hot key released: passed on to pid 20049
+what the app saw of ⌃⌥J (key code 38):
+07:45:39.041 down code=38 mods=ctrl+opt chars=6a repeat=false
+07:45:39.210 up code=38 mods=ctrl+opt chars=6a repeat=false
+07:45:40.104 down code=38 mods=ctrl+opt chars=6a repeat=false
+07:45:40.238 up code=38 mods=ctrl+opt chars=6a repeat=false
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+shot: mac-shell/03-after-quit.png
+
+== the same app on pauseForApps
+session 2: Arbor pid 25903, test windows 195 196 (pid 25879)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 195 left
+docked w195 at the left edge
+> dock 196 right
+docked w196 at the right edge
+> click 174 370
+
+> reload-settings
+settings reloaded
+  ✔ running while another app is in front
+> zoom 195
+framed w195
+  ✔ framed on 1: 2 is out of view
+  ✔ the app comes to the front
+  ✔ Arbor pauses
+  ✔ every window is in view
+  ✔ no event tap is left
+> key ctrl+opt+space
+  ✔ ⌃⌥Space reaches the app
+> click 782 15
+shot: mac-shell/04-menu-paused-for-app.png
+> key escape
+> key cmd+tab
+  ✔ ⌘Tab away resumes
+  ✔ the view is back on 1: 2 is out of view again
+  ✔ 1 is in view
+> pause
+paused until `resume`; windows are back in view, in their own sizes
+  ✔ the app comes to the front
+> key cmd+tab
+  ✔ a pause started by hand is not ended by leaving the app
+> resume
+resumed
+2026-10-15T07:45:48.609Z INFO  registered 52 shortcuts in 3162 µs
+2026-10-15T07:45:56.404Z INFO  registered 1 shortcuts in 4794 µs: 51 of the map's 52 are the apps' while Arbor is paused
+2026-10-15T07:45:56.406Z INFO  paused
+2026-10-15T07:45:56.406Z INFO  paused for ArborKeys
+2026-10-15T07:45:59.640Z INFO  registered 52 shortcuts in 3175 µs
+2026-10-15T07:45:59.647Z INFO  resumed
+2026-10-15T07:45:59.851Z INFO  registered 1 shortcuts in 8249 µs: 51 of the map's 52 are the apps' while Arbor is paused
+2026-10-15T07:45:59.853Z INFO  paused
+2026-10-15T07:46:01.418Z INFO  registered 52 shortcuts in 10506 µs
+2026-10-15T07:46:01.420Z INFO  resumed
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+shot: mac-shell/05-after-quit.png
+
+== for F44: can a script switch the keyboard layout here?
+selected com.apple.keylayout.US layout com.apple.keylayout.US ascii com.apple.keylayout.US
+com.apple.keylayout.US
+     251 /Users/runner/work/arbor/arbor/mac-shell/layouts-installed.txt
+07:46:07.502 watching: selected com.apple.keylayout.US layout com.apple.keylayout.US ascii com.apple.keylayout.US
+2026-10-15 07:46:08.692 keys[20049:54492] TSM AdjustCapsLockLEDForKeyTransitionHandling - _ISSetPhysicalKeyboardCapsLockLED Auto
+enable 0 select 0: selected com.apple.keylayout.German layout com.apple.keylayout.German ascii com.apple.keylayout.German
+07:46:08.758 changed: selected com.apple.keylayout.German layout com.apple.keylayout.German ascii com.apple.keylayout.German
+selected com.apple.keylayout.German layout com.apple.keylayout.German ascii com.apple.keylayout.German
+2026-10-15 07:46:09.946 keys[20049:54492] TSM AdjustCapsLockLEDForKeyTransitionHandling - _ISSetPhysicalKeyboardCapsLockLED Auto
+enable 0 select 0: selected com.apple.keylayout.Russian layout com.apple.keylayout.Russian ascii com.apple.keylayout.German
+07:46:09.961 changed: selected com.apple.keylayout.Russian layout com.apple.keylayout.Russian ascii com.apple.keylayout.German
+selected com.apple.keylayout.Russian layout com.apple.keylayout.Russian ascii com.apple.keylayout.German
+07:46:11.064 changed: selected com.apple.keylayout.US layout com.apple.keylayout.US ascii com.apple.keylayout.US
+enable 0 select 0: selected com.apple.keylayout.US layout com.apple.keylayout.US ascii com.apple.keylayout.US
+selected com.apple.keylayout.US layout com.apple.keylayout.US ascii com.apple.keylayout.US
+disable 0
+2026-10-15 07:46:13.685 keys[20049:54492] TSM AdjustCapsLockLEDForKeyTransitionHandling - _ISSetPhysicalKeyboardCapsLockLED Auto
+disable 0
+2026-10-15 07:46:13.751 keys[20049:54492] TSM AdjustCapsLockLEDForKeyTransitionHandling - _ISSetPhysicalKeyboardCapsLockLED Auto
+com.apple.keylayout.US
+
+== for F44: what the keys type
+      17 /Users/runner/work/arbor/arbor/mac-shell/layouts.jsonl
+
+49 passed, 4 failed
+exit code 1
