@@ -8,9 +8,10 @@
 # it begins, 0.7 s before the window shows. Asked for its slot in that time, or before, does the window take it, does it keep
 # it, and where does macOS's own animation go?
 #
-# Without Arbor: fsprobe.swift asks, at one moment per round (never, now = still in full screen, scaffold, left, landed), the sampler
+# Without Arbor: fsprobe.swift asks, at one moment per round (PROBE_MOMENTS: never, now = still in full screen, scaffold, left, landed,
+# insist = at the report and every 100 ms until it is heard, which is what Arbor does and is played unless told otherwise), the sampler
 # writes down every frame the window server showed, and a burst of pictures shows where the animation went.
-# Then the same with Arbor: three apps docked, two of them into full screen and out again, twice each.
+# Then the same with Arbor: three apps docked, two of them into full screen and out again, four times each.
 #
 # What comes back: fsprobe-<app>-<n>-<when>.log, samples.log, day-report.md, burst/<app>-<n>-<when>-<ms>.jpg, traces/.
 #
@@ -124,7 +125,7 @@ sleep 2
 if [ -z "${PROBE_ONLY_ARBOR:-}" ]; then
   chapter "Without Arbor: asked at one moment per round"
   for name in safari textedit; do
-    for when in never now scaffold left landed never; do
+    for when in ${PROBE_MOMENTS:-insist insist insist}; do
       round "$name" "$when"
     done
   done
@@ -149,7 +150,7 @@ if [ -z "${PROBE_WITHOUT_ARBOR:-}" ]; then
   key ctrl+opt+cmd+right
   acted moves=any judge=no
   brief | sed 's/^/    /'
-  for name in safari textedit safari textedit; do
+  for name in safari textedit safari textedit safari textedit safari textedit; do
     ROUND=$((ROUND + 1))
     chapter "With Arbor: $name, round $ROUND"
     reach "$name"

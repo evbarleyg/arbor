@@ -9,6 +9,7 @@
 //            left          when it reports a resize and is no longer in full screen: the way out has only begun
 //            scaffold      when its app reports a new window while it is in full screen: macOS's stand-in for the way out
 //            landed        when that stand-in is destroyed: the way out is over
+//            insist        as `left`, and again every 100 ms for as long as it is somewhere else, seven times at the most
 //   --other  an app whose list of windows is read along, to see when the windows of the Space that comes back are listed again
 //
 // One line per report and per look (every 25 ms from the first report on):
@@ -82,7 +83,7 @@ if let index = arguments.firstIndex(of: "--seconds"), index + 1 < arguments.coun
   seconds = Double(arguments[index + 1]) ?? seconds
   arguments.removeSubrange(index...(index + 1))
 }
-let usage = "usage: fsprobe <pid> <window> never|now|left|scaffold|landed <x> <y> <w> <h> [--other <pid>] [--seconds <n>]"
+let usage = "usage: fsprobe <pid> <window> never|now|left|scaffold|landed|insist <x> <y> <w> <h> [--other <pid>] [--seconds <n>]"
 if arguments.count != 7 { fail(usage) }
 // Plain globals, none of them bound by a `guard`: what a `guard` binds at the top level is a local variable, and a function that
 // reads one cannot be handed to C as a callback.
@@ -90,7 +91,7 @@ let pid = pid_t(arguments[0]) ?? 0
 let wanted = CGWindowID(arguments[1]) ?? 0
 let when = arguments[2]
 let numbers = arguments[3...6].map { Double($0) ?? -1 }
-if pid == 0 || wanted == 0 || !["never", "now", "left", "scaffold", "landed"].contains(when) || numbers[2] <= 0 || numbers[3] <= 0 {
+if pid == 0 || wanted == 0 || !["never", "now", "left", "scaffold", "landed", "insist"].contains(when) || numbers[2] <= 0 || numbers[3] <= 0 {
   fail(usage)
 }
 let target = CGRect(x: numbers[0], y: numbers[1], width: numbers[2], height: numbers[3])
@@ -105,6 +106,19 @@ var asked = false
 var looking = false
 var scaffolds = Set<CGWindowID>()
 var lastLook = ""
+
+var asks = 0
+
+func wanting() -> String { "\(Int(target.minX)),\(Int(target.minY)) \(Int(target.width))x\(Int(target.height))" }
+
+func insist() {
+  asks += 1
+  if frame(of: window) != wanting() {
+    asked = false
+    ask()
+  }
+  if asks < 7 { Timer.scheduledTimer(withTimeInterval: 0.1, repeats: false) { _ in insist() } }
+}
 
 func ask() {
   guard !asked else { return }
@@ -161,6 +175,7 @@ func callback(
     if when == "scaffold" { ask() }
   case "AXResized":
     if when == "left", id == wanted, !full { ask() }
+    if when == "insist", id == wanted, !full, asks == 0 { insist() }
   case "AXUIElementDestroyed":
     if when == "landed", scaffolds.contains(id), !flag(window, "AXFullScreen") { ask() }
   default:
