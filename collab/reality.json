@@ -9096,6 +9096,22 @@
    ]
   },
   {
+   "id": "right-after-a-move-to-another-display-the-old-one-judges-a-size",
+   "kind": "late-or-partial-answer",
+   "layer": "at the seam",
+   "expected": "A window that has been moved to another display grows to what that display allows. In the stand-ins the display a window's corner is on stops it, from the call after the move.",
+   "happened": "For about a fifth of a second after a position call has taken a window to another display, macOS still judges a size call by the display the window came from. From a small display to a large one the window ended short by every order of calls that was tried, 12 of 12. With Arbor, whose layer moves what grows before it sizes it: asked for 1443,43 465×947 the window took 465×677, and the same again at once; 43 + 677 is 720, the bottom of the display it came from. It stayed short in its slot. A trip out of view and back filled it.",
+   "found": "A probe of four orders of calls on a hosted Mac with two displays, Arbor not running; then a journey with Arbor on such a Mac.",
+   "modelled": "no",
+   "knobs": [],
+   "guards": [],
+   "copes": "open",
+   "hurt": 3,
+   "sources": [
+    "Sources/ArborCore/FramePlan.swift"
+   ]
+  },
+  {
    "id": "safaris-new-window-is-as-large-as-the-one-in-front-and-29-points-on",
    "kind": "second-actor",
    "layer": "at the seam",
@@ -11757,6 +11773,23 @@
    ]
   },
   {
+   "id": "what-is-asked-last-is-seen-to-go-first",
+   "kind": "timing",
+   "layer": "at the seam",
+   "expected": "A display shows what Arbor asks for in the order in which it asks. In the stand-ins a frame is there when `setFrame` returns, and every net reads the road off the log of moves.",
+   "happened": "At the key that fills the screen, with eight windows docked and no motion, the seven that leave were gone two frames (34 ms) before the one that fills the screen had grown, with wallpaper in between. The build that was filmed asked the one that grows first, had its answer, and only then sent the others away. It was first written down as “the windows that leave are sent first”, a guess at the cause that nobody had held against the code, and a cure was built on it. A guess that fits: a new place shows at once, a new size when the app has drawn itself in it, which is after it has answered. In a probe the window server still listed the frame before a call right after it in 143 of 170 cases. Nobody has measured both at once.",
+   "found": "Films of a hosted Mac at 60 frames a second, by the judge of polish, read beside the code of the build that was filmed.",
+   "modelled": "no",
+   "knobs": [],
+   "guards": [],
+   "copes": "open",
+   "hurt": 3,
+   "sources": [
+    "Sources/ArborKit/Controller/Controller+InOnePiece.swift",
+    "collab/polish/light-1.md"
+   ]
+  },
+  {
    "id": "what-is-over-within-one-sample-shows-to-nobody",
    "kind": "timing",
    "layer": "test",
@@ -12055,6 +12088,25 @@
    ],
    "backlog": [
     "K128"
+   ]
+  },
+  {
+   "id": "with-the-dock-at-the-right-growth-stops-at-its-line",
+   "kind": "geometry",
+   "layer": "at the seam",
+   "expected": "To the right a window grows as far as the display's edge, as it was measured with the Dock at the bottom, at the left and hidden (a-window-asked-to-grow-stops-at-the-dock). `FakeWindowSystem.sizeMacOSAllows` goes by the display's right edge wherever the Dock is.",
+   "happened": "With the Dock at the right it cuts there as it does below: on a display of 1024×768 whose visible frame was 974 wide, a window in view that was asked for a frame whose right edge lay on that line (494,226 480×348) took 479 of 480 points, five times of five in two runs: the visible right edge less 1. It came out whole from the parked place, when it was only moved, and when it shrank. The order of size and place changes nothing there. No docked window was short of its slot.",
+   "found": "A probe of four ways to give a window a frame, and the same journey with Arbor, on a hosted Mac with the Dock moved to the right. Two runs.",
+   "modelled": "no",
+   "knobs": [],
+   "guards": [
+    "test: withTheDockAtTheRightItsStripIsNoRoom"
+   ],
+   "copes": "FramePlan.room ends at the visible right edge, so a frame in the Dock's strip counts as hanging over, and a window that grows into it is sized first, where it is.",
+   "hurt": 2,
+   "sources": [
+    "Sources/ArborCore/FramePlan.swift",
+    "Sources/ArborTesting/FakeWindowSystem.swift"
    ]
   },
   {

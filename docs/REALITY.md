@@ -57,24 +57,24 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [order-of-reports](#order-of-reports) | 28 | 3 | 9 | 9 | 5 | 5 | 16 | 1 | 3 | 8 | 4 |
 | [missing-report](#missing-report) | 43 | 7 | 13 | 7 | 4 | 19 | 23 | 1 | 5 | 14 | 11 |
 | [extra-report](#extra-report) | 9 | 0 | 3 | 3 | 1 | 2 | 6 | 0 | 0 | 3 | 1 |
-| [late-or-partial-answer](#late-or-partial-answer) | 46 | 9 | 11 | 16 | 6 | 13 | 28 | 0 | 6 | 12 | 15 |
+| [late-or-partial-answer](#late-or-partial-answer) | 47 | 9 | 11 | 16 | 7 | 13 | 28 | 0 | 6 | 13 | 16 |
 | [second-actor](#second-actor) | 53 | 6 | 16 | 20 | 10 | 7 | 34 | 0 | 4 | 15 | 10 |
-| [geometry](#geometry) | 35 | 2 | 11 | 15 | 7 | 2 | 24 | 1 | 2 | 8 | 6 |
+| [geometry](#geometry) | 36 | 2 | 11 | 15 | 8 | 2 | 25 | 1 | 2 | 8 | 6 |
 | [identity](#identity) | 31 | 4 | 7 | 6 | 7 | 11 | 12 | 1 | 4 | 14 | 9 |
 | [permissions](#permissions) | 23 | 8 | 6 | 3 | 3 | 11 | 12 | 2 | 2 | 7 | 4 |
-| [timing](#timing) | 54 | 7 | 7 | 16 | 9 | 22 | 29 | 4 | 7 | 14 | 10 |
+| [timing](#timing) | 55 | 7 | 7 | 16 | 10 | 22 | 29 | 4 | 7 | 15 | 11 |
 | [input](#input) | 59 | 8 | 7 | 15 | 13 | 24 | 23 | 6 | 8 | 22 | 11 |
 | [looks](#looks) | 21 | 0 | 0 | 0 | 1 | 20 | 2 | 2 | 3 | 14 | 6 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 45 | 1 | 0 | 1 | 4 | 40 | 26 | 1 | 2 | 16 | 7 |
-| **all** | 462 | 62 | 91 | 124 | 70 | 177 | 235 | 19 | 60 | 148 | 109 |
+| **all** | 465 | 62 | 91 | 124 | 73 | 177 | 236 | 19 | 60 | 150 | 111 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
 | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 144 | 89 | 46 | 13 | 33 | 52 |
-| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 163 | 97 | 121 | 0 | 11 | 31 |
+| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 166 | 98 | 122 | 0 | 11 | 33 |
 | controller | in the controller or the core, given reports that were right | 28 | 15 | 16 | 0 | 1 | 11 |
 | test | in a test, a script or a harness that expected the wrong thing | 81 | 0 | 25 | 5 | 11 | 40 |
 | machine | in the machine, the toolchain or the way things are built and installed | 46 | 3 | 27 | 1 | 4 | 14 |
@@ -205,6 +205,7 @@ So no test on Linux can meet it. (Those they play partly are not listed: see eac
 | [a-dragged-window-may-stand-still-until-the-pointer-is-24-points-away](#a-dragged-window-may-stand-still-until-the-pointer-is-24-points-away) | 2 | controller | no | guarded without a mac |
 | [a-rotation-rides-along-with-a-pinch](#a-rotation-rides-along-with-a-pinch) | 2 | controller | no | guarded without a mac |
 | [macos-leaves-out-a-menu-bar-item-that-does-not-fit](#macos-leaves-out-a-menu-bar-item-that-does-not-fit) | 2 | at the seam | no | guarded without a mac |
+| [with-the-dock-at-the-right-growth-stops-at-its-line](#with-the-dock-at-the-right-growth-stops-at-its-line) | 2 | at the seam | no | guarded without a mac |
 
 ## Ring 2: what the walks on Linux cannot vouch for
 
@@ -1665,6 +1666,18 @@ Late or partial answers: a call returns before the deed, after it, with half of 
 - **Arbor copes:** UnixSocket.transmit says how much was taken and the rest follows; the tests' clients set a small send buffer everywhere, so that Linux meets it too.
 - **Read in:** `Tests/ArborKitTests/ControlSocketTests.swift`, `Sources/ArborIPC/UnixSocket.swift`
 
+### right-after-a-move-to-another-display-the-old-one-judges-a-size
+
+*hurt 3 · at the seam*
+
+- **Expected:** A window that has been moved to another display grows to what that display allows. In the stand-ins the display a window's corner is on stops it, from the call after the move.
+- **Happened:** For about a fifth of a second after a position call has taken a window to another display, macOS still judges a size call by the display the window came from. From a small display to a large one the window ended short by every order of calls that was tried, 12 of 12. With Arbor, whose layer moves what grows before it sizes it: asked for 1443,43 465×947 the window took 465×677, and the same again at once; 43 + 677 is 720, the bottom of the display it came from. It stayed short in its slot. A trip out of view and back filled it.
+- **Found by:** A probe of four orders of calls on a hosted Mac with two displays, Arbor not running; then a journey with Arbor on such a Mac.
+- **Stand-ins play it:** **no**
+- **Guard:** **none**
+- **Arbor copes:** **not yet**
+- **Read in:** `Sources/ArborCore/FramePlan.swift`
+
 ### the-fake-obeys-a-move-of-a-minimized-or-hidden-window
 
 *hurt 3 · at the seam · suspected · K180 · K1394 · touches `jolt`*
@@ -2536,6 +2549,18 @@ Geometry: displays, bars, sizes and coordinates that are not what was assumed.
 - **Guard:** `test: nearTheEdgeMeansWithinTenPointsOfTheBorderOnEitherSide`; `test: aSizeChangeAfterAPressOnTheBorderIsAnEdgeResize`; `trace: edge-resize.expect`
 - **Arbor copes:** WindowGrab.edgeMargin counts a press within 10 points of the border, inside or outside, as taking hold of an edge, which becomes `resizeBegan`.
 - **Read in:** `Sources/ArborCore/WindowGrab.swift`, `Sources/ArborKit/AX/AXWindowSystem.swift`, `Sources/arbor-fakemac/World+Input.swift`
+
+### with-the-dock-at-the-right-growth-stops-at-its-line
+
+*hurt 2 · at the seam*
+
+- **Expected:** To the right a window grows as far as the display's edge, as it was measured with the Dock at the bottom, at the left and hidden (a-window-asked-to-grow-stops-at-the-dock). `FakeWindowSystem.sizeMacOSAllows` goes by the display's right edge wherever the Dock is.
+- **Happened:** With the Dock at the right it cuts there as it does below: on a display of 1024×768 whose visible frame was 974 wide, a window in view that was asked for a frame whose right edge lay on that line (494,226 480×348) took 479 of 480 points, five times of five in two runs: the visible right edge less 1. It came out whole from the parked place, when it was only moved, and when it shrank. The order of size and place changes nothing there. No docked window was short of its slot.
+- **Found by:** A probe of four ways to give a window a frame, and the same journey with Arbor, on a hosted Mac with the Dock moved to the right. Two runs.
+- **Stand-ins play it:** **no**
+- **Guard:** `test: withTheDockAtTheRightItsStripIsNoRoom`
+- **Arbor copes:** FramePlan.room ends at the visible right edge, so a frame in the Dock's strip counts as hanging over, and a window that grows into it is sized first, where it is.
+- **Read in:** `Sources/ArborCore/FramePlan.swift`, `Sources/ArborTesting/FakeWindowSystem.swift`
 
 ### a-menus-row-is-24-points-high-on-macos-26
 
@@ -4000,6 +4025,18 @@ Timing: how long things take, and what can happen meanwhile.
 - **Guard:** `test: aTraceOfItReplays`; `test: everyWayBackReturnsEveryWindowFromEveryStateOfATrace`
 - **Arbor copes:** TraceReplayer.displays hands Arbor the recorded answer to its own question about the displays, at the place in the trace where it was asked.
 - **Read in:** `Sources/ArborTesting/TraceReplayer.swift`, `Tests/ArborKitTests/TraceCorpusTests.swift`, `Tests/ArborKitTests/LookBeforeLettingGoTests.swift`
+
+### what-is-asked-last-is-seen-to-go-first
+
+*hurt 3 · at the seam*
+
+- **Expected:** A display shows what Arbor asks for in the order in which it asks. In the stand-ins a frame is there when `setFrame` returns, and every net reads the road off the log of moves.
+- **Happened:** At the key that fills the screen, with eight windows docked and no motion, the seven that leave were gone two frames (34 ms) before the one that fills the screen had grown, with wallpaper in between. The build that was filmed asked the one that grows first, had its answer, and only then sent the others away. It was first written down as “the windows that leave are sent first”, a guess at the cause that nobody had held against the code, and a cure was built on it. A guess that fits: a new place shows at once, a new size when the app has drawn itself in it, which is after it has answered. In a probe the window server still listed the frame before a call right after it in 143 of 170 cases. Nobody has measured both at once.
+- **Found by:** Films of a hosted Mac at 60 frames a second, by the judge of polish, read beside the code of the build that was filmed.
+- **Stand-ins play it:** **no**
+- **Guard:** **none**
+- **Arbor copes:** **not yet**
+- **Read in:** `Sources/ArborKit/Controller/Controller+InOnePiece.swift`, `collab/polish/light-1.md`
 
 ### a-hosted-mac-holds-a-release-for-57-ms-by-itself
 

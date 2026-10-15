@@ -28,7 +28,8 @@ public enum FramePlan {
   /// What shrinks is sized first, where the window is: that lies within the old frame. Then it is moved, no larger either way than it is
   /// to be: that lies within the new one. What grows is sized last. So a window that only shrinks or only grows needs two calls, one that gets
   /// wider and shorter three. It is never larger on the way than at either end, so no display clamps it, and it grows where it ends up,
-  /// to what that display allows. In that probe this order ended as size, position, size did in every round that tried both: whole in 15
+  /// to what that display allows. (Right after a move to another display macOS still judges a size by the display the window came from, for
+  /// about a fifth of a second, so there it ends short by every order that was tried.) In that probe this order ended as size, position, size did in every round that tried both: whole in 15
   /// of 15 journeys on one display, on the way to a smaller display, and up to their own limits on five real apps.
   ///
   /// A window that only changes place, as every window does when it is parked and most do when they come back, needs one call, and
@@ -70,7 +71,7 @@ public enum FramePlan {
   /// Where on a display a window can grow whole: as far as the right edge and down to the bottom of its visible frame. (With the Dock at the
   /// bottom a window in view that grew to that line stopped a point short of it, by both orders that were tried.) To the right it was the
   /// display's edge that cut, with the Dock at the bottom, at the left and hidden, where the two edges are one. With the Dock at the
-  /// right nobody has looked. If it cuts there as it does below, a frame in its strip is no room; if not, this costs a full plan.
+  /// right it cuts as it does below: a window in view that grew stopped a point short of the visible right edge, five times of five.
   public static func room(onDisplay frame: CGRect, visible: CGRect) -> CGRect {
     CGRect(x: frame.minX, y: frame.minY, width: visible.maxX - frame.minX, height: visible.maxY - frame.minY)
   }

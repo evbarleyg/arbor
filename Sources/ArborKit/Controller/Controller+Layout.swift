@@ -52,7 +52,7 @@ extension Controller {
   ///
   /// A command that puts windows back itself (`putBack`) and then lays out hands them over as `puttingBack`
   /// instead: nobody must see a window jump ahead of the motion that explains it, so they are moved
-  /// here, first of all, once the stage is up.
+  /// here, once the stage is up and the docked windows are in their slots.
   ///
   /// One thing that happens is one layout. A command whose arrangement depends on how small a window goes (`shrink`) cannot know
   /// before the window has been asked, which is done here, before anybody is moved. `thinkingAgain` is called whenever one has
@@ -92,7 +92,6 @@ extension Controller {
     // What a window does after Arbor has given it a frame is its answer to that, not to a double-click before it.
     if reason != .enforce { appsDoubleClick = nil }
     let staged = stageTransition(on: displayID, to: layout, reason: reason, motion: motion, puttingBack: waiting)
-    putBackWhatWaits()
     // Once the stage is up, like everything that moves a window.
     if askBeforeTheyLeave(layout, on: displayID, startingFrom: before),
       let known = roomyLayout(of: displayID, for: reason, startingFrom: before)
@@ -128,6 +127,9 @@ extension Controller {
     if keptRoom[displayID] != nil, layoutAndWhoIsLate(of: displayID)?.atAWindowsCost == true {
       giveUpRoom(on: displayID)
     }
+    // What leaves its slot goes when its neighbours have grown into it (Controller+InOnePiece.swift). Floating windows that come back are among
+    // these too, and come after the docked ones. The stage, if there is one, has long been up.
+    putBackWhatWaits()
     rememberSqueezes(in: layout, on: displayID)
     noteWhereTheGapsStand(in: layout, on: displayID, for: reason)
     placeFloatingWindows(on: displayID, layout: layout, reason: reason)
@@ -164,8 +166,13 @@ extension Controller {
     // Of some that are out of view nobody knows whether they can grow as far as their slot, and where they go depends on it
     // (Controller+AskFirst.swift).
     var unknown: [(window: WindowID, slot: CGRect, question: CGRect)] = []
+    // Looked at before anybody moves. One window needs no company, if it is the only one the layout moves.
+    let leaves = leavesInSight(for: layout, on: displayID)
+    let othersMove = layout.windowFrames.contains { window, slot in
+      window != drag?.window && windows[window].map { isStillToBePlaced($0, in: slot) } == true
+    }
     // A window being dragged stays in the user's hand whatever happens to the layout meanwhile.
-    for (window, target) in layout.windowFrames.sorted(by: { $0.key < $1.key }) where window != drag?.window {
+    for (window, target) in inOnePiece(layout.windowFrames) where window != drag?.window {
       if let current = windows[window], isStillToBePlaced(current, in: target),
         let question = questionBeforePlacing(current, in: target, on: displayID)
       {
@@ -174,13 +181,7 @@ extension Controller {
         learnedMinimum = true
       }
     }
-    if let display = display(displayID) {
-      for window in layout.hiddenWindows.sorted()
-      where window != drag?.window && !isLetBe(window) && (!parked.contains(window) || hasLeftItsCorner(window)) {
-        park(window, on: display)
-      }
-    }
-    // They come last, so that each stands at its old place in its new size no longer than the others' answers take.
+    // They come after the others, so that each stands at its old place in its new size no longer than the others' answers take.
     for (window, _, question) in unknown {
       if ask(window, question, on: displayID) { learnedMinimum = true }
     }
@@ -192,6 +193,15 @@ extension Controller {
     // Whatever it answered: a window that is part of the layout is in its slot when the layout has been applied.
     for (window, slot, _) in unknown {
       if place(window, in: slot, on: displayID) { learnedMinimum = true }
+    }
+    // What leaves goes last, from behind what has grown (Controller+InOnePiece.swift), and is foretold only now: all that was foretold before has
+    // been asked for, so no answer is lost, and those who stay have their frames.
+    if leaves.count + (othersMove ? 1 : 0) > 1 { system.moveTogether(leaves) }
+    if let display = display(displayID) {
+      for window in layout.hiddenWindows.sorted()
+      where window != drag?.window && !isLetBe(window) && (!parked.contains(window) || hasLeftItsCorner(window)) {
+        park(window, on: display)
+      }
     }
     return learnedMinimum
   }

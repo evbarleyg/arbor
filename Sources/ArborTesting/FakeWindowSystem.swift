@@ -234,6 +234,11 @@ public final class FakeWindowSystem: WindowSystem {
   var inHand: (window: WindowID, start: CGRect, grab: CGPoint)?
   /// A window system is free to ignore `moveTogether`. Nothing but the cost may differ.
   public var ignoresMoveTogether = false
+  /// What is announced with `moveTogether` is carried out as apps carry it out that work side by side: each app its own windows in the order
+  /// they were named, and between apps whoever is done first. A place alone takes about a millisecond, a size 4 to 150 (hosted Macs, test
+  /// windows and real apps), so a window that only moves is there before any that is resized, whoever was named first. Off, the default:
+  /// in the order named, which is what a window system does that asks one window after another.
+  public var appsWorkSideBySide = false
   /// What came of the moves announced with `moveTogether`, until `setFrame` asks for it.
   public private(set) var answersAhead: [WindowID: (requested: CGRect, answer: CGRect?)] = [:]
 
@@ -285,7 +290,20 @@ public final class FakeWindowSystem: WindowSystem {
     for window in unclaimed {
       if let snapshot = windows[window]?.snapshot { events?.windowChanged(snapshot, userInitiated: false) }
     }
-    for (window, frame) in frames { answersAhead[window] = (frame, move(window, to: frame, together: true)) }
+    for (window, frame) in appsWorkSideBySide ? sideBySide(frames) : frames {
+      answersAhead[window] = (frame, move(window, to: frame, together: true))
+    }
+  }
+
+  /// In the order in which they are done (`appsWorkSideBySide`): a resize counts for ten moves.
+  private func sideBySide(_ frames: [(window: WindowID, frame: CGRect)]) -> [(window: WindowID, frame: CGRect)] {
+    var busyUntil: [Int32: Int] = [:]
+    let done = frames.enumerated().map { index, asked -> (at: Int, index: Int) in
+      guard let has = windows[asked.window]?.snapshot else { return (0, index) }
+      busyUntil[has.pid, default: 0] += has.frame.size == asked.frame.size ? 1 : 10
+      return (busyUntil[has.pid] ?? 0, index)
+    }
+    return done.sorted { ($0.at, $0.index) < ($1.at, $1.index) }.map { frames[$0.index] }
   }
 
   private func move(_ window: WindowID, to frame: CGRect, together: Bool) -> CGRect? {

@@ -158,7 +158,7 @@ public protocol WindowSystem: AnyObject {
   func unhideApp(pid: Int32)
 
   /// Says which `setFrame` calls are about to follow, so that they need not wait for one app after the other. A window
-  /// system that can moves these windows now, those of different apps side by side, waits only so long for all of them
+  /// system that can moves these windows now, those of one app in the order named, those of different apps side by side, waits only so long for all of them
   /// together, and keeps what came of each move as the answer to the next `setFrame` of that window with that very
   /// frame. A call with another frame moves the window as always. Answers nobody asks for are dropped at
   /// the next `moveTogether`, and the windows reported where they are. It changes what the calls cost, never what

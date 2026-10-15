@@ -320,12 +320,14 @@ and nothing else is worth optimising.
 - `AppKitOverlays` leaves tiles and seams alone when the scene has the ones that are showing, leaves panels alone that show the same thing, and keeps panels
   that go out of use to hand them out again (`Support/ReusePool.swift`, tested without a screen). After a switch of macOS
   Spaces everything is shown again, because a panel belongs to the Space it was shown on.
-- Before a layout moves anything it tells the window system which `setFrame` calls are about to follow
+- A layout tells the window system which `setFrame` calls are about to follow
   (`WindowSystem.moveTogether`, `Controller+Together.swift`). A window system that can moves those windows at once, the apps side
-  by side, waits only so long for all of them together, and answers the calls from what came of it. `apply` stays one
-  window at a time. Only docked windows are foretold, and not when they are put back. The hint changes what the calls cost, never
+  by side, waits only so long for all of them together, and answers the calls from what came of it. `apply` still asks one
+  window at a time. There are two forecasts, because apps that work side by side keep no order among themselves: the docked windows that stay in
+  view, before anything moves (`movesInSight`), and those that leave it, when the others have their frames (`leavesInSight`;
+  `Controller+InOnePiece.swift`). Only docked windows are foretold, and not when they are put back. The hint changes what the calls cost, never
   what they return: `MoveTogetherTests` walks two desks through everything, one taking the hint and one ignoring it, and compares them after every step.
-  **Whoever gives `apply` or `park` a new reason to leave a docked window alone gives it to `movesInSight` as well**; the tests fail otherwise.
+  **Whoever gives `apply` or `park` a new reason to leave a docked window alone gives it to `movesInSight` or `leavesInSight` as well**; the tests fail otherwise.
 
 ## Holding the view
 

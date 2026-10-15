@@ -664,8 +664,8 @@ extension Box where Value == EchoFilter {
     }
   }
 
-  /// With the Dock at the right nobody has measured where growth stops. Downwards it is the Dock's line, so a frame in the Dock's strip counts as
-  /// hanging over: at worst a full plan for nothing, where the other guess would at worst lose a size for good.
+  /// With the Dock at the right growth stops at the Dock's line, as it does downwards: measured on a hosted Mac, a point short of the visible right
+  /// edge, five times of five. So a frame in the Dock's strip counts as hanging over.
   @Test func withTheDockAtTheRightItsStripIsNoRoom() {
     let rooms = [FramePlan.room(onDisplay: CGRect(x: 0, y: 0, width: 1024, height: 768), visible: CGRect(x: 0, y: 31, width: 961, height: 737))]
     let known = CGRect(x: 170, y: 220, width: 480, height: 348)
