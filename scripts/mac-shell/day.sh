@@ -104,7 +104,7 @@ switch_to notes
 drag_edge notes left
 switch_to calendar
 drag_edge calendar top
-drag_by calendar 0 118
+drag_by calendar 0 118 click
 view all
 tile_click 1
 view all

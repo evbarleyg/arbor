@@ -112,8 +112,10 @@ def walk(seed, acts, two=False):
             say(dice.weighted([(f"dock_key {dice.pick(['left', 'right', 'up', 'down'])}", 8), ("float_key", 2), ("arrange_key", 1), ("undo", 2), ("redo", 1),
                                ("rotate", 1), ("mirror", 1), ("pin", 1)]))
         elif kind == "drag":
-            say(dice.weighted([(f"drag_onto {app} {other} {dice.pick(['left', 'right', 'top', 'bottom'])}", 3), (f"drag_out {app}", 2),
-                               (f"drag_by {app} {dice.roll(401) - 200} {dice.roll(241) - 120}", 2)]))
+            part, across, down = dice.pick(["left", "right", "top", "bottom"]), dice.roll(401) - 200, dice.roll(241) - 120
+            # Every other time an impatient hand clicks right after the drop. No roll of its own: the seeds keep their walks.
+            say(dice.weighted([(f"drag_onto {app} {other} {part}", 3), (f"drag_out {app}", 2),
+                               (f"drag_by {app} {across} {down}" + (" click" if (across + down) % 2 == 0 else ""), 2)]))
         elif kind == "drag-where-macos-tiles":
             say(f"drag_edge {app} {dice.pick(['left', 'right', 'top'])}")
         elif kind == "view":

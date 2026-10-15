@@ -210,6 +210,8 @@ class Step:
         self.under_the_stage = 0
         # Where Arbor's drop preview was when the button came up, if it was up.
         self.preview_at_drop = None
+        # When the button first came up. A press after that is a click, and nothing is in the hand any more.
+        self.dropped = None
         # What reached the far end of the event taps: (time, kind, microseconds late, whether Arbor posted it).
         self.arrived = []
         self.at_end = None
@@ -363,12 +365,12 @@ def read(path):
                         current.traces[window] = []
                         if not known:
                             current.born.add(window)
-                    current.traces[window].append((time, frame, world.button))
+                    current.traces[window].append((time, frame, world.button and current.dropped is None))
             elif kind == "G" and rest:
                 window = int(rest[0])
                 if current and world.ordinary(window):
                     current.traces.setdefault(window, [(current.began, world.frames.get(window), False)])
-                    current.traces[window].append((time, None, world.button))
+                    current.traces[window].append((time, None, world.button and current.dropped is None))
                 world.gone_frame = world.frames.pop(window, None)
                 if window in world.stages:
                     world.stages.discard(window)
@@ -396,7 +398,8 @@ def read(path):
                     if len(rest) >= 3:
                         current.pointer.append((time, float(rest[1]), float(rest[2])))
                         world.pointer = (float(rest[1]), float(rest[2]))
-                    if not world.button:
+                    if not world.button and current.dropped is None:
+                        current.dropped = time
                         # It goes with the button, and within one sample its going is written first.
                         current.macos_answered = bool(world.macos_previews) or time - world.macos_preview_left <= 150
                         up = [world.frames[preview] for preview in world.arbor_previews if preview in world.frames]
@@ -443,7 +446,7 @@ def read(path):
                     current.app_before = world.app
                     for window, frame in world.frames.items():
                         if world.ordinary(window):
-                            current.traces[window] = [(time, frame, world.button)]
+                            current.traces[window] = [(time, frame, world.button and current.dropped is None)]
                     top = next((window for window in world.order if world.ordinary(window)), None)
                     current.tops.append(top)
                     steps.append(current)
@@ -1223,6 +1226,18 @@ def self_test():
     detectors("dropped with no preview, and it stays", glide + ["2300 B up 460 110", "3400 M end 2 drags=1"], [])
     detectors("dropped with no preview, and it gets its own size back under the pointer", glide + [
         "2300 B up 460 110", "2320 W 1 10 0 360 100 200 150 One", "3400 M end 2 drags=1"], [])
+    to_the_edge = start + ["1250 M tiling defaults", "2000 M begin 2 drag", "2050 B down 300 110"]
+    for i in range(1, 9):
+        to_the_edge += [f"{2100 + 16 * i} W 1 10 0 {100 - 36 * i} 100 400 300 One", f"{2100 + 16 * i} P {300 - 36 * i} 110"]
+    detectors("a click right after the drop is no second drop: the preview that was up at the first still explains where it went", glide + [
+        "2260 W 51 99 3 0 30 500 700 Arbor", "2300 B up 460 110", "2310 G 51", "2320 W 1 10 0 12 42 476 676 One", "2600 B down 460 110", "2640 B up 460 110",
+        "3700 M end 2 drags=1 docked=1"], [])
+    detectors("what moves during that click is not in the hand: it moved after the drop, far from where it was let go", glide + [
+        "2300 B up 460 110", "2600 B down 460 110", "2620 W 1 10 0 700 400 400 300 One", "2640 B up 460 110", "3700 M end 2 drags=1"], ["stuck"])
+    # A window of a fixed size is moved into macOS's tile as it is, so only the preview says that macOS answered.
+    detectors("macOS answered the drag, and a click right after does not take that back", to_the_edge + [
+        "2240 W 50 5 0 -15 16 530 760 WindowManager", "2300 G 50", "2300 B up 12 110", "2320 W 1 10 0 0 30 400 300 One", "2600 B down 12 110", "2640 B up 12 110",
+        "2900 W 1 10 0 12 42 400 300 One", "3900 M end 2 drags=1"], ["fought", "jolt"])
     detectors("what the script hands on keeps its name", start + [
         "2000 M begin 2 idle", "2500 M finding 2 -:busy FAIL Arbor used 4 % of a core", "3000 M end 2"], ["busy"])
     to_edge = start + ["1250 M tiling defaults", "2000 M begin 2 drag", "2050 B down 300 110"]

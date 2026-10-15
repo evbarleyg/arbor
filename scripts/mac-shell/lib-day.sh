@@ -390,12 +390,13 @@ click_window() {
 # Not every point that looks free moves the window: a toolbar has controls Accessibility does not call controls. So the button stays down until the window is
 # seen to have followed; a press that did not take hold of it is let go, and the drag was not performed.
 drag_window() {
-  local window=$1 to_x=$2 to_y=$3 x y role before hold=0.2 keep="" options=""
+  local window=$1 to_x=$2 to_y=$3 x y role before hold=0.2 keep="" again="" options=""
   shift 3
   while [ $# -gt 0 ]; do
     case "$1" in
       --hold) hold=$2; shift ;;
       --no-release) keep=yes ;;
+      --then-click) again=yes ;;
       *) options="$options $1" ;;
     esac
     shift
@@ -414,6 +415,10 @@ drag_window() {
   [ -n "$keep" ] && return 0
   sleep "$hold"
   release
+  [ -n "$again" ] || return 0
+  # An impatient hand: whoever still holds the drag's events back, or takes the next press for more of the drag, shows it now (`input-held`).
+  sleep 0.3
+  click "$to_x" "$to_y"
 }
 
 dock_click() {
