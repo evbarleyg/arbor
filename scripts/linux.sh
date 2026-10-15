@@ -11,8 +11,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-image=$(sed -n 's/^ *container: *\(swift:[^ ]*\) *$/\1/p' .github/workflows/ci.yml | head -1)
-[ -n "$image" ] || { echo "no Swift image named in .github/workflows/ci.yml"; exit 2; }
+image=$(sed -n 's/^ *container: *\(swift:[^ ]*\) *$/\1/p' .github/workflows/linux.yml | head -1)
+[ -n "$image" ] || { echo "no Swift image named in .github/workflows/linux.yml"; exit 2; }
 [ $# -gt 0 ] || set -- make check scenarios parity
 
 # shellcheck disable=SC2086
