@@ -55,7 +55,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | Kind | Cases | Hurt 1 | Stand-ins play it | partly | not yet | cannot | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded | Arbor does not cope yet, or nobody knows |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | [order-of-reports](#order-of-reports) | 28 | 3 | 9 | 11 | 3 | 5 | 18 | 1 | 3 | 6 | 4 |
-| [missing-report](#missing-report) | 43 | 7 | 13 | 7 | 4 | 19 | 23 | 1 | 5 | 14 | 11 |
+| [missing-report](#missing-report) | 44 | 7 | 14 | 7 | 4 | 19 | 24 | 1 | 5 | 14 | 11 |
 | [extra-report](#extra-report) | 9 | 0 | 3 | 3 | 1 | 2 | 6 | 0 | 0 | 3 | 1 |
 | [late-or-partial-answer](#late-or-partial-answer) | 46 | 9 | 11 | 16 | 6 | 13 | 28 | 0 | 6 | 12 | 15 |
 | [second-actor](#second-actor) | 54 | 6 | 18 | 20 | 9 | 7 | 35 | 0 | 4 | 15 | 10 |
@@ -67,7 +67,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [looks](#looks) | 21 | 0 | 0 | 0 | 1 | 20 | 2 | 2 | 3 | 14 | 6 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 45 | 1 | 0 | 1 | 4 | 40 | 26 | 1 | 2 | 16 | 7 |
-| **all** | 463 | 62 | 93 | 126 | 67 | 177 | 240 | 19 | 60 | 144 | 109 |
+| **all** | 464 | 62 | 94 | 126 | 67 | 177 | 241 | 19 | 60 | 144 | 109 |
 
 **Where the difference bit**
 
@@ -76,7 +76,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 144 | 89 | 46 | 13 | 33 | 52 |
 | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 163 | 97 | 124 | 0 | 11 | 28 |
 | controller | in the controller or the core, given reports that were right | 28 | 15 | 16 | 0 | 1 | 11 |
-| test | in a test, a script or a harness that expected the wrong thing | 82 | 0 | 27 | 5 | 11 | 39 |
+| test | in a test, a script or a harness that expected the wrong thing | 83 | 0 | 28 | 5 | 11 | 39 |
 | machine | in the machine, the toolchain or the way things are built and installed | 46 | 3 | 27 | 1 | 4 | 14 |
 
 Each case is counted under the best guard it has: one that goes red on any machine (a test, a scenario, a replayed trace, a tool that `make check` or CI runs), one that needs CI's Macs (a test for macOS alone, a step of a real-window run that CI starts), one that somebody has to start, or none.
@@ -984,6 +984,18 @@ Missing reports: something happens and nobody says so.
 - **Guard:** `test: nothingIsDecidedWhileTheWindowStandsStillAndThePointerIsNear`; `trace: click-title-bar.jsonl`
 - **Arbor copes:** WindowGrab.classify decides nothing while the window stands still.
 - **Read in:** `collab/evidence/traces/README.md`
+
+### a-drag-ends-with-where-the-window-is
+
+*hurt 4 · test · touches `moved-unasked`*
+
+- **Expected:** The end of a drag is one report. `FakeWindowSystem.endDrag`, `loseTheReleaseOfTheDrag` and `dragAndLoseTheRelease` said that the drag had ended or was lost, and nothing before it.
+- **Happened:** The Accessibility layer reads where the window server has the window, since its app may not have heard yet, and reports that as the person's doing straight before it says that the drag is over (`endGrab`, `releaseWasLost`). In 279 stories played to the real layer on Linux, every end of a drag, every lost one and every end of a resize came straight after such a report. The fake did so for a resize and not for a drag, and the fake Mac only for a drag off a strip.
+- **Found by:** By holding what the fake sends across the seam against what the real layer sends.
+- **Stand-ins play it:** yes (`FakeWindowSystem.sayWhereItIs`, `FakeWindowSystem.endDrag`, `FakeWindowSystem.loseTheReleaseOfTheDrag`, `FakeWindowSystem.dragAndLoseTheRelease`, `World.lift`)
+- **Guard:** `test: whatAHandDidEndsWithWhereTheWindowIs`
+- **Arbor copes:** Controller.dragEnded goes by the frame it was told last, which with this report is the true one.
+- **Read in:** `Sources/ArborKit/AX/AXWindowSystem.swift`, `Sources/ArborTesting/FakeWindowSystem.swift`, `Sources/arbor-fakemac/World+Input.swift`
 
 ### a-replay-could-not-play-a-closing-lid
 

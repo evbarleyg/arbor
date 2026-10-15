@@ -25,12 +25,12 @@ private final class Recorder: WindowSystemEvents {
   func windowFocused(_ id: WindowID) { log.append("focused \(id)") }
   func dragBegan(_ id: WindowID, at point: CGPoint) { log.append("drag began \(id)") }
   func dragMoved(_ id: WindowID, to point: CGPoint) {}
-  func dragEnded(_ id: WindowID, at point: CGPoint) {}
+  func dragEnded(_ id: WindowID, at point: CGPoint) { log.append("drag ended \(id)") }
   func displaysChanged() { log.append("displays") }
   func resizeBegan(_ id: WindowID) { log.append("resize began \(id)") }
-  func resizeEnded(_ id: WindowID) {}
+  func resizeEnded(_ id: WindowID) { log.append("resize ended \(id)") }
   func keyboardFocusMoved() { log.append("keyboard moved") }
-  func dragCancelled(_ id: WindowID) {}
+  func dragCancelled(_ id: WindowID) { log.append("drag lost \(id)") }
   func windowReplaced(_ old: WindowID, by window: WindowSnapshot) { log.append("replaced \(old) by \(window.id)") }
   func pointerPressed() { log.append("pressed") }
 }
@@ -294,6 +294,23 @@ private final class Recorder: WindowSystemEvents {
     #expect(system.focused == b)
     system.userFocusesNothing()
     #expect(system.focused == nil, "on the Desktop, as after a click on the wallpaper")
+  }
+
+  /// Straight before a drag or a resize is said to be over, seen or lost, the layer says where the window is, as the person's doing.
+  @Test func whatAHandDidEndsWithWhereTheWindowIs() {
+    let (system, recorder, a, _, _) = make()
+    system.beginDrag(a)
+    system.moveDrag(to: CGPoint(x: 700, y: 400))
+    system.endDrag()
+    #expect(recorder.log.suffix(2) == ["changed \(a) by hand", "drag ended \(a)"])
+    system.beginDrag(a)
+    system.moveDrag(to: CGPoint(x: 600, y: 300))
+    system.loseTheReleaseOfTheDrag()
+    #expect(recorder.log.suffix(2) == ["changed \(a) by hand", "drag lost \(a)"])
+    system.dragAndLoseTheRelease(a, to: CGPoint(x: 500, y: 500))
+    #expect(recorder.log.suffix(2) == ["changed \(a) by hand", "drag lost \(a)"])
+    system.userResize(a, to: system.frame(of: a)!.insetBy(dx: -10, dy: 0))
+    #expect(recorder.log.suffix(2) == ["changed \(a) by hand", "resize ended \(a)"])
   }
 
   @Test func everySwitchCanBeTurnedOff() {

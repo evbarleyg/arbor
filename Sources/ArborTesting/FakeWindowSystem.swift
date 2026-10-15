@@ -1215,6 +1215,7 @@ extension FakeWindowSystem {
     mouseDown = false
     // macOS sees every release.
     if let letGo = windows[window]?.snapshot.frame { letMacOSTile(window, letGoAt: letGo) }
+    sayWhereItIs(window)
     events?.dragCancelled(window)
   }
 }
@@ -1363,6 +1364,7 @@ extension FakeWindowSystem {
     guard let window = inHand?.window else { return }
     inHand = nil
     let letGo = windows[window]?.snapshot.frame
+    sayWhereItIs(window)
     events?.dragEnded(window, at: cursor)
     if let letGo { letMacOSTile(window, letGoAt: letGo) }
   }
@@ -1471,7 +1473,14 @@ extension FakeWindowSystem {
     inHand = nil
     // macOS sees every release.
     if let letGo = windows[window]?.snapshot.frame { letMacOSTile(window, letGoAt: letGo) }
+    sayWhereItIs(window)
     events?.dragCancelled(window)
+  }
+
+  /// Like the Accessibility layer at the end of a drag, seen or lost (`endGrab`, `releaseWasLost`): it reads where the window is, since its
+  /// app may not have heard yet, and reports that as the person's doing straight before it says that the drag is over.
+  public func sayWhereItIs(_ window: WindowID) {
+    if let snapshot = windows[window]?.snapshot { events?.windowChanged(snapshot, userInitiated: true) }
   }
 
   /// The window in the hand goes along with the pointer, but for its title bar (`highestTop`). The press alone moves nothing, of which nobody would

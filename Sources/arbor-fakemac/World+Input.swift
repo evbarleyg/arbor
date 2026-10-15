@@ -388,6 +388,7 @@ extension World {
     case .title(let window, _, let moved, let clicks):
       if moved {
         let letGo = system.frame(of: window)
+        system.sayWhereItIs(window)
         system.events?.dragEnded(window, at: point)
         if let letGo { system.letMacOSTile(window, letGoAt: letGo) }
       } else if AppsDoubleClick.isCompleted(byClick: clicks) {

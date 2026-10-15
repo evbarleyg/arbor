@@ -724,6 +724,35 @@
    ]
   },
   {
+   "id": "a-drag-ends-with-where-the-window-is",
+   "kind": "missing-report",
+   "layer": "test",
+   "expected": "The end of a drag is one report. `FakeWindowSystem.endDrag`, `loseTheReleaseOfTheDrag` and `dragAndLoseTheRelease` said that the drag had ended or was lost, and nothing before it.",
+   "happened": "The Accessibility layer reads where the window server has the window, since its app may not have heard yet, and reports that as the person's doing straight before it says that the drag is over (`endGrab`, `releaseWasLost`). In 279 stories played to the real layer on Linux, every end of a drag, every lost one and every end of a resize came straight after such a report. The fake did so for a resize and not for a drag, and the fake Mac only for a drag off a strip.",
+   "found": "By holding what the fake sends across the seam against what the real layer sends.",
+   "modelled": "yes",
+   "knobs": [
+    "FakeWindowSystem.sayWhereItIs",
+    "FakeWindowSystem.endDrag",
+    "FakeWindowSystem.loseTheReleaseOfTheDrag",
+    "FakeWindowSystem.dragAndLoseTheRelease",
+    "World.lift"
+   ],
+   "guards": [
+    "test: whatAHandDidEndsWithWhereTheWindowIs"
+   ],
+   "copes": "Controller.dragEnded goes by the frame it was told last, which with this report is the true one.",
+   "hurt": 4,
+   "touches": [
+    "moved-unasked"
+   ],
+   "sources": [
+    "Sources/ArborKit/AX/AXWindowSystem.swift",
+    "Sources/ArborTesting/FakeWindowSystem.swift",
+    "Sources/arbor-fakemac/World+Input.swift"
+   ]
+  },
+  {
    "id": "a-drag-is-heard-of-a-third-of-a-second-late",
    "kind": "timing",
    "layer": "at the seam",
