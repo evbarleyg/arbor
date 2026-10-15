@@ -67,6 +67,8 @@ extension Controller: WindowSystemEvents {
     releasePendingSlot(of: id)
     if drag?.window == id { cancelDrag() }
     guard isRunning else { return }
+    // Before the step begins: the way back is no part of what the closing changed.
+    let wentBack = hadKeyboard ? theViewGoesBack(aheadOfTheGoingOf: id, of: app) : nil
     // It cannot be undone, and `undo` says so if the window was docked (Controller+Undo.swift).
     let undoScope = beginUndoStep("the closing of \(appName.map { "a window of \($0)" } ?? "\(id)")")
     defer { endUndoStep(undoScope) }
@@ -74,8 +76,8 @@ extension Controller: WindowSystemEvents {
       if !slotWaitsAgain(after: id, on: display) {
         workspaces[display]!.forget(id, shareSpace: settings.shareRemovedSpace)
       }
-      relayout(display, reason: .structure)
-      if hadKeyboard { keyboardLeft(id, of: app, on: display) }
+      if wentBack?.display != display { relayout(display, reason: .structure) }
+      if hadKeyboard { keyboardLeft(id, of: app, on: display, wentBack: wentBack) }
     }
     // The arrangement of a display that is away would carry the number, and its pin, into state.json, and
     // numbers start again after a reboot: another window would be taken for this one.
@@ -136,12 +138,14 @@ extension Controller: WindowSystemEvents {
 
     // Minimizing or restoring changes who takes up space.
     if previous?.isPresent != window.isPresent {
-      relayout(display, reason: .structure)
+      let hadKeyboard = !window.isPresent && hadKeyboard(window.id)
+      let wentBack = hadKeyboard ? theViewGoesBack(aheadOfTheGoingOf: window.id, of: window.pid) : nil
+      if wentBack?.display != display { relayout(display, reason: .structure) }
       // It may have been given the keyboard before it was reported back (Controller+Focus.swift).
       if window.isPresent {
         bringIntoViewIfFocused(window.id, retries: 0)
-      } else if hadKeyboard(window.id) {
-        keyboardLeft(window.id, of: window.pid, on: display)
+      } else if hadKeyboard {
+        keyboardLeft(window.id, of: window.pid, on: display, wentBack: wentBack)
       }
       scheduleSave()
       return

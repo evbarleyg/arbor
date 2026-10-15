@@ -202,8 +202,10 @@ Until the going is reported, a few milliseconds later, a close looks like ⌘`. 
 one window of an app to another that is out of view waits 50 ms (`Controller.timeForAGoing`): if the first window goes
 meanwhile, all is as if its going had been reported first, and nothing has moved. Nothing else waits: another app's
 window, a window that has only just opened, what Arbor itself asked for or found, what a hold turns away. A going that is
-later still finds a view that has followed, which is taken back (`Workspace.retractLastMove`); not where the going dissolves
-the group that was in view, which leaves nothing to go back to: there the view ends on everything.
+later still finds a view that has followed, which is taken back (`Workspace.retractLastMove`): on paper, before anything is laid out
+for the going and before a closed window leaves the arrangement (`Controller.theViewGoesBack`), so that one layout shows both. A group
+is kept whole only while the view is on it, and what the going leaves of the group that was in view would otherwise dissolve and
+leave nothing to go back to.
 Two moves that cancel out are no move to a person. A window can float over a view that is not the Desktop's, and
 nothing in the model says that it does: the move back to such a view would park it. So the floating windows that
 were in view before the first move are where they were after the second (`Reveal.floatingInView`).

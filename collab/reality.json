@@ -4673,11 +4673,13 @@
     "test: theGoingOfAnAppsSecondWindowMovesNothing",
     "test: theViewStaysOnWhatIsLeftOfAGroupThatDissolves",
     "test: aGoingThatComesAfterTheMomentStillTakesTheViewBack",
+    "test: aGroupThatDissolves",
+    "test: aFloatThatWasOutOfViewIsOutOfViewAgain",
     "trace: close.expect",
     "e2e: close a docked window",
     "e2e: minimize a docked window"
    ],
-   "copes": "Controller.waitsForAGoing: a report that takes the keyboard from one window of an app to another that is out of view waits 50 ms before the view follows. If the first window goes meanwhile, Controller.keyboardLeft goes on as if the going had come first: the view stays and a window in view gets the keyboard. A going later than that finds a view that has followed, and takes it back; where the going dissolves the group that was in view there is nothing to go back to, and the view still ends on everything. The gaps recorded were 7 and 12 ms, on idle Macs, and Arbor's own work was part of the 12; nobody has measured a busy Mac, where a timer that is overdue may well run before a report that is waiting.",
+   "copes": "Controller.waitsForAGoing: a report that takes the keyboard from one window of an app to another that is out of view waits 50 ms before the view follows. If the first window goes meanwhile, Controller.keyboardLeft goes on as if the going had come first: the view stays and a window in view gets the keyboard. A going later than that finds a view that has followed, and takes it back on paper before anything is laid out for the going and before a closed window leaves the arrangement (Controller.theViewGoesBack): one layout shows both, each window moves once, and what is left of the group that was in view is still there to go back to. The gaps recorded were 7 and 12 ms, on idle Macs, and Arbor's own work was part of the 12; nobody has measured a busy Mac, where a timer that is overdue may well run before a report that is waiting.",
    "hurt": 1,
    "touches": [
     "moved-unasked",

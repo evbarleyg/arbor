@@ -184,9 +184,33 @@ extension Controller {
     focusHistory.first == id || keyboardHandOver.reveal?.holder == id || keyboardHandOver.waiting?.holder == id
   }
 
+  /// Call before `display` is laid out without `id`, which `hadKeyboard` and has closed or stopped taking space, and before a window that
+  /// has closed is taken out of the arrangement. If the view has followed its heir it goes back now, on paper, and what is returned
+  /// goes to `keyboardLeft`, whose layout is then the only one on that display: it shows the going and the way back as one move.
+  /// Laid out for the going first, every window in view moved twice. And a group is kept whole only while the view is on it: what is
+  /// left of one that `id` was part of can be a row in a row, which the tree does not keep, and history then led to everything.
+  func theViewGoesBack(aheadOfTheGoingOf id: WindowID, of app: Int32?) -> KeyboardHandOver.Reveal? {
+    // (A window that a rule has come to leave alone is in no arrangement, and nothing would be laid out for it.)
+    guard isRunning, workspaceID(containing: id) != nil, let reveal = keyboardHandOver.reveal, isTheHeirs(reveal, after: id, of: app),
+      workspaces[reveal.display]?.retractLastMove() == true
+    else { return nil }
+    keyboardHandOver.reveal = nil
+    return reveal
+  }
+
+  /// Whether the view moved just now for the window macOS picked when `id` went, and a layout of where it came from shows something: otherwise
+  /// it would only have to follow again. (A view with nothing in it shows what is around it, so this is seldom no.)
+  private func isTheHeirs(_ reveal: KeyboardHandOver.Reveal, after id: WindowID, of app: Int32?) -> Bool {
+    guard reveal.holder == id, now().timeIntervalSince(reveal.time) < Self.handOverTime, app == nil || app == windows[reveal.window]?.pid
+    else { return false }
+    var before = workspaces[reveal.display]
+    guard before?.retractLastMove() == true, let view = before?.camera else { return false }
+    return somethingWouldBeInView(on: reveal.display, at: view)
+  }
+
   /// Call after `id`, which `hadKeyboard`, closed or stopped taking space, and `display` was laid out without it.
-  /// `app` is its process, or nil if the whole app was hidden.
-  func keyboardLeft(_ id: WindowID, of app: Int32?, on display: DisplayID) {
+  /// `app` is its process, or nil if the whole app was hidden. `wentBack`: what `theViewGoesBack` returned; its display has not been laid out.
+  func keyboardLeft(_ id: WindowID, of app: Int32?, on display: DisplayID, wentBack: KeyboardHandOver.Reveal? = nil) {
     guard isRunning else { return }
     // Its heir was named first and has waited for this. From here on it is the order in which the going comes first.
     let heir = keyboardHandOver.waiting.flatMap { $0.holder == id ? $0.window : nil }
@@ -195,16 +219,16 @@ extension Controller {
       stopWaitingForAGoing()
       keyboardHandOver.reveal = nil
     }
-    if let reveal = keyboardHandOver.reveal, reveal.holder == id {
+    var followed = wentBack
+    if followed == nil, let reveal = keyboardHandOver.reveal, reveal.holder == id {
       keyboardHandOver.reveal = nil
-      guard now().timeIntervalSince(reveal.time) < Self.handOverTime, app == nil || app == windows[reveal.window]?.pid
-      else { return }
       // The new focus was reported first and the view has followed it. Take that back, unless nothing would be
       // in view there: then the view would only have to follow again.
-      var before = workspaces[reveal.display]
-      guard before?.retractLastMove() == true, let view = before?.camera, somethingWouldBeInView(on: reveal.display, at: view)
-      else { return }
-      if workspaces[reveal.display]?.retractLastMove() == true {
+      guard isTheHeirs(reveal, after: id, of: app), workspaces[reveal.display]?.retractLastMove() == true else { return }
+      followed = reveal
+    }
+    if let reveal = followed {
+      if let view = workspaces[reveal.display]?.camera {
         // As if the view had never moved. Over a view without the Desktop the move back would send out whatever floats there,
         // and the move there may have gathered it onto a Desktop that came into view: each is where it was. With the
         // Desktop in the view the layout knows where they belong, also now that `id` has gone.
