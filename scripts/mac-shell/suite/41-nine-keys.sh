@@ -16,6 +16,25 @@ acts() {
   sleep 0.3
   received "$witness" key -eq "$before"
 }
+# once <window with the keyboard> <keys> <what the log says of it>: that line comes once and no second time, and the window hears nothing of the key.
+# A key and its twin with fn are two registrations with macOS: a press that fired both would run the command twice.
+once() {
+  local witness=$1 chord=$2 before mark count
+  shift 2
+  before=$(events_of "$witness" key)
+  mark=$(arbor_log_lines)
+  key "$chord" || return 1
+  eventually arbor_says_since "$mark" "$*" || return 1
+  sleep 0.6
+  count=$(arbor_log_since "$mark" | grep -c -F -e "INFO  $*")
+  [ "$count" -eq 1 ] || { echo "the log says \"$*\" $count times"; return 1; }
+  received "$witness" key -eq "$before"
+}
+arbor_says_since() {
+  local mark=$1
+  shift
+  arbor_log_since "$mark" | grep -F -e "INFO  $*" > /dev/null || { echo "arbor.log does not say: $*"; return 1; }
+}
 # arrives <window with the keyboard> <keys>: the window gets the key, and Arbor runs nothing. Whether it has the keyboard is not asked of Arbor,
 # which knows no window during a pause: a window that counts the key had it.
 arrives() {
@@ -131,6 +150,59 @@ check "the app heard none of it" received "$W2" key -eq "$keys"
 click_window "$W1"
 check "⌃⌥↑ arrives in the app" arrives "$W1" ctrl+opt+up
 check "⌃⌥Space" pressed ctrl+opt+space show-all
+settled
+
+claim "with fn down as well each of the nine is Arbor's alone, and one press runs one command"
+proves A122
+# On a laptop fn sits beside ⌃. With its flag on the event a key passes a plain hot key by, so Arbor registers each a second time with fn: all but the
+# arrows, which carry the flag by nature and are one registration. Plain first, as the control of `once`, then with the flag. The fake Mac has no fn.
+click_window "$W1"
+check "plain ⌃⌥↩: once" once "$W1" ctrl+opt+return "zoom: "
+check "plain ⌃⌥↩ back: once" once "$W1" ctrl+opt+return "zoom: "
+# It stands at the left edge: one place to the right, and back.
+check "plain ⌃⌥→: once" once "$W1" ctrl+opt+right "dock right: "
+check "plain ⌃⌥←: once" once "$W1" ctrl+opt+left "dock left: "
+if [ -z "${ARBOR_REHEARSAL:-}" ]; then
+  # The control of the count: on a Mac Go to… writes two lines that begin alike, one of them its panel's.
+  check "a line that comes twice is caught" fails once "$W1" ctrl+opt+g "find: "
+  key escape
+  click_window "$W1"
+  # The control of the flag: a shortcut of one's own without both ⌃ and ⌥ is registered once, without a twin, so with fn's flag on the event it passes
+  # Arbor by. Did it not, the flag would not be on the events this tool posts, and what follows would be plain presses under another name.
+  check "a shortcut without a twin is bound" ctl bind opt+cmd+j zoom
+  check "plain ⌥⌘J: once" once "$W1" opt+cmd+j "zoom: "
+  check "the window fills the screen" eventually fills "$W1"
+  check "fn ⌥⌘J passes Arbor by and arrives in the app: the flag is on the event" arrives "$W1" fn+opt+cmd+j
+  check "the window still fills the screen" stays fills "$W1"
+  check "plain ⌥⌘J back: once" once "$W1" opt+cmd+j "zoom: "
+  check "it is unbound again" ctl unbind opt+cmd+j
+  check "fn ⌃⌥↩: once" once "$W1" fn+ctrl+opt+return "zoom: "
+  check "the window fills the screen" eventually fills "$W1"
+  check "fn ⌃⌥Space: once" once "$W1" fn+ctrl+opt+space "show-all: "
+  check "the camera is on everything" eventually camera_on root
+  check "fn ⌃⌥[: once" once "$W1" "fn+ctrl+opt+[" "back: "
+  check "the window fills the screen again" eventually fills "$W1"
+  check "⌃⌥Space" pressed ctrl+opt+space show-all
+  check "fn ⌃⌥F: once" once "$W1" fn+ctrl+opt+f "toggle-float: "
+  check "the window floats" eventually is floating "$W1"
+  check "fn ⌃⌥Z: once" once "$W1" fn+ctrl+opt+z "undo: "
+  check "the window is docked again" eventually is docked "$W1"
+  check "fn ⌃⌥G: once" once "$W1" fn+ctrl+opt+g "find: the palette is up"
+  key escape
+  click_window "$W1"
+  check "fn ⌃⌥⎋: once" once "$W1" fn+ctrl+opt+escape "paused"
+  check "Arbor is paused" eventually says "paused" arborctl status
+  check "fn ⌃⌥⎋ again: once" once "$W1" fn+ctrl+opt+escape "resumed"
+  check "Arbor runs again" eventually fails says "paused" arborctl status
+  click_window "$W1"
+  # The arrows as a keyboard sends them are what `key` posts; with the flag named they are the same event.
+  check "fn ⌃⌥→: once" once "$W1" fn+ctrl+opt+right "dock right: "
+  check "fn ⌃⌥←: once" once "$W1" fn+ctrl+opt+left "dock left: "
+  check "the window is at the left edge again" eventually at_edge "$W1" left
+  # And what is not Arbor's is not Arbor's with fn either.
+  check "fn ⌃⌥A arrives in the app" arrives "$W1" fn+ctrl+opt+a
+  check "fn ⌃⌥D arrives in the app" arrives "$W1" fn+ctrl+opt+d
+fi
 settled
 
 claim "one setting brings the whole map back, at once, and takes it away again"
