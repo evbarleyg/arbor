@@ -657,6 +657,7 @@ holds for the commit named (second reading, 10:45 UTC) and says what the script 
 | `check-displays.sh`, `check-desktop.sh`, `compat-pictures.sh` | trunk | **never**: end with 77 | | Virtual displays, dark mode, wallpaper, a Space that stays, every window arranged |
 | `check-sweep.sh` | trunk | **never**: ends with 77 | | Clicks on the wallpaper, which sweep aside whatever is open |
 | `compat.sh`, `compat-extras.sh` (`lib-apps.sh`) | trunk | **never, unless the person says `ARBOR_APPS_HERE=1`**: end with 77 | | An app that was not running is still theirs: launched, it brings back last time's windows and unsaved documents, and `app_quit` answers "Don't Save" |
+| `app-sizes.sh` (`lib-apps.sh`) | trunk | **never**: ends with 77 | | It opens some forty apps, each for the first time, dismisses what they ask and quits them |
 | `input-taps.sh` | trunk | **never, unless the person says `ARBOR_INPUT_TAPS_HERE=1`**: ends with 77 | | Pinches, scrolls and clicks at fixed places past the nets; stops Arbor while its taps hold everybody's input |
 | `rehearse.sh` | trunk | **never on a Mac**: ends with 77 | | It tells scripts that the Mac is thrown away; only what has a stand-in is fake. For Linux |
 | `run.sh` | trunk | safe for the Mac | none | Starts a run on GitHub |
@@ -743,6 +744,7 @@ in front of the stock apps on the same Macs, which nobody is using:
 scripts/mac-shell/run.sh --macs 2 scripts/mac-shell/compat.sh   # 13 apps × 28 steps, every second app on the second Mac; what does not fit into 1000 s is reported as not run
 scripts/mac-shell/run.sh scripts/mac-shell/compat-extras.sh     # tabs, sheets, full screen, a growing font: 4 minutes
 ARBOR_APPS_HERE=1 scripts/mac-shell/compat.sh terminal safari   # on your own Mac, if you mean it (see lib-apps.sh): only these apps
+scripts/mac-shell/run.sh scripts/mac-shell/app-sizes.sh         # how small and how large some forty apps go, Arbor not started: 6 minutes; what the shipped table is made of (F64)
 ```
 
 Each app gets a fresh Arbor and the same drill beside two test windows, through `arborctl` and through a real pointer
