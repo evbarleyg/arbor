@@ -377,6 +377,29 @@ public final class AXWindowSystem: WindowSystem {
 
   public func macTiling() -> MacTiling { MacFacts.tiling }
 
+  public func whereabouts(of window: WindowID) -> Whereabouts {
+    guard let record = records[window] else { return .inTheDockOrGone }
+    guard answers(record.snapshot.pid) else { return .unknown }
+    let began = uptime
+    let answer = record.element.read(kAXMinimizedAttribute)
+    switch answer.error {
+    case .success:
+      guard let value = answer.value, CFGetTypeID(value) == CFBooleanGetTypeID() else { return .here }
+      return CFBooleanGetValue((value as! CFBoolean)) ? .inTheDockOrGone : .here
+    case .invalidUIElement:
+      return .inTheDockOrGone
+    case .apiDisabled:
+      events?.accessibilityWasRefused()
+      return .unknown
+    case .cannotComplete:
+      noteSilence(of: record.snapshot.pid, since: began)
+      return .unknown
+    default:
+      // A window that cannot be minimized has nothing to say about it.
+      return .here
+    }
+  }
+
   public func modifierKeysDown() -> KeyChord.Modifiers {
     // People let go of the key and the button together, and by the time Arbor hears of the
     // mouse-up the key can be up as well. What counts is what was held when it happened.

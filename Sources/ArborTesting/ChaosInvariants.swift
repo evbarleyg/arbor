@@ -113,7 +113,8 @@ extension ChaosRunner {
         problems.append(.init("mirror", "\(id) exists but Arbor does not know it"))
         continue
       }
-      if snapshot != fake.snapshot, filter.manages(fake.snapshot) {
+      // (`zoom` with the number of a minimized window gives it the keyboard, which fetches it out of the Dock. macOS says so a moment later.)
+      if snapshot != fake.snapshot, filter.manages(fake.snapshot), !system.hasStillToReportThatItCameBack(id) {
         problems.append(
           .init("mirror", "\(id) is at \(fake.snapshot.frame.brief), Arbor thinks \(snapshot.frame.brief) (or its state differs)"))
       }

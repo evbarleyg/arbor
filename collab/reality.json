@@ -1902,6 +1902,46 @@
    ]
   },
   {
+   "id": "a-raise-fetches-a-minimized-window-out-of-the-dock",
+   "kind": "second-actor",
+   "layer": "at the seam",
+   "expected": "Giving a window the keyboard, or raising it, does nothing to a window that is minimized. The stand-in gave the keyboard to a window that stayed in the Dock, and minimized a window whatever was asked of it meanwhile.",
+   "happened": "AXRaise fetches a minimized window out of the Dock, one that has only just landed (16 of 16) and one at rest there (4 of 4), and the call takes as long as the flight out: 0.53 to 0.58 s. Making it the main window does nothing to it (8 of 8). Between the naming of the app's next window and the report of the minimizing, 0 to 32 ms, a raise also holds that report back, and the sibling's \"main window changed\" with it: \"miniaturized\" and \"deminiaturized\" then come within a millisecond of each other when the window is out again, and whoever looks at it finds it not minimized. On a held view Arbor sent the keyboard back to the window that was shown as soon as another was named: minimized in front of an audience, it flew to the Dock and straight back, and seven checks of \"held and empty\" were green over a view that had never been empty. The trace of that was first read as macOS naming the next window half a second early. It was Arbor's own raise that took the half second: a trace with Arbor running shows what macOS does to Arbor's doings, and what macOS does by itself takes a round without Arbor.",
+   "found": "The first run of the hold's checks on a hosted Mac, by reading its trace behind the green checks; then a probe of macOS alone, no Arbor running: 64 rounds on a hosted Mac, macOS 26.6.2, posted events, the app in front, two windows each of the test app and TextEdit, by ⌘M, the yellow button and Accessibility, with Reduce Motion on and off. With the stand-in made true and nothing else changed, five tests of the hold turned red by themselves.",
+   "modelled": "yes",
+   "knobs": [
+    "FakeWindowSystem.focus",
+    "FakeWindowSystem.raise",
+    "FakeWindowSystem.landInTheDock",
+    "FakeWindowSystem.reportTheLanding",
+    "FakeWindowSystem.whereabouts"
+   ],
+   "guards": [
+    "test: givenTheKeyboardAWindowThatHasJustLandedComesStraightBack",
+    "test: onAHeldViewTheWindowThatIsShownStaysInTheDock",
+    "test: aMinimizedWindowIsAwayAndComesBackToTheSameView",
+    "test: aWindowKeptInViewIsNotRaisedOutOfTheDock",
+    "test: theNetSpeaksWhenAMinimizedWindowIsBack",
+    "scenario: 58-minimized-in-front-of-an-audience.sim",
+    "e2e: W1 stays in the Dock",
+    "tool: mac-shell/probe-flight.sh"
+   ],
+   "copes": "Controller.sendTheKeyboard, for a window that Arbor picks by itself, and Controller.raiseIfItIsThere ask the window first where it is (WindowSystem.whereabouts, a read of AXMinimized that was answered yes in 0 to 2 ms, 20 of 20) and leave alone one that says it is minimized or is gone: it stayed in the Dock 16 of 16. One whose app does not answer is not sent the keyboard either, and a window kept in view is looked at again once a second until its app wakes. Whoever names a window gets it, unasked: Go to… and a command with a window's number fetch it out of the Dock, since what a person asks for last counts, and a request to an app that hangs waits there until it wakes. The walks' net minimize-undone speaks whenever a window that has just been minimized is not.",
+   "hurt": 2,
+   "touches": [
+    "moved-unasked",
+    "focus",
+    "flash"
+   ],
+   "sources": [
+    "scripts/mac-shell/probe-flight.sh",
+    "scripts/mac-shell/check-F58.sh",
+    "collab/QUESTIONS.md",
+    "Sources/ArborTesting/FakeWindowSystem.swift",
+    "Sources/ArborKit/Controller/Controller+KeyboardFocus.swift"
+   ]
+  },
+  {
    "id": "a-real-key-stays-down-while-the-reports-come-in",
    "kind": "timing",
    "layer": "at the seam",
@@ -3428,6 +3468,27 @@
    ],
    "backlog": [
     "K013"
+   ]
+  },
+  {
+   "id": "an-app-answers-nobody-while-its-window-flies-to-the-dock",
+   "kind": "late-or-partial-answer",
+   "layer": "below the seam",
+   "expected": "A minimize is over when it is asked for, and an app answers Accessibility at any time.",
+   "happened": "The flight takes 0.50 to 0.66 s from the key, the button or the call, and for all of it the whole app answers nobody: a read of another window of the app, asked in flight, takes the rest of the flight (474 to 743 ms), polled every 4 ms or every 50 alike. The window server lists the window on screen all the way, its bounds changing from 25 to 90 ms after the hand, then not at all. The box first widens toward the Dock's slot (480 to 712 points) before it shrinks: for a quarter of a second the window server has the window over its neighbour, and whoever reads its list then sees an overlap. Reduce Motion changes none of it. The three notifications, focused window, main window, miniaturized, come when the window has landed, in that order.",
+   "found": "The same probe of macOS alone: 64 rounds on a hosted Mac, macOS 26.6.2. Days with real apps had recorded the shrinking bounds before.",
+   "modelled": "no",
+   "knobs": [],
+   "guards": [
+    "tool: mac-shell/probe-flight.sh"
+   ],
+   "copes": "Sources/ArborKit/AX/AXWindowSystem.swift hears of a minimize when the flight is over, so nothing has to cope with the flight itself. Whatever Arbor asks of that app meanwhile for another reason waits on the main thread for up to the rest of the flight, which is under the second after which an app counts as hung.",
+   "hurt": 1,
+   "touches": [
+    "slow"
+   ],
+   "sources": [
+    "scripts/mac-shell/probe-flight.sh"
    ]
   },
   {

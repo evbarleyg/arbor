@@ -482,11 +482,11 @@ extension Controller {
     if level == .still { holdSaysThatItTurnedAway(id) }
     hold.isSendingBack = true
     scheduler.schedule("focus-held", after: Self.arrivalSpan) { [weak self] in self?.holdLooksAgain() }
-    if let home = hold.home, windows[home]?.isPresent == true, !isOutOfView(home) {
-      askForTheKeyboard(for: home)
-    } else if let display = displayWithSomethingInView(preferring: workspaceID(containing: id)) {
-      ensureFocusIsVisible(on: display)
-    }
+    let home = hold.home.flatMap { windows[$0]?.isPresent == true && !isOutOfView($0) ? $0 : nil }
+    if let home, sendTheKeyboard(to: home) { return true }
+    // On to the next display where the only window in view is the one that has gone.
+    let asked = Set([home].compactMap { $0 })
+    _ = displaysWithSomethingInView(preferring: workspaceID(containing: id)).contains { ensureFocusIsVisible(on: $0, notTo: asked) }
     return true
   }
 
@@ -530,9 +530,10 @@ extension Controller {
     return home
   }
 
-  private func displayWithSomethingInView(preferring preferred: DisplayID?) -> DisplayID? {
-    let order = [pointerDisplayID, preferred].compactMap { $0 } + workspaces.keys.sorted()
-    return order.first { display in
+  private func displaysWithSomethingInView(preferring preferred: DisplayID?) -> [DisplayID] {
+    var seen: Set<DisplayID> = []
+    let order = ([pointerDisplayID, preferred].compactMap { $0 } + workspaces.keys.sorted()).filter { seen.insert($0).inserted }
+    return order.filter { display in
       guard let workspace = workspaces[display] else { return false }
       return layouts[display]?.windowFrames.isEmpty == false
         || workspace.floating.keys.contains { !parked.contains($0) && windows[$0]?.isPresent == true }

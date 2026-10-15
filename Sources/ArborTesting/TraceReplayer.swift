@@ -794,9 +794,12 @@ public final class TraceReplayer {
   /// For `ReplayWindowSystem`: the recorded answer to a question that `TraceLine` has no case for, or nil to ask the fake.
   ///
   ///     func isHolding(_ chord: KeyChord) -> Bool { replayer?.answer(read: "isHolding") ?? fake?.isHolding(chord) ?? true }
-  public func answer<T: Decodable>(read name: String, as type: T.Type = T.self) -> T? {
+  ///
+  /// With `about`, only an answer to the question with those arguments: of two windows asked after one stimulus each gets its own.
+  public func answer<T: Decodable>(read name: String, about arguments: [any Encodable]? = nil, as type: T.Type = T.self) -> T? {
+    let wanted = arguments?.map { TraceJSON(encoding: $0) }
     for index in unconsumedResponse() {
-      if case .other(.read, name, _, let result?) = entries[index].line {
+      if case .other(.read, name, let asked, let result?) = entries[index].line, wanted == nil || wanted == asked {
         consumed[index] = true
         return result.decoded()
       }
@@ -1111,6 +1114,9 @@ private final class ReplayWindowSystem: WindowSystem {
   func modifierKeysDown() -> KeyChord.Modifiers { replayer?.answer(read: "modifierKeysDown") ?? fake?.modifierKeysDown() ?? [] }
   /// A trace without the answer was recorded by an Arbor that did not ask, and stood aside for nobody.
   func macTiling() -> MacTiling { replayer?.answer(read: "macTiling") ?? .off }
+  func whereabouts(of window: WindowID) -> Whereabouts {
+    replayer?.answer(read: "whereabouts", about: [window]) ?? fake?.whereabouts(of: window) ?? .unknown
+  }
   func openApplication(_ app: String) -> Bool {
     replayer?.answer(call: "openApplication", [app])?.decoded() ?? fake?.openApplication(app) ?? false
   }

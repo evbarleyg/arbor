@@ -224,7 +224,7 @@ public final class ChaosRunner {
     beforeTheNextCheck = nil
     noteWhereItsUserLeftEachWindow(after: action, movesBefore: movesBefore)
     noteAfterTheSevenRules(action, movesBefore: movesBefore)
-    return found + wayHomeViolations(after: action) + raiseViolations(after: action) + check(after: action)
+    return found + wayHomeViolations(after: action) + raiseViolations(after: action) + undoneViolations(after: action) + check(after: action)
   }
 
   /// Where somebody other than Arbor last put each window, as seen from the corner of the display that shows most of it, and

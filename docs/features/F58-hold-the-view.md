@@ -63,6 +63,8 @@ Shipped (2026-10-14): what is under Behaviour as the product owner changed it on
   So the hold has a key, and every refusal names it. `theKeyThatPausesReleasesAHeldViewAndMovesNothing` and the six tests after it.
 - **A held view never widens by itself** (criterion 4, and "if the space becomes empty the hold ends"). Minimized, hidden and closed are treated like full screen: the display shows the wallpaper and stays held.
   `whenTheOnlyWindowInViewClosesTheViewStaysHeldAndEmpty` and the five tests after it.
+  On a Mac the minimized half of that did not hold until 2026-10-15: the window flew to the Dock and straight back, because the keyboard was sent back to it as it landed, and that raises it. It is asked
+  first now (`TheFlightToTheDockTests`, scenario `58-minimized-in-front-of-an-audience.sim`, `check-F58.sh`, step 3e). Not shipped: the line on screen that says that the keyboard is in a window out of view.
 - `holdStillWhileMicrophoneIsOn` ships false until two checks on a Mac (docs/TESTING.md); `com.apple.FaceTime` is no longer in `holdStillFor`.
 
 Beyond the spec, each logged in `collab/QUESTIONS.md`:

@@ -167,10 +167,37 @@ extension Controller {
   /// Asks macOS to give `window` the keyboard, and remembers having asked until macOS has got there. Across apps a Mac moves the
   /// keyboard only after the call has returned: whoever asks it in the same breath who has the keyboard is told the old window.
   /// `keyboardFocus()` knows better. (Nothing comes into view for it, and nobody is told: that is `giveFocus`.)
+  ///
+  /// For a window its person has named or pointed at. One that Arbor picks by itself goes through `sendTheKeyboard(to:)`.
   func askForTheKeyboard(for window: WindowID) {
     let replaced = focusRequest
     system.focus(window)
     noteFocusRequest(for: window, replacing: replaced)
+  }
+
+  /// `askForTheKeyboard` for a window that Arbor has picked by itself: the keyboard has to go somewhere, or back. A person's ⌘M is never undone,
+  /// so the window is asked first, then and there, where it is. It may have landed in the Dock: its app names its next window, which is
+  /// why Arbor is looking for somebody to give the keyboard to, a moment before it reports the minimizing, and the request would
+  /// fetch the window back out. Returns false if it was not made, for that reason or because the window's app does not say: what cannot
+  /// be found out is no leave to act, and there may be another to pick. (Whoever names a window gets it, out of the Dock too: what
+  /// they ask for last counts. And a request to an app that hangs waits there until it wakes, which a question would forestall.)
+  func sendTheKeyboard(to window: WindowID) -> Bool {
+    let whereabouts = window == namedWindow ? .here : system.whereabouts(of: window)
+    guard whereabouts == .here else {
+      Log.info("\(window) \(whereabouts == .unknown ? "does not say where it is" : "is in the Dock or gone"): the keyboard is not sent to it")
+      return false
+    }
+    askForTheKeyboard(for: window)
+    return true
+  }
+
+  /// Runs `move`, which moves the view on the way to `window`, named by its person. A view that moves takes the keyboard along and picks that very
+  /// window as a rule. It is asked nothing then, as at the request that follows.
+  func onTheWay(to window: WindowID, _ move: () -> Void) {
+    let outer = namedWindow
+    namedWindow = window
+    defer { namedWindow = outer }
+    move()
   }
 
   private func noteFocusRequest(for window: WindowID, replacing replaced: FocusRequest?) {

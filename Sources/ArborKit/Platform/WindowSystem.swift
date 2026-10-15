@@ -174,6 +174,13 @@ public protocol WindowSystem: AnyObject {
   /// macOS takes the window, Arbor stands aside (`MacTiling`). No default: in a wrapper that forgot to pass it on, the fight
   /// over the window would be back in silence.
   func macTiling() -> MacTiling
+
+  /// Asks the window itself, now, where it is. What was last reported does not tell: when a window has landed in the Dock its app names its
+  /// next window first and reports the minimizing up to 32 ms later, and `focus` and `raise` fetch a minimized window out of the Dock.
+  /// Given the keyboard in between it comes straight back, and its person's ⌘M is undone. (One that is still on its way there answers
+  /// when it has landed: its app answers nobody meanwhile.) No default: in a wrapper that forgot to pass it on, windows would
+  /// come back out of the Dock in silence.
+  func whereabouts(of window: WindowID) -> Whereabouts
 }
 
 extension WindowSystem {
@@ -201,6 +208,14 @@ extension WindowSystem {
     defer { stop() }
     return setFrame(frame, of: window)
   }
+}
+
+/// What a window says of itself when it is asked (`WindowSystem.whereabouts`).
+public enum Whereabouts: String, Codable, Sendable {
+  case here
+  case inTheDockOrGone
+  /// Its app does not answer, or Arbor may not ask.
+  case unknown
 }
 
 /// Notifications from a `WindowSystem`. All arrive on the main actor.

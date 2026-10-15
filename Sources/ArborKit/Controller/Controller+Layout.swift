@@ -434,7 +434,7 @@ extension Controller {
       // Back in view, at the place in macOS's order that it had. A guest raised over its host would cover the very
       // window its person has just switched to, which is how ⌘Tab brings a view back. ⌃⌥D shows all that floats.
       // Only a window kept in view is raised: pinned while it was out of view, this is the raise at the pin.
-      if parked.remove(window) != nil, workspace.staysInView(window) { system.raise(window) }
+      if parked.remove(window) != nil, workspace.staysInView(window) { raiseIfItIsThere(window) }
     }
   }
 
@@ -690,7 +690,7 @@ extension Controller {
   /// given the focus would cover a guest that was used after it.
   @discardableResult
   func ensureFocusIsVisible(
-    on displayID: DisplayID, alsoFromAPinnedWindow: Bool = false, alsoFromNothing: Bool = true
+    on displayID: DisplayID, alsoFromAPinnedWindow: Bool = false, alsoFromNothing: Bool = true, notTo asked: Set<WindowID> = []
   ) -> Bool {
     // A command that moves the view says where the attention goes, so the keyboard goes along, also out of a
     // pinned window, which is still in view: keys meant for the window that arrived must not end up in a call.
@@ -700,12 +700,13 @@ extension Controller {
         parked.contains($0) || (alsoFromNothing && windows[$0]?.isMinimized == true)
           || (alsoFromAPinnedWindow && staysInView($0))
       } ?? alsoFromNothing
-    return nobody && giveTheKeyboardToTheView(on: displayID)
+    return nobody && giveTheKeyboardToTheView(on: displayID, notTo: asked)
   }
 
-  /// The choice itself, for a caller that knows the keyboard has to come (a peek that landed beside it).
+  /// The choice itself, for a caller that knows the keyboard has to come (a peek that landed beside it). `asked`: those the caller has
+  /// asked already, in vain. Each question is a round trip to an app.
   @discardableResult
-  func giveTheKeyboardToTheView(on displayID: DisplayID) -> Bool {
+  func giveTheKeyboardToTheView(on displayID: DisplayID, notTo asked: Set<WindowID> = []) -> Bool {
     guard let layout = layouts[displayID], let workspace = workspaces[displayID] else { return false }
     // The layout can be a moment behind the windows (an app being hidden is laid out once all are reported).
     var candidates = layout.windowFrames.filter { windows[$0.key]?.isPresent == true }
@@ -724,11 +725,12 @@ extension Controller {
     }
     let cursor = system.cursorLocation()
     let underPointer = ordered.filter { $0.value.contains(cursor) }
-    let target =
-      focusHistory.first { candidates[$0] != nil }
-      ?? (underPointer.first { workspace.isFloating($0.key) } ?? underPointer.first ?? ordered.first)?.key
-    if let target { askForTheKeyboard(for: target) }
-    return target != nil
+    let byChoice =
+      focusHistory.filter { candidates[$0] != nil }
+      + (underPointer.filter { workspace.isFloating($0.key) } + underPointer + ordered).map(\.key)
+    // The first that is there to take it: the one used last may have landed in the Dock, which is why the keyboard has to go somewhere.
+    var asked = asked
+    return byChoice.contains { asked.insert($0).inserted && sendTheKeyboard(to: $0) }
   }
 
   /// Whether the view is on one space that is not a group: a window, a tab group, the Desktop. Then the level is kept:

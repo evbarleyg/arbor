@@ -210,6 +210,7 @@ extension Controller {
   /// and how long apart in seconds.
   static let pinChecks = 3
   static let pinCheckInterval = 0.2
+  static let pinChecksWhileAnAppHangs = 60
 
   /// Called with every change observers hear of. Being in view is worth little behind the window
   /// that just arrived or was just clicked, and macOS has no way to keep another app's window
@@ -249,31 +250,50 @@ extension Controller {
 
   private func checkPinnedWindows() {
     guard isRunning else { return }
-    raisePinnedWindows()
+    let allSaid = raisePinnedWindows()
     // A click is not over until the button is up.
     if !system.isMouseButtonDown() { pinChecksLeft -= 1 }
-    guard pinChecksLeft > 0 else { return }
-    scheduler.schedule("raise-pins", after: Self.pinCheckInterval) { [weak self] in self?.checkPinnedWindows() }
+    // An app that hangs does not say where its window is, and a raise that is not made does not wait with it until it wakes. So Arbor
+    // looks again once a second, for a minute: asking an app that is known to hang costs nothing.
+    guard pinChecksLeft > 0 || (!allSaid && pinChecksLeft > -Self.pinChecksWhileAnAppHangs) else { return }
+    scheduler.schedule("raise-pins", after: pinChecksLeft > 0 ? Self.pinCheckInterval : 1) { [weak self] in self?.checkPinnedWindows() }
   }
 
   /// Brings the pinned windows that another window covers in front of it. The keyboard stays where it
-  /// is. One that nothing covers is left alone: raising asks its app, which may be busy with a call.
-  func raisePinnedWindows() {
+  /// is. One that nothing covers is left alone: raising asks its app, which may be busy with a call. Returns false if one that is covered
+  /// was not raised because its app does not say where it is.
+  @discardableResult
+  func raisePinnedWindows() -> Bool {
     let pins = workspaces.keys.sorted()
       .flatMap { workspaces[$0]!.pinnedWindows + [workspaces[$0]!.summoned?.window].compactMap { $0 } }
       .filter { windows[$0]?.isPresent == true && isManaged($0) && !parked.contains($0) }
     let frontToBack = system.windowsFrontToBack()
     let covered = pins.filter { isCovered($0, by: frontToBack, apartFrom: pins) }
     // Nearly every look ends here. Who has the keyboard is a question to the app in front, which is being worked in.
-    guard !covered.isEmpty else { return }
+    guard !covered.isEmpty else { return true }
     // A pinned window with the keyboard is in front already, and the others must not cover it.
-    if let focused = system.focusedWindow(), pins.contains(focused) { return }
+    if let focused = system.focusedWindow(), pins.contains(focused) { return true }
     // The one used last ends up in front of the other pinned windows, as it was.
     func recency(_ window: WindowID) -> Int { focusHistory.firstIndex(of: window) ?? Int.max }
+    var allSaid = true
     for window in covered.sorted(by: { (recency($0), $0) > (recency($1), $1) }) {
-      system.raise(window)
-      Log.debug("raised \(window), which stays in view")
+      switch raiseIfItIsThere(window) {
+      case .here: Log.debug("raised \(window), which stays in view")
+      case .inTheDockOrGone: break
+      case .unknown: allSaid = false
+      }
     }
+    return allSaid
+  }
+
+  /// A raise fetches a window out of the Dock, like the one that is part of giving a window the keyboard (`sendTheKeyboard`), and a press on the yellow
+  /// button of a window kept in view is a press like any other: Arbor looks at what is kept in view while that window lands. So it is asked
+  /// first, and raised only if it says that it is there. Returns what it said.
+  @discardableResult
+  func raiseIfItIsThere(_ window: WindowID) -> Whereabouts {
+    let whereabouts = system.whereabouts(of: window)
+    if whereabouts == .here { system.raise(window) }
+    return whereabouts
   }
 
   /// Whether a window Arbor knows, other than `others`, lies over part of `window`. What Arbor does

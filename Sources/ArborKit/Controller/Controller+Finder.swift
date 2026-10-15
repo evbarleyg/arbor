@@ -283,10 +283,12 @@ extension Controller {
       // Now, rather than when the reports come in (Controller+Focus.swift), so that the command does what it says
       // whether or not the window gets the keyboard. The view is picked as if the window were back already,
       // it takes its place there when macOS says it is, and the reports then find nothing to do.
-      bringIntoView(id, onItsWayBack: !snapshot.isPresent)
-      // How small a window can be, Arbor learns by trying (and has forgotten since it was last launched). One that refused
-      // its slot is a tile now: it is framed at once, not when macOS reports that a window out of view has the keyboard.
-      if windows[id]?.isPresent == true, parked.contains(id) { bringIntoView(id) }
+      onTheWay(to: id) {
+        bringIntoView(id, onItsWayBack: !snapshot.isPresent)
+        // How small a window can be, Arbor learns by trying (and has forgotten since it was last launched). One that refused
+        // its slot is a tile now: it is framed at once, not when macOS reports that a window out of view has the keyboard.
+        if windows[id]?.isPresent == true, parked.contains(id) { bringIntoView(id) }
+      }
     }
     // Otherwise focusing it makes macOS switch Spaces. Moving the camera now would rearrange the Space the user is
     // about to leave; the camera follows the focus report once the window's own Space shows.

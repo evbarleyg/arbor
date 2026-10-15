@@ -57,8 +57,8 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [order-of-reports](#order-of-reports) | 27 | 3 | 9 | 8 | 5 | 5 | 15 | 1 | 3 | 8 | 4 |
 | [missing-report](#missing-report) | 40 | 7 | 12 | 6 | 4 | 18 | 21 | 1 | 4 | 14 | 10 |
 | [extra-report](#extra-report) | 8 | 0 | 3 | 3 | 0 | 2 | 6 | 0 | 0 | 2 | 0 |
-| [late-or-partial-answer](#late-or-partial-answer) | 43 | 8 | 10 | 14 | 6 | 13 | 27 | 0 | 5 | 11 | 13 |
-| [second-actor](#second-actor) | 44 | 6 | 12 | 16 | 9 | 7 | 26 | 0 | 4 | 14 | 8 |
+| [late-or-partial-answer](#late-or-partial-answer) | 44 | 9 | 10 | 14 | 7 | 13 | 27 | 0 | 6 | 11 | 13 |
+| [second-actor](#second-actor) | 45 | 6 | 13 | 16 | 9 | 7 | 27 | 0 | 4 | 14 | 8 |
 | [geometry](#geometry) | 29 | 1 | 7 | 12 | 8 | 2 | 16 | 1 | 2 | 10 | 7 |
 | [identity](#identity) | 28 | 4 | 6 | 5 | 6 | 11 | 11 | 1 | 2 | 14 | 7 |
 | [permissions](#permissions) | 22 | 8 | 6 | 3 | 3 | 10 | 11 | 2 | 2 | 7 | 4 |
@@ -67,14 +67,14 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [looks](#looks) | 18 | 0 | 0 | 0 | 1 | 17 | 1 | 2 | 3 | 12 | 4 |
 | [never-exercised](#never-exercised) | 16 | 7 | 2 | 13 | 0 | 1 | 0 | 0 | 15 | 1 | 16 |
 | [toolchain](#toolchain) | 41 | 1 | 0 | 1 | 4 | 36 | 23 | 1 | 0 | 17 | 6 |
-| **all** | 422 | 59 | 80 | 109 | 67 | 166 | 204 | 19 | 53 | 146 | 99 |
+| **all** | 424 | 60 | 81 | 109 | 68 | 166 | 205 | 19 | 54 | 146 | 99 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
-| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 137 | 88 | 41 | 13 | 32 | 51 |
-| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 146 | 91 | 108 | 0 | 10 | 28 |
+| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 138 | 89 | 41 | 13 | 33 | 51 |
+| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 147 | 92 | 109 | 0 | 10 | 28 |
 | controller | in the controller or the core, given reports that were right | 25 | 13 | 13 | 0 | 1 | 11 |
 | test | in a test, a script or a harness that expected the wrong thing | 74 | 0 | 19 | 5 | 8 | 42 |
 | machine | in the machine, the toolchain or the way things are built and installed | 40 | 3 | 23 | 1 | 2 | 14 |
@@ -161,6 +161,7 @@ No guard, or only a script that somebody has to start.
 |---|---|---|---|---|
 | [an-event-stuck-in-a-tap-is-overtaken-by-later-ones](#an-event-stuck-in-a-tap-is-overtaken-by-later-ones) | 1 | below the seam | cannot | not guarded |
 | [appkit-draws-an-images-handler-on-any-thread](#appkit-draws-an-images-handler-on-any-thread) | 1 | below the seam | cannot | not guarded |
+| [an-app-answers-nobody-while-its-window-flies-to-the-dock](#an-app-answers-nobody-while-its-window-flies-to-the-dock) | 1 | below the seam | no | only when somebody starts a script |
 | [another-tools-event-tap-sees-arbors-replays](#another-tools-event-tap-sees-arbors-replays) | 1 | below the seam | cannot | only when somebody starts a script |
 | [the-space-change-notice-comes-mid-transition](#the-space-change-notice-comes-mid-transition) | 1 | below the seam | cannot | only when somebody starts a script |
 | [a-tap-is-born-switched-on](#a-tap-is-born-switched-on) | 2 | below the seam | cannot | not guarded |
@@ -190,6 +191,7 @@ So no test on Linux can meet it. (Those they play partly are not listed: see eac
 |---|---|---|---|---|
 | [a-size-clipped-by-the-screen-was-taken-for-the-apps-refusal](#a-size-clipped-by-the-screen-was-taken-for-the-apps-refusal) | 1 | controller | no | not guarded |
 | [with-fns-flag-on-the-event-arbors-letter-keys-are-not-arbors](#with-fns-flag-on-the-event-arbors-letter-keys-are-not-arbors) | 1 | below the seam | no | not guarded |
+| [an-app-answers-nobody-while-its-window-flies-to-the-dock](#an-app-answers-nobody-while-its-window-flies-to-the-dock) | 1 | below the seam | no | only when somebody starts a script |
 | [a-child-has-its-parents-permission](#a-child-has-its-parents-permission) | 1 | below the seam | no | guarded only on ci's macs |
 | [stage-manager-rearranges-windows-on-its-own](#stage-manager-rearranges-windows-on-its-own) | 1 | at the seam | no | guarded without a mac |
 | [tap-to-click-is-up-before-finder-has-answered](#tap-to-click-is-up-before-finder-has-answered) | 1 | below the seam | no | guarded without a mac |
@@ -1199,6 +1201,18 @@ Late or partial answers: a call returns before the deed, after it, with half of 
 - **Arbor copes:** TapHealth counts what is found off like what is reported off, one count for all the taps of the thread, and leaves them off for thirty seconds after three switch-offs in ten. `reviveIfSwitchedOff` looks once a second for a tap that is off without a word.
 - **Read in:** `Tests/ArborCoreTests/PointerInputTests.swift`, `docs/ARCHITECTURE.md`, `Sources/ArborKit/Input/EventTap.swift`, `Sources/ArborCore/TapHealth.swift`, `collab/BACKLOG.md`
 
+### an-app-answers-nobody-while-its-window-flies-to-the-dock
+
+*hurt 1 · below the seam · touches `slow`*
+
+- **Expected:** A minimize is over when it is asked for, and an app answers Accessibility at any time.
+- **Happened:** The flight takes 0.50 to 0.66 s from the key, the button or the call, and for all of it the whole app answers nobody: a read of another window of the app, asked in flight, takes the rest of the flight (474 to 743 ms), polled every 4 ms or every 50 alike. The window server lists the window on screen all the way, its bounds changing from 25 to 90 ms after the hand, then not at all. The box first widens toward the Dock's slot (480 to 712 points) before it shrinks: for a quarter of a second the window server has the window over its neighbour, and whoever reads its list then sees an overlap. Reduce Motion changes none of it. The three notifications, focused window, main window, miniaturized, come when the window has landed, in that order.
+- **Found by:** The same probe of macOS alone: 64 rounds on a hosted Mac, macOS 26.6.2. Days with real apps had recorded the shrinking bounds before.
+- **Stand-ins play it:** **no**
+- **Guard:** `tool: mac-shell/probe-flight.sh` (by hand)
+- **Arbor copes:** Sources/ArborKit/AX/AXWindowSystem.swift hears of a minimize when the flight is over, so nothing has to cope with the flight itself. Whatever Arbor asks of that app meanwhile for another reason waits on the main thread for up to the rest of the flight, which is under the second after which an app counts as hung.
+- **Read in:** `scripts/mac-shell/probe-flight.sh`
+
 ### finder-answers-late-by-halves-or-not-at-all
 
 *hurt 1 · below the seam · K1534 · K1420 · K1617 · K950 · K073 · touches `input-held`*
@@ -1790,6 +1804,18 @@ A second actor: macOS, an app or another tool moves things too.
 - **Guard:** `test: aNewWindowIsCreatedThenFocused`; `test: aLateFloatOfAWindowTheViewWentToIsBackWhereItOpened`; `test: fromAViewOnOneWindowNobodyElseComesAndGoes`
 - **Arbor copes:** Controller.bringIntoViewIfFocused: the view follows a window that really has the keyboard, by decision; docking by command does not pull the view.
 - **Read in:** `Sources/ArborTesting/FakeWindowSystem.swift`, `collab/BACKLOG.md`
+
+### a-raise-fetches-a-minimized-window-out-of-the-dock
+
+*hurt 2 · at the seam · touches `moved-unasked`, `focus`, `flash`*
+
+- **Expected:** Giving a window the keyboard, or raising it, does nothing to a window that is minimized. The stand-in gave the keyboard to a window that stayed in the Dock, and minimized a window whatever was asked of it meanwhile.
+- **Happened:** AXRaise fetches a minimized window out of the Dock, one that has only just landed (16 of 16) and one at rest there (4 of 4), and the call takes as long as the flight out: 0.53 to 0.58 s. Making it the main window does nothing to it (8 of 8). Between the naming of the app's next window and the report of the minimizing, 0 to 32 ms, a raise also holds that report back, and the sibling's "main window changed" with it: "miniaturized" and "deminiaturized" then come within a millisecond of each other when the window is out again, and whoever looks at it finds it not minimized. On a held view Arbor sent the keyboard back to the window that was shown as soon as another was named: minimized in front of an audience, it flew to the Dock and straight back, and seven checks of "held and empty" were green over a view that had never been empty. The trace of that was first read as macOS naming the next window half a second early. It was Arbor's own raise that took the half second: a trace with Arbor running shows what macOS does to Arbor's doings, and what macOS does by itself takes a round without Arbor.
+- **Found by:** The first run of the hold's checks on a hosted Mac, by reading its trace behind the green checks; then a probe of macOS alone, no Arbor running: 64 rounds on a hosted Mac, macOS 26.6.2, posted events, the app in front, two windows each of the test app and TextEdit, by ⌘M, the yellow button and Accessibility, with Reduce Motion on and off. With the stand-in made true and nothing else changed, five tests of the hold turned red by themselves.
+- **Stand-ins play it:** yes (`FakeWindowSystem.focus`, `FakeWindowSystem.raise`, `FakeWindowSystem.landInTheDock`, `FakeWindowSystem.reportTheLanding`, `FakeWindowSystem.whereabouts`)
+- **Guard:** `test: givenTheKeyboardAWindowThatHasJustLandedComesStraightBack`; `test: onAHeldViewTheWindowThatIsShownStaysInTheDock`; `test: aMinimizedWindowIsAwayAndComesBackToTheSameView`; `test: aWindowKeptInViewIsNotRaisedOutOfTheDock`; `test: theNetSpeaksWhenAMinimizedWindowIsBack`; `scenario: 58-minimized-in-front-of-an-audience.sim`; `e2e: W1 stays in the Dock` (by hand); `tool: mac-shell/probe-flight.sh` (by hand)
+- **Arbor copes:** Controller.sendTheKeyboard, for a window that Arbor picks by itself, and Controller.raiseIfItIsThere ask the window first where it is (WindowSystem.whereabouts, a read of AXMinimized that was answered yes in 0 to 2 ms, 20 of 20) and leave alone one that says it is minimized or is gone: it stayed in the Dock 16 of 16. One whose app does not answer is not sent the keyboard either, and a window kept in view is looked at again once a second until its app wakes. Whoever names a window gets it, unasked: Go to… and a command with a window's number fetch it out of the Dock, since what a person asks for last counts, and a request to an app that hangs waits there until it wakes. The walks' net minimize-undone speaks whenever a window that has just been minimized is not.
+- **Read in:** `scripts/mac-shell/probe-flight.sh`, `scripts/mac-shell/check-F58.sh`, `collab/QUESTIONS.md`, `Sources/ArborTesting/FakeWindowSystem.swift`, `Sources/ArborKit/Controller/Controller+KeyboardFocus.swift`
 
 ### a-restored-window-takes-the-keyboard-in-its-corner
 

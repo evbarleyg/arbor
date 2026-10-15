@@ -270,6 +270,8 @@ public final class Controller {
   public var openWelcomeWindow: ((OnboardingFlow.Page) -> Void)?
   /// How many more times to look whether a pinned window is covered (Controller+Pin.swift).
   var pinChecksLeft = 0
+  /// The window a command is on its way to (`onTheWay(to:)`).
+  var namedWindow: WindowID?
   /// Whether and how the view is held (Controller+Hold.swift).
   var hold = Hold()
   /// The shortcut that released a held view, until it comes up. It outlives the hold.

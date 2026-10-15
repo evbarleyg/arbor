@@ -7,6 +7,14 @@ extension FakeWindowSystem {
     guard windows[window] != nil else { return }
     raiseLog.append(window)
     bringToFront(window)
+    // It becomes its app's focused window as well, which is the keyboard if that app is in front.
+    if comesOutOfTheDockIfRaised(window) {
+      if let holder = focused, windows[holder]?.snapshot.pid == windows[window]?.snapshot.pid {
+        focused = window
+        if echoes.focus { undelivered.append(.focus(window)) }
+      }
+      if echoes.focus { undelivered.append(.cameBack(window)) }
+    }
   }
 
   /// Focusing or raising a window brings it to the front. Windows that never were lie behind the

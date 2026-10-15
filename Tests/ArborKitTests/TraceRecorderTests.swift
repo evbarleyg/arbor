@@ -988,6 +988,7 @@ final class SpyWindowSystem: WindowSystem {
   func stackedWindows() -> [StackedWindow] { [] }
   func modifierKeysDown() -> KeyChord.Modifiers { [.command] }
   func macTiling() -> MacTiling { MacTiling(screenEdges: true, menuBar: false, optionKey: true) }
+  func whereabouts(of window: WindowID) -> Whereabouts { window == WindowID(5) ? .inTheDockOrGone : .here }
   func openApplication(_ app: String) -> Bool {
     calls.append("openApplication \(app)")
     return true

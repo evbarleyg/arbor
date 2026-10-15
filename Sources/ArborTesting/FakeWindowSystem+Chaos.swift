@@ -47,6 +47,8 @@ extension FakeWindowSystem {
 
   /// Whether `appsReact()` has anything to deliver.
   public var hasHeldEchoes: Bool { !undelivered.isEmpty }
+  /// Whether `window` has come out of the Dock because it was given the keyboard, and its app has still to say so.
+  public func hasStillToReportThatItCameBack(_ window: WindowID) -> Bool { undelivered.contains(.cameBack(window)) }
 
   /// Delivers the echoes held back since the last call (`holdsEchoes`), in order; what Arbor's reactions queue
   /// meanwhile waits for the next call. A window that snaps back does so instead of echoing, which looks like a user's move.
@@ -68,6 +70,8 @@ extension FakeWindowSystem {
       case .focus(let window):
         if windows[window] != nil { events?.windowFocused(window) }
       case .keyboardMoved: events?.keyboardFocusMoved()
+      case .cameBack(let window):
+        if let fake = windows[window] { events?.windowChanged(fake.snapshot, userInitiated: true) }
       }
     }
   }

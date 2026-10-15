@@ -12,6 +12,8 @@
 # On somebody's own Mac it touches only its test windows, the pointer and the keyboard focus. There the harness leaves out
 # the grey wallpaper, the virtual display and every picture of the whole screen (ARBOR_SHOTS=1 takes those), and with the
 # pictures the measuring in parts 1 and 2; everything that is a check still runs. Quit your own Arbor first: both would take ⌃⌥.
+# What macOS reported and what Arbor asked of it comes back as a trace of every launch (docs/TRACES.md).
+ARBOR_RECORD=1
 source "$(dirname "$0")/lib.sh"
 
 arbor_build
@@ -35,7 +37,9 @@ log_since() {
   LOG_MARK=$(wc -l < "$ARBOR_HOME/arbor.log")
 }
 # The first line of the summary: the display, its view and whether Back has somewhere to go.
-view() { summary | head -n 1; }
+# Where the view is, without what macOS leaves of the display: four windows minimized into the Dock made it five points lower at the first run on a Mac, and
+# two checks took that for a view that had moved.
+view() { summary | head -n 1 | sed 's/, visible [^,]*//'; }
 view_is() { [ "$(view)" = "$1" ]; }
 status_says() { "$ARBOR_BIN/arborctl" status | grep -q "$1"; }
 # Away from the edges, and in the same place in every picture that is compared with another.
@@ -53,6 +57,53 @@ edges() {
 as_seen() {
   echo "  window $1: window server $(real_frame_of "$1"), share on a display $(pointer visible "$1"), $(pointer windows | awk -v id="$1" '$1 == id { print "on-screen list: " $8 }')"
 }
+
+# look_on <name> <seconds>: from now on, in the background, a picture of the main display about twice a second and, as fast as the tool answers, how much of each window
+# that is out of view lies on a display. looked_on waits for both and says what they saw; WATCHED is the most of a window that lay on a display.
+# In the background, because display_add is seconds at work. At the first run on a Mac the script slept while the displays changed, and only the trace told
+# that macOS had put all four in plain view for almost two seconds. The share is the window server's frame against the displays: whether something covered it, the pictures tell.
+look_on() {
+  local until=$((SECONDS + $2)) began
+  LOOK=$1
+  began=$(arbor_now)
+  (
+    while [ "$SECONDS" -lt "$until" ]; do
+      line=""
+      for id in "$W2" "$W3" "$X1" "$X2"; do line="$line $id:$("$ARBOR_POINTER" visible "$id" 2>/dev/null)"; done
+      echo "$(echo "$(arbor_now) - $began" | bc) s$line"
+    done > "$ARBOR_OUT/$LOOK-shares.txt"
+  ) 9>&- 8>&- &
+  LOOK_SHARES_PID=$!
+  (
+    round=1
+    while [ "$SECONDS" -lt "$until" ]; do
+      shot "$LOOK-$round"
+      round=$((round + 1))
+      sleep 0.3
+    done > "$ARBOR_OUT/$LOOK-shots.txt" 2>&1
+  ) 9>&- 8>&- &
+  LOOK_SHOTS_PID=$!
+}
+looked_on() {
+  local looks unanswered first last
+  check "$LOOK: both lookers came to an end" ended "$LOOK_SHARES_PID" 200
+  ended "$LOOK_SHOTS_PID" 200 || kill "$LOOK_SHOTS_PID" 2>/dev/null
+  read -r looks unanswered WATCHED first last <<< "$(awk '
+    { shown = 0
+      for (i = 3; i <= NF; i++) {
+        split($i, part, ":")
+        if (part[2] !~ /^[0-9.]+$/) { unanswered++; continue }
+        if (part[2] + 0 > most) most = part[2] + 0
+        if (part[2] + 0 > 0.02) shown = 1
+      }
+      if (shown) { if (first == "") first = $1; last = $1 }
+    }
+    END { print NR + 0, unanswered + 0, most + 0, (first == "" ? "-" : first), (last == "" ? "-" : last) }' "$ARBOR_OUT/$LOOK-shares.txt")"
+  echo "$LOOK: $looks looks, $(grep -c "^shot:" "$ARBOR_OUT/$LOOK-shots.txt") pictures; the most of a window on a display: $WATCHED; from $first s to $last s"
+  awk '{ for (i = 3; i <= NF; i++) { split($i, part, ":"); if (part[2] + 0 > 0.02) { print "  " $0; next } } }' "$ARBOR_OUT/$LOOK-shares.txt" | sed -n '1,3p;$p'
+  check "$LOOK: there were looks, and each got an answer" test "$looks" -ge 5 -a "$unanswered" -eq 0
+}
+hardly() { [ "$(echo "$1" | awk '{ print ($1 <= 0.02) ? "yes" : "no" }')" = yes ]; }
 
 # Mid grey shows both what is darker than the wallpaper (shadows) and what is lighter (title bars).
 wallpaper '#808080'
@@ -142,9 +193,10 @@ step "2b. what the pickers of Zoom, Meet and Teams are told, and what sharing on
 # Without Screen Recording all of these raise macOS's dialog, which stays on the screen of whoever owns the Mac.
 if on_throwaway_mac || [ "$(pointer screen-access)" = true ]; then
 probe shareable "$W1" "$W2" "$W3" "$X1" "$X2"
-probe capture "$W2" "$ARBOR_OUT/share-one-window-out-of-view.png"
+# At the first run on a Mac the tool fell over at both, nothing went red, and the two pictures were missing.
+check "ScreenCaptureKit gives a picture of a window that is out of view" probe capture "$W2" "$ARBOR_OUT/share-one-window-out-of-view.png"
 probe colours "$ARBOR_OUT/share-one-window-out-of-view.png"
-probe capture "$W1" "$ARBOR_OUT/share-one-window-in-view.png"
+check "and of the one in view" probe capture "$W1" "$ARBOR_OUT/share-one-window-in-view.png"
 probe colours "$ARBOR_OUT/share-one-window-in-view.png"
 look share-one-window-the-old-way "$X2"
 probe colours "$ARBOR_OUT/share-one-window-the-old-way.png"
@@ -235,19 +287,41 @@ else
   check "⌃⌥⇧F could be pressed" false
 fi
 for id in "$W2" "$W3" "$X1" "$X2"; do check "window $id is still out of view" is parked "$id"; done
-# ⌘M on the window being shown.
-ax set "$P1" "$W1" AXMinimized yes
-sleep 1.5
-shot held-and-empty
-check "the view is still held" status_says "the view is held"
-for id in "$W2" "$W3" "$X1" "$X2"; do check "with W1 minimized, window $id is still out of view" is parked "$id"; done
-ax set "$P1" "$W1" AXMinimized no
-check "restored, W1 is where it was" eventually is in_slot "$W1"
-check "the view did not move" view_is "$HELD"
+# The window being shown is minimized, in each of the three ways there are. A person's ⌘M is never undone: at the first run on a Mac W1 flew to the Dock and straight
+# back. When a window has landed its app names its next window, which is out of view here, and reports the minimizing 0 to 32 ms later. In between Arbor sent the
+# keyboard back to W1, and the raise that is part of that fetches a window out of the Dock. Now W1 is asked first where it is, and says itself that it is minimized.
+w1_says() { ax list "$P1" | awk -v id="$W1" '$1 == id { print $3 }' | grep -q -x "$1"; }
+log_has() { tail -n "+$((GOING_MARK + 1))" "$ARBOR_HOME/arbor.log" | grep -q "$1"; }
+for way in "Accessibility" "⌘M" "the yellow button"; do
+  check "$way: W1 has the keyboard first" eventually is focused "$W1"
+  GOING_MARK=$(wc -l < "$ARBOR_HOME/arbor.log")
+  case "$way" in
+    Accessibility) ax set "$P1" "$W1" AXMinimized yes ;;
+    ⌘M) key cmd+m ;;
+    *) click_button "$W1" minimize; rest_pointer ;;
+  esac
+  sleep 1.5
+  [ "$way" = Accessibility ] && shot held-and-empty
+  # Or the checks that follow are about a view that was never empty.
+  check "$way: W1 stays in the Dock" fails is on_screen "$W1"
+  check "$way: W1 says that it is minimized" w1_says yes
+  check "$way: and Arbor knows" is minimized "$W1"
+  # Or W1 stayed there for want of anybody who wanted it back.
+  check "$way: its app named a window out of view, and Arbor asked W1 before sending the keyboard back" log_has "w$W1 is in the Dock or gone"
+  check "$way: the view is empty and still held" log_has "hold: nothing is in the view"
+  check "$way: the view is still held" status_says "the view is held"
+  for id in "$W2" "$W3" "$X1" "$X2"; do check "$way: with W1 minimized, window $id is still out of view" is parked "$id"; done
+  ax set "$P1" "$W1" AXMinimized no
+  check "$way: restored, W1 is where it was" eventually is in_slot "$W1"
+  check "$way: the view did not move" view_is "$HELD"
+done
 # ⌃⌥⎋, kept down. Whether macOS repeats a hot key that stays down is what the log says afterwards.
 log_since 0 > /dev/null
 key ctrl+opt+escape --down
-sleep 3
+sleep 0.5
+# A key-down that is posted does not repeat by itself as a key under a finger does.
+key ctrl+opt+escape --repeat 60
+sleep 0.7
 check "⌃⌥⎋ released the hold" not status_says "the view is held"
 check "kept down for three seconds, it did not go on to pause" not status_says "^paused"
 key ctrl+opt+escape --up
@@ -259,7 +333,7 @@ check "held again" status_says "the view is held"
 step "3f. the lock in the menu bar, and the menu"
 shot held-menu-bar
 # shellcheck disable=SC2046
-click $(status_item)
+rightclick $(status_item)
 sleep 0.5
 shot held-menu
 key escape
@@ -310,14 +384,17 @@ summary
 ctl release
 
 step "5. a second display to the right: where do windows go that are out of view, and what does each display show?"
+# First everything into view: W1 may be out of view by now, and a click where its title bar is then is a click off the display.
+ctl show-all
 # shellcheck disable=SC2046
 click $(titlebar_of "$W1")
-ctl show-all
 ctl zoom "$W1"
 check "framed" eventually is parked "$X1"
 ctl hold
+look_on display-comes 9
 if display_add 1280 720 right; then
-  sleep 3
+  looked_on
+  check "held, nothing that is out of view lay on a display while one came (the most: $WATCHED of a window)" hardly "$WATCHED"
   summary
   pointer displays
   for id in "$W2" "$W3" "$X1" "$X2"; do as_seen "$id"; done
@@ -326,10 +403,38 @@ if display_add 1280 720 right; then
   rest_pointer
   shot two-displays
   panorama two-displays-panorama
+
+  # On GitHub's Macs the first virtual display also changes the size of the main one, so that two changes are mixed above. A further one may not.
+  step "5b. held, with two displays: a third comes and goes"
+  main_display() { pointer displays | awk '$2 == 0 && $3 == 0 { print $4, $5 }'; }
+  main_before=$(main_display)
+  look_on third-display-comes 6
+  "$ARBOR_VDISPLAY" add 1280 720 "Arbor Test Display 3" --serial 3 > "$ARBOR_OUT/third-display.txt" 2>> "$ARBOR_OUT/vdisplay.log" 9>&- 8>&- 3>&- &
+  THIRD_PID=$!
+  started "$THIRD_PID"
+  at_exit 'kill_started $THIRD_PID'
+  looked_on
+  pointer displays
+  check "there are three displays" test "$(pointer displays | grep -c .)" -eq 3
+  check "the main display kept its size ($main_before)" test "$(main_display)" = "$main_before"
+  check "held, nothing that is out of view lay on a display while the third came (the most: $WATCHED of a window)" hardly "$WATCHED"
+  check "still held" status_says "the view is held"
+  look_on third-display-goes 6
+  kill -TERM "$THIRD_PID" 2>/dev/null
+  wait "$THIRD_PID" 2>/dev/null
+  looked_on
+  check "the main display kept its size ($main_before)" test "$(main_display)" = "$main_before"
+  check "nor while it went (the most: $WATCHED of a window)" hardly "$WATCHED"
+
+  step "5c. held: the second display goes, and the main one changes its size again"
+  look_on display-goes 6
   display_remove
-  sleep 3
+  looked_on
+  check "held, nothing that is out of view lay on a display meanwhile (the most: $WATCHED of a window)" hardly "$WATCHED"
   summary
   for id in "$W2" "$W3" "$X1" "$X2"; do check "window $id is out of view" eventually is parked "$id"; done
+else
+  looked_on
 fi
 
 step "6. quitting while held brings every window back"

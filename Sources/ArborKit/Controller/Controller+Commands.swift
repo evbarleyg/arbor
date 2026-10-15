@@ -397,7 +397,7 @@ extension Controller {
       }
       return result
     }
-    moveCamera(on: display, to: space)
+    onTheWay(to: id) { moveCamera(on: display, to: space) }
     askForTheKeyboard(for: inFront(of: id, on: display))
     if space == tree.desktop { return .success("showing the Desktop, where \(id) floats") }
     return .success(tree.leaf(containing: id) == nil ? "framed \(name(of: space, on: display))" : "framed \(id)")
