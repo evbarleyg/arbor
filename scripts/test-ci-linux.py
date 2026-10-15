@@ -4,15 +4,19 @@
 One job ran everything, one step after another, and could not forget any. Several can: a new job that the last one does
 not wait for fails without anybody noticing, a job or a step that may be skipped proves nothing, and a step of
 `make check` that no job took over is simply not run (two were not, for as long as the list was kept by hand). So this
-reads .github/workflows/ci.yml and the Makefile and says what does not hold:
+reads .github/workflows/linux.yml, ci.yml, which calls it, and the Makefile, and says what does not hold:
 
-  every job on a Linux runner is named linux-… (but `changes`, and the few that speak for the Mac job), and the job `linux` needs it, and
-  needs no other;
-  `linux` runs whatever became of them and fails unless each succeeded: its script is run here, on made-up results;
+  ci.yml calls linux.yml in a job `linux`, always, and no other workflow; its other jobs on Linux runners are those of NOT_A_CHECK
+  and the few that speak for the Mac job;
+  every job of linux.yml is named linux-…, has a shorter name for its check, and `linux-verdict` needs it, and needs no other;
+  `linux-verdict` runs whatever became of them, and before anything else fails unless each succeeded: that script is run
+  here, on made-up results;
   no Linux job and no step of one has a condition that could skip it, and none may fail and pass all the same;
   every command of `make check`, as it stands there, is a command of some Linux job, and so is what ALSO lists;
-  all of them use the same image, which scripts/linux.sh takes from the first. But one, which is there for its image (an older
-  Swift): it does not stand first, and what it runs counts for nothing above.
+  the jobs that use an image use the same, which scripts/linux.sh takes from the first in linux.yml. But `oldest-swift` in ci.yml,
+  which is there for the oldest Swift that README.md promises: it has another, compiles everything and type-checks the
+  macOS-only code, and what it runs counts for nothing above (or dropping the type-check with the newest would go unnoticed);
+  `tests-whole` runs plain `swift test` and holds it against the record that `linux-verdict` hands on, under the same names.
 
 Then it holds itself to a table of workflows that are wrong in one way each. `make lint` runs this. It reads the files as
 text: the Swift image has no YAML parser, and the few shapes that matter are easy to tell.
@@ -27,18 +31,38 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-VERDICT = "linux"
-# On Linux too, but it decides about the Mac and proves nothing about the code.
-NOT_A_CHECK = {"changes"}
-# On Linux runners because they need no Mac, but what they say is about the macOS job, after which they run and with which they are skipped. Each
-# is a check of its own, by its own name: what real windows said there, whether every test ran there or here, that it had built from nothing.
+PREFIX, VERDICT = "linux-", "linux-verdict"
+# The job of ci.yml that stands for all of them, and what it must say.
+CALLER, CALLED = "linux", "./.github/workflows/linux.yml"
+# Jobs of ci.yml on Linux runners that are not part of the verdict: `changes` decides about the Mac and proves nothing
+# about the code; `tests-whole` runs only where work is integrated, takes twelve minutes, and whoever integrates waits
+# for it by name; `oldest-swift` takes eleven, and whoever lands reads it by name.
+WHOLE_JOB, OLDEST_JOB = "tests-whole", "oldest-swift"
+NOT_A_CHECK = {"changes", WHOLE_JOB, OLDEST_JOB}
+OLDEST_RUNS = ["swift build --build-tests", "make typecheck-mac"]
+# On Linux runners because they need no Mac, but what they say is about the macOS job, after which they run and with which they are
+# skipped. Each is a check of its own, by its own name: what real windows said there, whether every test ran there or here, that it
+# had built from nothing.
 OF_THE_MAC = {"real-windows", "tests-accounted-for", "macos-from-nothing"}
-# There for its image: the oldest Swift that README.md promises.
-OWN_IMAGE = {"linux-oldest-swift"}
+# What that job must run, and what is handed from the verdict to it.
+WHOLE_RUNS = ["swift test", "scripts/fast-tests.py same whole.jsonl linux.tsv"]
+HANDED_ON = ("tests-linux", "linux.tsv")
 # What CI's Linux jobs run beyond `make check`.
-ALSO = ["make typecheck-mac", "scripts/parity.py --report linux.tsv.events --check", "scripts/test-ci-changes.py",
+ALSO = ["make typecheck-mac", "scripts/parity.py --report test-*.jsonl --check", "scripts/test-ci-changes.py",
         "scripts/test-mac-queue.py", "scripts/test-ci-tests.py"]
-# Of `make check`, but no check: it forgets the record of the run before, as ci-tests.py does by itself.
+# What stands for a command of `make check`: all of these together, or it does not count. The tests are divided among several
+# machines (scripts/fast-tests.py): each cuts out its part, builds it and runs it, and one job holds the parts against the sources.
+INSTEAD = {"swift test": [
+    "scripts/fast-tests.py cut $PART $PARTS",
+    "swift build --build-tests",
+    "scripts/fast-tests.py run --no-build --events test-$PART.jsonl",
+    "scripts/fast-tests.py join --record linux.tsv test-*.jsonl",
+], "scripts/test-tooling.py": [
+    # The rows that need a build where there is one, the others, three minutes of them, on a machine of their own.
+    "scripts/test-tooling.py --only scenarios rehearse",
+    "scripts/test-tooling.py --but scenarios rehearse",
+]}
+# Of `make check`, but no check: it forgets the record of the run before, as fast-tests.py does by itself.
 TIDYING = {"rm -f $(TEST_REPORT)"}
 JOB = re.compile(r"""^  ["']?([A-Za-z_][\w-]*)["']?:\s*(?:#.*)?$""")
 KEY = re.compile(r"^(\s*)(?:- )?([\w-]+):\s*(.*)$")
@@ -106,12 +130,15 @@ def plain(command):
         words = words[1:]
     if words and words[0].startswith("./"):
         words[0] = words[0][2:]
-    # `swift test` on everything, which also leaves a record of what ran.
-    if words[:5] == ["scripts/ci-tests.py", "run", "--mode", "full", "--record"] and len(words) > 5:
-        words = ["swift", "test", *words[6:]]
     # And so is `make test`: where the record goes does not change what runs. $(TEST_ARGS) is empty unless somebody fills it.
     if words[:2] == ["swift", "test"] and words[2::2][:2] == ["--event-stream-output-path", "--event-stream-version"]:
         words = ["swift", "test", *(word for word in words[6:] if word != "$(TEST_ARGS)")]
+    # It builds the same, and leaves out the index that only an editor reads.
+    if words[:2] == ["swift", "build"]:
+        words = [word for word in words if word != "--disable-index-store"]
+    # `swift test` on everything, which also leaves a record of what ran.
+    if words[:5] == ["scripts/ci-tests.py", "run", "--mode", "full", "--record"] and len(words) > 5:
+        words = ["swift", "test", *words[6:]]
     return " ".join(words)
 
 
@@ -134,14 +161,39 @@ def verdict_on(script, results):
     return subprocess.run(["bash", "-e", "-c", script], env=environment, capture_output=True, check=False).returncode
 
 
-def problems_in(workflow, makefile):
-    jobs = jobs_of(workflow)
+def problems_in(workflow, makefile, caller):
+    jobs, others = jobs_of(workflow), jobs_of(caller)
+    found = []
+    if values_of(others.get(CALLER, []), "uses", 4) != [CALLED]:
+        found.append(f"ci.yml has no job `{CALLER}` that uses {CALLED}")
+    elif len(others[CALLER]) > 1:
+        found.append(f"ci.yml's job `{CALLER}` says more than what it uses: it must run always, and wait for nothing")
+    found += [f"{name} in ci.yml runs on Linux, so nobody waits for it: it belongs in linux.yml" for name, lines in others.items()
+              if name not in (*NOT_A_CHECK, *OF_THE_MAC) and any("ubuntu" in value for value in values_of(lines, "runs-on"))]
+    found += [f"{name} in ci.yml calls another workflow, whose jobs nothing here looks at" for name, lines in others.items()
+              if name != CALLER and values_of(lines, "uses", 4)]
+    found += [f"{name} is not named {PREFIX}…" for name in jobs if not name.startswith(PREFIX)]
+    found += [f"{name} has no `name:`, so its check would be called `{CALLER} / {name}`" for name, lines in jobs.items()
+              if not values_of(lines, "name", 4)]
+    whole = others.get(WHOLE_JOB, [])
+    ran = {plain(line) for script in scripts_of(whole) for line in script.split("\n")}
+    found += [f"`{WHOLE_JOB}` does not run `{command}`" for command in WHOLE_RUNS if command not in ran]
+    if HANDED_ON[0] not in values_of(whole, "name"):
+        found.append(f"`{WHOLE_JOB}` does not fetch `{HANDED_ON[0]}`")
+    if values_of(whole, "continue-on-error"):
+        found.append(f"{WHOLE_JOB} may fail and pass all the same (continue-on-error)")
+    oldest = others.get(OLDEST_JOB, [])
+    ran = {plain(line) for script in scripts_of(oldest) for line in script.split("\n")}
+    found += [f"`{OLDEST_JOB}` does not run `{command}`" for command in OLDEST_RUNS if command not in ran]
+    if "ALL: 1" not in [line.strip() for line in oldest]:
+        found.append(f"`{OLDEST_JOB}` type-checks only a part of the macOS-only code (ALL: 1)")
+    if values_of(oldest, "if") or values_of(oldest, "needs", 4):
+        found.append(f"{OLDEST_JOB} has a condition, or waits for a job that may be skipped: what is skipped proves nothing")
+    if values_of(oldest, "continue-on-error"):
+        found.append(f"{OLDEST_JOB} may fail and pass all the same (continue-on-error)")
     if VERDICT not in jobs:
-        return [f"there is no job `{VERDICT}`"]
-    parts = sorted(name for name in jobs if name.startswith(VERDICT + "-"))
-    found = [f"{name} runs on Linux and is not named {VERDICT}-…, so nobody waits for it"
-             for name, lines in jobs.items() if name not in (*parts, VERDICT, *NOT_A_CHECK, *OF_THE_MAC)
-             and any("ubuntu" in value for value in values_of(lines, "runs-on"))]
+        return found + [f"there is no job `{VERDICT}`"]
+    parts = sorted(name for name in jobs if name != VERDICT)
 
     needs = sorted(re.findall(r"[\w-]+", " ".join(values_of(jobs[VERDICT], "needs", 4))))
     found += [f"`{VERDICT}` does not wait for {name}" for name in parts if name not in needs]
@@ -150,9 +202,12 @@ def problems_in(workflow, makefile):
         found.append(f"`{VERDICT}` has nothing to wait for")
     if not set(values_of(jobs[VERDICT], "if", 4)) & HARMLESS:
         found.append(f"`{VERDICT}` is skipped when a job it waits for fails: it needs `if: ${{{{ !cancelled() }}}}`")
-    if "${{ toJSON(needs) }}" not in values_of(jobs[VERDICT], "RESULTS"):
+    told = [index for index, line in enumerate(jobs[VERDICT]) if line.strip() == "RESULTS: ${{ toJSON(needs) }}"]
+    if not told:
         found.append(f"`{VERDICT}` is not told how the jobs it waits for ended (RESULTS: ${{{{ toJSON(needs) }}}})")
-    script = "\n".join(scripts_of(jobs[VERDICT]))
+    elif values_of(jobs[VERDICT][:told[0]], "run") or values_of(jobs[VERDICT][:told[0]], "uses"):
+        found.append(f"`{VERDICT}` does something else before it asks how the jobs ended")
+    script = (scripts_of(jobs[VERDICT][told[0] if told else 0:]) or ["true"])[0]
     good = {name: "success" for name in parts or ["linux-x"]}
     if verdict_on(script, good) != 0:
         found.append(f"`{VERDICT}` fails though every job succeeded")
@@ -166,25 +221,28 @@ def problems_in(workflow, makefile):
         for needed in re.findall(r"[\w-]+", " ".join(values_of(jobs[name], "needs", 4))):
             if needed not in parts:
                 found.append(f"{name} waits for {needed}, which is no Linux job and may be skipped, and then so is {name}")
-    for name in (*parts, VERDICT):
+    for name in jobs:
         for condition in values_of(jobs[name], "if"):
             if condition not in HARMLESS:
                 found.append(f"{name} has a condition, `{condition}`: what is skipped proves nothing")
         if values_of(jobs[name], "continue-on-error"):
             found.append(f"{name} may fail and pass all the same (continue-on-error)")
-    usual = [name for name in parts if name not in OWN_IMAGE]
-    images = sorted({image for name in usual for image in values_of(jobs[name], "container", 4)})
+    if HANDED_ON[0] not in values_of(jobs[VERDICT], "name") or HANDED_ON[1] not in values_of(jobs[VERDICT], "path"):
+        found.append(f"`{VERDICT}` does not hand on `{HANDED_ON[1]}` as `{HANDED_ON[0]}`")
+    images = sorted({image for name, lines in (*jobs.items(), *others.items()) if name != OLDEST_JOB for image in values_of(lines, "container", 4)})
     if len(images) > 1:
-        found.append(f"the Linux jobs use different images: {', '.join(images)}")
-    first = next((name for name in jobs if values_of(jobs[name], "container", 4)), None)
-    if first in OWN_IMAGE:
-        found.append(f"{first} is the first job with an image, which scripts/linux.sh would take for everybody's")
+        found.append(f"the jobs use different images: {', '.join(images)}")
+    if values_of(oldest, "container", 4) in ([], images):
+        found.append(f"`{OLDEST_JOB}` has no image of its own: it is there for the oldest Swift")
+    if not any(values_of(lines, "container", 4) for lines in jobs.values()):
+        found.append("no job of linux.yml names an image any more, and scripts/linux.sh takes its from there")
 
-    run = {plain(line) for name in usual for script in scripts_of(jobs[name]) for line in script.split("\n")}
+    run = {plain(line) for lines in jobs.values() for script in scripts_of(lines) for line in script.split("\n")}
     for command in sorted(run):
         words = command.split()
         if words[:1] == ["make"] and all(steps_of(makefile, word) is not None for word in words[1:]):
             run |= {step for word in words[1:] for step in steps_of(makefile, word)}
+    run |= {step for step, commands in INSTEAD.items() if all(command in run for command in commands)}
     check = steps_of(makefile, "check")
     if not check:
         found.append("the Makefile has no `check`, or it runs nothing")
@@ -193,7 +251,7 @@ def problems_in(workflow, makefile):
     return found
 
 
-GOOD = """
+CI = """
 jobs:
   changes:
     runs-on: ubuntu-latest
@@ -202,7 +260,31 @@ jobs:
     if: ${{ needs.changes.outputs.mac != 'false' }}
     steps:
       - run: swift build
+  linux:
+    uses: ./.github/workflows/linux.yml
+  tests-whole:
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    container: swift:1
+    steps:
+      - run: ./scripts/ci-step.py test swift test --event-stream-output-path whole.jsonl --event-stream-version 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: tests-linux
+      - run: ./scripts/ci-step.py same ./scripts/fast-tests.py same whole.jsonl linux.tsv
+  oldest-swift:
+    runs-on: ubuntu-latest
+    container: swift:0
+    steps:
+      - run: ./scripts/ci-step.py older swift build --build-tests
+      - env:
+          ALL: 1
+        run: ./scripts/ci-step.py older-typecheck make typecheck-mac
+"""
+GOOD = """
+jobs:
   linux-a:
+    name: a
     runs-on: ubuntu-latest
     steps:
       - run: ./scripts/ci-step.py lint make lint
@@ -213,13 +295,14 @@ jobs:
         run: ./scripts/ci-step.py --summary 'warning:' build swift build
       - run: ./scripts/ci-step.py typecheck-mac make typecheck-mac
   linux-b:
+    name: b
     runs-on: ubuntu-latest
     container: swift:1
     steps:
-      - run: ./scripts/ci-step.py --report linux.tsv.events test swift test
+      - run: ./scripts/ci-step.py --report test.jsonl test swift test
       - run: ./scripts/ci-step.py smoke ./scripts/smoke.sh
-      - run: ./scripts/ci-step.py parity python3 scripts/parity.py --report linux.tsv.events --check
-  linux:
+  linux-verdict:
+    name: verdict
     needs: [linux-a, linux-b]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
@@ -229,6 +312,11 @@ jobs:
         run: |
           echo "$RESULTS" | grep -q '"result"'
           ! echo "$RESULTS" | grep -oE '"result": *"[a-z]+"' | grep -qv success
+      - run: ./scripts/ci-step.py parity python3 scripts/parity.py --report test-*.jsonl --check
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tests-linux
+          path: linux.tsv
 """
 MAKEFILE = """
 lint:
@@ -242,17 +330,13 @@ check: lint build test
 typecheck-mac:
 \t@./scripts/typecheck-mac/check.sh
 """
+WHOLE = "      - run: ./scripts/ci-step.py --report test.jsonl test swift test\n"
 WITH_A_RECORD = "\t@rm -f $(TEST_REPORT)\n\tswift test --event-stream-output-path $(TEST_REPORT) --event-stream-version 0 $(TEST_ARGS)\n"
+TOOLING = "      - run: ./scripts/ci-step.py tooling python3 scripts/test-tooling.py\n"
+WITH_TOOLING = MAKEFILE.replace("\t@./scripts/smoke.sh\n", "\t@./scripts/smoke.sh\n\t@python3 scripts/test-tooling.py\n")
+DIVIDED = "".join(f"      - run: ./scripts/ci-step.py x ./{command}\n".replace("./swift", "swift") for command in INSTEAD["swift test"])
 SMOKE = "      - run: ./scripts/ci-step.py smoke ./scripts/smoke.sh\n"
 NEEDS = "needs: [linux-a, linux-b]"
-OLDEST = """  linux-oldest-swift:
-    runs-on: ubuntu-latest
-    container: swift:0
-    steps:
-      - run: ./scripts/ci-step.py build swift build --build-tests
-      - run: ./scripts/ci-step.py older-typecheck make typecheck-mac
-"""
-OLDEST_NEEDS = "needs: [linux-a, linux-b, linux-oldest-swift]"
 CONDITION = NEEDS + "\n    if: ${{ !cancelled() }}"
 LAST = """          ! echo "$RESULTS" | grep -oE '"result": *"[a-z]+"' | grep -qv success\n"""
 
@@ -262,20 +346,39 @@ def changed(old, new, text=GOOD):
     return text.replace(old, new)
 
 
-# What must be said (a part of it; None: nothing), the situation, the workflow, the Makefile.
+OLDEST = CI[CI.index("  oldest-swift:"):]
+
+# What must be said (a part of it; None: nothing), the situation, linux.yml, the Makefile, and ci.yml if it is not CI.
 TABLE = [
     (None, "all is well", GOOD, MAKEFILE),
     (None, "a step that runs even after a failure", changed(SMOKE, SMOKE + "      - if: ${{ !cancelled() }}\n        run: true\n"), MAKEFILE),
     ("does not wait for linux-b", "a job nobody waits for", changed(NEEDS, "needs: [linux-a]"), MAKEFILE),
     ("does not wait for linux-b", "the same, with a comment after its name", changed("  linux-b:", "  linux-b: # more", changed(NEEDS, "needs: [linux-a]")), MAKEFILE),
     ("does not wait for linux-b", "the same, its name in quotation marks", changed("  linux-b:", '  "linux-b":', changed(NEEDS, "needs: [linux-a]")), MAKEFILE),
-    ("does not wait for linux-c", "a new job after a comment at the margin", GOOD + "# more\n  linux-c:\n    steps:\n      - run: false\n", MAKEFILE),
+    ("does not wait for linux-c", "a new job after a comment at the margin", GOOD + "# more\n  linux-c:\n    name: c\n    steps:\n      - run: false\n", MAKEFILE),
+    ("linux-c has no `name:`", "a job whose check would have a long name", changed(NEEDS, "needs: [linux-a, linux-b, linux-c]") + "  linux-c:\n    steps:\n      - run: true\n", MAKEFILE),
     ("linux-b waits for changes", "a job that waits for one that may be skipped", changed("  linux-b:\n", "  linux-b:\n    needs: changes\n"), MAKEFILE),
     (None, "a job that waits for another Linux job", changed("  linux-b:\n", "  linux-b:\n    needs: [linux-a]\n"), MAKEFILE),
-    ("fuzz runs on Linux", "a job on Linux by another name", GOOD + "  fuzz:\n    runs-on: ubuntu-latest\n    steps:\n      - run: false\n", MAKEFILE),
-    (None, "a job on Linux that speaks for the Mac job", GOOD + "  real-windows:\n    needs: macos\n    runs-on: ubuntu-latest\n    steps:\n      - run: false\n", MAKEFILE),
-    ("waits for real-windows", "the verdict waits for such a one, which is skipped with the Mac",
-     changed(NEEDS, "needs: [linux-a, linux-b, real-windows]") + "  real-windows:\n    runs-on: ubuntu-latest\n", MAKEFILE),
+    ("fuzz is not named linux-", "a job by another name", GOOD + "  fuzz:\n    runs-on: ubuntu-latest\n    steps:\n      - run: false\n", MAKEFILE),
+    ("fuzz in ci.yml runs on Linux", "a job on Linux in ci.yml", GOOD, MAKEFILE, CI + "  fuzz:\n    runs-on: ubuntu-latest\n    steps:\n      - run: false\n"),
+    ("no job `linux` that uses", "ci.yml does not call linux.yml", GOOD, MAKEFILE, changed("  linux:\n    uses: ./.github/workflows/linux.yml\n", "", CI)),
+    ("no job `linux` that uses", "ci.yml calls something else", GOOD, MAKEFILE, changed("workflows/linux.yml", "workflows/other.yml", CI)),
+    ("no job `linux` that uses", "the job that calls it has another name", GOOD, MAKEFILE, changed("  linux:\n", "  headless:\n", CI)),
+    ("suite in ci.yml calls another workflow", "ci.yml calls a second workflow", GOOD, MAKEFILE, CI + "  suite:\n    uses: ./.github/workflows/suite.yml\n"),
+    ("`tests-whole` does not run `swift test", "the whole is not run", GOOD, MAKEFILE, changed("test swift test --event", "test true --event", CI)),
+    ("`tests-whole` does not run `swift test", "only some of the whole is run", GOOD, MAKEFILE, changed("--event-stream-version 0", "--event-stream-version 0 --filter Core", CI)),
+    ("`tests-whole` does not run `scripts/fast-tests.py same", "the whole is compared with nothing", GOOD, MAKEFILE,
+     changed("      - run: ./scripts/ci-step.py same ./scripts/fast-tests.py same whole.jsonl linux.tsv\n", "", CI)),
+    ("`tests-whole` does not fetch", "the whole fetches something else", GOOD, MAKEFILE, changed("name: tests-linux", "name: tests", CI)),
+    ("`tests-whole` does not run", "there is no whole at all", GOOD, MAKEFILE, CI[:CI.index("  tests-whole:")]),
+    ("tests-whole may fail and pass", "the whole may fail", GOOD, MAKEFILE, changed("    container: swift:1\n", "    container: swift:1\n    continue-on-error: true\n", CI)),
+    ("does not hand on", "the record is handed on under another name", changed("name: tests-linux", "name: linux-tests"), MAKEFILE),
+    ("does not hand on", "the record is not handed on", changed("          path: linux.tsv\n", "          path: other.tsv\n"), MAKEFILE),
+    ("says more than what it uses", "ci.yml calls it on a condition", GOOD, MAKEFILE, changed("linux.yml\n", "linux.yml\n    if: ${{ false }}\n", CI)),
+    ("says more than what it uses", "ci.yml calls it after a job that may be skipped", GOOD, MAKEFILE, changed("  linux:\n", "  linux:\n    needs: changes\n", CI)),
+    (None, "a job on Linux that speaks for the Mac job", GOOD, MAKEFILE, CI + "  real-windows:\n    needs: macos\n    runs-on: ubuntu-latest\n    steps:\n      - run: false\n"),
+    ("waits for real-windows", "the verdict waits for such a one, which is skipped with the Mac", changed(NEEDS, "needs: [linux-a, linux-b, real-windows]"), MAKEFILE,
+     CI + "  real-windows:\n    runs-on: ubuntu-latest\n"),
     ("waits for macos", "the verdict waits for a Mac", changed(NEEDS, "needs: [linux-a, linux-b, macos]"), MAKEFILE),
     ("waits for linux-c", "a job that was renamed", changed(NEEDS, "needs: [linux-a, linux-b, linux-c]"), MAKEFILE),
     ("is skipped when", "the verdict has no condition", changed(CONDITION, NEEDS), MAKEFILE),
@@ -286,23 +389,31 @@ TABLE = [
     ("passes though a job ended as failure", "the verdict's answer is thrown away", changed(LAST, LAST.rstrip("\n") + " || true\n"), MAKEFILE),
     ("passes though it heard of no job", "the verdict is content with nothing", changed("""          echo "$RESULTS" | grep -q '"result"'\n""", ""), MAKEFILE),
     ("fails though every job succeeded", "the verdict never passes", changed(LAST, "          false\n"), MAKEFILE),
-    ("linux may fail and pass", "the verdict may fail", changed(CONDITION, CONDITION + "\n    continue-on-error: true"), MAKEFILE),
-    ("linux has a condition", "the verdict's step may be skipped", changed("      - env:\n", "      - if: ${{ failure() }}\n        env:\n"), MAKEFILE),
+    ("something else before", "the verdict asks only after other steps", changed("      - env:\n", "      - run: true\n      - env:\n"), MAKEFILE),
+    ("something else before", "the verdict asks only after an action", changed("      - env:\n", "      - uses: actions/checkout@v5\n      - env:\n"), MAKEFILE),
+    ("linux-verdict may fail and pass", "the verdict may fail", changed(CONDITION, CONDITION + "\n    continue-on-error: true"), MAKEFILE),
+    ("linux-verdict has a condition", "the verdict's step may be skipped", changed("      - env:\n", "      - if: ${{ failure() }}\n        env:\n"), MAKEFILE),
     ("linux-a has a condition", "a job that may be skipped", changed("  linux-a:\n", "  linux-a:\n    if: ${{ false }}\n"), MAKEFILE),
     ("linux-b has a condition", "a step that may be skipped", changed(SMOKE, "      - if: ${{ false }}\n  " + SMOKE.replace("- ", "  ")), MAKEFILE),
     ("linux-b may fail and pass", "a job that may fail", changed("  linux-b:\n", "  linux-b:\n    continue-on-error: true\n"), MAKEFILE),
     ("linux-b may fail and pass", "a step that may fail", changed(SMOKE, "      - continue-on-error: true\n  " + SMOKE.replace("- ", "  ")), MAKEFILE),
-    ("there is no job", "no verdict at all", changed("  linux:\n", "  verdict:\n"), MAKEFILE),
-    ("nothing to wait for", "no jobs but the verdict", changed(NEEDS, "needs: []").replace("linux-a", "a").replace("linux-b", "b"), MAKEFILE),
-    ("different images", "one job on another image", changed("  linux-a:\n    runs-on: ubuntu-latest\n", "  linux-a:\n    runs-on: ubuntu-latest\n    container: swift:2\n"), MAKEFILE),
-    (None, "the job with the oldest Swift has an image of its own", changed(NEEDS, OLDEST_NEEDS, changed("  linux:\n", OLDEST + "  linux:\n")), MAKEFILE),
-    ("does not wait for linux-oldest-swift", "nobody waits for it", changed("  linux:\n", OLDEST + "  linux:\n"), MAKEFILE),
-    ("is the first job with an image", "it stands first, and linux.sh would run its image",
-     changed(NEEDS, OLDEST_NEEDS, changed("  linux-a:\n", OLDEST + "  linux-a:\n")), MAKEFILE),
-    ("runs `make typecheck-mac`", "the type-check is left to it alone, with its older compiler",
-     changed("typecheck-mac make typecheck-mac", "typecheck-mac true", changed(NEEDS, OLDEST_NEEDS, changed("  linux:\n", OLDEST + "  linux:\n"))), MAKEFILE),
-    ("linux-oldest-swift has a condition", "it may be skipped",
-     changed(NEEDS, OLDEST_NEEDS, changed("  linux:\n", OLDEST.replace("    container", "    if: ${{ false }}\n    container") + "  linux:\n")), MAKEFILE),
+    ("there is no job", "no verdict at all", changed("  linux-verdict:\n", "  linux-last:\n"), MAKEFILE),
+    ("nothing to wait for", "no jobs but the verdict", "\njobs:\n" + changed(NEEDS, "needs: []")[GOOD.index("  linux-verdict:"):], MAKEFILE),
+    ("no job of linux.yml names an image", "the image is gone from linux.yml", changed("    container: swift:1\n", ""), MAKEFILE),
+    ("different images", "one job on another image", changed("    name: a\n", "    name: a\n    container: swift:2\n"), MAKEFILE),
+    ("`oldest-swift` has no image of its own", "the oldest Swift is the usual one", GOOD, MAKEFILE, changed("container: swift:0", "container: swift:1", CI)),
+    ("`oldest-swift` has no image of its own", "it runs on the bare runner, with whatever is there", GOOD, MAKEFILE, changed("    container: swift:0\n", "", CI)),
+    ("`oldest-swift` does not run `swift build --build-tests`", "the tests are not compiled by it", GOOD, MAKEFILE, changed("older swift build --build-tests", "older swift build", CI)),
+    ("`oldest-swift` does not run `make typecheck-mac`", "the macOS-only code is not looked at by it", GOOD, MAKEFILE, changed("older-typecheck make typecheck-mac", "older-typecheck true", CI)),
+    ("type-checks only a part", "only what changed is type-checked", GOOD, MAKEFILE, changed("ALL: 1", "ALL: 0", CI)),
+    ("oldest-swift may fail and pass", "it may fail", GOOD, MAKEFILE, changed("    container: swift:0\n", "    container: swift:0\n    continue-on-error: true\n", CI)),
+    ("oldest-swift has a condition", "it runs only now and then", GOOD, MAKEFILE, changed("    container: swift:0\n", "    container: swift:0\n    if: ${{ github.event_name == 'push' }}\n", CI)),
+    ("oldest-swift has a condition", "a step of it may be skipped", GOOD, MAKEFILE, changed("      - run: ./scripts/ci-step.py older swift", "      - if: ${{ false }}\n        run: ./scripts/ci-step.py older swift", CI)),
+    ("oldest-swift has a condition", "it waits for the Mac's decision", GOOD, MAKEFILE, changed("    container: swift:0\n", "    container: swift:0\n    needs: changes\n", CI)),
+    ("`oldest-swift` does not run", "there is no such job", GOOD, MAKEFILE, CI[:CI.index("  oldest-swift:")]),
+    ("linux-oldest-swift", "it is put into linux.yml, and nobody waits for it", changed("  linux-verdict:\n", OLDEST.replace("  oldest-swift:", "  linux-oldest-swift:\n    name: oldest") + "  linux-verdict:\n"), MAKEFILE),
+    ("runs `make typecheck-mac`", "the type-check runs with the oldest Swift alone", changed("typecheck-mac make typecheck-mac", "typecheck-mac true"), MAKEFILE),
+    ("different images", "the whole on another image", GOOD, MAKEFILE, changed("container: swift:1", "container: swift:2", CI)),
     ("runs `scripts/smoke.sh`", "a step of make check was dropped", changed(SMOKE, ""), MAKEFILE),
     ("runs `scripts/smoke.sh`", "it is only spoken of, in a comment", changed(SMOKE, "      # ./scripts/smoke.sh runs elsewhere\n"), MAKEFILE),
     ("runs `scripts/smoke.sh`", "it is only spoken of, in a name", changed(SMOKE, "      - name: scripts/smoke.sh\n        run: true\n"), MAKEFILE),
@@ -312,7 +423,7 @@ TABLE = [
     ("runs `scripts/new.sh`", "make check has a new step", GOOD, changed("smoke.sh\n", "smoke.sh\n\t@./scripts/new.sh\n", MAKEFILE)),
     ("runs `scripts/new.sh`", "a new step after a comment", GOOD, changed("smoke.sh\n", "smoke.sh\n# And then:\n\t@./scripts/new.sh\n", MAKEFILE)),
     ("runs `scripts/smoke.sh && ./scripts/new.sh`", "a new step on an old line", GOOD, changed("smoke.sh\n", "smoke.sh && ./scripts/new.sh\n", MAKEFILE)),
-    ("runs `swift test`", "the tests run only on the Mac", changed("test swift test", "test true").replace("- run: swift build", "- run: swift test"), MAKEFILE),
+    ("runs `swift test`", "the tests run only on the Mac", changed("test swift test", "test true"), MAKEFILE, changed("- run: swift build", "- run: swift test", CI)),
     (None, "the tests run through the script that records them", changed("test swift test", "test ./scripts/ci-tests.py run --mode full --record linux.tsv"), MAKEFILE),
     ("runs `swift test`", "through that script, only the Mac's selection", changed("test swift test", "test ./scripts/ci-tests.py run --mode mac-only --record linux.tsv"), MAKEFILE),
     ("runs `swift test`", "through that script, only some", changed("test swift test", "test ./scripts/ci-tests.py run --mode full --record linux.tsv --filter Geometry"), MAKEFILE),
@@ -323,13 +434,24 @@ TABLE = [
     ("runs `swift test`", "the same, and the job runs only some", changed("test swift test", "test make test TEST_ARGS=--filter=Geometry"),
      changed("\tswift test\n", WITH_A_RECORD, MAKEFILE)),
     ("runs `swift test --filter Geometry`", "make check itself runs only some", GOOD, changed("$(TEST_ARGS)", "--filter Geometry", changed("\tswift test\n", WITH_A_RECORD, MAKEFILE))),
+    (None, "the tests are divided among machines", changed(WHOLE, DIVIDED), MAKEFILE),
+    (None, "the tools' self-test as it stands in make check", changed(SMOKE, SMOKE + TOOLING), WITH_TOOLING),
+    (None, "the same in two", changed(SMOKE, SMOKE + TOOLING.replace(".py\n", ".py --only scenarios rehearse\n") + TOOLING.replace(".py\n", ".py --but scenarios rehearse\n")), WITH_TOOLING),
+    ("runs `scripts/test-tooling.py`", "only the one half", changed(SMOKE, SMOKE + TOOLING.replace(".py\n", ".py --only scenarios rehearse\n")), WITH_TOOLING),
+    ("runs `scripts/test-tooling.py`", "only the other", changed(SMOKE, SMOKE + TOOLING.replace(".py\n", ".py --but scenarios rehearse\n")), WITH_TOOLING),
+    ("runs `scripts/test-tooling.py`", "two halves that do not meet", changed(SMOKE, SMOKE + TOOLING.replace(".py\n", ".py --only scenarios rehearse\n") + TOOLING.replace(".py\n", ".py --but scenarios rehearse lint\n")), WITH_TOOLING),
+    (None, "a build without the index is a build", changed("build swift build", "build swift build --disable-index-store"), MAKEFILE),
+    ("runs `swift build`", "a build of one product is not", changed("build swift build", "build swift build --product arbor-sim"), MAKEFILE),
+    ("runs `swift test`", "divided, and nobody counts them afterwards", changed(WHOLE, "".join(DIVIDED.splitlines(True)[:3])), MAKEFILE),
+    ("runs `swift test`", "divided, and built, and not run", changed(WHOLE, "".join(DIVIDED.splitlines(True)[:2] + DIVIDED.splitlines(True)[3:])), MAKEFILE),
+    ("runs `swift test`", "divided, and a part's failure is thrown away", changed(WHOLE, DIVIDED.replace(".jsonl\n", ".jsonl || true\n", 1)), MAKEFILE),
     ("lint-a.py", "lint was dropped", changed("      - run: ./scripts/ci-step.py lint make lint\n", ""), MAKEFILE),
     ("lint-a.py", "lint is only printed", changed("lint make lint", "lint make lint -n"), MAKEFILE),
     ("runs `scripts/lint-b.py`", "a lint that make check runs by another way", GOOD,
      changed("check: lint build test", "more:\n\t@python3 scripts/lint-b.py\ncheck: lint more build test", MAKEFILE)),
     ("has no `check`", "make check was renamed", GOOD, changed("check:", "verify:", MAKEFILE)),
-    ("runs `scripts/parity.py", "parity was dropped", changed("      - run: ./scripts/ci-step.py parity python3 scripts/parity.py --report linux.tsv.events --check\n", ""), MAKEFILE),
-    ("runs `scripts/parity.py", "parity no longer minds FEATURES.md", changed("linux.tsv.events --check", "linux.tsv.events"), MAKEFILE),
+    ("runs `scripts/parity.py", "parity was dropped", changed("      - run: ./scripts/ci-step.py parity python3 scripts/parity.py --report test-*.jsonl --check\n", ""), MAKEFILE),
+    ("runs `scripts/parity.py", "parity no longer minds FEATURES.md", changed("test-*.jsonl --check", "test-*.jsonl"), MAKEFILE),
     ("runs `make typecheck-mac`", "the type-check was dropped", changed("typecheck-mac make typecheck-mac", "typecheck-mac true"), MAKEFILE),
     ("runs `scripts/test-ci-changes.py`", "the Mac's rules go unchecked", changed("      - run: ./scripts/ci-step.py ci-changes ./scripts/test-ci-changes.py\n", ""), MAKEFILE),
 ]
@@ -337,24 +459,24 @@ TABLE = [
 
 def main():
     wrong = 0
-    for expected, situation, workflow, makefile in TABLE:
-        said = problems_in(workflow, makefile)
+    for expected, situation, workflow, makefile, *caller in TABLE:
+        said = problems_in(workflow, makefile, *(caller or [CI]))
         if (not said) if expected is None else any(expected in problem for problem in said):
             continue
         wrong += 1
         print(f"✘ {situation}: expected {expected or 'nothing'}, got {said or 'nothing'}")
     print(f"{len(TABLE) - wrong} of {len(TABLE)} workflows judged as expected")
 
-    with open(os.path.join(ROOT, ".github", "workflows", "ci.yml"), encoding="utf-8") as handle:
-        workflow = handle.read()
-    with open(os.path.join(ROOT, "Makefile"), encoding="utf-8") as handle:
-        makefile = handle.read()
-    found = problems_in(workflow, makefile)
+    texts = []
+    for path in (".github/workflows/linux.yml", "Makefile", ".github/workflows/ci.yml"):
+        with open(os.path.join(ROOT, path), encoding="utf-8") as handle:
+            texts.append(handle.read())
+    found = problems_in(*texts)
     for problem in found:
-        print(f"✘ ci.yml: {problem}")
+        print(f"✘ linux.yml: {problem}")
     if not found:
-        parts = [name for name in jobs_of(workflow) if name.startswith(VERDICT + "-")]
-        print(f"ci.yml: `{VERDICT}` waits for {', '.join(parts)}; between them they run all of `make check`")
+        parts = [name for name in jobs_of(texts[0]) if name != VERDICT]
+        print(f"linux.yml: `{VERDICT}` waits for {', '.join(parts)}; between them they run all of `make check`")
     return 1 if wrong or found else 0
 
 

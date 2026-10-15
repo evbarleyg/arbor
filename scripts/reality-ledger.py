@@ -272,6 +272,9 @@ class Tree:
         makes, and the scripts those name, and the scripts these name in turn."""
         if "started" not in self.indexes:
             workflow = without_comments(self.read(os.path.join(self.root, ".github", "workflows", "ci.yml")), hash_too=True)
+            # And the workflows of this repository that it calls.
+            for called in sorted(set(re.findall(r"\buses:\s*\./(\.github/workflows/[\w.-]+)", workflow))):
+                workflow += "\n" + without_comments(self.read(os.path.join(self.root, called)), hash_too=True)
             makefile = self.read(os.path.join(self.root, "Makefile"))
             targets = {"check", "lint"} | set(re.findall(r"\bmake ([\w-]+)", workflow))
             text, done = workflow, set()
@@ -835,7 +838,10 @@ def self_test():
         "Sources/arbor-e2e/main.swift": 'step("a step on real windows")\n// step("a step that was taken out")\nobserve("a step that only looks on")',
         "scripts/mac-shell/check-F99.sh": 'step "a step somebody has to start"', "scripts/mac-shell/e2e-drag.sh": 'step "a drag that CI makes"',
         "scripts/t.py": "", "scripts/by-hand.py": "", "scripts/e2e.sh": ".build/debug/arbor-e2e", "docs/A.md": "", "collab/BACKLOG.md": "| K7 | a thing |",
-        ".github/workflows/ci.yml": "run: ./scripts/e2e.sh\nrun: ./scripts/mac-shell/e2e-drag.sh\nrun: make lint\n# run: ./scripts/by-hand.py",
+        ".github/workflows/ci.yml": "run: ./scripts/e2e.sh\nrun: ./scripts/mac-shell/e2e-drag.sh\nrun: make lint\n# run: ./scripts/by-hand.py\n"
+                                    "uses: ./.github/workflows/called.yml\n# uses: ./.github/workflows/not-called.yml",
+        ".github/workflows/called.yml": "run: ./scripts/called.py", ".github/workflows/not-called.yml": "run: ./scripts/not-called.py",
+        "scripts/called.py": "", "scripts/not-called.py": "",
         "Makefile": "lint:\n\t@python3 scripts/t.py\n",
         "docs/VIABLE.md": "## 4. Across what\n\n| Value |\n|---|\n| `defaults` |\n\n## 5. The detectors\n\nWords.\n\n| Id | `FAIL` when |\n|---|---|\n| `lost` | a window is gone |\n| `jolt` | it moves twice |\n"
                           "| `focus` | the keyboard is elsewhere |\n\nMore words.\n\n| Control |\n|---|\n| `sabotage` |\n\n## 6. What an act may move\n\n| Act |\n|---|\n| `idle` |\n",
@@ -981,6 +987,9 @@ def self_test():
     situation("a step of a script that CI does not start is by hand", sets(guards=["e2e: a step somebody has to start"]), 0, "1 that nothing guards by itself", "(by hand)")
     situation("a tool that `make lint` runs guards", sets(guards=["tool: t.py"]), 0, "0 that nothing", "- **Guard:** `tool: t.py`\n")
     situation("a tool the workflow names only in a comment is by hand", sets(guards=["tool: by-hand.py"]), 0, "1 that nothing guards by itself", "`tool: by-hand.py` (by hand)")
+    situation("a tool started by a workflow that ci.yml calls guards by itself", sets(guards=["tool: called.py"]), 0, "0 that nothing guards by itself")
+    situation("a tool of a workflow that ci.yml does not call is by hand", sets(guards=["tool: not-called.py"]), 0, "1 that nothing guards by itself",
+              "`tool: not-called.py` (by hand)")
     situation("no guard", sets(guards=[]), 0, "1 that nothing guards by itself", "**none**")
     situation("an open case that is guarded is still on the list of what to do first", sets(copes="open"), 0, "1 Arbor does not cope", "A fault that is known and open.\n\n| Case | Hurt | Where | Stand-ins play it | Guard |\n|---|---|---|---|---|\n| [a-case]")
 
