@@ -129,6 +129,7 @@ TEXTS = [
     ([], "variables and type parameters", 'for id in $S $C1 $C2; func f<S1: ShapeStyle, S2>()'),
     ([], "the word in its everyday sense", "to triage the backlog; a conductor-less train"),
     ([], "roles the public knows", "the documenter, the product owner, a reviewer, an executor"),
+    ([], "the board's lanes, which go by letters", "these walks and their rules are lane L's; lane M has it; lane A, next after 1.1"),
 
     (["number"], "a number nothing here has yet", "fixed in #187"),
     (["number"], "before a semicolon", "like #187; and more"),

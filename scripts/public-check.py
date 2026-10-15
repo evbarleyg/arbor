@@ -104,7 +104,7 @@ RULES = [
          "(\"a reviewer\", \"the product owner\")",
          r"\b" + ROLE + r"(?:['’]s\b| (?:" + SAID + r")\b)|\b(?:session|environment|lane|conductor|reviewer|builder|executor|owner:?) "
          + ROLE + r"\b|\b[Tt]he integrator\b|\b[Rr]elease manager\b|\bFRESH EYES\b|\bTRIAGE\b"
-         r"|\b(?:lane|executor) [LMS]\b", 0),
+         r"|\bexecutor [LMS]\b", 0),
 ]
 NAME_WHY = "the name in LICENSE belongs in LICENSE: say \"the maintainer\""
 NUMBER_WHY = "no issue or pull request here has this number yet, so it is one of the private phase: say what the thing does"
