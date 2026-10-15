@@ -1,0 +1,131 @@
+# mac-shell: scripts/mac-shell/check-F56.sh at f1e881e, macOS 26.6.2, 2026-10-15T04:14Z
+built Arbor and the pointer tool in 6s
+com.apple.WindowManager EnableTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTopTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+session 1: Arbor pid 7344, test windows 29 30 (pid 7291)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+
+== One display: which way ⌃⌥↓ steps
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+> click 849 368
+  ✔ the clicked window has the keyboard
+> move 174 368
+> typed a word
+  pointer 2.15 keys 0.49 presses 5
+> key ctrl+opt+down
+  ✔ typing in w2 with the pointer pushed aside over w1: ⌃⌥↓ frames w2
+shot: mac-shell/01-toward-the-keyboard.png
+  pointer 4.03 keys 1.50 presses 6
+> key ctrl+opt+up
+  ✔ ⌃⌥↑ shows both again
+
+== Pointing at a window and pressing ⌃⌥↓ means that window, and so do the shortcuts after it
+> move 194 388
+  pointer 0.56 keys 2.46 presses 7
+> key ctrl+opt+down
+  ✔ the pointer moved last: ⌃⌥↓ frames w1
+  pointer 2.69 keys 1.85 presses 8
+> key ctrl+opt+up
+  ✔ ⌃⌥↑ shows both again
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back yes
+  Desktop          349 43 326 650
+  w29 12 43 325 650        docked focused
+  w30 687 43 325 650       docked
+
+== arborctl chooses as a shortcut does
+> click 849 368
+> move 174 368
+> typed a word
+  pointer 2.12 keys 0.48 presses 14
+> in
+stepped in to ArborTestWindows (n3)
+  ✔ arborctl in, after typing in w2: w2 is framed
+> show-all
+showing everything
+
+== stepInToward: pointer is how it was before
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 29 is back on screen after quitting
+  ✔ window 30 is back on screen after quitting
+session 2: Arbor pid 8497, test windows 40 41 (pid 8475)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 40 left
+docked w40 at the left edge
+> dock 41 right
+docked w41 at the right edge
+> click 849 368
+> move 174 368
+> typed a word
+  pointer 1.70 keys 0.43 presses 19
+> key ctrl+opt+down
+  ✔ with stepInToward pointer, ⌃⌥↓ frames the window under the pointer
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 40 is back on screen after quitting
+  ✔ window 41 is back on screen after quitting
+
+
+== Two displays: the trap
+> display_add 1280 800: display 2, 4A428B75-C640-4DE1-A3F2-719DBE2063B8
+> display_move right: now at 1920 0 1280 800
+session 3: Arbor pid 9082, test windows 61 62 63 64 (pid 9057)
+running: 2 displays, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 61 left
+docked w61 at the left edge
+> dock 62 right
+docked w62 at the right edge
+> drag 888 424 3197 415
+  ✔ w4 docked on the second display
+> dock 63 beside 64 left
+docked w63 left of w64
+> zoom 61
+framed w61
+> zoom 63
+framed w63
+  ✔ a window is framed on each display
+  ✔ a window is framed on each display
+> click 2560 415
+> move 960 516
+> typed a word
+  pointer 1.94 keys 0.40 presses 25
+> key ctrl+opt+up
+  ✔ typing on the second display, the pointer at rest on the first: ⌃⌥↑ zooms the second out
+  ✔ and the first display stays as it was
+shot: mac-shell/02-the-display-being-typed-on.png
+  pointer 3.85 keys 1.56 presses 26
+> key ctrl+opt+return
+  ✔ ⌃⌥↩, pressed next, acts on the same display
+
+== Two displays: pointing
+> move 980 536
+  pointer 0.54 keys 2.39 presses 27
+> key ctrl+opt+up
+  ✔ the pointer moved last: ⌃⌥↑ zooms the display under it out
+  ✔ and the display with the keyboard stays as it was
+shot: mac-shell/03-the-display-pointed-at.png
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 61 is back on screen after quitting
+  ✔ window 62 is back on screen after quitting
+  ✔ window 63 is back on screen after quitting
+  ✔ window 64 is back on screen after quitting
+shot: mac-shell/04-after-quit.png and 04-after-quit-d2.png
+> display_remove
+
+26 passed, 0 failed
+exit code 0

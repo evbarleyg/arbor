@@ -1,0 +1,12 @@
+Made the code-signing certificate "Arbor Local Signing" in /private/tmp/arbor-f13.Ekgdlw/signing.keychain-db
+  SHA-1 818093130E64A734B4CEB79C763E6B3811923143, valid until Oct 12 04:19:09 2036 GMT
+$ARBOR_KEYCHAIN_PASSWORD is not this keychain's password
+The first build will make macOS ask whether codesign may use the key: choose Always Allow.
+
+`make app` and `make install` sign with it from now on.
+The first build signed this way needs Accessibility permission once more. If an older build is listed there, clear
+its entry, but NOT YET: an Arbor that is running needs it to bring its windows back when it quits. In this order:
+  make install LAUNCH=0
+  tccutil reset Accessibility com.evbarleyg.arbor
+  open ~/Applications/Arbor.app
+Remove the certificate with scripts/make-signing-identity.sh --remove.

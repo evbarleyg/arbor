@@ -1,0 +1,90 @@
+# mac-shell: scripts/mac-shell/check-F13.sh at f1e881e, macOS 26.6.2, 2026-10-15T04:15Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64; bash 3.2.57(1)-release; GNU Make 3.81
+Apple Swift version 6.4.1 (swift-6.4.1-RELEASE)
+/usr/bin/openssl: LibreSSL 3.3.6
+System Integrity Protection status: disabled.; curl 8.7.1; Python 3.14.7
+one of GitHub's throwaway Macs
+the place apart: /private/tmp/arbor-f13.Ekgdlw
+another openssl: /opt/homebrew/opt/openssl@3/bin/openssl OpenSSL 3.6.4 25 Aug 2026 (Library: OpenSSL 3.6.4 25 Aug 2026)
+
+== a clone to build in
+HEAD f1e881e, 1 commits (a shallow checkout has 1); version.sh: 0.9.0 (build 1, f1e881e)
+
+== a keychain of its own
+under the throwaway HOME the search list reads: 
+after making /private/tmp/arbor-f13.Ekgdlw/signing.keychain-db: 
+  ✔ the account's own search list and default keychain are as they were
+
+== 1  no identity: ad hoc, as before
+Signed build/Arbor.app ad hoc. The signature changes with every build, so each new build has to be given
+  Accessibility permission again. scripts/make-signing-identity.sh, run once, ends that (docs/INSTALL.md).
+Built build/Arbor.app, version 0.9.0 (build 1, f1e881e)
+  designated => cdhash H"c6f198c2565062b5e0df9e82562e1a2371094a1e"
+    Identifier=com.evbarleyg.arbor
+    CodeDirectory v=20400 size=23244 flags=0x2(adhoc) hashes=720+3 location=embedded
+    CDHash=c6f198c2565062b5e0df9e82562e1a2371094a1e
+    Signature=adhoc
+    TeamIdentifier=not set
+    Arbor.app/Contents/_CodeSignature/CodeResources
+    Arbor.app/Contents/Helpers/arborctl
+    Arbor.app/Contents/Info.plist
+    Arbor.app/Contents/MacOS/Arbor
+    Arbor.app/Contents/Resources/Arbor.icns
+  ✔ make app says the signature is ad hoc
+  ✔ an ad-hoc build's requirement is its own hash
+  ✔ codesign --verify --deep --strict passes
+  ✔ arborctl has an identifier of its own
+  Info.plist: 0.9.0 / 1 / f1e881e
+  ✔ the version is stamped
+  ✔ the build number is stamped
+  ✔ the commit is stamped
+  ✔ the property list is still valid
+
+== 2  the signing identity
+Made the code-signing certificate "Arbor Local Signing" in /private/tmp/arbor-f13.Ekgdlw/signing.keychain-db
+  SHA-1 818093130E64A734B4CEB79C763E6B3811923143, valid until Oct 12 04:19:09 2036 GMT
+$ARBOR_KEYCHAIN_PASSWORD is not this keychain's password
+The first build will make macOS ask whether codesign may use the key: choose Always Allow.
+
+`make app` and `make install` sign with it from now on.
+The first build signed this way needs Accessibility permission once more. If an older build is listed there, clear
+its entry, but NOT YET: an Arbor that is running needs it to bring its windows back when it quits. In this order:
+  make install LAUNCH=0
+  tccutil reset Accessibility com.evbarleyg.arbor
+  open ~/Applications/Arbor.app
+Remove the certificate with scripts/make-signing-identity.sh --remove.
+
+Policy: Code Signing
+  Matching identities
+  1) 818093130E64A734B4CEB79C763E6B3811923143 "Arbor Local Signing" (CSSMERR_TP_NOT_TRUSTED)
+     1 identities found
+
+  Valid identities only
+     0 valid identities found
+the key's attributes in the keychain:
+class: 0x00000010 
+    0x00000001 <blob>="Imported Private Key"
+    0x00000003 <uint32>=0x00000001 
+    0x0000000E <uint32>=0x00000001 
+    0x0000000F <uint32>=0x00000001 
+    0x00000010 <uint32>=0x00000001 
+    0x00000012 <uint32>=0x00000001 
+    0x00000013 <uint32>=0x00000001 
+    0x00000014 <uint32>=0x00000001 
+    0x00000015 <uint32>=0x00000001 
+    0x00000016 <uint32>=0x00000001 
+    0x00000017 <uint32>=0x00000001 
+  ✔ the identity is in the keychain
+  ✔ nobody trusts the certificate, and nothing was asked to
+  ✘ codesign could use the key at once, without a dialog
+trying without the label (this keychain holds no other key), so that the rest of this run can go on:
+    0x00000018 <uint32>=0x00000001 
+    0x00000019 <uint32>=0x00000001 
+    0x0000001A <uint32>=0x00000001 
+  ✘ codesign signs with the key, and asks nobody
+::error title=mac-shell::codesign cannot use the key without a dialog; the rest would put dialogs on this Mac's screen
+
+11 passed, 2 failed
+exit code 2

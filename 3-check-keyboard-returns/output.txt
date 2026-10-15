@@ -1,0 +1,334 @@
+# mac-shell: scripts/mac-shell/check-keyboard-returns.sh at f1e881e, macOS 26.6.2, 2026-10-15T04:19Z
+built Arbor and the pointer tool in 3s
+
+== an app with a bundle id that writes down its keys
+
+== an app like any other: [1 | Desktop | 2], shortcuts and the menu bar item on, the app's window floating on the Desktop between them
+session 1: Arbor pid 20976, test windows 93 94 (pid 20953)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 93 left
+docked w93 at the left edge
+> dock 94 right
+docked w94 at the right edge
+  ✔ Arbor arranges the app's window too
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          349 43 326 655
+  w88 382 508 260 160      floating
+  w93 12 43 325 655        docked
+  w94 687 43 325 655       docked focused
+shot: mac-shell/arranged-00-the-witness.png
+
+== the name field, closed with ⎋
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> key ctrl+opt+n
+  ✔ the field is up
+> key x
+  ✔ with the field up: an x does not reach the app
+shot: mac-shell/arranged-01-field.png
+> key escape
+  ✔ ⎋ closes it
+> key x
+  ✔ after ⎋: an x reaches the app
+  ✔ after ⎋: the app is in front
+
+== the name field, closed with ↩
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> key ctrl+opt+n
+  ✔ the field is up
+> key x
+  ✔ with the field up: an x does not reach the app
+> key return
+  ✔ ↩ closes it
+> key x
+  ✔ after ↩: an x reaches the app
+  ✔ after ↩: the app is in front
+
+== the name field, closed with its own shortcut
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> key ctrl+opt+n
+  ✔ the field is up
+> key ctrl+opt+n
+  ✔ ⌃⌥N again closes it
+> key x
+  ✔ after ⌃⌥N: an x reaches the app
+  ✔ after ⌃⌥N: the app is in front
+
+== Go to…, closed with ⎋
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> key ctrl+opt+g
+  ✔ the palette is up
+> key x
+  ✔ with the palette up: an x does not reach the app
+shot: mac-shell/arranged-02-palette.png
+> key escape
+  ✔ ⎋ closes it
+> key x
+  ✔ after ⎋: an x reaches the app
+  ✔ after ⎋: the app is in front
+
+== Go to…, closed with its own shortcut
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> key ctrl+opt+g
+  ✔ the palette is up
+> key ctrl+opt+g
+  ✔ ⌃⌥G again closes it
+> key x
+  ✔ after ⌃⌥G: an x reaches the app
+  ✔ after ⌃⌥G: the app is in front
+
+== the panel of shortcuts, closed with ⎋
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> key ctrl+opt+shift+/
+  ✔ the panel is up
+shot: mac-shell/arranged-03-shortcuts.png
+> key escape
+  ✔ ⎋ puts it away
+> key x
+  ✔ after ⎋: an x reaches the app
+  ✔ after ⎋: the app is in front
+
+== the panel of shortcuts, put away by any key
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> key ctrl+opt+shift+/
+  ✔ the panel is up
+> key x
+  ✔ an x puts it away
+the x that put the panel away: 0 reached the app
+> key x
+  ✔ after that key: an x reaches the app
+  ✔ after that key: the app is in front
+
+== the minimap, tapped
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> key ctrl+opt+m
+  ✔ the map is up
+shot: mac-shell/arranged-04-minimap.png
+> key x
+  ✔ with the map up: an x reaches the app
+  ✔ with the map up: the app is in front
+> key ctrl+opt+m
+  ✔ ⌃⌥M again puts it away
+> key x
+  ✔ after ⌃⌥M: an x reaches the app
+  ✔ after ⌃⌥M: the app is in front
+
+== the settings window, closed with ⌘W
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> key ctrl+opt+,
+  ✔ the window is up
+shot: mac-shell/arranged-05-settings.png
+> key x
+  ✔ with the window up: an x does not reach the app
+> key cmd+w
+  ✔ ⌘W closes it
+> key x
+  ✔ after ⌘W: an x reaches the app
+  ✔ after ⌘W: the app is in front
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 93 is back on screen after quitting
+  ✔ window 94 is back on screen after quitting
+shot: mac-shell/arranged-06-quit.png
+what the app wrote down about coming to the front and leaving it:
+04:19:21.086 ready pid=20920 bundle=dev.arbor.test.keys
+04:19:21.160 active
+04:19:22.364 resigned
+04:19:27.209 active
+04:19:53.342 resigned
+04:19:55.356 active
+
+== an app Arbor does not look at, in the same place
+session 2: Arbor pid 22908, test windows 142 143 (pid 22843)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 142 left
+docked w142 at the left edge
+> dock 143 right
+docked w143 at the right edge
+  ✔ Arbor does not know the app's window
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          349 43 326 655
+  w142 12 43 325 655        docked
+  w143 687 43 325 655       docked focused
+shot: mac-shell/unseen-00-the-witness.png
+
+== the name field, closed with ⎋
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> key ctrl+opt+n
+  ✔ the field is up
+> key x
+  ✔ with the field up: an x does not reach the app
+shot: mac-shell/unseen-01-field.png
+> key escape
+  ✔ ⎋ closes it
+> key x
+  ✔ after ⎋: an x reaches the app
+  ✔ after ⎋: the app is in front
+
+== the name field, closed with ↩
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> key ctrl+opt+n
+  ✔ the field is up
+> key x
+  ✔ with the field up: an x does not reach the app
+> key return
+  ✔ ↩ closes it
+> key x
+  ✔ after ↩: an x reaches the app
+  ✔ after ↩: the app is in front
+
+== the name field, closed with its own shortcut
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> key ctrl+opt+n
+  ✔ the field is up
+> key ctrl+opt+n
+  ✔ ⌃⌥N again closes it
+> key x
+  ✔ after ⌃⌥N: an x reaches the app
+  ✔ after ⌃⌥N: the app is in front
+
+== Go to…, closed with ⎋
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> key ctrl+opt+g
+  ✔ the palette is up
+> key x
+  ✔ with the palette up: an x does not reach the app
+shot: mac-shell/unseen-02-palette.png
+> key escape
+  ✔ ⎋ closes it
+> key x
+  ✔ after ⎋: an x reaches the app
+  ✔ after ⎋: the app is in front
+
+== Go to…, closed with its own shortcut
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> key ctrl+opt+g
+  ✔ the palette is up
+> key ctrl+opt+g
+  ✔ ⌃⌥G again closes it
+> key x
+  ✔ after ⌃⌥G: an x reaches the app
+  ✔ after ⌃⌥G: the app is in front
+
+== the panel of shortcuts, closed with ⎋
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> key ctrl+opt+shift+/
+  ✔ the panel is up
+shot: mac-shell/unseen-03-shortcuts.png
+> key escape
+  ✔ ⎋ puts it away
+> key x
+  ✔ after ⎋: an x reaches the app
+  ✔ after ⎋: the app is in front
+
+== the panel of shortcuts, put away by any key
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> key ctrl+opt+shift+/
+  ✔ the panel is up
+> key x
+  ✔ an x puts it away
+the x that put the panel away: 0 reached the app
+> key x
+  ✔ after that key: an x reaches the app
+  ✔ after that key: the app is in front
+
+== the minimap, tapped
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> key ctrl+opt+m
+  ✔ the map is up
+shot: mac-shell/unseen-04-minimap.png
+> key x
+  ✔ with the map up: an x reaches the app
+  ✔ with the map up: the app is in front
+> key ctrl+opt+m
+  ✔ ⌃⌥M again puts it away
+> key x
+  ✔ after ⌃⌥M: an x reaches the app
+  ✔ after ⌃⌥M: the app is in front
+
+== the settings window, closed with ⌘W
+> click 512 588
+> key x
+  ✔ before: an x reaches the app
+  ✔ before: the app is in front
+> key ctrl+opt+,
+  ✔ the window is up
+shot: mac-shell/unseen-05-settings.png
+> key x
+  ✔ with the window up: an x does not reach the app
+> key cmd+w
+  ✔ ⌘W closes it
+> key x
+  ✔ after ⌘W: an x reaches the app
+  ✔ after ⌘W: the app is in front
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 142 is back on screen after quitting
+  ✔ window 143 is back on screen after quitting
+shot: mac-shell/unseen-06-quit.png
+what the app wrote down about coming to the front and leaving it:
+04:20:02.676 ready pid=22765 bundle=dev.arbor.test.keys
+04:20:02.738 active
+04:20:03.675 resigned
+04:20:08.463 active
+04:20:34.216 resigned
+04:20:36.264 active
+
+128 passed, 0 failed
+exit code 0
