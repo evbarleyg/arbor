@@ -162,6 +162,14 @@ public struct FinderSession: Equatable, Sendable {
   /// The rows that match `query`, best first. `index` counts through `model.rows` and on through `model.commands`.
   public private(set) var matches: [FinderMatch]
   public private(set) var selection: FinderSelection
+  /// Whether the selection was moved by hand since the text last changed.
+  ///
+  /// **Return alone never runs a command.** ⌃⌥G, a few letters, Return, without a look, is what Go to… is for, and the fingers do it also when
+  /// the app they mean is not open: `pa` for Pages must not pause Arbor, `shortcuts` for the app of that name not switch Arbor's off. Letters and
+  /// Return do what they did before commands were listed: they go to the best place, or beep. So the places come first, however they were
+  /// found, and where there is none the command on top is shown, not selected, until a key picks it; a click and ⌘ with a digit
+  /// point at a row and need no picking. There is no list of commands that are too weighty for a reflex: none is run by one.
+  public private(set) var hasPicked = false
   private var candidates: [FinderCandidate]
   private var everything: [FinderModel.Row]
 
@@ -173,16 +181,13 @@ public struct FinderSession: Equatable, Sendable {
     selection = FinderSelection(count: matches.count, pageSize: FinderLayout.pageSize(on: model.screen))
   }
 
-  /// Best first (`FinderQuery`), but for this: **letters that stand together in a place are that place.** `vie` is Preview, though the word
-  /// View begins with it and Hold This View would score higher. Until commands were listed, Return went to Preview, and whoever types
-  /// a piece of a name or a title and presses Return must not have run something instead. So no command comes before such a place,
-  /// nor before the places that are better still. The places keep their order among themselves, and so do the commands.
+  /// The places, best first (`FinderQuery`), then the commands, best first. Go to… is about places: `vie` is Preview, though the word View
+  /// begins with it, and whoever types a piece of a title and presses Return goes where they went before there was Hold This View.
   private static func rank(_ text: String, _ candidates: [FinderCandidate], places: Int) -> [FinderMatch] {
     let query = FinderQuery(text)
     guard !query.isEmpty else { return query.rank(Array(candidates.prefix(places))) }
     let ranked = query.rank(candidates)
-    guard let last = ranked.lastIndex(where: { $0.index < places && query.foundInOnePiece($0) }) else { return ranked }
-    return ranked[...last].filter { $0.index < places } + ranked[...last].filter { $0.index >= places } + ranked[(last + 1)...]
+    return ranked.filter { $0.index < places } + ranked.filter { $0.index >= places }
   }
 
   /// The text in the field changed: match again and select the best. A notice has been read by then.
@@ -195,21 +200,61 @@ public struct FinderSession: Equatable, Sendable {
     query = text
     matches = Self.rank(text, candidates, places: model.rows.count)
     selection = FinderSelection(count: matches.count, pageSize: selection.pageSize)
+    hasPicked = false
   }
 
-  /// A fresh list while the palette stays open. What was typed stays, and so does the selection if it is
-  /// still listed; otherwise the row that took its place is selected.
+  /// A fresh list while the palette stays open. What was typed stays, and so does the selection if it is still listed. Otherwise the
+  /// row that took its place is selected, or the last place if that row is a command's: nobody has picked it.
   public mutating func replace(model newModel: FinderModel) {
     let destination = selected
     let text = query
     let row = selection.index
+    let picked = hasPicked
     self = FinderSession(model: newModel)
     match(text)
-    selection.select(matches.firstIndex { everything[$0.index].destination == destination } ?? row)
+    let same = destination.flatMap { destination in matches.firstIndex { everything[$0.index].destination == destination } }
+    selection.select(same ?? min(row, max(places - 1, 0)))
+    hasPicked = picked && same != nil
   }
 
-  public mutating func moveSelection(by rows: Int) { selection.move(by: rows) }
-  public mutating func pageSelection(by pages: Int) { selection.page(by: pages) }
+  /// No place matches, and nobody has picked the command on top: it does not show as selected, and Return does not choose it.
+  private var awaitsPicking: Bool {
+    guard !hasPicked, let place = selection.selected else { return false }
+    return everything[matches[place].index].place == .command
+  }
+
+  /// How many of `matches` are places. They come first.
+  private var places: Int { matches.prefix { $0.index < model.rows.count }.count }
+
+  /// ↓ and ↑, going round at the ends. **Only ↓ past the last place leads from the places to the commands.** ↑ from the top goes round to the
+  /// last place, as it did before commands were listed: `pa` ↑ Return is the last of Pages' windows, not Pause Arbor, which stands below it.
+  /// Coming up out of the commands it stays among the places likewise. Where a command waits to be picked the arrows come from outside
+  /// the list: ↓ picks the first and ↑ the last.
+  public mutating func moveSelection(by rows: Int) {
+    guard rows != 0 else { return }
+    let waited = awaitsPicking
+    hasPicked = true
+    let places = places
+    guard rows < 0, places > 0 else { return selection.move(by: waited && rows > 0 ? rows - 1 : rows) }
+    let up = rows.magnitude
+    let toTheLastPlace = UInt(max(selection.index - (places - 1), 0))
+    guard up >= toTheLastPlace else { return selection.select(selection.index - Int(up)) }
+    selection.select((min(selection.index, places - 1) - Int((up - toTheLastPlace) % UInt(places)) + places) % places)
+  }
+
+  /// Page Down and Page Up, stopping at the ends; among the places, at the last of them, however often it is pressed. Where a command
+  /// waits to be picked, either picks the first row.
+  public mutating func pageSelection(by pages: Int) {
+    guard pages != 0 else { return }
+    let waited = awaitsPicking
+    hasPicked = true
+    let (places, before) = (places, selection)
+    selection.page(by: waited && pages > 0 ? pages - 1 : pages)
+    if before.index < places, selection.index >= places {
+      selection = before
+      selection.select(places - 1)
+    }
+  }
 
   /// One row as it shows.
   public struct Item: Equatable, Sendable {
@@ -221,13 +266,13 @@ public struct FinderSession: Equatable, Sendable {
   /// The rows that show, from the top.
   public var items: [Item] {
     selection.visible.map { place in
-      Item(row: everything[matches[place].index], match: matches[place], isSelected: place == selection.selected)
+      Item(row: everything[matches[place].index], match: matches[place], isSelected: place == selection.selected && !awaitsPicking)
     }
   }
 
-  /// What Return would choose.
+  /// What Return would choose. Nothing, where a command waits to be picked.
   public var selected: FinderDestination? {
-    selection.selected.map { everything[matches[$0].index].destination }
+    awaitsPicking ? nil : selection.selected.map { everything[matches[$0].index].destination }
   }
 
   /// What shows at `place` from the top, counted from 0: what a click there, or ⌘ and the digit
@@ -240,6 +285,7 @@ public struct FinderSession: Equatable, Sendable {
   public var message: String? {
     if let notice = model.notice { return notice }
     if model.rows.isEmpty, matches.isEmpty { return "No windows" }
+    if awaitsPicking { return "↓ picks a command, ↩ runs it" }
     return matches.isEmpty ? "Nothing matches" : nil
   }
 

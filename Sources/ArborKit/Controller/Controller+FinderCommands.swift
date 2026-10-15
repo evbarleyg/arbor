@@ -42,8 +42,12 @@ extension Controller {
         let path = path + (isSubmenu ? [section.title].compactMap { $0 } : [])
         for item in section.items {
           if let command = item.command {
+            // Under Arrange Again a row is an app's name and nothing else. Here it is marked as the menu marks one in the midst of a title
+            // (Don’t Arrange “Safari”): whoever types the name means the app, not this (`FinderQuery`).
+            var title = item.title
+            if case .include = command { title = "“\(title)”" }
             add(
-              command, name: (path + [item.title]).joined(separator: " ▸ "), shortcut: item.shortcut?.label, isOn: item.isTicked,
+              command, name: (path + [title]).joined(separator: " ▸ "), shortcut: item.shortcut?.label, isOn: item.isTicked,
               isAvailable: item.isEnabled)
           }
           walk(item.sections, under: path + [item.title], isSubmenu: true)
