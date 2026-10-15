@@ -1,0 +1,18 @@
+# mac-shell: scripts/mac-shell/check-F51.sh at 0414562, macOS 26.6.2, 2026-10-15T15:16Z
+built Arbor, the pointer tool and the app bundles in 7s
+/tmp/arbor-shell.4T3htO/Arbor.app: replacing existing signature
+session 1: Arbor pid 5837, launched without the permission
+Error: stepping, UNIQUE constraint failed: access.service, access.client, access.client_type, access.indirect_object_identifier (19)
+::error title=mac-shell::the grant could not be written
+  ✘ the script ended early, with exit code 2
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+4 passed, 1 failed
+exit code 2

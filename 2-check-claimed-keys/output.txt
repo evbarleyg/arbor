@@ -1,0 +1,664 @@
+# mac-shell: scripts/mac-shell/check-claimed-keys.sh at 0414562, macOS 26.6.2, 2026-10-15T15:16Z
+built Arbor, the pointer tool and the app bundles in 3s
+26.6.2
+
+== 0. the control: no Arbor at all
+> key j
+> key ctrl+opt+z
+RESULT | no Arbor | status: no Arbor | item in the menu bar: no | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+  ✔ with nobody to take it, the key reaches the app: the witness works
+
+== 1. waiting for the permission: a first launch
+Arbor pid 8383: waiting for Accessibility permission (System Settings → Privacy & Secu
+  ✔ Arbor waits for the permission
+shot: mac-shell/10-waiting.png
+  ✔ its item is in the menu bar
+  ✔ the keys were registered before the item was made
+> key j
+> click 150 620
+> key j
+> key ctrl+opt+z
+RESULT | waiting for the permission (first launch) | status: waiting for Accessibility permission (System Settings → Privacy & Secu | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+  ✔ the key is taken all the same
+  ✔ and the line says why
+shot: mac-shell/10-waiting-the-line.png
+Right now: Arbor takes them and can move nothing without Accessibility permission.
+arborctl: ✘ Accessibility: not granted, so Arbor cannot move windows (System Settings → Privacy & Security → Accessibility; the `check-setup` command opens a window that explains it)
+✔ Shortcuts: 9 registered
+> click 780 15 --right
+shot: mac-shell/11-waiting-its-menu.png
+> key escape
+> key j
+> click 150 620
+> key j
+> key ctrl+opt+z
+RESULT | waiting for the permission, a second time | status: waiting for Accessibility permission (System Settings → Privacy & Secu | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+  ✔ a second time too
+
+== 1b. the permission arrives: the control for 1
+1792077484.17 the bundle has an entry that allows
+  ✔ Arbor starts by itself
+2026-10-15T15:17:42.372Z INFO  registered 9 shortcuts in 1105 µs
+> key j
+> key ctrl+opt+z
+RESULT | running, permission granted while it waited | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+  ✔ the key is Arbor's
+  ✔ and Arbor answers it
+shot: mac-shell/12-running.png
+
+== 1p. a peek's keys, from the press on: of the nine that ship ⌃⌥↓ is bound to nothing (board 1.80)
+> key j
+> key ctrl+opt+down
+RESULT | running, no peek: a key that is bound to nothing | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+  ✔ the control: without a peek it is the app's
+> key j
+  ✔ the witness has the keyboard (granted while it waited)
+> key ctrl+opt+space --down
+> key ctrl+opt+down --held
+RESULT | granted while it waited: ⌃⌥↓ started 0.1 s after ⌃⌥Space | the app got: 1 down | early by Arbor's log: 0
+> key ctrl+opt+space --up
+> key j
+  ✔ the witness has the keyboard (granted while it waited)
+> key ctrl+opt+space --down
+> key ctrl+opt+down --held
+RESULT | granted while it waited: ⌃⌥↓ started 0.15 s after ⌃⌥Space | the app got: 0 down | early by Arbor's log: 1
+> key ctrl+opt+space --up
+> key j
+  ✔ the witness has the keyboard (granted while it waited)
+> key ctrl+opt+space --down
+> key ctrl+opt+down --held
+RESULT | granted while it waited: ⌃⌥↓ started 0.2 s after ⌃⌥Space | the app got: 0 down | early by Arbor's log: 1
+> key ctrl+opt+space --up
+> key j
+  ✔ the witness has the keyboard (granted while it waited)
+> key ctrl+opt+space --down
+> key ctrl+opt+down --held
+RESULT | granted while it waited: ⌃⌥↓ started 0.25 s after ⌃⌥Space | the app got: 0 down | early by Arbor's log: 1
+> key ctrl+opt+space --up
+  ✘ in none of the four did it reach the app (granted while it waited)
+      picture: mac-shell/fail-check-claimed-keys-1.png
+      | display 0 0 1024 768, visible 0 31 1024 677, camera n0, back no
+      |   Desktop          12 43 1000 653
+      |   w33 20 520 260 160       floating focused
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG peek: the key came up
+      log | INFO  show-all: showing everything
+      log | DEBUG peek: ctrl+opt+down came before the hold counted
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG peek: held
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG peek: the key came up
+  ✔ and in one at least it came before the hold counted, or these rounds prove nothing (granted while it waited)
+> key j
+  ✔ the witness has the keyboard (granted while it waited)
+> key ctrl+opt+space --down
+> key ctrl+opt+escape --held
+> key ctrl+opt+down --held
+RESULT | granted while it waited: ⌃⌥↓ after ⌃⌥⎋ has called the peek off, ⌃⌥Space still down | the app got: 0 down
+  ✔ with the peek called off and its key still down it goes nowhere (granted while it waited)
+  ✔ and ⌃⌥⎋ meant the peek: Arbor is not paused (granted while it waited)
+> key ctrl+opt+space --up
+> key j
+> key ctrl+opt+down
+RESULT | granted while it waited: running, the peek over | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+  ✔ and the app's again once the key is up (granted while it waited)
+> key j
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+RESULT | granted while it waited: ⌃⌥Space held, 1 | held: 1 | found up: 0
+  Arbor's looks, the same ones counted:
+      24 key combined=false hid=true ctrl=true opt=true flags appkit=786432
+  Arbor's last two looks and the end:
+    2026-10-15T15:18:29.051Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432
+    2026-10-15T15:18:29.088Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432
+    2026-10-15T15:18:29.120Z DEBUG peek: the key came up
+  from outside:
+    15:18:27.524 key combined=false hid=false ctrl=false opt=false flags appkit=0
+    15:18:27.935 key combined=false hid=false ctrl=true opt=false flags appkit=262144
+    15:18:27.968 key combined=false hid=false ctrl=true opt=true flags appkit=786432
+    15:18:28.025 key combined=true hid=true ctrl=true opt=true flags appkit=786432
+    15:18:29.125 key combined=false hid=false ctrl=true opt=true flags appkit=786432
+    15:18:29.193 key combined=false hid=false ctrl=true opt=false flags appkit=262144
+    15:18:29.254 key combined=false hid=false ctrl=false opt=false flags appkit=0
+  ✔ a held ⌃⌥Space is seen as held (granted while it waited, 1)
+> key j
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+RESULT | granted while it waited: ⌃⌥Space held, 2 | held: 1 | found up: 0
+  Arbor's looks, the same ones counted:
+      21 key combined=false hid=true ctrl=true opt=true flags appkit=786432
+  Arbor's last two looks and the end:
+    2026-10-15T15:18:33.185Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432
+    2026-10-15T15:18:33.222Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432
+    2026-10-15T15:18:33.604Z DEBUG peek: the key came up
+  from outside:
+    15:18:31.639 key combined=false hid=false ctrl=false opt=false flags appkit=0
+    15:18:32.068 key combined=false hid=false ctrl=true opt=false flags appkit=262144
+    15:18:32.136 key combined=false hid=false ctrl=true opt=true flags appkit=786432
+    15:18:32.187 key combined=true hid=true ctrl=true opt=true flags appkit=786432
+    15:18:33.346 key combined=false hid=false ctrl=true opt=true flags appkit=786432
+    15:18:33.382 key combined=false hid=false ctrl=true opt=false flags appkit=262144
+    15:18:33.401 key combined=false hid=false ctrl=false opt=false flags appkit=0
+  ✔ a held ⌃⌥Space is seen as held (granted while it waited, 2)
+ctrl+opt+a runs `show-all`; mind that a widely used chat app archives the open conversation with ⌃⌥A, should the key ever reach it
+> key j
+> key ctrl+opt+a --down
+> key ctrl+opt+a --up
+RESULT | granted while it waited: ⌃⌥A held, bound to the same command, 1 | held: 1 | found up: 0
+  Arbor's looks, the same ones counted:
+      14 key combined=false hid=true ctrl=true opt=true flags appkit=786432
+  Arbor's last two looks and the end:
+    2026-10-15T15:18:38.206Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432
+    2026-10-15T15:18:38.243Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432
+    2026-10-15T15:18:38.691Z DEBUG peek: the key came up
+  from outside:
+    15:18:36.804 key combined=false hid=false ctrl=false opt=false flags appkit=0
+    15:18:37.318 key combined=false hid=false ctrl=true opt=false flags appkit=262144
+    15:18:37.379 key combined=false hid=false ctrl=true opt=true flags appkit=786432
+    15:18:37.493 key combined=true hid=true ctrl=true opt=true flags appkit=786432
+    15:18:38.659 key combined=false hid=false ctrl=true opt=true flags appkit=786432
+    15:18:38.693 key combined=false hid=false ctrl=true opt=false flags appkit=262144
+    15:18:38.725 key combined=false hid=false ctrl=false opt=false flags appkit=0
+  ✔ a held ⌃⌥A is seen as held (granted while it waited, 1)
+> key j
+> key ctrl+opt+a --down
+> key ctrl+opt+a --up
+RESULT | granted while it waited: ⌃⌥A held, bound to the same command, 2 | held: 1 | found up: 0
+  Arbor's looks, the same ones counted:
+      22 key combined=false hid=true ctrl=true opt=true flags appkit=786432
+  Arbor's last two looks and the end:
+    2026-10-15T15:18:42.829Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432
+    2026-10-15T15:18:42.866Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432
+    2026-10-15T15:18:42.896Z DEBUG peek: the key came up
+  from outside:
+    15:18:41.174 key combined=false hid=false ctrl=false opt=false flags appkit=0
+    15:18:41.609 key combined=false hid=false ctrl=true opt=false flags appkit=262144
+    15:18:41.705 key combined=false hid=false ctrl=true opt=true flags appkit=786432
+    15:18:41.759 key combined=true hid=true ctrl=true opt=true flags appkit=786432
+    15:18:42.898 key combined=false hid=false ctrl=true opt=true flags appkit=786432
+    15:18:42.972 key combined=false hid=false ctrl=true opt=false flags appkit=262144
+    15:18:43.003 key combined=false hid=false ctrl=false opt=false flags appkit=0
+  ✔ a held ⌃⌥A is seen as held (granted while it waited, 2)
+ctrl+opt+a no longer runs `show-all`; ctrl+opt+space still does
+> key j
+> key ctrl+opt+space --down
+ctrl+opt+space no longer runs `show-all`; no shortcut does now
+> key ctrl+opt+space --up
+RESULT | granted while it waited: a release that is never reported | found up while the key was down: 0 | once it was up: 1 | reported: 0
+  Arbor's looks, the same ones counted:
+      33 key combined=false hid=true ctrl=true opt=true flags appkit=786432
+       1 key combined=false hid=false ctrl=false opt=false flags appkit=0
+  Arbor's last three looks and what it made of them:
+    2026-10-15T15:18:48.205Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432
+    2026-10-15T15:18:48.244Z DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432
+    2026-10-15T15:18:48.614Z DEBUG PROBE isHolding: key combined=false hid=false ctrl=false opt=false flags appkit=0
+    2026-10-15T15:18:48.615Z DEBUG peek: the keys were found up
+  from outside:
+    15:18:46.014 key combined=false hid=false ctrl=false opt=false flags appkit=0
+    15:18:46.444 key combined=false hid=false ctrl=true opt=false flags appkit=262144
+    15:18:46.537 key combined=false hid=false ctrl=true opt=true flags appkit=786432
+    15:18:46.651 key combined=true hid=true ctrl=true opt=true flags appkit=786432
+    15:18:48.300 key combined=false hid=false ctrl=true opt=true flags appkit=786432
+    15:18:48.327 key combined=false hid=false ctrl=true opt=false flags appkit=262144
+    15:18:48.391 key combined=false hid=false ctrl=false opt=false flags appkit=0
+  ✔ while the key was down no look found it up (granted while it waited)
+  ✔ and once it is up a look finds it up, with no release reported (granted while it waited)
+ctrl+opt+space runs `show-all`
+
+== 1r. the same in an Arbor that is started with the permission in place
+Arbor pid 11965: running: 1 display, 0 docked and 1 floating, 0 out of view
+> key j
+  ✔ the witness has the keyboard (started with the permission)
+> key ctrl+opt+space --down
+> key ctrl+opt+down --held
+RESULT | started with the permission: ⌃⌥↓ started 0.1 s after ⌃⌥Space | the app got: 1 down | early by Arbor's log: 0
+> key ctrl+opt+space --up
+> key j
+  ✔ the witness has the keyboard (started with the permission)
+> key ctrl+opt+space --down
+> key ctrl+opt+down --held
+RESULT | started with the permission: ⌃⌥↓ started 0.15 s after ⌃⌥Space | the app got: 0 down | early by Arbor's log: 1
+> key ctrl+opt+space --up
+> key j
+  ✔ the witness has the keyboard (started with the permission)
+> key ctrl+opt+space --down
+> key ctrl+opt+down --held
+RESULT | started with the permission: ⌃⌥↓ started 0.2 s after ⌃⌥Space | the app got: 0 down | early by Arbor's log: 1
+> key ctrl+opt+space --up
+> key j
+  ✔ the witness has the keyboard (started with the permission)
+> key ctrl+opt+space --down
+> key ctrl+opt+down --held
+RESULT | started with the permission: ⌃⌥↓ started 0.25 s after ⌃⌥Space | the app got: 0 down | early by Arbor's log: 1
+> key ctrl+opt+space --up
+  ✘ in none of the four did it reach the app (started with the permission)
+      picture: mac-shell/fail-check-claimed-keys-2.png
+      | display 0 0 1024 768, visible 0 31 1024 677, camera n0, back no
+      |   Desktop          12 43 1000 653
+      |   w33 20 520 260 160       floating focused
+      log | DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432
+      log | DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432
+      log | DEBUG peek: ctrl+opt+down came before the hold counted
+      log | DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG peek: held
+      log | DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=11272192
+      log | DEBUG peek: the key came up
+  ✔ and in one at least it came before the hold counted, or these rounds prove nothing (started with the permission)
+> key j
+  ✔ the witness has the keyboard (started with the permission)
+> key ctrl+opt+space --down
+> key ctrl+opt+escape --held
+> key ctrl+opt+down --held
+RESULT | started with the permission: ⌃⌥↓ after ⌃⌥⎋ has called the peek off, ⌃⌥Space still down | the app got: 0 down
+  ✔ with the peek called off and its key still down it goes nowhere (started with the permission)
+  ✔ and ⌃⌥⎋ meant the peek: Arbor is not paused (started with the permission)
+> key ctrl+opt+space --up
+> key j
+> key ctrl+opt+down
+RESULT | started with the permission: running, the peek over | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+  ✔ and the app's again once the key is up (started with the permission)
+> key j
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+RESULT | started with the permission: ⌃⌥Space held, 1 | held: 1 | found up: 0
+  Arbor's looks, the same ones counted:
+      32 key combined=true hid=true ctrl=true opt=true flags appkit=786432
+  Arbor's last two looks and the end:
+    2026-10-15T15:19:11.235Z DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432
+    2026-10-15T15:19:11.272Z DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432
+    2026-10-15T15:19:11.308Z DEBUG peek: the key came up
+  from outside:
+    15:19:09.444 key combined=false hid=false ctrl=false opt=false flags appkit=0
+    15:19:09.922 key combined=false hid=false ctrl=true opt=false flags appkit=262144
+    15:19:10.020 key combined=false hid=false ctrl=true opt=true flags appkit=786432
+    15:19:10.108 key combined=true hid=true ctrl=true opt=true flags appkit=786432
+    15:19:11.316 key combined=false hid=false ctrl=true opt=true flags appkit=786432
+    15:19:11.375 key combined=false hid=false ctrl=true opt=false flags appkit=262144
+    15:19:11.468 key combined=false hid=false ctrl=false opt=false flags appkit=0
+  ✔ a held ⌃⌥Space is seen as held (started with the permission, 1)
+> key j
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+RESULT | started with the permission: ⌃⌥Space held, 2 | held: 1 | found up: 0
+  Arbor's looks, the same ones counted:
+      31 key combined=true hid=true ctrl=true opt=true flags appkit=786432
+  Arbor's last two looks and the end:
+    2026-10-15T15:19:15.370Z DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432
+    2026-10-15T15:19:15.407Z DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432
+    2026-10-15T15:19:15.416Z DEBUG peek: the key came up
+  from outside:
+    15:19:13.736 key combined=false hid=false ctrl=false opt=false flags appkit=0
+    15:19:14.144 key combined=false hid=false ctrl=true opt=false flags appkit=262144
+    15:19:14.230 key combined=false hid=false ctrl=true opt=true flags appkit=786432
+    15:19:14.280 key combined=true hid=true ctrl=true opt=true flags appkit=786432
+    15:19:15.418 key combined=false hid=false ctrl=true opt=true flags appkit=786432
+    15:19:15.522 key combined=false hid=false ctrl=true opt=false flags appkit=262144
+    15:19:15.552 key combined=false hid=false ctrl=false opt=false flags appkit=0
+  ✔ a held ⌃⌥Space is seen as held (started with the permission, 2)
+ctrl+opt+a runs `show-all`; mind that a widely used chat app archives the open conversation with ⌃⌥A, should the key ever reach it
+> key j
+> key ctrl+opt+a --down
+> key ctrl+opt+a --up
+RESULT | started with the permission: ⌃⌥A held, bound to the same command, 1 | held: 1 | found up: 0
+  Arbor's looks, the same ones counted:
+      32 key combined=true hid=true ctrl=true opt=true flags appkit=786432
+  Arbor's last two looks and the end:
+    2026-10-15T15:19:20.223Z DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432
+    2026-10-15T15:19:20.257Z DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432
+    2026-10-15T15:19:20.289Z DEBUG peek: the key came up
+  from outside:
+    15:19:18.454 key combined=false hid=false ctrl=false opt=false flags appkit=0
+    15:19:18.900 key combined=false hid=false ctrl=true opt=false flags appkit=262144
+    15:19:18.988 key combined=false hid=false ctrl=true opt=true flags appkit=786432
+    15:19:19.087 key combined=true hid=true ctrl=true opt=true flags appkit=786432
+    15:19:20.289 key combined=false hid=false ctrl=true opt=true flags appkit=786432
+    15:19:20.360 key combined=false hid=false ctrl=true opt=false flags appkit=262144
+    15:19:20.390 key combined=false hid=false ctrl=false opt=false flags appkit=0
+  ✔ a held ⌃⌥A is seen as held (started with the permission, 1)
+> key j
+> key ctrl+opt+a --down
+> key ctrl+opt+a --up
+RESULT | started with the permission: ⌃⌥A held, bound to the same command, 2 | held: 1 | found up: 0
+  Arbor's looks, the same ones counted:
+      31 key combined=true hid=true ctrl=true opt=true flags appkit=786432
+  Arbor's last two looks and the end:
+    2026-10-15T15:19:24.486Z DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432
+    2026-10-15T15:19:24.521Z DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432
+    2026-10-15T15:19:24.540Z DEBUG peek: the key came up
+  from outside:
+    15:19:22.723 key combined=false hid=false ctrl=false opt=false flags appkit=0
+    15:19:23.185 key combined=false hid=false ctrl=true opt=false flags appkit=262144
+    15:19:23.277 key combined=false hid=false ctrl=true opt=true flags appkit=786432
+    15:19:23.389 key combined=true hid=true ctrl=true opt=true flags appkit=786432
+    15:19:24.543 key combined=false hid=false ctrl=true opt=true flags appkit=786432
+    15:19:24.634 key combined=false hid=false ctrl=true opt=false flags appkit=262144
+    15:19:24.659 key combined=false hid=false ctrl=false opt=false flags appkit=0
+  ✔ a held ⌃⌥A is seen as held (started with the permission, 2)
+ctrl+opt+a no longer runs `show-all`; ctrl+opt+space still does
+> key j
+> key ctrl+opt+space --down
+ctrl+opt+space no longer runs `show-all`; no shortcut does now
+> key ctrl+opt+space --up
+RESULT | started with the permission: a release that is never reported | found up while the key was down: 0 | once it was up: 1 | reported: 0
+  Arbor's looks, the same ones counted:
+      39 key combined=true hid=true ctrl=true opt=true flags appkit=786432
+       1 key combined=false hid=false ctrl=true opt=true flags appkit=786432
+  Arbor's last three looks and what it made of them:
+    2026-10-15T15:19:29.451Z DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432
+    2026-10-15T15:19:29.486Z DEBUG PROBE isHolding: key combined=true hid=true ctrl=true opt=true flags appkit=786432
+    2026-10-15T15:19:29.523Z DEBUG PROBE isHolding: key combined=false hid=false ctrl=true opt=true flags appkit=786432
+    2026-10-15T15:19:29.523Z DEBUG peek: the keys were found up
+  from outside:
+    15:19:27.455 key combined=false hid=false ctrl=false opt=false flags appkit=0
+    15:19:27.888 key combined=false hid=false ctrl=true opt=false flags appkit=262144
+    15:19:27.957 key combined=false hid=false ctrl=true opt=true flags appkit=786432
+    15:19:28.040 key combined=true hid=true ctrl=true opt=true flags appkit=786432
+    15:19:29.493 key combined=false hid=false ctrl=true opt=true flags appkit=786432
+    15:19:29.588 key combined=false hid=false ctrl=true opt=false flags appkit=262144
+    15:19:29.687 key combined=false hid=false ctrl=false opt=false flags appkit=0
+  ✔ while the key was down no look found it up (started with the permission)
+  ✔ and once it is up a look finds it up, with no release reported (started with the permission)
+ctrl+opt+space runs `show-all`
+
+== 2. with no event tap, as shipped: every default shortcut in turn
+event taps: 0
+false
+> key j
+> key ctrl+opt+[
+> key j
+> key ctrl+opt+left
+> key j
+> key ctrl+opt+right
+> key j
+> key ctrl+opt+g
+> key escape
+> key j
+> key ctrl+opt+space
+> key j
+> key ctrl+opt+f
+> key j
+> key ctrl+opt+escape
+> key j
+> key ctrl+opt+z
+> key j
+> key ctrl+opt+return
+RESULT | all defaults, no tap | pressed: 9 | reached the app: none
+  ✔ none of them reaches the app
+
+== 2b. the key held down: its repeats and its release
+> key j
+> key ctrl+opt+z --down
+> key ctrl+opt+z --repeat 12
+> key ctrl+opt+z --up
+RESULT | held with 12 repeats | the app got: 0 events
+  ✔ neither a repeat nor the release reaches the app
+
+== 5. what the person said themselves, and what changes nothing
+> key j
+> key ctrl+opt+escape
+  ✔ a pause says whose the keys are now
+shot: mac-shell/50-paused.png
+> key j
+> key ctrl+opt+z
+RESULT | paused | status: paused: windows, shortcuts and gestures are left alone until `resume` | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+  ✔ in a pause the key is the app's: the person said so
+Right now: all but 1 off while Arbor is paused.
+> resume
+resumed
+> key j
+> key ctrl+opt+z
+RESULT | resumed: the control | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+  ✔ the key is Arbor's again
+> hold
+holding this view until `release`
+> key j
+> key ctrl+opt+z
+RESULT | the view is held | status: running: 1 display, 1 docked and 0 floating, 0 out of view; the view i | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+  ✔ a held view keeps the key
+> release
+released
+> hold still
+holding still until `release`: the view moves only when you ask
+> key j
+> key ctrl+opt+z
+RESULT | holding still | status: running: 1 display, 0 docked and 1 floating, 0 out of view; holding st | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+  ✔ holding still keeps the key
+> release
+released
+> pass-through dev.arbor.test.keys on
+shortcuts and gestures are off in ArborKeys, except ⌃⌥⎋
+> key j
+> key ctrl+opt+z
+RESULT | the app is on passThroughApps | status: running: 1 display, 0 docked and 1 floating, 0 out of view; shortcuts  | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+  ✔ in an app on the list the key is the app's: the person said so
+> pass-through dev.arbor.test.keys off
+shortcuts and gestures work in ArborKeys again
+> set hotkeysEnabled false
+hotkeysEnabled = false (was true); Settings… in Arbor's menu is the way back
+> key j
+> key ctrl+opt+z
+RESULT | hotkeysEnabled false | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+  ✔ with shortcuts off the key is the app's: the person said so
+> set hotkeysEnabled true
+hotkeysEnabled = true (was false)
+> key j
+> key ctrl+opt+z
+RESULT | all of it undone: the control | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+  ✔ the key is Arbor's again
+
+== 6. while the hot keys are registered anew
+> key j
+RESULT | 60 presses during 0 registrations | the app got: 0
+   1 registered 9 shortcuts in 985 µs
+   1 registered 9 shortcuts in 741 µs
+   1 registered 9 shortcuts in 583 µs
+   1 registered 9 shortcuts in 563 µs
+   1 registered 9 shortcuts in 509 µs
+
+== 4. the key is Arbor's, and the app has roads of its own
+> bind ctrl+opt+a show-all
+ctrl+opt+a runs `show-all`; mind that a widely used chat app archives the open conversation with ⌃⌥A, should the key ever reach it
+  15:20:37.546 road menu: an item with ctrl+opt+a
+  15:20:37.557 road monitor: installed
+  15:20:37.599 road tap: installed
+Arbor pid 17227: running: 1 display, 0 docked and 1 floating, 0 out of view
+> key j
+> key ctrl+opt+a
+RESULT | running; the app has a menu item, a global monitor and a listening tap | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 1 | another claimant: 0 | lines in Arbor's log: 1
+  15:20:37.546 road menu: an item with ctrl+opt+a
+  15:20:37.557 road monitor: installed
+  15:20:37.599 road tap: installed
+  15:20:38.287 road tap: down code=38 mods=none
+  15:20:38.950 road tap: down code=0 mods=ctrl+opt
+> key j
+> key ctrl+opt+a
+RESULT | no Arbor; the same app: the control | status: no Arbor | item in the menu bar: no | the app got: 1 down, 1 up | by other roads: 2 | another claimant: 0 | lines in Arbor's log: 0
+  15:20:38.950 road tap: down code=0 mods=ctrl+opt
+  15:20:40.452 road tap: down code=38 mods=none
+  15:20:41.202 road tap: down code=0 mods=ctrl+opt
+  15:20:41.213 road menu: the item ran
+  15:20:43.285 road hotkey: RegisterEventHotKey answered 0
+Arbor pid 17444: running: 1 display, 0 docked and 1 floating, 0 out of view
+2026-10-15T15:20:37.917Z INFO  registered 10 shortcuts in 694 µs
+2026-10-15T15:20:43.737Z INFO  registered 10 shortcuts in 1456 µs
+> key j
+> key ctrl+opt+a
+RESULT | running; the app in front registered ⌃⌥A itself BEFORE Arbor did | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 1 | another claimant: 0 | lines in Arbor's log: 1
+  15:20:43.285 road hotkey: RegisterEventHotKey answered 0
+  15:20:45.212 road hotkey: pressed
+  15:20:45.365 road hotkey: released
+  15:20:48.363 road hotkey: RegisterEventHotKey answered 0
+> key j
+> key ctrl+opt+a
+RESULT | running; the app in front registered ⌃⌥A itself AFTER Arbor did | status: running: 1 display, 0 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 1 | another claimant: 0 | lines in Arbor's log: 1
+  15:20:48.363 road hotkey: RegisterEventHotKey answered 0
+  15:20:49.371 road hotkey: pressed
+  15:20:49.555 road hotkey: released
+  15:20:51.510 road secure: EnableSecureEventInput answered 0, on=true
+> key j
+> key ctrl+opt+a
+RESULT | running; secure input is on | status: running: 1 display, 0 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+
+== 3. another program holds the same chord
+15:20:54.658 claimed pid=18133 exclusive=false answer=0
+> key j
+> key ctrl+opt+a
+RESULT | another program claimed ⌃⌥A AFTER Arbor (plain) | status: running: 1 display, 0 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 1 | lines in Arbor's log: 1
+Arbor pid 18542: running: 1 display, 0 docked and 1 floating, 0 out of view
+2026-10-15T15:20:43.737Z INFO  registered 10 shortcuts in 1456 µs
+2026-10-15T15:20:58.261Z INFO  registered 10 shortcuts in 646 µs
+✔ Shortcuts: 10 registered
+> key j
+> key ctrl+opt+a
+RESULT | another program claimed ⌃⌥A BEFORE Arbor (plain) | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 1 | lines in Arbor's log: 1
+> key j
+> key ctrl+opt+a
+RESULT | that program has gone: the control | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+15:21:03.737 claimed pid=18981 exclusive=true answer=0
+> key j
+> key ctrl+opt+a
+RESULT | another program claimed ⌃⌥A AFTER Arbor exclusive | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 1 | lines in Arbor's log: 0
+Arbor pid 19163: running: 1 display, 0 docked and 1 floating, 0 out of view
+2026-10-15T15:20:58.261Z INFO  registered 10 shortcuts in 646 µs
+2026-10-15T15:21:07.081Z INFO  registered 10 shortcuts in 1661 µs
+✔ Shortcuts: 10 registered
+> key j
+> key ctrl+opt+a
+RESULT | another program claimed ⌃⌥A BEFORE Arbor exclusive | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 1 | lines in Arbor's log: 0
+> key j
+> key ctrl+opt+a
+RESULT | that program has gone: the control | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+
+== 1c. the permission is taken away while Arbor runs
+1792077674.09 the bundle's entry says no
+  ✔ Arbor notices
+shot: mac-shell/13-taken-away.png
+  ✔ its item is in the menu bar
+> key j
+> key ctrl+opt+z
+RESULT | the permission was taken away | status: Arbor's Accessibility permission was taken away, so it cannot move win | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+  ✔ the key is taken all the same
+  ✔ and the line says why
+Right now: Arbor takes them and can move nothing without Accessibility permission.
+1792077681.86 the bundle has an entry that allows
+  ✔ Arbor starts again
+> key j
+> key ctrl+opt+z
+RESULT | the permission is back: the control | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+  ✔ the key is Arbor's again
+  ✔ and Arbor answers it
+
+== 1d. a new build over an old grant: the switch in System Settings stays on
+this build's requirement begins: cdhash H"34ab6196e9215c4
+1792077690.10 the bundle has an entry that allows, for one signature only
+
+Arbor pid 20378: running: 1 display, 0 docked and 1 floating, 0 out of view
+  ✔ the build the grant was made for runs: the control
+> key j
+> key ctrl+opt+z
+RESULT | the build the grant was made for | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+  ✔ its key is its own
+Arbor pid 20944: waiting for Accessibility permission (System Settings → Privacy & Secu
+the entry still says: 2 (2 is allowed)
+shot: mac-shell/14-another-build.png
+  ✔ the new build waits for a permission it seems to have
+  ✔ its item is in the menu bar
+> key j
+> click 150 620
+> key j
+> key ctrl+opt+z
+RESULT | another ad-hoc build, the old grant still switched on | status: waiting for Accessibility permission (System Settings → Privacy & Secu | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+  ✔ the key is taken all the same
+  ✔ and the line says why
+
+== the table
+RESULT | no Arbor | status: no Arbor | item in the menu bar: no | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+RESULT | waiting for the permission (first launch) | status: waiting for Accessibility permission (System Settings → Privacy & Secu | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+RESULT | waiting for the permission, a second time | status: waiting for Accessibility permission (System Settings → Privacy & Secu | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+RESULT | running, permission granted while it waited | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+RESULT | running, no peek: a key that is bound to nothing | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+RESULT | granted while it waited: ⌃⌥↓ started 0.1 s after ⌃⌥Space | the app got: 1 down | early by Arbor's log: 0
+RESULT | granted while it waited: ⌃⌥↓ started 0.15 s after ⌃⌥Space | the app got: 0 down | early by Arbor's log: 1
+RESULT | granted while it waited: ⌃⌥↓ started 0.2 s after ⌃⌥Space | the app got: 0 down | early by Arbor's log: 1
+RESULT | granted while it waited: ⌃⌥↓ started 0.25 s after ⌃⌥Space | the app got: 0 down | early by Arbor's log: 1
+RESULT | granted while it waited: ⌃⌥↓ after ⌃⌥⎋ has called the peek off, ⌃⌥Space still down | the app got: 0 down
+RESULT | granted while it waited: running, the peek over | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+RESULT | granted while it waited: ⌃⌥Space held, 1 | held: 1 | found up: 0
+RESULT | granted while it waited: ⌃⌥Space held, 2 | held: 1 | found up: 0
+RESULT | granted while it waited: ⌃⌥A held, bound to the same command, 1 | held: 1 | found up: 0
+RESULT | granted while it waited: ⌃⌥A held, bound to the same command, 2 | held: 1 | found up: 0
+RESULT | granted while it waited: a release that is never reported | found up while the key was down: 0 | once it was up: 1 | reported: 0
+RESULT | started with the permission: ⌃⌥↓ started 0.1 s after ⌃⌥Space | the app got: 1 down | early by Arbor's log: 0
+RESULT | started with the permission: ⌃⌥↓ started 0.15 s after ⌃⌥Space | the app got: 0 down | early by Arbor's log: 1
+RESULT | started with the permission: ⌃⌥↓ started 0.2 s after ⌃⌥Space | the app got: 0 down | early by Arbor's log: 1
+RESULT | started with the permission: ⌃⌥↓ started 0.25 s after ⌃⌥Space | the app got: 0 down | early by Arbor's log: 1
+RESULT | started with the permission: ⌃⌥↓ after ⌃⌥⎋ has called the peek off, ⌃⌥Space still down | the app got: 0 down
+RESULT | started with the permission: running, the peek over | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+RESULT | started with the permission: ⌃⌥Space held, 1 | held: 1 | found up: 0
+RESULT | started with the permission: ⌃⌥Space held, 2 | held: 1 | found up: 0
+RESULT | started with the permission: ⌃⌥A held, bound to the same command, 1 | held: 1 | found up: 0
+RESULT | started with the permission: ⌃⌥A held, bound to the same command, 2 | held: 1 | found up: 0
+RESULT | started with the permission: a release that is never reported | found up while the key was down: 0 | once it was up: 1 | reported: 0
+RESULT | all defaults, no tap | pressed: 9 | reached the app: none
+RESULT | held with 12 repeats | the app got: 0 events
+RESULT | paused | status: paused: windows, shortcuts and gestures are left alone until `resume` | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+RESULT | resumed: the control | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+RESULT | the view is held | status: running: 1 display, 1 docked and 0 floating, 0 out of view; the view i | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+RESULT | holding still | status: running: 1 display, 0 docked and 1 floating, 0 out of view; holding st | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+RESULT | the app is on passThroughApps | status: running: 1 display, 0 docked and 1 floating, 0 out of view; shortcuts  | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+RESULT | hotkeysEnabled false | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+RESULT | all of it undone: the control | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+RESULT | 60 presses during 0 registrations | the app got: 0
+RESULT | running; the app has a menu item, a global monitor and a listening tap | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 1 | another claimant: 0 | lines in Arbor's log: 1
+RESULT | no Arbor; the same app: the control | status: no Arbor | item in the menu bar: no | the app got: 1 down, 1 up | by other roads: 2 | another claimant: 0 | lines in Arbor's log: 0
+RESULT | running; the app in front registered ⌃⌥A itself BEFORE Arbor did | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 1 | another claimant: 0 | lines in Arbor's log: 1
+RESULT | running; the app in front registered ⌃⌥A itself AFTER Arbor did | status: running: 1 display, 0 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 1 | another claimant: 0 | lines in Arbor's log: 1
+RESULT | running; secure input is on | status: running: 1 display, 0 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+RESULT | another program claimed ⌃⌥A AFTER Arbor (plain) | status: running: 1 display, 0 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 1 | lines in Arbor's log: 1
+RESULT | another program claimed ⌃⌥A BEFORE Arbor (plain) | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 1 | lines in Arbor's log: 1
+RESULT | that program has gone: the control | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+RESULT | another program claimed ⌃⌥A AFTER Arbor exclusive | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 1 | lines in Arbor's log: 0
+RESULT | another program claimed ⌃⌥A BEFORE Arbor exclusive | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 1 | lines in Arbor's log: 0
+RESULT | that program has gone: the control | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+RESULT | the permission was taken away | status: Arbor's Accessibility permission was taken away, so it cannot move win | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+RESULT | the permission is back: the control | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+RESULT | the build the grant was made for | status: running: 1 display, 0 docked and 1 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+RESULT | another ad-hoc build, the old grant still switched on | status: waiting for Accessibility permission (System Settings → Privacy & Secu | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+
+64 passed, 2 failed
+exit code 1

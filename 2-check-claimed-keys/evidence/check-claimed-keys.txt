@@ -1,0 +1,97 @@
+# check-claimed-keys 2026-10-15T15:16Z on macOS 26.6.2, commit 0414562
+
+== 0. the control: no Arbor at all
+  ✔ with nobody to take it, the key reaches the app: the witness works
+
+== 1. waiting for the permission: a first launch
+  ✔ Arbor waits for the permission
+  ✔ its item is in the menu bar
+  ✔ the keys were registered before the item was made
+  ✔ the key is taken all the same
+  ✔ and the line says why
+  ✔ a second time too
+
+== 1b. the permission arrives: the control for 1
+  ✔ Arbor starts by itself
+  ✔ the key is Arbor's
+  ✔ and Arbor answers it
+
+== 1p. a peek's keys, from the press on: of the nine that ship ⌃⌥↓ is bound to nothing (board 1.80)
+  ✔ the control: without a peek it is the app's
+  ✔ the witness has the keyboard (granted while it waited)
+  ✔ the witness has the keyboard (granted while it waited)
+  ✔ the witness has the keyboard (granted while it waited)
+  ✔ the witness has the keyboard (granted while it waited)
+  ✘ in none of the four did it reach the app (granted while it waited)
+  ✔ and in one at least it came before the hold counted, or these rounds prove nothing (granted while it waited)
+  ✔ the witness has the keyboard (granted while it waited)
+  ✔ with the peek called off and its key still down it goes nowhere (granted while it waited)
+  ✔ and ⌃⌥⎋ meant the peek: Arbor is not paused (granted while it waited)
+  ✔ and the app's again once the key is up (granted while it waited)
+  ✔ a held ⌃⌥Space is seen as held (granted while it waited, 1)
+  ✔ a held ⌃⌥Space is seen as held (granted while it waited, 2)
+  ✔ a held ⌃⌥A is seen as held (granted while it waited, 1)
+  ✔ a held ⌃⌥A is seen as held (granted while it waited, 2)
+  ✔ while the key was down no look found it up (granted while it waited)
+  ✔ and once it is up a look finds it up, with no release reported (granted while it waited)
+
+== 1r. the same in an Arbor that is started with the permission in place
+  ✔ the witness has the keyboard (started with the permission)
+  ✔ the witness has the keyboard (started with the permission)
+  ✔ the witness has the keyboard (started with the permission)
+  ✔ the witness has the keyboard (started with the permission)
+  ✘ in none of the four did it reach the app (started with the permission)
+  ✔ and in one at least it came before the hold counted, or these rounds prove nothing (started with the permission)
+  ✔ the witness has the keyboard (started with the permission)
+  ✔ with the peek called off and its key still down it goes nowhere (started with the permission)
+  ✔ and ⌃⌥⎋ meant the peek: Arbor is not paused (started with the permission)
+  ✔ and the app's again once the key is up (started with the permission)
+  ✔ a held ⌃⌥Space is seen as held (started with the permission, 1)
+  ✔ a held ⌃⌥Space is seen as held (started with the permission, 2)
+  ✔ a held ⌃⌥A is seen as held (started with the permission, 1)
+  ✔ a held ⌃⌥A is seen as held (started with the permission, 2)
+  ✔ while the key was down no look found it up (started with the permission)
+  ✔ and once it is up a look finds it up, with no release reported (started with the permission)
+
+== 2. with no event tap, as shipped: every default shortcut in turn
+  ✔ none of them reaches the app
+
+== 2b. the key held down: its repeats and its release
+  ✔ neither a repeat nor the release reaches the app
+
+== 5. what the person said themselves, and what changes nothing
+  ✔ a pause says whose the keys are now
+  ✔ in a pause the key is the app's: the person said so
+  ✔ the key is Arbor's again
+  ✔ a held view keeps the key
+  ✔ holding still keeps the key
+  ✔ in an app on the list the key is the app's: the person said so
+  ✔ with shortcuts off the key is the app's: the person said so
+  ✔ the key is Arbor's again
+
+== 6. while the hot keys are registered anew
+
+== 4. the key is Arbor's, and the app has roads of its own
+
+== 3. another program holds the same chord
+
+== 1c. the permission is taken away while Arbor runs
+  ✔ Arbor notices
+  ✔ its item is in the menu bar
+  ✔ the key is taken all the same
+  ✔ and the line says why
+  ✔ Arbor starts again
+  ✔ the key is Arbor's again
+  ✔ and Arbor answers it
+
+== 1d. a new build over an old grant: the switch in System Settings stays on
+  ✔ the build the grant was made for runs: the control
+  ✔ its key is its own
+  ✔ the new build waits for a permission it seems to have
+  ✔ its item is in the menu bar
+  ✔ the key is taken all the same
+  ✔ and the line says why
+
+== the table
+
+64 passed, 2 failed
