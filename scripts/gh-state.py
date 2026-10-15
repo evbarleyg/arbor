@@ -18,8 +18,10 @@ With --queue it also writes, from the same answers, the file scripts/mac-queue.p
 ($ARBOR_MAC_QUEUE_CACHE): as long as that is fresh, nobody who waits for a turn on a Mac asks GitHub anything.
 
 A poller somebody has to keep alive is forgotten one day. So the one that counts runs at GitHub (.github/workflows/state.yml), with
-the workflow's own token, which has a limit of its own, and with --publish puts both files on a branch after every round. Readers
-say --from and that branch: a file that is more than a round old is then brought up to date by `git fetch`, which no limit counts.
+the workflow's own token, which comes under the limit of this repository's workflows and not under the one people and agents share, and
+with --publish puts both files on a branch after every round. Readers say --from and that branch: a file more than a minute old is then
+brought up to date by `git fetch`, which no limit counts. Two pollers that publish to one branch hand over by themselves: the one that
+finds the other's commit there was the earlier one, and ends. One that cannot publish three rounds in a row ends with an error.
 
 Usage: scripts/gh-state.py --out FILE [--queue FILE] [--every SECONDS] [--cache FILE] [--once] [--for MINUTES] [--publish BRANCH]
                                                               the poller; every 150 seconds, for ever, by default
@@ -52,6 +54,17 @@ LEAVE = 400
 ROOT = "51b162d5f28c02846134c1f4a113c787f5164602"
 # The two files, as they are called on the branch.
 STATE, QUEUE = "github-state.md", "mac-queue-cache.json"
+# How the first begins: a reader puts a newer one only in the place of such a file.
+HEADING = "# How things stand at GitHub"
+# A reader's copy older than this is brought up to date. A fetch costs little, and scripts/mac-queue.py believes a look for 200 seconds.
+LOOK_AGAIN = datetime.timedelta(seconds=60)
+# So many rounds in a row that could not be published, and the poller ends with an error: a run that stays green while nobody hears of
+# anything is worse than one that is red.
+UNHEARD = 3
+# Where git is to look, as whoever called has set it. In a hook or a rebase these point at another repository. The others (how to reach
+# a server, whom to ask for a password, which certificates to believe) are needed as they are.
+ELSEWHERE = ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_PREFIX", "GIT_NAMESPACE",
+             "GIT_SHALLOW_FILE", "GIT_GRAFT_FILE", "GIT_IMPLICIT_WORK_TREE")
 # A file older than this was written by a poller that has stopped.
 STALE = datetime.timedelta(minutes=12)
 # Workflows a job of which can want a Mac, besides the Mac shell. Of the others' runs only the number matters.
@@ -116,7 +129,8 @@ def heads_by_git(cwd=None):
 def read_state(github, finished, now):
     """Everything the file says, as a dictionary. `finished`: commit → its checks, for commits whose checks are all in; kept between rounds."""
     limit = github.get("rate_limit", lambda body: body["resources"]["core"])
-    state = {"limit": limit, "paused": limit["remaining"] < min(LEAVE, limit["limit"] // 5)}
+    state = {"limit": limit, "leaves": min(LEAVE, limit["limit"] // 5)}
+    state["paused"] = limit["remaining"] < state["leaves"]
     if state["paused"]:
         return state
     pull = lambda item: {"number": item["number"], "branch": item["head"]["ref"], "sha": item["head"]["sha"], "base": item["base"]["ref"], "title": item["title"],
@@ -181,14 +195,14 @@ def minutes(since, now):
 def written(state, heads, now, every, spent):
     """The file's text."""
     limit = state["limit"]
-    lines = ["# How things stand at GitHub, asked by one poller for everybody (scripts/gh-state.py)", "",
+    lines = [HEADING + ", asked by one poller for everybody (scripts/gh-state.py)", "",
              f"read {now.strftime('%Y-%m-%d %H:%M:%S')} UTC, next in about {every} s",
              f"requests left this hour: {limit['remaining']} of {limit['limit']}, new ones at {datetime.datetime.fromtimestamp(limit['reset'], datetime.timezone.utc).strftime('%H:%M:%S')} UTC; "
              f"the poller spent {spent} in the last hour",
              f"A time more than {int(STALE.total_seconds() // 60)} minutes old means that the poller has stopped: say so, and do not start polling yourself.", "",
              " · ".join(f"{name} {sha}" for name, sha in sorted(heads.items(), reverse=True)) or "(git did not say where the branches stand)"]
     if state["paused"]:
-        return "\n".join(lines + ["", f"PAUSED: fewer than {LEAVE} requests are left, and they are for those who have to act. What stood here before is out of date."]) + "\n"
+        return "\n".join(lines + ["", f"PAUSED: fewer than {state['leaves']} requests are left, and they are for those who have to act. What stood here before is out of date."]) + "\n"
     lines += ["", f"## Open pull requests: {len(state['open'])}", "", "✔ passed  ✘ failed  – skipped  ∅ cancelled  … running  ⧖ waiting", ""]
     for item in sorted(state["open"], key=lambda item: item["number"]):
         checks = {}
@@ -220,53 +234,103 @@ def save(path, text):
 
 
 def git(*arguments, cwd=None, given=None, who=None):
-    """git's answer. Without the GIT_ variables of whoever called: in a hook or a rebase they point at another repository."""
-    environment = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
-    done = subprocess.run(["git", *arguments], cwd=cwd or HERE, input=given or "", capture_output=True, text=True, timeout=120, check=False,
+    """git's answer."""
+    environment = {key: value for key, value in os.environ.items() if key not in ELSEWHERE}
+    done = subprocess.run(["git", *arguments], cwd=cwd or HERE, input=given or "", capture_output=True, text=True, errors="replace", timeout=120, check=False,
                           env={**environment, **(who or {})})
     if done.returncode:
         raise OSError(f"git {arguments[0]}: {done.stderr.strip()[:200]}")
     return done.stdout
 
 
+def published_now(branch, cwd=None):
+    """The commit `branch` stands at, at origin; "" if there is no such branch."""
+    return git("ls-remote", "origin", f"refs/heads/{branch}", cwd=cwd).split("\t")[0]
+
+
 def publish(branch, files, cwd=None, root=ROOT):
-    """Puts `files` (name → path) on `branch` at origin: always one commit on top of the first, in place of the one before."""
+    """Puts `files` (name → path) on `branch` at origin: always one commit on top of the first, in place of the one before. The commit."""
+    try:
+        git("cat-file", "-e", root + "^{commit}", cwd=cwd)
+    except OSError:  # a checkout with no history, as a workflow's: that one commit is all that is wanted of it
+        git("fetch", "--quiet", "--no-tags", "--depth", "1", "origin", root, cwd=cwd)
     entries = "".join(f"100644 blob {git('hash-object', '-w', path, cwd=cwd).strip()}\t{name}\n" for name, path in files.items() if os.path.exists(path))
     bot = {f"GIT_{role}_{key}": value for role in ("AUTHOR", "COMMITTER")
            for key, value in (("NAME", "github-actions[bot]"), ("EMAIL", "41898282+github-actions[bot]@users.noreply.github.com"))}
     commit = git("commit-tree", git("mktree", cwd=cwd, given=entries).strip(), "-p", root, "-m", "state: how things stand at GitHub", cwd=cwd, who=bot).strip()
     git("push", "--quiet", "--force", "origin", f"{commit}:refs/heads/{branch}", cwd=cwd)
+    return commit
+
+
+def read_text(path):
+    try:
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            return handle.read()
+    except OSError:
+        return ""
 
 
 def refresh(path, branch, cwd=None, clock=time.time):
-    """Brings `path`, and the queue's file beside it, up to date from `branch` if it is more than a round old. Never puts an older one in a newer one's place."""
-    now = datetime.datetime.fromtimestamp(clock(), datetime.timezone.utc)
-    try:
-        with open(path, encoding="utf-8") as handle:
-            age = age_of(handle.read(), now)
-    except OSError:
-        age = None
-    if age is not None and age < datetime.timedelta(seconds=EVERY):
+    """Brings `path`, and the queue's file beside it, up to date from `branch`. Never puts an older one in a newer one's place, nor anything
+    in the place of a file that is something else."""
+    def now():
+        return datetime.datetime.fromtimestamp(clock(), datetime.timezone.utc)
+
+    def stale(text):
+        """How old, or None for a file whose time says nothing: there is none, or it lies in the future."""
+        age = age_of(text, now())
+        return age if age is not None and age > datetime.timedelta(minutes=-2) else None
+    mine = read_text(path)
+    if mine.strip() and not mine.startswith(HEADING):
+        print(f"gh-state: {path} is not a file of this script's, so it is left as it is: name another", file=sys.stderr)
+        return
+    if stale(mine) is not None and stale(mine) < LOOK_AGAIN:
         return
     try:
         git("fetch", "--quiet", "--no-tags", "origin", f"+refs/heads/{branch}:refs/arbor/state", cwd=cwd)
-        text = git("show", f"refs/arbor/state:{STATE}", cwd=cwd)
-        newer = age_of(text, now)
-        if newer is None or (age is not None and newer >= age):
+        theirs = git("show", f"refs/arbor/state:{STATE}", cwd=cwd)
+        if stale(theirs) is None:
             return
+        beside = os.path.join(os.path.dirname(os.path.abspath(path)), QUEUE)
         try:
-            save(os.path.join(os.path.dirname(os.path.abspath(path)), QUEUE), git("show", f"refs/arbor/state:{QUEUE}", cwd=cwd))
+            queue = git("show", f"refs/arbor/state:{QUEUE}", cwd=cwd)
+            # By its own time: scripts/mac-queue.py writes that file too, whenever it has had to look for itself.
+            if looked_at(queue) > looked_at(read_text(beside)):
+                save(beside, queue)
         except OSError:  # a round in which the poller left the rest to others writes none
             pass
-        save(path, text)
+        # Read again: the fetch took a while, and somebody nearer by may have written meanwhile.
+        age = stale(read_text(path))
+        if age is None or stale(theirs) < age:
+            save(path, theirs)
     except (OSError, subprocess.TimeoutExpired) as error:  # the file's own time tells
         print(f"gh-state: {branch} could not be fetched ({error})", file=sys.stderr)
 
 
-def poll(github, out, cache_file, every, once, clock=time.time, sleep=time.sleep, heads=heads_by_git, queue=None, until=None, published=None):
-    finished = {}
+def looked_at(queue):
+    """When the look at the queue in this text was taken, as text that sorts by time; "" if it says nothing."""
+    try:
+        at = json.loads(queue)["at"]
+        return at if isinstance(at, str) else ""
+    except (ValueError, KeyError, TypeError):
+        return ""
+
+
+def poll(github, out, cache_file, every, once, clock=time.time, sleep=time.sleep, heads=heads_by_git, queue=None, until=None, published=None, standing=None):
+    """`published` puts the files on the branch and says as which commit; `standing` says which commit is there now."""
+    finished, mine, unheard = {}, None, 0
     while True:
         now = datetime.datetime.fromtimestamp(clock(), datetime.timezone.utc)
+        if mine and standing:
+            # Two that publish to one branch need no third to tell them apart: whoever finds another's commit there was the earlier one.
+            try:
+                there = standing()
+            except (OSError, subprocess.TimeoutExpired):
+                there = ""
+            if there and there != mine:
+                print(f"{now.strftime('%H:%M:%S')} another poller has published since ({there[:8]}): it has taken over, and this one ends", flush=True)
+                return 0
+        wrote = False
         try:
             state = read_state(github, finished, now)
             github.counted = [at for at in github.counted if at > clock() - 3600]
@@ -276,11 +340,18 @@ def poll(github, out, cache_file, every, once, clock=time.time, sleep=time.sleep
                 save(queue, json.dumps({"repo": github.repository, "at": now.strftime("%Y-%m-%dT%H:%M:%SZ"), "runs": runs}))
             if cache_file:
                 save(cache_file, json.dumps(github.cache))
-            if published:
-                published({STATE: out, **({QUEUE: queue} if queue else {})})
+            wrote = True
             print(f"{now.strftime('%H:%M:%S')} written; {state['limit']['remaining']} left, {len(github.counted)} spent here in the last hour", flush=True)
         except (*NO_ANSWER, KeyError, TypeError, subprocess.TimeoutExpired) as error:  # the next round may fare better; the file's time tells
             print(f"{now.strftime('%H:%M:%S')} no round: {type(error).__name__}: {error}", flush=True)
+        if published and wrote:
+            try:
+                mine, unheard = published({STATE: out, **({QUEUE: queue} if queue else {})}), 0
+            except (OSError, subprocess.TimeoutExpired) as error:
+                unheard += 1
+                print(f"{now.strftime('%H:%M:%S')} NOT PUBLISHED, {unheard} in a row: {error}", flush=True)
+                if unheard >= UNHEARD:
+                    return 1
         if once or (until is not None and clock() + every >= until):
             return 0
         sleep(every)
@@ -298,7 +369,10 @@ def lines_about(text, what):
 
 def age_of(text, now):
     found = re.search(r"^read (\d{4}-\d\d-\d\d \d\d:\d\d:\d\d) UTC", text, re.MULTILINE)
-    return now - datetime.datetime.strptime(found.group(1), "%Y-%m-%d %H:%M:%S").replace(tzinfo=datetime.timezone.utc) if found else None
+    try:
+        return now - datetime.datetime.strptime(found.group(1), "%Y-%m-%d %H:%M:%S").replace(tzinfo=datetime.timezone.utc) if found else None
+    except ValueError:  # the 45th of the 13th
+        return None
 
 
 def wait(path, what, limit, clock=time.time, sleep=time.sleep, refreshed=None):
@@ -525,35 +599,118 @@ def self_test():
         theirs, mine = os.path.join(folder, "theirs"), os.path.join(folder, "mine")
         os.mkdir(theirs), os.mkdir(mine)
 
-        def at(minute):
-            return text.replace("read 2026-01-02 12:00:00 UTC", f"read 2026-01-02 12:{minute:02}:00 UTC")
+        def at(minute, second=0):
+            return text.replace("read 2026-01-02 12:00:00 UTC", f"read 2026-01-02 12:{minute:02}:{second:02} UTC")
 
-        def put(minute, queue="{}"):
-            save(os.path.join(theirs, "s.md"), at(minute))
-            save(os.path.join(theirs, "q.json"), queue)
-            publish("state/github", {STATE: os.path.join(theirs, "s.md"), QUEUE: os.path.join(theirs, "q.json")}, cwd=one, root=first)
+        def look(minute, second=0):
+            return json.dumps({"repo": "x/arbor", "at": f"2026-01-02T12:{minute:02}:{second:02}Z", "runs": []})
 
-        def got(minute, name="state.md"):
-            with contextlib.redirect_stderr(io.StringIO()):
-                refresh(os.path.join(mine, "state.md"), "state/github", cwd=two, clock=lambda: start.timestamp() + 60 * minute)
-            with open(os.path.join(mine, name), encoding="utf-8") as handle:
-                return handle.read()
-        put(0, '{"runs": []}')
+        def put(minute, queue=None, state=None):
+            save(os.path.join(theirs, "s.md"), state or at(minute))
+            save(os.path.join(theirs, "q.json"), queue or look(minute))
+            return publish("state/github", {STATE: os.path.join(theirs, "s.md"), QUEUE: os.path.join(theirs, "q.json")}, cwd=one, root=first)
+
+        def got(minute, name="state.md", second=0, clock=None):
+            with contextlib.redirect_stderr(io.StringIO()) as said:
+                refresh(os.path.join(mine, "state.md"), "state/github", cwd=two, clock=clock or (lambda: start.timestamp() + 60 * minute + second))
+            got.said = said.getvalue()
+            return read_text(os.path.join(mine, name))
+
+        def have(state=None, queue=None):
+            for name, content in (("state.md", state), (QUEUE, queue)):
+                if content is not None:
+                    save(os.path.join(mine, name), content)
+        commit = put(0)
         rows += [
-            ("--from: where there is no file yet, both are brought", (got(1) == at(0), got(1, QUEUE)), (True, '{"runs": []}')),
+            ("--from: where there is no file yet, both are brought", (got(1) == at(0), got(1, QUEUE) == look(0)), (True, True)),
             ("what is published is one commit on top of the first, so no clone gets a second history",
-             (git("rev-list", "refs/arbor/state", cwd=two).split()[1:], git("rev-list", "--max-parents=0", "refs/arbor/state", cwd=two).split()), ([first], [first])),
+             (git("rev-list", "refs/arbor/state", cwd=two).split(), git("rev-list", "--max-parents=0", "refs/arbor/state", cwd=two).split()), ([commit, first], [first])),
+            ("under the name of GitHub's own hand, and an address that leads to nobody",
+             git("log", "-1", "--format=%an <%ae> %cn <%ce>", "refs/arbor/state", cwd=two).strip(),
+             "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com> github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"),
+            ("where the branch stands can be asked", published_now("state/github", cwd=one), commit),
+            ("a branch that is not there", published_now("state/none", cwd=one), ""),
         ]
         put(3)
-        rows.append(("--from: a file less than a round old is left alone, and nothing is fetched", got(2) == at(0), True))
+        have(at(3, 30))
+        rows.append(("--from: a file less than a minute old is left alone, and nothing is fetched", (got(4, second=29) == at(3, 30), git("rev-parse", "refs/arbor/state", cwd=two).strip()), (True, commit)))
+        have(at(0))
         rows += [
             ("--from: an older one is brought up to date", got(4) == at(3), True),
             ("and the branch is still two commits long", len(git("rev-list", "refs/arbor/state", cwd=two).split()), 2),
         ]
-        save(os.path.join(mine, "state.md"), at(10))
+        have(at(10))
         rows.append(("--from: what somebody nearer by wrote later is not replaced by what the branch has", got(20) == at(10), True))
+        have(at(3))
+        os.utime(os.path.join(mine, "state.md"), (1, 1))
+        rows.append(("--from: one that is just as old is not written again", (got(20) == at(3), os.path.getmtime(os.path.join(mine, "state.md"))), (True, 1.0)))
+        have(at(0), look(4, 50))
+        rows.append(("--from: a look at the queue that scripts/mac-queue.py took later stays, though the other file is brought up to date", (got(5) == at(3), got(5, QUEUE) == look(4, 50)), (True, True)))
+        have(at(0), "half a fi")
+        rows.append(("--from: half a file in the queue's place is replaced", got(5, QUEUE) == look(3), True))
+        have(at(50))
+        rows.append(("--from: a file from the future says nothing, and is replaced", got(5) == at(3), True))
+        for what, content in (("a day that does not exist", text.replace("read 2026-01-02 12:00:00 UTC", "read 2026-13-45 99:99:99 UTC")), ("no time at all", HEADING + "\n")):
+            have(content)
+            rows.append((f"--from: a file with {what}: likewise", got(5) == at(3), True))
+        with open(os.path.join(mine, "state.md"), "wb") as handle:
+            handle.write(HEADING.encode() + b"\n\xff\xfe\n")
+        rows.append(("--from: or with a byte that is no text", got(5) == at(3), True))
+        have("# My notes\nnot to be lost\n", look(1))
+        rows.append(("--from: a file that is something else is left as it is, with a word, and so is what lies beside it",
+                     (got(5), got(5, QUEUE) == look(1), "is not a file of this script's" in got.said), ("# My notes\nnot to be lost\n", True, True)))
+        have(at(0))
+        put(6, state=text.replace("read 2026-01-02 12:00:00 UTC", "read 2026-13-45 99:99:99 UTC"))
+        rows.append(("--from: the branch's own file has a time nobody can read: nothing is taken from it", got(7) == at(0), True))
+        put(6)
+
+        def meanwhile():
+            """The clock of a reader beside whom somebody writes while it fetches: its third look at it is the first after the fetch."""
+            meanwhile.looks += 1
+            if meanwhile.looks == 3:
+                have(at(6, 30))
+            return start.timestamp() + 60 * 7
+        meanwhile.looks = 0
+        have(at(0))
+        rows.append(("--from: somebody nearer by writes a newer one while the fetch is under way: theirs stays", got(7, clock=meanwhile) == at(6, 30), True))
+        os.environ["GIT_DIR"], kept = os.path.join(folder, "nowhere"), os.environ.get("GIT_DIR")
+        have(at(0))
+        rows.append(("--from: called from a hook, whose GIT_DIR points elsewhere", got(7) == at(6), True))
+        os.environ.pop("GIT_DIR") if kept is None else os.environ.update(GIT_DIR=kept)
+        os.environ["GIT_CONFIG_COUNT"], os.environ["GIT_CONFIG_KEY_0"], os.environ["GIT_CONFIG_VALUE_0"] = "1", f"url.{origin}.insteadOf", "https://nowhere.invalid/x.git"
+        git("remote", "set-url", "origin", "https://nowhere.invalid/x.git", cwd=two)
+        have(at(0))
+        rows.append(("--from: how to reach the server, as whoever called has set it, is kept", got(7) == at(6), True))
+        for key in ("GIT_CONFIG_COUNT", "GIT_CONFIG_KEY_0", "GIT_CONFIG_VALUE_0"):
+            del os.environ[key]
+        git("remote", "set-url", "origin", origin, cwd=two)
+
+        bare = os.path.join(folder, "shallow")
+        git("clone", "--quiet", "--depth", "1", "--branch", "later", "file://" + (lambda: (git("push", "--quiet", "origin", git("commit-tree", git("mktree", cwd=one).strip(), "-p", first, "-m", "later", cwd=one, who=somebody).strip() + ":refs/heads/later", cwd=one), origin)[1])(), bare, cwd=folder)
+        rows.append(("a checkout with no history, as a workflow's, fetches the one commit it needs",
+                     (git("rev-list", "--count", "HEAD", cwd=bare).strip(), git("rev-list", publish("state/github", {STATE: os.path.join(theirs, "s.md"), "none": os.path.join(theirs, "none")}, cwd=bare, root=first), cwd=bare).split()[1:],
+                      git("ls-tree", "--name-only", published_now("state/github", cwd=one), cwd=bare).split()), ("1", [first], [STATE])))
+        # The command line, with the clones above and a stand-in for GitHub.
+        def called(*arguments, **more):
+            with contextlib.redirect_stdout(io.StringIO()) as said, contextlib.redirect_stderr(io.StringIO()):
+                code = main(list(arguments), root=first, sleep=lambda seconds: None, **more)
+            return code, said.getvalue()
+        wired = os.path.join(folder, "wired")
+        os.mkdir(wired)
+        code, _ = called("--out", os.path.join(wired, "o.md"), "--queue", os.path.join(wired, "o.json"), "--once", "--publish", "state/wired", clone=one, github=Stub(world()))
+        rows.append(("--out --queue --once --publish: one round, and both files are on that branch", (code, git("ls-tree", "--name-only", published_now("state/wired", cwd=one), cwd=one).split()), (0, [STATE, QUEUE])))
+        code, said = called("--read", os.path.join(wired, "r.md"), "--from", "state/wired", "2", clone=two)
+        rows.append(("--read --from: fetched from that branch, and the line is printed", (code, [line[:9] for line in said.splitlines() if line.startswith("#")], os.path.exists(os.path.join(wired, QUEUE))), (0, ["#2 fix/2 "], True)))
+        os.remove(os.path.join(wired, "r.md"))
+        rows.append(("--read without --from fetches nothing, and says so", (called("--read", os.path.join(wired, "r.md"), "2", clone=two)[0], os.path.exists(os.path.join(wired, "r.md"))), (3, False)))
+        rows.append(("--read --from --wait: likewise fetched", (called("--read", os.path.join(wired, "r.md"), "--from", "state/wired", "--wait", "2", clone=two)[0], os.path.exists(os.path.join(wired, "r.md"))), (0, True)))
+        code, _ = called("--out", os.path.join(wired, "o.md"), "--every", "60", "--for", "0.5", "--publish", "state/wired", clone=one, github=Stub(world()))
+        rows.append(("--for: half a minute is no time for a second round", code, 0))
+
         os.rename(origin, origin + ".gone")
-        rows.append(("--from: GitHub cannot be reached: the file stays, and its own time tells", got(30) == at(10), True))
+        have(at(0))
+        rows.append(("--from: GitHub cannot be reached: the file stays, with a word, and its own time tells", (got(30) == at(0), "could not be fetched" in got.said), (True, True)))
+        os.rename(origin + ".gone", origin)
 
         calls = []
         with contextlib.redirect_stdout(io.StringIO()):
@@ -572,6 +729,35 @@ def self_test():
                  heads=lambda: {}, queue=os.path.join(folder, "p.json"), until=start.timestamp() + 600, published=sent.append)
         rows.append(("--for: the poller ends by itself before the time is up, and has published every round",
                      (len(ticks), [sorted(files) for files in sent]), (3, [[STATE, QUEUE]] * 4)))
+
+        def looped(published, standing, rounds=9, github=None):
+            ticks = []
+            with contextlib.redirect_stdout(io.StringIO()) as said:
+                code = poll(github or Stub(world()), os.path.join(folder, "p.md"), None, 150, False, clock=lambda: start.timestamp() + 150 * len(ticks), sleep=ticks.append,
+                            heads=lambda: {}, until=start.timestamp() + 150 * rounds, published=published, standing=standing)
+            return code, len(ticks), said.getvalue()
+
+        def refused(files):
+            raise OSError("git push: refused")
+        there = iter(["a1", "a1", "b1"])
+        code, slept, said = looped(lambda files: "a1", lambda: next(there))
+        rows.append(("another poller has published: this one, the earlier, ends, without an error and without publishing over it", (code, slept, "has taken over" in said), (0, 3, True)))
+        rows.append(("nobody else publishes: it goes on to its end", looped(lambda files: "a1", lambda: "a1")[:2], (0, 8)))
+        rows.append(("the branch is gone, or cannot be asked after: that is nobody's taking over", (looped(lambda files: "a1", lambda: "")[:2], looped(lambda files: "a1", refused and (lambda: refused(None)))[:2]), ((0, 8), (0, 8))))
+        code, slept, said = looped(refused, lambda: "a1")
+        rows.append(("three rounds in a row that nobody hears of: it ends with an error, and has said so each time", (code, slept, said.count("NOT PUBLISHED")), (1, 2, 3)))
+        turns = iter([True, True, False, True, True, False, True, True, False])
+
+        def now_and_then(files):
+            if next(turns):
+                raise OSError("git push: refused")
+            return "a1"
+        rows.append(("two in a row, now and then: it goes on", looped(now_and_then, lambda: "a1")[:2], (0, 8)))
+        sent = []
+        looped(sent.append, lambda: "a1", rounds=3, github=Stub({"rate_limit": TimeoutError("slow")}))
+        rows.append(("a round that was not written is not published", sent, []))
+        rows.append(("what is left to others is said as it is", ("fewer than 200 requests" in written(read_state(Stub(world(**small(199))), {}, start), {}, start, 150, 0),
+                                                                 "fewer than 400 requests" in written(read_state(Stub(world(remaining=399)), {}, start), {}, start, 150, 0)), (True, True)))
     failed = [f"{what}: got {got!r}, expected {wanted!r}" for what, got, wanted in rows if got != wanted]
     for line in failed:
         print("gh-state self-test:", line)
@@ -579,7 +765,8 @@ def self_test():
     return 1 if failed else 0
 
 
-def main():
+def main(arguments=None, clone=None, root=ROOT, github=None, sleep=time.sleep):
+    """All but the first are for the self-test: a clone, a first commit and a GitHub of its own."""
     parser = argparse.ArgumentParser(usage="see the top of scripts/gh-state.py", add_help=False)
     for flag in ("--out", "--cache", "--queue", "--read", "--wait", "--publish"):
         parser.add_argument(flag)
@@ -589,36 +776,42 @@ def main():
     for flag in ("--once", "--self-test", "--help"):
         parser.add_argument(flag, action="store_true")
     parser.add_argument("what", nargs="?")
-    options = parser.parse_args()
+    options = parser.parse_args(arguments)
     if options.self_test:
         return self_test()
-    refreshed = (lambda: refresh(options.read, options.branch)) if options.read and options.branch else None
+    refreshed = (lambda: refresh(options.read, options.branch, cwd=clone)) if options.read and options.branch else None
     if options.read and options.wait:
-        return wait(options.read, options.wait, options.limit or 60, refreshed=refreshed)
+        return wait(options.read, options.wait, options.limit or 60, sleep=sleep, refreshed=refreshed)
     if options.read:
         if refreshed:
             refreshed()
-        with open(options.read, encoding="utf-8") as handle:
-            text = handle.read()
+        text = read_text(options.read)
+        if not text:
+            print(f"gh-state: there is no {options.read}, or nothing in it" + ("" if options.branch else "; --from BRANCH fetches one"))
+            return 3
         print("\n".join(text.splitlines()[2:4] + lines_about(text, options.what)) if options.what else text, end="" if not options.what else "\n")
         return 0
     if not options.out or options.help:
         print(__doc__)
         return 0 if options.help else 2
-    token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN") or subprocess.run(["gh", "auth", "token"], capture_output=True, text=True, check=False).stdout.strip()
+    try:
+        token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN") or subprocess.run(["gh", "auth", "token"], capture_output=True, text=True, check=False).stdout.strip()
+    except OSError:  # there is no gh here
+        token = ""
     origin = subprocess.run(["git", "remote", "get-url", "origin"], cwd=HERE, capture_output=True, text=True, check=False).stdout.strip()
     found = re.search(r"github\.com[:/]([\w.-]+/[\w.-]+?)(\.git)?/?$", origin)
     repository = os.environ.get("GITHUB_REPOSITORY") or (found.group(1) if found else None)
-    if not token or not repository:
+    if not github and (not token or not repository):
         print("gh-state: a token ($GH_TOKEN, $GITHUB_TOKEN or `gh auth login`) and a repository ($GITHUB_REPOSITORY or origin) are needed")
         return 2
     cache = {}
     if options.cache and os.path.exists(options.cache):
         with open(options.cache, encoding="utf-8") as handle:
             cache = {url: tuple(value) for url, value in json.load(handle).items()}
-    return poll(GitHub(repository, token, cache), options.out, options.cache, max(60, options.every), options.once, queue=options.queue,
+    return poll(github or GitHub(repository, token, cache), options.out, options.cache, max(60, options.every), options.once, sleep=sleep, queue=options.queue,
                 until=time.time() + options.limit * 60 if options.limit else None,
-                published=(lambda files: publish(options.publish, files)) if options.publish else None)
+                published=(lambda files: publish(options.publish, files, cwd=clone, root=root)) if options.publish else None,
+                standing=(lambda: published_now(options.publish, cwd=clone)) if options.publish else None)
 
 
 if __name__ == "__main__":

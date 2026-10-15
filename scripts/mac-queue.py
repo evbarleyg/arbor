@@ -32,6 +32,8 @@ everything everybody does under it, so do not run this in a loop; the last line 
 --turn is made to be asked again and again, and costs little: two requests, and one for every run in progress that is not a Mac shell
 run (of those the run's own state tells enough). With $ARBOR_MAC_QUEUE_CACHE naming a file, whoever asks within three minutes of somebody else
 reads the answer there and asks GitHub nothing: for several checkouts, containers or people on one machine or one shared folder.
+With $ARBOR_STATE_BRANCH naming the branch the poller at GitHub publishes to (scripts/gh-state.py; `state/github`), that file is first brought
+up to date from there by `git fetch`, which no limit counts: then nobody who waits for a turn asks GitHub's API anything.
 
 What GitHub's answers mean, found by looking at them on 2026-10-14 while five jobs ran and five waited:
 
@@ -155,11 +157,25 @@ def fetch_now(repo):
     return found
 
 
-def shared(repo, now, look, path=None):
+def fetched(path, branch=None):
+    """Has scripts/gh-state.py bring the cache up to date from the branch the poller at GitHub publishes to, if one is named. It never puts
+    an older look in a newer one's place. Whatever goes wrong costs requests, nothing else."""
+    branch = os.environ.get("ARBOR_STATE_BRANCH", "") if branch is None else branch
+    if not branch or os.path.basename(path) != "mac-queue-cache.json":  # the name it has on the branch, and gets beside the other file
+        return
+    try:
+        subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "gh-state.py"), "--read",
+                        os.path.join(os.path.dirname(os.path.abspath(path)), "github-state.md"), "--from", branch, "0"], capture_output=True, timeout=150, check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+
+
+def shared(repo, now, look, path=None, fetch=fetched):
     """`look()`, or what somebody who shares the cache saw a short while ago."""
     path = os.environ.get("ARBOR_MAC_QUEUE_CACHE", "") if path is None else path
     if not path:
         return look()
+    fetch(path)
     try:
         with open(path, encoding="utf-8") as handle:
             kept = json.load(handle)

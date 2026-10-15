@@ -304,6 +304,28 @@ def cached(kept, writable=True):
         return len(looks), second
 
 
+def brought():
+    """What is read when the fetch puts a fresh look there."""
+    with tempfile.TemporaryDirectory() as folder:
+        path = os.path.join(folder, "mac-queue-cache.json")
+
+        def fetch(where):
+            with open(where, "w", encoding="utf-8") as handle:
+                handle.write(kept_at("11:59:30"))
+        return [run["id"] for run in queue.shared("owner/repo", NOON, lambda: [{"id": "asked"}], path, fetch)]
+
+
+def ran(branch, name):
+    """The commands `fetched` runs."""
+    commands, real = [], queue.subprocess.run
+    queue.subprocess.run = lambda command, **more: commands.append(command)
+    try:
+        queue.fetched(os.path.join("/somewhere", name), branch)
+    finally:
+        queue.subprocess.run = real
+    return commands
+
+
 def kept_at(time, repo="owner/repo"):
     return json.dumps({"repo": repo, "at": at(time), "runs": [{"id": "kept"}]})
 
@@ -344,6 +366,11 @@ SINGLE = [
     ("the cache: not what was expected there", lambda: cached("[1, 2]"), (1, [{"id": 1}])),
     ("the cache: cannot be written: both ask, and that is all", lambda: cached(None, writable=False), (2, [{"id": 2}])),
     ("no cache is named: everybody asks", lambda: [queue.shared("owner/repo", NOON, lambda: "asked", "")], ["asked"]),
+    ("the cache is brought up to date before it is read", lambda: brought(), ["kept"]),
+    ("no branch is named, or the cache goes by another name than it has there: nothing is run", lambda: [ran("", "mac-queue-cache.json"), ran("state/github", "queue.json")], [[], []]),
+    ("a branch is named: scripts/gh-state.py is asked, for the file beside the cache", lambda: [word for word in ran("state/github", "mac-queue-cache.json")[0][1:] if not word.startswith("/")],
+     ["--read", "--from", "state/github", "0"]),
+    ("and which file", lambda: [os.path.basename(word) for word in ran("state/github", "mac-queue-cache.json")[0] if word.startswith("/")][-2:], ["gh-state.py", "github-state.md"]),
     ("what is left of the hour's requests stands above the line to grep for", lambda: queue.report(queue.facts([], NOON), "owner/repo", "GitHub's API: 7 left").splitlines()[-2:],
      ["GitHub's API: 7 left", "mean wait: 0 s over 0 jobs"]),
     ("whose turn: nobody waits, nothing of its own", lambda: [turn(n, 0) for n in (1, 2, 3)], ["", "", ""]),

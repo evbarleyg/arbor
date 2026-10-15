@@ -320,7 +320,8 @@ Three rules keep the Linux build working and the platforms telling the same stor
    GitHub itself (`.github/workflows/state.yml`), under a limit of its own, and puts what it heard on the branch `state/github`.
    Everybody else reads: `scripts/gh-state.py --read <file> --from state/github 123` for a pull request's line, with `--wait 123` to
    wait for its checks without asking anybody. `<file>` is any file of yours, or one that agents share; it is brought up to date
-   by `git fetch`. (Should the workflow be down: one agent runs `scripts/gh-state.py --out <file>`, and the others read that file.) Ask git for what git can tell (`git ls-remote origin swarm/trunk 'refs/pull/*/head'`): that has no such limit.
+   by `git fetch`. With `ARBOR_STATE_BRANCH=state/github`, and `ARBOR_MAC_QUEUE_CACHE` naming `mac-queue-cache.json` in the same folder, whoever
+   waits for a turn on a Mac reads the queue the same way. (Should the workflow be down: one agent runs `scripts/gh-state.py --out <file>`, and the others read that file.) Ask git for what git can tell (`git ls-remote origin swarm/trunk 'refs/pull/*/head'`): that has no such limit.
    When you must ask GitHub: one request for a whole commit, as above, and `gh api rate_limit`, which is free, to see what is left.
 
 4. Fix and push until the checks pass, with the board and parity data brought up to date in the same pull request. The
