@@ -18,7 +18,7 @@
 #
 # Only on GitHub's Macs: it opens real apps, moves and resizes their windows, quits them, and switches Reduce Motion and the display's size.
 # The apps alone come first: what is cut off is the pairs, the film and the pictures, and what is there can still be judged.
-ARBOR_TIME_LIMIT=450
+ARBOR_TIME_LIMIT=480
 # Twice the display's rate: a place that was there for a whole frame cannot fall between two samples.
 DAY_HZ=120
 # Two samples' time. What the sampler did not see is held against no app.
@@ -74,18 +74,21 @@ place() {
   apptool set-frame "$(window_of "$1")" ${2//,/ } > /dev/null
 }
 
-# Two roads. On the first every edge moves. On the second the left edge alone: the others are to stand still, which two askings cannot promise.
+# Two roads. On the first every edge moves, the near ones the way the window grows: by glide.swift's rule no order can put an edge off its road there. On the second the left
+# edge moves alone and the others are to stand still, which two askings cannot promise: there the orders differ.
 SMALL=60,80,560,400   LARGE=420,160,800,560
 RIGHT=640,80,560,400  WIDE=240,80,960,400
 
-# road <app> <frame> <frame>: there and back, 18 steps in each order, then the control in either.
+# road <app> <frame> <frame> <order…>: there and back, 18 steps in each of these orders, then the control in either.
 road() {
-  local window order
+  local app=$1 here=$2 there=$3 window order
   window=$(window_of "$1")
-  for order in by-edges place-first size-first; do
-    play "$1" 18 "$order" "$window:$3"
-    play "$1" 18 "$order" "$window:$2"
+  shift 3
+  for order in "$@"; do
+    play "$app" 18 "$order" "$window:$there"
+    play "$app" 18 "$order" "$window:$here"
   done
+  set -- "$app" "$here" "$there"
   for order in place-first size-first; do
     play "$1" 1 "$order" "$window:$3"
     play "$1" 1 "$order" "$window:$2"
@@ -97,10 +100,10 @@ alone() {
   PLAYERS=$1
   place "$1" "$SMALL"
   quiet 300 2000
-  road "$1" "$SMALL" "$LARGE"
+  road "$1" "$SMALL" "$LARGE" by-edges
   # From the one road to the other: the place alone, 580 points.
   play "$1" 12 by-edges "$(window_of "$1"):$RIGHT"
-  road "$1" "$RIGHT" "$WIDE"
+  road "$1" "$RIGHT" "$WIDE" by-edges place-first size-first
   # Last: what macOS has tiled it may treat as its own.
   play "$1" bar "$(window_of "$1")"
 }
