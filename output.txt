@@ -1,0 +1,150 @@
+# mac-shell: scripts/mac-shell/check-side-by-side.sh at d208d88, macOS 26.6.2, 2026-10-15T09:51Z
+built Arbor, the pointer tool and the app bundles in 11s
+
+== five floating windows, shortcuts on
+session 1: Arbor pid 7959, test windows 29 30 31 32 33 (pid 7896)
+running: 1 display, 0 docked and 5 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> click 610 234
+  ✔ the test app is the active one
+display 0 0 1024 768, visible 0 31 1024 677, camera n0, back no
+  Desktop          12 43 1000 653
+  w29 170 220 480 348      floating
+  w30 220 180 480 348      floating
+  w31 270 140 480 348      floating
+  w32 320 100 480 348      floating
+  w33 370 60 480 348       floating focused
+
+== the line under the rows says how
+> key ctrl+opt+g
+  ✔ ⌃⌥G opens the palette
+shot: mac-shell/01-the-hint.png
+
+== ⌘↩ ticks: 3, then 1, then 4
+> key 3
+> key cmd+return
+shot: mac-shell/02-one-ticked.png
+> key 1
+> key cmd+return
+> key 4
+> key cmd+return
+shot: mac-shell/03-three-ticked.png
+  ✔ the palette is still open
+  ✔ nothing has moved yet: window 3 is where it was
+
+== ↩ docks them, in that order, and they fill the screen
+> key return
+  ✔ the palette closes
+  ✔ 3 is docked
+  ✔ three windows are docked
+  ✔ 3 is left of 1
+  ✔ 1 is left of 4
+  ✔ each is in its slot: 3
+  ✔ 1
+  ✔ 4
+  ✔ the first ticked has the keyboard
+  ✔ the test app is still the active one
+shot: mac-shell/04-side-by-side.png
+display 0 0 1024 768, visible 0 31 1024 677, camera n4, back yes
+  w29 349 43 326 653       docked
+  w30 1023 680 480 348     floating parked
+  w31 12 43 325 653        docked focused
+  w32 687 43 325 653       docked
+  w33 1023 680 480 348     floating parked
+> ascii
+display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
++----------------------++----------------------++----------------------+
+|w31 ArborTestWindows  ||w29 ArborTestWindows  ||w32 ArborTestWindows  |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
+|                      ||                      ||                      |
++----------------------++----------------------++----------------------+
+camera n4
+
+== ⌃⌥Z takes all of it back
+> key ctrl+opt+z
+  ✔ nothing is docked
+  ✔ 3 has its own frame again
+  ✔ 1
+  ✔ 4
+shot: mac-shell/05-undone.png
+
+== ⌘-click and ⇧-click tick a row; again takes the tick off
+> key ctrl+opt+g
+  ✔ the palette is open
+> click 512 321 --mods cmd
+> click 512 397 --mods shift
+shot: mac-shell/06-ticked-by-clicks.png
+  ✔ a click with a modifier chooses nothing: the palette is still open
+> click 512 397 --mods cmd
+shot: mac-shell/07-one-tick-taken-off.png
+> key escape
+  ✔ ⎋ closes it, and nothing is docked
+
+== a fifth is refused
+> key ctrl+opt+g
+  ✔ the palette is open
+> key 1
+> key cmd+return
+> key 2
+> key cmd+return
+> key 3
+> key cmd+return
+> key 4
+> key cmd+return
+> key 5
+> key cmd+return
+shot: mac-shell/08-four-at-the-most.png
+> key escape
+  ✔ closed
+
+== one of them is in the Dock: it comes back into the place kept open for it
+> test windows: minimize 30
+  ✔ 2 is minimized
+> key ctrl+opt+g
+  ✔ the palette is open
+> key 5
+> key cmd+return
+> key 2
+> key cmd+return
+shot: mac-shell/09-one-in-the-dock-ticked.png
+> key return
+shot: mac-shell/10-the-place-is-kept-open.png
+  ✔ 2 is out of the Dock
+  ✔ 5 is left of 2
+  ✔ 2 is in its slot
+  ✔ 5 is in its slot
+  ✔ 5 was never wider than its half (494 then, 494 now)
+shot: mac-shell/11-both-there.png
+display 0 0 1024 768, visible 0 31 1024 677, camera n4, back yes
+  w29 1023 680 480 348     floating parked
+  w30 518 43 494 653       docked
+  w31 1023 680 480 348     floating parked
+  w32 1023 680 480 348     floating parked
+  w33 12 43 494 653        docked focused
+
+== nothing of a title is in the log
+  ✔ no title in the log
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+
+32 passed, 0 failed
+exit code 0
