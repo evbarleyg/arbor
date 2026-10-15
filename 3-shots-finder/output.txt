@@ -1,0 +1,319 @@
+# mac-shell: scripts/mac-shell/shots-finder.sh at cef4a28, macOS 26.6.2, 2026-10-15T02:40Z
+built Arbor and the pointer tool in 3s
+
+== five windows: [1 / 5 | Desktop with 4 | 2 / 3], shortcuts and the menu bar item on
+session 1: Arbor pid 23625, test windows 116 117 118 119 120 (pid 23604)
+running: 1 display, 0 docked and 5 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 116 left
+docked w116 at the left edge
+> dock 117 right
+docked w117 at the right edge
+> dock 118 beside 117 bottom
+docked w118 below w117
+> dock 120 beside 116 bottom
+docked w120 below w116
+> click 849 203
+> click 174 203
+  ✘ the test app is the active one
+  ✔ window 1 is focused
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  Desktop          349 43 326 653
+  w116 12 43 325 321        docked focused
+  w117 687 43 325 321       docked
+  w118 687 376 325 320      docked
+  w119 349 100 326 348      floating
+  w120 12 376 325 320       docked
+> zoom 116
+framed w116
+  ✔ framed on 1: window 3 is out of view
+
+== open it with the command
+> find
+Go to… is open
+  ✔ the palette is on screen
+shot: mac-shell/01-open.png
+Arbor's own windows (the palette is at level 5):
+138 23625 101 220 218 312 237 off Arbor
+133 23625 0 0 268 500 500 off Arbor
+132 23625 5 212 200 600 262 on Arbor
+131 23625 0 337 43 12 653 off Arbor
+130 23625 0 675 43 12 653 off Arbor
+129 23625 0 687 364 325 12 off Arbor
+128 23625 0 3 34 1018 671 on Arbor
+127 23625 -2147483602 0 31 1024 677 on Arbor
+126 23625 0 12 364 325 12 off Arbor
+in front: process 
+  ✘ the test app is still the active one: Arbor did not activate
+  ✔ window 1 is still what macOS calls focused
+
+== type with real keys: 3 finds Arbor Test 3
+> key 3
+shot: mac-shell/02-typed.png
+> key return
+  ✔ Return closed the palette
+  ✔ window 3 is in view
+  ✔ window 3 is focused
+  ✔ window 1 is out of view: window 3 is framed as window 1 was
+shot: mac-shell/03-went.png
+display 0 0 1024 768, visible 0 31 1024 677, camera n4, back yes
+  w116 1023 680 1000 653    docked parked
+  w117 1023 680 325 321     docked parked
+  w118 12 43 1000 653       docked focused
+  w119 1023 680 326 348     floating parked
+  w120 1023 680 325 320     docked parked
+
+== ⌃⌥G, then Return at once: back to the window before
+> key ctrl+opt+g
+  ✔ the shortcut opened the palette
+shot: mac-shell/04-recent-first.png
+> key return
+  ✔ window 1 is focused again
+  ✔ the palette closed
+
+== arrows, Tab, Escape
+> zoom 116
+framed w116
+  ✔ framed on 1
+> key ctrl+opt+g
+  ✔ open
+> key down
+> key down
+shot: mac-shell/05-third-row.png
+> key tab
+> key shift+tab
+> key up
+> key up
+> key up
+shot: mac-shell/06-round-the-top.png
+> key escape
+  ✔ Escape closed the palette
+  ✔ and the view did not move
+  ✔ and window 1 still has the keyboard
+
+== the shortcut again closes it
+> key ctrl+opt+g
+  ✔ open
+> key ctrl+opt+g
+  ✔ closed
+
+== a click on another window closes it
+> show-all
+showing everything
+> key ctrl+opt+g
+  ✔ open
+> click 32 676
+  ✔ the click elsewhere closed the palette
+  ✔ and reached the window
+
+== does it ALWAYS close? a click on one of Arbor's own tiles or gap handles
+> key ctrl+opt+g
+  ✔ open
+> click 174 370
+  ✔ a click on a gap handle closed the palette
+
+== does it ALWAYS close? pause
+> click 174 203
+> key ctrl+opt+g
+  ✔ open
+> pause
+paused until `resume`; windows are back in view, in their own sizes
+  ✔ pausing closed the palette
+> resume
+resumed
+
+== does it ALWAYS close? ⌘Tab
+> click 174 203
+  ✘ the test app is the active one
+> key ctrl+opt+g
+  ✔ open
+> key cmd+tab
+  ✔ ⌘Tab closed the palette
+in front: process 
+> click 174 203
+  ✘ the test app is the active one again
+
+== does it ALWAYS close? Mission Control
+> key ctrl+opt+g
+  ✔ open
+> key ctrl+up
+shot: mac-shell/06a-mission-control.png
+> key escape
+  ✘ no palette after Mission Control
+> click 174 203
+
+== does it ALWAYS close? a swipe to another macOS Space
+> space_add
+> key ctrl+opt+g
+  ✔ open
+> key ctrl+right
+shot: mac-shell/06b-other-space.png
+  ✔ the palette did not come along
+> key ctrl+left
+  ✔ and is not waiting here
+> click 174 203
+   1 2026-10-15T02:40:37.039Z INFO  find: the palette is up, with the keyboard
+   1 2026-10-15T02:40:40.786Z INFO  find: the palette is up, with the keyboard
+   1 2026-10-15T02:40:42.613Z INFO  find: the palette is up, with the keyboard
+   1 2026-10-15T02:40:47.161Z INFO  find: the palette is up, with the keyboard
+   1 2026-10-15T02:40:48.371Z INFO  find: the palette is up, with the keyboard
+   1 2026-10-15T02:40:49.636Z INFO  find: the palette is up, with the keyboard
+   1 2026-10-15T02:40:51.923Z INFO  find: the palette is up, with the keyboard
+   1 2026-10-15T02:40:57.984Z INFO  find: the palette is up, with the keyboard
+   1 2026-10-15T02:41:04.704Z INFO  find: the palette is up, with the keyboard
+   1 2026-10-15T02:41:19.330Z INFO  find: the palette is up, with the keyboard
+
+== ⌘2, and a click on a row
+> click 174 536
+> click 849 536
+> click 849 203
+> click 174 203
+  ✔ window 1 is focused
+> key ctrl+opt+g
+  ✔ open
+shot: mac-shell/07-before-cmd-2.png
+> key cmd+2
+  ✔ ⌘2 closed the palette
+  ✔ and went to the second row's window
+> key ctrl+opt+g
+  ✔ open
+> move 512 397
+shot: mac-shell/08-hover-changes-nothing.png
+> click 512 359
+  ✔ a click on the third row closed the palette
+  ✔ and went to its window
+
+== nothing matches
+> key ctrl+opt+g
+  ✔ open
+> key z
+> key z
+> key z
+shot: mac-shell/09-nothing-matches.png
+> key return
+  ✔ Return with nothing to choose leaves it open
+> key delete
+> key delete
+> key delete
+shot: mac-shell/10-text-deleted.png
+> key escape
+  ✔ closed
+
+== saved views, and a list longer than the palette
+> zoom 117
+framed w117
+> save-view 1
+saved view 1: ArborTestWindows (n3)
+> out
+stepped out to ArborTestWindows and ArborTestWindows (n5)
+> save-view 2
+saved view 2: ArborTestWindows and ArborTestWindows (n5)
+> desktop
+showing the Desktop
+> save-view 3
+saved view 3: the Desktop
+> show-all
+showing everything
+> save-view 4
+saved view 4: everything
+> zoom 120
+framed w120
+> save-view 5
+saved view 5: ArborTestWindows (n6)
+> key ctrl+opt+g
+  ✔ open
+shot: mac-shell/11-nine-of-ten.png
+> key up
+shot: mac-shell/12-scrolled-to-the-last.png
+> key v
+> key 2
+shot: mac-shell/13-view-2.png
+> key return
+  ✔ the view moved to saved view 2
+  ✔ closed
+shot: mac-shell/14-at-view-2.png
+
+== a window in the Dock
+> show-all
+showing everything
+> click 721 57
+> zoom 116
+framed w116
+> key ctrl+opt+g
+  ✔ open
+> key t
+> key 2
+shot: mac-shell/15-minimised-note.png
+> key return
+film: 4 pictures in .63 s
+shot: mac-shell/16-coming-back-1.png
+shot: mac-shell/16-coming-back-2.png
+shot: mac-shell/16-coming-back-3.png
+shot: mac-shell/16-coming-back-4.png
+  ✔ window 2 is no longer minimised
+  ✔ it is in view
+  ✔ it is focused
+  ✔ window 1 is out of view: window 2 is framed as window 1 was
+shot: mac-shell/16a-framed.png
+> show-all
+showing everything
+its slot was 687 43 325 321 and it is at 687 43 325 321; the window server has it at 687 43 325 321
+  ✔ it is back in its own place
+  ✔ it did not become a tile
+shot: mac-shell/17-back-from-the-dock.png
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back yes
+  Desktop          349 43 326 653
+  w116 12 43 325 321        docked
+  w117 687 43 325 321       docked focused
+  w118 687 376 325 320      docked
+  w119 349 100 326 348      floating
+  w120 12 376 325 320       docked
+
+== without the palette
+> zoom 116
+framed w116
+> find test 4
+w119 is in view and focused
+  ✔ find <text> brought the floating window into view
+  ✔ and focused it
+> find zebra
+arborctl: no window, space or saved view matches “zebra”
+> reveal 118
+w118 is in view and focused
+  ✔ reveal focused window 3
+
+== the menu
+> click 675 15
+shot: mac-shell/18-menu.png
+> key escape
+
+== quitting with the palette open
+> click 1523 1006
+> key ctrl+opt+g
+  ✔ open
+  ✔ no window title reached the log
+2026-10-15T02:41:35.324Z INFO  find: the palette is up, with the keyboard
+2026-10-15T02:41:35.324Z INFO  find: showing 5 destination(s) on 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+2026-10-15T02:41:40.051Z INFO  find: the palette is up, with the keyboard
+2026-10-15T02:41:40.051Z INFO  find: showing 10 destination(s) on 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+2026-10-15T02:41:43.844Z INFO  find: view 2: view 2: ArborTestWindows and ArborTestWindows (n5)
+2026-10-15T02:41:46.923Z INFO  find: the palette is up, with the keyboard
+2026-10-15T02:41:46.923Z INFO  find: showing 10 destination(s) on 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+2026-10-15T02:41:49.471Z INFO  find: w117: w117 is in view and focused
+2026-10-15T02:41:53.019Z INFO  find: w119: w119 is in view and focused
+2026-10-15T02:41:53.137Z DEBUG find failed: nothing matches among 10
+2026-10-15T02:41:56.181Z INFO  find: the palette is up, with the keyboard
+2026-10-15T02:41:56.181Z INFO  find: showing 10 destination(s) on 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 116 is back on screen after quitting
+  ✔ window 117 is back on screen after quitting
+  ✔ window 118 is back on screen after quitting
+  ✔ window 119 is back on screen after quitting
+  ✔ window 120 is back on screen after quitting
+shot: mac-shell/19-after-quit.png
+
+62 passed, 5 failed
+exit code 1

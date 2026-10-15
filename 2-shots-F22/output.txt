@@ -1,0 +1,259 @@
+# mac-shell: scripts/mac-shell/shots-F22.sh at cef4a28, macOS 26.6.2, 2026-10-15T02:39Z
+built Arbor and the pointer tool in 3s
+
+== session 1: [ 1 / 3 | Desktop with 4 floating | 2 ], shortcuts and the menu bar item on
+session 1: Arbor pid 20053, test windows 74 75 76 77 (pid 20032)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 74 left
+docked w74 at the left edge
+> dock 75 right
+docked w75 at the right edge
+> dock 76 beside 74 bottom
+docked w76 below w74
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  w74 12 43 325 319        docked
+  w75 687 43 325 650       docked
+  w76 12 374 325 319       docked focused
+  w77 349 100 326 348      floating
+> click 174 202
+  ✔ a click focused window 1
+shot: mac-shell/01-start.png
+
+== focus by command
+> focus right
+focused w77
+  ✔ focus right went to the floating window in between
+> focus right
+focused w75
+  ✔ focus right went on to window 2
+> focus right
+arborctl: no window or space to the right
+> focus left
+focused w77
+  ✔ focus left came back to the floating window
+> focus left
+focused w74
+  ✔ focus left came back to window 1, in focus more recently than 3
+> focus down
+focused w76
+  ✔ focus down went to window 3
+> focus next
+focused w75
+  ✔ focus next follows the tree
+> focus next
+focused w77
+  ✔ and then the floating windows
+> focus previous
+focused w75
+  ✔ focus previous goes back
+> focus 74
+focused w74
+  ✔ focus by id
+  ✔ the camera has not moved
+shot: mac-shell/02-focus.png
+
+== focus by the real shortcuts
+> key ctrl+opt+shift+down
+  ✔ ⌃⌥⇧↓ went to window 3
+> key ctrl+opt+shift+up
+  ✔ ⌃⌥⇧↑ went to window 1
+> key ctrl+opt+shift+right
+  ✔ ⌃⌥⇧→ went to the floating window
+> key ctrl+opt+shift+left
+  ✔ ⌃⌥⇧← went back
+
+== framed on one window, the same keys walk from space to space
+> zoom 74
+framed w74
+> key ctrl+opt+shift+down
+  ✔ ⌃⌥⇧↓ went to window 3
+  ✔ window 3 is in view
+  ✔ window 1 is tucked away
+shot: mac-shell/03-framed-down.png
+> key ctrl+opt+shift+right
+  ✔ ⌃⌥⇧→ went to the Desktop and its floating window
+shot: mac-shell/04-framed-desktop.png
+> key ctrl+opt+shift+right
+  ✔ ⌃⌥⇧→ went on to window 2
+  ✔ and it stays there once macOS has reported the change
+  ✔ window 2 is in view
+display 0 0 1024 768, visible 0 31 1024 674, camera n3, back yes
+  w74 1023 677 1000 650    docked parked
+  w75 12 43 1000 650       docked focused
+  w76 1023 677 1000 650    docked parked
+  w77 1023 677 480 348     floating parked
+> show-all
+showing everything
+
+== swap: the slots keep their sizes
+> resize 74 right 60
+resized w74
+> click 204 202
+  ✔ a click focused window 1
+> swap right
+swapped w74 with w75
+window 1 was 385 wide and is 325; window 2 was 325 and is 385
+  ✔ window 1 took the narrow slot
+  ✔ window 2 took the wide slot
+  ✔ focus stayed with window 1
+  ✔ the camera has not moved
+shot: mac-shell/05-swapped.png
+> swap left
+swapped w74 with w75
+> balance
+balanced 2 groups
+
+== grow, shrink and balance by the real shortcuts
+> key ctrl+opt+cmd+=
+window 1 was 325x319 and is 365x359
+  ✔ ⌃⌥⌘= made it 40 points wider
+  ✔ and 40 points taller
+shot: mac-shell/06-grown.png
+> key ctrl+opt+cmd+-
+  ✔ ⌃⌥⌘- took them back
+> grow 90
+w74 grew
+> key ctrl+opt+cmd+0
+  ✔ ⌃⌥⌘0 evened the sizes out
+
+== a window whose app refuses to shrink stays a window
+> click 849 368
+  ✔ a click focused window 2
+> shrink 200
+w75 shrank
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back yes
+  Desktop          349 43 350 650
+  w74 12 43 325 319        docked
+  w75 711 43 301 650       docked focused
+  w76 12 374 325 319       docked
+  w77 349 100 350 348      floating
+  ✔ window 2 is not a tile
+  ✔ it is in view
+  ✔ it stopped at the 300 points its app insists on
+  ✔ it still has focus
+  ✔ the camera has not moved
+shot: mac-shell/07-shrunk-to-the-minimum.png
+> shrink
+arborctl: w75 cannot shrink any further
+> balance
+balanced 2 groups
+
+== rotate and mirror by the real shortcuts
+> key ctrl+opt+r
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back yes
+  Desktop          12 264 1000 208
+  w74 12 43 494 209        docked
+  w75 12 484 1000 209      docked focused
+  w76 518 43 494 209       docked
+  w77 320 264 480 208      floating
+shot: mac-shell/08-rotated.png
+  ✔ ⌃⌥R stacked the row: window 1 is above window 2
+  ✔ and the column inside became a row: window 1 is left of window 3
+> key ctrl+opt+shift+r
+  ✔ ⌃⌥⇧R mirrored it: window 2 is above window 1
+shot: mac-shell/09-mirrored.png
+> key ctrl+opt+shift+r
+> key ctrl+opt+r
+  ✔ and back: window 1 is left of window 2
+
+== ⌃⌥R on a pair inside the row is its own way back
+> resize 74 right 200
+resized w74
+> click 274 202
+  ✔ a click focused window 1
+> key ctrl+opt+r
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back yes
+  tile n0 desktop  549 43 126 650  holds -
+  w74 12 43 257 650        docked focused
+  w75 687 43 325 650       docked
+  w76 281 43 256 650       docked
+  w77 349 100 326 348      floating
+shot: mac-shell/09b-pair-rotated.png
+  ✔ windows 1 and 3 are side by side
+  ✔ window 2 has not moved
+> key ctrl+opt+r
+  ✔ the second press put window 1 back
+  ✔ and window 3
+  ✔ and left window 2 alone
+> balance
+balanced 2 groups
+
+== the pointer stays where the hand left it
+> move 20 400
+> focus-display 1
+focused w74 on display 1
+  ✔ focus-display did not move the pointer
+  ✔ in either direction
+
+== the menu
+> click 732 15
+shot: mac-shell/10-menu.png
+> key escape
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 74 is back on screen after quitting
+  ✔ window 75 is back on screen after quitting
+  ✔ window 76 is back on screen after quitting
+  ✔ window 77 is back on screen after quitting
+shot: mac-shell/11-after-quit.png
+
+== session 2: a tile in the way is entered
+session 2: Arbor pid 22156, test windows 102 103 104 (pid 22119)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 102 left
+docked w102 at the left edge
+> dock 103 right
+docked w103 at the right edge
+> dock 104 beside 103 bottom
+docked w104 below w103; its space is too small to show it, so it is a tile
+> show-all
+showing everything
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  tile n4 window   687 374 325 319  holds w104
+  w102 12 43 325 650        docked
+  w103 687 43 325 319       docked focused
+  w104 1023 677 700 500     docked parked
+  ✔ window 3 is a tile
+> click 849 202
+  ✔ a click focused window 2
+shot: mac-shell/20-tile.png
+> focus down
+focused w104
+  ✔ focus down entered the tile
+  ✔ window 3 is in view
+shot: mac-shell/21-tile-entered.png
+> back
+back to everything
+
+== swapping into a slot too small leaves a tile, and the view where it was
+> show-all
+showing everything
+> click 174 368
+  ✔ a click focused window 1
+> swap 102 104
+swapped w102 with w104
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  tile n4 window   12 43 325 650  holds w104
+  w102 687 374 325 319      docked focused
+  w103 687 43 325 319       docked
+  w104 1023 677 1000 650    docked parked
+  ✔ the camera has not moved
+shot: mac-shell/22-swapped-with-a-tile.png
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 102 is back on screen after quitting
+  ✔ window 103 is back on screen after quitting
+  ✔ window 104 is back on screen after quitting
+shot: mac-shell/23-after-quit.png
+
+64 passed, 0 failed
+exit code 0
