@@ -383,7 +383,7 @@ import Testing
       h.controller.menuModel().sections.first?.items.map(\.title)
         == ["2 places kept for windows that are not open yet", news])
     #expect(h.controller.menuModel().sections.first?.items.allSatisfy { $0.command == nil } == true, "nothing to choose")
-    #expect(h.controller.menuModel().sections.dropFirst().first?.items.first?.title == "Show Everything")
+    #expect(h.controller.menuModel().sections.dropFirst().first?.items.first?.title == "Arrange Windows")
     // Two states at most, and whatever has a command that ends it comes first.
     h.run("pause")
     #expect(

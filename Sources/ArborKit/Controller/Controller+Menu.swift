@@ -108,7 +108,7 @@ extension Controller {
       let news = notice.split(separator: "(", maxSplits: 1).first.map { $0.trimmingCharacters(in: .whitespaces) } ?? notice
       states.append([news == notice ? Item.text(notice) : Item.text(news).help(notice)])
     }
-    // More than two would push the first command, which is the way back, out of its place.
+    // More than two would push the first commands, among them the way back, out of their places.
     return Section { states.prefix(2).flatMap { $0 } }
   }
 
@@ -121,8 +121,8 @@ extension Controller {
 
   // MARK: View
 
-  /// Where the view can go. Show Everything is the first command in the menu: it is what someone whose windows have just
-  /// left the view came for.
+  /// The three things people open the menu for, then where the view can go. Arrange Windows is the first command: ⌃⌥A is never to be
+  /// bound again (QUESTIONS Q29, point 2), so this is where it is run from. Under it the two answers to "where has my window gone".
   private func viewSection() -> Section {
     // The places of the display under the pointer, which is the one these commands act on, worded, greyed out
     // and ticked as the menu bar's buttons are.
@@ -130,9 +130,10 @@ extension Controller {
     let focused = focusedWindowInHand
     let map = minimapInMenu
     return Section {
-      Item.command("Show Everything", .showAll).like(places.button(.everything))
-      // The second answer to "where has my window gone" (Controller+OpenWindows.swift).
+      Item.command("Arrange Windows", .arrange).enabled(canArrange)
+      // Controller+OpenWindows.swift.
       Item.submenu("Windows") { windowListItems() }
+      Item.command("Show Everything", .showAll).like(places.button(.everything))
       Item.command("Frame Focused Window", .zoom(nil)).enabled(focused.map(canFrame) ?? false).ticked(focused?.isFramed == true)
       Item.command("Go to…", .find(nil)).enabled(!finderRows().isEmpty)
       Item.submenu("Saved Views", sections: savedViewSections(places))
@@ -282,16 +283,17 @@ extension Controller {
 
   // MARK: Arrangement
 
-  /// What changes the whole arrangement.
+  /// Whether `arrange`, which is for the display under the pointer, would find anything to take. Windows kept in view, and those that come and go
+  /// with `summon`, accompany the arrangement and are not part of it; a place kept for a window that is not open yet is forgotten first.
+  private var canArrange: Bool {
+    guard let workspace = menuDisplay?.1 else { return false }
+    return workspace.tree.allWindows.contains { !pendingSlots.contains($0) }
+      || workspace.floating.keys.contains { windows[$0]?.isPresent == true && workspace.role(of: $0) == nil }
+  }
+
+  /// What else changes the whole arrangement.
   private func arrangementSection() -> Section {
-    // `arrange` is for the display under the pointer.
     let here = menuDisplay?.1
-    // What `arrange` takes. Windows kept in view, and those that come and go with `summon`, accompany the arrangement and are not part
-    // of it; a place kept for a window that is not open yet is forgotten first.
-    let anyHere = here.map { workspace in
-      workspace.tree.allWindows.contains { !pendingSlots.contains($0) }
-        || workspace.floating.keys.contains { windows[$0]?.isPresent == true && workspace.role(of: $0) == nil }
-    }
     // They name the step they would take back or put back; plain and grey when there is none (Controller+Undo.swift).
     let (undoTitle, redoTitle) = (nextStepTitle(.undo), nextStepTitle(.redo))
     let focused = focusedWindowInHand
@@ -302,7 +304,6 @@ extension Controller {
     return Section {
       Item.command(undoTitle.map { "Undo \($0)" } ?? "Undo", .undo).enabled(undoTitle != nil)
       Item.command(redoTitle.map { "Redo \($0)" } ?? "Redo", .redo).enabled(redoTitle != nil)
-      Item.command("Arrange Windows", .arrange).enabled(anyHere == true)
       // One of the ways back, which are never greyed out: nobody should have to wonder why.
       Item.command("Float All Windows", .floatAll)
       Item.submenu(

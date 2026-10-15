@@ -10,9 +10,10 @@ Written by the executor swarm, 2026-10-14 (product owner); for the documenter to
 
 Arbor has no window and no Dock icon. The menu is the only part of it a newcomer can look at, so it has three jobs, in this order:
 
-1. **The way back.** Someone whose windows have just left the view opens this menu. What they need is the first command in it, and
-   whoever misses one window finds it in the second row: every open window, by app and title.
-2. **The vocabulary.** Read from the top, it teaches the model: show everything, frame, dock, float, arrange; stepping out and in is
+1. **The way back.** Someone whose windows have just left the view opens this menu. What they need is in its first three rows: whoever misses one
+   window finds it under Windows, every open window by app and title, and Show Everything is right below. Above them stands Arrange Windows, whose key
+   is never to be bound again (`collab/QUESTIONS.md`, Q29, point 2): it is run from here.
+2. **The vocabulary.** Read from the top, it teaches the model: arrange, show everything, frame, dock, float; stepping out and in is
    under View. Each row shows its shortcut, in submenus too, so the menu is also where shortcuts are learned.
 3. **What Arbor is doing that is out of the ordinary**, and the command that ends it: paused, holding, waiting for permission.
 
@@ -25,7 +26,7 @@ would fail, and whatever would do something else than its title says.
 ## Rules
 
 1. **The ways back are always at the top level, always in the same place, never greyed out while Arbor runs, and never below a fold**: Show
-   Everything is the first command, Float All Windows is in the third group, Pause Arbor and Quit Arbor are the last two rows. (A held
+   Everything is the third row, Float All Windows is in the third group, Pause Arbor and Quit Arbor are the last two rows. (A held
    view is the one exception: nothing moves it, so Show Everything is greyed out, and the row that says so, which releases, takes its place.)
 2. **A state comes first, in one row: the sentence, and after " · " the command that ends the state, which choosing the row runs.** At most
    two states are shown; the order of precedence is in [States](#states).
@@ -55,20 +56,20 @@ would fail, and whatever would do something else than its title says.
 | # | Row | Shortcut | Command | From | Notes |
 |---|---|---|---|---|---|
 | | *state lines, if any, and a separator* | | | | see [States](#states) |
-| 1 | Show Everything | ⌃⌥Space | `show-all` | shipped | ✓ when that is the view. With several displays, holding ⌥ turns it into **Show Everything on All Displays** (⌃⌥0, `home`) |
+| 1 | Arrange Windows | ⌃⌥A | `arrange` | shipped | the first command (Q29, point 2): its key goes with the nine keys (board 0.3) and is never bound again, so it is run from here; and arranging is what a newcomer came for |
 | 2 | Windows ▸ | | | shipped | every open window; a click brings it to the front and into view |
-| 3 | Frame Focused Window | ⌃⌥↩ | `zoom` | shipped | ✓ when it is framed; choosing it again un-frames, as the key does |
-| 4 | Go to… | ⌃⌥G | `find` | F27 | |
-| 5 | Saved Views ▸ | | | shipped, F10 | |
-| 6 | View ▸ | | | | the rest of what moves the view, and what holds it |
+| 3 | Show Everything | ⌃⌥Space | `show-all` | shipped | ✓ when that is the view. With several displays, holding ⌥ turns it into **Show Everything on All Displays** (⌃⌥0, `home`) |
+| 4 | Frame Focused Window | ⌃⌥↩ | `zoom` | shipped | ✓ when it is framed; choosing it again un-frames, as the key does |
+| 5 | Go to… | ⌃⌥G | `find` | F27 | |
+| 6 | Saved Views ▸ | | | shipped, F10 | |
+| 7 | View ▸ | | | | the rest of what moves the view, and what holds it |
 | | *separator* | | | | Every row of this group is about the focused window or its app; all greyed out when there is none. Titles stay whole ("Float Focused Window"): a command has one title, in the menu, the shortcuts panel, the guide and read alone by VoiceOver |
-| 7 | Dock Focused Window ▸ | | | shipped | |
-| 8 | Float Focused Window | ⌃⌥F | `float` | shipped | greyed out when it floats already |
-| 9 | Focused Window ▸ | | | | |
+| 8 | Dock Focused Window ▸ | | | shipped | |
+| 9 | Float Focused Window | ⌃⌥F | `float` | shipped | greyed out when it floats already |
+| 10 | Focused Window ▸ | | | | |
 | | *separator* | | | | |
-| 10 | Undo Dock | ⌃⌥Z | `undo` | shipped | names the step it takes back; "Undo" greyed out when there is none |
-| 11 | Redo Dock | ⌃⌥⇧Z | `redo` | shipped | |
-| 12 | Arrange Windows | ⌃⌥A | `arrange` | shipped | |
+| 11 | Undo Dock | ⌃⌥Z | `undo` | shipped | names the step it takes back; "Undo" greyed out when there is none |
+| 12 | Redo Dock | ⌃⌥⇧Z | `redo` | shipped | |
 | 13 | Float All Windows | ⌃⌥⇧F | `float-all` | shipped | |
 | 14 | Arrangement ▸ | | | | |
 | | *separator* | | | | |
@@ -82,7 +83,7 @@ would fail, and whatever would do something else than its title says.
 
 A separator is written `|`. Rows show their shortcuts here as at the top level.
 
-**Saved Views ▸** (5)
+**Saved Views ▸** (6)
 - heading *Go To*, then one row per saved view, named in words: `View 1: Safari and Mail` ⌃⌥1 (✓ when that is the view). No heading and no
   rows when nothing is saved.
 - heading *Save This View As*, then `View 1` … `View 9` ⌃⌥⇧1 …, a taken number reading `View 1 (replace)`.
@@ -95,25 +96,26 @@ A separator is written `|`. Rows show their shortcuts here as at the top level.
 - **In the order of use, not by app**: the window with the keyboard first, ticked, as in an app's own Window menu; then those that have had it,
   the latest first; then the rest as they are laid out. Windows of apps Arbor does not arrange come after the others, by app.
 - **A mark in words at the right end, grey, for what cannot be seen just now**, and nothing for what can: `out of view` (docked outside the view, too
-  small to show, behind the window its tab group shows, floating while the Desktop is out of view or with most of it beyond the screen's edge, sent
+  small to show, behind the window its tab group shows, floating while the Desktop is out of view or with most of it beyond the edges of all displays, sent
   away by `summon`), and macOS's own words for what macOS did: `minimized`, `hidden`, `full screen`, `another Space`; not for the window being typed
   in, which is what is seen. No display's name.
 - **A click** runs `reveal` for that window, the road Go to… takes: it ends in front, with the keyboard, and whole. A floating window that hangs over an edge of the
-  screen is moved the least that brings all of it in. Moved, never sized: of one larger than its display the corner with the title bar comes in.
+  screen is moved the least that brings all of it in, on the display it belongs to. Moved, never sized: of one larger than its display the corner with the
+  title bar comes in. One that lies across two displays, which show all of it between them, is let be.
   (So it is for `reveal`, `find` and Go to… too.) One that Arbor does not arrange is shown where it is.
 - No limit: thirty windows are 730 points, and macOS scrolls a submenu by itself. With nothing open: `No Open Windows`, grey.
 - Only while Arbor runs. While the view is held every row is grey, as all that would move it.
 - Titles are for the person at the Mac, here as in Go to…: they are in no log, no trace and not in `state`. `menu`, which a person asks for themselves,
   prints them as `find` does: whoever passes its output on passes titles on.
 
-**View ▸** (6): `Show the Desktop` ⌃⌥D (✓ when that is the view; the same title in the shortcuts panel; the way to see everything that floats), `Step Out` ⌃⌥↑, `Step In` ⌃⌥↓, `Back` ⌃⌥[, `Forward` ⌃⌥] | `Show Minimap` ⌃⌥M (F26; ✓ while one that was asked for is up; choosing it
+**View ▸** (7): `Show the Desktop` ⌃⌥D (✓ when that is the view; the same title in the shortcuts panel; the way to see everything that floats), `Step Out` ⌃⌥↑, `Step In` ⌃⌥↓, `Back` ⌃⌥[, `Forward` ⌃⌥] | `Show Minimap` ⌃⌥M (F26; ✓ while one that was asked for is up; choosing it
 again puts it away, as the key does) | `Hold This View` ✓, `Hold Still` ✓ (F58; with the reason as a remark when Arbor began it by itself). Whoever is
 about to share a screen looks under View; once the view is held, the line that says so and `Release` are the first two rows of the menu.
 
-**Dock Focused Window ▸** (7): `Left` ⌃⌥⌘←, `Right` ⌃⌥⌘→, `Top` ⌃⌥⌘↑, `Bottom` ⌃⌥⌘↓ | `Carry…` ⌃⌥⌘Space (F59) | with a second display,
+**Dock Focused Window ▸** (8): `Left` ⌃⌥⌘←, `Right` ⌃⌥⌘→, `Top` ⌃⌥⌘↑, `Bottom` ⌃⌥⌘↓ | `Carry…` ⌃⌥⌘Space (F59) | with a second display,
 `Move to Next Display` (F22).
 
-**Focused Window ▸** (9): `Keep This Window in View` ✓ (`pin`, F49. No app's name: it pins one window; the app is what a rule is for) |
+**Focused Window ▸** (10): `Keep This Window in View` ✓ (`pin`, F49. No app's name: it pins one window; the app is what a rule is for) |
 `Don’t Arrange “Zoom”` (`exclude`), `Shortcuts Off in “Zoom”` ✓ (`pass-through`, F41) | heading *Tab Group* (F04; neither heading nor rows while
 `tabsEnabled` is off): `Next Tab` ⌃⌥⇥, `Previous Tab` ⌃⌥⇧⇥, `Move Tab Left`, `Move Tab Right`, `Take Window Out of Tab Group`, and, where there was a
 submenu of a submenu, up to four plain rows: `Make a Tab Group With the Window to the Left`, `… to the Right`, `… Above`, `… Below`, each shown only
@@ -135,7 +137,7 @@ lines on screen. It is what a person opened the menu to find out, and macOS draw
 (measured in a picture from a hosted Mac; decided by the product owner, 2026-10-15). Only news that no command ends is a line of text:
 state 2, state 8, and what comes under the row of a permission that was taken away.
 
-States are shown first in the menu, above Show Everything, with a separator under them. When several hold, the first two in this order
+States are shown first in the menu, above Arrange Windows, with a separator under them. When several hold, the first two in this order
 are shown: while Arbor runs that is two rows, which rule 3 counts on. **The topmost state's way out is never greyed out.** One below it may
 wait for it, if it is one choice away: with the view held and a mistake in the file, Release is at full strength and the file's row,
 which would open a window over what is being shown (F58), follows it.

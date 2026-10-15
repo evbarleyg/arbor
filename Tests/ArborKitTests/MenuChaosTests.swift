@@ -30,6 +30,7 @@ private let seeds: [UInt64] = {
     (.shrink(nil), "F22: the window is as small as its app allows"),
     (.equalize(all: false), "F22: the focused window is full screen"),
     (.rotate, "F22: rotated, a window would be too small to show"),
+    (.moveToDisplay(.next, nil), "F22: the window's app hangs, which is found out by asking it"),
   ]
   /// They need something a test has not got (a window to open, GitHub), or end the walk.
   static let notTried: [Command] = [.quit, .checkSetup, .welcome, .settings(.showWindow()), .checkForUpdates, .reloadSettings, .togglePause]
