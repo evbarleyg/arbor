@@ -84,7 +84,8 @@ def walk(seed, acts, two=False):
         app, other = dice.pick(APPS), dice.pick(APPS)
         if kind == "switch":
             say(dice.weighted([(f"switch_dock {app}", 4), (f"switch_click {app}", 4), (f"switch_cmdtab {1 + dice.roll(3)}", 3),
-                               ("switch_backtick", 1), ("switch_tile", 1), (f"switch_menu {dice.pick(['safari', 'finder', 'textedit', 'terminal'])}", 1)]))
+                               ("switch_backtick", 1), (f"tile_click {1 + dice.roll(2)}", 1), (f"focus_key {dice.pick(['left', 'right', 'up', 'down'])}", 2),
+                               (f"summon {app}", 1), (f"switch_menu {dice.pick(['safari', 'finder', 'textedit', 'terminal'])}", 1)]))
         elif kind == "open-close":
             what = dice.roll(5)
             if what == 0:
@@ -107,16 +108,19 @@ def walk(seed, acts, two=False):
                 say("close_new")
         elif kind == "dock-key":
             say(f"switch_to {app}")
-            say(dice.weighted([(f"dock_key {dice.pick(['left', 'right', 'up', 'down'])}", 4), ("float_key", 1)]))
+            say(dice.weighted([(f"dock_key {dice.pick(['left', 'right', 'up', 'down'])}", 8), ("float_key", 2), ("arrange_key", 1), ("undo", 2), ("redo", 1),
+                               ("rotate", 1), ("mirror", 1), ("pin", 1)]))
         elif kind == "drag":
             say(dice.weighted([(f"drag_onto {app} {other} {dice.pick(['left', 'right', 'top', 'bottom'])}", 3), (f"drag_out {app}", 2),
                                (f"drag_by {app} {dice.roll(401) - 200} {dice.roll(241) - 120}", 2)]))
         elif kind == "drag-where-macos-tiles":
             say(f"drag_edge {app} {dice.pick(['left', 'right', 'top'])}")
         elif kind == "view":
-            say("view " + dice.weighted([("frame", 4), ("all", 4), ("out", 2), ("in", 2), ("left", 2), ("right", 2), ("back", 2), ("forward", 1), ("desktop", 1)]))
+            say(dice.weighted([("view frame", 4), ("view all", 4), ("view out", 2), ("view in", 2), ("view left", 2), ("view right", 2), ("view back", 2),
+                               ("view forward", 1), ("view desktop", 1), ("view home", 1), ("peek", 1), (f"save_view {1 + dice.roll(3)}", 1), (f"view_n {1 + dice.roll(3)}", 1)]))
         elif kind == "resize":
-            say(dice.weighted([(f"resize_gap {app} {dice.pick([-80, -40, 40, 80])}", 2), (f"resize_key {dice.pick(['grow', 'shrink', 'balance'])}", 3)]))
+            say(dice.weighted([(f"resize_gap {app} {dice.pick([-80, -40, 40, 80])}", 2), (f"resize_key {dice.pick(['grow', 'shrink', 'balance'])}", 3),
+                               (f"resize_edge {app} {dice.pick(['left', 'right', 'top', 'bottom'])} {dice.pick([-60, -30, 30, 60])}", 2)]))
         elif kind == "macos-own":
             what = dice.roll(3)
             if what == 0:
@@ -128,11 +132,15 @@ def walk(seed, acts, two=False):
                 say("full_screen on")
                 say("full_screen off")
         elif kind == "way-out":
-            if dice.roll(2):
+            what = dice.roll(5)
+            if what < 2:
                 say("pause")
                 later("resume")
+            elif what == 2:
+                say("hold_view")
+                later("release_view")
             else:
-                say("float_all")
+                say(dice.pick(["float_all", "float_all", "float_all_here"]))
         else:
             say("idle_act")
     for _, line in owed:
@@ -163,7 +171,7 @@ def self_test():
         failures.append(f"the walk from 4711 begins {walk('4711', 110)[:3]}, not {PINNED}")
     for seed in range(200):
         lines = walk(seed, 110)
-        for opens, closes in (("minimize", "restore"), ("hide", "unhide"), ("pause", "resume"), ("full_screen on", "full_screen off"), ("quit_app", "reopen")):
+        for opens, closes in (("minimize", "restore"), ("hide", "unhide"), ("pause", "resume"), ("hold_view", "release_view"), ("full_screen on", "full_screen off"), ("quit_app", "reopen")):
             if sum(line.startswith(opens) for line in lines) != sum(line.startswith(closes) for line in lines):
                 failures.append(f"seed {seed}: as many of `{opens}` as of `{closes}`")
         if lines.count("quit_and_start") != 1:
@@ -186,10 +194,11 @@ def self_test():
     return 1 if failures else 0
 
 
-WORDS = {"switch_dock", "switch_click", "switch_to", "switch_cmdtab", "switch_backtick", "switch_menu", "switch_tile", "open_new", "close_new", "minimize", "restore", "hide", "unhide",
+WORDS = {"switch_dock", "switch_click", "switch_to", "switch_cmdtab", "switch_backtick", "switch_menu", "tile_click", "focus_key", "summon", "arrange_key", "undo",
+         "redo", "rotate", "mirror", "pin", "peek", "save_view", "view_n", "resize_edge", "float_all_here", "hold_view", "release_view", "open_new", "close_new", "minimize", "restore", "hide", "unhide",
          "quit_app", "reopen", "dock_key", "float_key", "drag_onto", "drag_out", "drag_by", "drag_edge", "view", "resize_gap", "resize_key", "full_screen",
          "wallpaper_click", "title_double_click", "pause", "resume", "float_all", "quit_and_start", "idle_act", "display", "send_across"}
-PINNED = ['view back', 'switch_click textedit', 'switch_to terminal']
+PINNED = ['view all', 'switch_dock calendar', 'minimize']
 
 
 def main(arguments):
