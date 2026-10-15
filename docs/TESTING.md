@@ -506,7 +506,9 @@ Things that bite:
   last one in front, and floating windows stay where they are when something is docked, over it or behind it.
   `drag_window`, `titlebar_of` and `click_window` look for a point that nothing covers.
 - `check` runs its command in a subshell, and `$(…)` among its arguments is evaluated once, before `eventually`
-  starts trying: write `eventually wider_than $W1 400`, not `eventually test $(width_of $W1) -gt 400`.
+  starts trying: write `eventually wider_than $W1 400`, not `eventually test $(width_of $W1) -gt 400`. So does `eventually`, and
+  `want`, which is a `check`. A variable the command sets is lost to the script: a function that starts Arbor anew or forgets its process
+  runs on a line of its own, and the check asks how it ended. (Every Quit in a walk was once reported as a crash for that.)
 - Commands that act on the focused window, and shortcuts, need a real `click` on a test window first.
 - There is no public way to make gesture events. `pinch` (and `witness pinch`, below) fills in the fields a trackpad's
   events carry, and Arbor's tap reads the result as it reads a trackpad's on macOS 26; a new macOS may change that.
@@ -795,6 +797,9 @@ copy from before the repository was public, and say what the script does once it
 | `check-macos-double-click.sh` | trunk | safe, steps skip themselves | 40 s | macOS's other title-bar actions (it would change the setting), TextEdit and Terminal. A test window fills the display for some seconds |
 | `check-claimed-keys.sh` | trunk | **never**: ends with 77 | | Writes an entry for Arbor's bundle into the privacy database; types into whatever has the keyboard |
 | `check-menu-height.sh` | trunk | **never**: ends with 77 | | Clicks in the menu bar; pauses, holds and quits its Arbor from the menu |
+| `probe-mission-control.sh` | trunk | **never**: ends with 77 | | Mission Control and the app's windows opened, a window picked there by a click |
+| `probe-whose-key.sh`, `probe-fn-bit.sh` (`lib-ears.sh`) | trunk | **never**: ends with 77 | | Some fifty shortcuts pressed a dozen times over into whatever is in front; event taps that listen; hot keys registered; secure input switched on and off; Arbor stopped, killed and installed as a bundle of its own under `~/Applications`; the display put to sleep; an entry in the permission database, as root |
+| `census-menu-keys.sh` | trunk | **never**: ends with 77 | | Alone on its Mac. Opens and ends every app, installs apps and leaves them, lifts the browsers' quarantine mark, prints the titles of menu items |
 | `check-F59.sh` | not landed | safe | 30 s | During a carry nobody's app gets arrows, ↩ or ⎋ |
 | `shots-F04.sh`, `shots-F34.sh` | not landed | safe | 3 min, 60 s | Test windows go to the Dock and come back; one is closed by its tab's button |
 | `shots-F22.sh`, `shots-F19.sh` | trunk | safe | 90 s, 45 s | |
