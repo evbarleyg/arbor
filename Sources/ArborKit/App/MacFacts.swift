@@ -33,10 +33,20 @@ enum MacFacts {
     return count > 0 ? count : nil
   }
 
-  /// The running apps that get in Arbor's way, by name.
+  /// The running apps that get in Arbor's way, by name. The first thing asked about a running app, be it only its number, is a
+  /// round trip to Launch Services, and there are dozens of them. So nothing is asked of any until there are more or fewer than
+  /// there were, and twice a minute all the same: one may have come as another went, or not have had its name yet.
   static var competingApps: [String] {
+    let running = NSWorkspace.shared.runningApplications
+    let halfMinute = Int(ProcessInfo.processInfo.systemUptime / 30)
+    return keptCompetingApps.value(for: [running.count, halfMinute]) { competingApps(among: running) }
+  }
+
+  private static var keptCompetingApps = KeptFact<[Int], [String]>()
+
+  private static func competingApps(among running: [NSRunningApplication]) -> [String] {
     var names: [String] = []
-    for app in NSWorkspace.shared.runningApplications {
+    for app in running {
       let name = CompetingApp.name(
         bundleID: app.bundleIdentifier, appName: app.localizedName, executable: app.executableURL?.lastPathComponent)
       if let name, !names.contains(name) {

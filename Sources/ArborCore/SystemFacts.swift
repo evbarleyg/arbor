@@ -125,3 +125,25 @@ public enum CompetingApp {
     return nil
   }
 }
+
+/// A fact that is dear to read and seldom changes, kept for as long as something cheap to read stays what it was.
+///
+/// The welcome window reads the facts about the Mac once a second for as long as it is open, which can be all day. Asking macOS
+/// about every running app each time kept Arbor at over 1 % of a core with nothing happening; how many there are says nearly
+/// as well whether anybody has come or gone. No notice has to arrive for this to notice, so none can be lost.
+public struct KeptFact<Key: Equatable, Value> {
+  private var kept: (key: Key, value: Value)?
+
+  public init() {}
+
+  /// What `read` answered when `key` last changed, or answers now.
+  public mutating func value(for key: Key, read: () -> Value) -> Value {
+    if let kept, kept.key == key { return kept.value }
+    let value = read()
+    kept = (key, value)
+    return value
+  }
+
+  /// The next question is passed on, whatever the key.
+  public mutating func forget() { kept = nil }
+}

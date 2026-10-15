@@ -6963,6 +6963,31 @@
    ]
   },
   {
+   "id": "the-first-question-about-a-running-app-is-a-round-trip",
+   "kind": "timing",
+   "layer": "below the seam",
+   "expected": "`NSWorkspace.runningApplications` hands out what it knows. Reading an app's process number, which never changes, costs nothing, so a list of the numbers is a cheap way to see whether anybody has come or gone.",
+   "happened": "The objects are made anew for every call, and the first property asked of each, be it only `processIdentifier`, fetches all that can change about that app from Launch Services, one round trip an app. With 32 apps the main thread was seen there for 12 ms of every second while the welcome window was open, which reads the facts about the Mac once a second: 0.4 to 0.7 % of a core with nothing happening, and 1.2 to 1.6 % in seven idle half-minutes of seven with nine more apps and the day's instruments running. A first cure that kept the names for as long as the numbers stayed the same still paid for the numbers. How many there are costs nothing.",
+   "found": "Thirteen idle half-minutes of ordinary days on hosted Macs, macOS 26.6.2, on 2026-10-14 and 15, told apart by whether Arbor's welcome window was among the windows on screen; then `sample` in three rounds on one Mac: as it is, with nothing kept, as it is again.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [
+    "test: itIsReadOnceForAsLongAsTheKeyStays",
+    "tool: mac-shell/probe-idle.sh"
+   ],
+   "copes": "MacFacts.competingApps asks nothing about any app until there are more or fewer than there were, and twice a minute all the same (`KeptFact`): 0.1 to 0.3 % with the window open.",
+   "hurt": 3,
+   "touches": [
+    "busy"
+   ],
+   "sources": [
+    "Sources/ArborKit/App/MacFacts.swift",
+    "Sources/ArborCore/SystemFacts.swift",
+    "scripts/mac-shell/probe-idle.sh",
+    "scripts/mac-shell/lib-day.sh"
+   ]
+  },
+  {
    "id": "tap-to-click-is-up-before-finder-has-answered",
    "kind": "timing",
    "layer": "below the seam",
