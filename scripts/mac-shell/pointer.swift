@@ -455,12 +455,17 @@ struct Pointer {
     return nil
   }
 
-  /// The first element below `element`, in the order the tree lists them, whose title starts with `prefix`.
+  /// The nearest element below `element` that shows and whose title starts with `prefix`.
+  /// Level by level, and only what shows. A submenu that is closed has its rows all the same, without a size, and going down into each row before
+  /// the next one found "View 1" in the closed Saved Views and never came to the row "View" below it: on a hosted Mac a section of the
+  /// suite fell whole for that, with the menu open and the row in plain view.
   func descendant(of element: AXUIElement, titled prefix: String, depth: Int) -> AXUIElement? {
-    guard depth > 0 else { return nil }
-    for child in elements(element, kAXChildrenAttribute) {
-      if let title = attribute(child, kAXTitleAttribute) as? String, title.hasPrefix(prefix) { return child }
-      if let found = descendant(of: child, titled: prefix, depth: depth - 1) { return found }
+    var level = [element]
+    for _ in 0..<depth {
+      level = level.flatMap { elements($0, kAXChildrenAttribute) }
+      for child in level {
+        if let title = attribute(child, kAXTitleAttribute) as? String, title.hasPrefix(prefix), (frame(of: child)?.width ?? 0) > 0 { return child }
+      }
     }
     return nil
   }
