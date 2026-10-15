@@ -274,6 +274,7 @@ import Testing
   /// However a drag ends, the preview is gone with it: dropped, called off, the release never seen, the window closed in the hand.
   @Test(arguments: ["dropped", "lost", "closed", "paused"]) func noPreviewOutlivesItsDrag(ending: String) {
     let (h, windows) = mac()
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.start()
     h.system.beginDrag(windows[0])
     h.system.moveDrag(to: CGPoint(x: 2, y: 400), holding: 0.5)

@@ -164,6 +164,7 @@ import Testing
     #expect(expect("replied anything", h)?.contains("looks at the line before") == true)
     #expect(expect("preview none", h) == nil)
     #expect(expect("preview showing", h) == "no drop preview is showing")
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
     h.system.beginDrag(a)
     h.system.moveDrag(to: CGPoint(x: 2, y: 400), holding: 0.5)
     #expect(expect("preview showing", h) == nil)
