@@ -25,7 +25,8 @@ func tellOfPlacing(_ book: Book) {
     story.check("the window has it", window.frame == target, window.frame.text)
     story.check("nothing is reported before the call returns", one.heard.all.isEmpty, one.heard.texts)
     one.mac.pass(1)
-    story.check("its app's reports follow, and count as echoes", !one.heard.all.isEmpty && !one.heard.all.contains(where: isByUser), one.heard.texts)
+    // Whether reports that only confirm what the layer has booked are passed on is the layer's business.
+    story.check("of its app's reports, which follow, none counts as the person's doing", !one.heard.all.contains(where: isByUser), one.heard.texts)
     one.heard.clear()
     let calls = one.mac.calls
     story.check("asked for the same frame again, the layer answers the same", one.layer.setFrame(target, of: WindowID(window.number)) == target)

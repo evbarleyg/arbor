@@ -380,3 +380,16 @@ five windows are arranged on 1024 points, and one is dropped at the right edge o
 with nothing floating, the view goes to the Desktop (desktop): what is typed now goes to no window out of view # U3: a command that moves the view hands the keyboard to a window in view if there is one; with none it stays where it was
 with nothing floating, the view goes to the Desktop (back): what is typed now goes to no window out of view # U3: a command that moves the view hands the keyboard to a window in view if there is one; with none it stays where it was
 a window opens over a docked one, and then another app quits: what happened was not about it: it is where it was # U2: known to the chaos lab as moved-unasked, severity 2: left where it opened, and pushed onto the Desktop by the next layout, whatever brings that about
+
+# N16: an app that says yes at once and carries out a moment later what it is asked. What Arbor reads back right after the call is the old frame, and that is booked as "where Arbor put it". The look 0.3 s later finds the window
+# "strayed" to the very place Arbor sent it, and reports Arbor's own move as the person's ("did not stay where it was put").
+an app carries out 20 ms late what it is asked, and Arbor gives its window a frame: nothing of it counts as the person's doing # N16: hasStrayed goes by what was read back, not by what was asked for
+an app carries out 20 ms late what it is asked, one of its windows floats, and the view goes to another window and comes back: where it was # N16: hasStrayed goes by what was read back, not by what was asked for
+an app carries out 50 ms late what it is asked, and Arbor gives its window a frame: nothing of it counts as the person's doing # N16: hasStrayed goes by what was read back, not by what was asked for
+an app carries out 50 ms late what it is asked, one of its windows floats, and the view goes to another window and comes back: where it was # N16: hasStrayed goes by what was read back, not by what was asked for
+an app carries out 200 ms late what it is asked, and Arbor gives its window a frame: nothing of it counts as the person's doing # N16: hasStrayed goes by what was read back, not by what was asked for
+an app carries out 200 ms late what it is asked, one of its windows floats, and the view goes to another window and comes back: where it was # N16: hasStrayed goes by what was read back, not by what was asked for
+
+# N13 again, with a hang short enough that only a layer that does not wait for the app gets to the quit in time.
+an app hangs for 2 s at the first call that sets something in a move out of view, and Arbor is quit meanwhile: in the end all its windows are in view: nothing that was asked of it in vain takes one away after Arbor is gone # a park that timed out is carried out when the app wakes (measured on a hosted Mac), and Arbor is gone by then
+

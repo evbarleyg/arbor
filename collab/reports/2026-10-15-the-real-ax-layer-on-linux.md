@@ -4,7 +4,7 @@
 - Branch: test/the-real-ax-layer-on-linux, then test/mac-on-linux-round-2 and -round-3
 - What: `make mac-on-linux` (scripts/mac-on-linux/README.md; docs/TESTING.md, section 9)
 
-`Sources/ArborKit/AX` ran in no headless test. Now it is compiled as it is, linked with a model of a Mac and run on Linux: 294 stories (1,204 ✔, 91 ✘ known, on the trunk at 9b4cd51; 181 stories at the end of round 1) and a random walk under four kinds of bad manners, at both storeys, five seconds to run. The run enters 92 % of the lines and 81 % of
+`Sources/ArborKit/AX` ran in no headless test. Now it is compiled as it is, linked with a model of a Mac and run on Linux: 308 stories (1,263 ✔, 98 ✘ known, on the trunk at 9b4cd51; 181 stories at the end of round 1) and a random walk under four kinds of bad manners, at both storeys, five seconds to run. The run enters 92 % of the lines and 81 % of
 the regions of `AXWindowSystem.swift` (`COVERAGE=1`). Twenty-three changes that take known cures out of a copy of the layer all turn their stories red (`make mac-on-linux-selftest`).
 
 This report is what it found. Nothing in the layer was changed. Each finding says what a person would see, the lines concerned, and how sure the model is of the manners that bring it out: SEEN on a Mac, or GUESS. Every red check is listed in
@@ -30,6 +30,7 @@ forty lines further down now. **The findings of round 2 (N9 to N15, the addition
 | N13 | **a window goes out of view seconds AFTER Arbor is gone** | a hang in the middle of a move out of view, a quit meanwhile | seen on a hosted Mac |
 | N14 | Arbor's request for the keyboard, held up by a slow app, takes the keyboard away from where the person has gone meanwhile | an app busy for less than the timeout | the layer's own logic |
 | N15 | a command answers after 3.3 s because one app is slow | an app that takes 0.1 s over a call | the layer's own logic; slow answers seen |
+| N16 | a floating window comes back from out of view moved and shrunk; Arbor's own moves count as the person's | an app that carries out a moment late what it says yes to | seen of Safari leaving full screen; in general a guess |
 | U1 | **a window dropped where there is no room for it goes out of view, as a tile, and what is typed goes into it** | nothing: a polite Mac, 1024 points, three windows | the controller's; the stand-ins show the same; no net asks |
 | U2 | a window that opened over a docked one jumps, and shrinks, when something else happens | nothing: a polite Mac | the controller's; known to the chaos lab (`moved-unasked`, severity 2) |
 | U3 | the view goes to an empty Desktop, and what is typed goes into a window out of view | nothing: `arrange`, `desktop` | the controller's; the stand-ins show the same; no net asks |
@@ -174,6 +175,15 @@ WHY: N12: `setFrame` gives an app up at the first call that goes unanswered, and
 answers within the second, 316-318 go on to raise and activate without asking whether another app has come forward since `began`; `activations`, which 324 reads for the opposite purpose, would tell. N15: every call of every move is waited for on the main thread, one after the other.
 HOW SURE: N12 and N13 SEEN on a hosted Mac (traces of a hang at a quit, at a pause, while the view moves: a park is carried out on waking as well as a fetch). N14, N15: the layer's own logic; that big apps answer slowly is seen (100 to 190 ms of the layer's work for one focus report with Safari and Finder).
 TO CONSIDER: N12, N13: at `stop()`, send the fetch to every window that is or may be out of view, with a short timeout and without waiting for an answer: what lies in the queue last wins. N14: after 307, `guard activations == before`. N15: the lanes.
+
+### N16. Arbor's own move is reported as the person's, if the app carries it out a moment after saying yes   (FOUND BY THE WALK AT STOREY TWO, under all four; told without dice)
+WHAT A PERSON SEES: an app answers "done" at once and moves its window 20, 50 or 200 ms later. Frame another window and come back: the app's FLOATING window is not where it was (624,218 400×300) but at 624,405, and 341 points wide. In the walk a floating window that had been sent out of view was taken for put in the corner by hand, and
+stayed there (`upstairs, all four|243|dock 78 23; zoom 33 70 +0.3; close 95 56`). Docked windows come right.
+STORIES: "an app carries out 20 / 50 / 200 ms late what it is asked, and Arbor gives its window a frame" (`changed … user` 0.3 s after the move); "…, one of its windows floats, and the view goes to another window and comes back"; "…, and the view goes to another window and comes back" (docked: green).
+WHY: `setFrame` reads the frame back right after the calls and gets the old one; that is what the echo filter is told the window took. `lookAgain`, `EchoFilter.settleTime` later: `echoes.hasStrayed(window, now: frame)` holds the frame of now, which is the one Arbor asked for, against the stale read-back: "did not stay where it was put",
+`windowChanged(…, userInitiated: true)`. To the controller a floating window's frame is its person's.
+HOW SURE: the layer's own logic. The manners: SEEN of Safari on its way out of full screen ("answers success to all three calls, reads back the old frame", docs/REALITY.md) and "the window server applies moves a moment later"; in general, and for how long, a GUESS.
+TO CONSIDER: `hasStrayed` against what was ASKED FOR as well as what was read back: a window that is where Arbor sent it has not strayed.
 
 ## What the walk at storey two found (round 3)
 
@@ -439,6 +449,7 @@ Each is one script for `scripts/mac-shell/run.sh`, a minute or two of a hosted M
 | 8 | **N4** | what a window on its way into full screen does with a frame it is given | the test app's window enters full screen; 100 ms later set its position and size | where it ends; whether it ends in full screen at all |
 | 9 | **N3** | the order of "focused window changed" and `activeSpaceDidChange` | two windows of one app at the same frame on two Spaces; switch ten times | the order of the two raw lines |
 | 10 | **N10** | both halves together | close Notes' window; start Arbor; show the window again from the Dock | `found` or `appeared` |
+| 11 | **N16** | whether apps say yes and move later, which, and by how much | the test app and Safari, Finder, Terminal, TextEdit: set a position and a size, read the frame back at once and every 10 ms for half a second | the first reading that has the new frame |
 | 11 | **N1** | how often "destroyed" never comes | no Mac: read the recordings there are for windows that left the window server's list without a raw "destroyed" within 5 s | a rate |
 | 12 | L1 | why a dragged window can end a step further than the pointer travelled (seen once) | one drag in 30 coarse steps, logging the window server's bounds and the pointer at every `leftMouseDragged` | ahead at every look, or only at the end |
 | 13 | the walk's one line that rests on a guess | whether `AXFocusedWindow` names a window on another Space | an app in front with its one window; switch to an empty Space; read the attribute | a window, or none |

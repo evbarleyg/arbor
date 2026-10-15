@@ -108,7 +108,7 @@ public final class FakeMac: @unchecked Sendable {
   public internal(set) var secondsWaitedInVain: TimeInterval = 0
   /// The most it has waited in vain for one app in one hang.
   public internal(set) var longestWaitForOneHang: TimeInterval = 0
-  /// How long Arbor's main thread has stood still in all: in calls to apps that did not answer, and waiting for its own other threads.
+  /// How long Arbor's main thread has stood still in all: in calls to apps, answered or not, and waiting for its own other threads.
   public internal(set) var secondsTheMainThreadWaited: TimeInterval = 0
   var workers: [Worker] = []
   /// What is put on Arbor's main dispatch queue has its turn so much later. To the run loop the queue is one source among others.
@@ -512,6 +512,9 @@ extension FakeMac {
     /// Its list of windows is so long behind every change. A window in plain view has been seen missing from its app's list (AXWindowSystem.swift, `rescan`); for
     /// how long nobody has measured.
     public var listLagsBy: TimeInterval = 0
+    /// Whatever it is asked to set it says yes to at once, and carries out so much later: a read in between gets the old answer. Seen of Safari on its way out of full screen ("answers success to all three calls, reads back the
+    /// old frame", docs/REALITY.md); in general, and for how long, a GUESS.
+    public var carriesOutAfter: TimeInterval = 0
     /// A new size is applied so long after the call returned.
     public var appliesSizeAfter: TimeInterval = 0
     /// Posts no "moved" while a window is dragged, only one at the end.

@@ -44,6 +44,7 @@ final class StoreyTwo {
     watcher = FrontmostAppWatcher { [weak controller] app in controller?.applicationActivated(app) }
     mac.note("Arbor starts")
     story.listens(heard, storey: 2, from: mac.now)
+    story.onFailure { [mac] in String(format: "    THE MAIN THREAD STOOD STILL FOR %.2f s in all", mac.secondsTheMainThreadWaited) }
     watcher.start()
     controller.start()
     mac.pass(1)

@@ -75,12 +75,16 @@ func tellOfSlowApps(_ book: Book) {
   }
 
   // The park that is carried out after Arbor is gone.
-  for (calls, words) in [(Int?.none, "at the beginning of"), (1, "at the first call that sets something in"), (2, "at the reading back in")] {
-    book.story("an app hangs for 8 s \(words) a move out of view, and Arbor is quit meanwhile") { story in
+  for (seconds, calls, words) in [
+    (8.0, Int?.none, "at the beginning of"), (8, 1, "at the first call that sets something in"), (8, 2, "at the reading back in"),
+    // Short enough that only a layer that does not wait for the app gets to the quit in time; of another the story has not been told, and its second check says so.
+    (2, nil, "at the beginning of"), (2, 1, "at the first call that sets something in"),
+  ] {
+    book.story("an app hangs for \(Int(seconds)) s \(words) a move out of view, and Arbor is quit meanwhile") { story in
       let (two, mine, theirs) = stage(story)
       let busy = theirs[0].app
       if let calls { busy.hangsAfterCalls = calls } else { two.mac.hang(busy) }
-      two.mac.later(8) { two.mac.wake(busy) }
+      two.mac.later(seconds) { two.mac.wake(busy) }
       two.run("zoom \(mine.number)", then: 0.3)
       two.quit()
       // Or the story has not been told.
@@ -88,6 +92,66 @@ func tellOfSlowApps(_ book: Book) {
       two.mac.pass(10)
       story.check("the app is awake again", !busy.isHung)
       story.check("in the end all its windows are in view: nothing that was asked of it in vain takes one away after Arbor is gone", theirs.allSatisfy { two.isInView($0) }, places(two, theirs))
+    }
+  }
+
+  // A layer that remembers for a while what an app has answered may make the park its first call to an app that hangs. From both sides of a second.
+  for silence in [0.5, 1.5] {
+    book.story("an app hangs \(silence) s after it last answered Arbor, its windows are sent out of view, and Arbor is quit") { story in
+      let (two, mine, theirs) = stage(story)
+      let busy = theirs[0].app
+      // The last it hears of Arbor: a move, there and back.
+      two.run("zoom \(mine.number)", then: 1)
+      two.run("show-all", then: 0)
+      two.mac.pass(silence)
+      two.mac.hang(busy, for: 8)
+      two.run("zoom \(mine.number)", then: 0.3)
+      two.quit()
+      story.check("Arbor is gone while the app still hangs", busy.isHung)
+      two.mac.pass(10)
+      story.check("in the end all its windows are in view", theirs.allSatisfy { two.isInView($0) }, places(two, theirs))
+    }
+  }
+
+  // The app says yes at once and does it a moment later, so that what Arbor reads back right after the call is the old frame. Its report, when it comes, is the only word on how things stand.
+  for late in [0.02, 0.05, 0.2] {
+    let words = "an app carries out \(Int(late * 1000)) ms late what it is asked"
+    book.story("\(words), and Arbor gives its window a frame") { story in
+      var window: FakeMac.Window!
+      let one = StoreyOne(story) { mac in window = mac.open("window", in: mac.launch("Late")) }
+      window.app.carriesOutAfter = late
+      let target = CGRect(x: 12, y: 43, width: 500, height: 650)
+      _ = one.layer.setFrame(target, of: WindowID(window.number))
+      one.mac.pass(3)
+      story.check("the window has the frame", window.frame == target, window.frame.text)
+      story.check("Arbor knows where it is", one.snapshot(window)?.frame == target, "\(one.snapshot(window)?.frame.text ?? "")")
+      story.check("nothing of it counts as the person's doing", !one.heard.all.contains(.changed(window.number, byUser: true)), one.heard.texts)
+    }
+
+    book.story("\(words), and the view goes to another window and comes back") { story in
+      let (two, mine, theirs) = stage(story)
+      let homes = theirs.map(\.frame)
+      theirs[0].app.carriesOutAfter = late
+      two.run("zoom \(mine.number)", then: 3)
+      story.check("its windows are out of view", theirs.allSatisfy { two.isOutOfView($0) }, places(two, theirs))
+      let believed = { (window: FakeMac.Window) in two.controller.windows[WindowID(window.number)]?.frame }
+      story.check("and Arbor knows where they are", theirs.allSatisfy { believed($0) == $0.frame }, theirs.map { "w\($0.number): \(believed($0)?.text ?? "") against \($0.frame.text)" }.joined(separator: "; "))
+      story.check("still docked: nobody has moved them but Arbor", theirs.allSatisfy { two.isDocked($0) })
+      two.run("show-all", then: 3)
+      story.check("shown again, they are in their places", zip(theirs, homes).allSatisfy { $0.frame == $1 }, places(two, theirs))
+      story.check("and Arbor knows that", theirs.allSatisfy { believed($0) == $0.frame }, theirs.map { "w\($0.number): \(believed($0)?.text ?? "") against \($0.frame.text)" }.joined(separator: "; "))
+    }
+
+    book.story("\(words), one of its windows floats, and the view goes to another window and comes back") { story in
+      let (two, mine, theirs) = stage(story)
+      two.run("float \(theirs[1].number)")
+      let home = theirs[1].frame
+      theirs[0].app.carriesOutAfter = late
+      two.run("zoom \(mine.number)", then: 3)
+      story.check("it is out of view with the Desktop", two.isOutOfView(theirs[1]), two.whereabouts(theirs[1]))
+      two.run("show-all", then: 3)
+      story.check("shown again, it is in view", two.isInView(theirs[1]), two.whereabouts(theirs[1]))
+      story.check("where it was", theirs[1].frame == home, "\(two.whereabouts(theirs[1])), it was at \(home.text)")
     }
   }
 
@@ -114,6 +178,10 @@ func tellOfSlowApps(_ book: Book) {
       let (two, mine, theirs) = stage(story)
       let busy = theirs[0].app
       var new: FakeMac.Window?
+      // Out of view first, so that showing everything has something to ask of the app.
+      two.run("zoom \(mine.number)")
+      story.check("the app's windows are out of view", theirs.allSatisfy { two.isOutOfView($0) }, places(two, theirs))
+      let asked = theirs.map(\.timesAskedForAFrame)
       two.mac.hang(busy, for: 0.7)
       two.mac.later(0.705) {
         switch what {
@@ -122,9 +190,10 @@ func tellOfSlowApps(_ book: Book) {
         default: new = two.mac.newTab(of: theirs[1])
         }
       }
-      two.run("show-all", then: 0)
-      two.run("arrange", then: 6)
-      _ = mine
+      two.run("show-all", then: 6)
+      // Or the story has not been told.
+      story.check("Arbor has asked them back", zip(theirs.map(\.timesAskedForAFrame), asked).allSatisfy { $0 > $1 })
+      story.check("they are in view again", theirs.filter(\.isFrontTab).allSatisfy { two.isInView($0) }, places(two, theirs))
       switch what {
       case "opens a window":
         story.check("Arbor knows the new window", new.map { two.knows($0) } ?? false)
@@ -154,15 +223,16 @@ func tellOfSlowApps(_ book: Book) {
     story.check("and the focus ring is there", two.ring == third.number, "\(String(describing: two.ring))")
   }
 
-  book.story("a window is moved by hand while Arbor moves its sibling, and their app is slow") { story in
+  for (answer, words) in [(0.05, "slow"), (0.15, "slower than Arbor's patience")] {
+  book.story("a window is moved by hand while Arbor moves its sibling, and their app is \(words)") { story in
     var a: FakeMac.Window!, b: FakeMac.Window!
     let one = StoreyOne(story) { mac in
       let app = mac.launch("Busy")
       a = mac.open("a", in: app, frame: CGRect(x: 40, y: 60, width: 300, height: 300))
       b = mac.open("b", in: app, frame: CGRect(x: 500, y: 60, width: 300, height: 300))
     }
-    // Seven calls or so: a third of a second.
-    a.app.answersIn = 0.05
+    // Seven calls or so: a third of a second, or a whole one.
+    a.app.answersIn = answer
     let moved = CGRect(x: 560, y: 160, width: 300, height: 300)
     one.mac.later(0.1) { one.mac.appMoves(b, to: moved) }
     let target = CGRect(x: 12, y: 43, width: 400, height: 500)
@@ -172,6 +242,7 @@ func tellOfSlowApps(_ book: Book) {
     story.check("Arbor knows where the other is", one.snapshot(b)?.frame == moved, "\(one.snapshot(b)?.frame.text ?? "")")
     story.check("and that this was not its own doing", one.heard.all.contains(.changed(b.number, byUser: true)), one.heard.texts)
     story.check("while its own move counts as its own", !one.heard.all.contains(.changed(a.number, byUser: true)), one.heard.texts)
+  }
   }
 
   // Headless twin: SlowAppTests.whatABusyAppMakesOfTheSizeIsLearntWhenItIsDone.

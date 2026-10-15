@@ -59,7 +59,12 @@ extension FakeMac {
       // It woke in time, has seen to what was in its queue, and answers this call late.
     }
     let cost = app.answersIn ?? timing.answer
-    if isOnAThread { Worker.holder?.wait(cost) } else if !Pump.isOffTheMainThread { now += cost }
+    if isOnAThread {
+      Worker.holder?.wait(cost)
+    } else if !Pump.isOffTheMainThread {
+      now += cost
+      secondsTheMainThreadWaited += cost
+    }
     return nil
   }
 
@@ -188,7 +193,7 @@ extension FakeMac {
       guard let window = window(for: element), window.isOpen else { return .invalidUIElement }
       if attribute == "AXSize", !window.isResizable { return .failure }
     }
-    let lag = manners.lag(upTo: manners.lateCalls)
+    let lag = max(manners.lag(upTo: manners.lateCalls), app.carriesOutAfter)
     // An app reads what it is sent in order: behind a call that still waits, the next waits too.
     if lag > 0 || app.callsStillToCarryOut > 0 {
       app.callsStillToCarryOut += 1

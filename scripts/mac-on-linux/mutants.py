@@ -140,7 +140,7 @@ MUTANTS = [
         "name": "the timeout is left at the system's six seconds",
         "old": "  private static let messagingTimeout: Float = 1\n",
         "new": "  private static let messagingTimeout: Float = 0\n",
-        "red": ["an app hangs: after waiting for one call, a second, and not for six"],
+        "red": ["an app hangs: after waiting a second at most, and not six"],
     },
     {
         "name": "a window that leaves the list has left, tab or no tab",

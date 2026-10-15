@@ -197,6 +197,7 @@ final class StoreyOne {
     layer.events = heard
     mac.note("Arbor starts")
     story.listens(heard, storey: 1, from: mac.now)
+    story.onFailure { [mac] in String(format: "    THE MAIN THREAD STOOD STILL FOR %.2f s in all", mac.secondsTheMainThreadWaited) }
     layer.start()
     mac.pass(0.5)
     story.onFailure { [mac] in "    what happened on the Mac, and what Arbor's layer made of it:\n" + mac.journal.map { "      " + $0 }.joined(separator: "\n") }
