@@ -1,0 +1,15 @@
+# mac-shell: scripts/mac-shell/probe-why-alert.sh at c88076a, macOS 26.6.2, 2026-10-15T01:37Z
+python3 is /opt/homebrew/bin/python3, Python 3.15.0; the Mac calls itself iad20-gt….local
+-- after nothing: 0 alert(s) on screen
+   answered: yes
+-- after 1-a-server-that-does-not-ask-its-name: 0 alert(s) on screen
+   getfqdn took 0.05 s and ends in .arpa
+-- after 2-only-the-question-for-the-name: 0 alert(s) on screen
+cat: /var/folders/n6/hn37q6pj7sj_9dmqqc2113800000gn/T/tmp.5rhozh6aWb/port: No such file or directory
+   answered: 
+-- after 3-the-server-as-it-is: 1 alert(s) on screen
+   release-tools-test.sh: exit 0
+-- after 4-the-script-itself: 1 alert(s) on screen
+30 4298 8 382 118 260 250 on UserNotificationCenter
+-- after 5-its-owner-ended: 0 alert(s) on screen
+exit code 0
