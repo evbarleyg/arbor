@@ -24,8 +24,11 @@ let usage = """
                                     tap made and thrown away, as Arbor does it), listen=yes|no (a tap that only listens)
     hear <seconds>                  print every distributed notification com.apple.accessibility.api
     announce                        post that notification
-    stream <seconds> <ms> <x> <y>   every <ms> milliseconds: a click at x y, the key F19 and one notch of the wheel, numbered
-    arrivals <seconds>              print each of those that reaches the end of the taps: the time, its kind, its number, how late
+    stream <seconds> <ms> <x> <y> [--kinds click,key,wheel,pinch] [--ctrl-opt <from> <until>]
+                                    every <ms> milliseconds, numbered: a click at x y, the key F19, one notch of the wheel (those three
+                                    unless told otherwise), a whole small pinch. ⌃⌥ go down <from> seconds in and up at <until>
+    arrivals <seconds>              print each of those that reaches the end of the taps: the time, its kind, its number, how late, its modifiers;
+                                    and every other press, drag, key, scroll and gesture, as other=…
     now                             the time as all of these write it, and as arbor.log does
   """
 
@@ -92,26 +95,85 @@ func hear(seconds: Double) {
 
 // MARK: The stream and its arrivals
 
-func stream(seconds: Double, every milliseconds: Double, at point: CGPoint) {
+func field(_ number: UInt32) -> CGEventField {
+  CGEventField(rawValue: number) ?? unsafeBitCast(number, to: CGEventField.self)
+}
+
+func stream(seconds: Double, every milliseconds: Double, at point: CGPoint, kinds: Set<String>, held: ClosedRange<Double>?) {
   let source = CGEventSource(stateID: .hidSystemState)
   var number: Int64 = 0
-  func post(_ event: CGEvent?) {
+  var flags: CGEventFlags = []
+  func post(_ event: CGEvent?, at tap: CGEventTapLocation = .cghidEventTap) {
     guard let event else { fail("macOS made no event") }
     number += 1
     event.setIntegerValueField(.eventSourceUserData, value: streamMark + number)
-    event.post(tap: .cghidEventTap)
+    if !flags.isEmpty { event.flags = flags }
+    event.post(tap: tap)
+  }
+  /// ⌃ is key 59, ⌥ key 58: pressed and let go as witness.swift does it, which is what switches Arbor's scroll tap on.
+  func modifiers(down: Bool) {
+    let both: CGEventFlags = [.maskControl, .maskAlternate]
+    let control: CGEventFlags = .maskControl
+    let none: CGEventFlags = []
+    // Down: ⌃, then ⌥. Up: ⌥, then ⌃. Each event carries what is down after it.
+    let controlKey: CGKeyCode = 59
+    let optionKey: CGKeyCode = 58
+    let pressing: [(CGKeyCode, CGEventFlags)] = [(controlKey, control), (optionKey, both)]
+    let letting: [(CGKeyCode, CGEventFlags)] = [(optionKey, control), (controlKey, none)]
+    let steps = down ? pressing : letting
+    for (code, after) in steps {
+      guard let event = CGEvent(keyboardEventSource: source, virtualKey: code, keyDown: down) else { fail("macOS made no event") }
+      event.flags = after
+      event.post(tap: .cghidEventTap)
+      Thread.sleep(forTimeInterval: 0.01)
+    }
+    flags = down ? both : none
+    print("\(now()) ctrl+opt \(down ? "down" : "up") after n=\(number)")
+  }
+  /// Gesture events have no public constructor: the fields are those of witness.swift. Subtype 8 is a magnification, its amount field 113.
+  func magnify(_ amount: Double, phase: Double) {
+    guard let event = CGEvent(source: nil) else { fail("macOS made no event") }
+    event.setDoubleValueField(field(55), value: 29)
+    event.setDoubleValueField(field(110), value: 8)
+    event.setDoubleValueField(field(132), value: phase)
+    event.setDoubleValueField(field(113), value: amount)
+    event.location = point
+    post(event, at: .cgSessionEventTap)
   }
   let f19: CGKeyCode = 80
-  let end = Date().addingTimeInterval(seconds)
+  let began = Date()
+  let end = began.addingTimeInterval(seconds)
+  var up = true
   print("\(now()) stream begins")
   while Date() < end {
-    post(CGEvent(mouseEventSource: source, mouseType: .leftMouseDown, mouseCursorPosition: point, mouseButton: .left))
-    post(CGEvent(mouseEventSource: source, mouseType: .leftMouseUp, mouseCursorPosition: point, mouseButton: .left))
-    post(CGEvent(keyboardEventSource: source, virtualKey: f19, keyDown: true))
-    post(CGEvent(keyboardEventSource: source, virtualKey: f19, keyDown: false))
-    post(CGEvent(scrollWheelEvent2Source: source, units: .line, wheelCount: 1, wheel1: 1, wheel2: 0, wheel3: 0))
+    if let held {
+      let elapsed = Date().timeIntervalSince(began)
+      if flags.isEmpty, held.contains(elapsed) { modifiers(down: true) }
+      if !flags.isEmpty, !held.contains(elapsed) { modifiers(down: false) }
+    }
+    if kinds.contains("click") {
+      post(CGEvent(mouseEventSource: source, mouseType: .leftMouseDown, mouseCursorPosition: point, mouseButton: .left))
+      post(CGEvent(mouseEventSource: source, mouseType: .leftMouseUp, mouseCursorPosition: point, mouseButton: .left))
+    }
+    if kinds.contains("key") {
+      post(CGEvent(keyboardEventSource: source, virtualKey: f19, keyDown: true))
+      post(CGEvent(keyboardEventSource: source, virtualKey: f19, keyDown: false))
+    }
+    if kinds.contains("wheel") {
+      // Up and down in turn, so that a view that follows them goes nowhere.
+      let notch = CGEvent(scrollWheelEvent2Source: source, units: .line, wheelCount: 1, wheel1: up ? 1 : -1, wheel2: 0, wheel3: 0)
+      notch?.location = point
+      post(notch)
+      if held != nil { up.toggle() }
+    }
+    if kinds.contains("pinch") {
+      magnify(0, phase: 1)
+      magnify(0.01, phase: 2)
+      magnify(0, phase: 4)
+    }
     Thread.sleep(forTimeInterval: milliseconds / 1000)
   }
+  if !flags.isEmpty { modifiers(down: false) }
   print("\(now()) stream ends: \(number) events posted")
 }
 
@@ -119,19 +181,26 @@ var arrivalsPort: CFMachPort?
 
 func arrivals(seconds: Double) {
   var mask = CGEventMask(0)
-  for type in [1, 2, 10, 11, 22] { mask |= CGEventMask(1) << CGEventMask(type) }
+  for type in [1, 2, 6, 10, 11, 12, 22, 29] { mask |= CGEventMask(1) << CGEventMask(type) }
   let callback: CGEventTapCallBack = { _, type, event, _ in
     if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
       print("\(now()) switched-off \(type.rawValue)")
       if let port = arrivalsPort { CGEvent.tapEnable(tap: port, enable: true) }
       return Unmanaged.passUnretained(event)
     }
-    let names: [UInt32: String] = [1: "down", 2: "up", 10: "key-down", 11: "key-up", 22: "wheel"]
+    let names: [UInt32: String] = [
+      1: "down", 2: "up", 6: "dragged", 10: "key-down", 11: "key-up", 12: "modifiers", 22: "wheel", 29: "gesture",
+    ]
+    var mods = ""
+    if event.flags.contains(.maskControl) { mods += "ctrl+" }
+    if event.flags.contains(.maskAlternate) { mods += "opt+" }
+    if event.flags.contains(.maskShift) { mods += "shift+" }
+    if event.flags.contains(.maskCommand) { mods += "cmd+" }
     let data = event.getIntegerValueField(.eventSourceUserData)
     // An event's timestamp is in nanoseconds on the clock that stops while the Mac sleeps.
     let late = (Int64(clock_gettime_nsec_np(CLOCK_UPTIME_RAW)) - Int64(event.timestamp)) / 1000
     let whose = data > streamMark && data < streamMark + 0x1000_0000 ? "n=\(data - streamMark)" : "other=\(data)"
-    print("\(now()) \(names[type.rawValue] ?? "type\(type.rawValue)") \(whose) late_us=\(late)")
+    print("\(now()) \(names[type.rawValue] ?? "type\(type.rawValue)") \(whose) late_us=\(late) mods=\(mods.isEmpty ? "none" : String(mods.dropLast()))")
     return Unmanaged.passUnretained(event)
   }
   arrivalsPort = CGEvent.tapCreate(
@@ -145,7 +214,15 @@ func arrivals(seconds: Double) {
 
 // MARK: Go
 
-let arguments = Array(CommandLine.arguments.dropFirst())
+var arguments = Array(CommandLine.arguments.dropFirst())
+/// Takes an option and its values out of the arguments.
+func option(_ name: String, values: Int) -> [String]? {
+  guard let index = arguments.firstIndex(of: name) else { return nil }
+  guard index + values < arguments.count else { fail(usage) }
+  let found = Array(arguments[(index + 1)...(index + values)])
+  arguments.removeSubrange(index...(index + values))
+  return found
+}
 func number(_ index: Int) -> Double {
   guard index < arguments.count, let value = Double(arguments[index]) else { fail(usage) }
   return value
@@ -161,7 +238,10 @@ case "announce":
   DistributedNotificationCenter.default().postNotificationName(announcement, object: nil, userInfo: nil, deliverImmediately: true)
   print("\(now()) announced \(announcement.rawValue)")
 case "stream":
-  stream(seconds: number(1), every: number(2), at: CGPoint(x: number(3), y: number(4)))
+  let kinds = Set((option("--kinds", values: 1)?[0] ?? "click,key,wheel").split(separator: ",").map(String.init))
+  let held = option("--ctrl-opt", values: 2).map { $0.compactMap(Double.init) }
+  if let held, held.count != 2 || held[0] > held[1] { fail(usage) }
+  stream(seconds: number(1), every: number(2), at: CGPoint(x: number(3), y: number(4)), kinds: kinds, held: held.map { $0[0]...$0[1] })
 case "arrivals":
   arrivals(seconds: number(1))
 case "now":
