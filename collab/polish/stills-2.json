@@ -1,0 +1,910 @@
+{
+ "commit": "356f437",
+ "from": "the gallery's second run, Actions run 38685258262 (the trunk at 07b2bfc with three pull requests: the one on panels is on the trunk since, as f39029b and 356f437; the one on tiles is not, and the tiles are left out), raw pictures, never scaled; the settings window from Actions run of 2026-10-15 07:13 UTC on the branch whose one commit on the window's code, f42e3a0, is on the trunk",
+ "panels": {
+  "go to": {
+   "S1 at 1x": {
+    "status": "pass",
+    "said": "Every step that can be asked takes 0 pixels between. Panel's box 212,200,600,148 in light-on-red / -blue / -black-2-go-to: steps of 124-130, 189 and 189 levels, 0 px on all four sides, at reach 5 and at reach 3. On white the step is 0 to 24 levels: too small to ask. Selected row 220,264,584,38 in the same four: top and bottom 189 to 240 levels over 0 px; its ends are 38 px: not asked. light-08-go-to 212,199,600,300: 137 to 193 levels over 0 px, its row 220,263,584,38 203/204 over 0 px; light-10-go-to-nothing-matches 212,199,600,102: 132 to 193 over 0 px. The line under the field (y 256, 600 px) is exactly one row of 230/230/230; its step is 41 levels at most (on black): too small to ask.",
+    "pictures": [
+     "light-on-red-2-go-to",
+     "light-on-blue-2-go-to",
+     "light-on-white-2-go-to",
+     "light-on-black-2-go-to",
+     "light-08-go-to",
+     "light-10-go-to-nothing-matches"
+    ]
+   },
+   "S1 at 2x": {
+    "status": "pass",
+    "said": "retina-09-go-to-on-glass-1, panel 24,24,1200,524: left 148-153 levels over 0 px, top 88-96 over 0, right 193 over 0; bottom 72 levels over 1 px at reach 3 (59 levels at reach 5: too small to ask), the one pixel being the darkest row of the shadow outside (121/136/137). Stretch by stretch: over the red (24,24,110,524) top 157 and bottom 184 levels over 0 px, over the blue (1110,24,110,524) 193 and 174 over 0 px. Selected row 40,152,1168,76: four sides 193 to 237 levels over 0 px. The rim is two full pixels (232, 230), the line under the field two full rows (y 136-137, both 230): one point each, nothing half-covered.",
+    "pictures": [
+     "retina-09-go-to-on-glass-1"
+    ]
+   },
+   "S2": {
+    "status": "pass",
+    "said": "No side with a row half-way in any light picture: edges says so of 212,200,600,148 (light-on-red, -blue, -black), 212,199,600,300 (light-08-go-to), 212,199,600,102 (light-10), 212,201,600,414 (apps-light-05-go-to, read pixel by pixel) and of the selected row. Pixel by pixel on black: 0/0/0 then 229 (rim) then 191, 189 at the left; 0 then 232, 190, 189 at the top; the mirror image at the right and the bottom. The panel alone as the window server holds it is 600x300, 600x102, 600x414, and 1200x524 at 2x (600x262 pt): whole points.",
+    "pictures": [
+     "light-on-black-2-go-to",
+     "light-on-red-2-go-to",
+     "light-on-blue-2-go-to",
+     "light-08-go-to",
+     "light-10-go-to-nothing-matches",
+     "apps-light-05-go-to",
+     "light-08-go-to-alone-1",
+     "retina-09-go-to-alone-1"
+    ]
+   },
+   "S3": {
+    "status": "pass",
+    "said": "Measured part by part. Field (212,200,600,56 in light-/dark-on-black and -on-white-2-go-to; 212,201,600,56 opaque and contrast): ink keeps 22 pt from the left (the magnifier; the words 52), 17-18 from the top (13 where the caret shows), 169-170 from the right, 17-18 from the line below. Selected row against its own box (220,264,584,38): 11 left (the icon), 8 top, 12 right, 8 bottom. Rows below (212,302,600,46; 212,303,600,198 in light-opaque-/light-contrast-/dark-contrast-08 and -09): 19-20 left (icon; words 52), 20-21 right, 16-20 from the panel's bottom (19 with the underlines of -09). Nothing matches (212,258,600,45): 21 left, 16-17 above, 17 below. At 2x (--scale 2): field 22 / 18 / 169.5 / 18; row 12 / 9 / 12.5 / 9; rows below 52.5 / 13 / 20.5 / 20.5. The least anywhere is 11 pt at a side and 8 pt above or below. (In the -08 pictures fits says 9 and 3 of the selected row: that is the pointer at 228,257, the script's.) By eye: the title of 115 letters ends in 'with th...' at x 754 and the note 'tile' begins at x 776, 21 px on (light-08-go-to, row 6, 389,463,368,18; 757 and 776, 18 px, in light-09-go-to-typed); it cannot fit, so the dots are needed. At 2x with the long note 'in view, on Arbor Test Display' it ends 'year after...' at x 826, the note begins at 876: 24.5 pt. No other word ends in dots, none is cut, none touches another or an edge, with real apps' names too (apps-light-, apps-dark-05-go-to). No picture shows a larger text size: not judged.",
+    "pictures": [
+     "light-08-go-to",
+     "dark-08-go-to",
+     "light-09-go-to-typed",
+     "light-on-black-2-go-to",
+     "dark-on-black-2-go-to",
+     "light-on-white-2-go-to",
+     "dark-on-white-2-go-to",
+     "light-opaque-08-go-to",
+     "light-opaque-09-go-to-typed",
+     "light-opaque-10-go-to-nothing-matches",
+     "light-contrast-08-go-to",
+     "dark-contrast-08-go-to",
+     "retina-09-go-to-on-glass-1",
+     "apps-light-05-go-to",
+     "apps-dark-05-go-to"
+    ]
+   },
+   "S4 light on glass": {
+    "status": "pass",
+    "said": "The worst ground is the black wallpaper (the panel's ground is 189/189/189 there; 240/200/197 on red, 189/228/240 on blue, 240 on white). Worst strip per kind, with what it is at most: PLACEHOLDER 5.29 (5.51) light-on-black-2-go-to 262,215,384,25; red 5.81, blue 6.11, white 6.55. TYPED TEXT 8.98 (9.36) light-on-black-3-go-to-typed 262,215,36,25; red 10.62, blue 11.72, white 13.39. APP NAMES 8.91 (9.28) light-on-black-3-go-to-typed 262,312,128,19; red 10.54, blue 11.62, white 13.27. TITLES 8.72 (9.09) light-on-black-2-go-to 392,312,218,18; red 10.34, blue 11.36, white 12.95. NOTES 4.99 (5.20) light-on-black-2-go-to 732,314,62,14; red 5.46, blue 5.71, white 6.10. SELECTED ROW, the same over all four since its fill is opaque 0/90/216: app name 6.03 (6.29) at 262,274,124,17, title 5.99 (6.24) at 392,274,222,19 in -3-go-to-typed, NOTE 4.73 (4.93) at 732,276,62,14. NOTHING MATCHES 5.67 (5.91) light-10-go-to-nothing-matches 230,269,100,16, over the red window only: no picture shows it over black or white. There is no hint line. Over the coloured windows and real apps nothing is lower: light-08 / -09: placeholder 5.75, titles 10.25, notes 5.73; apps-light-05-go-to: placeholder 6.15, names 12.16, notes 5.68; at 2x placeholder 6.11, notes 6.10, selected note 4.79. All words one must read reach 4.5, all secondary ones 3. Against the builder: field 5.3 to 6.6 here (the builder's 5.1 is the dark look's), titles 8.7+, notes 4.99: agreed within the ruler's error. The builder's 6.1 for the selected row is its name and title (I read 6.03 / 5.99); the row's third kind, the note, is 4.73, which the builder does not say; it passes as secondary. THE MAGNIFIER is there (231,218,21,20) and can be seen in all four, but faintly: 2.72 (2.84) on black, 2.85 on red, 2.91 on blue, 2.99 on white. It is a mark, not words, and the placeholder reaches 4.5 by itself, so nothing hangs on it.",
+    "pictures": [
+     "light-on-black-2-go-to",
+     "light-on-black-3-go-to-typed",
+     "light-on-red-2-go-to",
+     "light-on-red-3-go-to-typed",
+     "light-on-blue-2-go-to",
+     "light-on-blue-3-go-to-typed",
+     "light-on-white-2-go-to",
+     "light-on-white-3-go-to-typed",
+     "light-08-go-to",
+     "light-09-go-to-typed",
+     "light-10-go-to-nothing-matches",
+     "apps-light-05-go-to",
+     "retina-09-go-to-on-glass-1"
+    ]
+   },
+   "S4 dark on glass": {
+    "status": "pass",
+    "said": "The worst ground is the white wallpaper (the panel's ground is 71/71/71 there; 71/36/34 on red, 29/58/71 on blue, 29 on black). Worst strip per kind, with what it is at most: PLACEHOLDER 5.00 (5.21) dark-on-white-2-go-to 262,215,384,25; blue 6.02, red 6.61, black 7.69. TYPED TEXT 7.29 (7.59) dark-on-white-3-go-to-typed 262,215,36,25; blue 9.17, red 10.22, black 12.39. APP NAMES 7.24 (7.54) dark-on-white-3-go-to-typed 262,312,128,19; blue 9.08, red 10.12, black 12.27. TITLES 7.23 (7.53) dark-on-white-2-go-to 392,312,218,18; blue 9.09, red 10.13, black 12.28. NOTES 4.96 (5.17) dark-on-white-2-go-to 732,314,62,14; blue 5.96, red 6.53, black 7.60. SELECTED ROW, the same over all four (fill 0/89/209): app name 6.22 (6.48) at 262,274,124,17, title 6.18 (6.44) at 392,274,218,18, NOTE 4.87 (5.08) at 732,276,62,14. NOTHING MATCHES 6.64 (6.92) dark-10-go-to-nothing-matches 230,269,100,16, over the red window only: no picture shows it over white. Over the coloured windows and real apps nothing is lower: dark-08 / -09: placeholder 6.68, titles 9.42, notes 6.14; apps-dark-05-go-to: placeholder 6.83, names 9.38, notes 6.91. Against the builder: field 5.00 to 7.69 against the builder's 5.1 to 7.8, titles 7.23 against 7.3+, notes 4.96 against 4.9+, selected name and title 6.22 / 6.18 against 6.3: all within the ruler's 4%. The selected row's note, 4.87, the builder does not say; it passes as secondary. THE MAGNIFIER is there and can be seen: 3.07 (3.20) on white, 3.48 on blue, 3.68 on red, 4.06 on black (231,218,21,20).",
+    "pictures": [
+     "dark-on-white-2-go-to",
+     "dark-on-white-3-go-to-typed",
+     "dark-on-red-2-go-to",
+     "dark-on-red-3-go-to-typed",
+     "dark-on-blue-2-go-to",
+     "dark-on-blue-3-go-to-typed",
+     "dark-on-black-2-go-to",
+     "dark-on-black-3-go-to-typed",
+     "dark-08-go-to",
+     "dark-09-go-to-typed",
+     "dark-10-go-to-nothing-matches",
+     "apps-dark-05-go-to"
+    ]
+   },
+   "S4 light": {
+    "status": "pass",
+    "said": "Reduce Transparency on, ground 235/235/235; every number is the same to the hundredth over red, blue, white and black. Placeholder 6.46 (6.73) light-opaque-on-*-2-go-to 266,215,380,25 and light-opaque-08-go-to 262,216,384,25; typed text 12.95 (light-opaque-09-go-to-typed 262,216,32,25); app names 12.84 (262,312,128,19 in -3-go-to-typed); titles 12.39 (the long one, light-opaque-09-go-to-typed 392,465,368,18); notes 6.02 (6.27) at 732,314,62,14; selected row 6.03 / 5.99 and its note 4.73 (4.93) at 732,276,62,14; Nothing matches 6.37 (6.64) light-opaque-10-go-to-nothing-matches 230,271,100,16. The builder's 6.5 is the placeholder (6.46 here): agreed; the lowest words are the selected row's note at 4.73, secondary, which passes. The magnifier 2.97 (3.09) at 231,218,21,20: there, faint.",
+    "pictures": [
+     "light-opaque-on-red-2-go-to",
+     "light-opaque-on-blue-2-go-to",
+     "light-opaque-on-white-2-go-to",
+     "light-opaque-on-black-2-go-to",
+     "light-opaque-on-red-3-go-to-typed",
+     "light-opaque-on-blue-3-go-to-typed",
+     "light-opaque-on-white-3-go-to-typed",
+     "light-opaque-on-black-3-go-to-typed",
+     "light-opaque-08-go-to",
+     "light-opaque-09-go-to-typed",
+     "light-opaque-10-go-to-nothing-matches"
+    ]
+   },
+   "S4 dark": {
+    "status": "pass",
+    "said": "Reduce Transparency on, ground 36/36/36; every number is the same over red, blue, white and black. Placeholder 7.32 (7.63) dark-opaque-on-*-2-go-to 266,215,380,25; typed text 11.51 (262,215,36,25 in -3-go-to-typed); app names 11.41 (262,312,128,19); titles 11.42 (392,312,218,18); notes 7.24 (7.54) at 732,314,62,14; selected row 6.22 / 6.18 and its note 4.87 (5.08) at 732,276,62,14; the magnifier 3.93 (4.09). The builder's 7.4 is the placeholder (7.32 here): agreed within the ruler's error. No picture shows Nothing matches in this look: not judged.",
+    "pictures": [
+     "dark-opaque-on-red-2-go-to",
+     "dark-opaque-on-blue-2-go-to",
+     "dark-opaque-on-white-2-go-to",
+     "dark-opaque-on-black-2-go-to",
+     "dark-opaque-on-red-3-go-to-typed",
+     "dark-opaque-on-blue-3-go-to-typed",
+     "dark-opaque-on-white-3-go-to-typed",
+     "dark-opaque-on-black-3-go-to-typed"
+    ]
+   },
+   "S6": {
+    "status": "miss",
+    "said": "THE LINE AT THE SIDE passes. Panel 212,201,600,300. light-contrast-08-go-to: left and right 4.84 (5.03-5.05 at reach 3); stretch by stretch, top 4.54 over the red, 6.04 over the wallpaper, 4.56 over the blue; bottom 5.99 over the light tiles, 8.59, 5.36. dark-contrast-08-go-to: left 4.07 over the red (reach 3; 4.33 at reach 5), right 4.96; top 4.37 / 9.50 / 5.35, bottom 5.10 / 9.33 / 4.53. The worst is 4.07. (The line is macOS's: a dark pixel outside the box, a light one of 243 or 183 inside.) WORDS off the selected row pass by far: light placeholder 12.80, typed 17.14, names 17.07, titles 16.77, notes 10.49 ('in view', light-contrast-09-go-to-typed 753,391,41,14), Nothing matches 12.63, magnifier 8.33; dark 12.65, 17.17, 17.17, 17.03, 12.65, 12.64, 9.46. THE SELECTED ROW does not. light-contrast-08 / -09 (fill 0/64/221): name 7.50, title 7.45, but its NOTE 5.79 (at most 6.03) at 753,277,41,14. dark-contrast-08 / -09 (fill 23/116/218, a lighter blue than without Increase Contrast): name 4.59 (4.78) at 262,275,124,17, title 4.57 (4.76) at 392,275,218,18, NOTE 3.75 (3.91) at 753,277,41,14. Whose: the fill is macOS's own colour for a selected row and white on it is macOS's pair, so 4.57 in the dark look is macOS's measure and I do not count it. The note's ink is Arbor's choice: it is white thinned (215/225/249 on the blue; in the worktree's FinderPanel.swift the selection's ink at 0.85), and Increase Contrast does not thicken it. In the light look full white reaches 7.5 on the same fill, so the 5.79 is Arbor's alone; in the dark look it takes 4.59 down to 3.75. That is the miss.",
+    "pictures": [
+     "light-contrast-08-go-to",
+     "light-contrast-09-go-to-typed",
+     "light-contrast-10-go-to-nothing-matches",
+     "dark-contrast-08-go-to",
+     "dark-contrast-09-go-to-typed",
+     "dark-contrast-10-go-to-nothing-matches"
+    ]
+   },
+   "S7": {
+    "status": "pass",
+    "said": "0.0 levels within every box and 0 between boxes and between wallpapers. light-opaque-on-red / -blue / -white / -black-2-go-to, boxes 300,243,480,10; 660,206,140,48; 400,338,400,8; 620,306,100,30; 215,232,13,22: each varies by 0.0, each is 235/235/235. dark-opaque-on-* the same five boxes: 0.0, each 36/36/36. light-opaque-08-go-to over the red window (216,232,14,22; 300,244,140,10), the wallpaper (470,244,140,10) and the blue window (640,244,160,10; 620,310,120,180): 0.0, each 235/235/235. The builder's 0 levels: agreed. (A first box, 216,206,14,46, read 15 to 27 levels in the dark look: it took in the rim of the round corner. My box, not the ground.)",
+    "pictures": [
+     "light-opaque-on-red-2-go-to",
+     "light-opaque-on-blue-2-go-to",
+     "light-opaque-on-white-2-go-to",
+     "light-opaque-on-black-2-go-to",
+     "dark-opaque-on-red-2-go-to",
+     "dark-opaque-on-blue-2-go-to",
+     "dark-opaque-on-white-2-go-to",
+     "dark-opaque-on-black-2-go-to",
+     "light-opaque-08-go-to"
+    ]
+   }
+  },
+  "heads-up line": {
+   "S1 at 1x": {
+    "status": "pass",
+    "said": "The capsule is 38 px high with round ends, so only its top and bottom are straight sides of 60 px or more. edges, at reach 5 and again at reach 3: light-21-line-hint 224,611,576,38 top a step of 128 levels over 0 pixels between, bottom 133 over 0; light-20-line-sentence 296,611,433,38 top 146 over 0, bottom 170 over 0; light-19-line-problem 397,611,231,38 top 157 over 0, bottom 160 over 0; light-22-paused 271,611,482,38 top 122 over 0, bottom 144 over 0; light-on-red/-blue/-black-6-line 419,617,186,38 top 113/175/175 over 0, bottom 120/175/175 over 0. light-on-white-6-line: a step of 4 and 18 levels, too small to ask. Pixel by pixel down x 575 of light-21-line-hint: 609 (239,53,56) outside, 610 (172,38,40) the shadow's dark rim, 611 (232,231,231) the panel's light line, 612 (237,184,185), 613 (237,182,183) ground.",
+    "pictures": [
+     "light-21-line-hint",
+     "light-20-line-sentence",
+     "light-19-line-problem",
+     "light-22-paused",
+     "light-on-red-6-line",
+     "light-on-blue-6-line",
+     "light-on-white-6-line",
+     "light-on-black-6-line"
+    ]
+   },
+   "S1 at 2x": {
+    "status": "pass",
+    "said": "retina-12-line-hint-on-glass-1, box 24,24,1152,76: top a step of 129 levels over 0 pixels between, bottom 134 over 0 (reach 5; the same 0 at reach 3 and 8). The ruler also answers for left and right (130 over 0), but those are half circles of 38 px radius, no straight sides. Down x 600: 23 (171,38,40) rim outside, 24 (232,232,232) and 25 (230,230,230) the panel's line of one point, 26 (237,182,183) ground: each step at once.",
+    "pictures": [
+     "retina-12-line-hint-on-glass-1"
+    ]
+   },
+   "S2": {
+    "status": "pass",
+    "said": "No side with one row half-way in any light picture (edges on the eight boxes named under S1 at 1x, reach 5 and 3). Top and bottom are mirror images: light-21-line-hint rows 611/612 = (232,231,231)/(237,184,185), rows 648/647 the same. Boxes begin and end on whole pixels even where the width is odd: 231 wide at x 397 (light-19-line-problem), 433 wide at x 296 (light-20-line-sentence). At 2x the box begins at an even pixel and its line is exactly 2 px. Enlarged eight times (216,604,60,52 of light-21-line-hint) the round end is smooth and even.",
+    "pictures": [
+     "light-21-line-hint",
+     "light-20-line-sentence",
+     "light-19-line-problem",
+     "retina-12-line-hint-on-glass-1"
+    ]
+   },
+   "S3": {
+    "status": "pass",
+    "said": "fits on 36 pictures at 1x (19, 20, 21 and 22 in five looks, the sixteen plain ones), every one between 18 and 19 pt from the left, 19 from the right, 13 from the top, 10 from the bottom (the bottom is the descenders'). The longest line there is a picture of, light-21-line-hint 224,611,576,38: 18 / 13 / 19 / 10; at 2x retina-12-line-hint-on-glass-1 24,24,1152,76 --scale 2: 18.5 / 13.5 / 19 / 10. By eye: no word cut, no …, none touching; the dot has some 9 px of air on either side, the key signs stand clear of one another. Not shown: a line longer than 576 of the screen's 1024 points, or a larger text size.",
+    "pictures": [
+     "light-21-line-hint",
+     "dark-21-line-hint",
+     "light-20-line-sentence",
+     "light-19-line-problem",
+     "light-22-paused",
+     "retina-12-line-hint-on-glass-1",
+     "light-on-red-6-line",
+     "dark-on-white-6-line"
+    ]
+   },
+   "S4 light on glass": {
+    "status": "pass",
+    "said": "WORST per kind. Sentence over the four plain wallpapers (435,627,154,20): black 7.84 : 1 (at most 8.17), ink (27,27,27) on (175,175,175); red 10.01; blue 11.24; white 13.44. So the worst is light-on-black-6-line, 7.84. The plain pictures show ONE sentence only (\"Showing the Desktop\"): keys, dot, hint and a problem's words are pictured only over the windows of the gallery. There: keys ⌃⌥⇧9 9.14 (at most 9.52) in light-20-line-sentence 456,621,54,20 over the dark green; ⌃⌥ alone 9.20 and Space 9.45 in light-21-line-hint 587,621,29,20 and 616,621,42,20 over the red window; ⌃⌥⎋ 10.48 in light-22-paused 378,621,44,20; hint \"shows everything\" 9.42 at 661,621,123,20; the sentence before it 9.40 at 240,621,330,20; sentence after the keys 8.98 (at most 9.36) in light-20-line-sentence 510,621,202,20; a problem's words 9.02 (at most 9.40) in light-19-line-problem 413,621,198,20. The dot is too small for read (5 pixels): its darkest pixel at 578,631 is (83,64,64) on (237,182,183) = 5.51 : 1, and at 2x nine pixels have that colour; it is a divider in a fainter colour, no word. Keys, hint and sentence have one ink, within one level: (37,28,29), (37,29,29), (37,28,28) in light-21-line-hint. Round 1's 4.30 is gone. The builder says 5.8 to 12.8 over both looks; I read 5.73 to 13.44 (7.84 to 13.44 in the light look).",
+    "pictures": [
+     "light-on-black-6-line",
+     "light-on-red-6-line",
+     "light-on-blue-6-line",
+     "light-on-white-6-line",
+     "light-19-line-problem",
+     "light-20-line-sentence",
+     "light-21-line-hint",
+     "light-22-paused"
+    ]
+   },
+   "S4 dark on glass": {
+    "status": "pass",
+    "said": "WORST per kind. Sentence over the four plain wallpapers (435,627,154,20): white 5.73 : 1 (at most 5.97), ink (228,228,228) on (87,87,87); blue 8.07; red 9.17; black 12.64. So the worst is dark-on-white-6-line, 5.73: over 4.5, and a hair under the builder's 5.8. Keys, dot, hint and a problem's words are NOT pictured over the plain wallpapers, so not over white, which is this look's worst ground. Where they are pictured: keys ⌃⌥ 9.58 and Space 9.65 in dark-21-line-hint 587,621,29,20 and 616,621,42,20 over the red window; ⌃⌥⇧9 11.94 in dark-20-line-sentence 456,621,54,20; ⌃⌥⎋ 11.90 in dark-22-paused 378,621,44,20; hint 9.64 at 661,621,123,20; its sentence 9.65 at 240,621,330,20; the whole of dark-20-line-sentence 312,621,400,20 worst 8.71 (at most 9.07) in its last strip, x 696, ground (56,57,59), where a tile's pale picture lies behind its end; a problem's words 10.58 in dark-19-line-problem 413,621,198,20. The dot's lightest pixel at 578,631: (195,178,179) on (83,34,36) = 6.37. Keys and hint have the sentence's ink, (228,220,220) against (228,221,221).",
+    "pictures": [
+     "dark-on-white-6-line",
+     "dark-on-blue-6-line",
+     "dark-on-red-6-line",
+     "dark-on-black-6-line",
+     "dark-19-line-problem",
+     "dark-20-line-sentence",
+     "dark-21-line-hint",
+     "dark-22-paused"
+    ]
+   },
+   "S4 light": {
+    "status": "pass",
+    "said": "Reduce Transparency, light. Sentence 12.59 : 1 (at most 13.12), ink (36,36,36) on (232,232,232), the same to the last digit in light-opaque-on-red/-blue/-white/-black-6-line 435,627,154,20. Worst per kind in the gallery: key signs ⌃⌥ 12.16 (at most 12.67) in light-opaque-21-line-hint 587,627,29,20; Space 12.58; ⌃⌥⇧9 12.61 in light-opaque-20-line-sentence 456,627,54,20; ⌃⌥⎋ 12.45 in light-opaque-22-paused 378,627,44,20; hint 12.52 at 661,627,123,20; sentence 12.49 at 240,627,330,20; a problem's words 12.55 in light-opaque-19-line-problem 413,627,198,20; the dot's darkest pixel (81,81,81) on (232,232,232) = 6.48 at 578,637.",
+    "pictures": [
+     "light-opaque-on-red-6-line",
+     "light-opaque-on-blue-6-line",
+     "light-opaque-on-white-6-line",
+     "light-opaque-on-black-6-line",
+     "light-opaque-19-line-problem",
+     "light-opaque-20-line-sentence",
+     "light-opaque-21-line-hint",
+     "light-opaque-22-paused"
+    ]
+   },
+   "S4 dark": {
+    "status": "pass",
+    "said": "Reduce Transparency, dark. Sentence 11.82 : 1 (at most 12.31), ink (220,220,220) on (33,33,33), the same in dark-opaque-on-red/-blue/-white/-black-6-line 435,627,154,20. No dark opaque picture shows keys, the dot, a hint or a problem's words: this verdict is the sentence's alone.",
+    "pictures": [
+     "dark-opaque-on-red-6-line",
+     "dark-opaque-on-blue-6-line",
+     "dark-opaque-on-white-6-line",
+     "dark-opaque-on-black-6-line"
+    ]
+   },
+   "S6": {
+    "status": "pass",
+    "said": "Outline, stretch by stretch, since one line lies over three grounds. WORST: dark-contrast-20-line-sentence, top over the grey tile at the right, box 620,617,100,38: the line at the side 3.20 : 1 (light line (181,181,181) against (91,92,94)); over the tile at the left 290,617,170,38 top 3.44, bottom 4.21; over the dark wallpaper 440,617,200,38 9.87; dark-contrast-21-line-hint 224,617,576,38 over red top 4.55, bottom 3.95 (3.69 at reach 3), ground 5.63 and 4.55; dark-contrast-22-paused 8.08. There the ruler also says ONE ROW HALF-WAY and 3 pixels between: that is the outline itself, a dark rim outside (25,26,26), the light line (181), and one softer pixel inside it (57 to 60 on a ground of 22), the same at top and bottom, so no side off the grid. Light: light-contrast-21-line-hint over red top 4.44, bottom 5.19; light-contrast-20-line-sentence over the pale tile 290,617,170,38 top 7.76, bottom 6.89 (the dark rim (64,65,66) against (222,223,227)), over the wallpaper 12.25; light-contrast-22-paused 4.12. Ink, worst per kind: light ⌃⌥ 16.16 (at most 16.83) in light-contrast-21-line-hint 587,627,29,20, sentence 16.40, hint 16.43, problem 16.46, ⌃⌥⎋ 16.37; dark ⌃⌥ 17.76 in dark-contrast-21-line-hint, sentence 17.82, hint 17.93, problem 17.86. The dot's farthest pixel: 12.63 light, 13.20 dark, at 578,637. No Increase Contrast picture over the plain wallpapers.",
+    "pictures": [
+     "dark-contrast-20-line-sentence",
+     "dark-contrast-21-line-hint",
+     "dark-contrast-19-line-problem",
+     "dark-contrast-22-paused",
+     "light-contrast-20-line-sentence",
+     "light-contrast-21-line-hint",
+     "light-contrast-19-line-problem",
+     "light-contrast-22-paused"
+    ]
+   },
+   "S7": {
+    "status": "pass",
+    "said": "flat on four boxes of ground without words (440,619,144,9 above the words, 440,647,144,6 below, 423,630,11,12 and 590,630,11,12 in the round ends) in each of the eight plain opaque pictures: 0.0 levels in every box, 0% left out; every box is (232,232,232) in the light look over red, blue, white and black and (33,33,33) in the dark look over the same four: 0 levels between them. Over windows: light-opaque-20-line-sentence 315,619,395,9 and 315,647,395,6, which lie over a pale tile, dark green wallpaper and another tile: 0.0, (232,232,232); light-opaque-21-line-hint 243,619,538,9 over the red window and light-opaque-22-paused 290,619,444,9 the same.",
+    "pictures": [
+     "light-opaque-on-red-6-line",
+     "light-opaque-on-blue-6-line",
+     "light-opaque-on-white-6-line",
+     "light-opaque-on-black-6-line",
+     "dark-opaque-on-red-6-line",
+     "dark-opaque-on-blue-6-line",
+     "dark-opaque-on-white-6-line",
+     "dark-opaque-on-black-6-line",
+     "light-opaque-20-line-sentence",
+     "light-opaque-21-line-hint"
+    ]
+   }
+  },
+  "name field": {
+   "S1 at 1x": {
+    "status": "pass",
+    "said": "edges, reach 5 and again reach 3, all four sides: light-12-name-empty 322,179,380,96 left 132, top 130, right 132, bottom 135 levels, each over 0 pixels between; light-on-red-5-name 322,180,380,96 116/113/116/120 over 0; light-on-blue-5-name 175 on all four over 0; light-on-black-5-name 175 on all four over 0. light-on-white-5-name: steps of 3 to 19 levels, too small to ask. Along y 228 of light-12-name-empty: 320 (228,50,54) outside, 321 (163,36,38) the shadow's rim, 322 (232,232,232) the panel's line, 323 (239,185,188), 324 (239,184,187) ground.",
+    "pictures": [
+     "light-12-name-empty",
+     "light-on-red-5-name",
+     "light-on-blue-5-name",
+     "light-on-white-5-name",
+     "light-on-black-5-name"
+    ]
+   },
+   "S1 at 2x": {
+    "status": "pass",
+    "said": "retina-11-name-on-glass-1, box 24,24,760,192: left a step of 80 levels, top 82, bottom 80, each over 0 pixels between (reach 5; 0 too at reach 3 and 8). RIGHT: the ruler says 66 levels over 2 pixels between (3 at reach 3, 2 at reach 8). I looked: it is fooled by the panel's own line. That side lies over the wallpaper's pale yellow sun, so the step is in blue only, from 175 outside to 241 inside, and the panel's light line of one point, two pixels of (230,230,230) and (232,232,232), happens to lie between those. Along y 100: 781 (207,230,241) ground, 782 (230,230,230), 783 (232,232,232) line, 784 (168,161,128) rim of the shadow, then 200, 222, 228 as macOS's soft shadow fades. Ground to line and line to outside are each a step at once, as on the other three sides; at y 160, where blue sky is outside, the same two pixels and (91,128,154) next to them.",
+    "pictures": [
+     "retina-11-name-on-glass-1"
+    ]
+   },
+   "S2": {
+    "status": "pass",
+    "said": "No side with one row half-way in any light picture (edges on the five boxes under S1 at 1x, reach 5 and 3). Opposite sides are mirror images: light-12-name-empty columns 322/323 = (232,232,232)/(239,185,188) and 701/700 the same; rows 179/180 and 274/273 the same. The box is 380 by 96 on whole pixels wherever I looked for its sides (x 322; y 179, 180 or 181 from run to run). At 2x it begins on an even pixel, 760 by 192, its line exactly 2 px. The corner enlarged eight times (314,171,60,52) is smooth.",
+    "pictures": [
+     "light-12-name-empty",
+     "light-on-red-5-name",
+     "light-on-blue-5-name",
+     "light-on-black-5-name",
+     "retina-11-name-on-glass-1"
+    ]
+   },
+   "S3": {
+    "status": "pass",
+    "said": "By the ruler everything keeps its distance. Empty and typed, in all looks: 17 to 18 pt from the left (17 is the caret), 14 to 15 from the top, 15 to 17 from the bottom, 213 and more from the right; at 2x retina-11-name-on-glass-1 24,24,760,192 --scale 2: 18.5 / 14.5 / 256 / 15. The name of 75 letters (light-13b-name-long 322,179,380,96, and the same in dark-, light-contrast-, dark-contrast-, light-opaque-13b-name-long): 12 pt from the left, 16 to 17 from the right, 14 from the top, 17 from the bottom. The panel keeps its 380 points, nothing touches an edge, heading and note stay whole, and the note turns into bold words, \"a name can have at most 40 characters\", 218 px wide, whole. BY EYE, and this is the one thing to weigh: the typed words have scrolled and the first letter in view, an s, is cut in half by a straight cut at x 334 (enlarged: 322,205,60,45). The drawing is macOS's: a text field scrolls so, and 75 letters cannot be shown in one line of 350 points. The choice is Arbor's: the field goes on taking letters past the 40 it allows, and its cut lies 6 pt LEFT of the column at x 340 on which heading, name and note all begin, so the half letter hangs out of the column. I count it as a cut that has to be somewhere, not as a clipped label. What is in view is 39 letters and a half: no picture shows a name of exactly 40, the longest that is allowed, and whether that is cut too.",
+    "pictures": [
+     "light-13b-name-long",
+     "dark-13b-name-long",
+     "light-contrast-13b-name-long",
+     "dark-contrast-13b-name-long",
+     "light-opaque-13b-name-long",
+     "light-12-name-empty",
+     "light-13-name-typed",
+     "retina-11-name-on-glass-1"
+    ]
+   },
+   "S4 light on glass": {
+    "status": "pass",
+    "said": "WORST per kind, all in light-on-black-5-name: note \"everything\" 4.73 : 1 (at most 4.92) at 338,248,60,18, ink (64,64,64) on (175,175,175); heading \"Name this space\" 4.79 (at most 4.99) at 338,192,94,17; placeholder \"Name\" 4.92 (at most 5.12) at 343,215,51,22. Over red 5.43 / 5.50 / 5.67, over blue 5.75 / 5.83 / 6.02, over white 6.34 / 6.44 / 6.70 (note / heading / placeholder, the same boxes). All reach 4.5. The plain pictures show the EMPTY field only. Typed words, the hint and a problem's words are pictured over the red window alone: typed \"writing\" 9.76 in light-13-name-typed 339,214,58,24; 75 letters 9.70 in light-13b-name-long 333,214,351,24; hint \"names ArborTestWindows\" 5.44 (at most 5.67) at 353,247,140,18; problem's words 9.62 in light-13b-name-long 338,247,218,18; heading 5.40, placeholder 5.58, note 5.32 in light-12-name-empty. The ↩ before the hint is too thin for read at 1x (\"no ink\"): its arrowhead reaches the hint's colour, (83,64,65) on (239,184,187) = 5.62 at 342,253, but its stem falls on two rows and shows as (171,132,134) and (165,127,129), 1.92 and 2.06; at 2x (retina-11-name-on-glass-1 58,160,26,28) the sign reads 6.28 like the words beside it (6.24). macOS's drawing of a thin sign; secondary.",
+    "pictures": [
+     "light-on-black-5-name",
+     "light-on-red-5-name",
+     "light-on-blue-5-name",
+     "light-on-white-5-name",
+     "light-12-name-empty",
+     "light-13-name-typed",
+     "light-13b-name-long",
+     "retina-11-name-on-glass-1"
+    ]
+   },
+   "S4 dark on glass": {
+    "status": "miss",
+    "said": "dark-on-white-5-name: heading \"Name this space\" 4.09 : 1 (at most 4.26) at 338,192,94,17, ink (194,194,194) on (87,87,87); note \"everything\" 4.09 (at most 4.26) at 338,248,60,18; placeholder \"Name\" 4.11 (at most 4.28) at 343,215,51,22. 4.5 less the ruler's 4% is 4.32: none of the three reaches it. It is no error of the ruler's: the placeholder's strokes are two pixels broad and hold whole pixels of the words' colour, (196,196,196) along y 226 at x 347, 348, 351, 352, which on (87,87,87) IS 4.14. So the builder's \"4.1 and better\" is right, and the 4.1 is ALL THREE kinds in the fainter colour, which have one ink. Must one read them to act? The heading: yes. It is the only thing that says what this panel is and what the field is for, and it is what lets the placeholder off. The note: yes in my judgement, it alone says WHICH space gets the name. The placeholder: no, secondary beside the heading, and 4.11 passes 3. The colours are Arbor's choice, on a ground that is Arbor's choice. Over the other three the same boxes pass: blue 5.43 / 5.41 / 5.45, red 6.03 / 6.00 / 6.07 (round 1's 3.75 over red is cured), black 7.82 / 7.77 / 7.88 (heading / note / placeholder); over the red window dark-12-name-empty 6.21 / 6.23 / 6.27. Typed words, hint and problem's words are not pictured over the plain wallpapers; over the red window: typed 9.59 in dark-13-name-typed 339,214,58,24, 75 letters 9.64 and problem's words 9.52 in dark-13b-name-long 333,214,351,24 and 338,247,218,18, hint 6.21 in dark-13-name-typed 353,247,140,18 (the hint has the heading's ink, so over white it would be asked the same question). ↩: arrowhead (195,178,179) on (83,35,37) = 6.32, stem 2.64 and 3.21.",
+    "pictures": [
+     "dark-on-white-5-name",
+     "dark-on-blue-5-name",
+     "dark-on-red-5-name",
+     "dark-on-black-5-name",
+     "dark-12-name-empty",
+     "dark-13-name-typed",
+     "dark-13b-name-long"
+    ]
+   },
+   "S4 light": {
+    "status": "pass",
+    "said": "Reduce Transparency, light; ground (232,232,232). The same to the last digit over red, blue, white and black (light-opaque-on-…-5-name): note 6.02 : 1 (at most 6.27) at 338,248,60,18; heading 6.20 at 338,192,94,17; placeholder 6.40 at 343,215,51,22. WORST of all kinds: the hint \"names ArborTestWindows\" 5.92 (at most 6.17; middle 6.21) in light-opaque-13-name-typed 353,249,140,18. Typed 12.77 at 339,216,58,24; 75 letters 12.69 and problem's words 12.52 in light-opaque-13b-name-long 333,216,351,24 and 338,249,218,18. ↩: arrowhead (81,81,81) = 6.48.",
+    "pictures": [
+     "light-opaque-on-red-5-name",
+     "light-opaque-on-blue-5-name",
+     "light-opaque-on-white-5-name",
+     "light-opaque-on-black-5-name",
+     "light-opaque-12-name-empty",
+     "light-opaque-13-name-typed",
+     "light-opaque-13b-name-long"
+    ]
+   },
+   "S4 dark": {
+    "status": "pass",
+    "said": "Reduce Transparency, dark; ground (33,33,33). The same over red, blue, white and black (dark-opaque-on-…-5-name): note 7.43 : 1 (at most 7.74) at 338,248,60,18; heading 7.48 at 338,192,94,17; placeholder 7.54 at 343,215,51,22. No dark opaque picture shows typed words, the hint or a problem's words: this verdict is for the empty field.",
+    "pictures": [
+     "dark-opaque-on-red-5-name",
+     "dark-opaque-on-blue-5-name",
+     "dark-opaque-on-white-5-name",
+     "dark-opaque-on-black-5-name"
+    ]
+   },
+   "S6": {
+    "status": "pass",
+    "said": "Outline, box 322,181,380,96, over the red window, the only ground pictured. dark-contrast-12-name-empty: left 4.33, top 4.55, right 4.33, bottom 3.96 : 1 (WORST 3.72, the bottom at reach 3); ground 5.14 / 5.63 / 5.14 / 4.56. What carries it is the dark rim just outside, (70,27,28) against (244,93,97) = 4.59, and the ground; the light line (185,185,185) by itself is 1.63 to that red. light-contrast-12-name-empty: 4.72 / 4.46 / 4.72 / 5.21, ground 3.89 to 4.54. (In the dark picture the ruler counts 3 pixels between: rim, line, and one softer pixel (55,55,55) inside the line, alike on all four sides.) Ink, worst per kind. Light: note 11.85 (at most 12.34) in light-contrast-12-name-empty 338,249,102,18; heading 12.07; hint 12.18; placeholder 12.51; problem's words 16.44; typed 16.56. Dark: hint 12.94 in dark-contrast-13-name-typed 353,249,140,18; note 12.97; heading 12.99; placeholder 13.10; problem's words 17.81; typed 17.89. ↩ at 1x: arrowhead 12.63 light, 13.20 dark; hook 8.10 and 11.62; its stem, split over two rows, (145,145,145) and (136,136,136) on 229 = 2.50 and 2.81 light, 4.04 and 5.31 dark. A thin sign as macOS draws it, in the hint's colour, beside words that say the same; I do not count it.",
+    "pictures": [
+     "dark-contrast-12-name-empty",
+     "light-contrast-12-name-empty",
+     "dark-contrast-13-name-typed",
+     "light-contrast-13-name-typed",
+     "dark-contrast-13b-name-long",
+     "light-contrast-13b-name-long"
+    ]
+   },
+   "S7": {
+    "status": "pass",
+    "said": "flat on four boxes of ground without words (440,186,250,86 the empty right half, 326,200,10,56 beside the left side, 340,184,340,9 along the top, 340,266,340,8 along the bottom) in each of the eight plain opaque pictures: 0.0 levels in every box, 0% left out; all (232,232,232) in the light look over red, blue, white and black, all (33,33,33) in the dark look: 0 levels between. The same (232,232,232) over the red window in light-opaque-12-name-empty and light-opaque-13-name-typed (500,186,190,86 and the three others).",
+    "pictures": [
+     "light-opaque-on-red-5-name",
+     "light-opaque-on-blue-5-name",
+     "light-opaque-on-white-5-name",
+     "light-opaque-on-black-5-name",
+     "dark-opaque-on-red-5-name",
+     "dark-opaque-on-blue-5-name",
+     "dark-opaque-on-white-5-name",
+     "dark-opaque-on-black-5-name",
+     "light-opaque-12-name-empty",
+     "light-opaque-13-name-typed"
+    ]
+   }
+  },
+  "shortcuts": {
+   "S1 at 1x": {
+    "status": "pass",
+    "said": "The sheet's box is 130,67,764,608 over the plain wallpapers (130,64,764,608 in light-07-shortcuts). edges, reach 3 and 5: light-on-red steps of 113 to 122 levels, light-on-blue 175, light-on-black 175, each over 0 pixels between, on all four sides; light-07-shortcuts left 136 and right 178 levels over 0 between (top and bottom 39 and 36 levels: too small to ask); light-on-white 2 to 26 levels: too small to ask. Pixel by pixel at y 370: shadow, one dark pixel of the window server's (163,52,49), one pixel of the sheet's line (232,232,232), then the ground (242,189,186). The sheet has no other straight line of its own.",
+    "pictures": [
+     "light-on-red-1-shortcuts",
+     "light-on-blue-1-shortcuts",
+     "light-on-white-1-shortcuts",
+     "light-on-black-1-shortcuts",
+     "light-07-shortcuts"
+    ]
+   },
+   "S1 at 2x": {
+    "status": "pass",
+    "said": "retina-08-shortcuts-on-glass-1, box 24,24,1528,1216, measured whole and part by part so that one colour lies outside each stretch: left over red 134 levels, over orange 144; right over blue 178, over green 132; top 133 (red), 91 (pale blue), 178 (blue); bottom 146 (orange), 152 (dark green), 134 (green): every one over 0 pixels between. The line is two device pixels (232, 230), then the ground at once.",
+    "pictures": [
+     "retina-08-shortcuts-on-glass-1"
+    ]
+   },
+   "S2": {
+    "status": "pass",
+    "said": "No side with one row half-way in light-on-red, -blue, -white, -black or light-07-shortcuts (edges, 130,67,764,608). The four sides are alike pixel for pixel (left 163/232/190/189, right the same mirrored), which a frame off the grid would not be; 764 by 608 whole pixels at 1x, 1528 by 1216 at 2x starting on an even pixel. (In dark-contrast-07-shortcuts the ruler cries 'one row half-way' over the grey tiles at 130,471,764,98 and 130,570,764,60: it is fooled by the three marks there, rim 21, line 183, a soft pixel 58, which are the same on both sides. Not a picture S2 is asked of.)",
+    "pictures": [
+     "light-on-red-1-shortcuts",
+     "light-on-blue-1-shortcuts",
+     "light-on-white-1-shortcuts",
+     "light-on-black-1-shortcuts",
+     "light-07-shortcuts"
+    ]
+   },
+   "S3": {
+    "status": "pass",
+    "said": "fits on 130,67,764,608: ink keeps 29 pt from the left, 26 from the top, 29 from the right, 24 from the bottom, the same in the ten plain pictures I asked (eight on glass, two opaque; light-on-black: 30 left), in light-contrast-07, dark-contrast-07 and light-opaque-07; at 2x (24,24,1528,1216 --scale 2) 29.5, 25.5, 29, 23.5. By eye, enlarged: no word cut off; the only … is 'Go to…', which is the command's name; keys end at x 245 and names begin at x 260 (14 pt between); the longest name of the left column ends at x 452, the nearest key of the right column begins at x 494; lines stand 22 px apart with ink 10 to 13 px high.",
+    "pictures": [
+     "light-on-red-1-shortcuts",
+     "light-on-blue-1-shortcuts",
+     "light-on-white-1-shortcuts",
+     "light-on-black-1-shortcuts",
+     "dark-on-red-1-shortcuts",
+     "dark-on-blue-1-shortcuts",
+     "dark-on-white-1-shortcuts",
+     "dark-on-black-1-shortcuts",
+     "light-opaque-on-red-1-shortcuts",
+     "dark-opaque-on-red-1-shortcuts",
+     "light-contrast-07-shortcuts",
+     "dark-contrast-07-shortcuts",
+     "light-opaque-07-shortcuts",
+     "retina-08-shortcuts-on-glass-1"
+    ]
+   },
+   "S4 light on glass": {
+    "status": "pass",
+    "said": "All 74 lines read in each picture (boxes 3 px wider and 4 px higher than the ink on each side). The worst ground for the light look is the BLACK wallpaper (ground 175,175,175), and every kind has its worst there, light-on-black-1-shortcuts: title 7.88 at 430,89,164,24; headings 4.86 (at most 5.06) at 258,127,33,18 'Look', the other three 4.88; rows 7.66 at 257,372,91,18; keys 7.77 at 211,174,37,18; the words in the key column ('Click a tile') 7.79 at 579,601,70,19; the last line 4.77 (at most 4.97) at 447,635,130,20. Worst line per kind over the others: red: title 10.06, headings 5.59, rows 9.53, keys 9.87, last 5.46; blue: 11.29, 5.93, 10.62, 11.05, 5.79; white: 13.71, 6.59, 12.76, 13.36, 6.40. Over windows of strong colours (light-07-shortcuts): title 10.02, headings 5.47 at 258,124,33,18, rows 9.35, keys 9.53, last 5.21 at 447,632,130,20. At 2x (retina-08-shortcuts-on-glass-1): headings 5.89 at 280,148,66,30, last 5.85 at 658,1164,260,35. Everything reaches 4.5, secondary words too. Round 1's 1.3 to 2.1 for headings and last line is gone.",
+    "pictures": [
+     "light-on-red-1-shortcuts",
+     "light-on-blue-1-shortcuts",
+     "light-on-white-1-shortcuts",
+     "light-on-black-1-shortcuts",
+     "light-07-shortcuts",
+     "retina-08-shortcuts-on-glass-1"
+    ]
+   },
+   "S4 dark on glass": {
+    "status": "pass",
+    "said": "The worst ground for the dark look is the WHITE wallpaper (ground 87,87,87), and every kind has its worst there, dark-on-white-1-shortcuts: title 5.76 (at most 6.00) at 430,89,164,24; rows 5.69 (at most 5.93) at 257,460,48,18 'Go to…'; keys 5.72 at 209,196,39,18; the words in the key column 5.74 at 491,558,158,21: all words one must read reach 4.5. HEADINGS 4.10 (at most 4.27) at 657,128,53,19 'Arrange', 657,407,72,18 and 658,511,127,20, 4.11 (at most 4.28) at 258,127,33,18; THE LAST LINE 4.08 (at most 4.25) at 447,635,130,20; ink 195,195,195 on 87,87,87. That is where the builder's 4.1 is: all four headings and 'Press any key to close', dark look, glass, white behind. It is under 4.5 even with the ruler's 4%, and over 3. I count both as secondary (a heading groups rows that say themselves what they do; any key closes the sheet, so nobody must read how), hence pass at 3 : 1. Whoever holds 'Press any key to close' to be the sheet's only word on how to leave it, as a placeholder that is a field's only label, must call this cell a miss by 0.25. Worst line per kind over the others: blue: title 8.12, headings 5.43, rows 8.01, keys 8.05, last 5.40; red: 9.16, 5.98, 9.02, 9.08, 5.94; black: 12.74, 7.80, 12.51, 12.60, 7.76. Over windows of strong colours (dark-07-shortcuts; the line under the pointer left out): title 10.30, headings 5.77 at 657,125,53,19, rows 8.51 at 658,325,88,18, keys 9.29, last 7.33. Against the builder: headings 4.1 to 7.9 claimed, 4.10 to 7.83 measured (both looks): the same. Rows 5.8 and better claimed: the colours are 229 on 87 = 5.77, the ruler's worst strip 5.69: the same within its error. (With boxes only 2 px higher than the ink the ruler said 5.42 at 658,560,92,14: the ground's median took in the letters' soft edges, 91 for 87; drawn again at 658,558,92,18 it says 5.74.)",
+    "pictures": [
+     "dark-on-red-1-shortcuts",
+     "dark-on-blue-1-shortcuts",
+     "dark-on-white-1-shortcuts",
+     "dark-on-black-1-shortcuts",
+     "dark-07-shortcuts"
+    ]
+   },
+   "S4 light": {
+    "status": "pass",
+    "said": "Reduce Transparency, ground 232,232,232. The 74 lines read the same, line for line, over red, blue, white and black and in light-opaque-07-shortcuts: title 12.71 at 430,89,164,24; headings 6.30 (at most 6.56) at 258,127,33,18; rows 11.94 at 257,372,91,18; keys 12.47 at 210,350,39,18; the words in the key column 12.49 at 579,601,70,19; the last line 6.06 (at most 6.31) at 447,635,130,20.",
+    "pictures": [
+     "light-opaque-on-red-1-shortcuts",
+     "light-opaque-on-blue-1-shortcuts",
+     "light-opaque-on-white-1-shortcuts",
+     "light-opaque-on-black-1-shortcuts",
+     "light-opaque-07-shortcuts"
+    ]
+   },
+   "S4 dark": {
+    "status": "pass",
+    "said": "Reduce Transparency, ground 33,33,33. The same, line for line, over all four wallpapers: title 11.89 at 430,89,164,24; headings 7.46 at 657,407,72,18; rows 11.67 at 257,460,48,18; keys 11.75 at 209,196,39,18; the words in the key column 11.79 at 491,558,158,21; the last line 7.41 at 447,635,130,20.",
+    "pictures": [
+     "dark-opaque-on-red-1-shortcuts",
+     "dark-opaque-on-blue-1-shortcuts",
+     "dark-opaque-on-white-1-shortcuts",
+     "dark-opaque-on-black-1-shortcuts"
+    ]
+   },
+   "S6": {
+    "status": "pass",
+    "said": "The line at the side against what is outside, part by part (edges --reach 3). light-contrast-07-shortcuts: over the red window 4.97 (130,100,764,340 left), the blue 4.98 (right), the grey tiles 7.04 (130,471,764,98 left) and 7.28 (130,570,764,60 right), title bars 8.17 and 7.67 (top), the dark window 7.14 (top) and 13.55 (bottom), tiles below 6.47 and 6.50. dark-contrast-07-shortcuts: red 4.07, blue 4.96, grey tiles 3.87 (left) and 3.51 (right, 130,570,764,60: the least), tiles' icons 7.02 and 7.91, title bars 6.03 and 7.59, the dark window 9.86 and 10.09, tiles below 4.45 and 4.50. All at least 3. Ink to ground, worst line of each kind: light: title 16.58, headings 12.31 at 258,127,33,18, rows 16.00 at 257,372,91,18, keys 16.37, last line 11.98 at 447,635,130,20; dark: title 17.98, headings 12.96 at 657,407,72,18, rows 17.65, keys 17.79, last line 12.88. All at least 7. (The key under the pointer, 208,262,40,18, left out.)",
+    "pictures": [
+     "light-contrast-07-shortcuts",
+     "dark-contrast-07-shortcuts"
+    ]
+   },
+   "S7": {
+    "status": "pass",
+    "said": "flat on seven boxes of ground without words (145,505,330,125; 150,75,260,45; 620,75,250,45; 462,130,30,360; 136,100,20,540; 870,100,18,540; 600,650,270,20) in each of nine pictures: 0.0 levels in every box, nothing left out as ink. Between boxes and between wallpapers: 232,232,232 everywhere in the light look (red, blue, white, black, and over the red and blue windows of light-opaque-07-shortcuts), 33,33,33 everywhere in the dark look: 0 levels. Only the sheet's outermost pixel all round (its line, which here has the ground's colour) follows what is outside: up to 4 levels off over red, 6 over blue and black, 1 over white; from the second pixel inward 0. An edge, not a stretch of ground.",
+    "pictures": [
+     "light-opaque-on-red-1-shortcuts",
+     "light-opaque-on-blue-1-shortcuts",
+     "light-opaque-on-white-1-shortcuts",
+     "light-opaque-on-black-1-shortcuts",
+     "dark-opaque-on-red-1-shortcuts",
+     "dark-opaque-on-blue-1-shortcuts",
+     "dark-opaque-on-white-1-shortcuts",
+     "dark-opaque-on-black-1-shortcuts",
+     "light-opaque-07-shortcuts"
+    ]
+   }
+  },
+  "minimap": {
+   "S1 at 1x": {
+    "status": "pass",
+    "said": "The map's box is 397,495,231,160 over the plain wallpapers, 396,489,232,160 in light-11-minimap. edges --reach 3: light-11-minimap steps of 130 to 136 levels, light-on-red 114 to 122, light-on-blue 175, light-on-black 175, each over 0 pixels between on all four sides; light-on-white 2 to 26 levels: too small to ask. Lines of its own of 60 px and more: the plate in view 406,499,93,93 in light-11-minimap, 154 levels over 0 between on four sides; the plates out of view (407,505,51,140; 536,499,82,110) step by 3 to 30 levels: too small to ask. Pixel by pixel every plate's line is one pixel of one colour (148,130,128) and the ring two pixels of pure 0,112,245, nothing between.",
+    "pictures": [
+     "light-11-minimap",
+     "light-on-red-4-minimap",
+     "light-on-blue-4-minimap",
+     "light-on-white-4-minimap",
+     "light-on-black-4-minimap"
+    ]
+   },
+   "S1 at 2x": {
+    "status": "pass",
+    "said": "retina-10-minimap-on-glass-1, box 24,24,480,306: left 125 levels, top 96, right 123, bottom 144, each over 0 pixels between. Its own lines: plates 44,44,144,132 and 340,180,144,130: 72 to 76 levels over 0 between where they can be asked; the outlined rectangle 192,44,144,266 top 82 and bottom 78 over 0; the ring 38,38,452,278: 98 to 104 levels over 1 between (the ruler's two inside pixels straddle ring and tint; pixel by pixel the ring is x 38..41, four device pixels of pure 0,112,245). Every mark begins on an even pixel.",
+    "pictures": [
+     "retina-10-minimap-on-glass-1"
+    ]
+   },
+   "S2": {
+    "status": "pass",
+    "said": "No side with one row half-way in light-11-minimap (396,489,232,160) or over the four plain wallpapers (397,495,231,160); left and right, top and bottom mirror each other pixel for pixel. Enlarged six times (400,585,230,62 of light-11-minimap) the small plates' lines are each one whole pixel (y 611 and 638; x 406, 451, 454, 498).",
+    "pictures": [
+     "light-11-minimap",
+     "light-on-red-4-minimap",
+     "light-on-blue-4-minimap",
+     "light-on-white-4-minimap",
+     "light-on-black-4-minimap"
+    ]
+   },
+   "S6": {
+    "status": "miss",
+    "said": "The map's OUTLINE passes: light-contrast-11-minimap 397,495,231,160 over the red window: 4.97 left and right, 4.58 top, 5.44 bottom; dark-contrast-11-minimap 4.07, 4.37, 3.72 (bottom, the least). The ring passes: 6.0 light (404,502,98,99), 3.92 dark. The PLATES miss in the light look: light-contrast-11-minimap, the large plate out of view 536,505,82,110 against the map's ground: its line 2.52 : 1 (143,145,145 on 229,229,229; read at 617,520,9,80 says the same), its fill 1.24 : 1; the line against its own fill 2.03. The outlined empty rectangle (501,505,33,140): its line 2.08 : 1 in the light look (160 on 229, read at 520,520,16,100) and 2.71 : 1 in the dark look (92 on 22). In the dark look the plates pass by their line: 5.49, fill 2.73. Increase Contrast changes nothing in the plates: without it (light-opaque-11-minimap) line 2.55, fill 1.26, rectangle 2.08. Only the system's accent and the window's border change. All of this is Arbor's own drawing.",
+    "pictures": [
+     "light-contrast-11-minimap",
+     "dark-contrast-11-minimap",
+     "light-opaque-11-minimap"
+    ]
+   },
+   "S7": {
+    "status": "pass",
+    "said": "flat on four boxes of ground (399,520,8,110; 618,520,8,110; 420,497,185,5; 420,648,185,5) and three of plates (409,507,48,136; 568,507,48,136; 463,507,99,136) in each of the eight plain opaque pictures: 0.0 levels in every box, nothing left out. Between wallpapers 0 levels: ground 232,232,232, plates 206,208,209, the ringed rectangle 204,217,233 in the light look over red, blue, white and black; 33,33,33, 97,99,100 and 29,44,60 in the dark look. light-opaque-11-minimap over the red window: six boxes (399,520,5,110; 618,520,8,110; 420,497,185,5; 420,646,185,7; 503,507,29,130; 538,507,78,106) 0.0 levels, the same colours. Only the map's outermost pixel all round follows what is outside: up to 3 levels off over the red wallpaper, 5 over blue and black, 1 over white, 4 over the red window (231,228,228 at y 495 and 654); from the second pixel inward 0. An edge, not a stretch of ground.",
+    "pictures": [
+     "light-opaque-on-red-4-minimap",
+     "light-opaque-on-blue-4-minimap",
+     "light-opaque-on-white-4-minimap",
+     "light-opaque-on-black-4-minimap",
+     "dark-opaque-on-red-4-minimap",
+     "dark-opaque-on-blue-4-minimap",
+     "dark-opaque-on-white-4-minimap",
+     "dark-opaque-on-black-4-minimap",
+     "light-opaque-11-minimap"
+    ]
+   }
+  },
+  "focus ring": {
+   "S1 at 1x": {
+    "status": "pass",
+    "said": "light-02-two-columns: the ring is 3 px of (0,122,255) at x 9-11 and 337-339, y 39-41 and 693-695. Pixel by pixel (median of 40 rows or columns) every step is from one flat colour to the next with 0 pixels between: left (94,126,147)|(0,122,255)|(255,76,80), top (53,107,154)|ring|(249,226,226), right and bottom alike; the same in dark. `edges 9,39,331,657 --reach 3` says 0 to 1 between, but it is fooled: a line 3 px thick puts the window's own first pixel into what it takes for the ground (hence its 'one row half-way' in dark).",
+    "pictures": [
+     "light-02-two-columns",
+     "dark-02-two-columns"
+    ]
+   },
+   "S1 at 2x": {
+    "status": "pass",
+    "said": "Both are crops at two pixels to the point (traffic lights 24 px). The ring is 6 px of (0,122,255): y 26-31 and x 26-31 in retina-02, y 208-213 and x 368-373 in retina-03. `edges --reach 4`: left a step of 114 levels over 0 pixels, top 99 over 0, right 190 over 0, bottom 212 over 0.",
+    "pictures": [
+     "retina-02-ring-top-left",
+     "retina-03-ring-bottom-right"
+    ]
+   },
+   "S2": {
+    "status": "pass",
+    "said": "light-02-two-columns: no half-covered row or column on any side, inside or outside the ring: three whole pixels of one colour (six at 2x). The lighter pixel next to it inside, (255,76,80), is the window's own rim: the unfocused window has it too.",
+    "pictures": [
+     "light-02-two-columns",
+     "retina-02-ring-top-left"
+    ]
+   },
+   "S6": {
+    "status": "pass",
+    "said": "The cure works here. The ring is now 1 px of white OUTSIDE and 2 px of blue inside it ((0,64,221) light, (23,116,218) dark); round 1 had 1.1 to 1.7. OUTSIDE, white to the surface it lies on: light-contrast-02 `edges 9,40,331,662 --reach 3` left 4.91, top 5.6, right 6.76, bottom 12.58; walked pixel by pixel along all four straight sides the worst spot is 3.80 (x 9, y 404, on (116,134,140)), middles 5.84 / 5.63 / 7.37 / 12.65. dark-contrast-02: 17.29 / 19.15 / 18.81 / 19.78, worst spot 10.13. Round the blue window (06k-framed): 4.28 to 10.04 light, 17.64 to 19.51 dark. INSIDE, blue to what it touches, which is macOS's own light rim of the window: 4.57 (red window) and 5.03 (blue window) light, 3.34 and 3.70 dark, 7.56 and 3.05 at the title bar. Blue to the window's own colour beyond that rim is low: 1.66 red, 1.65 blue in light; 1.57 red, 2.15 blue, 2.54 title bar in dark. The two tones to one another: 7.56 light, 4.62 dark.",
+    "pictures": [
+     "light-contrast-02-two-columns",
+     "dark-contrast-02-two-columns",
+     "light-contrast-06k-framed",
+     "dark-contrast-06k-framed"
+    ]
+   }
+  },
+  "drop preview": {
+   "S1 at 1x": {
+    "status": "pass",
+    "said": "light-03-drop-preview, box 12,374,325,319: 2 px of (0,122,255), then 1 px of (234,171,183), then the fill (209,68,95), the same on all four sides. `edges --reach 5`: left a step of 144 levels over 0 pixels, right 168 over 0; top (53 levels) and bottom (12) too small to ask. Pixel by pixel there are 0 pixels between on all four. At --reach 3 the ruler says 'one row half-way' at the top: fooled, it averages the 1 px inner line with the fill.",
+    "pictures": [
+     "light-03-drop-preview",
+     "dark-03-drop-preview"
+    ]
+   },
+   "S1 at 2x": {
+    "status": "pass",
+    "said": "A crop at two pixels to the point. Top (x 120-320): (255,56,60) | 4 px (0,122,255) at y 92-95 | 2 px (234,171,183) | (209,68,95): 0 pixels between at each step. Left (y 140-240): x 32-35 blue, 36-37 light, then fill: 0 between. The ruler finds the step from outside to fill too small to ask (38 and 46 levels), so these are my own profiles. Only the top-left corner is pictured.",
+    "pictures": [
+     "retina-05-drop-preview-corner"
+    ]
+   },
+   "S2": {
+    "status": "pass",
+    "said": "No half-covered row. The one pixel of (234,171,183) inside the blue is white at 55% over the fill ((139,221,237) over the cyan window: the same 55%), and it is there on all four sides alike and doubles to 2 px at 2x: a line drawn so, not a frame off the grid.",
+    "pictures": [
+     "light-03-drop-preview"
+    ]
+   },
+   "S6": {
+    "status": "miss",
+    "said": "Better than round 1, enough in light, not quite in dark. The line is now 2 px of blue OUTSIDE and 1 px of solid white inside it: the other way round from the ring. Box 12,377,325,322. light-contrast `edges --reach 3` (it takes the line's best tone, the white): left 5.54, top 4.56, right 7.47, bottom 4.59: reaches 3. dark-contrast: left 16.69, right 18.1, but top 2.94 (white on the red window (255,97,101); the blue there 1.57) and bottom 2.78 (blue on the dragged cyan window (59,221,236); the white there 1.65): under 3 on two sides, flat colours, so no ruler's error to allow for. What TOUCHES the outside is the blue, and that alone is: light 1.66 top (red), 1.64 bottom (teal), 1.35 left and 1.10 right (surface, middles); dark 1.57 top, 2.78 bottom, 3.64 left, 3.94 right. INSIDE, white to the fill: light 6.00 over red, 5.04 over the dragged window; dark 3.54 over red, 1.95 over the dragged cyan window (52,202,232). The two tones to one another: 7.56 light, 4.62 dark, which is what a person sees there.",
+    "pictures": [
+     "light-contrast-03-drop-preview",
+     "dark-contrast-03-drop-preview"
+    ]
+   }
+  },
+  "seam": {
+   "S2": {
+    "status": "pass",
+    "said": "The handle is 36 by 4 px (x 212-246 whole, 211 and 247 its round ends; y 456-459 hovered, 476-479 dragged), in the middle of the 12 px gap. Rows: (73,101,81) | four rows of (167,170,168) | (56,77,62), its soft shadow: no half-covered row above or below; dragged (0,86,180) likewise. At 36 px it is under the 60 px from which S1 is asked (`edges 211,456,37,4`: 'not asked' on all sides), so S1 is left out; there is no 2x picture of it.",
+    "pictures": [
+     "light-06-gap-hover",
+     "light-06b-gap-dragged"
+    ]
+   },
+   "S6": {
+    "status": "miss",
+    "said": "The handle did get an outline with Increase Contrast, but it does not reach 3 : 1 to the surface in three of the four pictures. The ruler does not ask sides under 60 px, so these are vertical profiles at x 220-240 with the same formula. The outline is 1 pt centred on the handle's edge, so it falls on two rows at half strength each, and leaves 2 rows of the body. light-contrast hovered: outline rows (36,50,40) and (28,39,31) to the surface (73,101,81)/(77,107,86): 2.09 to 2.61; body (167,170,167) to the surface 2.52 to 2.74. light-contrast dragged: outline (125,139,129)/(118,128,121): 1.44 to 1.77; body (0,45,156): 1.79 to 1.91. dark-contrast hovered: the outline is black on a nearly black surface, 1.08 to 1.14, but the body (113,114,115) has 3.63 to 3.77: that one reaches 3. dark-contrast dragged: outline (69,69,80)/(73,73,82) 1.84 to 2.04, its inner half row at best 2.72, body (11,56,107) 1.49 to 1.55. Inside, outline to body: 5.73 and 6.58 (light hovered), 3.17 and 2.77 (light dragged), 4.08 and 4.14 (dark hovered), 1.24 and 1.32 (dark dragged).",
+    "pictures": [
+     "light-contrast-06-gap-hover",
+     "light-contrast-06b-gap-dragged",
+     "dark-contrast-06-gap-hover",
+     "dark-contrast-06b-gap-dragged"
+    ]
+   }
+  },
+  "peek outline": {
+   "S1 at 1x": {
+    "status": "pass",
+    "said": "light-14-peek, box 622,37,395,520: 4 px of (0,122,255) (x 622-625 and 1013-1016, y 37-40 and 553-556), then 1 px of a translucent white ((169,189,206) at the sides), then the window's own rim. `edges --reach 3`: left a step of 102 levels over 0 pixels, bottom 190 over 0, top 71 over 1, right 132 over 1; the 1 at the top and right is the single pixel of the surface left between the wallpaper and the line, not a soft edge. Pixel by pixel: 0 between on all four sides, in dark too. No 2x picture shows it.",
+    "pictures": [
+     "light-14-peek",
+     "dark-14-peek"
+    ]
+   },
+   "S2": {
+    "status": "pass",
+    "said": "The outer edge goes from (89,129,159) to (0,122,255) in one step on every side. `edges --reach 7` says 'one row half-way' at top and bottom: that row is the 1 px inner line, which is there at the same place on all four sides (x 626 and 1012, y 41 and 552): drawn so, not off the grid.",
+    "pictures": [
+     "light-14-peek"
+    ]
+   },
+   "S6": {
+    "status": "pass",
+    "said": "It passes only by its new white hairline, and only just in light; judge this one yourself. The line is 4 px of blue OUTSIDE ((0,64,221) / (23,116,218)) and 1 px of solid white inside. Box 622,38,395,523. light-contrast, the blue band to what it touches is still round 1's number: left 1.84 in the middle (worst 1.39), top 1.38 to the pixel of surface and 2.00 to the sky behind, right 1.84 and 3.17 (worst 2.30), bottom 1.06 (worst 1.04). That is what `edges` reads, because the white lies beyond the 3 px it looks at: --reach 6: left 2.13, top 1.96, right 3.7, bottom 1.05. The white hairline to what is outside the line: left 4.10 in the middle (worst 3.01 at y 450), top 3.77, right 4.15 to the surface's pixel, and the better tone to the sky beyond it 3.25 in the middle with a worst of 2.75 at y 170, bottom 8.00. White to the band 7.56. INSIDE: white to the blue window (26,105,241) 4.84 (macOS's rim between them 1.80), white to the light title bar only 1.39, where the band has 5.45. dark-contrast: band to outside 3.62 left, 3.95 top, 3.20 right, 4.01 bottom in the middle (worst spots 1.93 at y 207 and 2.50 at y 378, over stars or hills); white to outside 8.9 and more; white to band 4.62; INSIDE white to the window (84,176,250) 2.34, to the title bar 13.21.",
+    "pictures": [
+     "light-contrast-14-peek",
+     "dark-contrast-14-peek"
+    ]
+   }
+  },
+  "menu": {
+   "S1 at 1x": {
+    "status": "pass",
+    "said": "macOS's own menu window. light-15-menu, box 651,31,351,668: left a step of 151 levels over 0 pixels, right 150 over 0, bottom 166 over 0, top 45 levels: too small to ask. large-01-menu-on-glass-1 (one pixel to the point: rows 24 px apart), box 12,12,354,846: 68, 115, 66 and 98 levels, each over 0 pixels. The separators (x 667-985, 319 px) are 1 px high with a step of 25 levels: too small to ask. large-01-menu to large-06-about whole-screen are 1600x900 pictures of a 1920x1080 display (rows 20 px apart) and the -d2 ones 1600x1000 of 2880x1800: scaled, asked nothing about edges. No 2x picture shows the menu: S1 at 2x left out.",
+    "pictures": [
+     "light-15-menu",
+     "large-01-menu-on-glass-1"
+    ]
+   },
+   "S2": {
+    "status": "pass",
+    "said": "No side with a row half-way in either picture; the window server's pictures of it are 351x668 and 354x846, whole points.",
+    "pictures": [
+     "light-15-menu",
+     "large-01-menu-on-glass-1"
+    ]
+   },
+   "S3": {
+    "status": "miss",
+    "said": "THE MENU IS 846 POINTS HIGH (354 wide): large-01-menu-alone-1 is 354x846 and in large-01-menu-on-glass-1 it runs from y 12 to 857. On the 1080-point display it is pictured on it fits: y 31 to 877, visible frame to 1002; the Help submenu ends at about 984. On the 768-point display it still does NOT fit: 738 points lie under the menu bar, macOS shows 668 of them (light-15-menu, dark-15-menu: y 31-698) or 674 (the three looks: y 31-704) and ends it in a scroll arrow. Out of sight until one scrolls: the heading Arbor, Hold This View, Hold Still, Settings…, Keyboard Shortcuts…, Help, Pause Arbor, Quit Arbor: 7 of 29 items. In light-contrast-15-menu, dark-contrast-15-menu and light-opaque-15-menu a word is cut off: of the heading 'Arbor' only the tips of A and b show, two specks at 676-688,679-681 above the arrow. The clipping is macOS's drawing; the length is Arbor's choice. Otherwise all is well: `fits` large-01-menu-alone-1 9 pt left (the tick; titles 24), 17 right, 11 below; light-opaque-15-menu 10, 15 above, 17, 9; light-contrast and dark-contrast 10, 14, 16, 9; paused menu 17, 13, 17, 11. On glass `fits` is fooled by the colours (1 pt all round), so the submenus by hand: titles 16-17 pt from the left, keys 15-19 from the right, 'Check for Updates…' 17 and 18. No … that need not be, no word touching another.",
+    "pictures": [
+     "light-15-menu",
+     "dark-15-menu",
+     "light-contrast-15-menu",
+     "dark-contrast-15-menu",
+     "light-opaque-15-menu",
+     "large-01-menu-on-glass-1",
+     "large-01-menu-alone-1",
+     "large-05-help-on-glass-2"
+    ]
+   },
+   "S4 light on glass": {
+    "status": "miss",
+    "said": "The miss is one line, and it is Arbor's choice: light-22b-paused-menu, 'Arbor is paused: it leaves windows and shortcuts alone' at 609,40,334,16 is still a greyed item: worst 1.81 : 1 (at most 1.89), middle 1.84, ink (154,185,186) on (202,247,248); round 1 had 1.86. It says what is the matter and is the only line that does; nothing may be under 3. The drawing is macOS's, putting these words into a disabled item is Arbor's. 'Arbor needs Accessibility permission': no picture shows that menu. All else: titles one acts on, every row read: light-15-menu over the blue window worst 10.73 (Arrange Windows), large-01 11.65, submenus over orange, green and blue windows 10.38 (Name This Space…) to 12.8, paused menu 11.95. macOS's own, costing nothing: headings 1.80 to 1.85, key equivalents 1.79 to 1.88, greyed items (Step Out, Forward, Redo, Left) 1.81 to 1.82, selected rows white on blue 3.17 to 3.49. Finder's Go menu on the same Mac measures the same: greyed 1.84, keys 1.87, titles 13.19.",
+    "pictures": [
+     "light-22b-paused-menu",
+     "light-15-menu",
+     "large-01-menu-on-glass-1",
+     "large-02-saved-views-on-glass-2",
+     "large-03-dock-on-glass-2",
+     "large-04-adjust-on-glass-2",
+     "large-05-help-on-glass-2",
+     "light-24-finders-go-menu"
+    ]
+   },
+   "S4 dark on glass": {
+    "status": "miss",
+    "said": "dark-22b-paused-menu, 'Arbor is paused: …' at 609,40,334,16: worst 2.00 : 1 (at most 2.09), middle 2.08, ink (73,97,103) on (18,53,60): a greyed item by Arbor's choice, under 3. Titles: dark-15-menu worst 7.20 (Dock Focused Window, over the blue window), paused menu over the cyan window 6.25 (Settings…), 6.49 (Resume). macOS's own, costing nothing: headings 1.88 to 2.20, keys 1.93 to 2.21, greyed items 1.93 to 1.95. No dark picture of the submenus.",
+    "pictures": [
+     "dark-22b-paused-menu",
+     "dark-15-menu"
+    ]
+   },
+   "S4 light": {
+    "status": "miss",
+    "said": "light-opaque-22b-paused-menu, 'Arbor is paused: …' at 609,40,334,16: worst 1.83 : 1 (at most 1.91), ink (173,183,183) on (232,245,245): the same greyed item. Titles: light-opaque-15-menu worst 12.98 (Back), paused menu 12.81 (Help). macOS's own: headings 1.84 to 1.86, keys 1.84 to 1.87, greyed items 1.84 to 1.85.",
+    "pictures": [
+     "light-opaque-22b-paused-menu",
+     "light-opaque-15-menu"
+    ]
+   },
+   "S6": {
+    "status": "miss",
+    "said": "Outline, macOS's: `edges 651,31,351,674 --reach 3` light-contrast 3.0 left and right, 3.54 top, 4.41 bottom (its dark outer pixel (63,64,65) to the tile beside it 6.81); dark-contrast 4.84, 17.28, 4.78, 17.64. Titles 19.83 and more in light, 20.25 and more in dark. The miss is Arbor's choice again: 'Arbor is paused: …' as a greyed item reads 4.60 (at most 4.79) in light-contrast-22b-paused-menu and 5.14 (at most 5.36) in dark-contrast-22b-paused-menu, where 7 is asked. macOS's own, costing nothing: headings 4.66 to 4.80 / 5.14 to 5.22, keys 4.71 to 4.86 / 5.15 to 5.25, greyed items 4.65 to 4.69 / 5.15 to 5.21. THE GLYPHS IN THE MENU BAR with the menu open: round 1's white on light grey (1.56) is not in these pictures, and they cannot say it is cured, because the bar is not light grey in them: in light-contrast-15-menu it is see-through over the blue sky and macOS writes everything in it in white. There Arbor's glyphs are white on macOS's pill (64,144,216): back 3.34, frame 3.35 (`read` 722,6,10,18: 3.28, at most 3.42), dots 3.35; the marked glyph on the lighter square Arbor puts behind it (113,173,227): 2.39 (`read` 745,6,18,18: 2.38, at most 2.48); the greyed forward arrow 1.58. macOS's own magnifier beside them: 3.73 (`read` 3.67). With the menu shut (light-contrast-14-peek): 4.12 to 4.19, marked glyph 2.75, greyed arrows 1.75. dark-contrast-15-menu: 11.7, marked 5.47, greyed 2.87.",
+    "pictures": [
+     "light-contrast-22b-paused-menu",
+     "dark-contrast-22b-paused-menu",
+     "light-contrast-15-menu",
+     "dark-contrast-15-menu"
+    ]
+   },
+   "S7": {
+    "status": "pass",
+    "said": "It costs nothing because the ground is macOS's own menu material and Arbor chooses nothing in it; by the number alone it would miss. light-opaque-15-menu, boxes without words: over the blue window 860,60,50,230 varies by 6.0 levels, colour (224,246,255); 800,490,100,50 by 3.0, (228,245,255); over the grey tile 800,585,120,70 by 6.0, (236,244,249); over the sky 760,34,200,8 by 1.0, (229,245,255): 12 levels between the stretch over the blue window and the one over the tile. light-opaque-22b-paused-menu: over green 700,155,40,22 by 2.0, (226,247,245); over cyan 800,96,90,46 by 3.0, (227,246,250); over the sky 910,96,70,46 by 2.0, (229,245,253): 8 levels between. No picture of a menu of macOS's own with Reduce Transparency to hold beside it.",
+    "pictures": [
+     "light-opaque-15-menu",
+     "light-opaque-22b-paused-menu"
+    ]
+   }
+  },
+  "settings": {
+   "S1 at 1x": {
+    "status": "pass",
+    "said": "The whole-screen pictures are 1024 x 768, as output.txt says the display is (display 0 0 1024 768): not scaled. The window's box 122,58,780,568 in 01-over-three-columns and in 03-brought-back-by-the-shortcut, at reach 5 and 3: left a step of 200 levels over 0 pixels between (over red), top 255 over 0 (over black), right 202 to 204 over 0 (over green), bottom 246 over 0 (over black; by the pixels also 0 over red and over blue). Its own straight lines of 60 px and more cannot be asked, their steps are under 60 levels: group box 4 (light-general 221,48,539,272), selected sidebar row 25, orange banner 41 to 50 (light-file-broken 201,29,579,103), yellow banner 37 to 46, recorder button 13 to 17, Restore Defaults 10 to 14, the lines beside the sidebar, under the title and over the foot 0 to 9. The window-alone pictures are 780 x 568, the frame the window as text gives (122 58 780 568), so not scaled either, but have nothing outside the window to step from. No whole-screen picture in the dark look.",
+    "pictures": [
+     "01-over-three-columns",
+     "03-brought-back-by-the-shortcut"
+    ]
+   },
+   "S2": {
+    "status": "pass",
+    "said": "No side has a row half-way: `edges` on 122,58,780,568 flags none in either picture. Pixel by pixel in 01-over-three-columns: left at y 300: (207,46,49) (176,39,41) | (247,247,247) (246,246,246); right: (246) (247) | (36,136,61) (42,161,72); top at x 400: (0,0,0) | (255,255,255); bottom: (246) (247) | (0,0,0). The one darker pixel outside is the window server's rim, not a half-covered row. The frame in the window as text is whole points: 122 58 780 568.",
+    "pictures": [
+     "01-over-three-columns",
+     "03-brought-back-by-the-shortcut"
+    ]
+   },
+   "S3": {
+    "status": "pass",
+    "said": "RULED A PASS BY THE JUDGE, as in the first round: a list that scrolls is cut where its view ends, as every list of macOS's is; that this one runs to the window's very foot, a point beyond it, is a remark and no clipped word. The reviewer, who marked it a miss by the letter and said that it could be overruled: ONE thing is under the mark: the Shortcuts pane's list still runs to the very foot of the window. As the pane opens, nothing scrolled (light-shortcuts, dark-shortcuts, light-recording): `fits` on 201,29,565,539 and on the whole window gives 1.0 pt from the bottom; by the pixels the keys of the row Forward (⌃⌥], about 628..654 x 562..567) have ink in the window's last row, y 567, so they are cut through at 0 pt, the word Forward ends at y 564, 3 px above the edge, and its command name is not seen at all. The window as text puts the list at 323 86 579 540, ending exactly at the window's foot (626), and its scroll bar at 85..627, 1 pt beyond the window at each end. This pane, Apps, Rules and the search results have no foot bar; the other panes end at a line at y 527 with 40 px of foot under it. It is a list that scrolls, and a scrolling list is cut somewhere: whoever rules may say macOS is the measure here too; by the letter (3 pt above and below, no word cut off) it misses. Everything else keeps its distance, in both looks: sidebar 8 / 7 / 8 / 11 pt (left, top, right, bottom; light-general 0,29,200,539), title bar 8 / 8 / - / 7, groups at least 9 left, 9 top, 10 right, 11 bottom (general, windows, dragging, gestures, calls, menu-bar, apps, scripting, rules), foot bar at least 25 right, 10 top, 9 bottom, orange banner 12 / 14 / 24 to 31 / 11 (light- and dark-file-broken 201,29,579,103; -question 201,29,579,141), yellow banner 12 / 14 / 118 / 13. By eye: no word ends in … that need not (Add an App…, Add a Rule for…, Replace It with the Defaults…, Press the keys… are meant), none touches another: the clash's words end 8 px before its first button, `none` 7 px before Open the File. The longest words there are and the largest text size are not pictured.",
+    "pictures": [
+     "light-shortcuts",
+     "dark-shortcuts",
+     "light-recording",
+     "light-general",
+     "light-general-advanced",
+     "light-apps-advanced",
+     "light-file-broken",
+     "dark-file-broken",
+     "light-values-unusable"
+    ]
+   },
+   "S4 light": {
+    "status": "miss",
+    "said": "Worst per kind, the ruler's reading and what it is at most. MISSES, all words one must read to act: (1) the search field's placeholder Search 1.80 (at most 1.88), light-dragging 19,42,46,14, ink 192 on 255; without the ring 1.82, light-file-broken. Still a plain text field: no magnifying glass, no label, no clear button when something is typed (light-search); the placeholder is its only label, so it needs 4.5. The colour is macOS's, the choice Arbor's. (2) Rules: `Only windows whose title contains… (any title)` 1.81 (at most 1.89), light-rules 234,255,285,15 and the same at y 350 and 445, ink 181 on 242: again the field's only label, and once something is typed (Inbox, abc) nothing says what the field is for. (3) warnings in orange: `⌃⌥⇧F9 runs Show the Desktop now.` 2.03 (at most 2.12), light-clash 230,120,184,14, ink (254,143,45) on 242, with the two buttons Use It Here Instead and Cancel that depend on reading it; `Mind that no app gets ⌘W while Arbor runs.` 2.05 (at most 2.13), light-caution 230,119,215,14. Under 3, which nothing may be. (4) refusals in red: `Must be from 0 to 100 pt, got 500` 3.10 (at most 3.23), light-gap-refused and light-slider-held 230,106,166,13, ink (254,64,67) on 242; `Nothing was changed: settings.json cannot be read` 3.14 (at most 3.27), light-file-broken-refusal 230,210,250,13 and light-file-broken-question 230,248,250,13. SECONDARY, all over 3: notes under rows 3.36 (at most 3.50), light-dragging 229,309,80,13 (`none ever does.`), then 3.41 light-gestures-advanced 229,89,458,13, some 580 grey lines read in all the light pictures, middle about 3.7; units % 3.57 light-dragging 723,268,14,14, s 3.79, pt 3.81; command names 3.58 light-shortcuts 230,102,52,12; rule numbers 3.74 light-rules 229,297,17,17; Arbor dev 3.74 light-general 76,548,48,11; `none` 3.75 light-calls 629,203,32,14; Rules' opening note 3.62. WELL OVER 4.5: window title 8.44 (macOS's); yellow banner's words 10.72 light-values-unusable 212,60,203,13, its title 13.15; selected sidebar row 10.94 light-rules-moved 17,367,59,14, other sidebar labels 13.38; orange banner's words 11.79 light-file-broken-question 212,101,540,15, its title 12.21; list items 12.74 light-apps-advanced 228,122,123,17; row titles 12.79 light-gestures-advanced 228,59,188,17; Advanced 13.07; values in fields 13.10 light-rules 234,160,38,15 (13.13 while the slider is held, 13.91 in the field with the ring); pop-ups 13.14 light-general 645,189,85,16; section headings 13.57 light-shortcuts 230,49,33,14 and 13.72 light-search 230,49,78,16; buttons' words 13.91 (Open the File, light-calls 673,204,72,13), the banner's 14.04, Cancel 14.09, Restore Defaults 14.27, recorders 14.28, Press the keys… 14.46; typed in the search field 14.62. COSTS NOTHING: Restore Defaults greyed 1.81, light-general 650,541,103,14: macOS's own greyed button. There is no pane title: the window stays `Arbor Settings` and only the sidebar's selected row says which pane this is.",
+    "pictures": [
+     "light-dragging",
+     "light-file-broken",
+     "light-rules",
+     "light-clash",
+     "light-caution",
+     "light-gap-refused",
+     "light-slider-held",
+     "light-file-broken-refusal",
+     "light-file-broken-question",
+     "light-gestures-advanced",
+     "light-shortcuts",
+     "light-calls",
+     "light-general",
+     "light-values-unusable",
+     "light-search",
+     "light-recording",
+     "light-apps-advanced",
+     "light-rules-moved",
+     "light-windows"
+    ]
+   },
+   "S4 dark": {
+    "status": "miss",
+    "said": "Worst per kind, the ruler's reading and what it is at most. MISSES, all words one must read to act: (1) the search field's placeholder Search 2.13 (at most 2.22), dark-dragging 19,42,46,14, ink 100 on 51; without the ring 2.16, dark-clash and dark-file-broken: no magnifying glass, its only label. (2) Rules' placeholder `Only windows whose title contains… (any title)` 2.21 (at most 2.30), dark-rules 234,255,285,15 and at y 350 and 445, ink 95 on 44: its field's only label. (3) the banner's two buttons: Replace It with the Defaults… 3.84 (at most 4.00), dark-file-broken 325,103,180,13, and Open the File 3.87 (at most 4.03), 220,103,84,13, ink (235,232,230) on (128,112,98). The button is macOS's and see-through; the brown under it, (84,62,43), is Arbor's: the same button on the window's plain ground reads 4.95 to 5.04. (4) the refusal in red `Must be from 0 to 100 pt, got 500` 3.87 (at most 4.03), dark-gap-refused 230,106,166,13, ink (245,64,67) on 43. PASS: the warning in orange 6.11, dark-clash 230,120,184,14; buttons on the plain ground: recorders 4.95 dark-shortcuts 608,92,66,15, Open the File 4.97 dark-calls 673,204,72,13, Use It Here Instead 5.01 and Cancel 5.02 dark-clash 424,121,105,13 and 545,121,41,13, Restore Defaults 5.04 dark-windows 650,541,103,14; notes 5.21 dark-appearance-advanced-2 228,223,247,14 (some 350 grey lines read in all the dark pictures); command names 5.24 dark-shortcuts 230,310,90,12; units 5.27 dark-dragging 723,190,15,16; rule numbers 5.30; `none` 5.31 dark-calls 629,203,32,14; Arbor dev 5.36; window title 5.87 (macOS's); selected sidebar row 6.02 dark-rules 39,367,36,14, other labels 10.85; banner's words 7.55 dark-file-broken 212,63,547,15, its title 7.57; value in the field with the ring 8.17 dark-gap-refused 694,60,20,15, other values 10.31; row titles 10.03 dark-windows-advanced 229,345,169,14; pop-ups 10.41; Advanced 10.44; list items 10.48; heading Look 10.77. COSTS NOTHING: Restore Defaults greyed 2.03, dark-general 650,541,103,14, macOS's own. NOT PICTURED in the dark look: the word of caution, a refusal under a switch, the banner's question with Replace It and Cancel, the yellow banner, search results, Press the keys….",
+    "pictures": [
+     "dark-dragging",
+     "dark-clash",
+     "dark-rules",
+     "dark-gap-refused",
+     "dark-file-broken",
+     "dark-shortcuts",
+     "dark-calls",
+     "dark-appearance-advanced-2",
+     "dark-general",
+     "dark-windows",
+     "dark-windows-advanced"
+    ]
+   },
+   "S7": {
+    "status": "pass",
+    "said": "The form's ground in the whole-screen pictures, boxes without words, in both pictures alike: over the black Desktop 330,440,170,135: varies by 0.0 levels, (246,246,246); over the blue window 525,440,225,135: 0.0, 246; over the green window 775,440,120,135: 0.0, 246; the foot over black 330,590,170,30 and over blue 525,590,225,30: 0.0, 246; the group's ground over black and blue 500,398,250,26 and over green 775,398,100,26: 0.0, 242. Between boxes 0 levels. The sidebar too: over red 130,460,115,130 and over black 268,460,50,130: 0.0, 246; the script calls it frosted glass, so these Macs had Reduce Transparency on (output.txt does not say, and nothing in it switches glass on): the sidebar's labels on glass are shown by no picture here. Light look only.",
+    "pictures": [
+     "01-over-three-columns",
+     "03-brought-back-by-the-shortcut"
+    ]
+   }
+  }
+ },
+ "other": [
+  "The titles do not stand in one column. (a) In the row whose title is too long macOS squeezes the letters of the whole line, the app's name with it: the ink of 'ArborTestWindows' ends at x 379 instead of 382 and the title's begins at 391 instead of 394 (light-08-go-to, dark-08-go-to, row 6; at 2x 360 instead of 365 and 382 instead of 389, retina-09-go-to-on-glass-1, row 1). (b) After typing, the matched letters in the app's name are set bold and underlined and make it wider, so titles begin at 397 in those rows and at 394 in the selected one, whose match is in its title, and at 394 again in the squeezed one (light-09-go-to-typed; 394 and 397 in light-on-*-3-go-to-typed too): a ragged left edge, 3 px, in one list.",
+  "The magnifier is the faintest thing on the panel in the light look: 2.72 : 1 on black (at most 2.84), 2.85 on red, 2.91 on blue, 2.99 on white, 2.97 flat (light-on-*-2-go-to, light-opaque-on-*-2-go-to, 231,218,21,20). It is there and one finds it; under 3 : 1 it would not carry the field alone, were the placeholder ever made fainter again.",
+  "The line between the field and the list is one fixed grey, 230/230/230 light and 35/35/35 dark, whatever the ground: it is not mixed with what is under it. So it is lighter than the ground over red, blue and black and darker than it over white (light-on-*-2-go-to, y 256), a grey line on pink or pale blue; and it all but goes with Reduce Transparency: 230 on 235 (1.05 : 1, light-opaque-*, y 257), 35 on 36 (1.01 : 1, dark-opaque-*: not to be seen), and 35 on 29 on glass over black (1.07 : 1, dark-on-black-2-go-to). With Increase Contrast it is plain (152 on 233, 94 on 26).",
+  "With real apps most rows say the same word twice: 'Dictionary Dictionary', 'Maps Maps', 'Notes Notes', 'Music Music', 'Calculator Calculator', 'Reminders Reminders' (apps-light-05-go-to, apps-dark-05-go-to).",
+  "With Increase Contrast in the dark look the selected row turns a LIGHTER blue (23/116/218 against 0/89/209 without), and white on it falls from 6.2 to 4.6 : 1 (dark-contrast-08-go-to against dark-08-go-to). macOS's own colour, but the switch that should raise contrast lowers it in the one row one is about to act on.",
+  "Nothing matches is pictured only over the red window (light-10-, dark-10-go-to-nothing-matches) and flat in the light look. Its ink is near the notes' (84/71/72 against 89/74/73 on the same ground), but over black, over white and in dark-opaque nobody has measured it.",
+  "The caret stands against the G of the placeholder with no pixel between (light-on-white-2-go-to, y 227: caret at x 263-264, the G from 265; dark-on-black-2-go-to the same): that is how macOS's own field draws it.",
+  "apps-dark-05-go-to-alone-2 is a second window of Arbor's held by the window server while the palette was open: 312 x 237, all near-black, round corners, nothing in it. I cannot find it in the whole-screen picture apps-dark-05-go-to; the light run has no such file. Not the palette's, but somebody should know what it is.",
+  "The pointer lies on the top left corner of the selected row in every -08 picture (228,257): the script's doing; measured beside it.",
+  "What the plain wallpapers do not show: the line there is one sentence (\"Showing the Desktop\") and the name field is empty. Keys, the dot, a hint, a problem's words, typed words and the ↩ hint were never photographed over red, blue, white or black, nor in the dark look with Reduce Transparency. In dark-on-white the ground is (87,87,87): whatever has the fainter ink (the name field's ↩ hint, the line's dot) meets it there.",
+  "light-13b-name-long (and its four fellows): half an s hangs 6 pt to the left of the column on which everything else in the panel begins (cut at x 334, column at x 340); the field has taken 75 letters while the note under it says 40 is the most.",
+  "light-13b-name-long: \"a name can have at most 40 characters\" begins with a small letter; the heading above it and every sentence of the line begin with a capital.",
+  "light-on-red-5-name, light-12-name-empty: under the empty field stands one bare word, \"everything\" or \"ArborTestWindows\", with nothing to say what it is; only once a letter is typed does it become \"↩ names everything\" (light-13-name-typed, retina-11-name-on-glass-1).",
+  "light-19-line-problem, dark-19-line-problem, light-20-line-sentence, dark-20-line-sentence: the line lies over a tile's name and cuts it (\"quokkadoo Notes on oa\", then \"quok\"), and in the -20- pictures over half of the next tile's picture at 729,611.",
+  "On a ground like itself the panels have little edge outside Increase Contrast, which no cell asks: light-on-white-6-line and light-on-white-5-name ground 1.03 to 1.06 : 1 and rim 2.0 to 2.1 : 1 to the white; dark-on-black-6-line and dark-on-black-5-name ground 1.21 and line 2.5 to 2.6 to the black. The shadow helps on white; on black there is only the line.",
+  "The caret is macOS's, in the accent colour, caught at different moments of its blink: (22,113,213) on (87,87,87) = 1.50 : 1 in dark-on-white-5-name at 339,217; (43,80,146) on (87,39,37) = 1.55 in dark-on-red-5-name; (87,143,210) on (175,175,175) = 1.53 in light-on-black-5-name. It costs nothing by the rule, but on this glass it is hard to find.",
+  "The panels stand a pixel or two apart from run to run: the name field's top is y 179 in 1-shots-gallery, 180 on glass over the plain wallpapers, 181 with Reduce Transparency or Increase Contrast; the line's is 611 in 1-shots-gallery and 617 in 3-shots-gallery-looks. Always whole pixels.",
+  "light-21-line-hint, not my panel: an alert of Arbor's lies over the window, \"No update information … Could not connect to the server..\", with two full stops.",
+  "minimap, plates against the map's ground, DARK look on glass (edges --reach 3 on the plate out of view 407,505,51,140, left side; fill, then its one-pixel line): dark-on-red-4-minimap 2.32 and 4.25 (127,102,102 and 165,149,148 on 87,39,37); dark-on-blue 2.21 and 3.90; dark-on-white 1.85 and 2.99; dark-on-black 2.71 and 5.42; dark-opaque, all four wallpapers, 2.67 and 5.21; dark-11-minimap over the red window 2.40 and 4.43. Round 1's 1.1 : 1 over red is cured for the plates.",
+  "minimap, plates against the map's ground, LIGHT look on glass: here they still merge. Fill, then line: light-on-black-4-minimap 1.02 and 1.91 (175,177,178 and 122,124,124 on 175,175,175: the plate IS the ground's grey, only a hairline tells it); light-on-red 1.12 and 2.21; light-on-blue 1.19 and 2.37; light-on-white 1.30 and 2.66; light-opaque, all four, 1.26 and 2.55; light-11-minimap over the red window 1.10 and 2.17. Nowhere in the light look does a plate out of view reach 3 : 1 by fill or by line.",
+  "minimap, the rectangle inside the blue ring where no window fills it (458,502,109,146, edges --reach 5, top): its tint against the map's ground is 1.04 (dark-on-white), 1.06 (dark-on-red), 1.12 (dark-on-blue), 1.13 (dark-on-black); 1.12 to 1.17 in the light look. In the dark look it reads as a hole darker than the plates beside it. It is held by the ring alone, and the ring against the ground is 1.80 in dark-on-white-4-minimap, 2.07 in light-on-black, 2.63 in dark-on-blue, 2.75 in light-on-red, 3.04 in dark-on-red, 3.16 in light-on-blue, 4.05 in light-on-white, 4.33 in dark-on-black; against the plate beside it 1.03 in dark-on-white (0,122,255 beside 127,129,130: told by hue only).",
+  "minimap, plates in view have no line of their own and stand on the ring's tint: retina-10-minimap-on-glass-1 154,171,188 on 162,209,206: 1.26 to 1.41 (edges on 44,44,144,132 and 340,180,144,130); light-11-minimap the plate in view against the tint beside it 1.18, against the map's ground 1.35; apps-light-06-minimap the pale plates 1.46 (156,168,184 on 208,198,215, from the colours).",
+  "minimap, apps-dark-06-minimap: the navy plate at 531,553,21,46 (29,44,60) on the tinted ground (42,55,61) is 1.16 : 1 and has no line: a window one can hardly find; crimson 1.87, slate 2.68, blue 2.75, pale 5.18 (from the colours: the sides are under 60 px, so the ruler is not asked). In apps-light-06-minimap: navy 9.47, crimson 4.34, slate 3.10, blue 3.02, pale 1.46.",
+  "minimap, apps-light-06-minimap and apps-dark-06-minimap: no app's icon is to be seen on any plate, enlarged three times; the plates carry flat colours only.",
+  "minimap: the ring is drawn 3 px outside the rectangle it marks while plates stand 2 px apart, so it covers the neighbours' lines: in light-11-minimap the two plates below (406,595 and 454,595) have no top line, in the plain pictures the side plates have no inner line (x 457 to 458, 566 to 567).",
+  "shortcuts and minimap, no cell asks it: without Increase Contrast a panel on a wallpaper of its own lightness is told by a hairline and the shadow only: light-on-white-1-shortcuts ground 1.01 to 1.27 : 1, the window server's rim 1.98 to 2.13; dark-on-black-1-shortcuts ground 1.21, line 2.56. The same for the minimap. The border is macOS's.",
+  "shortcuts: the left column ends at y 499, the right one at y 616, so the lower left quarter of the sheet (145,505,330,125) is empty in every picture.",
+  "shortcuts: in light-07, dark-07, light-contrast-07, dark-contrast-07 and light-opaque-07 the pointer lies on the key of 'Space to the Right' (about 228,262). The script's doing; that line was left out there and read in the plain pictures.",
+  "The white line breaks in every bend with Increase Contrast: on the ring, the drop preview and the peek outline the white and the blue are two strokes whose corners do not run side by side, so where a straight side turns into the corner the white fades out for a few pixels and comes back (light-contrast-02-two-columns at 0,30,60,50; light-contrast-03-drop-preview at 0,365,70,60; dark-contrast-03-drop-preview at 280,590,70,120; light-contrast-14-peek at 960,30,64,60). Plain to see at 8x, a slight nick at 1x.",
+  "The three lines do not agree which tone is outside: the ring has white outside and blue inside, the drop preview and the peek outline blue outside and white inside. Only the ring's order gives the edge that meets the surface its contrast (3.8 and more against 1.04 to 1.84).",
+  "With Increase Contrast the seam handle's outline falls on two half-strength rows, so the handle looks soft and its body shrinks from 4 rows to 2; hovered under the focused window its upper outline row (y 458) touches the ring's white line (y 457) with none of the surface between (light-contrast-06-gap-hover at 195,448,70,22).",
+  "As Arbor ships, without Increase Contrast, no cell asks it, but: in light the ring differs from the surface it lies on by hue only, 1.07 left, 1.40 top, 1.58 right, 3.21 bottom, and 1.13 to the red window (light-02-two-columns); the peek outline on the blue window 1.12 (light-14-peek); the handle while dragged, (0,86,180), 1.09 to 1.19 to the surface in light and 1.59 to 1.66 in dark, fainter than while hovered (2.52 to 2.74, 3.55 to 3.67): it says least just when it is held (light-06b-gap-dragged, dark-06b-gap-dragged).",
+  "Over the seam the pointer is still the plain arrow, hovering and dragging, in all eight pictures of it (light-06-gap-hover at 159,458): nothing but the small handle 50 px away says that the gap can be dragged.",
+  "While paused, Arbor's glyph in the menu bar, the only way to Resume with the pointer, is dimmed to 1.80 (light-22-paused), 2.22 (dark-22-paused), 2.19 (light-contrast-22-paused), 5.24 (dark-contrast-22-paused); with the menu open 1.85, 2.13, 1.91, 4.26 (the 22b pictures, box 768,4,13,12, beside the pointer).",
+  "light-22b-paused-menu, light-opaque-22b-paused-menu and light-24-finders-go-menu still have the alert 'No update information' on screen (the script's 'Later puts it away' failed); its text ends 'Could not connect to the server..' with two full stops. Not my panel.",
+  "The focus ring is away while the seam is dragged and while peek's keys are down (light-06b-gap-dragged, light-14-peek), though window 1 keeps the keyboard: seen, not judged.",
+  "ROUND 1, item by item. (1) Search field: STILL SO. Plain field, no magnifying glass, placeholder its only label: 1.80 light (light-dragging 19,42,46,14), 2.13 dark (dark-dragging). (2) Warnings in orange: STILL SO. 2.03 light with the two buttons beside it (light-clash 230,120,184,14), 2.05 the caution (light-caution); dark 6.11. (3) Refusals in red: STILL SO. 3.10 light (light-gap-refused 230,106,166,13), 3.14 (light-file-broken-refusal), 3.87 dark (dark-gap-refused). (4) The dark banner's two buttons: STILL SO. 3.84 and 3.87, at most 4.00 and 4.03 (dark-file-broken 325,103,180,13 and 220,103,84,13). (5) Pause for: GONE. Its ink starts at x 232, as Don't arrange and Shortcuts off in do, its note at 231, its Add an App… at 239 as the other two (light- and dark-apps-advanced). (6) Rows behind Advanced: NEARLY GONE. From a note's last line to the next title 23 to 25 px of ink behind Advanced, 25 to 27 above; a row with a two-line note is 63 px from line to line behind Advanced (light-general-advanced y 372 to 435; light-appearance-advanced-2 132, 195, 258, 321, 384) and 65 above (112, 177, 242): 2 px tighter; the window as text says 19 against 21 pt between frames. (7) The Shortcuts list at the window's foot: STILL SO, see S3.",
+  "Most of the Shortcuts pane is in no picture. light-shortcuts-2 to -9 and dark-shortcuts-2 to -9 are the first page again (they differ from it only in the caret and the scroll bar's knob being pointed at): eight clicks in the scroll bar 8 px above its end (894,619 on screen, 7 px from the window's foot and 8 from its side, where the corner is round) paged nothing, while the same click at 894,578 paged every pane that has a foot bar. By the window as text the list is some 3,100 pt long, of which 540 are seen; the headings Your own and A shortcut for another command, the field for a command and its placeholder, Record Shortcut and Restore All Shortcuts… were seen by nobody.",
+  "General with Advanced open is 1 pt too long for its view (the group ends at 566 + 20 of margin = 586, the view at 585): a scroll bar stands there whose knob fills the track (494 of 501 pt, light-general-advanced 769,31,8,492). light- and dark-general-advanced-2 to -9 are the same picture for that reason.",
+  "An open Advanced group has 20 to 23 pt under its last row (light-general-advanced 221,330,539,178; light-apps-advanced 221,278,539,130); every other group has 11 to 14.",
+  "Three left edges in one group: titles and notes at x 231 to 232, Add an App… and Add a Rule for… at 239, the pop-ups in Rules (Dock at the edge, Float) at 243, the word Advanced at 243 (light-apps-advanced, light-rules). The banner's words start at 213, the groups at 221, the rows' words at 231 (light-file-broken).",
+  "The two banners set the same kind of words in two sizes: the orange one's reason is as large as a row title (ink 13 px high with descenders, light-file-broken 212,63,540,15), the yellow one's lines are as small as a note (10 px, light-values-unusable 212,60,203,13).",
+  "Text fields have the group's own ground (242 on 242, 43 on 43) and an outline of 1.26 : 1 light, 1.39 : 1 dark (light-rules, dark-rules 231,251,519,21): an empty Rules field is a faint line round faint words. The control is macOS's.",
+  "light-slider-held: the field follows the slider (86) while `Must be from 0 to 100 pt, got 500` still stands in red under it; output.txt says it goes with the next change, which is the letting go.",
+  "light-recording, light-clash, light-caution: while a recorder waits for keys (Press the keys…) or has just taken them, the search field keeps the blue ring and the caret, as if typing went there. The recorder itself changes its words only.",
+  "light-gestures, dark-gestures: Trackpad and mouse gestures is off and the three switches under it stand on in full blue; only the note says they count for nothing. The field beside Frame a rectangle with says ctrl+opt in letters, every other place in the window says ⌃⌥.",
+  "The foot bar with Restore Defaults is there in General, Windows, Dragging, Gestures, Calls, Appearance, Menu Bar and Scripting and missing in Apps, Shortcuts, Rules and the search results, so the form's foot jumps by 41 px from pane to pane while Arbor dev stays where it is.",
+  "Appearance is 23 px too long for its view with Advanced closed: as it opens the Advanced group is cut by the foot (light-appearance y 487 to 527), and one click brings the rest (light-appearance-2).",
+  "02-behind-a-clicked-window does not show what its name says: it is the same picture as 03, and like fail-shots-F12-1 and -2 it has the settings window in front. The script's click at 674,55 fell on the window's upper edge (the pointer is the up-and-down resize arrow there), so two of its checks failed (77 passed, 2 failed). The script's doing, not the window's.",
+  "The -advanced.txt files of panes that scroll describe the LAST page (light-windows-advanced-3, light-gestures-advanced-2, light-appearance-advanced-2), not the picture they are named after."
+ ]
+}
