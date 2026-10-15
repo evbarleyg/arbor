@@ -59,7 +59,7 @@ FRAMED = {RED: (12, 43, 1000, 650), BLUE: (12, 717, 1000, 650), GREEN: (1036, 43
 
 def shoot(folder, kind="camera", start=None, end=None, curve=(0.2, 0, 0, 1), seconds=0.46, latency=34, cards=False, hop=0,
           pause=None, blink=False, flash=False, overshoot=0.0, stutter=None, bars=False, lag=None, instant=False,
-          afterthought=False, fps=60, fade=0, offset=0, left=None, words=True, halfway=False, one_by_one=False):
+          afterthought=False, fps=60, fade=0, offset=0, left=None, words=True, halfway=False, one_by_one=False, hole=False, empty=False):
     """Draws one film. Every argument but the first few is one way of getting it wrong."""
     start, end = start or GRID, end or FRAMED
     x, y = bezier(curve)
@@ -91,6 +91,13 @@ def shoot(folder, kind="camera", start=None, end=None, curve=(0.2, 0, 0, 1), sec
             # Size and place are asked for one after the other, and the display shows what lies between: the new size at the old place.
             take(begins, {colour: (start[colour][0], start[colour][1], rect[2], rect[3]) for colour, rect in end.items()})
             begins += tick
+        if hole:
+            # All are at their new places but one, which has left its old place and is not there yet.
+            take(begins, {colour: rect for place, (colour, rect) in enumerate(end.items()) if place})
+            begins += tick
+        if empty:
+            take(begins, {})
+            begins += 4 * tick
         if one_by_one:
             # Each window a frame after the one before, nine frames apart in all.
             for count in range(1, len(end)):

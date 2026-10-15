@@ -272,6 +272,11 @@ def pieces(m, until=1500):
         # What is still there at the end has arrived; what has gone before that has no new place in view.
         new = clean[-1][2] if track.indices[-1] >= len(film) - 1 or track.times[-1] > cause + until else None
         before, moved = old, False
+        for (_, index, _, _), (_, following, _, _) in zip(seen, seen[1:]):
+            # Not in some frames between two in which it is: it went and came back.
+            if following > index + 1 and film.times[following] >= cause:
+                changed.update((index + 1, following))
+                moved = True
         for _, index, edges, ragged in after:
             if not here:
                 # It comes into view in this frame, whatever shows of it.
@@ -293,6 +298,63 @@ def pieces(m, until=1500):
         followed += moved
     frames = sorted(changed)
     return {"frames": frames, "times": [int(film.times[index]) - cause for index in frames], "between": sorted(between), "followed": followed}
+
+
+def in_one_piece(m, until=1500):
+    """What is worse than a window a frame late, frame by frame between the first change of an act and its last: {"holes": frames in which the ground shows where there is a window both before
+    the act and after it, "empty": frames in which there is nothing at all on a desk that had windows and has them again, "over": frames in which a window on its way covers what neither
+    its old frame nor its new one covers}. None where the wallpaper is not plain."""
+    film, scan, cause = m["film"], m["scan"], m["cause"]
+    said = pieces(m, until)
+    if scan.background is None or not said["frames"]:
+        return None
+    x, y, width, height = (int(value * film.scale) for value in film.visible)
+    first, last = said["frames"][0], said["frames"][-1]
+    room, taken, found = width * height, {}, {"holes": [], "empty": [], "over": []}
+    for index, _, picture, _ in film.frames():
+        if first - 1 <= index <= last:
+            # Arbor darkens the ground behind docked windows: that is ground too.
+            taken[index] = ~near(picture[y:y + height, x:x + width], scan.background, 64)
+        if index >= last:
+            break
+    before, after = taken[first - 1], taken[last]
+    for index in range(first, last):
+        if (before & after & ~taken[index]).sum() > room / 100:
+            found["holes"].append(index)
+        if taken[index].sum() < room / 100 and min(before.sum(), after.sum()) > room / 20:
+            found["empty"].append(index)
+    for track in scan.tracks:
+        if track.detail:
+            continue
+        clean = [(int(time), index, rect) for time, index, rect in zip(track.times, track.indices, track.rects) if not rect.thin and not rect.ragged and time <= cause + until]
+        old = next((rect for time, _, rect in reversed(clean) if time < cause), None)
+        new = clean[-1][2] if clean and clean[-1][0] >= cause else None
+        if old is None or new is None:
+            continue
+        for time, index, rect in clean:
+            if time < cause or index >= last:
+                continue
+            # The part of it that lies in neither: its area, less what it shares with the old frame and with the new, plus what those two share within it.
+            def shared(*others):
+                left, top = max([rect.left] + [other.left for other in others]), max([rect.top] + [other.top for other in others])
+                right, bottom = min([rect.right] + [other.right for other in others]), min([rect.bottom] + [other.bottom for other in others])
+                return max(right - left, 0) * max(bottom - top, 0)
+            if rect.area - shared(old) - shared(new) + shared(old, new) > 400 * film.scale**2:
+                found["over"].append(index)
+    found["over"] = sorted(set(found["over"]))
+    return found
+
+
+def whole(m, allow):
+    if not m["episodes"]:
+        return Verdict(UNSEEN, "nothing changed")
+    found = in_one_piece(m)
+    if found is None:
+        return Verdict(UNSEEN, "no window could be followed, or the wallpaper is not plain")
+    said = [f"{what} in {len(frames)} frames" for what, frames in (("the desk is empty", found["empty"]), ("the ground shows through a hole", found["holes"]),
+                                                                  ("a window covers what neither its old nor its new frame covers", found["over"])) if frames]
+    return Verdict(MISS if said else PASS, "; ".join(said) or "no hole, no empty desk, no window over what neither of its frames covers",
+                   sorted(set(found["empty"] + found["holes"] + found["over"]))[:8])
 
 
 def at_once(m, allow):
@@ -564,7 +626,8 @@ CHECKS = [
     ("R1", "without motion: the end at once, nothing in between", 1, ("instant",), at_once),
     ("R2", "without motion: the same end", 2, ("instant",), not_yet),
     ("R3", "without motion: no slide anywhere", 2, ("instant",), few_places),
-    ("R4", "without motion: every window is where it was or where it belongs", 1, ("instant",), old_or_new),
+    ("R4", "without motion: every window is where it was or where it belongs", 2, ("instant",), old_or_new),
+    ("R5", "without motion: in one piece: no hole, no empty desk, nothing covered that neither frame covers", 1, ("instant",), whole),
     ("D1", "Arbor never pulls what is being dragged", 1, ("drag",), not_pulled),
     ("D2", "the preview tells the truth", 2, ("drag",), preview_true),
     ("D3", "the preview comes and goes softly, once", 2, ("drag",), not_yet),
@@ -953,8 +1016,8 @@ def acts(folder, out=sys.stdout):
     with open(os.path.join(folder, "samples.log"), encoding="utf-8") as log:
         samples = [words for words in map(str.split, log) if len(words) > 8 and words[1] == "W"]
     films = os.path.join(folder, "films")
-    print("| Scene | Answers | On the display: pieces | first to last | frames with a window neither old nor new | By the window server: first to last move | steps of each window that moved | frames in between |\n"
-          "|---|---|---|---|---|---|---|---|", file=out)
+    print("| Scene | Answers | On the display: pieces | first to last | frames with a window neither old nor new | holes, empty desk, over others | By the window server: first to last move | steps of each window that moved | frames in between |\n"
+          "|---|---|---|---|---|---|---|---|---|", file=out)
     for name in sorted(os.listdir(films)):
         if not os.path.isfile(os.path.join(films, name, "film.log")):
             continue
@@ -962,11 +1025,12 @@ def acts(folder, out=sys.stdout):
         if film.kind not in ("instant", "bare") or name.startswith("metronome-"):
             continue
         m = measure(film)
-        cause, seen = m["cause"], pieces(m)
+        cause, seen, worse = m["cause"], pieces(m), in_one_piece(m) or {}
         said = act_of(samples, cause - 20, min(cause + 2000, film.ends))
         steps = ", ".join(f"{window}: {len(moved) - 1}" for window, moved in sorted(said["moves"].items()))
         print(f"| `{name}` | {f'{seen_at(seen)} ms' if seen['frames'] and m['cause_known'] == 'exact' else '?'} | {len(seen['frames']) or 'none followed'} | "
               + (f"{seen['times'][-1] - seen['times'][0]} ms" if seen["frames"] else "") + f" | {len(seen['between'])} {seen['between'][:8] if seen['between'] else ''} | "
+              + (", ".join(f"{what} {frames}" for what, frames in worse.items() if frames) or "none") + " | "
               + (f"{said['last'] - said['first']} ms" if said["moves"] else "nothing moved") + f" | {steps or 'none'} | {said['between']} |", file=out)
     return 0
 
@@ -1006,9 +1070,12 @@ def self_test():
         "flash-of-everything": ({"flash": (0, 31, 1024, 674)}, ["M9"], ["M7", "M8"]),
         "bars": ({"bars": True}, ["M11"], []),
         "at-once": ({"instant": True, "kind": "instant"}, [], []),
-        "not-at-once": ({"kind": "instant"}, ["R1", "R3", "R4"], []),
-        "new-size-at-the-old-place": ({"instant": True, "kind": "instant", "halfway": True}, ["R4"], ["R3"]),
-        "one-by-one": ({"instant": True, "kind": "instant", "one_by_one": True}, ["R1"], ["R3", "R4"]),
+        "not-at-once": ({"kind": "instant"}, ["R1", "R3", "R4"], ["R5"]),
+        "new-size-at-the-old-place": ({"instant": True, "kind": "instant", "halfway": True, "start": {studio.RED: (500, 300, 200, 150), studio.BLUE: studio.GRID[studio.BLUE]},
+                                       "end": {studio.RED: (518, 43, 494, 319), studio.BLUE: studio.GRID[studio.BLUE]}}, ["R4", "R5"], ["R3", "S8"]),
+        "one-by-one": ({"instant": True, "kind": "instant", "one_by_one": True}, ["R1"], ["R3", "R4", "R5"]),
+        "a-hole": ({"instant": True, "kind": "instant", "hole": True, "start": studio.FRAMED, "end": studio.GRID}, ["R5"], []),
+        "an-empty-desk": ({"instant": True, "kind": "instant", "empty": True}, ["R5"], ["R1", "M8"]),
         "uneven": ({"end": {**studio.FRAMED, studio.RED: (12, 43, 996, 650)}}, ["S8"], []),
     }
     # The same for what is drawn by another hand: name -> (who draws it, how it is wrong, must miss, may miss)
