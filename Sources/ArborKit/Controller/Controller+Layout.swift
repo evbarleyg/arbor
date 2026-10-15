@@ -63,6 +63,8 @@ extension Controller {
     // However this ends: a window that was promised a place gets it.
     defer { putBackWhatWaits() }
     guard isRunning, holdFences(displayID) else { return }
+    lettingBeEndsIfItNoLongerApplies()
+    aLayoutSomebodyAskedForEndsLettingBe(on: displayID)
     // Not when a window is only put back where it was: that moves nothing else.
     if reason != .enforce { dropOverdueSlots(on: displayID) }
     refreshVisibleFrame(of: displayID)
@@ -108,11 +110,14 @@ extension Controller {
     noteWhereTheGapsStand(in: layout, on: displayID, for: reason)
     placeFloatingWindows(on: displayID, layout: layout, reason: reason)
     layouts[displayID] = layout
+    lettingBeEndsWithAPlace(in: layout)
     settleTransition(staged, on: displayID, layout: layout)
     stats.time("controller", "update overlays") {
       overlays.update(display: displayID, scene: overlayScene(for: layout, on: displayID))
     }
     arrangementChangedDuringDrag(on: displayID, for: reason)
+    // A command and a move of the view have their own say about the keyboard first.
+    if !following.decides, reason != .camera { theKeyboardLeavesTheTile() }
     notify(.layout(displayID))
   }
 
@@ -148,7 +153,7 @@ extension Controller {
     }
     if let display = display(displayID) {
       for window in layout.hiddenWindows.sorted()
-      where window != drag?.window && (!parked.contains(window) || hasLeftItsCorner(window)) {
+      where window != drag?.window && !isLetBe(window) && (!parked.contains(window) || hasLeftItsCorner(window)) {
         park(window, on: display)
       }
     }
@@ -658,11 +663,13 @@ extension Controller {
     // This is the last move now, and only a move that followed the focus may be taken back (Controller+Focus.swift).
     keyboardHandOver.reveal = nil
     unframedIntoATile = nil
+    lettingBeIsOver(on: displayID)
     workspaces[displayID]!.moveCamera(to: node, record: record)
     if layingOut { relayout(displayID, reason: .camera) }
     // A command that leaves the view where it is changes nothing a person can see, the focus included.
     let moved = workspaces[displayID]!.camera != before
     if refocus { ensureFocusIsVisible(on: displayID, alsoFromAPinnedWindow: moved, alsoFromNothing: moved) }
+    if refocus, !following.decides { theKeyboardLeavesTheTile() }
     notify(.camera(displayID))
     scheduleSave()
   }
@@ -700,6 +707,9 @@ extension Controller {
       if let frame = windows[window]?.frame, windows[window]?.isPresent == true {
         candidates[window] = frame
       }
+    }
+    if let window = windowLetBe, workspace.isDocked(window), let snapshot = windows[window], snapshot.isPresent {
+      candidates[window] = snapshot.frame
     }
     // In a fixed order: windows overlap and frames tie, and the choice must not depend on a dictionary's.
     let ordered = candidates.sorted {

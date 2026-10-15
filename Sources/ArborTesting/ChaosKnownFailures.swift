@@ -556,31 +556,6 @@ extension ChaosRunner {
         settle
         """),
     ChaosKnownFailure(
-      rule: "launch-keyboard-in-a-tile", owner: "rule 2, a follow-up (decided, Q16): that window is let be where it stands, docked, its place kept, until the next layout somebody causes",
-      severity: 3,
-      story: "Arbor is started with the keyboard in a docked window that is a tile when everything shows, whatever room F61 finds for it. A "
-        + "launch shows everything, and no key may go to a window out of view: so the view goes to that window, and every other one leaves it.",
-      script: """
-        open 101 Xcode pid 1004 at 393 391 518 528 min 518 528 max 628 539 title Untitled
-        launch
-        settings {"minimumUsableWidth":800,"minimumUsableHeight":0}
-        open 106 Music pid 1006 at 636 440 1687 1775 max 561 347
-        url arbor://toggle-float/106
-        flush
-        crash
-        launch
-        """,
-      """
-        launch
-        open 101 Mail pid 1002 at 309 186 555 421 min 555 421 max 696 1933 title Übersicht
-        open 103 Safari pid 1000 at -154 293 714 663 min 714 663 no-bundle
-        tab-open 109 in 103
-        via shortcut dock 109 bottom
-        quit
-        settings {"gap":1000000000}
-        launch
-        """),
-    ChaosKnownFailure(
       rule: "flashed-into-view", owner: "rule 3: one thing that happens is one layout", severity: 2,
       story: "A window out of view shows and goes again for one thing that happened. A window closes, the display is laid out, the keyboard goes elsewhere and the view "
         + "follows. Also: a window kept to the LEFT of a display cannot be asked for a size there (what shows of it depends on its width), so it is offered its slot in view, and refuses.",

@@ -32,6 +32,7 @@ extension Controller: WindowSystemEvents {
     let app = windows[id]?.pid
     let appName = windows[id]?.appName
     windows[id] = nil
+    lettingBeEndsIfItNoLongerApplies()
     parked.remove(id)
     settled[id] = nil
     misfits[id] = nil
@@ -82,6 +83,7 @@ extension Controller: WindowSystemEvents {
     let previous = windows[window.id]
     // Every window Arbor moves reports back what Arbor knows already. Storing that would count as a change of `windows`.
     if previous != window { windows[window.id] = window }
+    lettingBeNotes(window, movedByItsUser: userInitiated && previous?.frame != window.frame)
     if owedTheWayBack[window.id] != nil { payTheWayBack(to: window.id) }
     noteWhetherItCameBack(window, was: previous)
     putBackIfItLeftFullScreen(window, was: previous)
@@ -224,6 +226,8 @@ extension Controller: WindowSystemEvents {
     guard isRunning, drag == nil, isManaged(id), let display = workspaceID(containing: id) else {
       return
     }
+    // It is in view, where it stood when Arbor started.
+    guard !isLetBe(id) else { return }
     guard !holdTurnsAway(id) else { return }
     holdLetsIn(id)
     let workspace = workspaces[display]!

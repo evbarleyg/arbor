@@ -171,6 +171,14 @@ private let b = WindowID(102)
     let again = oneDocked + ["quit"]
     #expect(!nets(after: again, then: "launch").contains("start-took-out-of-view"))
     #expect(nets(after: again, then: "launch") { _ = $0.setFrame(self.rect(1439, 868, 500, 400), of: b) }.contains("start-took-out-of-view"))
+    // What Show Everything itself has out of view may go, but for the window that has the keyboard.
+    let aTile = [
+      "launch", "settings {\"makeRoom\":false}", "open 101 Notes pid 1001 at 100 100 500 400", "open 102 Mail pid 1002 at 800 300 500 400",
+      "dock 101 left", "dock 102 right", "resize 101 right -300", "settle", "quit",
+    ]
+    #expect(!nets(after: aTile + ["focus 102"], then: "launch").contains("start-took-out-of-view"))
+    #expect(!nets(after: aTile + ["focus 101"], then: "launch").contains("start-took-out-of-view"))
+    #expect(nets(after: aTile + ["focus 101"], then: "launch") { _ = $0.setFrame(self.rect(1439, 868, 500, 400), of: a) }.contains("start-took-out-of-view"))
   }
 
   @Test func aQuitLeavesNothingWhereNobodyCanGetHoldOfIt() {

@@ -166,7 +166,7 @@ extension Controller {
         frames[window] = expectedFrame(of: current, in: slot)
       }
     }
-    for window in layout.hiddenWindows { frames[window] = nil }
+    for window in layout.hiddenWindows where !isLetBe(window) { frames[window] = nil }
     for (window, move) in floatingMoves(on: display.id, layout: layout, reason: reason) {
       switch move {
       case .place(let frame, _):

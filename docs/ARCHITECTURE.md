@@ -1029,9 +1029,19 @@ too. The arrangement, saved views, names and what Back led to stay. A window tha
 corner. It has one net: `state.json` can be half a second behind, so on a display where the first layout would send away
 a window that is in view now, everything shows instead (`showEverythingWhereTheViewWouldTakeAWindowOutOfView`).
 What is out of view all the same: what Show Everything itself has out of view, a docked window too large for its place (a tile) and the tabs
-behind the one in front. And if the keyboard is in such a window at a launch, the view goes to it, as it does whenever the keyboard goes to a
-tile, and the rest leaves the view: a known fault (the chaos lab's `launch-keyboard-in-a-tile`). Decided: that window will be let be where it stands.
-The end of a pause and the return of the permission are no such starts: they run `start()` from `resumeState`, and bring back
+behind the one in front. **If the keyboard is in such a tile's window when Arbor starts, and a person sees it, that window is let be where it stands**
+(`Controller+LetBe.swift`): sent to the corner it would be typed into unseen, and a view that went to it would take all the others away. It stays docked, its tile
+keeps its place, the keyboard stays in it, and nobody else moves for it. It gets no frame, unless nobody knew that it would not fit: apps say how
+small they go only when asked, so it is offered its place like any docked window, and put back where it stood when it refuses. `apply`,
+`movesInSight` and the stage pass it over; for `isOutOfView`, `bringIntoView`, `frameInView`, the choice of who gets the keyboard and the line round the focused window it is in view.
+It ends when a person asks: any `moveCamera`, and a layout within a command, with a gap or an edge in the hand, or for a drop. Then it is a window like any
+other, and if it goes into its tile with the keyboard in it, a window in view gets the keyboard, once, after the command has had its own say (`theKeyboardLeavesTheTile`).
+Layouts nobody asked for leave it alone: a timer, a putting-back, another window coming or going, a report of the displays, a switch of Spaces. It ends with nothing
+moved when it closes, is minimized, hidden, undocked (it floats where it stands) or excluded, and with one move when a layout has room for it after
+all. Where its person puts it meanwhile is its own frame from then on. Every start goes by this rule, each for the view it brings up: otherwise a pause
+and a resume would bring the old fault back. A window that a crash left in the corner is seen by nobody and is not let be: at a person's launch it
+stays behind its tile and a window in view gets the keyboard (`keyboardAfterAStart`).
+The end of a pause and the return of the permission are no launches: they run `start()` from `resumeState`, and bring back
 the view they interrupted (the permission's return then shows everything if windows were stranded, F63).
 
 ## Ending, and starting again

@@ -415,8 +415,7 @@ extension Controller {
   /// Whether Arbor arranges `id` and it is not showing: outside the view, inside a tile, or a tab behind another.
   func isOutOfView(_ id: WindowID) -> Bool {
     guard isManaged(id), let display = workspaceID(containing: id) else { return false }
-    if parked.contains(id) { return true }
-    return workspaces[display]?.isDocked(id) == true && layouts[display]?.windowFrames[id] == nil
+    return isOutOfView(id, on: display)
   }
 
   /// Called for every focus report, as it arrives.

@@ -157,7 +157,7 @@ extension Controller {
     else { return }
     let isDocked = workspace.isDocked(id)
     // Docked but without a frame: outside the view, inside a tile, or a tab behind another.
-    if isDocked, layouts[displayID]?.windowFrames[id] == nil { return }
+    if isDocked, layouts[displayID]?.windowFrames[id] == nil, !isLetBe(id) { return }
     guard
       let outerFrame = FocusRingGeometry.outerFrame(
         around: snapshot.frame, width: options.width, room: isDocked ? CGFloat(self.options(for: displayID).gap) : options.width,

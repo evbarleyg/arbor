@@ -329,19 +329,22 @@ import Testing
     #expect(desk.h.workspace.camera == arranged.camera && desk.h.workspace.back == arranged.back)
   }
 
-  /// A window of the view that is too small to show there: whether it shows depends on how the layout turns out.
-  @Test func aTileWithTheKeyboardIsFramedAsBefore() {
+  /// A window of the view that is too small to show there: whether it shows depends on how the layout turns out. With the keyboard in
+  /// it, it is let be where the pause left it, and the view stays (`collab/QUESTIONS.md`, Q16; `LaunchLetsBeTests`). It used
+  /// to be framed, and everything else left.
+  @Test func aTileWithTheKeyboardIsLetBe() {
     let desk = makeDesk()
     let wide = desk.h.system.open(
       app: "Xcode", pid: 2100, frame: CGRect(x: 100, y: 100, width: 1500, height: 700), minimumSize: CGSize(width: 1500, height: 700))
     desk.h.run("dock \(wide.rawValue) beside \(desk.safari.rawValue) bottom")
     desk.h.run("show-all")
     #expect(desk.h.layout?.tiles.contains { $0.windows == [wide] } == true)
+    let view = desk.h.workspace.camera
     desk.h.press("toggle-pause")
     desk.h.system.userFocus(wide)
     desk.h.press("toggle-pause")
     #expect(desk.h.system.isVisible(wide) && desk.h.system.focused == wide)
-    #expect(desk.h.workspace.camera == desk.h.workspace.tree.leaf(containing: wide))
+    #expect(desk.h.workspace.camera == view && desk.h.controller.windowLetBe == wide)
     expectWindowsMatchLayout(desk.h)
   }
 

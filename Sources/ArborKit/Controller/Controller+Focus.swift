@@ -211,6 +211,8 @@ extension Controller {
 
   func isOutOfView(_ id: WindowID, on display: DisplayID) -> Bool {
     if parked.contains(id) { return true }
+    // In a tile by the layout, and in plain sight (Controller+LetBe.swift).
+    if isLetBe(id) { return false }
     return workspaces[display]?.isDocked(id) == true && layouts[display]?.windowFrames[id] == nil
   }
 

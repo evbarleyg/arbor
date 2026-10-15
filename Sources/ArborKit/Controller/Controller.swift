@@ -201,6 +201,8 @@ public final class Controller {
   /// Managed windows, most recently focused first. `dock beside` rules use it
   /// to pick which of an app's windows to dock beside (Controller+Rules.swift).
   var focusHistory: [WindowID] = []
+  /// Controller+LetBe.swift.
+  var letBe: LetBe?
   /// New windows whose title is still being checked against the rules (Controller+Rules.swift).
   var titleWatches: [WindowID: TitleWatch] = [:]
   /// Windows an `ignore` rule matches that the last run arranged (in the workspace given), found while there was no
@@ -472,6 +474,7 @@ public final class Controller {
     let shapes = Dictionary(displays.map { ($0.id, $0.frame) }, uniquingKeysWith: { first, _ in first })
     displays = system.displays()
     var saved = resumeState
+    let byAPerson = saved == nil
     if saved == nil {
       // Somebody starts Arbor, or logs in. Quitting put every window in view, and the view of last time would send most of
       // them out of it again, unasked. Where nobody quit (a pause, the permission, the watchdog) `resumeState` has the view.
@@ -528,7 +531,9 @@ public final class Controller {
     isRunning = true
     Log.info("started: \(displays.count) display(s), \(managedWindowIDs.count) managed window(s)")
     letTheViewFollowTheKeyboardBeforeTheFirstLayout()
+    letTheWindowWithTheKeyboardBe()
     relayoutAll(reason: .camera, motion: .instant)
+    theStartHasLaidOut()
     placedOnPurpose.removeAll()
     refreshHoldCaller()
     notify(.lifecycle)
@@ -538,10 +543,7 @@ public final class Controller {
     fillOnceWindowsHaveTurnedUp()
     followFrontmostApp()
     scheduleUpdateChecks()
-    // Nobody told Arbor where the keyboard went while it was not running, and the view that has just come back may not
-    // include that window: it was swept out of view with the keyboard in it, and ⌘Tab does not fetch it, because its
-    // app is in front already and nothing is reported. A launch ends with the focused window in view, as `resume` does.
-    if isRunning, !isResuming, let focused = system.focusedWindow() { windowFocused(focused) }
+    if isRunning, !isResuming { keyboardAfterAStart(byAPerson: byAPerson) }
   }
 
   /// After an accident the windows the view leaves out are still in their corners, and keeping the view moves nothing. But the
@@ -577,6 +579,7 @@ public final class Controller {
     waitingForASpaceToLeave.removeAll()
     returningWindows.removeAll()
     keyboardHandOver = KeyboardHandOver()
+    letBe = nil
     scheduler.cancel("pending-slots")
     forgetHold()
     scheduler.cancel(Self.afterLaunchKey)

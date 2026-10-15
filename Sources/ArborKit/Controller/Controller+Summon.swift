@@ -80,7 +80,7 @@ extension Controller {
       let before = (camera: workspaces[home]!.camera, keyboard: keyboard)
       let inactiveTab = workspaces[home]!.tree.activeWindow(of: leaf) != window.id
       if inactiveTab { workspaces[home]!.tree.activate(window.id) }
-      if parked.contains(window.id) || layouts[home]?.windowFrames[window.id] == nil {
+      if parked.contains(window.id) || (layouts[home]?.windowFrames[window.id] == nil && !isLetBe(window.id)) {
         reveal(window.id, leaf: leaf, on: home)
       } else if inactiveTab {
         relayout(home, reason: .structure)

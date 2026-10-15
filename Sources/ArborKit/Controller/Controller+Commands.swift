@@ -17,6 +17,8 @@ extension Controller {
     let outer = following.decides
     following.decides = !command.isQuery
     defer { following.decides = outer }
+    // Once the command has had its own say about the keyboard (Controller+LetBe.swift).
+    defer { theKeyboardLeavesTheTile() }
     let start = DispatchTime.now()
     defer { if !command.isQuery { stats.record("commands", command.verb, seconds: CallStats.seconds(since: start)) } }
     // First of all: some commands below are answered whether or not Arbor is running.

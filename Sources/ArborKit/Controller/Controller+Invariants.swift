@@ -190,10 +190,15 @@ extension Controller {
     }
     for (id, workspace) in workspaces where !awaitingLayout.contains(id) {
       guard let layout = layouts[id] else { continue }
+      if let window = windowLetBe, workspace.contains(window), windows[window]?.isPresent == true,
+        !workspace.isDocked(window) || !layout.hiddenWindows.contains(window) || parked.contains(window)
+      {
+        problems.append(.init("let-be", "\(window) on \(id) is let be, which is for a docked window that the layout hides and that is in view"))
+      }
       // The window in the user's hand is left alone until it is dropped.
       // Nor is one whose app does not answer: it is where it was, and is placed when the app answers.
       for window in docked[id] ?? []
-      where windows[window]?.isPresent == true && window != drag?.window && !unplaced.contains(window) {
+      where windows[window]?.isPresent == true && window != drag?.window && !unplaced.contains(window) && !isLetBe(window) {
         let hidden = layout.hiddenWindows.contains(window)
         if hidden, !parked.contains(window) {
           problems.append(.init("parked", "\(window) on \(id) is hidden by the layout but not parked"))
@@ -238,6 +243,7 @@ extension Controller {
     check("owedMoves", owedMoves)
     check("givenUp", enforcement.givenUp)
     check("focusHistory", focusHistory)
+    check("letBe", [letBe?.window].compactMap { $0 })
     check("ignoredWindowIDs", filter.ignoredWindowIDs)
     check("landsAt", landsAt.keys)
     check("sharedItsSpace", sharedItsSpace.keys)

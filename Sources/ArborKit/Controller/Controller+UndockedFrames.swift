@@ -17,6 +17,8 @@ extension Controller {
   /// Where an undocked window should float, decided while it is still docked: the size it floated at,
   /// centred on its slot (on the middle of the display if its slot is out of view).
   func floatingFrame(for window: WindowID, on displayID: DisplayID) -> CGRect {
+    // It is in view at its own size already, and not in its slot (Controller+LetBe.swift).
+    if isLetBe(window), let frame = windows[window]?.frame { return frame }
     let layout = layouts[displayID]
     let slot = layout?.windowFrames[window]
     let size =
@@ -38,6 +40,7 @@ extension Controller {
   func undock(_ window: WindowID, on displayID: DisplayID) -> Bool {
     guard var workspace = workspaces[displayID], let display = display(displayID) else { return false }
     var frame = floatingFrame(for: window, on: displayID)
+    let standsWhereItFloats = isLetBe(window)
     let camera = workspace.camera
     let wasFramed = workspace.tree.leaf(containing: window) == camera && workspace.tree.windows(under: camera) == [window]
     workspace.undock(window, floatingAt: frame, shareSpace: settings.shareRemovedSpace)
@@ -54,7 +57,9 @@ extension Controller {
     if let desktop = layoutToCome(on: displayID)?.desktopFrame {
       // Onto the Desktop. A window floated by command is put there on purpose, like one that is dropped: if the
       // Desktop is smaller than it (the narrow one `arrange` makes), it keeps its own size and hangs over the docked windows.
-      frame = floatingFrame(frame, on: floatingRegion(desktop, on: display), of: display, minimum: frame.size)
+      if !standsWhereItFloats {
+        frame = floatingFrame(frame, on: floatingRegion(desktop, on: display), of: display, minimum: frame.size)
+      }
       workspaces[displayID]!.floating[window] = frame
       // Alone there and about to take all of it (Controller+SoleFloat.swift), it is not made its own size first.
       takesDesktop = windowThatTakesDesktop(of: displayID) == window

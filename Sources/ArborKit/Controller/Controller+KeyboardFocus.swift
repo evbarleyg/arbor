@@ -34,6 +34,7 @@ extension Controller {
     guard let workspace = workspaces[display], let snapshot = windows[window], snapshot.isPresent,
       isManaged(window)
     else { return nil }
+    if isLetBe(window) { return snapshot.frame }
     if let leaf = workspace.tree.leaf(containing: window) {
       guard let layout = layouts[display], let shown = layout.windowFrames[window] else { return nil }
       return layout.nodeFrames[leaf] ?? shown
@@ -126,6 +127,8 @@ extension Controller {
     for tile in layout.tiles {
       // There is nothing to focus on an empty Desktop, nor on one whose windows are stops themselves.
       if tile.kind == .desktop, !hasFloatingWindowsOutOfView(on: display) { continue }
+      // Its window is a stop itself (Controller+LetBe.swift).
+      if tile.windows.contains(where: isLetBe) { continue }
       let inside = tile.kind == .desktop ? Array(workspace.floating.keys) : tile.windows
       candidates.append(FocusCandidate(id: .tile(tile.node), frame: tile.frame, recency: focusRecency(of: inside)))
     }

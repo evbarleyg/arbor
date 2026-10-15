@@ -64,7 +64,7 @@ public enum ReplayInvariants {
             "\(window) is docked in the slot \(traceText(slot)) but ended up at \(traceText(frame)), where Arbor did not put it")
         }
       }
-      for window in layout.hiddenWindows.sorted() where h.system.isVisible(window) {
+      for window in layout.hiddenWindows.sorted() where h.system.isVisible(window) && window != controller.windowLetBe {
         if controller.windows[window]?.isPresent == true {
           problems.append("\(window) should be out of view but is at \(traceText(h.system.frame(of: window) ?? .zero))")
         }

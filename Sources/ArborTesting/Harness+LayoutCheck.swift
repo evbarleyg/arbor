@@ -15,7 +15,7 @@ extension Harness {
       for (window, slot) in fresh.windowFrames.sorted(by: { $0.key < $1.key }) where frame(window) != slot {
         problems.append("\(window) is at \(frame(window).map(Self.brief) ?? "nowhere"), and its place is \(Self.brief(slot))")
       }
-      for window in fresh.hiddenWindows.sorted() where system.isVisible(window) {
+      for window in fresh.hiddenWindows.sorted() where system.isVisible(window) && window != controller.windowLetBe {
         problems.append("\(window) should be out of view and is at \(frame(window).map(Self.brief) ?? "nowhere")")
       }
     }

@@ -30,7 +30,7 @@ extension Controller {
     // With `shrinkOutOfView` a window is parked at another size, which `parkingSize` works out and remembers in one
     // go: not for a forecast. Those moves wait on their own.
     for window in layout.hiddenWindows.sorted()
-    where !parked.contains(window) && window != drag?.window && !settings.shrinkOutOfView {
+    where !parked.contains(window) && window != drag?.window && !isLetBe(window) && !settings.shrinkOutOfView {
       // The frame `park` asks for.
       guard let size = windows[window]?.frame.size else { continue }
       moves.append((window, CGRect(origin: parkingOrigin(for: size, on: display), size: size)))
