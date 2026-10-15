@@ -1,0 +1,232 @@
+{"arbor":"0.0.0","cursor":[512,368],"displays":[{"frame":[0,0,1024,768],"id":"5A42259C-47B8-4590-9762-97DBE4FE7F1B","main":true,"name":"display-1","visible":[0,31,1024,674]}],"framePlan":2,"mouseDown":false,"name":"shots-minimap-3-17","onlyPIDs":[20213],"os":"macOS Version 26.6.2 (Build 25G83)","recorded":"2026-10-15T15:45:08Z","settings":{"allowAllURLCommands":false,"animationDuration":0.46,"appColourAmount":0.25,"appColours":true,"arrangeDesktopWeight":0.5,"autoDockMinimumHeight":300,"autoDockMinimumWidth":400,"automaticUpdateChecks":false,"bindings":{},"blurBehindArranged":0,"continuousZoom":false,"desktopEdge":0.05,"dimBehindArranged":0.25,"displays":[],"dropDwell":0.15,"excludedBundleIDs":[],"floatingWindowsMakeWay":false,"focusRing":true,"focusRingColour":"accent","focusRingRadius":0,"focusRingWidth":3,"frameRectangleModifier":"ctrl+opt","frameRectangleOnDesktop":true,"gap":12,"gapHandles":"shown","gesturesEnabled":true,"guardDesktopClicks":false,"historyButtons":true,"holdStillFor":[],"holdStillWhileCameraIsOn":false,"holdStillWhileMicrophoneIsOn":false,"hotkeysEnabled":true,"keepPushed":true,"makeRoom":true,"menuBarControls":true,"menuBarFill":0.25,"messages":"helpful","minimapDuration":3,"minimumUsableHeight":160,"minimumUsableWidth":240,"newWindows":"float","newWindowsWhileFramed":"guest","passThroughApps":[],"pauseForApps":[],"peek":true,"pinchThreshold":0.25,"pointerGestures":false,"previewDrags":true,"reflowWhileDragging":false,"resizeStep":40,"ruleTitleWait":2,"rules":[],"screenEdgeBand":12,"scrollOnDesktopZooms":false,"scrollZoom":true,"scrollZoomThreshold":40,"shareRemovedSpace":true,"shortcuts":"all","shortcutsFollowLayout":true,"shrinkOutOfView":false,"soleFloatTakesDesktop":false,"stepInToward":"auto","summonStays":false,"tabsEnabled":false,"tileFade":0.2,"tileRetryMinutes":10,"tileStyle":"icon","tintBehindArranged":0,"windowEdgeFraction":0.3,"windowPictures":false},"thinning":0.05,"trace":1,"windows":[{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[170,220,480,348],"id":122,"pid":20213,"title":"title[1]"},{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[220,180,480,348],"id":123,"pid":20213,"title":"title[2]"},{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[270,140,480,348],"id":124,"pid":20213,"title":"title[3]"},{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[320,100,480,348],"id":125,"pid":20213,"title":"title[4]"}],"workspaces":{"5A42259C-47B8-4590-9762-97DBE4FE7F1B":{"back":[],"camera":0,"floating":{"122":[[170,220],[480,348]],"123":[[220,180],[480,348]],"124":[[270,140],[480,348]],"125":[[320,100],[480,348]]},"forward":[],"names":{},"savedViews":{},"tree":{"desktop":0,"loans":[],"nextRawID":1,"nodes":{"0":{"id":0,"kind":{"desktop":{}},"weight":1}},"root":0,"visits":[]}}}}
+{"t":0.0013,"note":"session 3: Arbor has started"}
+{"t":0.0022,"event":"settingsFileMayHaveChanged"}
+{"t":0.0236,"command":"dock 122 left","from":"script"}
+{"t":0.0266,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":0.0271,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"5A42259C-47B8-4590-9762-97DBE4FE7F1B","main":true,"name":"display-1","visible":[0,31,1024,674]}]}
+{"t":0.0281,"read":"stackedWindows","result":[{"frame":[[320,100],[480,348]],"id":125},{"frame":[[270,140],[480,348]],"id":124},{"frame":[[220,180],[480,348]],"id":123},{"frame":[[170,220],[480,348]],"id":122}]}
+{"t":0.0307,"raw":"stage up d5A42259C-47B8-4590-9762-97DBE4FE7F1B 0,0,1024,768 0.46 w122 170,220,480,348,1 12,43,494,650,1 w123 220,180,480,348,1 220,180,480,348,1 w124 270,140,480,348,1 270,140,480,348,1 w125 320,100,480,348,1 320,100,480,348,1"}
+{"t":0.0309,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 170,220,480,348,1 w123 220,180,480,348,1 w124 270,140,480,348,1 w125 320,100,480,348,1"}
+{"t":0.0370,"call":"setFrame","frame":[12,43,494,650],"id":122,"result":[12,43,494,650],"took":0.0056}
+{"t":0.0375,"call":"isMouseButtonDown","result":false}
+{"t":0.0378,"call":"focusedWindow","result":null}
+{"t":0.0415,"call":"focus","id":122}
+{"t":0.0469,"call":"focusedWindow","result":null}
+{"t":0.0477,"done":"dock 122 left","message":"docked w122 at the left edge","ok":true}
+{"t":0.0485,"args":["dev.arbor.testwindows","ArborTestWindows"],"event":"applicationActivated"}
+{"t":0.0488,"raw":"didActivateApplication pid 20213"}
+{"t":0.0490,"raw":"frontmostApplication still names pid 378"}
+{"t":0.0544,"raw":"screens 5A42259C-47B8-4590-9762-97DBE4FE7F1B 0,0 1024x768"}
+{"t":0.0547,"raw":"AXMoved w122"}
+{"t":0.0852,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,43,494,650],"id":122,"pid":20213,"title":"title[1]"}}
+{"t":0.0871,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 132.85,178.38,483.29,419.01,1 w123 220,180,480,348,1 w124 270,140,480,348,1 w125 320,100,480,348,1"}
+{"t":0.0873,"raw":"AXResized w122"}
+{"t":0.0878,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,43,494,650],"id":122,"pid":20213,"title":"title[1]"}}
+{"t":0.0884,"raw":"AXFocusedWindowChanged"}
+{"t":0.0910,"event":"focused","id":122}
+{"t":0.0911,"call":"focusedWindow","result":122}
+{"t":0.0913,"call":"focusedWindow","result":122}
+{"t":0.0915,"call":"focusedWindow","result":122}
+{"t":0.0916,"call":"isMouseButtonDown","result":false}
+{"t":0.0952,"raw":"AXMainWindowChanged"}
+{"t":0.1050,"raw":"AXFocusedWindowChanged"}
+{"t":0.1067,"raw":"AXMainWindowChanged"}
+{"t":0.1080,"raw":"AXApplicationActivated"}
+{"t":0.1082,"event":"keyboardFocusMoved"}
+{"t":0.1086,"call":"focusedWindow","result":122}
+{"t":0.1087,"call":"isMouseButtonDown","result":false}
+{"t":0.1118,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 102.46,144.34,485.98,477.09,1 w123 220,180,480,348,1 w124 270,140,480,348,1 w125 320,100,480,348,1"}
+{"t":0.1176,"command":"dock 123 right","from":"script"}
+{"t":0.1178,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":0.1180,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"5A42259C-47B8-4590-9762-97DBE4FE7F1B","main":true,"name":"display-1","visible":[0,31,1024,674]}]}
+{"t":0.1189,"read":"stackedWindows","result":[{"frame":[[12,43],[494,650]],"id":122},{"frame":[[320,100],[480,348]],"id":125},{"frame":[[270,140],[480,348]],"id":124},{"frame":[[220,180],[480,348]],"id":123}]}
+{"t":0.1209,"raw":"stage retargeted d5A42259C-47B8-4590-9762-97DBE4FE7F1B 0,0,1024,768 0.46 w123 220,180,480,348,1 687,43,325,650,1 w124 270,140,480,348,1 270,140,480,348,1 w125 320,100,480,348,1 320,100,480,348,1 w122 94.39,135.3,486.7,492.52,1 12,43,325,650,1"}
+{"t":0.1210,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 94.39,135.3,486.7,492.52,1 w123 220,180,480,348,1 w124 270,140,480,348,1 w125 320,100,480,348,1"}
+{"t":0.1230,"call":"setFrame","frame":[220,180,325,348],"id":123,"result":[220,180,325,348],"took":0.0018}
+{"t":0.1242,"call":"setFrame","frame":[12,43,325,650],"id":122,"result":[12,43,325,650],"took":0.0011}
+{"t":0.1251,"call":"setFrame","frame":[687,43,325,650],"id":123,"result":[687,43,325,650]}
+{"t":0.1254,"call":"isMouseButtonDown","result":false}
+{"t":0.1258,"call":"focusedWindow","result":122}
+{"t":0.1277,"call":"focus","id":123}
+{"t":0.1292,"call":"focusedWindow","result":123}
+{"t":0.1296,"done":"dock 123 right","message":"docked w123 at the right edge","ok":true}
+{"t":0.1307,"raw":"AXResized w123"}
+{"t":0.1355,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[687,43,325,650],"id":123,"pid":20213,"title":"title[2]"}}
+{"t":0.1358,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 93.55,134.35,485.05,494.13,1 w123 224.77,178.6,478.42,351.08,1 w124 270,140,480,348,1 w125 320,100,480,348,1"}
+{"t":0.1360,"raw":"AXResized w122"}
+{"t":0.1362,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,43,325,650],"id":122,"pid":20213,"title":"title[1]"}}
+{"t":0.1375,"raw":"frontmostApplication names pid 20213"}
+{"t":0.1378,"event":"focused","id":123}
+{"t":0.1379,"call":"focusedWindow","result":123}
+{"t":0.1381,"call":"focusedWindow","result":123}
+{"t":0.1381,"call":"isMouseButtonDown","result":false}
+{"t":0.1540,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 88.84,129.08,475.81,503.13,1 w123 251.45,170.77,469.56,368.34,1 w124 270,140,480,348,1 w125 320,100,480,348,1"}
+{"t":0.1544,"raw":"AXMoved w123"}
+{"t":0.1546,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[687,43,325,650],"id":123,"pid":20213,"title":"title[2]"}}
+{"t":0.1548,"raw":"AXResized w123"}
+{"t":0.1550,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[687,43,325,650],"id":123,"pid":20213,"title":"title[2]"}}
+{"t":0.1552,"raw":"AXFocusedWindowChanged"}
+{"t":0.1563,"raw":"AXMainWindowChanged"}
+{"t":0.1615,"command":"dock 124 beside 122 bottom","from":"script"}
+{"t":0.1618,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":0.1620,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"5A42259C-47B8-4590-9762-97DBE4FE7F1B","main":true,"name":"display-1","visible":[0,31,1024,674]}]}
+{"t":0.1673,"read":"stackedWindows","result":[{"frame":[[687,43],[325,650]],"id":123},{"frame":[[12,43],[325,650]],"id":122},{"frame":[[320,100],[480,348]],"id":125},{"frame":[[270,140],[480,348]],"id":124}]}
+{"t":0.1693,"raw":"stage retargeted d5A42259C-47B8-4590-9762-97DBE4FE7F1B 0,0,1024,768 0.46 w124 270,140,480,348,1 12,374,325,319,1 w125 320,100,480,348,1 320,100,480,348,1 w122 80.55,119.79,459.53,518.98,1 12,43,325,319,1 w123 298.47,156.98,453.96,398.74,1 687,43,325,650,1"}
+{"t":0.1694,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 80.55,119.79,459.53,518.98,1 w123 298.47,156.98,453.96,398.74,1 w124 270,140,480,348,1 w125 320,100,480,348,1"}
+{"t":0.1715,"call":"setFrame","frame":[270,140,325,319],"id":124,"result":[270,140,325,319],"took":0.002}
+{"t":0.1726,"call":"setFrame","frame":[12,43,325,319],"id":122,"result":[12,43,325,319]}
+{"t":0.1729,"call":"setFrame","frame":[12,374,325,319],"id":124,"result":[12,374,325,319]}
+{"t":0.1733,"call":"isMouseButtonDown","result":false}
+{"t":0.1736,"call":"focusedWindow","result":123}
+{"t":0.1825,"call":"focus","id":124}
+{"t":0.1847,"call":"focusedWindow","result":124}
+{"t":0.1851,"done":"dock 124 beside 122 bottom","message":"docked w124 below w122","ok":true}
+{"t":0.1861,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 80.48,119.71,459.4,518.79,1 w123 298.84,156.87,453.83,398.99,1 w124 269.75,140.23,479.85,347.97,1 w125 320,100,480,348,1"}
+{"t":0.1865,"raw":"AXResized w124"}
+{"t":0.1867,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,374,325,319],"id":124,"pid":20213,"title":"title[3]"}}
+{"t":0.1885,"raw":"AXResized w122"}
+{"t":0.1887,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,43,325,319],"id":122,"pid":20213,"title":"title[1]"}}
+{"t":0.1889,"raw":"AXMoved w124"}
+{"t":0.1890,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,374,325,319],"id":124,"pid":20213,"title":"title[3]"}}
+{"t":0.1891,"raw":"AXFocusedWindowChanged"}
+{"t":0.2196,"event":"focused","id":124}
+{"t":0.2198,"call":"focusedWindow","result":124}
+{"t":0.2201,"call":"focusedWindow","result":124}
+{"t":0.2201,"call":"isMouseButtonDown","result":false}
+{"t":0.2212,"raw":"AXMainWindowChanged"}
+{"t":0.2226,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 72.36,110.62,443.46,495.09,1 w123 344.88,143.37,438.55,428.76,1 w124 239.18,167.95,461.48,344.54,1 w125 320,100,480,348,1"}
+{"t":0.2285,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 69.21,107.09,437.28,485.9,1 w123 362.74,138.12,432.62,440.31,1 w124 227.32,178.71,454.36,343.2,1 w125 320,100,480,348,1"}
+{"t":0.2311,"command":"zoom 124","from":"script"}
+{"t":0.2314,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":0.2317,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"5A42259C-47B8-4590-9762-97DBE4FE7F1B","main":true,"name":"display-1","visible":[0,31,1024,674]}]}
+{"t":0.2337,"read":"stackedWindows","result":[{"frame":[[12,374],[325,319]],"id":124},{"frame":[[687,43],[325,650]],"id":123},{"frame":[[12,43],[325,319]],"id":122},{"frame":[[320,100],[480,348]],"id":125}]}
+{"t":0.2359,"raw":"stage retargeted d5A42259C-47B8-4590-9762-97DBE4FE7F1B 0,0,1024,768 0.46 w125 320,100,480,348,1 960,-515,1477,709,0 w122 65.34,102.76,429.7,474.63,1 12,-650,1000,650,1 w123 384.64,131.7,425.36,454.47,1 2089,-631,1000,1324,1 w124 212.78,191.9,445.63,341.57,1 12,43,1000,650,1"}
+{"t":0.2360,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 65.34,102.76,429.7,474.63,1 w123 384.64,131.7,425.36,454.47,1 w124 212.78,191.9,445.63,341.57,1 w125 320,100,480,348,1"}
+{"t":0.2362,"note":"moveTogether, 3 windows, took 0.0 s"}
+{"t":0.2380,"call":"setFrame","frame":[12,43,1000,650],"id":124,"result":[12,43,1000,650],"took":0.0016}
+{"t":0.2385,"call":"setFrame","frame":[1023,767,325,319],"id":122,"result":[1023,677,325,319]}
+{"t":0.2389,"call":"setFrame","frame":[1023,767,325,650],"id":123,"result":[1023,677,325,650]}
+{"t":0.2394,"call":"setFrame","frame":[1023,767,480,348],"id":125,"result":[1023,677,480,348]}
+{"t":0.2397,"call":"isMouseButtonDown","result":false}
+{"t":0.2401,"call":"focusedWindow","result":124}
+{"t":0.2522,"call":"cursorLocation","result":[512,368]}
+{"t":0.2668,"call":"focusedWindow","result":124}
+{"t":0.2671,"call":"focus","id":124}
+{"t":0.2676,"call":"focusedWindow","result":124}
+{"t":0.2678,"done":"zoom 124","message":"framed w124","ok":true}
+{"t":0.2718,"raw":"AXMoved w124"}
+{"t":0.2720,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,43,1000,650],"id":124,"pid":20213,"title":"title[3]"}}
+{"t":0.2730,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 63.71,79.67,447.19,480.01,1 w123 436.92,108.3,442.99,481.14,1 w124 206.62,187.33,462.63,351.03,1 w125 339.63,81.13,510.59,359.07,0.97"}
+{"t":0.2852,"raw":"AXResized w124"}
+{"t":0.2854,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,43,1000,650],"id":124,"pid":20213,"title":"title[3]"}}
+{"t":0.2856,"raw":"AXMoved w122"}
+{"t":0.2857,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[1023,677,325,319],"id":122,"pid":20213,"title":"title[1]"}}
+{"t":0.2858,"raw":"AXMoved w123"}
+{"t":0.2860,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[1023,677,325,650],"id":123,"pid":20213,"title":"title[2]"}}
+{"t":0.2863,"raw":"AXMoved w125"}
+{"t":0.2865,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[1023,677,480,348],"id":125,"pid":20213,"title":"title[4]"}}
+{"t":0.2926,"command":"save-view 1","from":"script"}
+{"t":0.2928,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":0.2930,"read":"inputActivity","result":{"keyPresses":28,"keyboardIdle":40.318541,"pointerIdle":110.746582667}}
+{"t":0.2934,"call":"focusedWindow","result":124}
+{"t":0.2937,"done":"save-view 1","message":"saved view 1: ArborTestWindows (n4)","ok":true}
+{"t":0.2951,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 57.08,-13.88,518.06,501.8,1 w123 648.71,13.53,514.39,589.19,1 w124 181.67,168.83,531.52,389.36,1 w125 419.16,4.71,634.48,403.93,0.85"}
+{"t":0.3030,"timer":"settings-file"}
+{"t":0.3159,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 47.64,-147.05,618.96,532.83,1 w123 950.24,-121.41,616.06,743.03,1 w124 146.15,142.48,629.6,443.92,1 w125 532.39,-104.09,810.86,467.8,0.67"}
+{"t":0.3168,"command":"show-all","from":"script"}
+{"t":0.3170,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":0.3172,"read":"inputActivity","result":{"keyPresses":28,"keyboardIdle":40.342758459,"pointerIdle":110.770799917}}
+{"t":0.3179,"call":"focusedWindow","result":124}
+{"t":0.3180,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"5A42259C-47B8-4590-9762-97DBE4FE7F1B","main":true,"name":"display-1","visible":[0,31,1024,674]}]}
+{"t":0.3358,"read":"stackedWindows","result":[{"frame":[[12,43],[1000,650]],"id":124},{"frame":[[1023,677],[325,650]],"id":123},{"frame":[[1023,677],[325,319]],"id":122},{"frame":[[1023,677],[480,348]],"id":125}]}
+{"t":0.3394,"raw":"stage retargeted d5A42259C-47B8-4590-9762-97DBE4FE7F1B 0,0,1024,768 0.46 w125 627.93,-195.9,959.69,521.69,0.52 320,100,480,348,1 w122 39.68,-259.42,704.09,559.01,1 12,43,325,319,1 w123 1204.66,-235.26,701.84,872.83,1 687,43,325,650,1 w124 116.18,120.26,712.35,489.97,1 12,374,325,319,1"}
+{"t":0.3395,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 39.68,-259.42,704.09,559.01,1 w123 1204.66,-235.26,701.84,872.83,1 w124 116.18,120.26,712.35,489.97,1 w125 627.93,-195.9,959.69,521.69,0.52"}
+{"t":0.3397,"note":"moveTogether, 3 windows, took 0.0 s"}
+{"t":0.3405,"call":"setFrame","frame":[12,43,325,319],"id":122,"result":[12,43,325,319]}
+{"t":0.3410,"call":"setFrame","frame":[687,43,325,650],"id":123,"result":[687,43,325,650]}
+{"t":0.3421,"call":"setFrame","frame":[12,374,325,319],"id":124,"result":[12,374,325,319],"took":0.0011}
+{"t":0.3426,"call":"setFrame","frame":[320,100,480,348],"id":125,"result":[320,100,480,348]}
+{"t":0.3429,"call":"isMouseButtonDown","result":false}
+{"t":0.3430,"call":"focusedWindow","result":124}
+{"t":0.3515,"call":"focusedWindow","result":124}
+{"t":0.3519,"done":"show-all","message":"showing everything","ok":true}
+{"t":0.3528,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 39.66,-259.19,703.8,558.83,1 w123 1204.27,-235.05,701.55,872.66,1 w124 116.1,120.45,712.06,489.84,1 w125 627.69,-195.67,959.33,521.56,0.52"}
+{"t":0.3536,"raw":"AXMoved w122"}
+{"t":0.3538,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,43,325,319],"id":122,"pid":20213,"title":"title[1]"}}
+{"t":0.3552,"raw":"AXMoved w123"}
+{"t":0.3554,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[687,43,325,650],"id":123,"pid":20213,"title":"title[2]"}}
+{"t":0.3555,"raw":"AXResized w124"}
+{"t":0.3557,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,374,325,319],"id":124,"pid":20213,"title":"title[3]"}}
+{"t":0.3559,"raw":"AXMoved w124"}
+{"t":0.3560,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,374,325,319],"id":124,"pid":20213,"title":"title[3]"}}
+{"t":0.3561,"raw":"AXMoved w125"}
+{"t":0.3562,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[320,100,480,348],"id":125,"pid":20213,"title":"title[4]"}}
+{"t":0.3619,"command":"view 1","from":"script"}
+{"t":0.3621,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":0.3623,"read":"inputActivity","result":{"keyPresses":28,"keyboardIdle":40.387857709,"pointerIdle":110.81589875}}
+{"t":0.3626,"call":"focusedWindow","result":124}
+{"t":0.3628,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"5A42259C-47B8-4590-9762-97DBE4FE7F1B","main":true,"name":"display-1","visible":[0,31,1024,674]}]}
+{"t":0.3703,"read":"stackedWindows","result":[{"frame":[[12,374],[325,319]],"id":124},{"frame":[[687,43],[325,650]],"id":123},{"frame":[[12,43],[325,319]],"id":122},{"frame":[[320,100],[480,348]],"id":125}]}
+{"t":0.3723,"raw":"stage retargeted d5A42259C-47B8-4590-9762-97DBE4FE7F1B 0,0,1024,768 0.46 w125 619.15,-187.46,946.01,516.74,0.53 960,-515,1477,709,0 w122 38.89,-250.8,693.28,552.16,1 12,-650,1000,650,1 w123 1189.9,-227.33,691.09,866.48,1 2089,-631,1000,1324,1 w124 113.21,127.49,701.31,485.09,1 12,43,1000,650,1"}
+{"t":0.3724,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 38.89,-250.8,693.28,552.16,1 w123 1189.9,-227.33,691.09,866.48,1 w124 113.21,127.49,701.31,485.09,1 w125 619.15,-187.46,946.01,516.74,0.53"}
+{"t":0.3726,"note":"moveTogether, 3 windows, took 0.0 s"}
+{"t":0.3904,"call":"setFrame","frame":[12,43,1000,650],"id":124,"result":[12,43,1000,650],"took":0.0178}
+{"t":0.3909,"call":"setFrame","frame":[1023,767,325,319],"id":122,"result":[1023,677,325,319]}
+{"t":0.3913,"call":"setFrame","frame":[1023,767,325,650],"id":123,"result":[1023,677,325,650]}
+{"t":0.3918,"call":"setFrame","frame":[1023,767,480,348],"id":125,"result":[1023,677,480,348]}
+{"t":0.3921,"call":"isMouseButtonDown","result":false}
+{"t":0.3922,"call":"focusedWindow","result":124}
+{"t":0.3933,"call":"cursorLocation","result":[512,368]}
+{"t":0.3937,"call":"focusedWindow","result":124}
+{"t":0.3939,"done":"view 1","message":"view 1: ArborTestWindows (n4)","ok":true}
+{"t":0.4042,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 38.24,-260.41,700.66,554.52,1 w123 1211.55,-237.05,698.53,877.49,1 w124 110.77,125.46,708.5,489.06,1 w125 627.35,-195.35,958.8,521.37,0.52"}
+{"t":0.4059,"raw":"AXMoved w124"}
+{"t":0.4062,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,43,1000,650],"id":124,"pid":20213,"title":"title[3]"}}
+{"t":0.4187,"raw":"AXResized w124"}
+{"t":0.4201,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,43,1000,650],"id":124,"pid":20213,"title":"title[3]"}}
+{"t":0.4206,"raw":"AXMoved w122"}
+{"t":0.4208,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[1023,677,325,319],"id":122,"pid":20213,"title":"title[1]"}}
+{"t":0.4209,"raw":"AXMoved w123"}
+{"t":0.4212,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[1023,677,325,650],"id":123,"pid":20213,"title":"title[2]"}}
+{"t":0.4213,"raw":"AXMoved w125"}
+{"t":0.4215,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[1023,677,480,348],"id":125,"pid":20213,"title":"title[4]"}}
+{"t":0.4315,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 34.08,-322.14,748.09,569.65,1 w123 1350.58,-299.47,746.3,948.24,1 w124 95.12,112.39,754.69,514.56,1 w125 680.06,-246,1040.91,551.1,0.44"}
+{"t":0.4482,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 30.22,-379.55,792.21,583.72,1 w123 1479.89,-357.52,790.72,1014.04,1 w124 80.57,100.24,797.65,538.28,1 w125 729.08,-293.1,1117.27,578.75,0.36"}
+{"t":0.4657,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 26.86,-429.32,830.44,595.92,1 w123 1591.98,-407.85,829.24,1071.08,1 w124 67.95,89.71,834.88,558.84,1 w125 771.58,-333.94,1183.47,602.72,0.29"}
+{"t":0.4801,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 24.7,-461.47,855.14,603.79,1 w123 1664.38,-440.36,854.11,1107.92,1 w124 59.8,82.9,858.94,572.12,1 w125 799.02,-360.31,1226.23,618.2,0.25"}
+{"t":0.4809,"timer":"focus-ring-again"}
+{"t":0.4809,"call":"isMouseButtonDown","result":false}
+{"t":0.4835,"call":"focusedWindow","result":124}
+{"t":0.4957,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 22.79,-489.76,876.88,610.73,1 w123 1728.1,-468.96,876,1140.35,1 w124 52.62,76.92,880.1,583.81,1 w125 823.18,-383.53,1263.86,631.83,0.21"}
+{"t":0.5136,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 21.01,-516.2,897.2,617.21,1 w123 1787.65,-495.7,896.46,1170.65,1 w124 45.92,71.32,899.89,594.73,1 w125 845.76,-405.22,1299.03,644.56,0.18"}
+{"t":0.5290,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 19.73,-535.16,911.77,621.86,1 w123 1830.37,-514.88,911.14,1192.39,1 w124 41.11,67.31,914.08,602.56,1 w125 861.95,-420.78,1324.26,653.69,0.15"}
+{"t":0.5487,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 18.37,-555.44,927.35,626.83,1 w123 1876.04,-535.38,926.83,1215.63,1 w124 35.97,63.01,929.25,610.94,1 w125 879.26,-437.42,1351.23,663.46,0.13"}
+{"t":0.5655,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 17.39,-570.01,938.54,630.4,1 w123 1908.85,-550.12,938.1,1232.33,1 w124 32.28,59.93,940.15,616.96,1 w125 891.7,-449.37,1370.61,670.48,0.11"}
+{"t":0.5788,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 16.71,-580.1,946.3,632.87,1 w123 1931.58,-560.32,945.91,1243.89,1 w124 29.72,57.79,947.7,621.13,1 w125 900.32,-457.65,1384.03,675.34,0.09"}
+{"t":0.5962,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 15.93,-591.7,955.21,635.71,1 w123 1957.7,-572.05,954.89,1257.18,1 w124 26.78,55.34,956.38,625.92,1 w125 910.22,-467.17,1399.46,680.92,0.08"}
+{"t":0.6155,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 15.19,-602.68,963.65,638.4,1 w123 1982.43,-583.15,963.39,1269.77,1 w124 24,53.01,964.6,630.45,1 w125 919.6,-476.18,1414.06,686.21,0.06"}
+{"t":0.6324,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 14.63,-610.89,969.95,640.41,1 w123 2000.91,-591.45,969.73,1279.17,1 w124 21.92,51.28,970.74,633.84,1 w125 926.61,-482.91,1424.98,690.16,0.05"}
+{"t":0.6451,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 14.26,-616.41,974.19,641.77,1 w123 2013.35,-597.04,974.01,1285.51,1 w124 20.52,50.11,974.87,636.13,1 w125 931.32,-487.44,1432.32,692.82,0.04"}
+{"t":0.6619,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 13.83,-622.78,979.08,643.33,1 w123 2027.69,-603.47,978.94,1292.8,1 w124 18.9,48.76,979.63,638.75,1 w125 936.76,-492.66,1440.79,695.89,0.04"}
+{"t":0.6786,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 13.46,-628.26,983.3,644.67,1 w123 2040.05,-609.02,983.18,1299.09,1 w124 17.51,47.6,983.74,641.02,1 w125 941.44,-497.17,1448.09,698.53,0.03"}
+{"t":0.6952,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 13.15,-632.95,986.9,645.82,1 w123 2050.59,-613.76,986.8,1304.46,1 w124 16.32,46.61,987.24,642.96,1 w125 945.44,-501.01,1454.32,700.79,0.02"}
+{"t":0.7144,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 12.84,-637.53,990.42,646.94,1 w123 2060.9,-618.39,990.35,1309.7,1 w124 15.16,45.64,990.67,644.85,1 w125 949.35,-504.77,1460.41,702.99,0.02"}
+{"t":0.7296,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 12.64,-640.54,992.73,647.68,1 w123 2067.7,-621.44,992.68,1313.16,1 w124 14.4,45,992.92,646.09,1 w125 951.93,-507.24,1464.42,704.45,0.01"}
+{"t":0.7489,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 12.43,-643.69,995.15,648.45,1 w123 2074.78,-624.62,995.11,1316.76,1 w124 13.6,44.34,995.28,647.39,1 w125 954.61,-509.82,1468.6,705.96,0.01"}
+{"t":0.7636,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 12.3,-645.61,996.62,648.92,1 w123 2079.11,-626.56,996.6,1318.97,1 w124 13.11,43.93,996.71,648.19,1 w125 956.25,-511.4,1471.16,706.88,0.01"}
+{"t":0.7823,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 12.17,-647.5,998.08,649.39,1 w123 2083.38,-628.48,998.07,1321.14,1 w124 12.63,43.53,998.13,648.97,1 w125 957.87,-512.95,1473.68,707.8,0"}
+{"t":0.7967,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 12.1,-648.58,998.91,649.65,1 w123 2085.81,-629.57,998.9,1322.38,1 w124 12.36,43.3,998.94,649.41,1 w125 958.79,-513.84,1475.11,708.32,0"}
+{"t":0.8157,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 12.03,-649.52,999.63,649.88,1 w123 2087.92,-630.52,999.63,1323.45,1 w124 12.12,43.1,999.64,649.8,1 w125 959.59,-514.61,1476.36,708.77,0"}
+{"t":0.8292,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 12.01,-649.88,999.91,649.97,1 w123 2088.73,-630.88,999.91,1323.86,1 w124 12.03,43.03,999.91,649.95,1 w125 959.9,-514.9,1476.84,708.94,0"}
+{"t":0.8335,"raw":"stage lift d5A42259C-47B8-4590-9762-97DBE4FE7F1B"}
+{"t":0.8459,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 12,-650,1000,650,1 w123 2089,-631,1000,1324,1 w124 12,43,1000,650,1 w125 960,-515,1477,709,0"}
+{"t":0.8618,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 12,-650,1000,650,1 w123 2089,-631,1000,1324,1 w124 12,43,1000,650,1 w125 960,-515,1477,709,0"}
+{"t":0.8823,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 12,-650,1000,650,1 w123 2089,-631,1000,1324,1 w124 12,43,1000,650,1 w125 960,-515,1477,709,0"}
+{"t":0.8952,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 12,-650,1000,650,1 w123 2089,-631,1000,1324,1 w124 12,43,1000,650,1 w125 960,-515,1477,709,0"}
+{"t":0.9118,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 12,-650,1000,650,1 w123 2089,-631,1000,1324,1 w124 12,43,1000,650,1 w125 960,-515,1477,709,0"}
+{"t":0.9158,"raw":"stage frame d5A42259C-47B8-4590-9762-97DBE4FE7F1B w122 12,-650,1000,650,1 w123 2089,-631,1000,1324,1 w124 12,43,1000,650,1 w125 960,-515,1477,709,0"}
+{"t":0.9159,"raw":"stage down d5A42259C-47B8-4590-9762-97DBE4FE7F1B"}
+{"t":0.9186,"timer":"save"}
+{"t":0.9195,"event":"settingsFileMayHaveChanged"}
+{"t":0.9199,"event":"settingsFileMayHaveChanged"}
+{"t":1.0538,"end":"another trace was started","lines":231,"thinned":0}

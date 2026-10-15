@@ -1,0 +1,69 @@
+# check-F20 2026-10-15T15:46Z on macOS 26.6.2, commit 6717a94
+
+== three windows: [1 | Desktop | 2 / 3], shortcuts and the menu bar item on
+  ✔ the tool says who is in front
+
+== ⌃⌥N, type, ↩
+  ✔ ⌃⌥N shows the field
+  ✔ the app in front stays in front
+  ✔ its window is still the focused window
+  ✔ ↩ closes the field
+  ✔ and names the space, with the capital
+  ✔ no window moved: 2 and 3 are in their slots
+  ✔ the app in front is the same as before
+
+== the keyboard is back with the app
+  ✔ ⌃⌥↩ frames window 3, which has the keyboard again
+
+== a name that is refused keeps the field open; ⎋ closes it
+  ✔ the field is open
+  ✔ the name up is refused and the field stays
+  ✔ ⎋ closes it
+  ✔ the name is as it was
+
+== ⌃⌥N again, and a click elsewhere, close it
+  ✔ open
+  ✔ ⌃⌥N again closes it
+  ✔ open
+  ✔ a click in a window closes it
+
+== it closes when the view leaves its space
+  ✔ open
+  ✔ ⌃⌥Space shows everything and the field is gone
+  ✔ everything is in view
+
+== go, by the beginning of the name
+  ✔ the view is on Pair
+  ✔ window 1 is out of view
+
+== the menu
+
+== an empty field removes the name
+  ✔ open, with the name selected
+  ✔ ↩ on an empty field closes it
+  ✔ and the name is gone
+
+== pause closes it
+  ✔ open
+  ✔ pausing closes the field
+  ✔ and it does not come back
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== the field drawn dark: empty, with a name, and with the red line under a name that is refused
+  ✔ ⌃⌥N shows the field
+  ✔ ↩ names the space
+  ✔ the field is open again, with the name
+  ✔ ⎋ closes it
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+40 passed, 0 failed

@@ -1,0 +1,148 @@
+{"arbor":"0.0.0","cursor":[10,10],"displays":[{"frame":[0,0,1024,768],"id":"5A42259C-47B8-4590-9762-97DBE4FE7F1B","main":true,"name":"display-1","visible":[0,31,1024,674]}],"focusHistory":[31,30,29],"focused":31,"framePlan":2,"mouseDown":false,"name":"check-F51-1-02","onlyPIDs":[3189],"os":"macOS Version 26.6.2 (Build 25G83)","recorded":"2026-10-15T15:40:21Z","seenSizes":{"29":[[325,319],[494,650],[0,0],[0,0],[0,0]],"30":[[325,348],[480,650],[0,0],[0,0],[0,0]],"31":[[325,319],[480,348],[0,0],[0,0],[0,0]]},"settings":{"allowAllURLCommands":false,"animationDuration":0.46,"appColourAmount":0.25,"appColours":true,"arrangeDesktopWeight":0.5,"autoDockMinimumHeight":300,"autoDockMinimumWidth":400,"automaticUpdateChecks":false,"bindings":{},"blurBehindArranged":0,"continuousZoom":false,"desktopEdge":0.05,"dimBehindArranged":0.25,"displays":[],"dropDwell":0.15,"excludedBundleIDs":[],"floatingWindowsMakeWay":false,"focusRing":true,"focusRingColour":"accent","focusRingRadius":0,"focusRingWidth":3,"frameRectangleModifier":"ctrl+opt","frameRectangleOnDesktop":true,"gap":12,"gapHandles":"shown","gesturesEnabled":true,"guardDesktopClicks":false,"historyButtons":true,"holdStillFor":[],"holdStillWhileCameraIsOn":false,"holdStillWhileMicrophoneIsOn":false,"hotkeysEnabled":true,"keepPushed":true,"makeRoom":true,"menuBarControls":true,"menuBarFill":0.25,"messages":"helpful","minimapDuration":0,"minimumUsableHeight":160,"minimumUsableWidth":240,"newWindows":"float","newWindowsWhileFramed":"guest","passThroughApps":[],"pauseForApps":[],"peek":true,"pinchThreshold":0.25,"pointerGestures":false,"previewDrags":true,"reflowWhileDragging":false,"resizeStep":40,"ruleTitleWait":2,"rules":[],"screenEdgeBand":12,"scrollOnDesktopZooms":false,"scrollZoom":true,"scrollZoomThreshold":40,"shareRemovedSpace":true,"shortcuts":"all","shortcutsFollowLayout":true,"shrinkOutOfView":false,"soleFloatTakesDesktop":false,"stepInToward":"auto","summonStays":false,"tabsEnabled":false,"tileFade":0.2,"tileRetryMinutes":10,"tileStyle":"icon","tintBehindArranged":0,"windowEdgeFraction":0.3,"windowPictures":false},"thinning":0.05,"trace":1,"windows":[{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,43,325,319],"id":29,"pid":3189,"title":"title[1]"},{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[687,43,325,650],"id":30,"pid":3189,"title":"title[2]"},{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,374,325,319],"id":31,"pid":3189,"title":"title[3]"}],"workspaces":{"5A42259C-47B8-4590-9762-97DBE4FE7F1B":{"back":[],"camera":2,"floating":{},"forward":[],"names":{},"savedViews":{},"tree":{"desktop":0,"loans":[],"nextRawID":6,"nodes":{"0":{"id":0,"kind":{"desktop":{}},"parent":2,"weight":1},"1":{"id":1,"kind":{"stack":{"active":0,"windows":[29]}},"parent":5,"weight":1},"2":{"id":2,"kind":{"split":{"axis":"horizontal","children":[5,0,3]}},"weight":1},"3":{"id":3,"kind":{"stack":{"active":0,"windows":[30]}},"parent":2,"weight":1},"4":{"id":4,"kind":{"stack":{"active":0,"windows":[31]}},"parent":5,"weight":1},"5":{"id":5,"kind":{"split":{"axis":"vertical","children":[1,4]}},"parent":2,"weight":1}},"root":2,"visits":[]},"undockedFrames":{"29":[[170,220],[480,348]],"30":[[220,180],[480,348]],"31":[[270,140],[480,348]]}}}}
+{"t":0.0013,"note":"A tap shows everything, and it stays"}
+{"t":0.0176,"command":"show-all","from":"script"}
+{"t":0.0180,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":0.0187,"read":"inputActivity","result":{"keyPresses":0,"keyboardIdle":202.063132125,"pointerIdle":202.063126167}}
+{"t":0.0193,"call":"focusedWindow","result":31}
+{"t":0.0197,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"5A42259C-47B8-4590-9762-97DBE4FE7F1B","main":true,"name":"display-1","visible":[0,31,1024,674]}]}
+{"t":0.0204,"call":"isMouseButtonDown","result":false}
+{"t":0.0207,"call":"focusedWindow","result":31}
+{"t":0.0216,"call":"focusedWindow","result":31}
+{"t":0.0219,"done":"show-all","message":"showing everything","ok":true}
+{"t":0.0848,"command":"zoom 29","from":"script"}
+{"t":0.0854,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":0.0859,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"5A42259C-47B8-4590-9762-97DBE4FE7F1B","main":true,"name":"display-1","visible":[0,31,1024,674]}]}
+{"t":0.0895,"read":"stackedWindows","result":[{"frame":[[12,374],[325,319]],"id":31},{"frame":[[687,43],[325,650]],"id":30},{"frame":[[12,43],[325,319]],"id":29}]}
+{"t":0.0899,"note":"moveTogether, 3 windows, took 0.0 s"}
+{"t":0.0951,"call":"setFrame","frame":[12,43,1000,650],"id":29,"result":[12,43,1000,650],"took":0.0051}
+{"t":0.0958,"call":"setFrame","frame":[1023,767,325,650],"id":30,"result":[1023,677,325,650]}
+{"t":0.0961,"call":"setFrame","frame":[1023,767,325,319],"id":31,"result":[1023,677,325,319]}
+{"t":0.0965,"call":"isMouseButtonDown","result":false}
+{"t":0.0968,"call":"focusedWindow","result":31}
+{"t":0.0977,"call":"focusedWindow","result":31}
+{"t":0.0977,"call":"cursorLocation","result":[10,10]}
+{"t":0.0978,"call":"focus","id":29}
+{"t":0.1020,"call":"focusedWindow","result":29}
+{"t":0.1023,"call":"focus","id":29}
+{"t":0.1030,"call":"focusedWindow","result":29}
+{"t":0.1034,"done":"zoom 29","message":"framed w29","ok":true}
+{"t":0.1047,"raw":"AXResized w29"}
+{"t":0.1203,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,43,1000,650],"id":29,"pid":3189,"title":"title[1]"}}
+{"t":0.1211,"raw":"AXMoved w30"}
+{"t":0.1224,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[1023,677,325,650],"id":30,"pid":3189,"title":"title[2]"}}
+{"t":0.1226,"raw":"AXMoved w31"}
+{"t":0.1229,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[1023,677,325,319],"id":31,"pid":3189,"title":"title[3]"}}
+{"t":0.1231,"raw":"AXFocusedWindowChanged"}
+{"t":0.1311,"event":"focused","id":29}
+{"t":0.1316,"call":"focusedWindow","result":29}
+{"t":0.1321,"call":"focusedWindow","result":29}
+{"t":0.1321,"call":"isMouseButtonDown","result":false}
+{"t":0.1342,"raw":"AXMainWindowChanged"}
+{"t":0.1409,"command":"state","from":"script"}
+{"t":0.1424,"call":"focusedWindow","result":29}
+{"t":0.1428,"done":"state","message":"running: 1 display, 3 docked and 0 floating, 2 out of view","ok":true}
+{"t":0.2082,"command":"state","from":"script"}
+{"t":0.2095,"call":"focusedWindow","result":29}
+{"t":0.2100,"done":"state","message":"running: 1 display, 3 docked and 0 floating, 2 out of view","ok":true}
+{"t":0.2780,"command":"state","from":"script"}
+{"t":0.2796,"call":"focusedWindow","result":29}
+{"t":0.2798,"done":"state","message":"running: 1 display, 3 docked and 0 floating, 2 out of view","ok":true}
+{"t":0.3449,"command":"state","from":"script"}
+{"t":0.3458,"call":"focusedWindow","result":29}
+{"t":0.3459,"done":"state","message":"running: 1 display, 3 docked and 0 floating, 2 out of view","ok":true}
+{"t":0.3996,"timer":"focus-ring-again"}
+{"t":0.3998,"call":"isMouseButtonDown","result":false}
+{"t":0.4011,"call":"focusedWindow","result":29}
+{"t":0.6508,"timer":"save"}
+{"t":0.6518,"event":"settingsFileMayHaveChanged"}
+{"t":0.6523,"event":"settingsFileMayHaveChanged"}
+{"t":0.9672,"timer":"settings-file"}
+{"t":1.1010,"raw":"leftMouseDown 512,368"}
+{"t":1.1021,"event":"pointerPressed"}
+{"t":1.2069,"raw":"leftMouseUp 512,368"}
+{"t":1.7583,"raw":"flagsChanged"}
+{"t":1.8272,"raw":"flagsChanged"}
+{"t":1.9185,"args":["ctrl+opt+space","show-all","pressed"],"event":"shortcut"}
+{"t":1.9195,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":1.9197,"read":"inputActivity","result":{"keyPresses":1,"keyboardIdle":203.964129834,"pointerIdle":0.819119208}}
+{"t":1.9199,"call":"cursorLocation","result":[512,368]}
+{"t":1.9202,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"5A42259C-47B8-4590-9762-97DBE4FE7F1B","main":true,"name":"display-1","visible":[0,31,1024,674]}]}
+{"t":1.9225,"read":"stackedWindows","result":[{"frame":[[12,43],[1000,650]],"id":29},{"frame":[[1023,677],[325,319]],"id":31},{"frame":[[1023,677],[325,650]],"id":30}]}
+{"t":1.9231,"note":"moveTogether, 3 windows, took 0.0 s"}
+{"t":1.9411,"call":"setFrame","frame":[12,43,325,319],"id":29,"result":[12,43,325,319],"took":0.0178}
+{"t":1.9418,"call":"setFrame","frame":[687,43,325,650],"id":30,"result":[687,43,325,650]}
+{"t":1.9427,"call":"setFrame","frame":[12,374,325,319],"id":31,"result":[12,374,325,319]}
+{"t":1.9431,"call":"isMouseButtonDown","result":false}
+{"t":1.9441,"call":"focusedWindow","result":29}
+{"t":1.9471,"call":"focusedWindow","result":29}
+{"t":1.9478,"call":"cursorLocation","result":[512,368]}
+{"t":1.9479,"call":"isMouseButtonDown","result":false}
+{"t":1.9500,"raw":"AXResized w29"}
+{"t":1.9505,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,43,325,319],"id":29,"pid":3189,"title":"title[1]"}}
+{"t":1.9522,"raw":"AXMoved w30"}
+{"t":1.9526,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[687,43,325,650],"id":30,"pid":3189,"title":"title[2]"}}
+{"t":1.9534,"raw":"AXMoved w31"}
+{"t":1.9538,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,374,325,319],"id":31,"pid":3189,"title":"title[3]"}}
+{"t":1.9898,"timer":"peek"}
+{"t":1.9901,"call":"cursorLocation","result":[512,368]}
+{"t":1.9903,"args":["ctrl+opt+space"],"read":"isHolding","result":false}
+{"t":1.9906,"call":"isMouseButtonDown","result":false}
+{"t":2.1095,"args":["ctrl+opt+space","show-all","released"],"event":"shortcut"}
+{"t":2.1474,"raw":"flagsChanged"}
+{"t":2.1715,"raw":"flagsChanged"}
+{"t":2.2808,"command":"state","from":"script"}
+{"t":2.2815,"call":"focusedWindow","result":29}
+{"t":2.2817,"done":"state","message":"running: 1 display, 3 docked and 0 floating, 0 out of view","ok":true}
+{"t":2.3333,"command":"state","from":"script"}
+{"t":2.3357,"call":"focusedWindow","result":29}
+{"t":2.3360,"done":"state","message":"running: 1 display, 3 docked and 0 floating, 0 out of view","ok":true}
+{"t":2.3943,"command":"state","from":"script"}
+{"t":2.3958,"call":"focusedWindow","result":29}
+{"t":2.3961,"done":"state","message":"running: 1 display, 3 docked and 0 floating, 0 out of view","ok":true}
+{"t":2.4349,"note":"✔ everything shows"}
+{"t":2.5244,"timer":"save"}
+{"t":2.5259,"event":"settingsFileMayHaveChanged"}
+{"t":2.5263,"event":"settingsFileMayHaveChanged"}
+{"t":2.8366,"timer":"settings-file"}
+{"t":3.4620,"command":"state","from":"script"}
+{"t":3.4630,"call":"focusedWindow","result":29}
+{"t":3.4633,"done":"state","message":"running: 1 display, 3 docked and 0 floating, 0 out of view","ok":true}
+{"t":3.5010,"command":"state","from":"script"}
+{"t":3.5026,"call":"focusedWindow","result":29}
+{"t":3.5028,"done":"state","message":"running: 1 display, 3 docked and 0 floating, 0 out of view","ok":true}
+{"t":3.5384,"command":"state","from":"script"}
+{"t":3.5392,"call":"focusedWindow","result":29}
+{"t":3.5393,"done":"state","message":"running: 1 display, 3 docked and 0 floating, 0 out of view","ok":true}
+{"t":3.5797,"note":"✔ and still does a second later"}
+{"t":3.6193,"note":"✔ no outline"}
+{"t":3.6326,"command":"back","from":"script"}
+{"t":3.6334,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":3.6335,"read":"inputActivity","result":{"keyPresses":1,"keyboardIdle":1.524731666,"pointerIdle":2.532974708}}
+{"t":3.6336,"call":"cursorLocation","result":[512,368]}
+{"t":3.6337,"call":"displays","result":[{"frame":[0,0,1024,768],"id":"5A42259C-47B8-4590-9762-97DBE4FE7F1B","main":true,"name":"display-1","visible":[0,31,1024,674]}]}
+{"t":3.6350,"read":"stackedWindows","result":[{"frame":[[12,43],[325,319]],"id":29},{"frame":[[12,374],[325,319]],"id":31},{"frame":[[687,43],[325,650]],"id":30}]}
+{"t":3.6353,"note":"moveTogether, 3 windows, took 0.0 s"}
+{"t":3.6414,"call":"setFrame","frame":[12,43,1000,650],"id":29,"result":[12,43,1000,650],"took":0.006}
+{"t":3.6433,"call":"setFrame","frame":[1023,767,325,650],"id":30,"result":[1023,677,325,650],"took":0.0016}
+{"t":3.6444,"call":"setFrame","frame":[1023,767,325,319],"id":31,"result":[1023,677,325,319]}
+{"t":3.6449,"call":"isMouseButtonDown","result":false}
+{"t":3.6461,"call":"focusedWindow","result":29}
+{"t":3.6492,"call":"focusedWindow","result":29}
+{"t":3.6517,"done":"back","message":"back to ArborTestWindows (n1)","ok":true}
+{"t":3.6538,"raw":"AXResized w29"}
+{"t":3.6566,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,43,1000,650],"id":29,"pid":3189,"title":"title[1]"}}
+{"t":3.6580,"raw":"AXMoved w30"}
+{"t":3.6586,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[1023,677,325,650],"id":30,"pid":3189,"title":"title[2]"}}
+{"t":3.6588,"raw":"AXMoved w31"}
+{"t":3.6589,"event":"changed","user":false,"window":{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[1023,677,325,319],"id":31,"pid":3189,"title":"title[3]"}}
+{"t":3.6775,"command":"state","from":"script"}
+{"t":3.6787,"call":"focusedWindow","result":29}
+{"t":3.6789,"done":"state","message":"running: 1 display, 3 docked and 0 floating, 2 out of view","ok":true}
+{"t":3.7308,"command":"state","from":"script"}
+{"t":3.7322,"call":"focusedWindow","result":29}
+{"t":3.7324,"done":"state","message":"running: 1 display, 3 docked and 0 floating, 2 out of view","ok":true}
+{"t":3.7720,"command":"state","from":"script"}
+{"t":3.7731,"call":"focusedWindow","result":29}
+{"t":3.7734,"done":"state","message":"running: 1 display, 3 docked and 0 floating, 2 out of view","ok":true}
+{"t":3.8136,"note":"✔ back returns to w1"}
+{"t":3.8376,"end":"another trace was started","lines":147,"thinned":0}
