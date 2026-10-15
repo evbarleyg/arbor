@@ -1,0 +1,454 @@
+# mac-shell: scripts/mac-shell/e2e-drag.sh at 92f8b7a, macOS 26.6.2, 2026-10-15T05:55Z
+This takes over the real pointer for one to three minutes. Hands off the mouse until it says it is done.
+built Arbor, the pointer tool and the app bundles in 5s
+
+== MACOS'S OWN TILING: on, as a Mac comes
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+> drag 0 12 512 10 --hold 1
+without Arbor, a window let go in the menu bar ends at 170 220 480 348
+> drag 410 232 512 170
+> drag 512 170 512 10 --hold 1
+without Arbor, a window let go in the menu bar ends at 0 31 1024 674
+  ✔ macOS's own tiling is seen to act: yes
+session 1: Arbor pid 10994, test windows 39 40 41 (pid 10959)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w39 170 220 480 348      floating
+  w40 220 180 480 348      floating
+  w41 270 140 480 348      floating
+
+== drag a window by its title bar to the left screen edge
+> drag 546 152 3 368 --no-release
+  ✔ the window follows the pointer
+  ✔ with macOS's tiling on Arbor offers nothing along the edge
+> release --timed
+  ✔ the button is up within 100 ms (after 8 ms)
+  ✔ let go short of macOS's point, the window floats
+  ✔ where it was let go
+  ✔ Arbor saw the release
+> dock 41 left
+docked w41 at the left edge
+  ✔ a command docks it
+  ✔ it sits at the left edge
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          518 43 494 650
+  w39 518 220 480 348      floating
+  w40 518 180 480 348      floating
+  w41 12 194 494 348       docked focused
+
+== drag the right edge of the docked window 60 points to the right
+> drag 505 368 565 368
+  ✘ the window is 60 points wider
+      picture: mac-shell/fail-e2e-drag-1.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+      |   Desktop          578 43 434 650
+      |   w39 578 220 446 348      floating
+      |   w40 578 180 446 348      floating
+      |   w41 12 113 554 510       docked focused
+      log | DEBUG w41 is being resized by its edges
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG edge resize of w41: edges ["right"], seams beside ["right"]
+  ✔ the Desktop gave up the space
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          578 43 434 650
+  w39 578 220 446 348      floating
+  w40 578 180 446 348      floating
+  w41 12 113 554 510       docked focused
+
+== drag another window onto the right part of the docked one
+> drag 836 192 482 368 --no-release
+  ✔ the pointer is inside the drop preview
+  ✔ a drop preview shows while the button is held
+> release --timed --then-click 389,476
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ a click where the preview was, 573 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✘ it ends where the preview was
+      picture: mac-shell/fail-e2e-drag-2.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+      |   Desktop          583 43 429 650
+      |   w39 583 220 441 348      floating
+      |   w40 298 194 273 348      docked focused
+      |   w41 12 73 274 591        docked
+      log | DEBUG focus is on w40
+      log | DEBUG w40 has the keyboard
+      log | DEBUG w40 is being dragged
+      log | DEBUG drag of w40: on float
+      log | DEBUG drag of w40: waiting over beside(n1, ArborCore.Edge.right)
+      log | DEBUG drag of w40: on beside(n1, ArborCore.Edge.right)
+      log | INFO  dropped w40 on beside(n1, ArborCore.Edge.right), display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Docked · ⌃⌥↩ frames it
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+  ✔ to the right of the first
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          583 43 429 650
+  w39 583 220 441 348      floating
+  w40 298 194 273 348      docked focused
+  w41 12 73 274 591        docked
+
+== double-click the title bar of a docked window (H5)
+> click 180 85 2
+  ✔ the window is in its slot
+  ✘ no seam moved
+      picture: mac-shell/fail-e2e-drag-3.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+      |   Desktop          583 43 429 650
+      |   w39 583 220 441 348      floating
+      |   w40 298 194 273 348      docked
+      |   w41 12 43 274 650        docked focused
+      log | DEBUG focus is on w41
+      log | DEBUG w41 has the keyboard
+
+== press inside a docked window and move the pointer
+> drag 149 368 239 428 --no-release
+  ✔ that is not a drag: no preview
+> release
+  ✔ the window is in its slot
+
+== drag a docked window out onto the Desktop
+> drag 466 206 797 103
+  ✔ it floats
+  ✔ the first window is still docked
+  ✔ Arbor saw the release
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          578 43 434 650
+  w39 578 220 446 348      floating
+  w40 524 91 480 348       floating focused
+  w41 12 43 554 650        docked
+
+== drag a floating window to the bottom edge, which is Arbor's at every setting
+> drag 800 103 682 702 --no-release
+  ✔ a drop preview shows while the button is held
+> release --timed --then-click 345,586
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ a click where the preview was, 578 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✔ it ends where the preview was
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+> float 40
+w40 is floating
+  ✔ it floats again
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          578 43 434 650
+  w39 578 220 446 348      floating
+  w40 544 357 480 347      floating focused
+  w41 12 43 554 650        docked
+
+== let go of a docked window at the very edge of the screen, where macOS tiles
+> drag 324 55 0 368 --hold 1 --no-release
+  ✔ Arbor shows no preview beside macOS's
+> release --timed
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ macOS gives it its tile
+  ✔ where it stays
+  ✔ it floats
+  ✔ and Arbor knows where it is
+  ✔ Arbor saw the release
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w39 170 220 480 348      floating
+  w40 544 357 480 347      floating
+  w41 -1 32 513 674        floating focused
+
+== let go of a floating window in the menu bar, where macOS fills the screen
+> drag 820 369 512 15 --hold 1 --no-release
+  ✔ Arbor shows no preview beside macOS's
+> release --timed
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ macOS gives it its tile
+  ✔ where it stays
+  ✔ it floats
+  ✔ and Arbor knows where it is
+  ✔ Arbor saw the release
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w39 170 220 480 348      floating
+  w40 0 31 1024 674        floating focused
+  w41 -1 32 513 674        floating
+
+== macOS's tiling is switched off while Arbor runs: from the next drag on the menu bar is Arbor's
+com.apple.WindowManager EnableTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTopTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+> drag 546 43 512 231
+> drag 532 224 512 15 --hold 1 --no-release
+  ✔ a drop preview shows while the button is held
+> release --timed --then-click 345,255
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ a click where the preview was, 555 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✔ it ends where the preview was
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+display 0 0 1024 768, visible 0 31 1024 674, camera n7, back no
+  Desktop          12 374 1000 319
+  w39 170 374 480 331      floating
+  w40 12 43 1000 319       docked focused
+  w41 0 374 514 331        floating
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== MACOS'S OWN TILING: switched off
+com.apple.WindowManager EnableTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTopTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+> drag 410 232 512 10 --hold 1
+without Arbor, a window let go in the menu bar ends at 272 31 480 348
+> drag 512 43 512 170
+> drag 512 170 512 10 --hold 1
+without Arbor, a window let go in the menu bar ends at 272 31 480 348
+  ✔ macOS's own tiling is seen to act: no
+session 2: Arbor pid 16044, test windows 61 62 63 (pid 16030)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ Arbor's event taps are in the way of every press and release
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w61 170 220 480 348      floating
+  w62 220 180 480 348      floating
+  w63 270 140 480 348      floating
+
+== drag a window by its title bar to the left screen edge
+> drag 546 152 3 368 --no-release
+  ✔ the window follows the pointer
+  ✔ a drop preview shows while the button is held
+> release --timed --then-click 176,476
+  ✔ the button is up within 100 ms (after 2 ms)
+  ✔ a click where the preview was, 517 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✘ it ends where the preview was
+      picture: mac-shell/fail-e2e-drag-4.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+      |   Desktop          518 43 494 650
+      |   w61 518 220 480 348      floating
+      |   w62 518 180 480 348      floating
+      |   w63 12 194 494 348       docked focused
+      log | DEBUG focus is on w63
+      log | DEBUG w63 has the keyboard
+      log | DEBUG w63 is being dragged
+      log | DEBUG drag of w63: on float
+      log | DEBUG drag of w63: on cameraEdge(ArborCore.Edge.left)
+      log | INFO  dropped w63 on cameraEdge(ArborCore.Edge.left), display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Docked · ⌃⌥↩ frames it
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+  ✔ it sits at the left edge
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          518 43 494 650
+  w61 518 220 480 348      floating
+  w62 518 180 480 348      floating
+  w63 12 194 494 348       docked focused
+
+== drag the right edge of the docked window 60 points to the right
+> drag 505 368 565 368
+  ✘ the window is 60 points wider
+      picture: mac-shell/fail-e2e-drag-5.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+      |   Desktop          578 43 434 650
+      |   w61 578 220 446 348      floating
+      |   w62 578 180 446 348      floating
+      |   w63 12 113 554 510       docked focused
+      log | DEBUG w63 is being resized by its edges
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG edge resize of w63: edges ["right"], seams beside ["right"]
+  ✔ the Desktop gave up the space
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          578 43 434 650
+  w61 578 220 446 348      floating
+  w62 578 180 446 348      floating
+  w63 12 113 554 510       docked focused
+
+== drag another window onto the right part of the docked one
+> drag 836 192 482 368 --no-release
+  ✔ the pointer is inside the drop preview
+  ✔ a drop preview shows while the button is held
+> release --timed --then-click 389,476
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ a click where the preview was, 614 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✘ it ends where the preview was
+      picture: mac-shell/fail-e2e-drag-6.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+      |   Desktop          583 43 429 650
+      |   w61 583 220 441 348      floating
+      |   w62 298 194 273 348      docked focused
+      |   w63 12 73 274 591        docked
+      log | DEBUG focus is on w62
+      log | DEBUG w62 has the keyboard
+      log | DEBUG w62 is being dragged
+      log | DEBUG drag of w62: on float
+      log | DEBUG drag of w62: waiting over beside(n1, ArborCore.Edge.right)
+      log | DEBUG drag of w62: on beside(n1, ArborCore.Edge.right)
+      log | INFO  dropped w62 on beside(n1, ArborCore.Edge.right), display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Docked · ⌃⌥↩ frames it
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+  ✔ to the right of the first
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          583 43 429 650
+  w61 583 220 441 348      floating
+  w62 298 194 273 348      docked focused
+  w63 12 73 274 591        docked
+
+== double-click the title bar of a docked window (H5)
+> click 180 85 2
+  ✔ the window is in its slot
+  ✘ no seam moved
+      picture: mac-shell/fail-e2e-drag-7.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+      |   Desktop          583 43 429 650
+      |   w61 583 220 441 348      floating
+      |   w62 298 194 273 348      docked
+      |   w63 12 43 274 650        docked focused
+      log | DEBUG focus is on w63
+      log | DEBUG w63 has the keyboard
+
+== press inside a docked window and move the pointer
+> drag 149 368 239 428 --no-release
+  ✔ that is not a drag: no preview
+> release
+  ✔ the window is in its slot
+
+== drag a docked window out onto the Desktop
+> drag 466 206 797 103
+  ✔ it floats
+  ✔ the first window is still docked
+  ✔ Arbor saw the release
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          578 43 434 650
+  w61 578 220 446 348      floating
+  w62 523 91 480 348       floating focused
+  w63 12 43 554 650        docked
+
+== drag a floating window to the bottom edge, which is Arbor's at every setting
+> drag 799 103 682 702 --no-release
+  ✔ a drop preview shows while the button is held
+> release --timed --then-click 345,586
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ a click where the preview was, 583 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✘ it ends where the preview was
+      picture: mac-shell/fail-e2e-drag-8.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n5, back no
+      |   Desktop          578 43 434 319
+      |   w61 578 31 446 331       floating
+      |   w62 203 374 618 319      docked focused
+      |   w63 12 43 554 319        docked
+      log | DEBUG w62 is being dragged
+      log | DEBUG drag of w62: on float
+      log | DEBUG drag of w62: on cameraEdge(ArborCore.Edge.bottom)
+      log | INFO  dropped w62 on cameraEdge(ArborCore.Edge.bottom), display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Docked · ⌃⌥↩ frames it
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+> float 62
+w62 is floating
+  ✔ it floats again
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          578 43 434 650
+  w61 578 220 446 348      floating
+  w62 544 357 480 347      floating focused
+  w63 12 43 554 650        docked
+
+== let go of a docked window at the very edge of the screen, where macOS tiles
+> drag 820 369 0 368 --hold 1 --no-release
+  ✔ a drop preview shows while the button is held
+> release --timed --then-click 120,476
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ a click where the preview was, 580 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✘ it ends where the preview was
+      picture: mac-shell/fail-e2e-drag-9.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+      |   Desktop          726 43 286 650
+      |   w61 726 220 298 348      floating
+      |   w62 12 113 325 510       docked focused
+      |   w63 349 43 365 650       docked
+      log | DEBUG w62 is being dragged
+      log | DEBUG drag of w62: on float
+      log | DEBUG drag of w62: waiting over beside(n1, ArborCore.Edge.right)
+      log | DEBUG drag of w62: on beside(n1, ArborCore.Edge.right)
+      log | DEBUG drag of w62: on float
+      log | DEBUG drag of w62: waiting over beside(n1, ArborCore.Edge.left)
+      log | DEBUG drag of w62: on beside(n1, ArborCore.Edge.left)
+      log | DEBUG drag of w62: on cameraEdge(ArborCore.Edge.left)
+      log | INFO  dropped w62 on cameraEdge(ArborCore.Edge.left), display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+> float 62
+w62 is floating
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          578 43 434 650
+  w61 578 220 446 348      floating
+  w62 544 194 480 348      floating focused
+  w63 12 43 554 650        docked
+
+== let go of a floating window in the menu bar, where macOS fills the screen
+> drag 820 206 512 15 --hold 1 --no-release
+  ✔ a drop preview shows while the button is held
+> release --timed --then-click 345,255
+  ✔ the button is up within 100 ms (after 6 ms)
+  ✔ a click where the preview was, 486 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✘ it ends where the preview was
+      picture: mac-shell/fail-e2e-drag-10.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n8, back no
+      |   Desktop          578 374 434 319
+      |   w61 578 374 446 331      floating
+      |   w62 101 43 821 319       docked focused
+      |   w63 12 374 554 319       docked
+      log | DEBUG w62 is being dragged
+      log | DEBUG drag of w62: on float
+      log | DEBUG drag of w62: waiting over beside(n1, ArborCore.Edge.right)
+      log | DEBUG drag of w62: on cameraEdge(ArborCore.Edge.top)
+      log | INFO  dropped w62 on cameraEdge(ArborCore.Edge.top), display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+display 0 0 1024 768, visible 0 31 1024 674, camera n8, back no
+  Desktop          578 374 434 319
+  w61 578 374 446 331      floating
+  w62 101 43 821 319       docked focused
+  w63 12 374 554 319       docked
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+Done: the pointer is yours again.
+
+105 passed, 10 failed
+exit code 1

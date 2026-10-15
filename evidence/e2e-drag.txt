@@ -1,0 +1,164 @@
+# e2e-drag 2026-10-15T05:55Z on macOS 26.6.2, commit 92f8b7a
+
+== MACOS'S OWN TILING: on, as a Mac comes
+  ✔ macOS's own tiling is seen to act: yes
+
+== drag a window by its title bar to the left screen edge
+  ✔ the window follows the pointer
+  ✔ with macOS's tiling on Arbor offers nothing along the edge
+  ✔ the button is up within 100 ms (after 8 ms)
+  ✔ let go short of macOS's point, the window floats
+  ✔ where it was let go
+  ✔ Arbor saw the release
+  ✔ a command docks it
+  ✔ it sits at the left edge
+
+== drag the right edge of the docked window 60 points to the right
+  ✘ the window is 60 points wider
+  ✔ the Desktop gave up the space
+
+== drag another window onto the right part of the docked one
+  ✔ the pointer is inside the drop preview
+  ✔ a drop preview shows while the button is held
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ a click where the preview was, 573 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✘ it ends where the preview was
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+  ✔ to the right of the first
+
+== double-click the title bar of a docked window (H5)
+  ✔ the window is in its slot
+  ✘ no seam moved
+
+== press inside a docked window and move the pointer
+  ✔ that is not a drag: no preview
+  ✔ the window is in its slot
+
+== drag a docked window out onto the Desktop
+  ✔ it floats
+  ✔ the first window is still docked
+  ✔ Arbor saw the release
+
+== drag a floating window to the bottom edge, which is Arbor's at every setting
+  ✔ a drop preview shows while the button is held
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ a click where the preview was, 578 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✔ it ends where the preview was
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+  ✔ it floats again
+
+== let go of a docked window at the very edge of the screen, where macOS tiles
+  ✔ Arbor shows no preview beside macOS's
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ macOS gives it its tile
+  ✔ where it stays
+  ✔ it floats
+  ✔ and Arbor knows where it is
+  ✔ Arbor saw the release
+
+== let go of a floating window in the menu bar, where macOS fills the screen
+  ✔ Arbor shows no preview beside macOS's
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ macOS gives it its tile
+  ✔ where it stays
+  ✔ it floats
+  ✔ and Arbor knows where it is
+  ✔ Arbor saw the release
+
+== macOS's tiling is switched off while Arbor runs: from the next drag on the menu bar is Arbor's
+  ✔ a drop preview shows while the button is held
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ a click where the preview was, 555 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✔ it ends where the preview was
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== MACOS'S OWN TILING: switched off
+  ✔ macOS's own tiling is seen to act: no
+  ✔ Arbor's event taps are in the way of every press and release
+
+== drag a window by its title bar to the left screen edge
+  ✔ the window follows the pointer
+  ✔ a drop preview shows while the button is held
+  ✔ the button is up within 100 ms (after 2 ms)
+  ✔ a click where the preview was, 517 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✘ it ends where the preview was
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+  ✔ it sits at the left edge
+
+== drag the right edge of the docked window 60 points to the right
+  ✘ the window is 60 points wider
+  ✔ the Desktop gave up the space
+
+== drag another window onto the right part of the docked one
+  ✔ the pointer is inside the drop preview
+  ✔ a drop preview shows while the button is held
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ a click where the preview was, 614 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✘ it ends where the preview was
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+  ✔ to the right of the first
+
+== double-click the title bar of a docked window (H5)
+  ✔ the window is in its slot
+  ✘ no seam moved
+
+== press inside a docked window and move the pointer
+  ✔ that is not a drag: no preview
+  ✔ the window is in its slot
+
+== drag a docked window out onto the Desktop
+  ✔ it floats
+  ✔ the first window is still docked
+  ✔ Arbor saw the release
+
+== drag a floating window to the bottom edge, which is Arbor's at every setting
+  ✔ a drop preview shows while the button is held
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ a click where the preview was, 583 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✘ it ends where the preview was
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+  ✔ it floats again
+
+== let go of a docked window at the very edge of the screen, where macOS tiles
+  ✔ a drop preview shows while the button is held
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ a click where the preview was, 580 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✘ it ends where the preview was
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+
+== let go of a floating window in the menu bar, where macOS fills the screen
+  ✔ a drop preview shows while the button is held
+  ✔ the button is up within 100 ms (after 6 ms)
+  ✔ a click where the preview was, 486 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✘ it ends where the preview was
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+105 passed, 10 failed
