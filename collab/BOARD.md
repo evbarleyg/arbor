@@ -106,7 +106,7 @@ The walks and their rules are on the trunk since 2026-10-15 (`docs/TESTING.md`, 
 
 ### Ring 2: where the stand-ins do not yet tell the truth
 
-`python3 scripts/reality-ledger.py --rings` gives the number the gate reads (`docs/REALITY.md`). **2026-10-15: 98 cases touch a detector and are open**: Arbor does not cope yet, or nobody knows, or the stand-ins play the case partly or not at all. "Nobody knows" is no pass. It has to reach nought.
+`python3 scripts/reality-ledger.py --rings` gives the number the gate reads (`docs/REALITY.md`). **2026-10-15: 98 cases touch a detector and are open**: Arbor does not cope yet, or nobody knows, or the stand-ins play the case partly or not at all. "Nobody knows" is no pass. It has to reach nought. **Later the same night: 108.** The ten more are cases written down, not new untruths of the stand-ins: a number that rises because somebody looked is the ledger at work. By detector: `moved-unasked` 27, `focus` 22, `jolt` 19, `lost` 17, `input-held` 11, `slow` 10, `fought` 9, `stuck` 9, `size-lost` 8, `behind` 7, `flash` 5, `pulled` 2, `crash` 2, `left-behind` 1, `busy` and `told` none. First among them stands board 1.46. The table below is the count of 98.
 
 | Detector | Open + not played | | Detector | Open + not played |
 |---|---|---|---|---|
