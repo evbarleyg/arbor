@@ -401,7 +401,7 @@ extension Controller {
       }
       return result
     }
-    moveCamera(on: display, to: space)
+    onTheWay(to: id) { moveCamera(on: display, to: space) }
     askForTheKeyboard(for: inFront(of: id, on: display))
     return .success("framed \(id)")
   }

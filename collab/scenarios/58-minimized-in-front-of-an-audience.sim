@@ -1,0 +1,34 @@
+# Proposed by a fixer (2026-10-15), from the first run of F58's checks on a hosted Mac; the documenter may edit or drop it.
+# Story: whoever presses ⌘M asked to be rid of a window. A person's ⌘M is never undone.
+# When a window has landed in the Dock its app names its next window, and only then reports the minimizing. A held view sends the keyboard back to the
+# window that is shown as soon as another is named, and giving a window the keyboard raises it, which fetches it out of the Dock: it flew
+# there and straight back, in front of an audience. Now the window is asked first, and says itself where it is.
+# Reference: F58, criterion 4. Decided in collab/QUESTIONS.md (product owner, 2026-10-15, "three things found behind green runs").
+#
+# Someone shares the screen with one Keynote window framed and the view held. Notes and a second Keynote window are out of view.
+open Keynote
+open Notes
+open Keynote
+dock 101 left
+dock 102 right
+dock 103 right
+zoom 101
+hold
+expect fills 101
+minimize 101
+flush
+# It stays in the Dock, the view is empty and held, and nobody else has come into view.
+expect hidden 101
+expect hidden 102
+expect hidden 103
+expect held view
+zoom 102
+expect fail
+# A click in the Dock brings it back to the same view.
+restore 101
+flush
+expect fills 101
+expect hidden 102
+expect hidden 103
+release
+float-all

@@ -117,13 +117,11 @@ extension Controller {
     // Word of the keyboard going elsewhere can be late.
     guard visit.window == window.id, system.focusedWindow() == window.id else { return nil }
     if visit.cameraBefore != workspaces[home]!.camera, workspaces[home]!.tree.contains(visit.cameraBefore) {
-      moveCamera(on: home, to: visit.cameraBefore)
+      // Who gets the keyboard is said below: left to the move as well, the same window would be asked twice.
+      moveCamera(on: home, to: visit.cameraBefore, refocus: false)
     }
-    if let keyboard = visit.keyboardBefore, windows[keyboard]?.isPresent == true, !parked.contains(keyboard) {
-      askForTheKeyboard(for: keyboard)
-    } else {
-      ensureFocusIsVisible(on: home)
-    }
+    let before = visit.keyboardBefore.flatMap { windows[$0]?.isPresent == true && !parked.contains($0) ? $0 : nil }
+    if before.map(sendTheKeyboard(to:)) != true { ensureFocusIsVisible(on: home, notTo: Set([before].compactMap { $0 })) }
     return .success("back from \(window.appName)")
   }
 
@@ -198,11 +196,11 @@ extension Controller {
     let previous = keyboardBeforeSummon
     keyboardBeforeSummon = nil
     if system.focusedWindow() == window {
-      if let previous, windows[previous]?.isPresent == true, !parked.contains(previous) {
-        askForTheKeyboard(for: previous)
-      } else if !ensureFocusIsVisible(on: displayID) {
+      let before = previous.flatMap { windows[$0]?.isPresent == true && !parked.contains($0) ? $0 : nil }
+      let asked = Set([before].compactMap { $0 })
+      if before.map(sendTheKeyboard(to:)) != true, !ensureFocusIsVisible(on: displayID, notTo: asked) {
         // Nothing else is in view here. A window on another display is better than one that is out of view.
-        _ = workspaces.keys.sorted().first { $0 != displayID && ensureFocusIsVisible(on: $0) }
+        _ = workspaces.keys.sorted().first { $0 != displayID && ensureFocusIsVisible(on: $0, notTo: asked) }
       }
     }
     notify(.layout(displayID))

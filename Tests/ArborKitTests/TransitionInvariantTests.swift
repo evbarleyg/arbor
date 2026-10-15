@@ -112,6 +112,7 @@ import Testing
 
     for count in 0..<500 {
       let before = showing(h)
+      let inTheDock = Set(h.system.windows.filter(\.value.snapshot.isMinimized).keys)
       h.overlays.clearTransitions()
       drawnThoughGone = []
       let what = step(h, &random)
@@ -142,7 +143,9 @@ import Testing
         #expect(first[window]?.from == frame, "\(window) does not start where it is\n\(context)")
         #expect(first[window]?.fromOpacity == 1 && first[window]?.fromLook == .picture, "\(context)")
       }
-      for (window, frame) in after {
+      // Not a window the step fetched out of the Dock: a command that names a minimized window gives it the keyboard, and it comes back when
+      // the command's own motion is over. That is a second thing, like a step that restores it, which may need no stage.
+      for (window, frame) in after where !inTheDock.contains(window) || what == "restore \(window)" {
         #expect(last[window]?.to.approximatelyEquals(frame, tolerance: 1) == true, "\(window) does not end where it is\n\(context)")
         #expect(last[window]?.toOpacity == 1 && last[window]?.toLook == .picture, "\(context)")
       }

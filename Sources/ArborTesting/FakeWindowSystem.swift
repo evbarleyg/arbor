@@ -215,6 +215,10 @@ public final class FakeWindowSystem: WindowSystem {
   var lateRestores: [WindowID] = []
   /// Those of them whose app shows again.
   var shownLate: Set<WindowID> = []
+  /// Every window that was asked where it is, in order. Each question is a round trip to an app, on the main thread.
+  public private(set) var whereaboutsAsked: [WindowID] = []
+  /// The window that has landed in the Dock, which its app has still to report (`landInTheDock`, `reportTheLanding`).
+  var unreportedLanding: WindowID?
 
   /// One `setFrame`, with where the window was before, so tests can tell moves that changed nothing.
   public struct Move: Equatable {
@@ -474,6 +478,8 @@ public final class FakeWindowSystem: WindowSystem {
     }
     // Its app comes forward, which brings back what macOS had swept aside.
     sweptAside = nil
+    let wasInTheDock = comesOutOfTheDockIfRaised(window)
+    defer { if wasInTheDock, echoes.focus { undelivered.append(.cameBack(window)) } }
     let moved = focused != window
     let crossesApps = moved && focused.flatMap { windows[$0]?.snapshot.pid } != windows[window]?.snapshot.pid
     // macOS reports it two to four times when it crosses apps. Telling those apart is the Accessibility layer's job.
@@ -510,6 +516,12 @@ public final class FakeWindowSystem: WindowSystem {
   public func strayDialogsWaiting() -> Int { strayDialogs.count }
   public func modifierKeysDown() -> KeyChord.Modifiers { heldModifiers }
   public func macTiling() -> MacTiling { tiling }
+  public func whereabouts(of window: WindowID) -> Whereabouts {
+    whereaboutsAsked.append(window)
+    guard let fake = windows[window] else { return .inTheDockOrGone }
+    guard !isDenied, !unresponsive.contains(fake.snapshot.pid) else { return .unknown }
+    return fake.snapshot.isMinimized ? .inTheDockOrGone : .here
+  }
 
   public func inputActivity() -> InputActivity {
     InputActivity(
@@ -589,17 +601,46 @@ public final class FakeWindowSystem: WindowSystem {
 
   public func setMinimized(_ window: WindowID, _ minimized: Bool) {
     guard windows[window] != nil else { return }
-    // Either way the focus report comes first: of the app's next window, or of the window flying out of the Dock.
-    if echoes.keyboard {
-      if !minimized {
-        giveKeyboard(to: window)
-      } else if focused == window {
-        giveKeyboard(to: nextWindowOfApp(after: window))
-      }
+    if minimized {
+      landInTheDock(window)
+      return reportTheLanding()
     }
-    windows[window]!.snapshot.isMinimized = minimized
-    landings[window] = !minimized && echoes.flightFromTheDock > 0 ? clock() + echoes.flightFromTheDock : nil
-    if restoresLate, !minimized { return lateRestores.append(window) }
+    // The focus report comes first: of the window flying out of the Dock.
+    if echoes.keyboard { giveKeyboard(to: window) }
+    windows[window]!.snapshot.isMinimized = false
+    landings[window] = echoes.flightFromTheDock > 0 ? clock() + echoes.flightFromTheDock : nil
+    if restoresLate { return lateRestores.append(window) }
+    events?.windowChanged(windows[window]!.snapshot, userInitiated: true)
+    deliverEchoes()
+  }
+
+  /// Raised, a window comes out of the Dock, whether it has been there for an hour or has only just landed. Returns whether it did.
+  func comesOutOfTheDockIfRaised(_ window: WindowID) -> Bool {
+    guard windows[window]?.snapshot.isMinimized == true else { return false }
+    windows[window]!.snapshot.isMinimized = false
+    landings[window] = echoes.flightFromTheDock > 0 ? clock() + echoes.flightFromTheDock : nil
+    return true
+  }
+
+  /// The first half of a minimize as Arbor meets it. The window has flown for half a second, in which its whole app answers nobody, and has landed.
+  /// It says itself that it is minimized, and if it had the keyboard its app names its next window. That the window is minimized
+  /// the app reports a moment later: `reportTheLanding()`. Measured 0 to 32 ms, mostly 1 to 4. `setMinimized` is both at once.
+  public func landInTheDock(_ window: WindowID) {
+    guard windows[window] != nil else { return }
+    reportTheLanding()
+    windows[window]!.snapshot.isMinimized = true
+    landings[window] = nil
+    unreportedLanding = window
+    if echoes.keyboard, focused == window { giveKeyboard(to: nextWindowOfApp(after: window)) }
+  }
+
+  /// The second half. Whoever has given the window the keyboard meanwhile has fetched it back out of the Dock (`focus`), and its person's ⌘M
+  /// is undone. Then the report comes after that flight, and whoever looks at the window because of it finds it not minimized.
+  public func reportTheLanding() {
+    guard let window = unreportedLanding else { return }
+    unreportedLanding = nil
+    guard let fake = windows[window] else { return }
+    if !fake.snapshot.isMinimized { deliverEchoes() }
     events?.windowChanged(windows[window]!.snapshot, userInitiated: true)
     deliverEchoes()
   }
@@ -939,6 +980,7 @@ extension FakeWindowSystem {
     case focus(WindowID)
     case frame(WindowID)
     case keyboardMoved
+    case cameBack(WindowID)
   }
 
   /// Delivers what is queued, and what Arbor's reactions queue meanwhile. Returns how many focus reports
@@ -964,6 +1006,8 @@ extension FakeWindowSystem {
         // Like the Accessibility layer, this reads the frame when the report arrives, not when it was sent.
         if let snapshot = windows[window]?.snapshot { events?.windowChanged(snapshot, userInitiated: false) }
       case .keyboardMoved: events?.keyboardFocusMoved()
+      case .cameBack(let window):
+        if let snapshot = windows[window]?.snapshot { events?.windowChanged(snapshot, userInitiated: true) }
       }
     }
     return focusReports
@@ -976,7 +1020,7 @@ extension FakeWindowSystem {
   func takeNextEcho(_ hadTheirTurn: inout Set<Int32>) -> Echo {
     func app(_ echo: Echo) -> Int32? {
       switch echo {
-      case .focus(let window), .frame(let window): windows[window]?.snapshot.pid
+      case .focus(let window), .frame(let window), .cameBack(let window): windows[window]?.snapshot.pid
       case .keyboardMoved: nil
       }
     }

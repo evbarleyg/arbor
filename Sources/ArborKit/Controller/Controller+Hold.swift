@@ -468,6 +468,7 @@ extension Controller {
       scheduler.schedule("focus-held", after: request.until.timeIntervalSince(now)) { [weak self] in self?.holdLooksAgain() }
       return true
     }
+    let countedSoFar = hold.sentBack
     if let last = hold.sentBack, last.window == id, now.timeIntervalSince(last.since) < Self.fightSpan {
       guard lookingAgain || now.timeIntervalSince(last.last) >= Self.arrivalSpan else { return true }
       guard last.times < Self.fightLimit else {
@@ -482,11 +483,19 @@ extension Controller {
     if level == .still { holdSaysThatItTurnedAway(id) }
     hold.isSendingBack = true
     scheduler.schedule("focus-held", after: Self.arrivalSpan) { [weak self] in self?.holdLooksAgain() }
-    if let home = hold.home, windows[home]?.isPresent == true, !isOutOfView(home) {
-      askForTheKeyboard(for: home)
-    } else if let display = displayWithSomethingInView(preferring: workspaceID(containing: id)) {
-      ensureFocusIsVisible(on: display)
+    let home = hold.home.flatMap { windows[$0]?.isPresent == true && !isOutOfView($0) ? $0 : nil }
+    if let home, sendTheKeyboard(to: home) { return true }
+    // On to the next display where the only window in view is the one that has gone.
+    let asked = Set([home].compactMap { $0 })
+    if displaysWithSomethingInView(preferring: workspaceID(containing: id)).contains(where: { ensureFocusIsVisible(on: $0, notTo: asked) }) {
+      return true
     }
+    // Nobody is there to send it to: the one window in view is in the Dock. That was no round of a fight, and counted as one, three
+    // looks within the second would use up `fightLimit`: for five seconds after the window is back whoever takes the keyboard out
+    // of view would keep it. Nothing is on its way either, so there is nothing to look at again.
+    hold.sentBack = countedSoFar
+    hold.isSendingBack = false
+    scheduler.cancel("focus-held")
     return true
   }
 
@@ -530,9 +539,10 @@ extension Controller {
     return home
   }
 
-  private func displayWithSomethingInView(preferring preferred: DisplayID?) -> DisplayID? {
-    let order = [pointerDisplayID, preferred].compactMap { $0 } + workspaces.keys.sorted()
-    return order.first { display in
+  private func displaysWithSomethingInView(preferring preferred: DisplayID?) -> [DisplayID] {
+    var seen: Set<DisplayID> = []
+    let order = ([pointerDisplayID, preferred].compactMap { $0 } + workspaces.keys.sorted()).filter { seen.insert($0).inserted }
+    return order.filter { display in
       guard let workspace = workspaces[display] else { return false }
       return layouts[display]?.windowFrames.isEmpty == false
         || workspace.floating.keys.contains { !parked.contains($0) && windows[$0]?.isPresent == true }

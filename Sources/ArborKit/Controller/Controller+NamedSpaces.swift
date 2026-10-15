@@ -134,13 +134,12 @@ extension Controller {
       if let snapshot = windows[window], snapshot.isPresent { floating[window] = snapshot.frame }
     }
     if let focused = keyboardFocus(), layout.windowFrames[focused] != nil || floating[focused] != nil { return }
+    // The person named a space, and which of its windows is Arbor's pick: each is asked where it is, until one is there.
     for candidates in [layout.windowFrames, floating] {
-      let target =
-        focusHistory.first { candidates[$0] != nil }
-        ?? candidates.min { ($0.value.minY, $0.value.minX, $0.key) < ($1.value.minY, $1.value.minX, $1.key) }?.key
-      guard let target else { continue }
-      askForTheKeyboard(for: target)
-      return
+      let byPlace = candidates.sorted { ($0.value.minY, $0.value.minX, $0.key) < ($1.value.minY, $1.value.minX, $1.key) }.map(\.key)
+      var seen: Set<WindowID> = []
+      let inOrder = (focusHistory.filter { candidates[$0] != nil } + byPlace).filter { seen.insert($0).inserted }
+      if inOrder.contains(where: sendTheKeyboard(to:)) { return }
     }
   }
 

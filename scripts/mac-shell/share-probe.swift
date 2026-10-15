@@ -170,6 +170,9 @@ case "capture":
   guard let window = shareableWindows(onScreenOnly: false).first(where: { $0.windowID == id }) else {
     fail("ScreenCaptureKit lists no window \(id)")
   }
+  // A connection to the window server, which a command-line tool does not have by itself: without one the picture ends in
+  // "Assertion failed: (did_initialize), function CGS_REQUIRE_INIT" (macOS 26, at the first run on a hosted Mac).
+  _ = NSApplication.shared
   let configuration = SCStreamConfiguration()
   configuration.width = Int(window.frame.width)
   configuration.height = Int(window.frame.height)

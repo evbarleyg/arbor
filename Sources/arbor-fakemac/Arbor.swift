@@ -140,6 +140,7 @@ final class WatchedSystem: WindowSystem {
   func isMouseButtonDown() -> Bool { fake.isMouseButtonDown() }
   func modifierKeysDown() -> KeyChord.Modifiers { fake.modifierKeysDown() }
   func macTiling() -> MacTiling { fake.macTiling() }
+  func whereabouts(of window: WindowID) -> Whereabouts { fake.whereabouts(of: window) }
   func existingWindowIDs() -> Set<WindowID> { fake.existingWindowIDs() }
   func inputActivity() -> InputActivity { fake.inputActivity() }
   func isHolding(_ chord: KeyChord) -> Bool { fake.isHolding(chord) }

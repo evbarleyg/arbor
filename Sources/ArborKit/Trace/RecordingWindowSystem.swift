@@ -119,6 +119,9 @@ public final class RecordingWindowSystem: WindowSystem {
   public func stackedWindows() -> [StackedWindow] { recorder.read("stackedWindows") { inner.stackedWindows() } }
   public func modifierKeysDown() -> KeyChord.Modifiers { recorder.read("modifierKeysDown") { inner.modifierKeysDown() } }
   public func macTiling() -> MacTiling { recorder.read("macTiling") { inner.macTiling() } }
+  public func whereabouts(of window: WindowID) -> Whereabouts {
+    recorder.read("whereabouts", [window]) { inner.whereabouts(of: window) }
+  }
   public func openApplication(_ app: String) -> Bool {
     recorder.call("openApplication", [app], returning: { inner.openApplication(app) })
   }

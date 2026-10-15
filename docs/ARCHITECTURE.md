@@ -244,6 +244,11 @@ were in view before the first move are where they were after the second (`Reveal
 When a camera move parks the window that has the keyboard, a visible window is
 focused instead. Commands that arrange windows focus the window they moved only
 if it shows, because focusing a tile would zoom onto it.
+A person's ⌘M is never undone. Giving a window the keyboard raises it, and a raise fetches a minimized window out of the Dock; and an
+app names its next window, which is what sends Arbor looking for somebody to give the keyboard to, up to 32 ms before it reports
+the minimizing. So a window that Arbor picks by itself is asked, then and there, where it is (`WindowSystem.whereabouts`) before it is sent
+the keyboard (`sendTheKeyboard`) or raised (`raiseIfItIsThere`), and the choice goes on to the next window in view. Whoever names
+a window gets it, out of the Dock too (`askForTheKeyboard`): what a person asks for last counts.
 
 ## Motion
 

@@ -252,7 +252,8 @@ public final class ChaosRunner {
     beforeTheNextCheck = nil
     noteWhereItsUserLeftEachWindow(after: action, movesBefore: movesBefore)
     noteAfterTheSevenRules(action, movesBefore: movesBefore)
-    let all = found + wayHomeViolations(after: action) + raiseViolations(after: action) + check(after: action)
+    let all =
+      found + wayHomeViolations(after: action) + raiseViolations(after: action) + undoneViolations(after: action) + check(after: action)
     // Numbers, not gates: no walk, replay or test ends at them.
     counted = all.filter { Self.countedRules.contains($0.rule) }
     return counted.isEmpty ? all : all.filter { !Self.countedRules.contains($0.rule) }
