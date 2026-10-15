@@ -1,7 +1,7 @@
 #!/bin/bash
 # What does macOS do with a POSITION call through Accessibility while a hand is dragging the window by its title bar? ARBOR IS NOT RUNNING.
 #
-#   scripts/mac-shell/run.sh scripts/mac-shell/probe-a-position-call-in-the-hand.sh          under five minutes
+#   scripts/mac-shell/run.sh scripts/mac-shell/probe-a-position-call-in-the-hand.sh          about seven minutes
 #
 # probe-a-size-call-in-the-hand.sh found: a size call in the hand is taken as at rest, the origin stays, and the drag goes on at the old distance between pointer and origin. So a window that is made narrower than the
 # point it is held at is left behind by the pointer, and still follows it from afar. Can it be put under the pointer again, in the hand? Does the drag go on from the NEW hold, or does the window jump back by the old one
@@ -17,13 +17,16 @@
 #   K1  P1 with ⌘ down from before the press      K2  P1 with ⌘ pressed in the middle of the drag
 #   K3  P1 with ⌘ down, on a window that is NOT in front (TextEdit is, and its window lies over part of it): does it come forward?
 #   W   the wall at the Dock's line: 325×319 with its foot 21 points above the line, pulled down until the pointer is 19, 40, 80 and 150 points past where the foot meets the line: does the foot stay at the line?
+#   X   carried by the hand to a LARGER display at the right and dropped the moment it has crossed; then one size call that asks for more height than the display it came from could hold, 1, 50, 200 and 1000 ms after the
+#       button came up; and the same call still in the hand over the larger display. Who judges the size: the display it came from, or the one it is on? (By calls alone, a size call within 6 ms of the position call that
+#       changed the display was judged by the old one: probe-how-far-a-window-grows.sh.) Dropped with its origin 10 points past the edge; and, three times at 1 and 200 ms, with only its middle across
 #   S   Safari and Terminal, held where a short pull has shown that the window comes along: the first probe's T1 (smaller), T4 (narrower than where it is held) and T6a (the cut, and whole higher up)
-# All of P to W three times, then P and M twice more, then S.
+# All of P to W three times, then P and M twice more, then X five times, then S.
 #
 # What comes back: inhand.jsonl, samples.log, ax-events.txt, output.txt, as from probe-a-size-call-in-the-hand.sh, whose header says what is in them; also {"kind":"order"…}: the frontmost app's process and the ordinary
 # windows from front to back. It judges nothing. Exit code 0 unless a tool did not compile.
 source "$(dirname "${BASH_SOURCE[0]}")/lib-apps.sh"
-needs_throwaway_mac "drag windows about with the real pointer, hold ⌘ down meanwhile, and open and quit real apps"
+needs_throwaway_mac "drag windows about with the real pointer, hold ⌘ down meanwhile, plug in a virtual display, and open and quit real apps"
 
 TOOLS="$ARBOR_ROOT/.build/mac-shell"
 GROW="$TOOLS/grow"
@@ -47,7 +50,7 @@ for job in $COMPILING; do
   grep -A 6 "error:" "$ARBOR_OUT/build-${job%:*}.log" | head -n 40
   die "scripts/mac-shell/${job%:*}.swift did not compile"
 done
-apps_watchdog 400
+apps_watchdog 600
 echo "clock: built after ${SECONDS}s"
 
 # MARK: The tools
@@ -218,6 +221,32 @@ the_wall() {
   let_go
 }
 
+# across <trial> <time> <how far past the edge its origin is let go> <ms after the release | hand>
+across() {
+  local x=$((EDGE - 450)) px py to waiter
+  begin "$1" "$2" "$x" 200 400 300 || return 0
+  px=$((x + 200)) py=$((200 + GRIP)) to=$((EDGE + $3 + 200))
+  if [ "$4" = hand ]; then
+    hand drag "$px" "$py" "$to" "$py" --no-release --steps 16 --duration 0.5 --hold 0 --no-settle
+    ask "chain asked size 400 $TALL"
+    # shellcheck disable=SC2086
+    hand drag-on $((to + 60)) "$py" $CARRY
+    ask "look carried"
+    let_go
+    return
+  fi
+  # It watches the button from before the press, so that the drag can end in its release at once.
+  echo "chain asked after-release $4 size 400 $TALL" > "$STEPS/later"
+  limit 30 "$GROW" "$PID" "$WINDOW" "$LABEL" "$STEPS/later" > "$STEPS/said" 2>&1 5<&- 6>&- 8>&- 9>&- &
+  waiter=$!
+  sleep 0.4
+  hand drag "$px" "$py" "$to" "$py" --steps 16 --duration 0.5 --hold 0 --no-settle
+  wait "$waiter"
+  tee -a "$RESULTS" < "$STEPS/said" >> "$STEPS/trial"
+  ask "pause 300" "look rest"
+  tell
+}
+
 # the first probe's T1, T4 and T6a, for an app whose hold had to be found
 in_hand() {
   local x=$3 y=$4 at=$7 w=$8 h=$9 px py
@@ -318,8 +347,33 @@ for time in 1 2 3; do
   for past in 19 40 80 150; do the_wall "W-$past-past-the-line" "$time" "$past"; done
 done
 for time in 4 5; do worth_most "$time"; done
-echo "clock: the test window done after ${SECONDS}s"
+echo "clock: one display done after ${SECONDS}s"
 [ -z "$TEXTEDIT" ] || app_quit "$TEXTEDIT"
+
+BUDGET=$((BUDGET + 160))
+if in_time "the larger display"; then
+  step "a larger display at the right"
+  display_add 2560 1440 right
+  "$ARBOR_VDISPLAY" list
+  EDGE=$("$ARBOR_VDISPLAY" list | awk '$8 == "main" { print $3 + $5 }')
+  [ -n "$EDGE" ] || die "vdisplay names no main display"
+  # More than the display it comes from can hold between its menu bar and its Dock; grow.swift works it out from the displays as they are.
+  TALL="vb1-vt1+150"
+  LABEL=test-window.two-displays
+  GROW_BRIEF="" ask "look first"
+  tell
+  for time in 1 2 3 4 5; do
+    for after in 1 50 200 1000; do across "X-dropped-across-$after-ms" "$time" 10 "$after"; done
+    across X-across-in-the-hand "$time" 10 hand
+  done
+  for time in 1 2 3; do
+    for after in 1 200; do across "X-dropped-with-its-middle-across-$after-ms" "$time" -190 "$after"; done
+  done
+  display_remove
+  sleep 3
+  echo "clock: two displays done after ${SECONDS}s"
+fi
+BUDGET=$((BUDGET + 30))
 
 # comes_along <held at> <grip>: a short pull there, and whether the window came
 comes_along() {
@@ -381,5 +435,6 @@ fi
 step "done"
 echo "$(grep -c '"kind":"trial"' "$RESULTS") trials, $(grep -c '"kind":"hand"' "$RESULTS") rounds of calls, $(grep -c '"kind":"skipped"' "$RESULTS") skipped; samples.log $(grep -c "" "$ARBOR_OUT/samples.log") lines; ax-events.txt $(grep -c "" "$EVENTS") lines"
 echo "NOT VARIED: one Mac, one macOS; one display, at scale 1; the Dock at the bottom, shown; macOS's tiling switches and Reduce Motion as the image has them (printed at the top); one Space, no Stage Manager, no full screen;"
+echo "NOT VARIED in X: one app (the test window), one pair of displays, one direction (to the larger one, at the right), one size asked, the Dock at the bottom of the display it comes from."
 echo "NOT VARIED: a synthetic pointer, in even steps; never near an edge or a corner of the display, nor in the menu bar; no modifier but ⌘; the speed of the pull at the wall; Arbor not running, so no event tap of its own in the way."
 exit 0

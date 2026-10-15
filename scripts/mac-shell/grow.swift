@@ -26,7 +26,7 @@
 //   pause <ms>                                      let that long pass
 //   chain <name> [after-release <ms> | after-move <points>] (size <w> <h> | pos <x> <y> | under <dx> <dy>)…      those calls back to back where the window is, nothing read between them; then the frame at once and 50, 200 and 500 ms after the
 //                                                   last call returned (spun, so on time), each with the pointer and the button. For a window that a hand holds. after-release: first wait
-//                                                   until the left button comes up, and that many milliseconds more. after-move: first wait until the pointer has gone that many points from where
+//                                                   until the left button comes up (and, if it is not down yet, until it has gone down), and that many milliseconds more. after-move: first wait until the pointer has gone that many points from where
 //                                                   it is now: for a call made while the hand moves. under: a position call that puts the window's origin dx, dy up and left of where the pointer is
 //                                                   at that moment
 // With GROW_BRIEF in the environment the lines about the window and the displays are left out.
@@ -400,7 +400,9 @@ func chain(_ name: String, _ plan: [Call], afterRelease: Double?, afterMove: Dou
     line["gone"] = round3(gone)
     line["before"] = glance(since: now())
   } else if let afterRelease {
+    // Started before the press, it waits for the press first: so a drag can end in its release without a rest for this tool's sake.
     let patience = now() + 15
+    while !CGEventSource.buttonState(.hidSystemState, button: .left), now() < patience {}
     while CGEventSource.buttonState(.hidSystemState, button: .left), now() < patience {}
     let up = now()
     spin(until: up + afterRelease / 1000)
