@@ -99,7 +99,7 @@ Real-window evidence: mac-shell: scripts/mac-shell/proof.sh at ab40b20, macOS 26
 
 | ID | Feature | TrellisWM | Arbor | Level | Evidence | Spec |
 |---|---|---|---|---|---|---|
-| A01 | Keyboard docking and moving |  | ⌃⌥⌘+arrow docks the focused window or moves it one place | tested | tests 5/5 | [F01](features/F01-dock-and-zoom.md) |
+| A01 | Keyboard docking and moving |  | ⌃⌥⌘+arrow docks the focused window or moves it one place | tested | tests 16/16 | [F01](features/F01-dock-and-zoom.md) |
 | A02 | Command line with JSON state and ASCII layout |  | `arborctl state` (window titles only with `--titles`), `arborctl ascii`; batches from standard input, `--timeout`, exit codes for scripts, shell completion | tested | tests 18/18 | [F01](features/F01-dock-and-zoom.md) |
 | A03 | Configurable shortcuts |  | `bindings` in settings.json; `arborctl bindings` | tested | tests 6/6 | [F06](features/F06-configurable-keybindings.md) |
 | A04 | Rules for new windows per app |  | `rules` in settings.json; `arborctl rules` | tested | tests 10/10 | [F11](features/F11-app-rules.md) |

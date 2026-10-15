@@ -1,0 +1,48 @@
+# Story: three windows arranged, and one of them goes into the Dock. The browser that shared a column with it fills the column now: to the
+# eye there is no column of two. The key that moves a window to the right moves it past its neighbour at the first press, and that is
+# all that happens: they trade places, at the sizes they had. (It used to take the browser out of a group nobody could see: the same
+# picture, both windows narrower, and "moved" for an answer. To a person: it would not dock on the right.)
+# A key acts on what a person sees: one press, one step that shows.
+# Reference: IDEAS I21.
+quiet
+open Safari 900x700
+open Terminal 700x500
+open Chrome 1000x700
+arrange
+expect above 101 102
+expect left-of 101 103
+
+minimize 102
+focus 101
+expect left-of 101 103
+expect size 101 557x851
+expect size 103 557x851
+
+# To the left there is nothing, whatever the tree holds: it says so, on screen, and moves nothing.
+press dock left
+expect fail
+expect said already at the left edge
+expect left-of 101 103
+expect size 101 557x851
+
+# One press.
+press dock right
+expect ok
+expect left-of 103 101
+expect size 101 557x851
+expect size 103 557x851
+expect focused 101
+
+# Out of the Dock again, Terminal is back below the window it shared a column with, and nobody is squeezed for it.
+restore 102
+expect above 101 102
+expect left-of 103 101
+expect left-of 103 102
+expect size 103 557x851
+
+# A column that shows is a column: there the first press takes the window out of it, as ever.
+focus 101
+press dock left
+expect ok
+expect left-of 103 101
+expect left-of 101 102

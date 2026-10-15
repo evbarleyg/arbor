@@ -246,16 +246,11 @@ extension Controller {
     }
   }
 
-  /// `dock` has nowhere to take a docked window: it fills the view, or is the view's outermost on that side already.
+  /// `dock` has nowhere to take a docked window: asked as `dock` asks it.
   private func isAsFarAsItGoes(_ focused: FocusedWindow, toward edge: Edge) -> Bool {
     guard let leaf = focused.leaf else { return false }  // it floats, and can dock at any edge
-    let workspace = focused.workspace
-    // Asked as `dock` asks it: out of a tab group that fills the view a window can still go, and a named group down to this window is full of it.
-    if workspace.holdsOnly(focused.window.id, in: workspace.camera) { return true }
-    guard let parent = workspace.tree.parent(of: leaf), parent == workspace.camera,
-      case .split(let axis, let siblings) = workspace.tree[parent]?.kind, axis == edge.axis
-    else { return false }
-    return (edge.isLeading ? siblings.first : siblings.last) == leaf
+    if case .refused = moving(focused.window.id, at: leaf, toward: edge, in: focused.workspace, on: focused.display) { return true }
+    return false
   }
 
   // MARK: Arrangement
