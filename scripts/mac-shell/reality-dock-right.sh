@@ -9,3 +9,5 @@
 source "$(dirname "$0")/reality-variants.sh"
 reality_before() { dock_to right; }
 source "$(dirname "$0")/reality.sh"
+# The Dock is still at the right. What is to be seen of a window out of view there, and how far macOS lets one go elsewhere (the board, 1.95).
+out_of_view_beside_the_dock

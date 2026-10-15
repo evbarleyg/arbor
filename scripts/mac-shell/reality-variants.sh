@@ -82,3 +82,53 @@ a_second_display() {
   REALITY_SECOND_DISPLAY=1
   shot 00-second-display
 }
+
+# MARK: Out of view, beside a Dock at the side (the board, 1.95). Called after the journeys, with the Dock still where dock_to has put it.
+
+# With the Dock at the right every window Arbor took out of view, asked to 1023 767, rested at 934 740: by its frame a piece 40 wide and 28 high, with its three buttons, lay in the visible
+# frame. That is geometry. Part 1 takes the picture. Part 2 asks macOS alone, through Accessibility as Arbor does, how far it lets a window go at the left and at the bottom, and takes a picture of each.
+out_of_view_beside_the_dock() {
+  local tool="$ARBOR_ROOT/.build/mac-shell/apptool" name
+  step "out of view, 1: what is to be seen of a window that Arbor has taken out of view"
+  if [ -z "${ARBOR_REHEARSAL:-}" ]; then
+    swiftc -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/apptool.swift" -o "$tool" > "$ARBOR_OUT/build-apptool.log" 2>&1 || die "apptool.swift did not compile: build-apptool.log"
+  fi
+  # Every launch is recorded, so that the trace says whether Arbor asked anything of a window during its pause.
+  ARBOR_RECORD=1
+  arbor_start 3
+  ctl dock "$W1" left
+  ctl dock "$W2" right
+  ctl zoom "$W1"
+  sleep 1
+  for name in W2 W3; do
+    eval "echo \"out of view: $name \$(real_frame_of \"\$$name\"), \$(arbor_share_in_view \"\$$name\" 2>&1) hundredths of it on a display, by its frame\""
+  done
+  shot 10-out-of-view
+  step "out of view, 2: how far macOS lets a window go. Arbor is paused and asks nothing"
+  ctl show-all
+  ctl float "$W2"
+  ctl pause
+  sleep 1
+  "$ARBOR_BIN/arborctl" status | head -n 1
+  # asked <name> <x> <y>: W2, at its own size.
+  asked() {
+    local took
+    took=$("$tool" set-frame "$W2" "$2" "$3" 480 348 2>&1)
+    sleep 0.7
+    echo "asked $1: $2 $3 480 348 | Accessibility says $took | the window server $(real_frame_of "$W2" 2>&1) | $(arbor_share_in_view "$W2" 2>&1) hundredths of it on a display, by its frame"
+    shot "11-$1"
+  }
+  asked where-arbor-asks 1023 767
+  asked in-the-middle 300 200
+  asked a-point-at-the-left-at-the-bottom -479 767
+  asked in-the-middle-again 300 200
+  asked a-point-at-the-left-half-way-down -479 400
+  asked in-the-middle-once-more 300 200
+  asked wholly-off-at-the-left -600 767
+  asked in-the-middle-a-fourth-time 300 200
+  asked at-the-bottom-alone 300 767
+  asked in-the-middle-a-fifth-time 300 200
+  asked a-point-inside-the-visible-frame-at-the-right 973 767
+  ctl resume
+  arbor_stop
+}
