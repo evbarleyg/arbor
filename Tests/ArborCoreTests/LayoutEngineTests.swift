@@ -170,6 +170,25 @@ private func threeWindowTree() -> (LayoutTree, NodeID, NodeID, NodeID) {
     #expect(drawing.contains("desktop"))
   }
 
+  /// To the layout it is out of view. It is not: it is drawn where it stands, and is not listed with those that are.
+  @Test func asciiRendererDrawsAWindowThatIsLetBeAndDoesNotCallItHidden() {
+    var tree = LayoutTree()
+    let leaf = tree.dock(a, beside: tree.root, edge: .left)
+    tree.addToStack(b, leaf: leaf)
+    tree.addToStack(c, leaf: leaf)
+    let layout = LayoutEngine.layout(tree, camera: tree.root, in: screen, isPresent: everyone)
+    #expect(layout.hiddenWindows == [a, b])
+    #expect(AsciiRenderer.render(layout, tree: tree).hasSuffix("hidden: \(a) \(b)"))
+    let stands = CGRect(x: screen.midX, y: screen.midY, width: screen.width / 3, height: screen.height / 3)
+    let drawing = AsciiRenderer.render(layout, tree: tree, letBe: [a: stands])
+    #expect(drawing.hasSuffix("hidden: \(b)  let be: \(a)"), "\(drawing)")
+    #expect(drawing.contains(":\(a) "), "\(drawing)")
+    #expect(AsciiRenderer.render(layout, tree: tree, letBe: [a: stands, b: stands]).hasSuffix("\(layout.camera)  let be: \(a) \(b)"))
+    // Beyond the display there is nothing to draw, and it is let be all the same.
+    let away = AsciiRenderer.render(layout, tree: tree, letBe: [a: stands.offsetBy(dx: screen.width * 2, dy: 0)])
+    #expect(away.hasSuffix("let be: \(a)") && !away.contains(":\(a) "), "\(away)")
+  }
+
   @Test func asciiRendererSurvivesFramesThatAreNotOnTheScreen() {
     let (tree, _, _, _) = threeWindowTree()
     var layout = LayoutEngine.layout(tree, camera: tree.root, in: screen, isPresent: everyone)

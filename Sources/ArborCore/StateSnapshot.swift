@@ -70,7 +70,10 @@ public struct StateSnapshot: Codable, Sendable, Equatable {
     public var stashed = false
     /// The space a floating window opened over and goes in and out of view with, if not the Desktop (F57).
     public var guestOf: NodeID?
-    /// Docked, and for now not kept in its slot: macOS moved it at a double-click on its title bar, or its app keeps moving it.
+    /// Docked, and for now not kept in its place: macOS moved it at a double-click on its title bar, or its app keeps
+    /// moving it. Or it had the keyboard when Arbor started and there is no room for it: then it is among `tiles` and not
+    /// among `windowFrames`, as a window out of view is, and stands in view all the same (not `parked`). For whoever holds
+    /// this against the screen: `frame` is where it is.
     public var letBe = false
 
     public init(

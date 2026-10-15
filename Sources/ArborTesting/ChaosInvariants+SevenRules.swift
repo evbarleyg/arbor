@@ -308,7 +308,7 @@ extension ChaosRunner {
       let tiledByMacOS = inHandBefore == id && system.dragging != id && !fake.placeIsArborsDoing && !controller.workspaces.values.contains { $0.isDocked(id) }
       let wasDocked = wasRunningBefore && workspacesBefore.values.contains { $0.isDocked(id) }
       // Nor those of a window that is let be, which is in no slot (Controller+LetBe.swift).
-      if !wasDocked || tiledByMacOS || controller.windowLetBe == id, home.size != known {
+      if home.size != known, !wasDocked || tiledByMacOS || controller.saidToBeLetBeInATile.contains(id) {
         // Back at what Arbor had made of it (macOS's zoom at a double-click, and again): nobody chose that size. The account is the lab's own, and never
         // goes by what Arbor has written down.
         if let given = fake.lastRequest?.took.size, abs(home.width - given.width) <= 1.5, abs(home.height - given.height) <= 1.5,

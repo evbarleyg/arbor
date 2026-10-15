@@ -2,7 +2,24 @@ import ArborCore
 import ArborKit
 import CoreGraphics
 
+extension StateSnapshot {
+  /// The windows that are in view though the layout has them in a tile: let be, and not out of view
+  /// (Controller+LetBe.swift). One that has a slot is judged by its slot, and one that Arbor sent out of view is out of view.
+  public var letBeInATile: Set<WindowID> {
+    let inATile = Set(displays.flatMap { $0.tiles.flatMap(\.windows) })
+    return Set(windows.filter { $0.letBe && !$0.parked && inATile.contains($0.id) }.map(\.id))
+  }
+}
+
+extension Controller {
+  /// Read out of `state`, as whoever holds `arborctl state` against the screen of a real Mac has to. If the word were
+  /// missing there, the headless nets would raise the same false alarm.
+  public var saidToBeLetBeInATile: Set<WindowID> { snapshot(askingWhoHasTheKeyboard: false).letBeInATile }
+}
+
 extension Harness {
+  public var saidToBeLetBeInATile: Set<WindowID> { controller.saidToBeLetBeInATile }
+
   /// What does not fit together between the arrangement, the controller's record of its last layout, and where the windows
   /// really are; empty when all is well. On one display, or on all of them.
   ///
@@ -15,7 +32,8 @@ extension Harness {
       for (window, slot) in fresh.windowFrames.sorted(by: { $0.key < $1.key }) where frame(window) != slot {
         problems.append("\(window) is at \(frame(window).map(Self.brief) ?? "nowhere"), and its place is \(Self.brief(slot))")
       }
-      for window in fresh.hiddenWindows.sorted() where system.isVisible(window) && window != controller.windowLetBe {
+      // Asked last: it takes the whole of `state`, and hardly ever is a window in view that the layout has out of view.
+      for window in fresh.hiddenWindows.sorted() where system.isVisible(window) && !saidToBeLetBeInATile.contains(window) {
         problems.append("\(window) should be out of view and is at \(frame(window).map(Self.brief) ?? "nowhere")")
       }
     }

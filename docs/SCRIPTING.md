@@ -105,7 +105,7 @@ arborctl state --titles | jq -r '.state.windows[] | "\(.id) \(.title)"'         
 | `focused` | The focused window's number, if it has one |
 | `displays[]` | `id` (the display's UUID), `frame`, `visibleFrame` (without the menu bar and the Dock), `camera` (the number of the space that fills the view), `canGoBack`, `canGoForward`, `savedViews` (`{"2": 7}`: saved view 2 is space 7), `floating` (window numbers), `windowFrames` (docked windows in view), `desktopFrame` (if the Desktop is in view), `tiles[]`, `tree` |
 | `displays[].tree` | The arrangement: `root`, `desktop`, and `nodes` by number. A node's `kind` is `split` (a group: `axis`, `children`), `stack` (a window, or a tab group: `windows`, `active`) or `desktop`; `weight` is its share among its siblings |
-| `windows[]` | `id`, `pid`, `app`, `bundleID`, `frame`, `display`, `title` (only with `--titles`), and whether it is `managed` (Arbor arranges it), `docked`, `parked` (out of view), `minimized`, `hidden` (⌘H) |
+| `windows[]` | `id`, `pid`, `app`, `bundleID`, `frame`, `display`, `title` (only with `--titles`), and whether it is `managed` (Arbor arranges it), `docked`, `parked` (out of view), `minimized`, `hidden` (⌘H), `letBe` (docked, and for now not kept in its place: `frame` is where it is, whatever `windowFrames` or `tiles` say) |
 
 Rectangles are in points, with the origin at the top-left corner of the main display and y growing downward. In `state`
 they are `[[x, y], [width, height]]`; events spell them out, `{"x": …, "y": …, "width": …, "height": …}`.

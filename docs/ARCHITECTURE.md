@@ -1157,6 +1157,9 @@ behind the one in front. **If the keyboard is in such a tile's window when Arbor
 keeps its place, the keyboard stays in it, and nobody else moves for it. It gets no frame, unless nobody knew that it would not fit: apps say how
 small they go only when asked, so it is offered its place like any docked window, and put back where it stood when it refuses. `apply`,
 `movesInSight` and the stage pass it over; for `isOutOfView`, `bringIntoView`, `frameInView`, the choice of who gets the keyboard and the line round the focused window it is in view.
+To the layout it is out of view, so whoever asks is told, while it can be seen (`whereTheWindowLetBeStands`): `state` has `letBe` for it, as for a window macOS zoomed, and `ascii`
+draws whatever `state` calls so where it stands (`:`), on the display it stands on, and lists it under "let be", not under "hidden". The headless nets and the scenarios'
+`visible` read the word out of `state` (`saidToBeLetBeInATile`: let be, not parked, in a tile), as a script on a real Mac has to.
 It ends when a person asks: any `moveCamera`, and a layout within a command, with a gap or an edge in the hand, or for a drop. Then it is a window like any
 other, and if it goes into its tile with the keyboard in it, a window in view gets the keyboard, once, after the command has had its own say (`theKeyboardLeavesTheTile`).
 Layouts nobody asked for leave it alone: a timer, a putting-back, another window coming or going, a report of the displays, a switch of Spaces. It ends with nothing

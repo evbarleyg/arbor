@@ -792,9 +792,7 @@ extension Controller {
         candidates[window] = frame
       }
     }
-    if let window = windowLetBe, workspace.isDocked(window), let snapshot = windows[window], snapshot.isPresent {
-      candidates[window] = snapshot.frame
-    }
+    if let letBe = whereTheWindowLetBeStands, letBe.home == displayID { candidates[letBe.window] = letBe.frame }
     return asHeirs ? candidates.filter { canBeAnHeir($0.key) } : candidates
   }
 

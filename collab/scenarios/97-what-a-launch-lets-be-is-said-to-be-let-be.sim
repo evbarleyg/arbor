@@ -1,0 +1,35 @@
+# Story: someone quits Arbor, clicks the music player, and starts Arbor again. With everything showing there is no room for the player, so it is a
+# tile; it has the keyboard, so it is let be where it stands (QUESTIONS Q16). Whoever asks Arbor what it believes is told so: a window in full
+# view that Arbor called hidden looked like a fault to everybody who held `arborctl state` against the screen.
+quiet
+set makeRoom false
+open Music
+open Safari
+open Notes
+open Mail
+dock 101 left
+dock 102 right
+dock 104 beside 102 bottom
+resize 101 right -300
+wait 3
+expect tile 101
+expect hidden 101
+relaunch quit
+focus 101
+relaunch start
+wait 3
+# Docked, its tile keeps its place, and it is in view.
+expect docked 101
+expect tile 101
+expect visible 101
+expect focused 101
+state
+expect replied 101 is let be where it stands
+ascii
+expect replied let be: w101 Music
+# A layout that somebody asks for ends it: a window like any other again, out of view behind its tile, and said to be.
+relayout
+wait 3
+expect hidden 101
+ascii
+expect replied hidden: w101 Music

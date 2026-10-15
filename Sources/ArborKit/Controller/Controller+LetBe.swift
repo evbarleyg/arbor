@@ -35,8 +35,18 @@ extension Controller {
 
   func isLetBe(_ window: WindowID) -> Bool { letBe?.window == window && letBe?.phase != .over }
 
-  /// For whoever compares what Arbor believes with what is on screen: docked, in a tile, and in view all the same.
+  /// On record as let be, in sight or not. For the tests of this rule. Whoever compares what Arbor believes with what is on
+  /// screen reads `state`, which has `letBe` for it (`whereTheWindowLetBeStands`).
   public var windowLetBe: WindowID? { letBe.flatMap { isLetBe($0.window) ? $0.window : nil } }
+
+  /// Docked, in a tile, and in view all the same: the window, and where it stands. Nil while nobody can see it (another
+  /// Space, full screen beside it). One answer for `state`, `ascii` and the choice of who gets the keyboard.
+  var whereTheWindowLetBeStands: (window: WindowID, home: DisplayID, frame: CGRect)? {
+    guard let window = windowLetBe, let home = workspaceID(containing: window), workspaces[home]?.isDocked(window) == true,
+      let snapshot = windows[window], snapshot.isPresent
+    else { return nil }
+    return (window, home, snapshot.frame)
+  }
 
   // MARK: A start
 

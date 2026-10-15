@@ -352,7 +352,9 @@ public enum ScenarioExpectation {
     if snapshot.isFullScreen { return "\(id) is in full screen" }
     if controller.parked.contains(id) { return "\(id) is parked at \(describe(snapshot.frame))" }
     if let display = controller.workspaceID(containing: id), controller.workspaces[display]?.isDocked(id) == true,
-      controller.layouts[display]?.windowFrames[id] == nil
+      controller.layouts[display]?.windowFrames[id] == nil,
+      // One that is let be is in a tile and in view all the same: where it really is decides, below.
+      !controller.saidToBeLetBeInATile.contains(id)
     {
       return "\(id) is docked but not shown (inside a tile, an inactive tab, or outside the view)"
     }

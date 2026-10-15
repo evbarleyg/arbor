@@ -3,13 +3,14 @@ import CoreGraphics
 /// Draws a layout as text, for tests, `arborctl ascii` and arbor-sim.
 ///
 /// Docked windows are boxes drawn with `+-|`, tiles with `#`, the Desktop
-/// with `.`, floating windows with `~`.
+/// with `.`, floating windows with `~`, and with `:` a docked window that is let be, where it stands: its slot or
+/// its tile shows the place that is kept for it.
 /// Each box is labelled in its top-left corner. Under the drawing: the node in view with its name, the
-/// windows out of view, and on a line of their own the names of the display's spaces.
+/// windows out of view, those that are let be, and on a line of their own the names of the display's spaces.
 public enum AsciiRenderer {
   public static func render(
-    _ layout: Layout, tree: LayoutTree, floating: [WindowID: CGRect] = [:], columns: Int = 72,
-    rows: Int = 22, names: [String: NodeID] = [:], label: (WindowID) -> String = { $0.description }
+    _ layout: Layout, tree: LayoutTree, floating: [WindowID: CGRect] = [:], letBe: [WindowID: CGRect] = [:],
+    columns: Int = 72, rows: Int = 22, names: [String: NodeID] = [:], label: (WindowID) -> String = { $0.description }
   ) -> String {
     let frame = layout.frame
     guard frame.width > 0, frame.height > 0, columns > 2, rows > 2 else { return "" }
@@ -65,16 +66,22 @@ public enum AsciiRenderer {
       box(tile.frame, corner: "#", horizontal: "#", vertical: "#", text: name ?? text)
     }
 
-    // Floating windows are drawn last, on top, with `~` edges.
+    // Floating windows are drawn on top, with `~` edges.
     for (window, rect) in floating.sorted(by: { $0.key < $1.key }) where rect.overlaps(frame) {
       box(rect.intersection(frame), corner: "~", horizontal: "~", vertical: "~", text: label(window))
     }
 
+    // Where the layout has them they are not. Last: it is what a reader does not expect, and must not be painted over.
+    for (window, rect) in letBe.sorted(by: { $0.key < $1.key }) where rect.overlaps(frame) {
+      box(rect.intersection(frame), corner: ":", horizontal: ":", vertical: ":", text: label(window))
+    }
+
     var lines = grid.map { String($0) }
-    let hidden = layout.hiddenWindows.sorted().map(label)
+    let hidden = layout.hiddenWindows.subtracting(letBe.keys).sorted().map(label)
     let inView = names.first { $0.value == layout.camera }.map { " \($0.key)" } ?? ""
     lines.append(
-      "camera \(layout.camera)" + inView + (hidden.isEmpty ? "" : "  hidden: \(hidden.joined(separator: " "))"))
+      "camera \(layout.camera)" + inView + (hidden.isEmpty ? "" : "  hidden: \(hidden.joined(separator: " "))")
+        + (letBe.isEmpty ? "" : "  let be: \(letBe.keys.sorted().map(label).joined(separator: " "))"))
     if !names.isEmpty {
       lines.append("spaces: " + SpaceName.sorted(names.keys).map { "\($0) \(names[$0]!)" }.joined(separator: ", "))
     }

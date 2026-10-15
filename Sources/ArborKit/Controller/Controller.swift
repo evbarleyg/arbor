@@ -1150,7 +1150,9 @@ public final class Controller {
 
   // MARK: Snapshots
 
-  public func snapshot() -> StateSnapshot {
+  /// `askingWhoHasTheKeyboard: false` leaves `focused` out and asks macOS nothing: for a net that looks between two steps, whose
+  /// look must not count as a question of Arbor's, nor stand in a trace that is being recorded.
+  public func snapshot(askingWhoHasTheKeyboard: Bool = true) -> StateSnapshot {
     let displayStates = displays.compactMap { display -> StateSnapshot.Display? in
       guard let workspace = workspaces[display.id] else { return nil }
       let layout = layouts[display.id]
@@ -1184,7 +1186,7 @@ public final class Controller {
     }
     var snapshot = StateSnapshot(
       accessibility: accessibilityGranted, running: isRunning,
-      focused: isRunning ? system.focusedWindow() : nil, displays: displayStates,
+      focused: isRunning && askingWhoHasTheKeyboard ? system.focusedWindow() : nil, displays: displayStates,
       windows: windowStates)
     snapshot.paused = isPaused
     snapshot.waiting = waitingSlots
@@ -1193,10 +1195,15 @@ public final class Controller {
       snapshot.windows[index].pinned = role == .pinned
       snapshot.windows[index].stashed = role == .stashed
       if case .summoned = role { snapshot.windows[index].summoned = true }
-      snapshot.windows[index].letBe = snapshot.windows[index].docked && enforcement.givenUp.contains(snapshot.windows[index].id)
+      snapshot.windows[index].letBe = isSaidToBeLetBe(snapshot.windows[index].id, docked: snapshot.windows[index].docked)
     }
     snapshot.held = holdLevel
     return snapshot
+  }
+
+  /// `state`'s word, which `ascii` goes by as well.
+  private func isSaidToBeLetBe(_ window: WindowID, docked: Bool) -> Bool {
+    docked && (enforcement.givenUp.contains(window) || whereTheWindowLetBeStands?.window == window)
   }
 
   /// Every display drawn as text.
@@ -1209,8 +1216,16 @@ public final class Controller {
       for window in workspace.floating.keys where !parked.contains(window) {
         if let snapshot = windows[window], snapshot.isPresent { floating[window] = snapshot.frame }
       }
+      // On the display it is docked on, and on the one it stands on: a person may have carried it over.
+      var letBe: [WindowID: CGRect] = [:]
+      for (home, other) in workspaces {
+        for window in other.tree.allWindows where isSaidToBeLetBe(window, docked: true) && !parked.contains(window) {
+          guard let snapshot = windows[window], snapshot.isPresent else { continue }
+          if home == display.id || snapshot.frame.overlaps(display.frame) { letBe[window] = snapshot.frame }
+        }
+      }
       let drawing = AsciiRenderer.render(
-        layout, tree: workspace.tree, floating: floating, columns: columns, rows: rows, names: workspace.names,
+        layout, tree: workspace.tree, floating: floating, letBe: letBe, columns: columns, rows: rows, names: workspace.names,
         label: { [windows] id in "\(id) \(Self.word(for: workspace.role(of: id)))\(windows[id]?.appName ?? "")" })
       return "display \(display.id)\n" + drawing
     }.joined(separator: "\n\n")

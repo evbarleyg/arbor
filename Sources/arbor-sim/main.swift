@@ -766,6 +766,9 @@ func describe(_ state: StateSnapshot) -> String {
     for window in display.floating {
       if let host = state.window(window)?.guestOf { lines.append("  \(window.rawValue) is a guest of \(host)") }
     }
+    for window in state.windows where window.letBe && !window.parked && window.display == display.id {
+      lines.append("  \(window.id.rawValue) is let be where it stands")
+    }
     for id in display.tree.preorder() {
       guard let node = display.tree[id] else { continue }
       let indent = String(repeating: "  ", count: display.tree.depth(of: id) + 1)
