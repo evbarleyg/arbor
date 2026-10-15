@@ -1,0 +1,199 @@
+# mac-shell: scripts/mac-shell/check-comes-back.sh at 5aec3e9, macOS 26.6.2, 2026-10-15T11:04Z
+built Arbor, the pointer tool and the app bundles in 7s
+
+== two apps: W1 on the left, W2 above the other app's V1 on the right
+session 1: Arbor pid 4985, test windows 28 29 30 (pid 4768,4911)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ Arbor manages the other app's window too
+> dock 28 left
+docked w28 at the left edge
+> dock 29 right
+docked w29 at the right edge
+> dock 30 beside 29 bottom
+docked w30 below w29
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  w28 12 43 325 650        docked
+  w29 687 43 325 319       docked
+  w30 687 374 325 319      docked focused
+
+▸ A window that is minimized is fetched by name while the view is on another: nothing else shows, and it fills the screen (1 of 3)
+> show-all
+> click 176 383
+> test windows: minimize 30
+> zoom 28
+  ✔ V1 is minimized, the view is on W1
+> reveal 30
+w30 is on its way back, and comes into view when it is there
+  ✔ while it is on its way what is on screen stays, and its neighbour never shows
+  ✔ V1 fills the screen: whole, not short of its slot
+  ✔ and has the keyboard
+  ✔ W1 and W2 are out of view
+  ✔ 
+  ✔ and it stays so
+  ✔ windows match Arbor's layout
+11:04:20.602Z INFO  reveal 30: w30 is on its way back, and comes into view when it is there
+11:04:20.614Z DEBUG focus report for w30, which does not have the keyboard or takes no space; 4 checks left
+11:04:20.644Z DEBUG w30 has the keyboard
+
+▸ A window that is minimized is fetched by name while the view is on another: nothing else shows, and it fills the screen (2 of 3)
+> show-all
+> click 176 383
+> test windows: minimize 30
+> zoom 28
+  ✔ V1 is minimized, the view is on W1
+> reveal 30
+w30 is on its way back, and comes into view when it is there
+  ✔ while it is on its way what is on screen stays, and its neighbour never shows
+  ✔ V1 fills the screen: whole, not short of its slot
+  ✔ and has the keyboard
+  ✔ W1 and W2 are out of view
+  ✔ 
+  ✔ and it stays so
+  ✔ windows match Arbor's layout
+11:04:27.952Z INFO  reveal 30: w30 is on its way back, and comes into view when it is there
+11:04:27.971Z DEBUG w30 has the keyboard
+11:04:27.995Z DEBUG w30 has the keyboard
+
+▸ A window that is minimized is fetched by name while the view is on another: nothing else shows, and it fills the screen (3 of 3)
+> show-all
+> click 176 383
+> test windows: minimize 30
+> zoom 28
+  ✔ V1 is minimized, the view is on W1
+> reveal 30
+w30 is on its way back, and comes into view when it is there
+  ✔ while it is on its way what is on screen stays, and its neighbour never shows
+  ✔ V1 fills the screen: whole, not short of its slot
+  ✔ and has the keyboard
+  ✔ W1 and W2 are out of view
+  ✔ 
+  ✔ and it stays so
+  ✔ windows match Arbor's layout
+11:04:34.473Z INFO  reveal 30: w30 is on its way back, and comes into view when it is there
+11:04:34.484Z DEBUG focus report for w30, which does not have the keyboard or takes no space; 4 checks left
+11:04:34.501Z DEBUG w30 has the keyboard
+
+▸ A window that is hidden is fetched by name while the view is on another: nothing else shows, and it fills the screen (1 of 3)
+> show-all
+> click 176 383
+> test windows: hide
+> zoom 28
+  ✔ V1 is hidden, the view is on W1
+> reveal 30
+w30 is on its way back, and comes into view when it is there
+  ✔ while it is on its way what is on screen stays, and its neighbour never shows
+  ✔ V1 fills the screen: whole, not short of its slot
+  ✔ and has the keyboard
+  ✔ W1 and W2 are out of view
+  ✔ 
+  ✔ and it stays so
+  ✔ windows match Arbor's layout
+11:04:39.390Z INFO  reveal 30: w30 is on its way back, and comes into view when it is there
+11:04:39.402Z DEBUG focus report for w30, which does not have the keyboard or takes no space; 4 checks left
+11:04:39.432Z DEBUG w30 has the keyboard
+
+▸ A window that is hidden is fetched by name while the view is on another: nothing else shows, and it fills the screen (2 of 3)
+> show-all
+> click 176 383
+> test windows: hide
+> zoom 28
+  ✔ V1 is hidden, the view is on W1
+> reveal 30
+w30 is on its way back, and comes into view when it is there
+  ✔ while it is on its way what is on screen stays, and its neighbour never shows
+  ✔ V1 fills the screen: whole, not short of its slot
+  ✔ and has the keyboard
+  ✔ W1 and W2 are out of view
+  ✔ 
+  ✔ and it stays so
+  ✔ windows match Arbor's layout
+11:04:45.414Z INFO  reveal 30: w30 is on its way back, and comes into view when it is there
+11:04:45.443Z DEBUG focus report for w30, which does not have the keyboard or takes no space; 4 checks left
+11:04:45.463Z DEBUG w30 has the keyboard
+
+▸ A window that is hidden is fetched by name while the view is on another: nothing else shows, and it fills the screen (3 of 3)
+> show-all
+> click 176 383
+> test windows: hide
+> zoom 28
+  ✔ V1 is hidden, the view is on W1
+> reveal 30
+w30 is on its way back, and comes into view when it is there
+  ✔ while it is on its way what is on screen stays, and its neighbour never shows
+  ✔ V1 fills the screen: whole, not short of its slot
+  ✔ and has the keyboard
+  ✔ W1 and W2 are out of view
+  ✔ 
+  ✔ and it stays so
+  ✔ windows match Arbor's layout
+11:04:51.323Z INFO  reveal 30: w30 is on its way back, and comes into view when it is there
+11:04:51.340Z DEBUG focus report for w30, which does not have the keyboard or takes no space; 4 checks left
+11:04:51.366Z DEBUG w30 has the keyboard
+
+▸ A window comes back out of the Dock by its app's own doing, with the keyboard, while the view is on another: one layout (1 of 3)
+> show-all
+> click 176 383
+> test windows: minimize 30
+> zoom 28
+  ✔ V1 is minimized, the view is on W1
+> test windows: activate 30
+> test windows: restore 30
+  ✔ its neighbour never shows
+  ✔ V1 fills the screen: whole, not short of its slot
+  ✔ and has the keyboard
+  ✔ W1 and W2 are out of view
+  ✔ 
+  ✔ and it stays so
+  ✔ windows match Arbor's layout
+11:04:58.646Z DEBUG focus report for w30, which does not have the keyboard or takes no space; 4 checks left
+11:04:58.686Z DEBUG w30 has the keyboard
+
+▸ A window comes back out of the Dock by its app's own doing, with the keyboard, while the view is on another: one layout (2 of 3)
+> show-all
+> click 176 383
+> test windows: minimize 30
+> zoom 28
+  ✔ V1 is minimized, the view is on W1
+> test windows: activate 30
+> test windows: restore 30
+  ✔ its neighbour never shows
+  ✔ V1 fills the screen: whole, not short of its slot
+  ✔ and has the keyboard
+  ✔ W1 and W2 are out of view
+  ✔ 
+  ✔ and it stays so
+  ✔ windows match Arbor's layout
+11:05:05.438Z DEBUG focus report for w30, which does not have the keyboard or takes no space; 4 checks left
+11:05:05.486Z DEBUG w30 has the keyboard
+
+▸ A window comes back out of the Dock by its app's own doing, with the keyboard, while the view is on another: one layout (3 of 3)
+> show-all
+> click 176 383
+> test windows: minimize 30
+> zoom 28
+  ✔ V1 is minimized, the view is on W1
+> test windows: activate 30
+> test windows: restore 30
+  ✔ its neighbour never shows
+  ✔ V1 fills the screen: whole, not short of its slot
+  ✔ and has the keyboard
+  ✔ W1 and W2 are out of view
+  ✔ 
+  ✔ and it stays so
+  ✔ windows match Arbor's layout
+11:05:12.669Z DEBUG focus report for w30, which does not have the keyboard or takes no space; 4 checks left
+11:05:12.692Z DEBUG w30 has the keyboard
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+77 passed, 0 failed
+exit code 0

@@ -1,0 +1,102 @@
+# check-comes-back 2026-10-15T11:04Z on macOS 26.6.2, commit 5aec3e9
+
+== two apps: W1 on the left, W2 above the other app's V1 on the right
+  ✔ Arbor manages the other app's window too
+
+▸ A window that is minimized is fetched by name while the view is on another: nothing else shows, and it fills the screen (1 of 3)
+  ✔ V1 is minimized, the view is on W1
+  ✔ while it is on its way what is on screen stays, and its neighbour never shows
+  ✔ V1 fills the screen: whole, not short of its slot
+  ✔ and has the keyboard
+  ✔ W1 and W2 are out of view
+  ✔ 
+  ✔ and it stays so
+  ✔ windows match Arbor's layout
+
+▸ A window that is minimized is fetched by name while the view is on another: nothing else shows, and it fills the screen (2 of 3)
+  ✔ V1 is minimized, the view is on W1
+  ✔ while it is on its way what is on screen stays, and its neighbour never shows
+  ✔ V1 fills the screen: whole, not short of its slot
+  ✔ and has the keyboard
+  ✔ W1 and W2 are out of view
+  ✔ 
+  ✔ and it stays so
+  ✔ windows match Arbor's layout
+
+▸ A window that is minimized is fetched by name while the view is on another: nothing else shows, and it fills the screen (3 of 3)
+  ✔ V1 is minimized, the view is on W1
+  ✔ while it is on its way what is on screen stays, and its neighbour never shows
+  ✔ V1 fills the screen: whole, not short of its slot
+  ✔ and has the keyboard
+  ✔ W1 and W2 are out of view
+  ✔ 
+  ✔ and it stays so
+  ✔ windows match Arbor's layout
+
+▸ A window that is hidden is fetched by name while the view is on another: nothing else shows, and it fills the screen (1 of 3)
+  ✔ V1 is hidden, the view is on W1
+  ✔ while it is on its way what is on screen stays, and its neighbour never shows
+  ✔ V1 fills the screen: whole, not short of its slot
+  ✔ and has the keyboard
+  ✔ W1 and W2 are out of view
+  ✔ 
+  ✔ and it stays so
+  ✔ windows match Arbor's layout
+
+▸ A window that is hidden is fetched by name while the view is on another: nothing else shows, and it fills the screen (2 of 3)
+  ✔ V1 is hidden, the view is on W1
+  ✔ while it is on its way what is on screen stays, and its neighbour never shows
+  ✔ V1 fills the screen: whole, not short of its slot
+  ✔ and has the keyboard
+  ✔ W1 and W2 are out of view
+  ✔ 
+  ✔ and it stays so
+  ✔ windows match Arbor's layout
+
+▸ A window that is hidden is fetched by name while the view is on another: nothing else shows, and it fills the screen (3 of 3)
+  ✔ V1 is hidden, the view is on W1
+  ✔ while it is on its way what is on screen stays, and its neighbour never shows
+  ✔ V1 fills the screen: whole, not short of its slot
+  ✔ and has the keyboard
+  ✔ W1 and W2 are out of view
+  ✔ 
+  ✔ and it stays so
+  ✔ windows match Arbor's layout
+
+▸ A window comes back out of the Dock by its app's own doing, with the keyboard, while the view is on another: one layout (1 of 3)
+  ✔ V1 is minimized, the view is on W1
+  ✔ its neighbour never shows
+  ✔ V1 fills the screen: whole, not short of its slot
+  ✔ and has the keyboard
+  ✔ W1 and W2 are out of view
+  ✔ 
+  ✔ and it stays so
+  ✔ windows match Arbor's layout
+
+▸ A window comes back out of the Dock by its app's own doing, with the keyboard, while the view is on another: one layout (2 of 3)
+  ✔ V1 is minimized, the view is on W1
+  ✔ its neighbour never shows
+  ✔ V1 fills the screen: whole, not short of its slot
+  ✔ and has the keyboard
+  ✔ W1 and W2 are out of view
+  ✔ 
+  ✔ and it stays so
+  ✔ windows match Arbor's layout
+
+▸ A window comes back out of the Dock by its app's own doing, with the keyboard, while the view is on another: one layout (3 of 3)
+  ✔ V1 is minimized, the view is on W1
+  ✔ its neighbour never shows
+  ✔ V1 fills the screen: whole, not short of its slot
+  ✔ and has the keyboard
+  ✔ W1 and W2 are out of view
+  ✔ 
+  ✔ and it stays so
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+77 passed, 0 failed
