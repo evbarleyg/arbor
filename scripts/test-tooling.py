@@ -2127,7 +2127,9 @@ sys.exit(int(turns[min(look, len(turns) - 1)]))
         ("the queue cannot be read, as when GitHub refuses: that is no yes", "3", "1", (98, False)),
         ("the same at priority 2", "2", "1", (98, False)),
         ("the look at the queue falls over", "3", "120", (98, False)),
-        ("priority 1 is held back too, by what holds everybody back: a train", "1", "4", (98, False)),
+        ("priority 1 is held back too, by what holds everybody back: a train", "1", "5", (98, False)),
+        ("and by its own branch's runs", "1", "6", (98, False)),
+        ("not by a queue that is merely busy, which the queue does not say to it anyway", "1", "4", (97, True)),
         ("priority 1: it is its turn", "1", "0", (97, True)),
         ("priority 1 alone is not held up by what cannot be found out", "1", "1", (97, True)),
         ("nor by a look that falls over", "1", "120", (97, True)),
@@ -2145,6 +2147,15 @@ sys.exit(int(turns[min(look, len(turns) - 1)]))
     row("run.sh: a queue that was merely busy: nobody waits for anybody", [looks(priority, "4 0") for priority in "23"], [(97, True, 2)] * 2)
     row("run.sh: at the look it gave way for, something more urgent has come: it holds back again, and has given way already", looks("2", "5 0 4 4 0"), (97, True, 5))
     row("run.sh: another train comes while it gives way: it gives way again when that one is through", looks("2", "5 0 5 0 0"), (97, True, 5))
+    # The queue stays busy for ever here: a run that did not go would look at it until this self-test's own patience ended. So it gives up soon, and is a red row.
+    soon = {"MAC_SHELL_TIMEOUT": "10"}
+    row("run.sh: a queue that stays busy: priority 2 goes after so many looks held back, 3 after twice as many, whatever waits",
+        [looks(priority, "4", MAC_SHELL_AGE="2", **soon) for priority in "23"], [(97, True, 3), (97, True, 5)])
+    row("run.sh: eight looks where nothing else is said", looks("2", "4", **soon), (97, True, 9))
+    row("run.sh: and it says so", "held back for 2 looks at a busy queue: goes now, whatever waits (three are waiting)" in ran(
+        "a.sh", "feat/x", ARBOR_MAC_PRIORITY="2", TURN="4", MAC_SHELL_POLL="0", MAC_SHELL_AGE="2", **soon)[0].stdout, True)
+    row("run.sh: the branch's own runs are not outwaited", looks("2", "6 6 6 6 6 6 0", MAC_SHELL_AGE="2"), (97, True, 7))
+    row("run.sh: nor is a train, however long the run has held back before it", looks("2", "4 4 5 5 5 4", MAC_SHELL_AGE="2", **soon), (97, True, 6))
     row("run.sh: it says why it is not off yet", "what held everybody back is over: priority 1 goes first, this has priority 2" in ran(
         "a.sh", "feat/x", ARBOR_MAC_PRIORITY="2", TURN="5 0", MAC_SHELL_POLL="0")[0].stdout, True)
 
@@ -2159,7 +2170,7 @@ sys.exit(int(turns[min(look, len(turns) - 1)]))
     # The rules are written to while it holds back.
     first, second = os.path.join(world.name, "rules.md"), os.path.join(world.name, "more-rules.md")
 
-    def with_rules(turns, writes="", into=first, watched=None, there=True):
+    def with_rules(turns, writes="", into=first, watched=None, there=True, **more):
         for path in (first, second):
             if os.path.exists(path):
                 os.remove(path)
@@ -2167,13 +2178,14 @@ sys.exit(int(turns[min(look, len(turns) - 1)]))
                 with open(path, "w", encoding="utf-8") as handle:
                     handle.write("what held yesterday\n")
         done, noted, _ = ran("a.sh", "feat/x", ARBOR_MAC_PRIORITY="2", TURN=turns, MAC_SHELL_POLL="0", WRITES=writes, INTO=into,
-                             ARBOR_MAC_RULES=first + ":" + second if watched is None else watched)
+                             ARBOR_MAC_RULES=first + ":" + second if watched is None else watched, **more)
         return done.returncode, os.path.exists(noted), [line for line in done.stdout.splitlines() if line.startswith(("---", "NOTHING", "what held"))]
 
     row("run.sh: the rules change while it holds back: it does not start, shows what is new and no more, and ends with 95", with_rules("4 0", "NOTHING STARTS UNTIL NOON"),
         (95, False, ["--- new in rules.md:", "NOTHING STARTS UNTIL NOON"]))
     row("run.sh: so with the second of two files", with_rules("4 0", "NOTHING STARTS UNTIL NOON", into=second), (95, False, ["--- new in more-rules.md:", "NOTHING STARTS UNTIL NOON"]))
     row("run.sh: so with a file that was not there when the waiting began", with_rules("4 0", "NOTHING STARTS UNTIL NOON", there=False)[:2], (95, False))
+    row("run.sh: so with a run that has held back long enough to go whatever waits", with_rules("4", "NOTHING STARTS UNTIL NOON", MAC_SHELL_AGE="1", **soon)[:2], (95, False))
     row("run.sh: it held back and nothing was written: it starts", with_rules("4 0"), (97, True, []))
     row("run.sh: a file nobody watches may change", with_rules("4 0", "NOTHING STARTS UNTIL NOON", into=second, watched=first), (97, True, []))
     row("run.sh: no rules are named: as it was", with_rules("4 0", "NOTHING STARTS UNTIL NOON", watched=""), (97, True, []))

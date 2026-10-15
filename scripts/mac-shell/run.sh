@@ -56,6 +56,7 @@
 #                                 many again once it has its Mac. It is this script's patience and nothing else: a run is never cancelled for it. One that
 #                                 waits keeps its place in GitHub's line, one that is half done its minutes.
 #              MAC_SHELL_ASK      seconds until GitHub is first asked whether the run has ended without output (default 180); twice as long each time after
+#              MAC_SHELL_AGE      looks at a busy queue after which a run of priority 2 goes whatever waits (default 8; priority 3 twice as many)
 #              MAC_SHELL_LOOK     seconds a look at the queue may take before it is left behind (default 60)
 #              ARBOR_MAC_RULES    files, with colons between them, in which whoever coordinates writes what holds for everybody. A run that has held back and
 #                                 finds one of them changed does not start: it prints what is new and ends with 95. What was true when it began to wait may not be any more.
@@ -219,7 +220,7 @@ fi
 # if that meant "go", everybody who was holding back would start at once, at the worst moment. Priority 1 alone is not held up by what cannot be
 # found out, and does not pay for finding out: it reads what somebody else saw of late, and goes if there is nothing to read.
 start=$(date +%s)
-told="" together="" yielded=0
+told="" together="" yielded=0 aged=0
 # What the rules said when the waiting began.
 rules=$(mktemp -d) || fail "no room for a temporary folder"
 trap 'rm -rf "$rules"' EXIT
@@ -274,8 +275,17 @@ while :; do
         else
           break
         fi ;;
-      4) ;;
+      4)
+        # A lower priority is a delay, not never. "Fewer than three waiting" did not come for a whole night, and seven sessions held back for up to two hours and
+        # started nothing. GitHub's own line is first come, first served: whoever holds back here has no place in it. So after so many looks at a busy queue a run
+        # goes, whatever waits: priority 2 after 8 (some twenty minutes), 3 after 16. A train, a declared hold, changed rules and the branch's own runs hold as ever.
+        if [ "$aged" -ge $((${MAC_SHELL_AGE:-8} * (priority - 1))) ]; then
+          echo "held back for $aged looks at a busy queue: goes now, whatever waits ($why)"
+          break
+        fi
+        aged=$((aged + 1)) ;;
       5) together=yes yielded=0 ;;
+      6) ;;
       *) [ "$priority" != 1 ] || break
         why="the queue for the Macs cannot be read (are GitHub's calls for this hour used up? gh api rate_limit says, and costs none)" ;;
     esac
