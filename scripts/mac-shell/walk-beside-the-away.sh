@@ -1,5 +1,5 @@
 #!/bin/bash
-# "A window would not dock on the right while another window was minimized" (IDEAS I21), played with real browsers at macOS's own settings.
+# "A window would not dock on the right while another window was minimized" (IDEAS I21), played with real apps at macOS's own settings.
 #
 #   scripts/mac-shell/run.sh --priority 1 scripts/mac-shell/walk-beside-the-away.sh scripts/mac-shell/walk-beside-the-away-first-build.sh
 #
@@ -11,6 +11,9 @@
 #      docked, that is the browser's own second window, that went there before Arbor started.
 #   3. By hand against the right edge with macOS's tiling on, where the edge is macOS's (QUESTIONS Q23): what becomes of the window, and WHAT DOES ARBOR SAY, at the
 #      last point and a few points short of it?
+#
+# The browser is Safari. On a hosted Mac Chrome, Firefox and Edge did not open (`open` sat for a minute and a half each, then failed with -10673), and a walk
+# wants six apps: the cast is `stock`, which has played there.
 #
 # A walk written by hand (lib-walk.sh): every act is judged as a day's is, each chapter has a trace of its own, and an act that does not apply is left out and said so.
 # After each round `told` prints what a reader needs: what Arbor answered and said on screen since the last time, and the windows that show, from left to right.
@@ -29,7 +32,7 @@ told() {
   TOLD=$(arbor_log_lines)
   for name in $WALK_CAST; do
     window=$(window_of "$name")
-    shows "$window" 2> /dev/null || continue
+    [ -n "$window" ] && shows "$window" 2> /dev/null || continue
     echo "$name $(if is docked "$window" 2> /dev/null; then echo docked; else echo floats; fi) $(real_of "$window")"
   done | sort -n -k 3 | awk '{ printf "   %-9s %-7s x %5d  y %4d  %4d × %d\n", $1, $2, $3, $4, $5, $6 }'
 }
@@ -77,118 +80,118 @@ if [ -n "${WALK_OLD_BUILD:-}" ]; then
   }
 fi
 
-walk_begin browsers laptop defaults
+walk_begin stock laptop defaults
 TOLD=$(arbor_log_lines)
 
 chapter "In the complaint's own words, by the key: a floating window is in the Dock"
-switch_to safari
-dock_key left
 switch_to textedit
+dock_key left
+switch_to notes
 minimize
-switch_to chrome
+switch_to safari
 dock_key right
-told "Safari docked left, TextEdit (floating) in the Dock, ⌃⌥⌘→ on Chrome"
-restore textedit
+told "TextEdit docked left, Notes (floating) in the Dock, ⌃⌥⌘→ on Safari"
+restore notes
 float_all
 
 chapter "A column of which one is away: in the Dock"
 switch_to safari
 dock_key left
-switch_to chrome
+switch_to textedit
 dock_key right
-drag_onto firefox safari bottom
-told "Safari above Firefox, Chrome to their right"
-switch_to firefox
+drag_onto preview safari bottom
+told "Safari above Preview, TextEdit to their right"
+switch_to preview
 minimize
-told "Firefox in the Dock: Safari fills the column"
+told "Preview in the Dock: Safari fills the column"
 switch_to safari
 dock_key left
 told "⌃⌥⌘← on Safari: nothing that shows lies beyond"
 dock_key right
-told "⌃⌥⌘→ on Safari, THE FIRST PRESS: is it to the right of Chrome, with both as wide as before?"
+told "⌃⌥⌘→ on Safari, THE FIRST PRESS: is it to the right of TextEdit, with both as wide as before?"
 dock_key right
 told "⌃⌥⌘→ on Safari, the second press"
-restore firefox
-told "Firefox is back: beside which window?"
+restore preview
+told "Preview is back: beside which window?"
 float_all
 
 chapter "A column of which one is away: hidden with ⌘H"
 switch_to safari
 dock_key left
-switch_to chrome
+switch_to textedit
 dock_key right
-drag_onto firefox safari bottom
-switch_to firefox
+drag_onto preview safari bottom
+switch_to preview
 hide
-told "Firefox hidden: Safari fills the column"
+told "Preview hidden: Safari fills the column"
 switch_to safari
 dock_key right
 told "⌃⌥⌘→ on Safari, THE FIRST PRESS"
-unhide firefox
-told "Firefox is back"
+unhide preview
+told "Preview is back"
 float_all
 
 chapter "A docked window is in the Dock, and the browser is docked by the key, by the menu and by hand"
-switch_to safari
+switch_to textedit
 dock_key left
-switch_to edge
+switch_to notes
 dock_key right
 minimize
-told "Safari docked, Edge docked and in the Dock"
-switch_to chrome
+told "TextEdit docked, Notes docked and in the Dock"
+switch_to safari
 dock_key right
-told "⌃⌥⌘→ on Chrome, which floated"
+told "⌃⌥⌘→ on Safari, which floated"
 float_key
 dock_menu_right
-told "Chrome floated again; Dock Focused Window ▸ Right"
+told "Safari floated again; Dock Focused Window ▸ Right"
 float_key
-drag_onto chrome safari right
-told "Chrome floated again; dragged onto the right part of Safari"
-restore edge
-told "Edge is back"
+drag_onto safari textedit right
+told "Safari floated again; dragged onto the right part of TextEdit"
+restore notes
+told "Notes is back"
+float_all
+
+chapter "By hand against the right edge, which is macOS's"
+switch_to textedit
+dock_key left
+switch_to notes
+minimize
+drag_short_of_the_edge safari
+told "Safari let go six points short of the right edge: WHAT DOES ARBOR SAY?"
+drag_by safari -300 0
+drag_edge safari right
+told "Safari let go at the last point of the right edge: WHAT DOES ARBOR SAY?"
+switch_to safari
+dock_key right
+told "⌃⌥⌘→ on Safari, out of macOS's tile"
+restore notes
 float_all
 
 chapter "The browser's own other window is in the Dock"
-switch_to safari
+switch_to textedit
 dock_key left
-switch_to chrome
+switch_to safari
 open_new
 switch_backtick
 minimize
 dock_key right
-told "Chrome's first window in the Dock, ⌃⌥⌘→ on its second"
-restore chrome
+told "Safari's first window in the Dock, ⌃⌥⌘→ on its second"
+restore safari
 close_new
-float_all
-
-chapter "By hand against the right edge, which is macOS's"
-switch_to safari
-dock_key left
-switch_to textedit
-minimize
-drag_short_of_the_edge chrome
-told "Chrome let go six points short of the right edge: WHAT DOES ARBOR SAY?"
-drag_by chrome -300 0
-drag_edge chrome right
-told "Chrome let go at the last point of the right edge: WHAT DOES ARBOR SAY?"
-switch_to chrome
-dock_key right
-told "⌃⌥⌘→ on Chrome, out of macOS's tile"
-restore textedit
 float_all
 
 chapter "It went into the Dock before Arbor started"
 walk_quit
-switch_to edge
+switch_to notes
 minimize
 walk_start
 TOLD=$(arbor_log_lines)
-switch_to safari
+switch_to textedit
 dock_key left
-switch_to chrome
+switch_to safari
 dock_key right
-told "Edge in the Dock since before the start, ⌃⌥⌘→ on Chrome"
-restore edge
-told "Edge is back"
+told "Notes in the Dock since before the start, ⌃⌥⌘→ on Safari"
+restore notes
+told "Notes is back"
 
 walk_end
