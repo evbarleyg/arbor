@@ -1,6 +1,6 @@
 #!/bin/bash
 # Names a hosted Mac's build folder after everything that goes into it, for .github/actions/mac-setup.
-#   scripts/ci-build-key.sh products|tests
+#   scripts/ci-build-key.sh products|tests|release
 #
 # Prints, as GitHub's step outputs:
 #   key=…      the name of what this job will have built
@@ -9,13 +9,14 @@
 #
 #   build-v1-<system, Xcode, compiler>-<day>-<manifest>-t-<sources>-<tests>     after `swift build --build-tests`
 #   build-v1-<system, Xcode, compiler>-<day>-<manifest>-p-<sources>             after `swift build`
+#   build-v1-<system, Xcode, compiler>-<day>-<manifest>-r-<sources>             after `swift build -c release`
 #
 # Sources and tests are named by Git's hash of their content, so two commits with the same Sources share a build, whatever else
 # differs between them: a branch that only adds a Mac shell script builds nothing. The manifest stands before them: a build is never
 # built upon one with other targets, whose modules would still lie about and could be imported.
 # The day (UTC): however well building upon builds works, the chain is cut once a day.
 set -euo pipefail
-kind=${1:?usage: scripts/ci-build-key.sh products|tests}
+kind=${1:?usage: scripts/ci-build-key.sh products|tests|release}
 
 short() { git hash-object --stdin | cut -c 1-16; }
 # The runner's image too: the helper tools are compiled for the system they are compiled on. And the tools that build and note, whose meaning
@@ -42,5 +43,10 @@ case "$kind" in
     # With the tests built as well it is no worse.
     echo "enough=$stem-[pt]-$sources*"
     printf 'or<<.\n%s\n.\n' "$stem-t-$sources-"$'\n'"$stem-t-"$'\n'"$stem-p-" ;;
-  *) echo "ci-build-key.sh: products or tests, not '$kind'" >&2; exit 64 ;;
+  release)
+    # A world of its own: nothing of a debug build is of use to it, nor the other way round, and neither may pass for the other.
+    echo "key=$stem-r-$sources"
+    echo "enough=$stem-r-$sources"
+    printf 'or<<.\n%s\n.\n' "$stem-r-" ;;
+  *) echo "ci-build-key.sh: products, tests or release, not '$kind'" >&2; exit 64 ;;
 esac

@@ -535,7 +535,14 @@ scripts/mac-shell/run.sh scripts/mac-shell/shots-F10.sh scripts/mac-shell/shots-
 scripts/mac-shell/run.sh --macs 2 scripts/mac-shell/compat.sh            # one long script that shares its work out among two Macs
 scripts/mac-shell/run.sh --on macos-15 scripts/mac-shell/e2e.sh          # another macOS: macos-15, macos-14, macos-15-intel
 scripts/mac-shell/run.sh --bare scripts/mac-shell/desktop-facts.sh       # no toolchain, no build: it only asks the Mac something
+scripts/mac-shell/run.sh --release scripts/mac-shell/day.sh              # the release build: for whatever is measured
 ```
+
+**What is measured is measured on the release build.** `arbor_build` builds and drives `debug`, as `swift build` and the tests do, unless `ARBOR_CONFIGURATION=release` says
+otherwise; `run.sh --release` says it to the hosted Mac. How busy Arbor is, how long anything takes and how smoothly it moves belong to the program people get: without
+the optimizer it is another program. The release build is made before the first script and kept for the next run under a name of its own, so neither kind is
+ever taken for the other or built upon it. The line "built Arbor (release), …" in `output.txt` says which one a script drove. Whether something works at all is asked of
+`debug`, which every test runs against and which is nearly always built already.
 
 They run one after the other. Each gets its turn and its own twenty minutes, whatever became of the one before, and starts with an empty
 `mac-shell/`. What comes back is `.mac-shell/<first script>-x3-<run id>/` with a folder for each, `1-shots-F10/`, `2-shots-F12/`, …, holding what a

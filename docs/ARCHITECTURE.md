@@ -1527,6 +1527,7 @@ The scripts read a few variables of their own:
 | `ARBOR_UNATTENDED` | `scripts/install.sh`, `make run`, `scripts/make-signing-identity.sh` | `1`: go ahead although standard input is no terminal; otherwise they decline (77) |
 | `ARBOR_VERSION` | `scripts/version.sh` | Replaces the `VERSION` file for one build |
 | `ARBOR_CONFIGURATION` | `scripts/bundle.sh` (`make app`, `make install`) | `debug` compiles without the optimizer; `release` when unset |
+| `ARBOR_CONFIGURATION` | `scripts/mac-shell/lib.sh` (`arbor_build`), `scripts/mac-shell/run.sh` | `release`: the script drives the release build (`run.sh --release`); `debug` when unset |
 | `ARBOR_NOTARY_PROFILE` | `scripts/release.sh` (`make release`) | Notarize with this keychain profile |
 | `ARBOR_DOCKER_ARGS` | `scripts/linux.sh` (`make linux`) | More arguments for `docker run`, e.g. `--network host` |
 | `VERBOSE=1` | `scripts/scenarios.sh` (`make scenarios`) | Print arbor-sim's whole output |

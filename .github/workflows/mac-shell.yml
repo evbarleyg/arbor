@@ -52,6 +52,12 @@ on:
         required: false
         default: false
         type: boolean
+      configuration:
+        description: Which build the scripts drive. release is the program people get, for whatever is measured (run.sh --release)
+        required: false
+        default: debug
+        type: choice
+        options: [debug, release]
 
 # A run started again under the same tag (by default: the same scripts for the same branch) replaces the one before, which would
 # push to the same branch anyway: whoever starts it again after a fix no longer wants the old answer, and somebody is waiting for that Mac.
@@ -76,6 +82,8 @@ jobs:
     env:
       SCRIPT: ${{ matrix.scripts }}
       REF: ${{ inputs.ref }}
+      # For the build below and for lib.sh's arbor_build, which then finds nothing left to do.
+      ARBOR_CONFIGURATION: ${{ inputs.configuration || 'debug' }}
     steps:
       - name: Check the inputs
         id: inputs
@@ -138,14 +146,14 @@ jobs:
         if: ${{ !inputs.bare }}
         uses: ./.ci/.github/actions/mac-setup
         with:
-          build-cache: products
+          build-cache: ${{ inputs.configuration == 'release' && 'release' || 'products' }}
       # Here, so that what is kept is a build and nothing else. A build that fails is the script's to report, as it always was.
       - name: Build
         id: build
         if: ${{ !inputs.bare }}
         run: |
           swift --version
-          .ci/scripts/ci-build.sh && echo "passed=true" >> "$GITHUB_OUTPUT" || echo "::warning::swift build failed"
+          .ci/scripts/ci-build.sh -c "$ARBOR_CONFIGURATION" && echo "passed=true" >> "$GITHUB_OUTPUT" || echo "::warning::swift build failed"
       - name: Keep the build
         if: steps.build.outputs.passed == 'true' && steps.setup.outputs.keep-build == 'true'
         continue-on-error: true
