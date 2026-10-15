@@ -1749,16 +1749,16 @@ def check_mac_shell_batch():
     row("ci-mac-shell.sh: no script at all", tried()[0], 64)
 
     # The Mac between two scripts. Its state is a folder of files, which stand-ins for `defaults`, `killall` and the two helper tools read and write.
-    def between(*texts):
+    def between(*texts, domain="Margins 1"):
         with tempfile.TemporaryDirectory(prefix="tooling-") as folder:
             state = os.path.join(folder, "state")
             os.makedirs(state)
             os.makedirs(os.path.join(folder, "bin"))
             os.makedirs(os.path.join(folder, ".build", "mac-shell"))
             always = "26 340 25 799 0 31 30 on Control Center\n15 161 24 0 0 1024 30 on Window Server\n6 339 20 0 0 1024 768 on Dock\n40 900 8 382 118 260 250 off UserNotificationCenter"
-            for name, value in {"reduceMotion": "1", "tiling": "on", "ax": "true", "spaces": "1", "displays": "1", "windows": always}.items():
+            for name, value in {"reduceMotion": "1", "tiling": domain, "ax": "true", "spaces": "1", "displays": "1", "windows": always}.items():
                 with open(os.path.join(state, name), "w", encoding="utf-8") as handle:
-                    handle.write(value + "\n")
+                    handle.write(value + "\n" if value else "")
             stand_ins = {
                 "bin/defaults": """case "$*" in
   "read com.apple.universalaccess reduceMotion") cat "$STATE/reduceMotion" 2>/dev/null || exit 1 ;;
@@ -1766,9 +1766,12 @@ def check_mac_shell_batch():
   "write com.apple.universalaccess reduceMotion -bool false") echo 0 > "$STATE/reduceMotion" ;;
   "delete com.apple.universalaccess reduceMotion") rm -f "$STATE/reduceMotion" ;;
   "read -g AppleInterfaceStyle") cat "$STATE/style" 2>/dev/null || exit 1 ;;
-  "export com.apple.WindowManager -") cat "$STATE/tiling" ;;
-  "export com.apple.WindowManager "*) cp "$STATE/tiling" "$3" ;;
-  "import com.apple.WindowManager "*) cp "$3" "$STATE/tiling" ;;
+  "export com.apple.WindowManager -") sort "$STATE/tiling" ;;
+  "export com.apple.WindowManager "*) sort "$STATE/tiling" > "$3" ;;
+  # As on a real Mac: the file's keys are laid over what is there, and what else is there stays.
+  "import com.apple.WindowManager "*) awk 'NR == FNR { new[$1] = $0; next } !($1 in new) { print } END { for (key in new) print new[key] }' "$3" "$STATE/tiling" > "$STATE/tiling.new"
+    mv "$STATE/tiling.new" "$STATE/tiling" ;;
+  "delete com.apple.WindowManager") [ -e "$STATE/sticky" ] || : > "$STATE/tiling" ;;
 esac""",
                 "bin/killall": 'echo "$*" >> "$STATE/killed"\n[ -e "$STATE/stubborn" ] || { grep -v " $1\\$" "$STATE/windows" > "$STATE/windows.new"; mv "$STATE/windows.new" "$STATE/windows"; }',
                 ".build/mac-shell/pointer": 'case "$1" in ax-access) cat "$STATE/ax" ;; displays) seq "$(cat "$STATE/displays")" ;; windows) cat "$STATE/windows" ;; esac',
@@ -1778,7 +1781,7 @@ esac""",
                 with open(os.path.join(folder, path), "w", encoding="utf-8") as handle:
                     handle.write("#!/bin/bash\n" + text + "\n")
                 os.chmod(os.path.join(folder, path), 0o755)
-            see = 'echo "finds: $(cat "$STATE/reduceMotion" 2>/dev/null || echo unset) $(cat "$STATE/style" 2>/dev/null || echo Light) $(cat "$STATE/tiling") $(cat "$STATE/ax")"\n'
+            see = 'echo "finds: $(cat "$STATE/reduceMotion" 2>/dev/null || echo unset) $(cat "$STATE/style" 2>/dev/null || echo Light) $(sort "$STATE/tiling" | tr "\\n" ";") $(cat "$STATE/ax")"\n'
             names = []
             for number, text in enumerate(texts):
                 names.append(f"s{number}.sh")
@@ -1800,21 +1803,34 @@ esac""",
                     said += [f"{number + 1}: {line[11:]}" for line in handle.read().splitlines() if line.startswith("mac-shell: ") and ("screen" in line.lower() or "will not go" in line)]
             with open(os.path.join(state, "windows"), encoding="utf-8") as handle:
                 on_screen = sum(" on UserNotificationCenter" in line or " on SecurityAgent" in line for line in handle)
-            return done.returncode, found, codes, os.path.exists(os.path.join(state, "killed")), hidden, said, on_screen
+            back = []
+            for number in range(len(names) if len(names) > 1 else 0):
+                with open(os.path.join(folder, "mac-shell", f"{number + 1}-s{number}", "output.txt"), encoding="utf-8") as handle:
+                    back += [f"{number + 1}: {line[11:]}" for line in handle.read().splitlines() if line.startswith("mac-shell: ") and ("put back" in line or "go back" in line)]
+            return done.returncode, found, codes, os.path.exists(os.path.join(state, "killed")), hidden, said, on_screen, back
 
-    as_it_was = "1 Light on true"
+    as_it_was = "1 Light Margins 1; true"
     row("ci-mac-shell.sh: scripts that change nothing: nothing is put back, nothing restarted", between("true", "true")[:4], (0, [as_it_was] * 2, ["0", "0"], False))
     for what, change in [
         ("Reduce Motion switched off", 'echo 0 > "$STATE/reduceMotion"'),
         ("Reduce Motion no longer set at all", 'rm "$STATE/reduceMotion"'),
         ("dark mode", 'echo Dark > "$STATE/style"'),
-        ("macOS's own tiling switched off", 'echo off > "$STATE/tiling"'),
-        ("all of them", 'echo 0 > "$STATE/reduceMotion"; echo Dark > "$STATE/style"; echo off > "$STATE/tiling"'),
+        ("a setting of macOS's own tiling changed", 'echo "Margins 0" > "$STATE/tiling"'),
+        ("one set that was not set before, which `defaults import` alone would leave", 'echo "EdgeDrag 0" >> "$STATE/tiling"'),
+        ("one that was set, gone", ': > "$STATE/tiling"'),
+        ("all of them", 'echo 0 > "$STATE/reduceMotion"; echo Dark > "$STATE/style"; echo "EdgeDrag 0" >> "$STATE/tiling"'),
     ]:
         row(f"ci-mac-shell.sh: {what}: the next script finds the Mac as the first found it", between(change, "true")[:3], (0, [as_it_was] * 2, ["0", "0"]))
     row("ci-mac-shell.sh: WindowManager is restarted when its settings are put back, and only then",
-        (between('echo off > "$STATE/tiling"', "true")[3], between('echo Dark > "$STATE/style"', "true")[3]), (True, False))
-    row("ci-mac-shell.sh: also after a script that failed", between('echo off > "$STATE/tiling"; exit 1', "true")[:3], (1, [as_it_was] * 2, ["1", "0"]))
+        (between('echo "EdgeDrag 0" >> "$STATE/tiling"', "true")[3], between('echo Dark > "$STATE/style"', "true")[3]), (True, False))
+    row("ci-mac-shell.sh: also after a script that failed", between('echo "EdgeDrag 0" >> "$STATE/tiling"; exit 1', "true")[:3], (1, [as_it_was] * 2, ["1", "0"]))
+    row("ci-mac-shell.sh: a Mac on which none of them is set to begin with, as GitHub's come", between('echo "EdgeDrag 0" >> "$STATE/tiling"', "true", "true", domain="")[:3],
+        (0, ["1 Light  true"] * 3, ["0"] * 3))
+    answer = between("true", 'echo "EdgeDrag 0" >> "$STATE/tiling"; : > "$STATE/sticky"', "true", "true")
+    row("ci-mac-shell.sh: a setting that will not go back: that is said, nothing is called put back, and the scripts after it do not run", (answer[:3], answer[7]),
+        ((75, [as_it_was, as_it_was, "did not run", "did not run"], ["0", "0", "75", "75"]), ["2: s1.sh changed window-manager, and it will not go back"]))
+    row("ci-mac-shell.sh: what was put back is said once, with the script that changed it, and not again after the next", between('echo "EdgeDrag 0" >> "$STATE/tiling"', "true", "true")[7],
+        ["1: put back after s0.sh: window-manager"])
     for what, change in [("Accessibility is gone", 'echo false > "$STATE/ax"'), ("one more Space", 'echo 2 > "$STATE/spaces"'), ("a display that stayed", 'echo 2 > "$STATE/displays"')]:
         row(f"ci-mac-shell.sh: {what}: that cannot be put back, and the scripts after it do not run", between("true", change, "true", "true")[:3],
             (75, [as_it_was, as_it_was, "did not run", "did not run"], ["0", "0", "75", "75"]))
@@ -1832,7 +1848,7 @@ esac""",
     row("ci-mac-shell.sh: an app of that name within another's is no asker",
         between('echo "70 71 0 0 0 500 500 on Not UserNotificationCenter" >> "$STATE/windows"', "true")[3:6:2], (False, []))
     row("ci-mac-shell.sh: in the last place such a script costs nobody anything", between("true", 'echo false > "$STATE/ax"')[:3], (0, [as_it_was] * 2, ["0", "0"]))
-    row("ci-mac-shell.sh: a script by itself is not looked after", between('echo off > "$STATE/tiling"')[:4], (0, [as_it_was], ["0"], False))
+    row("ci-mac-shell.sh: a script by itself is not looked after", between('echo "EdgeDrag 0" >> "$STATE/tiling"')[:4], (0, [as_it_was], ["0"], False))
     row("ci-mac-shell.sh: the notes it keeps for this do not come back with the output", between("true", "true")[4], [])
 
     def parts(*names, **more):
