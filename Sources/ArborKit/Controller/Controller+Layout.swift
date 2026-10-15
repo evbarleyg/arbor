@@ -595,7 +595,8 @@ extension Controller {
   }
 
   func tileModels(for layout: Layout, on displayID: DisplayID) -> [TileModel] {
-    layout.tiles.map { tile in
+    noteTitlesSent(with: layout, on: displayID)
+    return layout.tiles.map { tile in
       TileModel(
         display: displayID, node: tile.node, kind: tile.kind, frame: tile.frame,
         items: tile.windows.compactMap { window in
@@ -603,7 +604,7 @@ extension Controller {
           return TileModel.Item(
             window: window, pid: snapshot.pid, bundleID: snapshot.bundleID,
             appName: snapshot.appName, miniatureFrame: tile.miniature[window])
-        }, name: spaceName(of: tile.node, on: displayID))
+        }, name: spaceName(of: tile.node, on: displayID), windowTitle: title(for: tile, on: displayID))
     }
   }
 

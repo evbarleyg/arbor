@@ -240,6 +240,8 @@ final class TilePanel: OverlayPanel {
   override init() {
     super.init()
     level = .normal
+    // Arbor is never the active app, and help tags are for the active app's windows unless a window says otherwise.
+    allowsToolTipsWhenApplicationIsInactive = true
     contentView = tileView
     tileView.onClick = { [weak self] in self?.onActivate?() }
   }
@@ -249,12 +251,25 @@ final class TilePanel: OverlayPanel {
   func show(_ model: TileModel, fade: TimeInterval, again: Bool) {
     // Moving, redrawing and reordering a panel are calls to the window server; most tiles outlast most layouts.
     if !again, isVisible, !isLeaving, tileView.model == model { return }
+    // The same tile in the same place, of the same kind: what has changed is drawn inside it. A terminal gives its window
+    // a new title at every command, and that is nothing the window server need hear of.
+    if !again, isVisible, !isLeaving, let old = tileView.model, old.node == model.node, old.frame == model.frame,
+      old.kind == model.kind
+    {
+      tileView.model = model
+      // Taken away first: a tag that is up shows the words it came up with, and they may be a title that has to go.
+      if old.helpTag != model.helpTag { tileView.toolTip = nil }
+      tileView.toolTip = model.helpTag
+      tileView.needsDisplay = true
+      return
+    }
     // A panel handed over from another tile is a new tile to the eye, wherever it was a moment ago.
     let isSameTile = isVisible && tileView.model?.node == model.node
     let isNew = !isSameTile || isLeaving
     isLeaving = false
     ignoresMouseEvents = false
     tileView.model = model
+    tileView.toolTip = model.helpTag
     tileView.needsDisplay = true
     setFrame(ScreenGeometry.appKit(fromGlobal: model.frame), display: true)
     // The window server shapes the shadow after what was last drawn.

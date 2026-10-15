@@ -135,7 +135,7 @@ extension Controller {
     scheduler.cancel("release")
     hold.until = minutes.map { now().addingTimeInterval($0 * 60) }
     if let minutes {
-      scheduler.schedule("release", after: minutes * 60) { [weak self] in _ = self?.release() }
+      scheduler.schedule("release", after: minutes * 60) { [weak self] in _ = self?.release(byItself: true) }
     }
     let end = minutes.map { "for \(Self.minutesText($0))" } ?? "until `release`"
     switch level {
@@ -144,8 +144,10 @@ extension Controller {
     }
   }
 
-  func release() -> CommandResult {
+  /// `byItself`: the time is up, and nobody may be looking.
+  func release(byItself: Bool = false) -> CommandResult {
     guard isHeld else { return .failure("the view is not held") }
+    defer { if !byItself { tileCaptionsMayShowAgain() } }
     let before = holdLevel
     scheduler.cancel("release")
     if hold.chosen != nil { hold.chosen = nil } else { hold.callerDismissed = true }
@@ -290,6 +292,7 @@ extension Controller {
       for (display, workspace) in workspaces { hold.fences[display] = fence(around: shownNode(of: workspace), of: workspace) }
     }
     Log.info("hold: \(before?.rawValue ?? "none") → \(level?.rawValue ?? "none")")
+    if before == nil { tileCaptionsAreHeld() }
     // What is up already comes down: the minimap draws the whole arrangement, what is out of view with it. On a held view everything of
     // Arbor's does, the field for a space's name with it; a call that begins takes nothing away that the person has just asked for but that.
     if level != nil { hideMinimaps() }
@@ -594,6 +597,7 @@ extension Controller {
   func holdLetsInWhatWaited(on display: DisplayID?) {
     // The other displays' go on waiting: nothing lays those out now.
     hold.keptOut = display.map { moved in hold.keptOut.filter { workspaceID(containing: $0) != moved } } ?? []
+    tileCaptionsMayShowAgain()
     guard hold.dialogsWait else { return }
     hold.dialogsWait = false
     system.leaveStrayDialogs(false, exceptOfApp: nil)

@@ -24,6 +24,8 @@ ARBOR_HOME=$home ARBOR_DEBUG=1 "$sim" quiet \
   "hold" "go NAMEWORD" "find TITLEWORD" "name NAMEWORD2" "unname NAMEWORD" "key ctrl+opt+j" "release" \
   "pause" "go NAMEWORD" "find TITLEWORD" "name NAMEWORD3" "resume" \
   "unbind ctrl+opt+j" "unbind ctrl+opt+k" "unname NAMEWORD" "unname NAMEWORDy" \
+  "show-all" "set minimumUsableWidth 900" "scene" "title 102 TITLEWORD five" "wait 1" "hold" "title 102 TITLEWORD six" "wait 1" \
+  "release" "reset minimumUsableWidth" \
   "title 101 TITLEWORD four" "minimize 101" "restore 101" "close 101" "close 102" \
   "state" "ascii" "menu" "doctor" "status" \
   "nonsense TITLEWORD" "dock TITLEWORD left" "zoom TITLEWORD" "name" "find" > "$home/out.txt" 2>&1
@@ -32,6 +34,7 @@ ARBOR_HOME=$home ARBOR_DEBUG=1 "$sim" quiet \
 grep -q "DEBUG" "$home/arbor.log" || { echo "privacy smoke test FAILED: no debug lines, so half of it was not tried"; exit 1; }
 # The words did reach Arbor: replies may say them.
 grep -q "NAMEWORD" "$home/out.txt" || { echo "privacy smoke test FAILED: the names never arrived"; exit 1; }
+grep -q ' window .*"TITLEWORD' "$home/out.txt" || { echo "privacy smoke test FAILED: no tile showed a title"; exit 1; }
 if grep -n -e TITLEWORD -e NAMEWORD -e QUERYWORD "$home/arbor.log"; then
   echo "privacy smoke test FAILED: the lines above are in arbor.log"
   exit 1

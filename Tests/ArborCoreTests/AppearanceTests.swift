@@ -16,7 +16,7 @@ import Testing
     #expect(settings.appColours)
     #expect(settings.appColourAmount == 0.25)
     #expect(settings.gapHandles == "shown")
-    #expect(settings.tileStyle == "icon")
+    #expect(settings.tileStyle == "name")
     #expect(settings.tintBehindArranged == 0)
     #expect(settings.desktopEdge == 0.05)
     #expect(settings.tileFade == 0.2)
@@ -24,7 +24,7 @@ import Testing
     #expect(
       settings.appearanceOptions
         == AppearanceOptions(
-          dim: 0.25, blur: 0, usesAppColours: true, appColourAmount: 0.25, gapHandles: .shown, tileStyle: .icon,
+          dim: 0.25, blur: 0, usesAppColours: true, appColourAmount: 0.25, gapHandles: .shown, tileStyle: .name,
           tint: 0, desktopEdge: 0.05, tileFade: 0.2))
   }
 
@@ -91,7 +91,7 @@ import Testing
     settings.gapHandles = "sometimes"
     var options = settings.appearanceOptions
     #expect(options.dim == 0.25 && options.blur == 0 && options.appColourAmount == 0.25)
-    #expect(options.tileStyle == .icon && options.gapHandles == .shown)
+    #expect(options.tileStyle == .name && options.gapHandles == .shown)
     settings.dimBehindArranged = 40
     settings.blurBehindArranged = -1
     options = settings.appearanceOptions
@@ -111,7 +111,7 @@ import Testing
   @Test func unknownChoicesFallBackToTheDefaultsAndAreReported() throws {
     let settings = try decode(#"{"tileStyle": "hologram", "gapHandles": "sometimes", "gap": 8}"#)
     #expect(settings.gap == 8, "the rest of the file still loads")
-    #expect(settings.appearanceOptions.tileStyle == .icon)
+    #expect(settings.appearanceOptions.tileStyle == .name)
     #expect(settings.appearanceOptions.gapHandles == .shown)
     #expect(settings.valueProblems.count == 2)
     #expect(settings.valueProblems.contains { $0.hasPrefix("tileStyle") })

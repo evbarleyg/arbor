@@ -172,8 +172,8 @@ public struct Settings: Codable, Equatable, Sendable {
   /// The gaps between docked windows: `shown` (drag one to resize both sides; a handle appears in it under the
   /// pointer), `hidden` (the same without the handle) or `off` (gaps cannot be dragged).
   public var gapHandles: String = "shown"
-  /// What a tile shows: `icon` (the app's icon), `name` (the icon and the app's name) or `plain` (only the colour).
-  public var tileStyle: String = "icon"
+  /// What a tile shows: `name` (the app's icon and which window it is), `icon` (the icon alone) or `plain` (only the colour).
+  public var tileStyle: String = "name"
   /// Windows keep their contents while they move: their stand-ins are still pictures of them, if macOS lets Arbor take
   /// any (Screen Recording permission). Off, they travel as their app's colour and icon whatever macOS allows, and no
   /// picture is ever taken. Off until the pictures have been seen to work on a Mac: they once crashed

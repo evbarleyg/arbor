@@ -186,8 +186,8 @@ pictures() {
   shot "$p-15c-tint-50-alone"
 
   step "$p: tile options"
-  settings '"tileStyle": "name"'
-  shot "$p-16-names"
+  settings '"tileStyle": "icon"'
+  shot "$p-16-icons"
   settings '"tileStyle": "plain"'
   shot "$p-16b-plain"
   settings '"appColours": false'
