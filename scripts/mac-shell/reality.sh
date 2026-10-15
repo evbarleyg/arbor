@@ -296,12 +296,18 @@ if wanted apps; then
   # Nobody expects it back when Arbor quits.
   ARBOR_WINDOW_IDS="$W1 $W3 $W4"
 
+  # Since the first app hid, Finder has been in front, which has no window here. The step after this one asks where a window opens whose app is not in front, and
+  # that shows only under a window of the app that is.
+  echo "> the second app comes forward"
+  kill -USR1 "$OTHER_PID"
+  eventually in_front "$OTHER_PID"
+  observe "the second app comes forward, before a window opens"
+
   echo "> test windows: one more window, as ⌘N opens it"
   kill -USR2 "$ARBOR_WINDOWS_PID"
   eventually has_windows 3
   observe "a new window opens"
 
-  # The second app has been in front since the first one hid.
   echo "> the first app comes forward"
   kill -USR1 "$ARBOR_WINDOWS_PID"
   eventually in_front "$ARBOR_WINDOWS_PID"
