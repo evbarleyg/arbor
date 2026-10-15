@@ -85,8 +85,25 @@ extension Controller {
   /// where it happened to overlap the display by a strip, it passed for a place somebody had chosen (`reach`).
   private func followDisplaysThatMoved(since before: [DisplaySnapshot]) {
     // Asked for only if a display moved.
-    lazy var whereWindowsAre = Dictionary(system.allWindows().map { ($0.id, $0.frame.origin) }) { first, _ in first }
+    lazy var whereWindowsAre = Dictionary(system.allWindows().map { ($0.id, $0.frame) }) { first, _ in first }
     let lately = now().addingTimeInterval(-Self.spokenLately)
+    // Such a report also said which DISPLAY the window is on, judged by the displays as they still were, the nearest if
+    // none held it: a window taken along with its display joined a neighbour's workspace, which does not move, and
+    // was nobody's to fit or to fetch. A window that has spoken lately is on the display it is really on now. If its
+    // place says where it really is, that is: what macOS took off a display that is leaving, in silence or unheard, is
+    // still that display's, and goes back with it. And on the display that shows most of it, not the nearest to it.
+    for window in spokeOfItsPlace.filter({ $0.value >= lately }).keys.sorted() {
+      guard let real = whereWindowsAre[window], let from = workspaceID(containing: window),
+        let place = workspaces[from]?.floating[window], abs(real.minX - place.minX) <= 1, abs(real.minY - place.minY) <= 1,
+        let most = displays.max(by: { $0.frame.intersection(real).area < $1.frame.intersection(real).area }),
+        most.frame.intersection(real).area > 0, most.id != from, workspaces[most.id] != nil
+      else { continue }
+      let to = most.id
+      let role = workspaces[from]!.role(of: window)
+      workspaces[from]!.floating[window] = nil
+      workspaces[to]!.floating[window] = place
+      workspaces[to]!.setRole(role, of: window)
+    }
     for display in displays {
       guard let old = before.first(where: { $0.id == display.id })?.frame, old.origin != display.frame.origin else {
         continue
@@ -100,10 +117,18 @@ extension Controller {
       // nothing moved the window, and when its app hangs and what is read is what was read before.
       let ahead = (workspaces[display.id]?.floating ?? [:]).filter { window, frame in
         guard let spoke = spokeOfItsPlace[window], spoke >= lately, let real = whereWindowsAre[window] else { return false }
-        return abs(real.x - frame.minX) <= 1 && abs(real.y - frame.minY) <= 1
+        return abs(real.minX - frame.minX) <= 1 && abs(real.minY - frame.minY) <= 1
       }
       workspaces[display.id]?.shift(by: offset)
-      for (window, frame) in ahead { workspaces[display.id]?.floating[window] = frame }
+      // Up to date as to the corner. But macOS takes a window along by the corner alone: on a display that has another
+      // size as well, the place may hang over an edge that was not there, as any other place would, and is fitted.
+      let fits = old.size == display.frame.size
+      for (window, frame) in ahead {
+        workspaces[display.id]?.floating[window] = fits ? frame : frame.fitted(into: display.visibleFrame)
+        // It was macOS that took it there, no hand, so it is Arbor's to move: the layout that follows does (`floatingMoves`
+        // leaves alone what its user placed).
+        if !fits { settled[window] = whereWindowsAre[window] }
+      }
       // What the controller itself remembers of those windows, or it would no longer agree with the workspace.
       for window in workspaces[display.id]?.allWindows ?? [] where ahead[window] == nil {
         appPlacedFrames[window] = appPlacedFrames[window].map(moved)
