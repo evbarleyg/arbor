@@ -83,6 +83,7 @@ extension Controller {
   /// answered just now.
   func noteFocus(_ window: WindowID?) {
     confirmFocusRequest(at: window)
+    if window != nil { keyboardHandOver.wentOn = nil }
     if let focus = following.focus, focus.window == window { return }
     following.focus = (window, now())
     following.lead.focusChanged()
@@ -132,7 +133,9 @@ extension Controller {
   /// The display the focused window is on: its workspace's, or for a window Arbor does not arrange the one it sits on.
   var focusedDisplayID: DisplayID? {
     if let place = focusedPlace { return place.display }
-    guard let window = system.focusedWindow(), let frame = windows[window]?.frame else { return nil }
+    guard let window = system.focusedWindow(), let frame = windows[window]?.frame else {
+      return keyboardHandOver.wentOn.flatMap { workspaces[$0] != nil ? $0 : nil }
+    }
     return displayID(at: frame.center)
   }
 

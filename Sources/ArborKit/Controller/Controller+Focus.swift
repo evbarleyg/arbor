@@ -110,7 +110,8 @@ extension Controller {
   /// although the user asked for nothing of the kind (and perhaps in front of an audience). So the view
   /// stays and a window in view gets the keyboard. Only if nothing is in view, on any display, does the view follow,
   /// because typing into a window out of view is worse. (A view that has followed already and is taken back still
-  /// looks at its own display alone.)
+  /// looks at its own display alone.) That the window macOS picked is out of view is Arbor's doing, and this is
+  /// all Arbor does about a going: where macOS picks a window in view, or none, macOS has decided.
   ///
   /// macOS was seen to report the new focus a millisecond BEFORE the close or the minimize, and after a hide, and
   /// not at all when another app comes forward whose own focused window did not change. All three are covered.
@@ -133,6 +134,10 @@ extension Controller {
     /// The window with the keyboard went away, on this display. `app` is the process macOS picks the next window
     /// from, or nil if it picks another app (its own was hidden).
     var loss: (display: DisplayID, app: Int32?, time: Date)?
+    /// The window with the keyboard went away on this display and nobody has had the keyboard since: its app is still in front, with
+    /// no window. Whoever was typing there is still looking there, and the next key that names no display means that one
+    /// (`focusedDisplayID`), wherever the pointer was left.
+    var wentOn: DisplayID?
     /// The windows that are going to be looked at again (`scheduleFocusCheck`).
     var secondLooks: Set<WindowID> = []
     /// `window`, out of view, has taken the keyboard from `holder`, a window of the same app, and the view has not followed yet
@@ -250,7 +255,7 @@ extension Controller {
         relayout(reveal.display, reason: .camera, puttingBack: back)
         // Only for that layout: should the view have to move on, they go with it like any other.
         placedOnPurpose.subtract(back.map(\.window))
-        if !ensureFocusIsVisible(on: reveal.display), let heir = system.focusedWindow(), heir != id,
+        if !ensureFocusIsVisible(on: reveal.display, alsoFromNothing: false), let heir = system.focusedWindow(), heir != id,
           windows[heir]?.isPresent == true
         {
           bringIntoView(heir)
@@ -265,10 +270,12 @@ extension Controller {
     scheduler.schedule(Self.lookAfterLoss, after: Self.focusCheckInterval) { [weak self] in
       guard let self else { return }
       guard let heir = self.system.focusedWindow(), heir != id else {
-        // It was its app's last window, so macOS picked none, and shortcuts for the focused window have nothing to
-        // act on.
+        // It was its app's last window, so macOS picked none: the app stays in front with its menu bar, as on a Mac alone. Or
+        // somebody else has had the keyboard all along: Finder, since a click on the desktop. After a person's own act
+        // macOS decides. Arbor used to hand the keyboard to the window used last, so that shortcuts had something to
+        // act on: another app jumped forward at ⌘M, and the next key acted on a window nobody had chosen.
         self.keyboardHandOver.loss = nil
-        self.ensureFocusIsVisible(on: display)
+        self.keyboardHandOver.wentOn = display
         return
       }
       guard self.isManaged(heir), self.windows[heir]?.isPresent == true,
@@ -294,7 +301,8 @@ extension Controller {
   private func aWindowInViewGetsTheKeyboard(after display: DisplayID, picked: DisplayID) -> Bool {
     // Each display once: asking costs a question to macOS.
     var asked: Set<DisplayID> = []
-    return ([display, picked] + workspaces.keys.sorted()).first { asked.insert($0).inserted && ensureFocusIsVisible(on: $0) } != nil
+    return ([display, picked] + workspaces.keys.sorted())
+      .first { asked.insert($0).inserted && ensureFocusIsVisible(on: $0, alsoFromNothing: false) } != nil
   }
 
   /// Whether a view on `camera` would show a window that can take the focus: a docked one, or a floating one that is in

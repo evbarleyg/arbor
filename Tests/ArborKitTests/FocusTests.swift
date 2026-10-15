@@ -426,22 +426,112 @@ import Testing
     return (h, a, b, c)
   }
 
-  @Test func closingAnAppsLastWindowEndsWithAFocusedWindowInView() {
-    let (h, a, _, _) = threeApps()
-    h.system.close(a)
-    h.scheduler.advance(by: 1)
-    let focused = h.system.focusedWindow()
-    #expect(focused != nil, "shortcuts that act on the focused window have nothing to act on")
-    if let focused { #expect(h.system.isVisible(focused)) }
+  /// The ways a window goes.
+  nonisolated static let goings = ["close", "minimize", "hide", "quit"]
+
+  func go(_ way: String, _ window: WindowID, _ h: Harness) {
+    let pid = h.system.allWindows().first { $0.id == window }!.pid
+    switch way {
+    case "close": h.system.close(window)
+    case "minimize": h.system.setMinimized(window, true)
+    case "hide": h.system.setHidden(pid: pid, true)
+    default: h.system.quit(pid: pid)
+    }
   }
 
-  @Test func minimizingAnAppsLastWindowEndsWithAFocusedWindowInView() {
+  /// After a person's own act macOS decides (`collab/QUESTIONS.md`, Q29; board 0.20). ⌘W or ⌘M on an app's only window: the app
+  /// stays in front with its menu bar, as on a Mac alone. These two said "…EndsWithAFocusedWindowInView": Arbor handed
+  /// the keyboard to the window used last, so that shortcuts had something to act on, and another app jumped forward.
+  @Test(arguments: ["close", "minimize"]) func afterAnAppsLastWindowHasGoneNobodyIsHandedTheKeyboard(way: String) {
     let (h, a, _, _) = threeApps()
-    h.system.setMinimized(a, true)
+    h.run("show-all")
+    h.system.userFocus(a)
     h.scheduler.advance(by: 1)
-    let focused = h.system.focusedWindow()
-    #expect(focused != nil && focused != a)
-    if let focused { #expect(h.system.isVisible(focused)) }
+    let asked = h.system.focusLog.count
+    go(way, a, h)
+    h.scheduler.advance(by: 2)
+    #expect(h.system.focusLog.dropFirst(asked).map(\.window) == [])
+    #expect(h.system.focusedWindow().map { $0 == a } != false, "nobody, or the window in the Dock that its app still names")
+    #expect(!h.run("float").ok, "a key that needs a window in front says that there is none")
+    expectWindowsMatchLayout(h)
+  }
+
+  /// Whoever was typing on the second display is still looking there. The next key that names no display means that one, wherever
+  /// the pointer was left. Once somebody has gone elsewhere, the pointer decides again.
+  @Test func theNextKeyStillMeansTheDisplayWhereTheWindowWent() {
+    let side = DisplaySnapshot(
+      id: DisplayID("side"), frame: CGRect(x: 1440, y: 0, width: 1440, height: 900),
+      visibleFrame: CGRect(x: 1440, y: 25, width: 1440, height: 875), isMain: false, isBuiltIn: false)
+    func desk() -> (Harness, onSide: WindowID) {
+      let h = Harness(displays: [FakeWindowSystem.standardDisplay, side])
+      let a = h.system.open(app: "Safari", pid: 11)
+      let b = h.system.open(app: "Mail", pid: 12, frame: CGRect(x: 1600, y: 100, width: 500, height: 400))
+      let c = h.system.open(app: "Notes", pid: 13, frame: CGRect(x: 2100, y: 100, width: 500, height: 400))
+      h.start()
+      h.run("dock \(a.rawValue) left")
+      h.run("dock \(b.rawValue) left")
+      h.run("dock \(c.rawValue) right")
+      h.system.cursor = CGPoint(x: 300, y: 300)
+      h.system.userFocus(c)
+      h.system.keyDown()
+      h.scheduler.advance(by: 1)
+      h.system.close(c)
+      h.scheduler.advance(by: 1)
+      return (h, b)
+    }
+    let (h, _) = desk()
+    #expect(h.controller.displayForCommands(from: .shortcut) == side.id)
+    let (gone, _) = desk()
+    gone.system.userFocusesNothing()
+    #expect(gone.controller.displayForCommands(from: .shortcut) == FakeWindowSystem.standardDisplay.id)
+  }
+
+  /// An app can go on naming its window in the Dock as the focused one. A key that names no window does not act on that.
+  @Test func aWindowInTheDockThatIsStillNamedIsNoWindowInFront() {
+    let (h, a, _, _) = threeApps()
+    h.run("show-all")
+    h.system.userFocus(a)
+    h.system.echoes.keyboard = false
+    h.system.setMinimized(a, true)
+    h.system.focused = a
+    h.scheduler.advance(by: 1)
+    let view = h.workspace.camera
+    for command in ["zoom", "float", "dock right"] { #expect(!h.run(command).ok, "\(command)") }
+    #expect(h.workspace.camera == view)
+    expectWindowsMatchLayout(h)
+  }
+
+  /// With nothing docked, which is what a newcomer meets.
+  @Test(arguments: ["close", "minimize"]) func norWithNothingDocked(way: String) {
+    let h = Harness()
+    let safari = h.system.open(app: "Safari", pid: 11)
+    let notes = h.system.open(app: "Notes", pid: 12)
+    h.start()
+    h.system.userFocus(safari)
+    h.system.userFocus(notes)
+    h.scheduler.advance(by: 1)
+    go(way, notes, h)
+    h.scheduler.advance(by: 2)
+    #expect(h.system.focusLog.isEmpty, "\(h.system.focusLog)")
+    #expect(h.system.frameLog.isEmpty)
+  }
+
+  /// Somebody clicks the desktop and renames a file there. The window used last goes away meanwhile. Arbor focused another window a
+  /// quarter of a second later: the renaming was over, and the windows that the click on the wallpaper had swept aside all
+  /// came back (seen on a hosted Mac; the trace `minimized-with-finder-in-front`).
+  @Test(arguments: goings) func aWindowThatGoesWhileTheKeyboardIsWithFinderCostsFinderNothing(way: String) {
+    let (h, a, _, _) = threeApps()
+    h.run("show-all")
+    h.system.userFocus(a)
+    h.scheduler.advance(by: 1)
+    h.system.userFocusesNothing()
+    h.scheduler.advance(by: 2)
+    let asked = h.system.focusLog.count
+    go(way, a, h)
+    h.scheduler.advance(by: 2)
+    #expect(h.system.focusLog.dropFirst(asked).map(\.window) == [])
+    #expect(h.system.focusedWindow() == nil)
+    expectWindowsMatchLayout(h)
   }
 
   @Test func movingTheViewWithNothingFocusedFocusesAWindowInView() {
@@ -465,7 +555,11 @@ import Testing
     h.run("show-all")
     for window in [c, b, a] { h.system.userFocus(window) }
     h.system.cursor = h.frame(c)!.center
+    h.run("zoom \(a.rawValue)")
     h.system.setMinimized(a, true)
+    h.scheduler.advance(by: 1)
+    // The view is empty, and a move of the view takes the keyboard along.
+    h.run("show-all")
     h.scheduler.advance(by: 1)
     #expect(h.system.focusedWindow() == b, "not the one that happens to be under the pointer")
   }

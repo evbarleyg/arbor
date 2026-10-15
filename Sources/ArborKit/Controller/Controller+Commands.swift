@@ -212,7 +212,8 @@ extension Controller {
 
   /// The explicit window, or the focused window, if Arbor manages it.
   func target(_ window: WindowID?) -> Target {
-    guard let id = window ?? keyboardFocus() else {
+    // An app can go on naming a window in the Dock, or of a hidden app, as its focused one. Nobody is typing into that.
+    guard let id = window ?? keyboardFocus().flatMap({ windows[$0].map { $0.isMinimized || $0.isHidden } == true ? nil : $0 }) else {
       return .failure(.failure("no focused window; click one, or name one (`state` lists their ids)"))
     }
     guard isManaged(id) else { return .failure(.failure(whyNotManaged(id))) }

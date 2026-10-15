@@ -130,7 +130,7 @@ private let upperDisplay = DisplaySnapshot(
         displays: [FakeWindowSystem.standardDisplay, sideDisplay])
       h.system.setMinimized(w[2], true)
       h.system.userFocus(w[0])
-      h.system.userFocusesNothing()
+      h.system.sheetTakesTheKeyboard()
       h.system.cursor = CGPoint(x: 300, y: 300)
       runOK(h, command, w)
       h.scheduler.advance(by: 1)
