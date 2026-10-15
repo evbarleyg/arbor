@@ -242,4 +242,133 @@ import Testing
     h.scheduler.advance(by: 2)
     #expect(h.system.focused.map { h.system.isVisible($0) } == true, "typing into \(String(describing: h.system.focused))\n\(h.ascii())")
   }
+
+  // MARK: Tabs, room that was lent, and what floats over the docked windows
+
+  /// `next` is named, a tenth of a second passes, in which the view follows, and only then is the going of `going` reported.
+  func closeLate(_ going: WindowID, next: WindowID, in h: Harness) {
+    h.system.focused = next
+    h.controller.windowFocused(next)
+    h.scheduler.advance(by: 0.1)
+    #expect(h.system.isVisible(next), "the view has followed: \(h.ascii())")
+    h.system.echoes.keyboard = false
+    h.beginStep()
+    h.system.close(going)
+    h.system.echoes.keyboard = true
+    h.scheduler.advance(by: 2)
+  }
+
+  /// The Desktop is in the view, with two floating windows: one on it, one that its person left over the docked windows. In the view that
+  /// followed the Desktop is a tile, so on the way back it "comes into view", which gathers what floats. Not what nobody had touched.
+  ///
+  /// As Arbor ships no layout places a floating window at all. This is for whoever has `floatingWindowsMakeWay` on.
+  @Test(arguments: [false, true], [false, true]) func whatFloatsStaysWhereItsPersonLeftIt(late: Bool, makeWay: Bool) {
+    var settings = Settings()
+    settings.floatingWindowsMakeWay = makeWay
+    let h = Harness(settings: settings)
+    let a = h.system.open(app: "Safari", pid: 11)
+    let b = h.system.open(app: "Notes", pid: 12)
+    let a2 = h.system.open(app: "Safari", pid: 11)
+    let onTheDesktop = h.system.open(app: "Calc", pid: 15, frame: CGRect(x: 900, y: 200, width: 300, height: 200))
+    let overTheOthers = h.system.open(app: "Clock", pid: 16, frame: CGRect(x: 950, y: 500, width: 300, height: 200))
+    h.start()
+    h.run("dock \(a2.rawValue) right")
+    h.run("desktop")
+    h.run("dock \(b.rawValue) left")
+    h.run("dock \(a.rawValue) left")
+    h.scheduler.advance(by: 2)
+    h.system.userMove(overTheOthers, to: CGRect(x: 60, y: 300, width: 300, height: 200))
+    h.run("focus \(a.rawValue)")
+    h.scheduler.advance(by: 2)
+    if late { closeLate(a, next: a2, in: h) } else { h.system.close(a) }
+    h.scheduler.advance(by: 2)
+    #expect(h.frame(overTheOthers) == CGRect(x: 60, y: 300, width: 300, height: 200), "\(h.ascii())")
+    // The Desktop is wider by the room the window left, and what had made way on it is back at its own place.
+    #expect(h.frame(onTheDesktop) == CGRect(x: 900, y: 200, width: 300, height: 200), "\(h.ascii())")
+    #expect(h.system.isVisible(b) && !h.system.isVisible(a2), "\(h.ascii())")
+  }
+
+  /// Out of a tab group the tab that comes forward is the one that comes forward at any closing, at once: not one, then another.
+  @Test(arguments: ["[Notes Safari Mail]", "[Notes Mail Safari]", "[Safari Notes Mail]"]) func aTabThatGoesLateLeavesOneTabInFront(group: String) {
+    func play(late: Bool) -> (h: Harness, shows: [WindowID]) {
+      let h = Harness()
+      let a = h.system.open(app: "Safari", pid: 11)
+      let others = [h.system.open(app: "Notes", pid: 12), h.system.open(app: "Mail", pid: 13)]
+      let a2 = h.system.open(app: "Safari", pid: 11)
+      h.start()
+      h.system.userFocus(a2)
+      h.system.userFocus(a)
+      #expect(h.run("layout \(group) | Safari").ok)
+      h.run("focus \(a.rawValue)")
+      h.run("zoom \(a.rawValue)")
+      h.scheduler.advance(by: 2)
+      #expect(h.system.focused == a && h.system.isVisible(a) && !h.system.isVisible(a2))
+      if late {
+        closeLate(a, next: a2, in: h)
+      } else {
+        h.beginStep()
+        h.system.close(a)
+        h.scheduler.advance(by: 2)
+      }
+      expectWindowsMatchLayout(h)
+      return (h, others.filter { h.system.isVisible($0) })
+    }
+    let (late, first) = (play(late: true), play(late: false))
+    #expect(late.h.jolts.isEmpty, "\(late.h.jolts)")
+    #expect(late.shows == first.shows && late.shows.count == 1, "\(late.h.ascii())")
+    #expect(late.h.system.focused == late.shows.first)
+  }
+
+  /// The window that goes had borrowed room from its neighbours (F61). They get it back in the move that brings them into view.
+  @Test(arguments: [true, false]) func neighboursThatHadLentRoomMoveOnce(share: Bool) {
+    var settings = Settings()
+    settings.shareRemovedSpace = share
+    let h = Harness(settings: settings)
+    let a = h.system.open(app: "Safari", pid: 11, minimumSize: CGSize(width: 200, height: 420))
+    let c = h.system.open(app: "Notes", pid: 12, minimumSize: CGSize(width: 200, height: 200))
+    let d = h.system.open(app: "Mail", pid: 13)
+    let b = h.system.open(app: "Music", pid: 14)
+    let a2 = h.system.open(app: "Safari", pid: 11)
+    h.start()
+    h.run("dock \(c.rawValue) left")
+    h.run("dock \(b.rawValue) right")
+    h.run("dock \(d.rawValue) beside \(c.rawValue) bottom")
+    h.run("dock \(a.rawValue) beside \(c.rawValue) top")
+    h.run("dock \(a2.rawValue) beside \(b.rawValue) right")
+    h.run("zoom \(a.rawValue)")
+    h.run("out")
+    h.run("focus \(a.rawValue)")
+    h.scheduler.advance(by: 2)
+    #expect(h.workspace.tree.hasLoans)
+    closeLate(a, next: a2, in: h)
+    #expect(h.jolts.isEmpty, "\(h.jolts)")
+    #expect(h.system.isVisible(c) && h.system.isVisible(d) && !h.system.isVisible(a2), "\(h.ascii())")
+    expectWindowsMatchLayout(h)
+  }
+
+  /// With the neighbours in the view that followed as well: they used to move for the room the window left, and again for the way back.
+  @Test(arguments: [true, false]) func neighboursInBothViewsMoveOnce(share: Bool) {
+    var settings = Settings()
+    settings.shareRemovedSpace = share
+    let h = Harness(settings: settings)
+    let a = h.system.open(app: "Safari", pid: 11, minimumSize: CGSize(width: 200, height: 420))
+    let c = h.system.open(app: "Notes", pid: 12, minimumSize: CGSize(width: 200, height: 260))
+    let d = h.system.open(app: "Mail", pid: 13)
+    let b = h.system.open(app: "Music", pid: 14)
+    let a2 = h.system.open(app: "Safari", pid: 11)
+    h.start()
+    h.run("dock \(c.rawValue) left")
+    h.run("dock \(b.rawValue) right")
+    h.run("dock \(d.rawValue) beside \(c.rawValue) bottom")
+    h.run("dock \(a.rawValue) beside \(c.rawValue) top")
+    h.run("dock \(a2.rawValue) beside \(b.rawValue) bottom")
+    h.run("zoom \(a.rawValue)")
+    h.run("out")
+    h.run("focus \(a.rawValue)")
+    h.scheduler.advance(by: 2)
+    closeLate(a, next: a2, in: h)
+    #expect(h.jolts.isEmpty, "\(h.jolts)")
+    #expect(h.system.isVisible(c) && h.system.isVisible(d) && !h.system.isVisible(a2), "\(h.ascii())")
+    expectWindowsMatchLayout(h)
+  }
 }

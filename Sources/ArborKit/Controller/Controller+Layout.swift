@@ -575,7 +575,10 @@ extension Controller {
         continue
       }
       if let desktop = layout.desktopFrame.map({ floatingRegion($0, on: display) }) {
-        let desktopCameIntoView = reason == .camera && previous != nil && previous?.desktopFrame == nil
+        // Not in a view that is taken back as if it had never moved: there the Desktop was in view all along, and what its person had left
+        // over the docked windows is not gathered.
+        let desktopCameIntoView =
+          reason == .camera && previous != nil && previous?.desktopFrame == nil && keyboardHandOver.comingBack != displayID
         // One that no display shows is out of view whoever put it there: a display that shrank, for one.
         guard
           parked.contains(window) || showsOnlyASliver(window) || isBackFromThePause(window)

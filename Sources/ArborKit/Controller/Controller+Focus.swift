@@ -146,6 +146,8 @@ extension Controller {
     var waiting: (window: WindowID, holder: WindowID, views: [DisplayID: NodeID])?
     /// The windows that have opened and have not had the keyboard yet, and when they opened.
     var newcomers: [WindowID: Date] = [:]
+    /// The display whose view is being laid out as it was before it followed (`keyboardLeft`).
+    var comingBack: DisplayID?
   }
 
   /// Reports this close together belong to one event. The ones recorded were within 91 ms, most of them within 13.
@@ -253,7 +255,9 @@ extension Controller {
           windows[$0.window]?.isPresent == true && workspaces[reveal.display]?.isFloating($0.window) == true
         }
         placedOnPurpose.formUnion(back.map(\.window))
+        keyboardHandOver.comingBack = reveal.display
         relayout(reveal.display, reason: .camera, puttingBack: back)
+        keyboardHandOver.comingBack = nil
         // Only for that layout: should the view have to move on, they go with it like any other.
         placedOnPurpose.subtract(back.map(\.window))
         if !ensureFocusIsVisible(on: reveal.display, alsoFromNothing: false), let heir = system.focusedWindow(), heir != id,
