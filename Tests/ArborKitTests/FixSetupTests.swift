@@ -46,7 +46,7 @@ import Testing
   /// Never by itself: not at the start, not with the welcome window, not when `doctor` finds them.
   @Test func nothingIsChangedUnasked() {
     let h = makeHarness()
-    h.controller.openWelcomeWindow = { _ in }
+    h.controller.openWelcomeWindow = { _, _ in }
     let a = h.system.open(app: "Safari")
     h.start()
     h.scheduler.advance(by: 10)

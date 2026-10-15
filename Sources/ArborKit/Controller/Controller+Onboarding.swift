@@ -59,9 +59,34 @@ extension Controller {
   /// `check-setup` and `welcome`. They work before `start()`: the window is for exactly that time.
   func showWelcomeWindow(_ page: OnboardingFlow.Page) -> CommandResult {
     guard let openWelcomeWindow else { return .failure("there is no window to open here; try `doctor`") }
-    openWelcomeWindow(page)
+    // Somebody asked for the window.
+    openWelcomeWindow(page, true)
     noteWelcomed()
     return .success("showing the welcome window")
+  }
+
+  /// The moments at which the window is shown without a command.
+  public enum WelcomeMoment: Equatable, Sendable {
+    /// Arbor has been opened: by a hand, or by macOS at login.
+    case launch(byHand: Bool)
+    /// The permission went while windows were out of view (F63).
+    case permissionLost
+    /// Opened again while it runs: the way in when the icon is hidden.
+    case openedAgain
+  }
+
+  /// Shows the window if the moment calls for it. **It takes the keyboard only in answer to an act on Arbor itself.** Wherever Arbor shows
+  /// or turns it by itself it comes forward and the keyboard stays where it is: the window never makes Arbor the active app, so the app
+  /// the person is in goes on looking in front, and what they type next would go into a window that has no field. The arrival of the
+  /// permission is no moment of these: whoever waited for it has seen the window, and an open one turns its page by itself
+  /// (`OnboardingSession`), which gives it no keyboard either (`WelcomeWindow.canBecomeKey`).
+  public func welcome(at moment: WelcomeMoment) {
+    switch moment {
+    case .launch(let byHand):
+      if !accessibilityGranted { openWelcomeWindow?(nil, byHand) } else if let page = pageToWelcomeOn() { openWelcomeWindow?(page, byHand) }
+    case .permissionLost: openWelcomeWindow?(nil, false)
+    case .openedAgain: openWelcomeWindow?(nil, true)
+    }
   }
 
   // MARK: The first launch (docs/features/F46-first-run-coach.md)

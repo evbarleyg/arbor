@@ -297,8 +297,9 @@ public final class Controller {
   public var isFirstLaunch = false
   /// The welcome window has been seen, now or at an earlier launch (Controller+Onboarding.swift).
   var hasWelcomed = false
-  /// Opens the welcome window on a page, for `check-setup` and `welcome`.
-  public var openWelcomeWindow: ((OnboardingFlow.Page) -> Void)?
+  /// Opens the welcome window on a page, or turns it to that page and brings it forward. Nil: no page in particular. The flag: whether it
+  /// takes the keyboard, which it does only in answer to an act on Arbor itself (`welcome(at:)`).
+  public var openWelcomeWindow: ((OnboardingFlow.Page?, _ takesTheKeyboard: Bool) -> Void)?
   /// How many more times to look whether a pinned window is covered (Controller+Pin.swift).
   var pinChecksLeft = 0
   /// Whether and how the view is held (Controller+Hold.swift).

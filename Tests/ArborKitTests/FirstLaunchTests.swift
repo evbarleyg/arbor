@@ -126,7 +126,7 @@ import Testing
   @Test(arguments: ["welcome", "check-setup"])
   func openingItByHandCounts(command: String) {
     let h = makeHarness()
-    h.controller.openWelcomeWindow = { _ in }
+    h.controller.openWelcomeWindow = { _, _ in }
     h.start()
     #expect(h.run(command).ok)
     #expect(h.controller.pageToWelcomeOn() == nil)

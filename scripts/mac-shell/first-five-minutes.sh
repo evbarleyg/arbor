@@ -183,6 +183,50 @@ codesign --force --sign - --identifier "$BUNDLE_ID" "$app" || die "codesign fail
 tcc "DELETE FROM access WHERE client = '$BUNDLE_ID';"
 at_exit "tcc \"DELETE FROM access WHERE client = '$BUNDLE_ID';\"; for name in $KEYS; do defaults delete $DOMAIN \$name 2>/dev/null; done; killall 'System Settings' 2>/dev/null"
 
+# The witness: an app that writes down the keys it is given (keys.swift). Low on the left: the welcome window comes up in the middle of the
+# display, System Settings beside it, the moves at the right.
+KEYS="$ARBOR_ROOT/.build/mac-shell/keys" KEYS_APP="$ARBOR_SESSION_DIR/ArborKeys.app" KEYS_LOG="$ARBOR_OUT/keys.log" KEYS_PID=""
+# Where the other scripts that use it put it, so that whichever comes second on a Mac finds it made.
+if [ ! -x "$KEYS" ] || [ "$ARBOR_ROOT/scripts/mac-shell/keys.swift" -nt "$KEYS" ]; then
+  mkdir -p "${KEYS%/*}"
+  swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/keys.swift" -o "$KEYS" > "$ARBOR_OUT/build-keys.log" 2>&1 \
+    || die "scripts/mac-shell/keys.swift did not compile"
+fi
+mkdir -p "$KEYS_APP/Contents/MacOS"
+cp "$KEYS" "$KEYS_APP/Contents/MacOS/keys"
+at_exit 'kill_started $KEYS_PID'
+cat > "$KEYS_APP/Contents/Info.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>CFBundleIdentifier</key><string>dev.arbor.test.keys</string>
+  <key>CFBundleExecutable</key><string>keys</string>
+  <key>CFBundleName</key><string>ArborKeys</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+</dict></plist>
+PLIST
+# How often the witness has been given a plain J (key code 38).
+js() { grep -c "^[0-9:.]* down code=38 " "$KEYS_LOG" 2>/dev/null || true; }
+# A J is typed once, and looked for for two seconds: a hosted Mac's window server stands still for a second now and then.
+j_arrives() {
+  local before tries
+  before=$(js)
+  key j || return 1
+  for tries in 1 2 3 4 5 6 7 8 9 10; do
+    [ "$(js)" -gt "$before" ] && return 0
+    sleep 0.2
+  done
+  return 1
+}
+# Typed, and not there after the same two seconds. That nothing could be typed at all, or the log not read, is no answer.
+j_does_not_arrive() {
+  local before
+  before=$(js)
+  [ -r "$KEYS_LOG" ] && key j || return 1
+  sleep 2
+  [ "$(js)" -eq "$before" ]
+}
+
 step "1  the launch"
 ARBOR_BUNDLE=$app ARBOR_MAY_LACK_PERMISSION=1 ARBOR_TEST_WINDOWS_ARGS="--regular" \
   arbor_start 4 ARBOR_NO_PROMPT=0 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 ARBOR_MAC_SWITCHES=1
@@ -241,6 +285,17 @@ shot 21-system-settings
 check "its button opens System Settings" settings_are_open
 check "and the dialog is gone: nothing is left lying over the person's windows" eventually macos_asks_no_more
 echo "on the screen, front to back:"; pointer windows --on-screen | awk '$3 >= 0 && $3 < 20'
+# Whose the keyboard is. The person is in another app when the permission arrives: System Settings mostly, here one that writes down what
+# it is given. Arbor's window comes forward and turns its page by itself then, and what is typed goes on arriving where it did.
+# Without descriptor 9, the test windows' stdin: they quit when it closes, and would wait for this app as well.
+"$KEYS_APP/Contents/MacOS/keys" app "$KEYS_LOG" 20 520 260 160 9>&- &
+KEYS_PID=$!
+started "$KEYS_PID"
+keys_ready() { grep -q "ready pid=$KEYS_PID " "$KEYS_LOG" 2>/dev/null; }
+eventually keys_ready || die "the key-logging app did not start"
+click 80 620
+sleep 0.5
+check "typed before the grant, a plain J arrives in the app the person is in" j_arrives
 codesign --display --requirements - "$app" 2>/dev/null | sed -n 's/^\(# \)\{0,1\}designated => //p' | csreq -r- -b "$ARBOR_SESSION_DIR/requirement.bin"
 hex=$(xxd -p "$ARBOR_SESSION_DIR/requirement.bin" | tr -d '\n')
 tcc "INSERT OR REPLACE INTO access (service, client, client_type, auth_value, auth_reason, auth_version, csreq, indirect_object_identifier, flags, last_modified) VALUES ('kTCCServiceAccessibility', '$BUNDLE_ID', 0, 2, 3, 1, X'$hex', 'UNUSED', 0, strftime('%s', 'now'));" \
@@ -269,6 +324,7 @@ if ! noticed; then
   ctl check-setup
 fi
 echo "what it took for Arbor to see the grant: $took"
+[ "$took" = "a relaunch" ] || check "typed just after the grant, it arrives there" j_arrives
 sleep 1.5
 see 22-granted
 echo "on the screen, front to back:"; pointer windows --on-screen | awk '$3 >= 0 && $3 < 20'
@@ -281,6 +337,21 @@ else
 fi
 check "with nothing else to decide it has gone on to the moves" eventually says "Four moves to try"
 check "nothing has moved" nothing_moved
+if [ "$took" != "a relaunch" ]; then
+  check "typed after the page has turned, it arrives there still: the window has not taken the keyboard" j_arrives
+  shot 23-the-keyboard-stays
+  # The control, and the other half of the rule: whoever asks for the window gets the keyboard in it. By the command, which is what the
+  # menu's Welcome… runs; the menu itself is not opened here.
+  ctl welcome
+  sleep 0.6
+  check "after the window has been asked for, by the command welcome, it does not: the keyboard is in the window" j_does_not_arrive
+  shot 24-asked-for
+  # And the control's control: the tool still types and the witness still writes.
+  click 80 620
+  sleep 0.5
+  check "clicked again, the app has the keyboard back" j_arrives
+fi
+kill_started "$KEYS_PID"
 killall "System Settings" 2>/dev/null
 sleep 1
 

@@ -33,6 +33,12 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
   private var holdsKeys = false
   private var permissionTimer: Timer?
   private var timesAskedForPermission = 0
+  private var hasWaitedForPermission = false
+  /// macOS opened Arbor as a login item, no hand did. It says so in the Apple event that opens an app, which is there to be read only
+  /// while the app finishes launching.
+  private var wasOpenedAtLogin = false
+  /// Nor did a hand where the watchdog started Arbor again after an accident.
+  private var wasOpenedByHand: Bool { !wasOpenedAtLogin && !environment.restarted }
   private var signalSources: [DispatchSourceSignal] = []
   private var pointerInput: PointerInput?
   private let guards = ProcessGuards()
@@ -92,7 +98,9 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
     }
     // The controller belongs to this object, so it cannot outlive it.
     controller.systemFacts = { [unowned self] in self.systemFacts() }
-    controller.openWelcomeWindow = { [unowned self] page in self.showWelcomeWindow(page) }
+    controller.openWelcomeWindow = { [unowned self] page, takesTheKeyboard in
+      self.showWelcomeWindow(page, takesTheKeyboard: takesTheKeyboard)
+    }
     controller.nameOfApp = { MacFacts.name(ofApp: $0) }
     // The mouse-down tap decides from a copy of where bare Desktop might be, so it gets a new one whenever a
     // layout, the view, a window's move, the settings, a pause or the app in front may have changed that.
@@ -130,7 +138,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
       openPane: { Self.openPane("com.apple.preference.security?Privacy_Accessibility") })
     // The window explains first; macOS's own prompt comes when the user clicks its button.
     controller.askForAccessibility = { [weak self] in
-      if self?.environment.noPrompt == false { self?.showWelcomeWindow() }
+      if self?.environment.noPrompt == false { self?.controller.welcome(at: .permissionLost) }
     }
   }
 
@@ -138,6 +146,10 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
 
   public func applicationDidFinishLaunching(_ notification: Notification) {
     Log.info("Arbor \(controller.buildInfo.text) starting, pid \(getpid()), home \(ArborPaths.home.path)")
+    if let event = NSAppleEventManager.shared().currentAppleEvent, event.eventID == AEEventID(kAEOpenApplication) {
+      wasOpenedAtLogin = event.paramDescriptor(forKeyword: AEKeyword(keyAEPropData))?.enumCodeValue == OSType(keyAELaunchedAsLogInItem)
+    }
+    Log.info("opened \(wasOpenedAtLogin ? "by macOS at login" : environment.restarted ? "by the watchdog" : "by a hand, as far as macOS says")")
     guards.claimSingleInstance(prompt: !environment.noPrompt)
     if environment.rescue {
       rescueAndQuit()
@@ -173,7 +185,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
   /// Arbor was opened again while running (from Finder, Spotlight or `open`). It has no Dock icon, and on a
   /// crowded menu bar macOS hides its item behind the notch, so this may be the only way to reach it.
   public func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-    showWelcomeWindow()
+    controller.welcome(at: .openedAgain)
     return false
   }
 
@@ -265,7 +277,8 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
     // quoted in reports. Which window managers run there and how Desktop & Dock is set is nobody's business. `doctor` still says it.
     if environment.onlyPIDs == nil { controller.logSetupProblems() }
     // Once in a lifetime: with the permission already there, nothing else would show that Arbor has started.
-    if !environment.noPrompt, let page = controller.pageToWelcomeOn() { showWelcomeWindow(page) }
+    // Not after waiting for the permission: the window was shown then.
+    if !environment.noPrompt, !hasWaitedForPermission { controller.welcome(at: .launch(byHand: wasOpenedByHand)) }
   }
 
   private func updateCallSensor() {
@@ -346,8 +359,9 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
     // However the last run ended: an Arbor that may not arrange windows has no use for them.
     controller.giveMacSwitchesBack()
     timesAskedForPermission = 0
+    hasWaitedForPermission = true
     // The window explains first; macOS's own prompt comes when the user clicks its button.
-    if !environment.noPrompt { showWelcomeWindow() }
+    if !environment.noPrompt { controller.welcome(at: .launch(byHand: wasOpenedByHand)) }
     permissionTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
       MainActor.assumeIsolated {
         guard AXIsProcessTrusted() else {
@@ -487,9 +501,11 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
 
   // MARK: The welcome window
 
-  /// - Parameter page: the page to open it on, or turn it to. Without the permission it is the welcome whatever is asked
-  ///   for. Nil when Arbor only wants it seen: an open window comes forward as it is.
-  func showWelcomeWindow(_ page: OnboardingFlow.Page? = nil) {
+  /// - Parameters:
+  ///   - page: the page to open it on, or turn it to. Without the permission it is the welcome whatever is asked
+  ///     for. Nil when Arbor only wants it seen: an open window comes forward as it is.
+  ///   - takesTheKeyboard: somebody asked for it (`Controller.welcome(at:)`).
+  func showWelcomeWindow(_ page: OnboardingFlow.Page?, takesTheKeyboard: Bool) {
     if onboarding == nil {
       onboarding = OnboardingWindow(
         controller: controller, onButton: { [weak self] row in self?.openSystemSettings(for: row) },
@@ -497,7 +513,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
         onAction: { [weak self] command in self?.handle(command, from: .script) ?? .failure("Arbor is quitting") },
         onLogin: { [weak self] in self?.toggleLaunchAtLogin() })
     }
-    onboarding?.show(page)
+    onboarding?.show(page, takesTheKeyboard: takesTheKeyboard)
     controller.noteWelcomed()
   }
 

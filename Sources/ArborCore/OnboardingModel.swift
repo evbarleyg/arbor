@@ -396,7 +396,11 @@ public struct OnboardingModel: Equatable, Sendable {
   ) -> Placement {
     if page == .firstSteps, !staysPut {
       return Placement(
-        frame: CGRect(origin: restingPlace(size: size, visible: visible, desktops: desktops), size: size), glides: previous != nil)
+        frame: CGRect(
+          origin: restingPlace(
+            size: size, visible: visible, desktops: desktops, isAtTheLeft: previous == .firstSteps && old.midX < visible.midX),
+          size: size),
+        glides: previous != nil)
     }
     // Opening, or back from where it rested: where macOS centres a window, a little above the middle.
     if page != .firstSteps, previous == nil || (previous == .firstSteps && !staysPut) {
@@ -416,9 +420,17 @@ public struct OnboardingModel: Equatable, Sendable {
   /// Where the window waits during the moves: its top left corner. Its promise is to keep out of the windows' way, and a dock touches only
   /// what is docked: the others lie where they lay, and what shows of them shows in the free part of the display. So it rests in the
   /// bottom corner on that side, farthest from what has been docked, a gap's width in: at the right while nothing is docked, because
-  /// the first move goes to the left. Where the line that says what each move did could reach it, it gives way upward.
-  static func restingPlace(size: CGSize, visible: CGRect, desktops: [CGRect]) -> CGPoint {
-    let isAtTheLeft = desktops.first { $0.overlaps(visible) }.map { $0.midX < visible.midX - 1 } ?? false
+  /// the first move goes to the left. It crosses the display for nothing else: where the free part reaches both sides or neither (between two
+  /// docked windows, out of view, none at all) it stays on the side where it is. Where the line that says what each move did could reach
+  /// it, it gives way upward.
+  /// - Parameter isAtTheLeft: where it rests now.
+  static func restingPlace(size: CGSize, visible: CGRect, desktops: [CGRect], isAtTheLeft: Bool) -> CGPoint {
+    var isAtTheLeft = isAtTheLeft
+    if let free = desktops.first(where: { $0.overlaps(visible) }) {
+      // Within two gaps of the display's edge.
+      let (reachesLeft, reachesRight) = (free.minX - visible.minX <= 2 * inset, visible.maxX - free.maxX <= 2 * inset)
+      if reachesLeft != reachesRight { isAtTheLeft = reachesLeft }
+    }
     let x = isAtTheLeft ? visible.minX + inset : visible.maxX - size.width - inset
     // The line is centred, and as wide as its words, up to this.
     let reach = HeadsUpModel(kind: .hint, text: "").placed(in: visible).maximumWidth / 2

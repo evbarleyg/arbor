@@ -28,5 +28,6 @@ typedef ResType DescType;
 enum : AEKeyword { keyDirectObject = 0x2D2D2D2D };
 enum { kInternetEventClass = 0x4755524C, kAEGetURL = 0x4755524C, kCoreEventClass = 0x61657674, kAEOpenApplication = 0x6F617070,
        kAEReopenApplication = 0x72617070, kAEQuitApplication = 0x71756974 };
+enum { keyAEPropData = 0x70726474, keyAELaunchedAsLogInItem = 0x6C676974 };
 enum { paramErr = -50, userCanceledErr = -128, procNotFound = -600 };
 #endif

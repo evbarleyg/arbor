@@ -1510,8 +1510,10 @@ All three show state, so each is a headless model that the app only draws.
 - **The welcome window.** `OnboardingSession` holds one showing of it: `refresh()` reads the facts again (the window
   asks once a second), the controller's changes tick off `FirstSteps`, `OnboardingFlow` turns the page when the
   permission arrives (unless the welcome names something that would spoil the moves), and `OnboardingModel` words it all: three pages, the welcome, the four moves, and Check Setup…, which alone has every row. `OnboardingWindow` lays the model out in SwiftUI. It is a
-  panel that never activates Arbor, so that "the focused window" stays the user's while they try the moves. It opens by itself when
-  the permission is missing and once more in a lifetime: after the first start `ArborApp` asks `Controller.pageToWelcomeOn()`, which answers nil
+  panel that never activates Arbor, so that "the focused window" stays the user's while they try the moves. It takes the keyboard only in
+  answer to an act on Arbor itself: every caller that is no command goes through `Controller.welcome(at:)`, which says whether somebody asked, and the panel's own
+  `canBecomeKey` lets no road of AppKit's give it the keyboard otherwise. It opens by itself when
+  the permission is missing and once more in a lifetime: at a launch `welcome(at:)` asks `pageToWelcomeOn()`, which answers nil
   once `noteWelcomed()` has been called, now or at an earlier launch (`welcomed` in `state.json`). The flag is written only while Arbor runs: before
   `start()` the controller has not read what it saved, and would write an empty arrangement over it.
 - **The one step.** `fix-setup` (`Controller+FixSetup.swift`) switches off the Desktop & Dock settings that are in the way, through the seam
