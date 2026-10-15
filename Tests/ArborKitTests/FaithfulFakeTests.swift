@@ -23,16 +23,16 @@ private final class Recorder: WindowSystemEvents {
     log.append((["changed \(window.id)", userInitiated ? "by hand" : "echo"] + traits).joined(separator: " "))
   }
   func windowFocused(_ id: WindowID) { log.append("focused \(id)") }
-  func dragBegan(_ id: WindowID, at point: CGPoint) {}
+  func dragBegan(_ id: WindowID, at point: CGPoint) { log.append("drag began \(id)") }
   func dragMoved(_ id: WindowID, to point: CGPoint) {}
   func dragEnded(_ id: WindowID, at point: CGPoint) {}
   func displaysChanged() { log.append("displays") }
-  func resizeBegan(_ id: WindowID) {}
+  func resizeBegan(_ id: WindowID) { log.append("resize began \(id)") }
   func resizeEnded(_ id: WindowID) {}
   func keyboardFocusMoved() { log.append("keyboard moved") }
   func dragCancelled(_ id: WindowID) {}
   func windowReplaced(_ old: WindowID, by window: WindowSnapshot) { log.append("replaced \(old) by \(window.id)") }
-  func pointerPressed() {}
+  func pointerPressed() { log.append("pressed") }
 }
 
 /// The fake window system reports what macOS 26 was recorded to report, in that order
@@ -227,6 +227,37 @@ private final class Recorder: WindowSystemEvents {
     recorder.log.removeAll()
     system.setHidden(pid: system.process(of: "Safari"), true)
     #expect(system.windows[a]?.snapshot.isHidden == true && system.windows[b]?.snapshot.isHidden == true)
+  }
+
+  /// Wherever on a window the button goes down, in it, on its title bar or on its edge, the window comes forward and takes the keyboard
+  /// before anything is dragged or resized. In the order a Mac tells it.
+  @Test(arguments: ["click", "drag", "resize", "a drag whose release is lost"]) func aPressBringsItsWindowForwardFirst(what: String) {
+    func press(_ system: FakeWindowSystem, _ window: WindowID) {
+      switch what {
+      case "click": system.userClick(window, release: false)
+      case "drag": system.beginDrag(window)
+      case "resize": system.userResize(window, to: system.frame(of: window)!.insetBy(dx: -10, dy: 0), release: false)
+      default: system.dragAndLoseTheRelease(window, to: CGPoint(x: 500, y: 500))
+      }
+    }
+    func untilItBegins(_ log: [String]) -> [String] { Array(log.prefix { !$0.contains("began") }) }
+    var (system, recorder, a, b, c) = make()
+    press(system, a)
+    #expect(untilItBegins(recorder.log) == ["pressed"], "it has the keyboard")
+    (system, recorder, a, b, c) = make()
+    press(system, b)
+    #expect(untilItBegins(recorder.log) == ["pressed", "focused \(b)"], "another window of the app in front")
+    #expect(system.focused == b && system.windowsFrontToBack().first == b)
+    (system, recorder, a, b, c) = make()
+    press(system, c)
+    #expect(untilItBegins(recorder.log) == ["focused \(c)", "keyboard moved", "pressed", "keyboard moved"], "macOS brings its app forward first")
+    #expect(system.focused == c && system.windowsFrontToBack().first == c)
+    // With ⌘ held macOS brings nothing forward: a window in the background can be moved where it lies.
+    (system, recorder, a, b, c) = make()
+    system.heldModifiers = .command
+    press(system, c)
+    #expect(untilItBegins(recorder.log) == ["pressed"])
+    #expect(system.focused == a && system.windowsFrontToBack().first == a)
   }
 
   @Test func everySwitchCanBeTurnedOff() {

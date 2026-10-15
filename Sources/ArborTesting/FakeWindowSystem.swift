@@ -801,8 +801,7 @@ extension FakeWindowSystem {
   /// (call again to keep dragging) until `releaseMouse()`.
   public func userResize(_ window: WindowID, to frame: CGRect, release: Bool = true) {
     guard let fake = windows[window] else { return }
-    if !mouseDown { events?.pointerPressed() }
-    mouseDown = true
+    if !mouseDown { press(on: window) }
     if resizing != window {
       resizing = window
       events?.resizeBegan(window)
@@ -1171,9 +1170,8 @@ extension FakeWindowSystem {
   /// The user is dragging `window` and the button's release is never seen.
   public func dragAndLoseTheRelease(_ window: WindowID, to point: CGPoint) {
     guard let start = windows[window]?.snapshot.frame else { return }
-    mouseDown = true
     cursor = point
-    events?.pointerPressed()
+    press(on: window)
     events?.dragBegan(window, at: CGPoint(x: start.midX, y: start.minY + 10))
     windows[window]!.snapshot.frame.origin = CGPoint(
       x: point.x - start.width / 2, y: max(point.y - 10, highestTop(heldAt: point)))
@@ -1296,8 +1294,7 @@ extension FakeWindowSystem {
     }
     let grab = CGPoint(x: start.midX, y: start.minY + 10)
     inHand = (window, start, grab)
-    mouseDown = true
-    events?.pointerPressed()
+    press(on: window)
     follow(point ?? grab, pressing: point == nil)
     events?.dragBegan(window, at: point ?? grab)
     // Its app reports the size it has again, a moment after the window server has shown that it is being dragged.

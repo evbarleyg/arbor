@@ -169,6 +169,8 @@ private let cameraCommands = [
     h.system.drag(s.notes, through: [CGPoint(x: 700, y: 300), h.layout!.nodeFrames[leaf]!.center])
     #expect(h.workspace.tree.leaf(containing: s.notes) == leaf, "notes is a tab of keynote's group")
     h.system.userFocus(s.keynote)
+    // A moment passes. The press that began the drag gave notes the keyboard, and within one app Arbor looks twice before it follows.
+    h.scheduler.runPending()
     h.run("zoom \(s.keynote.rawValue)")
     h.run("hold")
     let before = picture(h)

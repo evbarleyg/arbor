@@ -506,10 +506,13 @@
    "found": "Notes in scripts/mac-shell/input-taps.sh and compat-extras.sh, which try it on real apps.",
    "modelled": "partly",
    "knobs": [
+    "FakeWindowSystem.press",
     "FakeWindowSystem.drag",
     "World.press"
    ],
-   "guards": [],
+   "guards": [
+    "test: aPressBringsItsWindowForwardFirst"
+   ],
    "copes": "AXWindowSystem goes by reports, not by presses: a window that moves is followed whoever has the keyboard.",
    "hurt": 4,
    "touches": [
@@ -8740,21 +8743,23 @@
    "kind": "order-of-reports",
    "layer": "at the seam",
    "expected": "A drag or an edge resize begins with its own report. The stand-in's drag and resize helpers never focus: no `windowFocused` comes with them.",
-   "happened": "Pressing on a window that is not focused sends the focus report first, so before the drag or the resize is reported to begin. That is one order of two. In six later runs on a hosted Mac the press was reported before the focus it brings, most of the time and not always. `World.press` gives the keyboard first and reports the press afterwards, every time.",
+   "happened": "Pressing on a window that is not focused gives it the keyboard and brings it forward before the drag or the resize is reported to begin. The order depends on whose window it is. In eight recorded days with real apps on hosted Macs (144 presses; the recordings are not in the repository): on the window that has the keyboard, the press alone, 38 of 38; on another window of the app in front, the press and then the window, 6 of 6; on a window of another app macOS brings the app forward first and passes the press on afterwards: the window, its app active, the press, the other app no longer active, 66 of 100; the press first in 28, and six in yet another order. `FakeWindowSystem.beginDrag`, `userResize` and `dragAndLoseTheRelease` reported the press and gave nobody the keyboard, so tests dragged windows that were out of view, dragged tiles and resized windows without the keyboard. When they were made to press as `userClick` does, six tests of 5,986 fell, all for that reason. Only the most common order is played. `World.press` gives the keyboard first and reports the press afterwards, every time.",
    "found": "The traces drag-onto-window and edge-resize, recorded with the real pointer on a hosted Mac.",
    "modelled": "partly",
    "knobs": [
+    "FakeWindowSystem.press",
     "World.land",
     "World.giveKeyboard",
     "TraceReplayer",
     "World.press"
    ],
    "guards": [
+    "test: aPressBringsItsWindowForwardFirst",
     "test: everyCommittedTraceReplays",
     "trace: drag-onto-window.expect",
     "trace: edge-resize.expect"
    ],
-   "copes": "Controller.bringIntoViewIfFocused moves no view for a window that is in view, so nothing more is needed.",
+   "copes": "Controller.bringIntoViewIfFocused moves no view for a window that is in view. For one that is out of view it does, with the button down: whoever presses on the point that shows of a parked window has it taken from under the pointer. Open; nobody has tried it on a Mac.",
    "hurt": 3,
    "touches": [
     "moved-unasked"

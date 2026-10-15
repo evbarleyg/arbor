@@ -2151,10 +2151,11 @@ class Census:
         openers = [t for t in tests if t.cls in "CD" and t.opens]
         one_process = [t for t in openers if not re.search(r"\bpid:", "\n".join(d.bare() for d, _ in t.reach))]
         blocks["one_process"] = (None, (
-            f"A premise of another kind: `open` gives every window process 1000 unless told otherwise. {len(one_process)} of the {len(openers)} tests "
-            "of classes C and D that open windows never name a process, so all their apps are one process; "
+            f"A premise of another kind, which no longer holds: `open` gave every window process 1000 unless told otherwise. {len(one_process)} of the "
+            f"{len(openers)} tests of classes C and D that open windows never name a process, so all their apps were one process; "
             f"{sum(1 for t in one_process if any(h in ('system.close', 'system.setMinimized') for h, _, _ in t.world))} of those close or minimize a "
-            "window, after which the fake hands the keyboard to \"the app's next window\", which there is any window at all."))
+            "window, after which the fake hands the keyboard to \"the app's next window\", which there was any window at all. Now every app "
+            "name is a process of its own (`FakeWindowSystem.process(of:)`). Three tests fell when it became so."))
         blocks["differs"] = ("Table 2b. Recorded, and the fake is known to do otherwise", markdown(
             ["Helper", "Tests of class D", "The difference (by its row in collab/evidence/traces/README.md, or by the trace that shows it)"],
             [[f"`{r['helper']}`", r["d"], r["differs"]] for r in helpers if r["verdict"] == "recorded; the fake differs"], "lrl"))

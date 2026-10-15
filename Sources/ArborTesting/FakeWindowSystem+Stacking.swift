@@ -23,10 +23,31 @@ extension FakeWindowSystem {
   /// already, takes the keyboard; the button comes up. With `release: false` it stays down.
   public func userClick(_ window: WindowID, release: Bool = true) {
     guard windows[window] != nil else { return }
-    mouseDown = true
-    events?.pointerPressed()
-    if focused == window { bringToFront(window) } else { userFocus(window) }
+    press(on: window)
     if release { mouseDown = false }
+  }
+
+  /// The button goes down on `window`: in it, on its title bar or on its edge. Whatever follows, the window comes to the front and
+  /// takes the keyboard first, unless ⌘ is held, with which macOS brings nothing forward. In the order a Mac tells it (144 presses
+  /// recorded on hosted Macs). On the window that has the keyboard: the press. On another of the same app: the press, then the
+  /// window. On one of another app macOS brings the app forward first and passes the press on afterwards: the window is reported
+  /// with the button down already, its app says that it is active, then the press is heard of, and the app that was in front
+  /// says last that it no longer is (two in three; most of the others begin with the press).
+  func press(on window: WindowID) {
+    mouseDown = true
+    guard focused != window, !heldModifiers.contains(.command) else {
+      events?.pointerPressed()
+      if !heldModifiers.contains(.command) { bringToFront(window) }
+      return
+    }
+    guard focused.flatMap({ windows[$0]?.snapshot.pid }) != windows[window]?.snapshot.pid else {
+      events?.pointerPressed()
+      return userFocus(window)
+    }
+    userFocus(window)
+    events?.keyboardFocusMoved()
+    events?.pointerPressed()
+    events?.keyboardFocusMoved()
   }
 
   func bringToFront(_ window: WindowID) {

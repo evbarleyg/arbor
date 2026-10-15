@@ -136,9 +136,9 @@ private let side = DisplaySnapshot(
     let s = DragScene()
     // With nothing on it, the Desktop is not kept at a usable size.
     s.h.system.close(s.c)
-    for app in ["Terminal", "Music", "Finder", "Preview"] {
-      s.h.run("dock \(s.h.system.open(app: app).rawValue) left")
-    }
+    // The window itself stays in view: nobody can take hold of one that is a tile.
+    s.h.run("resize \(s.b.rawValue) left 300")
+    #expect(s.h.layout!.windowFrames[s.b] != nil)
     guard let tile = s.h.layout!.tiles.first(where: { $0.node == s.h.workspace.tree.desktop }) else {
       Issue.record("the Desktop should be a tile by now")
       return
@@ -1126,13 +1126,17 @@ private let side = DisplaySnapshot(
     expectWindowsMatchLayout(s.h)
   }
 
-  /// Let go where macOS tiles, it is macOS's, which is about to give it a frame: Arbor owes it a size and still keeps its hands off.
+  /// Let go where macOS tiles, it is macOS's, which is about to give it a frame: Arbor keeps its hands off. What it owed the window it has
+  /// paid by then: the press on what shows of it gives it the keyboard, and what has the keyboard comes into view at its own size.
   @Test func letGoWhereMacOSTilesAWindowMadeSmallIsLeftToMacOS() {
     let s = DragScene { $0.shrinkOutOfView = true }
     s.h.system.tiling = .on
+    let own = s.frame(s.c).size
     s.h.run("zoom \(s.a.rawValue)")
-    s.h.system.clearFrameLog()
+    #expect(s.frame(s.c).size != own)
     s.h.system.beginDrag(s.c)
+    #expect(s.frame(s.c).size == own)
+    s.h.system.clearFrameLog()
     s.h.system.moveDrag(to: CGPoint(x: 0, y: 450), holding: 1)
     s.h.system.endDrag()
     s.h.scheduler.advance(by: 3)
@@ -1297,6 +1301,15 @@ private let side = DisplaySnapshot(
     return s
   }
 
+  /// What the press alone makes of a scene. Whoever takes hold of a window gives it the keyboard before anything is dragged, and a
+  /// summoned window leaves when the keyboard does. A drag that comes to nothing changes nothing beyond that.
+  static func afterAPress(on window: WindowID, _ state: [String], reflow: Bool) -> DragScene.Outcome {
+    let s = scene(state, reflow: reflow)
+    s.h.system.userClick(window)
+    s.h.scheduler.runPending()
+    return s.outcome
+  }
+
   @Test(arguments: states, both) func nothingChanges(state: [String], reflow: Bool) {
     // With tab groups the middle of a window is a place to drop.
     for ending in Ending.allCases where ending != .nowhere || !state.contains("set tabsEnabled true") {
@@ -1309,7 +1322,7 @@ private let side = DisplaySnapshot(
         // The middle of another window if one is in view, or else of its own slot.
         let nowhere = (s.h.layout!.windowFrames[other] ?? slot).center
         let edge = s.h.layout!.windowFrames[other].map { CGPoint(x: $0.midX, y: $0.maxY - 20) } ?? nowhere
-        let before = s.outcome
+        let before = Self.afterAPress(on: window, state, reflow: reflow)
         s.h.system.beginDrag(window)
         switch ending {
         case .early:
@@ -1355,10 +1368,10 @@ private let side = DisplaySnapshot(
       for y in stride(from: visible.minY + 3, through: visible.maxY - 3, by: (visible.height - 6) / 6) { points.append(CGPoint(x: x, y: y)) }
     }
     for window in [probe.a, probe.b, probe.c] where probe.h.system.isVisible(window) {
+      let before = Self.afterAPress(on: window, state, reflow: reflow)
       for point in points {
         let s = Self.scene(state, reflow: reflow)
         let said = "\(state) \(window) held at \(Int(point.x)),\(Int(point.y))"
-        let before = s.outcome
         let wasDocked = s.h.workspace.isDocked(window)
         s.h.system.beginDrag(window)
         s.h.system.moveDrag(to: point, holding: 0.3)

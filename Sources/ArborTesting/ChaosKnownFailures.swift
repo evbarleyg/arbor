@@ -536,6 +536,7 @@ extension ChaosRunner {
         grab 101
         carry 1304 619
         release
+        advance 1
         key down float-all
         """),
     ChaosKnownFailure(

@@ -223,6 +223,9 @@ import Testing
           h.system.loseTheReleaseOfTheDrag()
           h.system.heldModifiers = []
           h.system.cursor = CGPoint(x: 720, y: 450)
+        } else {
+          // Whoever takes hold of a window gives it the keyboard. That much is the press's doing and not the drag's.
+          h.system.userClick(dragged)
         }
         var pictures: [Picture] = []
         for _ in 0..<5 {

@@ -63,18 +63,18 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [identity](#identity) | 31 | 4 | 7 | 6 | 7 | 11 | 13 | 1 | 4 | 13 | 9 |
 | [permissions](#permissions) | 23 | 8 | 6 | 3 | 3 | 11 | 12 | 2 | 2 | 7 | 4 |
 | [timing](#timing) | 54 | 7 | 7 | 16 | 9 | 22 | 29 | 4 | 7 | 14 | 10 |
-| [input](#input) | 59 | 8 | 7 | 15 | 13 | 24 | 23 | 6 | 8 | 22 | 11 |
+| [input](#input) | 59 | 8 | 7 | 15 | 13 | 24 | 24 | 6 | 8 | 21 | 11 |
 | [looks](#looks) | 21 | 0 | 0 | 0 | 1 | 20 | 2 | 2 | 3 | 14 | 6 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 45 | 1 | 0 | 1 | 4 | 40 | 26 | 1 | 2 | 16 | 7 |
-| **all** | 462 | 62 | 91 | 124 | 70 | 177 | 236 | 19 | 60 | 147 | 109 |
+| **all** | 462 | 62 | 91 | 124 | 70 | 177 | 237 | 19 | 60 | 146 | 109 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
 | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 144 | 89 | 46 | 13 | 33 | 52 |
-| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 163 | 97 | 121 | 0 | 11 | 31 |
+| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 163 | 97 | 122 | 0 | 11 | 30 |
 | controller | in the controller or the core, given reports that were right | 28 | 15 | 16 | 0 | 1 | 11 |
 | test | in a test, a script or a harness that expected the wrong thing | 81 | 0 | 26 | 5 | 11 | 39 |
 | machine | in the machine, the toolchain or the way things are built and installed | 46 | 3 | 27 | 1 | 4 | 14 |
@@ -494,11 +494,11 @@ Order of reports: what belongs together arrives in another order than expected.
 *hurt 3 · at the seam · touches `moved-unasked`*
 
 - **Expected:** A drag or an edge resize begins with its own report. The stand-in's drag and resize helpers never focus: no `windowFocused` comes with them.
-- **Happened:** Pressing on a window that is not focused sends the focus report first, so before the drag or the resize is reported to begin. That is one order of two. In six later runs on a hosted Mac the press was reported before the focus it brings, most of the time and not always. `World.press` gives the keyboard first and reports the press afterwards, every time.
+- **Happened:** Pressing on a window that is not focused gives it the keyboard and brings it forward before the drag or the resize is reported to begin. The order depends on whose window it is. In eight recorded days with real apps on hosted Macs (144 presses; the recordings are not in the repository): on the window that has the keyboard, the press alone, 38 of 38; on another window of the app in front, the press and then the window, 6 of 6; on a window of another app macOS brings the app forward first and passes the press on afterwards: the window, its app active, the press, the other app no longer active, 66 of 100; the press first in 28, and six in yet another order. `FakeWindowSystem.beginDrag`, `userResize` and `dragAndLoseTheRelease` reported the press and gave nobody the keyboard, so tests dragged windows that were out of view, dragged tiles and resized windows without the keyboard. When they were made to press as `userClick` does, six tests of 5,986 fell, all for that reason. Only the most common order is played. `World.press` gives the keyboard first and reports the press afterwards, every time.
 - **Found by:** The traces drag-onto-window and edge-resize, recorded with the real pointer on a hosted Mac.
-- **Stand-ins play it:** partly (`World.land`, `World.giveKeyboard`, `TraceReplayer`, `World.press`)
-- **Guard:** `test: everyCommittedTraceReplays`; `trace: drag-onto-window.expect`; `trace: edge-resize.expect`
-- **Arbor copes:** Controller.bringIntoViewIfFocused moves no view for a window that is in view, so nothing more is needed.
+- **Stand-ins play it:** partly (`FakeWindowSystem.press`, `World.land`, `World.giveKeyboard`, `TraceReplayer`, `World.press`)
+- **Guard:** `test: aPressBringsItsWindowForwardFirst`; `test: everyCommittedTraceReplays`; `trace: drag-onto-window.expect`; `trace: edge-resize.expect`
+- **Arbor copes:** Controller.bringIntoViewIfFocused moves no view for a window that is in view. For one that is out of view it does, with the button down: whoever presses on the point that shows of a parked window has it taken from under the pointer. Open; nobody has tried it on a Mac.
 - **Read in:** `collab/evidence/traces/README.md`, `Sources/arbor-fakemac/World+Input.swift`
 
 ### the-click-that-started-a-motion-arrives-after-it-began
@@ -4612,8 +4612,8 @@ Input: where presses, keys and gestures really go.
 - **Expected:** Any press on a window brings it forward and gives it the keyboard.
 - **Happened:** macOS does not bring a window forward for a ⌘-click. A window of an app in the background can be moved by ⌘-dragging its title bar without coming forward, and the close, minimize and zoom buttons work without bringing their window forward.
 - **Found by:** Notes in scripts/mac-shell/input-taps.sh and compat-extras.sh, which try it on real apps.
-- **Stand-ins play it:** partly (`FakeWindowSystem.drag`, `World.press`)
-- **Guard:** **none**
+- **Stand-ins play it:** partly (`FakeWindowSystem.press`, `FakeWindowSystem.drag`, `World.press`)
+- **Guard:** `test: aPressBringsItsWindowForwardFirst`
 - **Arbor copes:** AXWindowSystem goes by reports, not by presses: a window that moves is followed whoever has the keyboard.
 - **Read in:** `scripts/mac-shell/input-taps.sh`, `scripts/mac-shell/compat-extras.sh`, `Sources/arbor-fakemac/World+Input.swift`
 
