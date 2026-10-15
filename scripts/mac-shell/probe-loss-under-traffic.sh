@@ -10,7 +10,7 @@
 #   round b  the gesture tap. A whole small pinch without ⌥ over a test window every 50 ms: it is the app's, so all of it must arrive, throughout.
 #   round c  the tap on drags and mouse-ups, in the middle of a ⌃⌥-drag: the button down, the band showing. Afterwards the button's release arrives
 #            somewhere, nothing of Arbor's is left on the screen, and the next plain click, drag and key arrive whole.
-# Each round by three roads (see `take`). As in the other probe Arbor is a bundle under an identifier of its own, opened by Launch Services; only its
+# Each round by the roads of `take`, twice (README-permission-probes.md says how to read it). As in the other probe Arbor is a bundle under an identifier of its own, opened by Launch Services; only its
 # entry is taken, and this script's tools keep theirs. The settings are as they ship.
 #
 # The bars: no hole longer than a second between the loss and the taps' going, none over 150 ms (three beats of the stream) after it, nothing more than
@@ -99,6 +99,10 @@ for name, start, end in stretches:
     facts[name] = (len(part), round(hole * 1000), sum(1 for e in part if e[3] > 10000), round(late / 1000))
     print(f"{'+'.join(always)} {name}: {len(part)} arrived, LONGEST HOLE {hole * 1000:.0f} ms, worst lateness {late / 1000:.1f} ms, more than 10 ms late: {facts[name][2]}")
 
+# A beat posts three events in a fixed order, so which numbers are of the kinds that must always arrive is read off those that did.
+places = {e[2] % 3 for e in steady}
+gone = [number for number in range(1, posted + 1) if number % 3 in places and number not in {e[2] for e in found}]
+print(f"{'+'.join(always)}: LOST {len(gone)} of {sum(1 for number in range(1, posted + 1) if number % 3 in places)} posted" + (f", n={gone[0]} to {gone[-1]}" if gone else ""))
 def stamp(time):
     return f"{int(time // 3600):02d}:{int(time % 3600 // 60):02d}:{time % 60:06.3f}"
 for earlier, later in zip(steady, steady[1:]):
@@ -134,14 +138,15 @@ else:
     print(f"lost altogether: {lost_after}")
 print("facts", posted, facts["before the loss"][0], facts["after the taps were gone"][0], facts[between][1],
       facts["after the taps were gone"][1], facts["after the taps were gone"][2], lost_after, first_after, met, facts.get("clean", -1), facts.get("plain", -1),
-      facts["before the loss"][1], facts["before the loss"][3], facts["after the taps were gone"][3])
+      facts["before the loss"][1], facts["before the loss"][3], facts["after the taps were gone"][3], len(gone))
 PYTHON
 
 grant() {
   tcc "INSERT OR REPLACE INTO access (service, client, client_type, auth_value, auth_reason, auth_version, csreq, indirect_object_identifier, flags, last_modified) VALUES ('kTCCServiceAccessibility', '$BUNDLE_ID', 0, 2, 3, 1, $REQUIREMENT, 'UNUSED', 0, strftime('%s', 'now'));" \
     || die "INVALID: the grant could not be written"
   sudo killall -9 tccd 2>/dev/null
-  sleep 1
+  # Not one second: whoever posts events has been blocked for two seconds four and a half seconds after such a kill. That must be over before the stream begins.
+  sleep 6
 }
 leave() {
   "$ARBOR_POINTER" calm
@@ -180,14 +185,18 @@ begin() {
   started $!
   eventually grep -q arrivals-ready "$ARBOR_OUT/arrivals-$round.txt" || { invalid "the listener at the end of the taps started"; leave; return 1; }
 }
-# The road the permission goes by. tccutil: `tccutil reset Accessibility <identifier>`. row: the entry deleted and tccd restarted, nothing announced, which a running
-# process feels only a quarter of a minute later: until then Arbor keeps its taps and is told yes. announced: the same, and then the notification
-# com.apple.accessibility.api, which is probably what the switch in System Settings comes to (probe-permission-grant.sh).
+# The road the permission goes by. tccutil: `tccutil reset Accessibility <identifier>`, felt at once. word: the entry deleted and the notification
+# com.apple.accessibility.api posted, at which running processes ask again (probe-permission-grant.sh). row: the entry deleted and tccd killed, nothing said, which a
+# running process feels 4 to 16 s later or not within half a minute: until then Arbor keeps its taps and is told yes. announced: the same, and the notification.
+# Killing tccd is no person's deed, and blocks whoever posts events for seconds, with nobody else running: a hole in which no number is missing.
 ROAD=tccutil
 take() {
   TAKEN=$("$ASKER" now)
   case "$ROAD" in
     tccutil) tccutil reset Accessibility "$BUNDLE_ID" || sudo tccutil reset Accessibility "$BUNDLE_ID" ;;
+    word)
+      tcc "DELETE FROM access WHERE service = 'kTCCServiceAccessibility' AND client = '$BUNDLE_ID';"
+      "$ASKER" announce ;;
     row | announced)
       tcc "DELETE FROM access WHERE service = 'kTCCServiceAccessibility' AND client = '$BUNDLE_ID';"
       sudo killall -9 tccd 2>/dev/null
@@ -200,22 +209,24 @@ length() { [ "$ROAD" = row ] && echo 34 || echo 12; }
 between() { [ "$ROAD" = row ] && echo "FROM THE ROW'S DELETION UNTIL ARBOR NOTICED" || echo "from the loss until the taps were gone"; }
 # What Arbor's log says of it, and when the taps went.
 afterwards() {
-  tail -n "+$((LOG_MARK + 1))" "$ARBOR_HOME/arbor.log" | grep -E "ermission|event tap|stopped|ERROR" | cut -c 12-220 | tail -n 8
-  check "round $round: Arbor has no event tap left" eventually no_taps
+  tail -n "+$((LOG_MARK + 1))" "$ARBOR_HOME/arbor.log" | grep -E "ermission|event tap|stopped|ERROR" | grep -v "DEBUG said" | cut -c 12-220 | tail -n 8
   # Whichever noticed first: the taps' own check, or the controller.
   REMOVED=$(tail -n "+$((LOG_MARK + 1))" "$ARBOR_HOME/arbor.log" | grep -m 1 -E "permission is gone|permission was taken away" | cut -c 12-23)
-  [ -n "$REMOVED" ] || { invalid "Arbor's log says when it noticed"; REMOVED=$TAKEN; }
+  [ -n "$REMOVED" ] || { echo "FINDING: Arbor has not noticed by now. Its taps: $(arbor_taps | wc -l | tr -d ' '). Everything after the deed counts as \"after\" below."; REMOVED=$TAKEN; }
+  echo "lines about a tap that macOS switched off: $(tail -n "+$((LOG_MARK + 1))" "$ARBOR_HOME/arbor.log" | grep -c -E "event tap was off|switched (it|them) back on|too slow|of user input")"
+  [ "$REMOVED" = "$TAKEN" ] || check "round $round: Arbor has no event tap left" eventually no_taps
   "$ARBOR_BIN/arborctl" status | head -n 1 | cut -c 1-120
   echo "the tools' own permission afterwards: $(pointer ax-access)"
 }
 # bars: what both streams are held to, from the line of facts.
 bars() {
   grep -v "^facts " "$ARBOR_SESSION_DIR/verdict"
-  read -r _ posted before after hole_during hole_after late_after lost first met clean plain hole_before worst_before worst_after \
+  read -r _ posted before after hole_during hole_after late_after lost first met clean plain hole_before worst_before worst_after gone \
     <<< "$(grep "^facts " "$ARBOR_SESSION_DIR/verdict")"
   [ "${posted:-0}" -ge 400 ] || invalid "the stream posted its events (${posted:-0})"
   [ "${before:-0}" -ge 80 ] || invalid "events arrived before the loss (${before:-0})"
   [ "${after:-0}" -ge 80 ] || invalid "events arrived after the taps were gone (${after:-0})"
+  check "round $round: NOTHING LOST of what must always arrive (${gone:-?} were)" test "${gone:-1}" -eq 0
   check "round $round: no hole longer than a second while Arbor let go of its taps (${hole_during:-?} ms)" test "${hole_during:-9999}" -le 1000
   check "round $round: no hole after that (${hole_after:-?} ms; a beat is 50)" test "${hole_after:-9999}" -le 150
   check "round $round: nothing more than 10 ms late after that" test "${late_after:-1}" -eq 0
@@ -318,11 +329,13 @@ round_c() {
   leave
 }
 
-# ROADS="tccutil announced row" is all of them, which is also the default; one Mac's twenty minutes hold them.
-for ROAD in ${ROADS:-tccutil announced row}; do
-  round_a "a-$ROAD"
-  round_b "b-$ROAD"
-  round_c "c-$ROAD"
+# ROADS="tccutil word row announced" is all of them. Twice the two that kill no daemon, unless told otherwise.
+turn=0
+for ROAD in ${ROADS:-tccutil word tccutil word}; do
+  turn=$((turn + 1))
+  round_a "a-$ROAD-$turn"
+  round_b "b-$ROAD-$turn"
+  round_c "c-$ROAD-$turn"
 done
 
 step "the end"

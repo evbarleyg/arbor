@@ -1,7 +1,7 @@
 #!/bin/bash
 # Does the Mac's input survive when Arbor loses the Accessibility permission with its event taps installed?
 #
-#   scripts/mac-shell/run.sh scripts/mac-shell/probe-permission-loss.sh      (about three minutes)
+#   scripts/mac-shell/run.sh scripts/mac-shell/probe-permission-loss.sh      (about thirteen minutes; README-permission-probes.md says how to read it)
 #
 # macOS holds every event a tap has asked for until the tap's owner answers, and has been reported to stop all input when that owner
 # loses the permission. check-F63.sh and input-taps.sh take the permission from everything, their own tools included, so neither can
@@ -10,19 +10,24 @@
 #
 # Each round: the entry is written, Arbor is opened and has its taps; asker.swift posts a click, a key and a notch of the wheel every
 # 50 ms, each with a number, for twelve seconds; four seconds in, the permission goes; a listener at the far end of the taps writes down
-# what arrived and when. Three rounds with `tccutil reset Accessibility <identifier>`, two with the entry deleted and tccd restarted, which a running
-# process feels only a quarter of a minute later: meanwhile Arbor keeps its taps and is told yes. Those rounds' streams last until then. And two with
-# the notification com.apple.accessibility.api posted after that, which is probably what the switch in System Settings comes to.
-# What is asked: every event arrives; none is more than 10 ms late once the taps are gone; and THE NUMBER: the longest hole.
+# what arrived and when. The roads it goes by:
+#   by_tccutil              `tccutil reset Accessibility <identifier>`: felt at once
+#   by_the_row_and_a_word   the entry deleted, and the notification com.apple.accessibility.api posted, at which running processes ask again
+#   by_the_row              the entry deleted and tccd killed, nothing said: felt 4 to 16 s later, or not within half a minute. Until then Arbor keeps its
+#                           taps and is told yes. Those rounds' streams last 34 s
+#   by_the_row_announced    the same, and the notification
+# Killing tccd is no person's deed, and it blocks whoever posts events for seconds, with nobody else running: a hole in which no number is missing.
 #
-# The controls: the same deed and the same stream with nobody running, and with an Arbor that has no taps (ARBOR_NO_HOTKEYS=1).
+# The controls: the same deed and the same stream with nobody running; with an Arbor that has no taps (ARBOR_NO_HOTKEYS=1); and with a bare tapper, a tool that
+# has one active tap under an identifier of its own and does nothing about losing the permission: what macOS does to any tapper.
 #
-# A round in which nothing could be posted, nothing arrived before the loss, Arbor had no taps or did not lose them proves nothing: it
-# says INVALID and fails. arrivals-<n>.txt and stream-<n>.txt are the raw lists.
+# What is asked (the rule of 2026-10-15): nothing lost; the hole while the permission goes no longer than a second; afterwards no later and no longer
+# a hole than the same Mac had before the loss. The bars as they first stood are printed beside.
+# A round in which nothing could be posted, nothing arrived before the loss, or Arbor had no taps proves nothing: it says INVALID and fails. One in which
+# Arbor never notices is a FINDING. arrivals-<n>.txt and stream-<n>.txt are the raw lists, sample-<n>.txt what `sample` saw of Arbor.
 #
-# What it does not try: a pinch (nothing public posts one), and a scroll with ⌃⌥ down, which is the only time the scroll tap is switched
-# on. The clicks go through the tap on mouse-downs, which is always on. Arbor runs with ARBOR_NO_PROMPT=1: no window of its own, and no
-# question of macOS's, comes between the clicks and the test window.
+# What it does not try: see probe-loss-under-traffic.sh for the taps that are on only at times. The clicks here go through the tap on mouse-downs, which is
+# always on. Arbor runs with ARBOR_NO_PROMPT=1: no window of its own, and no question of macOS's, comes between the clicks and the test window.
 source "$(dirname "$0")/lib.sh"
 needs_throwaway_mac "write to the permission database with sudo, restart tccd and reset a bundle's Accessibility permission"
 
@@ -105,7 +110,8 @@ grant() {
   tcc "INSERT OR REPLACE INTO access (service, client, client_type, auth_value, auth_reason, auth_version, csreq, indirect_object_identifier, flags, last_modified) VALUES ('kTCCServiceAccessibility', '$BUNDLE_ID', 0, 2, 3, 1, $REQUIREMENT, 'UNUSED', 0, strftime('%s', 'now'));" \
     || die "INVALID: the grant could not be written"
   sudo killall -9 tccd 2>/dev/null
-  sleep 1
+  # Not one second: whoever posts events has been blocked for two seconds four and a half seconds after such a kill. That must be over before the stream begins.
+  sleep 6
 }
 launch() {
   limit 20 open -n "$app" --env ARBOR_HOME="$ARBOR_HOME" --env ARBOR_SOCKET="$ARBOR_SOCKET" --env ARBOR_DEBUG=1 \
@@ -137,16 +143,23 @@ by_the_row_announced() {
   "$ASKER" announce
 }
 
-# one_round <number> <how the permission goes> [arbor|arbor-without-taps|nobody|bare-tapper]: the last three are the controls. If input stands still without
-# Arbor's taps as well, it is not the taps' doing.
+# The same without violence: no person kills a daemon. tccd is left alone and only told of nothing; the processes are told to ask again.
+by_the_row_and_a_word() {
+  tcc "DELETE FROM access WHERE service = 'kTCCServiceAccessibility' AND client = '$BUNDLE_ID';"
+  "$ASKER" announce
+}
+
+# one_round <number> <how the permission goes> [arbor|arbor-without-taps|nobody|bare-tapper] [sampled]: the last three are the controls. If input stands still without
+# Arbor's taps as well, it is not the taps' doing. sampled: `sample` looks at Arbor from the deed on, for what its main thread is doing meanwhile; it halts
+# Arbor at every look, so such a round's figures are not to be compared with the others'.
 one_round() {
-  local how=$2 who=${3:-arbor} x y w h log_mark taken back length=12 between
+  local how=$2 who=${3:-arbor} sampled=${4:-} x y w h log_mark taken back length=12 between
   round=$1
   # By that road the loss came 14 s after the deed: the stream has to last until then.
   [ "$how" = by_the_row ] && length=34
   between="from the loss until the taps were gone"
   [ "$how" = by_the_row ] && between="FROM THE ROW'S DELETION UNTIL ARBOR NOTICED"
-  step "round $round: $how, with $who"
+  step "round $round: $how, with $who${sampled:+, sampled}"
   # Whose entry is written and taken.
   BUNDLE_ID=$ARBOR_ID REQUIREMENT=$ARBOR_REQUIREMENT
   [ "$who" = bare-tapper ] && BUNDLE_ID=$TAPPER_ID REQUIREMENT=$TAPPER_REQUIREMENT
@@ -186,6 +199,10 @@ one_round() {
   stream=$!
   started "$stream"
   sleep 4
+  if [ -n "$sampled" ] && [ -n "$ARBOR_PID" ]; then
+    sample "$ARBOR_PID" "$((length - 5))" 5 -file "$ARBOR_OUT/sample-$round.txt" > /dev/null 2>&1 &
+    started $!
+  fi
   taken=$("$ASKER" now)
   "$how"
   back=$("$ASKER" now)
@@ -202,11 +219,15 @@ one_round() {
     removed=$(grep -m 1 switched-off "$ARBOR_OUT/tapper-$round.txt" | cut -c 1-12)
     kill_started "$TAPPER_PID"
   elif [ "$who" != nobody ]; then
-    check "round $round: Arbor has no event tap left" eventually no_taps
     "$ARBOR_BIN/arborctl" status | head -n 1 | cut -c 1-100
     # Whichever noticed first: the taps' own check, or the controller.
     removed=$(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -m 1 -E "permission is gone|permission was taken away" | cut -c 12-23)
-    [ -n "$removed" ] || invalid "Arbor's log says when it noticed"
+    echo "lines about a tap that macOS switched off: $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -c -E "event tap was off|switched (it|them) back on|too slow|of user input")"
+    tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -E "event tap was off|switched (it|them) back on|too slow|of user input" | cut -c 12-200 | head -n 5
+    [ -z "$removed" ] || check "round $round: Arbor has no event tap left" eventually no_taps
+    if [ -z "$removed" ]; then
+      echo "FINDING: $((length - 4)) s after the deed Arbor has not noticed. Its taps: $(arbor_taps | wc -l | tr -d ' '). Whether input suffered meanwhile is below: everything after the deed counts as \"after\"."
+    fi
   fi
 
   python3 - "$ARBOR_OUT/arrivals-$round.txt" "$ARBOR_OUT/stream-$round.txt" "$taken" "${removed:-$back}" "$between" > "$ARBOR_SESSION_DIR/verdict" <<'PYTHON'
@@ -274,21 +295,17 @@ PYTHON
   leave
 }
 
-one_round 1 by_the_row_announced
-one_round 2 by_the_row_announced nobody
-one_round 3 by_the_row_announced arbor-without-taps
-one_round 4 by_the_row_announced bare-tapper
-one_round 5 by_the_row
-one_round 6 by_the_row nobody
-one_round 7 by_the_row arbor-without-taps
-one_round 8 by_the_row bare-tapper
-one_round 9 by_tccutil
-one_round 10 by_tccutil nobody
-one_round 11 by_tccutil bare-tapper
-one_round 12 by_the_row_announced
-one_round 13 by_the_row_announced nobody
-one_round 14 by_tccutil
-one_round 15 by_the_row
+# ROUNDS="<how>:<who>[:sampled] …" plays others than these.
+number=0
+for each in ${ROUNDS:-by_tccutil:arbor by_tccutil:nobody by_tccutil:arbor-without-taps by_tccutil:bare-tapper \
+  by_the_row_and_a_word:arbor by_the_row_and_a_word:nobody by_the_row_and_a_word:arbor-without-taps by_the_row_and_a_word:bare-tapper \
+  by_the_row:arbor by_the_row:nobody by_the_row:bare-tapper \
+  by_tccutil:arbor by_the_row_and_a_word:arbor by_tccutil:arbor by_the_row_and_a_word:arbor \
+  by_tccutil:arbor:sampled by_the_row_and_a_word:arbor:sampled by_the_row_announced:arbor:sampled}; do
+  number=$((number + 1))
+  IFS=: read -r how who sampled <<< "$each"
+  one_round "$number" "$how" "$who" "$sampled"
+done
 
 step "side by side"
 grep -E "^== round|THE LONGEST HOLE|^posted|a hole of|noticed|INVALID" "$ARBOR_OUT/output.txt" 2>/dev/null | cut -c 1-170
