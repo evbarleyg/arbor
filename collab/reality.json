@@ -6215,7 +6215,7 @@
    "kind": "permissions",
    "layer": "below the seam",
    "expected": "Taking the permission away only disables Arbor, and its event taps are harmless until Arbor removes them.",
-   "happened": "With Arbor's event taps in, from the instant macOS withdraws the right until Arbor has removed its taps, every event of every kind is dropped, for the whole Mac: clicks, keys, the wheel, also kinds that match no tap that is switched on. Lost, not late. Thirteen valid rounds. With nobody running nothing was lost (three rounds); with Arbor and no taps 0 of 3,400 events; with Arbor and its taps events were lost in 8 of 9 rounds, on all three roads: the row deleted and the daemon killed, in silence (95, 15, 5 and 65 events); the same, and announced (5, 0); `tccutil reset` (90, 95, 5). The holes were 85 to 1,046 ms long. A hole ends 30 to 100 ms after Arbor's line in the log: its length is the wait for the next tick of `PointerInput.checkPermission`, a timer of one second. Before the withdrawal (up to 16 s with the row already gone) and after the taps have gone nothing is lost. Nothing stayed stuck after a loss in the middle of a held ⌃⌥-drag with the band showing (12 of 12 checks, one valid round); whether an up can be lost whose down arrived has not been shown. No tap's callback was told that it had been disabled, as far as the logs say. Whether real keys and buttons are dropped as posted ones are, nobody can know from a hosted Mac. What is tested today is only that the taps go within three seconds. The pointer gestures are to ship off in the first build, by one new key, `pointerGestures`, that is asked before the four and means no tap at launch; it is decided and not in `Settings` on the trunk as this is written, where `gesturesEnabled`, `scrollZoom` and `frameRectangleOnDesktop` ship true and `frameRectangleModifier` \"ctrl+opt\", so the taps go in at launch.",
+   "happened": "With Arbor's event taps in, from the instant macOS withdraws the right until Arbor has removed its taps, every event of every kind is dropped, for the whole Mac: clicks, keys, the wheel, also kinds that match no tap that is switched on. Lost, not late. Fourteen valid rounds. With nobody running nothing was lost (three rounds); with Arbor and no taps 0 of 3,400 events; with Arbor and its taps events were lost in 9 of 10 rounds, on all three roads: the row deleted and the daemon killed, in silence (95, 15, 5 and 65 events, and 10 of 1,360 key events in an older table); the same, and announced (5, 0); `tccutil reset` (90, 95, 5). The holes were 85 to 1,046 ms long. A hole ends 30 to 100 ms after Arbor's line in the log: its length is the wait for the next tick of `PointerInput.checkPermission`, a timer of one second. Before the withdrawal (up to 16 s with the row already gone) and after the taps have gone nothing is lost. Nothing stayed stuck after a loss in the middle of a held ⌃⌥-drag with the band showing (12 of 12 checks, one valid round); whether an up can be lost whose down arrived has not been shown. No tap's callback was told that it had been disabled, as far as the logs say. Keys were dropped though Arbor has no tap for keys, and the wheel with its tap switched off: so whether switching a tap off would help is unproven, and only removal is known to end the hole. Whether real keys and buttons are dropped as posted ones are, nobody can know from a hosted Mac. What is tested today is only that the taps go within three seconds. The pointer gestures are to ship off in the first build, by one new key, `pointerGestures`, that is asked before the four and means no tap at launch; it is decided and not in `Settings` on the trunk as this is written, where `gesturesEnabled`, `scrollZoom` and `frameRectangleOnDesktop` ship true and `frameRectangleModifier` \"ctrl+opt\", so the taps go in at launch.",
    "found": "Probes that are not on the trunk yet, on hosted Macs in the night of 2026-10-15 (macOS 26.6.2, posted events, a debug build): a stream of numbered events, a witness that counts them, the permission withdrawn on three roads, and a control on both sides, nobody and Arbor without taps. Until then it was hearsay, quoted in the spec and in the code: \"macOS has been reported to stop all input\".",
    "modelled": "cannot",
    "knobs": [],
@@ -10417,25 +10417,47 @@
    "id": "every-event-takes-longer-with-arbor-running",
    "kind": "input",
    "layer": "below the seam",
-   "expected": "With a healthy tap on a thread of its own an event takes about 0.2 ms longer to reach its app.",
-   "happened": "In 24 streams of 23,970 posted events, none lost, a debug build: clicks into a window's content went from a median of 0.47 ms to 2.46, and from 7.9 to 11.7 at the 99th percentile; presses on a title bar from 1.02 to 3.89, and from 9.5 to 13.3. The debug log costs next to nothing. The taps' own share has not been told apart from the rest of Arbor's yet. A day with real apps had reported presses on title bars 35 to 68 ms late; that compared mixtures of presses and is taken back on the board (1.37). What is left there: a press on a title bar that brings another app forward reaches that app late, with all four settings off and no tap of Arbor's listed just the same, so it is no tap. macOS itself takes some 19 ms over such a press (two measurements), which leaves Arbor a share of some 15 to 20 ms, unproven until the probe has a fair baseline. The gate allows 10, by kind of event, against the journey's own control.",
-   "found": "Probes that are not on the trunk yet, on hosted Macs in the night of 2026-10-15 (macOS 26.6.2, posted events, a debug build), and a day with real apps and its control without Arbor.",
+   "expected": "With a healthy tap on a thread of its own an event takes about 0.2 ms longer to reach its app: the figure of one click at a time.",
+   "happened": "Measured in streams, on a release build: 18 streams, 17,975 posted events, none lost, three turns of each variant in turns on one hosted Mac of three cores. Median, 99th percentile and worst, in ms. Clicks into a window's content: with no Arbor 0.45, 8.12, 31.9; with Arbor without taps 0.53, 3.70, 6.7; with its taps 2.27, 9.66, 15.0. Presses on a title bar: 0.91, 4.83, 11.2; 1.00, 9.27, 14.2; 3.96, 15.15, 21.9. So the taps' own share is 1.7 to 3.0 ms at the median and 6 at the 99th percentile, and the rest of Arbor costs 0.08 at the median and 4.4 at the 99th on a title bar. Release costs what debug cost (2.27 against 2.46, 3.96 against 3.89, in 24 streams of 23,970 events): the price is the round trip to another process's thread and back, not Arbor's code, and nobody need try to optimise it away. The mouse-down, the only event that passes a tap that is switched on, pays least (0.6 to 0.8 ms); the up, the keys and the wheel's notch of the same beat pay more, because they queue behind it. Over 10 ms late on a title bar were 2, 23 and 142 of about 3,000 (nobody, without taps, with taps): that is where the taps show most. One limit: \"without taps\" also takes the 52 registered shortcuts out, which errs against the taps.",
+   "found": "Probes that are not on the trunk yet, on hosted Macs in the night of 2026-10-15 (macOS 26.6.2, posted events), first with a debug build and then with a release build, each with a control on both sides: nobody, and Arbor without taps.",
    "modelled": "cannot",
    "knobs": [],
    "guards": [
     "e2e: with Arbor: how long a click on a docked window takes"
    ],
+   "copes": "EventTapThread serves every tap on a thread of its own and keeps all but one switched off, so an event pays the round trip and little more. The product owner rules it within the limit, 10 ms at the median by kind of event: no fault.",
+   "hurt": 4,
+   "touches": [
+    "input-held"
+   ],
+   "sources": [
+    "Sources/ArborKit/Input/EventTap.swift",
+    "docs/VIABLE.md",
+    "scripts/mac-shell/input-taps.sh",
+    "scripts/mac-shell/witness.swift"
+   ]
+  },
+  {
+   "id": "a-press-that-brings-another-app-forward-reaches-it-late",
+   "kind": "input",
+   "layer": "below the seam",
+   "expected": "A press on the title bar of another app's window reaches that app as soon with Arbor running as without.",
+   "happened": "A day with real apps had reported presses on title bars 35 to 68 ms late; that compared mixtures of presses and is taken back on the board (1.37). What is left there: with Arbor running a press on a title bar that brings another app forward reaches that app late, with all four settings off and no tap of Arbor's listed just the same, so it is no tap. macOS itself takes some 19 ms over such a press (two measurements), which leaves Arbor a share of some 15 to 20 ms, unproven until the probe has a fair baseline. The gate allows 10, by kind of event, against the journey's own control.",
+   "found": "A day with real apps on a hosted Mac and its control without Arbor, then a probe of such presses. The share is unproven, by the board's own words.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [],
    "copes": "open",
-   "hurt": 2,
+   "hurt": 3,
    "touches": [
     "input-held"
    ],
    "sources": [
     "collab/BOARD.md",
     "docs/VIABLE.md",
-    "Sources/ArborKit/Input/EventTap.swift",
-    "scripts/mac-shell/input-taps.sh"
-   ]
+    "Sources/ArborKit/AX/AXWindowSystem.swift"
+   ],
+   "certainty": "suspected"
   }
  ],
  "afterword": [
