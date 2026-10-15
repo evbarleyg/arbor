@@ -377,7 +377,8 @@ def pieces(m, until=None):
 
 def grows_where_it_cannot(film, old):
     """The one exception to "over" (the product owner, 2026-10-15): a window may show its new size at its old place if it grows, wider or higher by half a point or more, and its new frame lies
-    within no display's room: x from the display's left edge to its right one, y from its top to the visible frame's bottom. macOS cuts growth at the display's edge once the window stands there,
+    within no display's room: x from the display's left edge to the visible frame's right one, y from the display's top to the visible frame's bottom: the room as the product has it
+    (`FramePlan.room`): one definition in both. (The Dock at the right: unmeasured on a Mac; the narrower room errs to the old full plan.) macOS cuts growth at the display's edge once the window stands there,
     and a size lost for good outranks a frame seen for a moment. The display shows only what of such a frame lies on it, so the frames are Arbor's own account, before and after; the window is the
     one whose frame before has the followed rectangle's left, right and bottom. False where the film does not say."""
     if not film.display or not film.visible:
@@ -387,7 +388,7 @@ def grows_where_it_cannot(film, old):
         if window in film.after and max(abs(x - edges[0]), abs(x + w - edges[2]), abs(y + h - edges[3])) <= 3:
             left, top, wide, high = film.after[window]
             grows = wide - w >= 0.5 or high - h >= 0.5
-            within = film.display[0] <= left and left + wide <= film.display[0] + film.display[2] and film.display[1] <= top and top + high <= film.visible[1] + film.visible[3]
+            within = film.display[0] <= left and left + wide <= film.visible[0] + film.visible[2] and film.display[1] <= top and top + high <= film.visible[1] + film.visible[3]
             return grows and not within
     return False
 
@@ -957,6 +958,8 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout, without=(), 
         off = max(min(max(abs(p - q) for p, q in zip(one.edges, other.edges)) for other in b) for one in a)
         still[1]["R2"] = Verdict(PASS if off <= 1 else MISS, f"windows rest within {off} px of where they rest with motion (at most 1)")
 
+    first = out
+    out = io.StringIO()
     print("## The instruments\n", file=out)
     trusted = True
     for kind, wanted in METRONOME.items():
@@ -1096,6 +1099,10 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout, without=(), 
           "miss or are unseen.", file=out)
     if not trusted:
         print("\nTHE INSTRUMENTS FAILED THEIR OWN TEST: the score above is not to be believed.", file=out)
+    # A gate that has seen under half of what it is about says so in its first line.
+    if 2 * seen < total:
+        print(f"**SEEN: {100 * seen / total:.0f}% OF {'WHAT SHIPS' if which == 'ships' else 'THE OPTIONS'}, UNDER HALF. Whatever follows is about that part; the rest counts as missed.**\n", file=first)
+    first.write(out.getvalue())
     return {
         "score": round(number, 1), "everything_on": round(lab_number, 1), "earned": earned, "total": total, "seen": round(100 * seen / total, 1), "trusted": trusted,
         "leeway": allow, "gate": len(gate), "severity1": worst, "pictures": pictures.get("commit"),
@@ -1417,6 +1424,19 @@ def self_test():
             wrong += [f"{identifier} saw nothing: {verdicts[identifier].said}" for identifier in unseen]
             failures += bool(wrong)
             print(f"{'✘' if wrong else '✔'} {name}: missed {', '.join(missed) or 'nothing'}" + "".join(f"\n    {line}" for line in wrong))
+        # The Dock at the right: the room ends where the visible frame does, not where the display does.
+        class Docked:
+            display, visible, scale = [0, 0, 1024, 768], [0, 31, 960, 737], 1
+            before = {1: [100.0, 100.0, 200.0, 300.0]}
+
+        class Was:
+            edges = (100, 100, 300, 400)
+        rooms = []
+        for after, wanted in (([400.0, 100.0, 500.0, 400.0], False), ([500.0, 100.0, 500.0, 400.0], True), ([400.0, 400.0, 500.0, 400.0], True), ([-10.0, 100.0, 500.0, 400.0], True), ([980.0, 100.0, 150.0, 200.0], False)):
+            Docked.after = {1: after}
+            rooms.append(grows_where_it_cannot(Docked, Was) == wanted)
+        failures += not all(rooms)
+        print(f"{'✔' if all(rooms) else '✘'} the room of the exception: within, over the visible frame's right edge, below its foot, over the display's left edge, and one that shrinks: {rooms}")
         _, verdicts = judge(os.path.join(folder, "grows-where-it-cannot"))
         counted = "was used in 1 frames" in verdicts["R5"].said
         failures += not counted
@@ -1447,7 +1467,7 @@ def self_test():
         right = (not film.after or "AFTER THE STAGE WENT" in told.getvalue()) and "stage +15 to +600" in told.getvalue()
         failures += not right
         print(f"{'✔' if right else '✘'} home: {told.getvalue().splitlines()[0]}")
-    print(f"{len(cases) + len(barren) + len(blind) + 2 - failures} of {len(cases) + len(barren) + len(blind) + 2} drawn films judged as they should be")
+    print(f"{len(cases) + len(barren) + len(blind) + 3 - failures} of {len(cases) + len(barren) + len(blind) + 3} drawn films judged as they should be")
     account = [line.split() for line in ("90 W 7 1 0 0 0 9 9 Oak", "110 W 50 2 4 0 0 100 100 Arbor", "120 W 7 1 0 5 5 9 9 Oak", "130 W 8 1 0 5 5 9 9 Elm",
                                          "140 W 51 2 3 0 0 9 9 Arbor", "300 L 45", "600 G 50", "640 W 8 1 0 6 6 9 9 Elm", "5000 W 7 1 0 1 1 9 9 Oak")]
     said = home_of(account, 100, 4000, {7, 8})
