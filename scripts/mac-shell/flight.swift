@@ -51,22 +51,30 @@ func minimized(_ window: AXUIElement) -> String {
 
 let arguments = Array(CommandLine.arguments.dropFirst())
 let modes = ["poll", "sparse", "read", "main", "raise", "both", "guarded", "late", "rest-main", "rest-raise"]
-guard arguments.count == 4, let pid = pid_t(arguments[0]), let id = CGWindowID(arguments[1]), let seconds = Double(arguments[2]),
-  modes.contains(arguments[3])
-else {
-  FileHandle.standardError.write(Data("usage: flight <pid> <window id> <seconds> \(modes.joined(separator: "|"))\n".utf8))
-  exit(64)
+func fail(_ code: Int32, _ message: String) -> Never {
+  FileHandle.standardError.write(Data("flight: \(message)\n".utf8))
+  exit(code)
 }
-let mode = arguments[3]
+func needed<T>(_ value: T?) -> T {
+  guard let value else { fail(64, "usage: flight <pid> <window id> <seconds> \(modes.joined(separator: "|"))") }
+  return value
+}
+// Not `guard let`: what that binds at the top of a file is no global, and the observer's callback, a C function, could not use it.
+let pid: pid_t = needed(arguments.count == 4 ? pid_t(arguments[0]) : nil)
+let id: CGWindowID = needed(CGWindowID(arguments[1]))
+let seconds: Double = needed(Double(arguments[2]))
+let mode: String = needed(modes.contains(arguments[3]) ? arguments[3] : nil)
 
 let app = AXUIElementCreateApplication(pid)
-var listed: CFTypeRef?
-AXUIElementCopyAttributeValue(app, "AXWindows" as CFString, &listed)
-let elements = (listed as? [AnyObject] ?? []).filter { CFGetTypeID($0) == AXUIElementGetTypeID() }.map { $0 as! AXUIElement }
-guard let window = elements.first(where: { number(of: $0) == id }) else {
-  FileHandle.standardError.write(Data("flight: process \(pid) lists no window \(id)\n".utf8))
-  exit(65)
-}
+let elements: [AXUIElement] = {
+  var listed: CFTypeRef?
+  AXUIElementCopyAttributeValue(app, "AXWindows" as CFString, &listed)
+  return (listed as? [AnyObject] ?? []).filter { CFGetTypeID($0) == AXUIElementGetTypeID() }.map { $0 as! AXUIElement }
+}()
+let window: AXUIElement = {
+  guard let found = elements.first(where: { number(of: $0) == id }) else { fail(65, "process \(pid) lists no window \(id)") }
+  return found
+}()
 let sibling = elements.first { number(of: $0) != id }
 // As Arbor has it (AXWindowSystem.messagingTimeout).
 AXUIElementSetMessagingTimeout(app, 1)
@@ -119,11 +127,11 @@ func callback(_ observer: AXObserver, _ element: AXUIElement, _ notification: CF
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { if mode == "rest-main" { setMain() } else { raise() } }
   }
 }
-var created: AXObserver?
-guard AXObserverCreate(pid, callback, &created) == .success, let observer = created else {
-  FileHandle.standardError.write(Data("flight: cannot observe process \(pid)\n".utf8))
-  exit(66)
-}
+let observer: AXObserver = {
+  var created: AXObserver?
+  guard AXObserverCreate(pid, callback, &created) == .success, let created else { fail(66, "cannot observe process \(pid)") }
+  return created
+}()
 for name in ["AXFocusedWindowChanged", "AXMainWindowChanged", "AXApplicationActivated", "AXApplicationDeactivated"] {
   AXObserverAddNotification(observer, app, name as CFString, nil)
 }
