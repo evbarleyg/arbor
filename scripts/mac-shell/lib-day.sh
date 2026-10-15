@@ -255,7 +255,19 @@ print(",".join("%d@%s" % (window, ":".join(str(round(number)) for pair in tile["
 }
 docked_ids() { day_ids; echo "$DAY_DOCKED"; }
 floating_ids() { day_ids; echo "$DAY_FLOATING"; }
-arbor_window() { arbor_answers && app_windows "$ARBOR_PID" | cut -d ' ' -f 1; }
+# The window of Arbor's own that a person can close: its welcome, its settings. By its red button, not by its kind: the welcome is a panel, which Accessibility does not call a standard
+# window, so that it was never found, never closed, and lay in the middle of the screen through the first session of every journey (where Arbor used 1.2 to 1.6 % of a core with nothing
+# to do, 7 times of 7, against 0.1 to 0.3 % in every later session, 7 of 7).
+arbor_window() {
+  local id
+  arbor_answers || return 0
+  for id in $(apptool windows "$ARBOR_PID" 2> /dev/null | awk '{ print $1 }'); do
+    if apptool button "$id" close > /dev/null 2>&1; then
+      echo "$id"
+      return 0
+    fi
+  done
+}
 
 act() {
   DAY_STEP=$((DAY_STEP + 1))
@@ -448,10 +460,13 @@ dock_click() {
 }
 
 cmd_tab() {
-  local times=${1:-1}
+  local times=${1:-1} pause=0.45
   key cmd+tab --down
   while [ "$times" -gt 1 ]; do
-    sleep 0.15
+    # macOS's switcher has to be up before a second press counts: one that came 235 to 314 ms after the first did not, one at 394 ms did, and the third always (nine such acts in
+    # three journeys). Where the act leads could not be foretold, so that a walk parted from its control there.
+    sleep "$pause"
+    pause=0.15
     key cmd+tab --held
     times=$((times - 1))
   done
