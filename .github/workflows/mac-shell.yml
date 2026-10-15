@@ -62,6 +62,11 @@ on:
         required: false
         default: "1200"
         type: string
+      swift:
+        description: "own: the Swift that comes with the runner's Xcode, and no toolchain is restored or installed (run.sh asks for it where the commit builds with it). Anything else: 6.4"
+        required: false
+        default: ""
+        type: string
       configuration:
         description: Which build the scripts drive. release is the program people get, for whatever is measured (run.sh --release)
         required: false
@@ -173,6 +178,8 @@ jobs:
         timeout-minutes: 15
         uses: ./.ci/.github/actions/mac-setup
         with:
+          # A commit from before the promise of Swift 6.2 needs 6.4, which has to be fetched. The compiler is part of a kept build's name, so the two never mix.
+          swift: ${{ inputs.swift == 'own' && '' || '6.4' }}
           build-cache: ${{ inputs.configuration == 'release' && 'release' || 'products' }}
       # Here, so that what is kept is a build and nothing else. A build that fails is the script's to report, as it always was.
       - name: Build
