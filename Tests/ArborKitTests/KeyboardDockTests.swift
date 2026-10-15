@@ -148,10 +148,12 @@ import Testing
     return (h, safari, terminal, chrome)
   }
 
-  /// Where the windows in view are, and the Desktop (as window 0): a window that trades places with it has moved.
+  /// Where the windows in view are, whole or as tiles, and the Desktop (as window 0): a window that trades places with it has moved.
   func picture(_ h: Harness) -> [WindowID: CGRect] {
     var picture = h.layout!.windowFrames
-    picture[WindowID(0)] = h.layout!.desktopFrame ?? h.layout!.tiles.first { $0.kind == .desktop }?.frame
+    for tile in h.layout!.tiles { for window in tile.windows { picture[window] = tile.frame } }
+    let tree = h.workspace.tree
+    picture[WindowID(0)] = h.layout!.desktopFrame ?? h.layout!.tiles.first { tree.subtree($0.node, contains: tree.desktop) }?.frame
     return picture
   }
 
@@ -187,9 +189,8 @@ import Testing
     expectWindowsMatchLayout(h)
   }
 
-  /// The rule, whatever the arrangement: a key that says "moved" has changed what is on screen, and one that cannot says why not. Out of a
-  /// group that shows the first press takes the window, which shows in the sizes; a window that is all that shows of its group has
-  /// changed places with somebody.
+  /// The rule, whatever the arrangement: a key that says "moved" has changed who lies left of whom or above whom, and one that cannot says
+  /// why not and changes nothing, no size either.
   @Test(arguments: Away.allCases) func aKeyThatSaysMovedHasMovedSomethingThatShows(away: Away) {
     for gone in 0..<4 {
       for walker in 0..<4 where walker != gone {
@@ -203,15 +204,11 @@ import Testing
           h.system.userFocus(ids[walker])
           for step in 1...6 {
             let before = picture(h)
-            let tree = h.workspace.tree
-            let company = tree.parent(of: tree.leaf(containing: ids[walker])!).map { tree.windows(under: $0) } ?? []
-            let itsGroupShows = company.contains { $0 != ids[walker] && before[$0] != nil }
             let result = h.run("dock \(edge)")
             let note = "\(ids[gone]) away, \(ids[walker]) \(edge), step \(step): \(result.message)\n\(h.ascii())"
             #expect(h.workspace.tree.invariantViolations().isEmpty, "\(note)")
             if result.ok {
-              #expect(picture(h) != before, "\(note)")
-              if !itsGroupShows { #expect(order(picture(h)) != order(before), "the same picture: \(note)") }
+              #expect(order(picture(h), around: ids[walker]) != order(before, around: ids[walker]), "the same picture: \(note)")
             } else {
               #expect(picture(h) == before, "\(note)")
               break
@@ -222,11 +219,12 @@ import Testing
     }
   }
 
-  /// Who lies left of whom and above whom: what a person would call the arrangement, whatever the sizes.
-  func order(_ picture: [WindowID: CGRect]) -> [String] {
+  /// Who lies left of whom and above whom: what a person would call the arrangement, whatever the sizes. `around`: only what is said of that
+  /// window, which is what its person is looking at. Sizes alone can part two bystanders that lay one above the other.
+  func order(_ picture: [WindowID: CGRect], around walker: WindowID? = nil) -> [String] {
     var relations: [String] = []
     for (a, frameA) in picture.sorted(by: { $0.key < $1.key }) {
-      for (b, frameB) in picture.sorted(by: { $0.key < $1.key }) where a != b {
+      for (b, frameB) in picture.sorted(by: { $0.key < $1.key }) where a != b && (walker == nil || a == walker || b == walker) {
         if frameA.maxX <= frameB.minX { relations.append("\(a) left of \(b)") }
         if frameA.maxY <= frameB.minY { relations.append("\(a) above \(b)") }
       }
@@ -326,6 +324,129 @@ import Testing
     #expect(h.run("dock \(safari) right").ok)
     let (chromeIs, safariIs) = (h.layout!.windowFrames[chrome] ?? .zero, h.layout!.windowFrames[safari] ?? .zero)
     #expect(!safariIs.isEmpty && !chromeIs.isEmpty && chromeIs.maxX < safariIs.minX, "\(h.ascii())")
+  }
+
+  /// `b | (c, away, over (d | a)) | Desktop`: to the eye `b | d | a | Desktop`, one row. `a` and `d` are a row that shows in a column that does not.
+  func aRowThatShowsInAColumnThatDoesNot(_ away: Away, desktopBeyond: Bool) -> (h: Harness, a: WindowID, b: WindowID, c: WindowID, d: WindowID) {
+    let (h, ids) = grid()
+    let (a, b, c, d) = (ids[0], ids[1], ids[2], ids[3])
+    switch away {
+    case .minimized: h.system.setMinimized(c, true)
+    case .hidden: h.system.setHidden(pid: 1002, true)
+    }
+    h.scheduler.advance(by: 1)
+    #expect(h.run("layout \(desktopBeyond ? "" : "Desktop | ")\(b) | (\(c) / (\(d) | \(a))):2\(desktopBeyond ? " | Desktop" : "")").ok)
+    h.scheduler.advance(by: 1)
+    h.system.userFocus(a)
+    return (h, a, b, c, d)
+  }
+
+  /// Taking it out of its row alone would leave the order as it is and resize all three under a "moved": no step. The press goes on until
+  /// something shows: out of the row and past its neighbour.
+  @Test(arguments: Away.allCases) func aPressGoesOnUntilSomethingShows(away: Away) {
+    let (h, a, b, _, d) = aRowThatShowsInAColumnThatDoesNot(away, desktopBeyond: true)
+    h.system.clearFrameLog()
+    #expect(h.run("dock right").message.hasPrefix("moved \(a) right"))
+    let desktop = picture(h)[WindowID(0)] ?? .zero
+    #expect(h.frame(b)!.maxX < h.frame(d)!.minX && h.frame(d)!.maxX < desktop.minX && desktop.maxX < h.frame(a)!.minX, "\(h.ascii())")
+    #expect(Dictionary(grouping: h.system.frameLog, by: \.window).allSatisfy { $0.value.count == 1 }, "each moves once: \(h.system.frameLog)")
+    expectWindowsMatchLayout(h)
+  }
+
+  /// With nothing beyond it is at the end of what shows, and says so. Nothing is resized.
+  @Test(arguments: Away.allCases) func orSaysThatItIsAtTheEdgeAndResizesNothing(away: Away) {
+    let (h, a, _, _, _) = aRowThatShowsInAColumnThatDoesNot(away, desktopBeyond: false)
+    let (tree, before) = (h.workspace.tree, picture(h))
+    h.system.clearFrameLog()
+    let result = h.run("dock right")
+    #expect(!result.ok && result.message == "\(a) is already at the right edge", "\(result.message)")
+    #expect(h.workspace.tree == tree && picture(h) == before && h.system.frameLog.isEmpty)
+    let rows = h.controller.menuModel().item("Dock Focused Window")?.sections.flatMap(\.items) ?? []
+    #expect(rows.first { $0.title == "Right" }?.isEnabled == false)
+  }
+
+  /// A tile is on screen too: a window that goes above two tiles it was beside has moved.
+  @Test(arguments: Away.allCases) func pastTilesIsAStep(away: Away) {
+    let (h, ids) = grid()
+    let e = h.system.open(app: "E", pid: 1004)
+    let (a, b, c, d) = (ids[0], ids[1], ids[2], ids[3])
+    switch away {
+    case .minimized: h.system.setMinimized(e, true)
+    case .hidden: h.system.setHidden(pid: 1004, true)
+    }
+    h.scheduler.advance(by: 1)
+    #expect(h.run("layout (\(e) | (\(d) / \(c)) | \(b)) / \(a) / Desktop").ok)
+    h.scheduler.advance(by: 1)
+    h.system.userFocus(b)
+    #expect(h.layout!.tiles.flatMap(\.windows).sorted() == [c, d].sorted(), "\(h.ascii())")
+    let before = order(picture(h))
+    #expect(h.run("dock up").ok)
+    #expect(order(picture(h)) != before && h.frame(b)!.width > h.visibleFrame.width - 30, "\(h.ascii())")
+  }
+
+  /// The Desktop in a group whose window is away, too narrow to use: a tile with nobody in it, and a place in the row all the same.
+  @Test(arguments: Away.allCases) func aTileThatHoldsOnlyTheDesktopIsAPlace(away: Away) {
+    let (h, ids) = grid()
+    let (a, b, c) = (ids[0], ids[1], ids[2])
+    h.system.close(ids[3])
+    switch away {
+    case .minimized: h.system.setMinimized(c, true)
+    case .hidden: h.system.setHidden(pid: 1002, true)
+    }
+    h.scheduler.advance(by: 1)
+    #expect(h.run("layout \(a) | (Desktop / \(c)):0.1 | \(b)").ok)
+    h.scheduler.advance(by: 1)
+    h.system.userFocus(a)
+    #expect(h.layout!.desktopFrame == nil && picture(h)[WindowID(0)] != nil, "\(h.ascii())")
+    // One place at a time: past the tile, past the window, and then there is nowhere to go.
+    #expect(h.run("dock right").ok)
+    #expect(picture(h)[WindowID(0)]!.maxX < h.frame(a)!.minX && h.frame(a)!.maxX < h.frame(b)!.minX, "\(h.ascii())")
+    #expect(h.run("dock right").ok)
+    #expect(h.frame(b)!.maxX < h.frame(a)!.minX, "\(h.ascii())")
+    #expect(!h.run("dock right").ok)
+    // And back past the window and the tile.
+    #expect(h.run("dock left").ok && h.run("dock left").ok)
+    #expect(h.frame(a)!.maxX < picture(h)[WindowID(0)]!.minX, "\(h.ascii())")
+    #expect(h.run("dock left").message == "\(a) is already at the left edge")
+  }
+
+  /// Below the row lie two windows that have nothing to do with it. Other sizes in the row part one of them from the one that lay above it:
+  /// nobody who walks a window along the row calls that a step.
+  @Test(arguments: Away.allCases) func whatBecomesOfBystandersIsNoStep(away: Away) {
+    let (h, ids) = grid()
+    let (a, b, c, d) = (ids[0], ids[1], ids[2], ids[3])
+    let (e, f) = (h.system.open(app: "E", pid: 1004), h.system.open(app: "F", pid: 1005))
+    switch away {
+    case .minimized: h.system.setMinimized(c, true)
+    case .hidden: h.system.setHidden(pid: 1002, true)
+    }
+    h.scheduler.advance(by: 1)
+    #expect(h.run("layout (\(b) | (\(c) / (\(d) | \(a))):2 | Desktop) / (\(e) | \(f))").ok)
+    h.scheduler.advance(by: 1)
+    h.system.userFocus(a)
+    #expect(h.run("dock right").ok)
+    let desktop = picture(h)[WindowID(0)] ?? .zero
+    #expect(h.frame(d)!.maxX < desktop.minX && desktop.maxX < h.frame(a)!.minX, "\(h.ascii())")
+    expectWindowsMatchLayout(h)
+  }
+
+  /// At the top to the eye. A step that only sends the others into tiles is none.
+  @Test(arguments: Away.allCases) func atTheTopItDoesNotSendTheOthersIntoTiles(away: Away) {
+    let (h, ids) = grid()
+    let (a, b, c, d) = (ids[0], ids[1], ids[2], ids[3])
+    let e = h.system.open(app: "E", pid: 1004)
+    switch away {
+    case .minimized: h.system.setMinimized(e, true)
+    case .hidden: h.system.setHidden(pid: 1004, true)
+    }
+    h.scheduler.advance(by: 1)
+    #expect(h.run("layout ((\(c) / Desktop) | \(e)):2 / \(d) / (\(b) | \(a))").ok)
+    h.scheduler.advance(by: 1)
+    h.system.userFocus(c)
+    let (tree, before) = (h.workspace.tree, picture(h))
+    let result = h.run("dock up")
+    #expect(!result.ok && result.message == "\(c) is already at the top edge", "\(result.message)")
+    #expect(h.workspace.tree == tree && picture(h) == before)
   }
 
   /// A group that shows is a group: the key takes the window out of it, as ever.

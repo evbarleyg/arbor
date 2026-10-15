@@ -1,0 +1,44 @@
+# Story: four windows arranged, one of them goes into the Dock, and a window is walked to the right. On its way it comes to lie in a row that
+# shows, inside a column that does not: to the eye all is one row. Taking it out of that row alone would leave everybody left of whom
+# they were and resize all three, under a "moved": the step nobody can see, in another coat. The press goes on until something shows: out of
+# the row and past its neighbor. Where nothing lies beyond it says that it is at the edge, and no size changes.
+# A press that changes nothing in the order a person sees is no step.
+# Reference: IDEAS I21.
+quiet
+open Mail
+open Notes
+open Music
+open Safari
+arrange
+minimize 103
+focus 101
+press dock right
+expect ok
+press dock right
+expect ok
+# To the eye: Notes, Safari, Mail, the Desktop.
+expect left-of 102 104
+expect left-of 104 101
+
+# One press, and Mail is past the Desktop: at the right end.
+press dock right
+expect ok
+expect moved-once
+expect left-of 102 104
+expect left-of 104 101
+layout --ids
+expect replied Desktop:0.6 | 101
+
+# There is nowhere further: it says so, and nothing is resized.
+press dock right
+expect fail
+expect said already at the right edge
+expect still
+
+# The same row with nothing beyond it, the Desktop being at the other end.
+layout Desktop | 102 | (103 / (104 | 101)):2
+focus 101
+press dock right
+expect fail
+expect said already at the right edge
+expect still

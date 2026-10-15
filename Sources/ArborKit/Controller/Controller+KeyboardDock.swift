@@ -10,10 +10,53 @@ extension Controller {
   }
 
   /// `workspace` with the docked window `id`, which is at `leaf`, one place further toward `edge`. **A key acts on what a person sees:** what
-  /// is away (in the Dock, hidden) is neither a neighbour to pass nor company in a group. The menu asks here too, so that a row looks the
-  /// way it acts.
+  /// is away (in the Dock, hidden) is neither a neighbour to pass nor company in a group, and a step that leaves the window left of and above
+  /// whom it was is no step, whatever it does to the sizes. The press goes on until something shows, or says why it cannot and changes
+  /// nothing. The menu asks here too, so that a row looks the way it acts.
   func moving(_ id: WindowID, at leaf: NodeID, toward edge: Edge, in workspace: Workspace, on display: DisplayID) -> KeyboardMove {
-    guard let layout = layouts[display] else { return .refused("display not laid out") }
+    guard var layout = layouts[display] else { return .refused("display not laid out") }
+    // Nobody looks at a window that does not show. No key reaches it; named by its id, it goes one place, as it always went.
+    guard layout.windowFrames[id] != nil else { return step(id, at: leaf, toward: edge, in: workspace, laidOutAs: layout, on: display) }
+    let before = place(of: id, in: layout, of: workspace)
+    var (workspace, leaf) = (workspace, leaf)
+    // (Each step takes it out of a group or past a neighbour, so there are fewer than there are nodes.)
+    for _ in 0..<workspace.tree.nodes.count {
+      let outcome = step(id, at: leaf, toward: edge, in: workspace, laidOutAs: layout, on: display)
+      guard case .moved(let next) = outcome else { return outcome }
+      guard let trial = trialLayout(of: next, on: display), place(of: id, in: trial, of: next) == before,
+        let itsLeaf = next.tree.leaf(containing: id)
+      else { return .moved(next) }
+      (workspace, leaf, layout) = (next, itsLeaf, trial)
+    }
+    return .refused("\(id) is already at the \(edge.rawValue) edge")
+  }
+
+  /// Where `id` lies to the eye: whom it is left of, right of, above and below, of the windows that show, whole or as tiles, and the Desktop (as
+  /// window 0). Only what is said of the window itself, which is what its person is looking at: other sizes alone can part two
+  /// bystanders that lay one above the other, or send them into a tile.
+  private func place(of id: WindowID, in layout: Layout, of workspace: Workspace) -> [[UInt32]] {
+    guard let own = layout.windowFrames[id] ?? layout.tiles.first(where: { $0.windows.contains(id) })?.frame else { return [] }
+    var others = layout.windowFrames.map { (id: $0.key.rawValue, frame: $0.value) }
+    if let desktop = layout.desktopFrame { others.append((0, desktop)) }
+    for tile in layout.tiles {
+      for window in tile.windows { others.append((window.rawValue, tile.frame)) }
+      // A Desktop too small to use is a tile, or in the tile of its group, perhaps with nobody beside it, and a place all the same.
+      if workspace.tree.subtree(tile.node, contains: workspace.tree.desktop) { others.append((0, tile.frame)) }
+    }
+    var place: [[UInt32]] = []
+    for other in others.sorted(by: { $0.id < $1.id }) where other.id != id.rawValue {
+      if own.maxX <= other.frame.minX { place.append([other.id, 0]) }
+      if other.frame.maxX <= own.minX { place.append([other.id, 1]) }
+      if own.maxY <= other.frame.minY { place.append([other.id, 2]) }
+      if other.frame.maxY <= own.minY { place.append([other.id, 3]) }
+    }
+    return place
+  }
+
+  /// One step of `moving`, in a `workspace` that is, or would be, laid out as `layout`.
+  private func step(
+    _ id: WindowID, at leaf: NodeID, toward edge: Edge, in workspace: Workspace, laidOutAs layout: Layout, on display: DisplayID
+  ) -> KeyboardMove {
     var workspace = workspace
     let present = presentWindowIDs()
     let view = TreeView(tree: workspace.tree, isPresent: { present.contains($0) })

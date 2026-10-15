@@ -175,8 +175,8 @@ import Testing
     #expect(h.workspace.tree.invariantViolations() == [])
   }
 
-  /// Seen from outside, the end of a kept group and the next place along the row are the same place.
-  /// As with any group, the first press takes the window out of it, which shows in its size.
+  /// Seen from outside, the end of a kept group and the next place along the row are the same place. Taking the window out of the group
+  /// alone would show in sizes and in nothing else: no step (QUESTIONS, IDEAS I21). The press goes on, past the neighbor.
   @Test func everyKeyboardMoveAlongARowChangesSomethingToSee() {
     let (h, mail, notes, safari, slack) = harness()
     let pair = h.workspace.tree.parent(of: h.workspace.tree.leaf(containing: notes)!)!
@@ -195,13 +195,13 @@ import Testing
     }
     var rows: [[WindowID?]] = []
     while rows.count < 6 {
-      let before = [notes, safari, slack].map { h.frame($0) }
+      let before = row()
       guard h.run("dock \(safari.rawValue) right").ok else { break }
-      #expect([notes, safari, slack].map { h.frame($0) } != before, "a key that says it moved the window and moves nothing")
+      #expect(row() != before, "a key that says it moved the window and leaves the row as it was")
       #expect(h.workspace.tree.invariantViolations() == [])
       rows.append(row())
     }
-    #expect(rows == [[notes, safari, nil, slack], [notes, nil, safari, slack], [notes, nil, slack, safari]])
+    #expect(rows == [[notes, nil, safari, slack], [notes, nil, slack, safari]])
     // The group is down to Notes, and the saved view with it.
     #expect(h.run("view 1").ok)
     #expect(inView(h) == [notes])
