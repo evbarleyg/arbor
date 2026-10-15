@@ -1,0 +1,40 @@
+# check-signing 2026-10-15T05:05Z on macOS 26.6.2, commit 7470c61
+
+== the Mac
+
+== 1  with the password
+  ✔ it succeeds
+  ✔ and says that codesign can sign with the key
+  ✔ the password is not blamed
+  ✔ codesign signs again, and asks nobody
+  ✔ run again, it changes nothing
+  ✔ --remove takes the identity away
+  ✔ packed by OpenSSL 3.6.4: the same
+  ✔ codesign signs again, and asks nobody
+
+== 2  a wrong password
+  ✔ it fails
+  ✔ and says that macOS does not take the password
+  ✔ the keychain is still unlocked
+
+== 3  off the search list
+  ✔ it fails, and says that that is why
+  ✔ the password is not blamed
+
+== 4  a login keychain
+  ✔ the account's own search list is as it was
+  ✘ alone in it, the key is given the leave (codesign follows HOME to the search list)
+  ✘ beside a key of the same name it changes neither, fails, and says why
+  ✘ the password is not blamed
+
+== 5  sign.sh
+  ✔ ad hoc: the stamp and codesign agree
+  ✔ the signature covers the stamp
+  ✔ with the certificate: the stamp and codesign agree
+  ✔ the signature covers the stamp
+
+== 6  Return at the question: macOS's own dialog
+  ✔ asked or not, the script ends by saying that codesign can sign
+  ✔ and the next signature asks nobody
+
+20 passed, 3 failed

@@ -1,0 +1,5 @@
+Made the code-signing certificate "Arbor Local Signing" in /private/tmp/arbor-signing.O1nEgc/third.keychain-db
+  SHA-1 0663D93C8604A4A654346C9792D1ED0BA23923AB, valid until Oct 12 05:05:42 2036 GMT
+make-signing-identity.sh: codesign was NOT given leave to use the key without a dialog. $ARBOR_KEYCHAIN_PASSWORD: macOS does not take that for the password of /private/tmp/arbor-signing.O1nEgc/third.keychain-db.
+The first build may make macOS ask whether codesign may use the key "Imported Private Key": choose Always Allow.
+The certificate stays in the keychain. To try again: this script with --remove, then once more.

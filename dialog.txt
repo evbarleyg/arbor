@@ -1,0 +1,24 @@
+Made the code-signing certificate "Arbor Local Signing" in /private/tmp/arbor-signing.O1nEgc/sixth.keychain-db
+  SHA-1 D93BAB8B0C3B44A6E2AEF3A140407675581566EB, valid until Oct 12 05:05:47 2036 GMT
+
+codesign may use the new key only with your leave.
+  Recommended: press Return. macOS then asks in a dialog of its own, in a moment.
+  Or type this keychain's password here (for the login keychain, the one you log in with) and there is no dialog.
+  It goes to macOS's `security` tool and nowhere else, as an argument that `ps` could show for an instant. A login
+  password is not something to type into a script from a repository out of habit, however honest this one is.
+Return, or the keychain's password: 
+
+
+If macOS now asks whether codesign may use the key "Imported Private Key": type the keychain's password and choose
+ALWAYS ALLOW. (Allow would ask again, twice for every build.) macOS 14 does not ask.
+/var/folders/36/tjdph2t965j8snz9_vkdnw0r0000gn/T/tmp.IVzaN8aAke/probe: replacing existing signature
+codesign can sign with it. What macOS will remember about a build signed this way:
+  identifier "com.evbarleyg.arbor.probe" and certificate leaf = H"d93bab8b0c3b44a6e2aef3a140407675581566eb"
+
+`make app` and `make install` sign with it from now on.
+The first build signed this way needs Accessibility permission once more. If an older build is listed there, clear
+its entry, but NOT YET: an Arbor that is running needs it to bring its windows back when it quits. In this order:
+  make install LAUNCH=0
+  tccutil reset Accessibility com.evbarleyg.arbor
+  open ~/Applications/Arbor.app
+Remove the certificate with scripts/make-signing-identity.sh --remove.
