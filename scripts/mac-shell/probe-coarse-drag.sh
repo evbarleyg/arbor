@@ -14,6 +14,8 @@
 # recorded as a trace (docs/TRACES.md), which comes back in traces/ and holds every raw event with its place and time.
 #
 # The fine steps are the control: they must always be seen. What the coarse ones do is the question.
+# Found on 2026-10-15 on the code of that morning: seen in 26 drags of 26 with steps of 24 points or less, in 3 of 26 above; the window went along in all 52. Since "a window that starts late is still being
+# dragged" every one of them should be seen.
 source "$(dirname "$0")/lib.sh"
 needs_throwaway_mac "plug in a virtual display, at which macOS moves every window"
 

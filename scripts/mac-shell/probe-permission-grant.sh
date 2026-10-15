@@ -1,7 +1,7 @@
 #!/bin/bash
 # What wakes the Accessibility flag in a process that is already running?
 #
-#   scripts/mac-shell/run.sh scripts/mac-shell/probe-permission-grant.sh      (about five minutes)
+#   scripts/mac-shell/run.sh scripts/mac-shell/probe-permission-grant.sh      (about six minutes; README-permission-probes.md says what it found)
 #
 # Launched without the permission, Arbor asks AXIsProcessTrusted() once a second and promises to notice by itself. check-F63.sh writes the
 # grant into the permission database and restarts tccd, and on a hosted Mac Arbor went on waiting for two and a half minutes, while
@@ -41,7 +41,10 @@ requirement_of() {
 }
 
 step "the asker's bundle"
-asker_app="$ARBOR_SESSION_DIR/ArborAsker.app"
+# Not in the session's folder: tccutil says "No such bundle identifier" of a bundle under /tmp.
+asker_app="$HOME/Applications/ArborProbeAsker.app"
+at_exit 'rm -rf "${asker_app:?}"'
+rm -rf "${asker_app:?}"
 mkdir -p "$asker_app/Contents/MacOS"
 cp "$ASKER" "$asker_app/Contents/MacOS/asker"
 cat > "$asker_app/Contents/Info.plist" <<PLIST
@@ -56,10 +59,8 @@ cat > "$asker_app/Contents/Info.plist" <<PLIST
 </dict></plist>
 PLIST
 codesign --force --sign - --identifier "$ASKER_ID" "$asker_app" || die "codesign failed"
-# tccutil finds a bundle by its identifier in Launch Services' list, which is kept for each user: as root it knows nothing of a bundle this user opened.
 LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
 "$LSREGISTER" -f "$asker_app" || echo "lsregister could not register the asker"
-sudo "$LSREGISTER" -f "$asker_app" || echo "lsregister could not register the asker for root"
 ASKER_REQUIREMENT=$(requirement_of "$asker_app")
 at_exit "tcc \"DELETE FROM access WHERE client IN ('$ASKER_ID', '$ARBOR_ID');\""
 
@@ -74,7 +75,7 @@ denied() { tcc "UPDATE access SET auth_value = 0 WHERE service = 'kTCCServiceAcc
 deleted() { tcc "DELETE FROM access WHERE service = 'kTCCServiceAccessibility' AND client = '$CLIENT';"; }
 tccd_restarted() { sudo killall -9 tccd 2>/dev/null; }
 announced() { "$ASKER" announce > /dev/null; }
-reset_by_tccutil() { tccutil reset Accessibility "$CLIENT" || sudo tccutil reset Accessibility "$CLIENT"; }
+reset_by_tccutil() { tccutil reset Accessibility "$CLIENT"; }
 
 # changes <file>: the first line, and every line at which an answer differs from the line before.
 changes() { awk '{ answer = $3 " " $4 " " $5 } answer != last { print "    " $1, answer } { last = answer }' "$1"; }
@@ -87,7 +88,7 @@ a_round() {
   deleted
   [ "$start" = with ] && written
   tccd_restarted
-  sleep 1
+  sleep 6 # a process started while the daemon restarts has been told "no" once although its entry was there
   : > "$list"
   limit 20 open -n "$asker_app" --args ask "$(($# * 7 + 6))" "$list"
   sleep 3
@@ -130,7 +131,9 @@ arbor_start 2
 "$ARBOR_BIN/arborctl" quit > /dev/null
 ended "$ARBOR_PID" || die "the session's own Arbor did not quit"
 ARBOR_PID=""
-app="$ARBOR_SESSION_DIR/Arbor.app"
+app="$HOME/Applications/ArborProbePermissionGrant.app"
+at_exit 'rm -rf "${app:?}"'
+rm -rf "${app:?}"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$ARBOR_BIN/Arbor" "$app/Contents/MacOS/Arbor"
 cp Resources/Info.plist "$app/Contents/Info.plist"
@@ -148,6 +151,9 @@ sleep 3
 ARBOR_PID=$(pgrep -f "$app/Contents/MacOS/Arbor" | head -n 1)
 [ -n "$ARBOR_PID" ] || die "the bundle did not start"
 started "$ARBOR_PID"
+# A bundle's socket has been seen to come up five seconds after `open`.
+answers() { "$ARBOR_BIN/arborctl" status > /dev/null 2>&1 || "$ARBOR_BIN/arborctl" status 2>&1 | grep -q "waiting"; }
+for _ in 1 2 3; do answers && break; sleep 2; done
 says() { "$ARBOR_BIN/arborctl" status 2>&1 | head -n 1 | cut -c 1-60; }
 echo "  $("$ASKER" now) launched: $(says)"
 check "Arbor waits for the permission" test "$(says | cut -c 1-7)" = waiting
