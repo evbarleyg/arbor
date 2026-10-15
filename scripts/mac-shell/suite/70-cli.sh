@@ -42,8 +42,11 @@ reply = json.load(open(sys.argv[1]))
 assert reply["ok"] is True and reply["message"] and reply["state"]["running"] and reply["state"]["accessibility"]
 assert len(reply["state"]["displays"]) >= 1 and len(reply["state"]["windows"]) == 3
 for window in reply["state"]["windows"]:
-    assert window["bundleID"] == sys.argv[2] and window["title"].startswith("Arbor Test") and window["managed"]
+    assert window["bundleID"] == sys.argv[2] and window["managed"]
 ' "$ARBOR_SESSION_DIR/state.json" "$ARBOR_TEST_BUNDLE"
+# It is what people paste into a report. Every test window is called "Arbor Test <n>".
+check "it holds no window's title" fails grep -q "Arbor Test" "$ARBOR_SESSION_DIR/state.json"
+check "state --titles lists them" says "Arbor Test 3" arborctl state --titles
 # shellcheck disable=SC2046
 check "the first window is where the state says" frame_is "$W1" $(frame_of "$W1")
 # shellcheck disable=SC2046
