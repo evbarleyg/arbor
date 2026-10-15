@@ -1759,6 +1759,11 @@ def check_fuzz_launch():
         row(*situation)
 
 
+def check_coverage_report():
+    code = subprocess.run([sys.executable, os.path.join(HERE, "coverage-report.py"), "--self-test"], capture_output=True, check=False).returncode
+    row("coverage-report: its own examples", code, 0)
+
+
 def main():
     canary, since = subprocess.Popen(["sleep", "600"]), time.time()
     check_parity()
@@ -1778,6 +1783,7 @@ def main():
     check_mac_shell_batch()
     check_preflight()
     check_fuzz_launch()
+    check_coverage_report()
     wrong = 0
     for what, got, expected in rows:
         if got != expected:
