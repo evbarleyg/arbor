@@ -1,0 +1,575 @@
+# mac-shell: scripts/mac-shell/shots-minimap.sh at c935805, macOS 26.6.2, 2026-10-15T16:13Z
+built Arbor, the pointer tool and the app bundles in 7s
+Reduce Motion: false
+
+== session 1: an arrangement worth a map: two columns, one of them split, and the Desktop
+/tmp/arbor-shell.fMR5fv/Arbor.app: replacing existing signature
+session 1: Arbor pid 13999, launched without the permission
+started as a person starts it: the app, through Launch Services, granted while it waited (pid 13999)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor 0.0.0 (build 0)
+> dock 64 left
+docked w64 at the left edge
+> dock 65 right
+docked w65 at the right edge
+> dock 66 beside 64 bottom
+docked w66 below w64
+  ✔ docking from the widest view brings no minimap up
+
+== frame a window
+> zoom 64
+framed w64
+  ✔ the minimap is on screen
+shot: mac-shell/01-framed.png
+the panel, as the window server sees it: 396 489 233 160; the display's usable area: 0 31 1024 674
+74 13999 5 396 489 233 160 on Arbor
+73 13999 0 337 43 12 650 off Arbor
+72 13999 0 675 43 12 650 off Arbor
+71 13999 0 3 34 1018 668 on Arbor
+70 13999 -2147483602 0 31 1024 674 on Arbor
+69 13999 0 12 362 325 12 off Arbor
+68 13999 4 0 0 1024 768 off Arbor
+  ✔ it is centred
+  ✔ its bottom edge is 56 points above the bottom of the usable area
+  ✔ it is at most 240 by 160
+
+== a click where it is goes through to the window below
+> click 599 589
+  ✔ the view has not moved
+  ✔ the window on the right is still out of view
+  ✔ the framed window has the keyboard
+
+== a group, the Desktop; not everything
+> out
+stepped out to 2 ArborTestWindows windows (n5)
+shot: mac-shell/02-group.png
+> desktop
+showing the Desktop
+shot: mac-shell/03-desktop.png
+> show-all
+showing everything
+  ✔ none when the view goes to everything
+
+== a saved view has a caption, and the map does not jump
+> zoom 65
+framed w65
+> save-view 3
+saved view 3: ArborTestWindows (n3)
+> show-all
+showing everything
+> view 3
+view 3: ArborTestWindows (n3)
+shot: mac-shell/05-caption.png
+  ✔ the panel is a line taller
+  ✔ and its bottom edge has stayed
+
+== it goes by itself
+  ✔ gone after its time
+shot: mac-shell/06-gone.png
+
+== the framed window leaves the arrangement, and the view goes to everything: none
+> zoom 66
+framed w66
+  ✔ up
+> float 66
+w66 is floating; showing the Desktop
+  ✔ the one that was up goes with the view it marked
+  ✔ and none comes
+
+== on demand, with real keys: ⌃⌥M
+> zoom 64
+framed w64
+> click 512 368
+> key ctrl+opt+m
+  ✔ the keys bring it up
+shot: mac-shell/08-on-demand.png
+> click 599 589
+  ✔ a click on the window at the right frames it
+  ✔ the window that was framed is out of view
+  ✔ the clicked window has the keyboard
+shot: mac-shell/09-after-the-click.png
+  ✔ then it goes like any other
+
+== ⌃⌥M again puts it away; so does a click beside the map
+> key ctrl+opt+m
+  ✔ up
+> key ctrl+opt+m
+  ✔ away
+> key ctrl+opt+m
+  ✔ up
+> click 512 646
+  ✔ away
+  ✔ and the view has not moved
+
+== the Desktop's outline can be clicked too
+> key ctrl+opt+m
+  ✔ up
+> click 512 589
+  ✔ the floating window is back in view
+  ✔ the docked ones are out of view
+
+== and back to the window at the left
+> key ctrl+opt+m
+  ✔ up
+> click 426 589
+  ✔ it is framed
+  ✔ and has the keyboard
+
+== held, like ⌃⌥Space: hold to look, let go to land
+> click 512 368
+> key ctrl+opt+m --down
+  ✔ the keys bring it up
+  ✘ it outlasts its five seconds while they are down
+      picture: mac-shell/fail-shots-minimap-1.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n1, back yes
+      |   w64 12 43 1000 650       docked focused
+      |   w65 1023 677 1000 650    docked parked
+      |   w66 1023 677 480 348     floating parked
+      |   w67 1023 677 480 348     floating parked
+      log | INFO  trace shots-minimap-1-11 ended: 148 lines, another trace was started
+      log | INFO  trace shots-minimap-1-12: recording to /tmp/arbor-shell.fMR5fv/home/traces/2026-10-15-161433-shots-minimap-1-12.jsonl
+      log | DEBUG stage down
+      log | DEBUG the button went down at 512,368, the pointer is at 512,368: it is on w64
+      log | DEBUG commands follow the pointer: a shortcut, pointer idle 0.3 s, keys 6.0 s, focus 4.9 s
+      log | INFO  minimap: showing the minimap
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432
+> move
+pointer: expected x and y
+usage: pointer <command>
+  move x y                      glide the pointer there
+  click x y [count] [--right]   click (count 2 is a double-click), with the right button if asked
+      [--quick]                 the button comes up at once, as with tap to click (otherwise after 0.04 s)
+  drag x1 y1 x2 y2              press at the first point, drag to the second, release
+      [--steps n]               intermediate events (default 30)
+      [--duration s]            how long the movement takes (default 0.6)
+      [--hold s]                wait at the end before releasing (default 0.2)
+      [--no-release]            leave the button down; finish with `release`
+      [--no-settle]             without the small movement at the end that lets Arbor catch up
+  drag-on x y                   with the button down since a `drag --no-release`: carry on to that point and rest there
+      [--steps n] [--duration s] [--hold s]      as for drag
+  release [x y]                 release the button there (default: where the pointer is)
+      [--timed]                 print how many milliseconds later the login session had the button up, as apps are told it
+                                (1000: not within a second). An event tap that keeps the release to itself shows here
+      [--then-click x,y]        click there as soon as the pointer is there, 0.3 s after the release at the earliest, and print, on the same
+                                line, how many milliseconds after it the button went down: about 500 on a hosted Mac, where two
+                                calls of this tool lie 600 to 800 apart
+  key <chord>                   press a shortcut, e.g. ctrl+opt+space, cmd+shift+f5, escape
+      [--down]                  press the modifiers and the key, and leave them all down
+      [--up]                    release the key, then the modifiers (modifiers alone, or a key alone, work too)
+      [--held]                  press and release the key only: its modifiers are down already, and stay down
+      [--repeat n]              n more key-down events marked as auto-repeat, as a key that is held sends
+  calm                          let go of every mouse button and key that is down, and say which, if any: for the end of a run
+  pinch x y <amount>            spread two fingers there (negative: pinch them together) by that much
+      [--steps n]               magnification, in that many events (default 10)
+  where                         the pointer's position and whether the left button is down
+  activity                      seconds since the pointer was used, seconds since a key was released, and the count
+                                of key presses, as Arbor reads them (AXWindowSystem+Input.swift)
+  displays                      id x y w h pixel-width pixel-height scale, one line per display
+  windows [--pid n]             id pid layer x y w h on|off owner, as the window server sees them
+      [--on-screen]             only those on screen, from the frontmost to the one at the back
+  frame <window id>             x y w h, as the window server sees it
+  visible <window id>           the share of the window that is on some display, 0 to 1; 0 when the window
+                                server does not show it (minimized, hidden, on another Space)
+  grab <window id>              x y: a point on its title bar that no other window covers
+  spot <window id>              x y: a point on its content that no other window covers
+  button <window id> <which>    x y: the middle of its close, minimize or zoom button
+  ax <window id>                its Accessibility role and subrole, e.g. AXWindow AXStandardWindow
+  front                         the process id of the app in front, which has the keyboard
+  status-item <pid> [--frame]   x y: the middle of that process's menu bar item (--frame: x y w h)
+  menu-item <pid> <title>       x y: the middle of the item of its open menu whose title starts so
+  menu-mark <pid> <title>       that item's mark, e.g. ✓, or - when it has none
+  keyboard                      the process id of the app in front, then the number of its window that
+                                keys go to; - for none
+  button <pid> x y <name>       x y: the middle of the close, minimize or zoom button of that process's
+                                window whose top-left corner is nearest the point
+  screen-access | ax-access     true or false: Screen Recording, Accessibility
+  reduce-motion                 true or false: what an app launched now is told about Reduce Motion
+  asleep                        true or false: whether the main display is asleep
+  picture <file> <w> <h> <#rrggbb> [<#rrggbb>]
+                                write a PNG: one colour, or a gradient between two under a grid
+  wallpaper [file]              show that picture on the desktop of every display; print what each shows
+click, drag, release and pinch take --mods <chord of modifiers>, e.g. --mods shift+cmd, held meanwhile.
+Every command that posts events takes --tap session, to post them after the window server's own handling.
+shot: mac-shell/09b-held-outline-under-the-pointer.png
+> key ctrl+opt+m --up
+  ✘ letting go frames the window the pointer is over
+      picture: mac-shell/fail-shots-minimap-2.png
+  ✘ the window that was framed is out of view — it is managed docked at 12 43 1000 650
+      picture: mac-shell/fail-shots-minimap-3.png
+  ✘ the landing has the keyboard — the focused window is 64
+      picture: mac-shell/fail-shots-minimap-4.png
+
+== held and let go with the pointer over nothing
+state.py: window 65 is out of view
+> move
+pointer: expected x and y
+usage: pointer <command>
+  move x y                      glide the pointer there
+  click x y [count] [--right]   click (count 2 is a double-click), with the right button if asked
+      [--quick]                 the button comes up at once, as with tap to click (otherwise after 0.04 s)
+  drag x1 y1 x2 y2              press at the first point, drag to the second, release
+      [--steps n]               intermediate events (default 30)
+      [--duration s]            how long the movement takes (default 0.6)
+      [--hold s]                wait at the end before releasing (default 0.2)
+      [--no-release]            leave the button down; finish with `release`
+      [--no-settle]             without the small movement at the end that lets Arbor catch up
+  drag-on x y                   with the button down since a `drag --no-release`: carry on to that point and rest there
+      [--steps n] [--duration s] [--hold s]      as for drag
+  release [x y]                 release the button there (default: where the pointer is)
+      [--timed]                 print how many milliseconds later the login session had the button up, as apps are told it
+                                (1000: not within a second). An event tap that keeps the release to itself shows here
+      [--then-click x,y]        click there as soon as the pointer is there, 0.3 s after the release at the earliest, and print, on the same
+                                line, how many milliseconds after it the button went down: about 500 on a hosted Mac, where two
+                                calls of this tool lie 600 to 800 apart
+  key <chord>                   press a shortcut, e.g. ctrl+opt+space, cmd+shift+f5, escape
+      [--down]                  press the modifiers and the key, and leave them all down
+      [--up]                    release the key, then the modifiers (modifiers alone, or a key alone, work too)
+      [--held]                  press and release the key only: its modifiers are down already, and stay down
+      [--repeat n]              n more key-down events marked as auto-repeat, as a key that is held sends
+  calm                          let go of every mouse button and key that is down, and say which, if any: for the end of a run
+  pinch x y <amount>            spread two fingers there (negative: pinch them together) by that much
+      [--steps n]               magnification, in that many events (default 10)
+  where                         the pointer's position and whether the left button is down
+  activity                      seconds since the pointer was used, seconds since a key was released, and the count
+                                of key presses, as Arbor reads them (AXWindowSystem+Input.swift)
+  displays                      id x y w h pixel-width pixel-height scale, one line per display
+  windows [--pid n]             id pid layer x y w h on|off owner, as the window server sees them
+      [--on-screen]             only those on screen, from the frontmost to the one at the back
+  frame <window id>             x y w h, as the window server sees it
+  visible <window id>           the share of the window that is on some display, 0 to 1; 0 when the window
+                                server does not show it (minimized, hidden, on another Space)
+  grab <window id>              x y: a point on its title bar that no other window covers
+  spot <window id>              x y: a point on its content that no other window covers
+  button <window id> <which>    x y: the middle of its close, minimize or zoom button
+  ax <window id>                its Accessibility role and subrole, e.g. AXWindow AXStandardWindow
+  front                         the process id of the app in front, which has the keyboard
+  status-item <pid> [--frame]   x y: the middle of that process's menu bar item (--frame: x y w h)
+  menu-item <pid> <title>       x y: the middle of the item of its open menu whose title starts so
+  menu-mark <pid> <title>       that item's mark, e.g. ✓, or - when it has none
+  keyboard                      the process id of the app in front, then the number of its window that
+                                keys go to; - for none
+  button <pid> x y <name>       x y: the middle of the close, minimize or zoom button of that process's
+                                window whose top-left corner is nearest the point
+  screen-access | ax-access     true or false: Screen Recording, Accessibility
+  reduce-motion                 true or false: what an app launched now is told about Reduce Motion
+  asleep                        true or false: whether the main display is asleep
+  picture <file> <w> <h> <#rrggbb> [<#rrggbb>]
+                                write a PNG: one colour, or a gradient between two under a grid
+  wallpaper [file]              show that picture on the desktop of every display; print what each shows
+click, drag, release and pinch take --mods <chord of modifiers>, e.g. --mods shift+cmd, held meanwhile.
+Every command that posts events takes --tap session, to post them after the window server's own handling.
+> key ctrl+opt+m --down
+  ✔ up
+> key ctrl+opt+m --up
+  ✘ away
+      picture: mac-shell/fail-shots-minimap-5.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n1, back yes
+      |   w64 12 43 1000 650       docked focused
+      |   w65 1023 677 1000 650    docked parked
+      |   w66 1023 677 480 348     floating parked
+      |   w67 1023 677 480 348     floating parked
+      log | INFO  trace shots-minimap-1-12 ended: 497 lines, another trace was started
+      log | INFO  trace shots-minimap-1-13: recording to /tmp/arbor-shell.fMR5fv/home/traces/2026-10-15-161457-shots-minimap-1-13.jsonl
+      log | INFO  minimap: showing the minimap
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432
+  ✘ and the view has not moved
+      picture: mac-shell/fail-shots-minimap-6.png
+
+== ⎋ while holding gives up, and pauses nothing
+> key ctrl+opt+m --down
+  ✔ up
+> key ctrl+opt+escape --held
+  ✔ away
+  ✘ Arbor is not paused: what is out of view stays there — state.py: Arbor knows no window 64
+      picture: mac-shell/fail-shots-minimap-7.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n1, back yes
+      log | INFO  trace shots-minimap-1-13 ended: 319 lines, another trace was started
+      log | INFO  trace shots-minimap-1-14: recording to /tmp/arbor-shell.fMR5fv/home/traces/2026-10-15-161506-shots-minimap-1-14.jsonl
+      log | INFO  minimap: showing the minimap
+      log | DEBUG PROBE isHolding: key combined=false hid=true ctrl=true opt=true flags appkit=786432
+      log | INFO  trace shots-minimap-1-14 ended: 96 lines, Arbor stopped
+      log | INFO  registered 1 shortcuts in 8868 µs: 50 of the map's 51 are the apps' while Arbor is paused
+      log | INFO  stopped; all windows returned to view
+      log | INFO  paused
+      log | DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Arbor is paused: its keys are the apps’ again · ⌃⌥⎋ resumes
+> key ctrl+opt+m --up
+
+== its time does not run out under the pointer
+> key ctrl+opt+m
+  ✘ up
+      picture: mac-shell/fail-shots-minimap-8.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n1, back yes
+> move
+pointer: expected x and y
+usage: pointer <command>
+  move x y                      glide the pointer there
+  click x y [count] [--right]   click (count 2 is a double-click), with the right button if asked
+      [--quick]                 the button comes up at once, as with tap to click (otherwise after 0.04 s)
+  drag x1 y1 x2 y2              press at the first point, drag to the second, release
+      [--steps n]               intermediate events (default 30)
+      [--duration s]            how long the movement takes (default 0.6)
+      [--hold s]                wait at the end before releasing (default 0.2)
+      [--no-release]            leave the button down; finish with `release`
+      [--no-settle]             without the small movement at the end that lets Arbor catch up
+  drag-on x y                   with the button down since a `drag --no-release`: carry on to that point and rest there
+      [--steps n] [--duration s] [--hold s]      as for drag
+  release [x y]                 release the button there (default: where the pointer is)
+      [--timed]                 print how many milliseconds later the login session had the button up, as apps are told it
+                                (1000: not within a second). An event tap that keeps the release to itself shows here
+      [--then-click x,y]        click there as soon as the pointer is there, 0.3 s after the release at the earliest, and print, on the same
+                                line, how many milliseconds after it the button went down: about 500 on a hosted Mac, where two
+                                calls of this tool lie 600 to 800 apart
+  key <chord>                   press a shortcut, e.g. ctrl+opt+space, cmd+shift+f5, escape
+      [--down]                  press the modifiers and the key, and leave them all down
+      [--up]                    release the key, then the modifiers (modifiers alone, or a key alone, work too)
+      [--held]                  press and release the key only: its modifiers are down already, and stay down
+      [--repeat n]              n more key-down events marked as auto-repeat, as a key that is held sends
+  calm                          let go of every mouse button and key that is down, and say which, if any: for the end of a run
+  pinch x y <amount>            spread two fingers there (negative: pinch them together) by that much
+      [--steps n]               magnification, in that many events (default 10)
+  where                         the pointer's position and whether the left button is down
+  activity                      seconds since the pointer was used, seconds since a key was released, and the count
+                                of key presses, as Arbor reads them (AXWindowSystem+Input.swift)
+  displays                      id x y w h pixel-width pixel-height scale, one line per display
+  windows [--pid n]             id pid layer x y w h on|off owner, as the window server sees them
+      [--on-screen]             only those on screen, from the frontmost to the one at the back
+  frame <window id>             x y w h, as the window server sees it
+  visible <window id>           the share of the window that is on some display, 0 to 1; 0 when the window
+                                server does not show it (minimized, hidden, on another Space)
+  grab <window id>              x y: a point on its title bar that no other window covers
+  spot <window id>              x y: a point on its content that no other window covers
+  button <window id> <which>    x y: the middle of its close, minimize or zoom button
+  ax <window id>                its Accessibility role and subrole, e.g. AXWindow AXStandardWindow
+  front                         the process id of the app in front, which has the keyboard
+  status-item <pid> [--frame]   x y: the middle of that process's menu bar item (--frame: x y w h)
+  menu-item <pid> <title>       x y: the middle of the item of its open menu whose title starts so
+  menu-mark <pid> <title>       that item's mark, e.g. ✓, or - when it has none
+  keyboard                      the process id of the app in front, then the number of its window that
+                                keys go to; - for none
+  button <pid> x y <name>       x y: the middle of the close, minimize or zoom button of that process's
+                                window whose top-left corner is nearest the point
+  screen-access | ax-access     true or false: Screen Recording, Accessibility
+  reduce-motion                 true or false: what an app launched now is told about Reduce Motion
+  asleep                        true or false: whether the main display is asleep
+  picture <file> <w> <h> <#rrggbb> [<#rrggbb>]
+                                write a PNG: one colour, or a gradient between two under a grid
+  wallpaper [file]              show that picture on the desktop of every display; print what each shows
+click, drag, release and pinch take --mods <chord of modifiers>, e.g. --mods shift+cmd, held meanwhile.
+Every command that posts events takes --tap session, to post them after the window server's own handling.
+  ✘ still up after seven seconds
+      picture: mac-shell/fail-shots-minimap-9.png
+state.py: Arbor knows no window 65
+> move
+pointer: expected x and y
+usage: pointer <command>
+  move x y                      glide the pointer there
+  click x y [count] [--right]   click (count 2 is a double-click), with the right button if asked
+      [--quick]                 the button comes up at once, as with tap to click (otherwise after 0.04 s)
+  drag x1 y1 x2 y2              press at the first point, drag to the second, release
+      [--steps n]               intermediate events (default 30)
+      [--duration s]            how long the movement takes (default 0.6)
+      [--hold s]                wait at the end before releasing (default 0.2)
+      [--no-release]            leave the button down; finish with `release`
+      [--no-settle]             without the small movement at the end that lets Arbor catch up
+  drag-on x y                   with the button down since a `drag --no-release`: carry on to that point and rest there
+      [--steps n] [--duration s] [--hold s]      as for drag
+  release [x y]                 release the button there (default: where the pointer is)
+      [--timed]                 print how many milliseconds later the login session had the button up, as apps are told it
+                                (1000: not within a second). An event tap that keeps the release to itself shows here
+      [--then-click x,y]        click there as soon as the pointer is there, 0.3 s after the release at the earliest, and print, on the same
+                                line, how many milliseconds after it the button went down: about 500 on a hosted Mac, where two
+                                calls of this tool lie 600 to 800 apart
+  key <chord>                   press a shortcut, e.g. ctrl+opt+space, cmd+shift+f5, escape
+      [--down]                  press the modifiers and the key, and leave them all down
+      [--up]                    release the key, then the modifiers (modifiers alone, or a key alone, work too)
+      [--held]                  press and release the key only: its modifiers are down already, and stay down
+      [--repeat n]              n more key-down events marked as auto-repeat, as a key that is held sends
+  calm                          let go of every mouse button and key that is down, and say which, if any: for the end of a run
+  pinch x y <amount>            spread two fingers there (negative: pinch them together) by that much
+      [--steps n]               magnification, in that many events (default 10)
+  where                         the pointer's position and whether the left button is down
+  activity                      seconds since the pointer was used, seconds since a key was released, and the count
+                                of key presses, as Arbor reads them (AXWindowSystem+Input.swift)
+  displays                      id x y w h pixel-width pixel-height scale, one line per display
+  windows [--pid n]             id pid layer x y w h on|off owner, as the window server sees them
+      [--on-screen]             only those on screen, from the frontmost to the one at the back
+  frame <window id>             x y w h, as the window server sees it
+  visible <window id>           the share of the window that is on some display, 0 to 1; 0 when the window
+                                server does not show it (minimized, hidden, on another Space)
+  grab <window id>              x y: a point on its title bar that no other window covers
+  spot <window id>              x y: a point on its content that no other window covers
+  button <window id> <which>    x y: the middle of its close, minimize or zoom button
+  ax <window id>                its Accessibility role and subrole, e.g. AXWindow AXStandardWindow
+  front                         the process id of the app in front, which has the keyboard
+  status-item <pid> [--frame]   x y: the middle of that process's menu bar item (--frame: x y w h)
+  menu-item <pid> <title>       x y: the middle of the item of its open menu whose title starts so
+  menu-mark <pid> <title>       that item's mark, e.g. ✓, or - when it has none
+  keyboard                      the process id of the app in front, then the number of its window that
+                                keys go to; - for none
+  button <pid> x y <name>       x y: the middle of the close, minimize or zoom button of that process's
+                                window whose top-left corner is nearest the point
+  screen-access | ax-access     true or false: Screen Recording, Accessibility
+  reduce-motion                 true or false: what an app launched now is told about Reduce Motion
+  asleep                        true or false: whether the main display is asleep
+  picture <file> <w> <h> <#rrggbb> [<#rrggbb>]
+                                write a PNG: one colour, or a gradient between two under a grid
+  wallpaper [file]              show that picture on the desktop of every display; print what each shows
+click, drag, release and pinch take --mods <chord of modifiers>, e.g. --mods shift+cmd, held meanwhile.
+Every command that posts events takes --tap session, to post them after the window server's own handling.
+  ✔ gone six seconds after the pointer left
+
+== ⌃⌥ let go first
+> key ctrl+opt+m --down
+  ✘ up
+      picture: mac-shell/fail-shots-minimap-10.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n1, back yes
+> key ctrl+opt --up
+  ✔ that is letting go too
+> key m --up
+> key ctrl+opt+m
+  ✘ and the keys still work
+      picture: mac-shell/fail-shots-minimap-11.png
+> key ctrl+opt+m
+  ✔ both ways
+
+== left alone, it goes after five seconds
+> minimap
+arborctl: paused: windows, shortcuts and gestures are left alone until `resume`
+  ✘ still up after three
+      picture: mac-shell/fail-shots-minimap-12.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n1, back yes
+  ✔ gone after five and a half
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+== the light look
+session 2: Arbor pid 20267, test windows 103 104 105 106 (pid 20193)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+> dock 103 left
+docked w103 at the left edge
+> dock 104 right
+docked w104 at the right edge
+> dock 105 beside 103 bottom
+docked w105 below w103
+> zoom 105
+framed w105
+> save-view 1
+saved view 1: ArborTestWindows (n4)
+> show-all
+showing everything
+> view 1
+view 1: ArborTestWindows (n4)
+shot: mac-shell/10-light.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+== the dark look
+session 3: Arbor pid 20899, test windows 118 119 120 121 (pid 20865)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+> dock 118 left
+docked w118 at the left edge
+> dock 119 right
+docked w119 at the right edge
+> dock 120 beside 118 bottom
+docked w120 below w118
+> zoom 120
+framed w120
+> save-view 1
+saved view 1: ArborTestWindows (n4)
+> show-all
+showing everything
+> view 1
+view 1: ArborTestWindows (n4)
+shot: mac-shell/10-dark.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+== the fades, at 0.9 s
+session 4: Arbor pid 21478, test windows 132 133 134 (pid 21460)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+> dock 132 left
+docked w132 at the left edge
+> dock 133 right
+docked w133 at the right edge
+> zoom 132
+framed w132
+film: 20 pictures in 1.70 s
+shot: mac-shell/11-fade-1.png
+shot: mac-shell/11-fade-2.png
+shot: mac-shell/11-fade-3.png
+shot: mac-shell/11-fade-4.png
+shot: mac-shell/11-fade-5.png
+shot: mac-shell/11-fade-6.png
+shot: mac-shell/11-fade-7.png
+shot: mac-shell/11-fade-8.png
+shot: mac-shell/11-fade-9.png
+shot: mac-shell/11-fade-10.png
+shot: mac-shell/11-fade-11.png
+shot: mac-shell/11-fade-12.png
+shot: mac-shell/11-fade-13.png
+shot: mac-shell/11-fade-14.png
+shot: mac-shell/11-fade-15.png
+shot: mac-shell/11-fade-16.png
+shot: mac-shell/11-fade-17.png
+shot: mac-shell/11-fade-18.png
+shot: mac-shell/11-fade-19.png
+shot: mac-shell/11-fade-20.png
+  ✔ gone again
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== as it ships: nothing by itself
+session 5: Arbor pid 22066, test windows 144 145 (pid 22044)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+> dock 144 left
+docked w144 at the left edge
+> zoom 144
+framed w144
+  ✔ no minimap after a move of the view
+
+== quitting while it shows
+> minimap
+showing the minimap
+  ✔ the command still shows it
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+shot: mac-shell/12-after-quit.png
+
+64 passed, 12 failed
+exit code 1
