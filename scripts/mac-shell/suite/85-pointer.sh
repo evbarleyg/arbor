@@ -31,6 +31,20 @@ check "the app under the pointer saw no press" received "$W3" down -eq "$downs"
 check "and no drag" received "$W3" dragged -eq 0
 ctl show-all
 
+claim "begin a ⌃⌥ rectangle and let go of ⌃⌥ before the button: the band goes, the view stays, and the app notices nothing"
+proves T38
+take "x y w h" real_frame_of "$W3"
+downs=$(events_of "$W3" down)
+drag "$((x + 30))" "$((y + 60))" "$((x + w - 30))" "$((y + h - 40))" --mods ctrl+opt --no-release
+check "a band is on screen while the button is held" eventually has_overlay 3
+# Without --mods: the button comes up with no key down.
+release
+check "the band is gone" eventually fails has_overlay 3
+check "Arbor framed nothing" stays fails logged "frame-rect "
+check "the view stays" camera_on root
+check "the app under the pointer saw no press" received "$W3" down -eq "$downs"
+ctl show-all
+
 claim "⌃⌥-drag a rectangle around a column: the camera frames the column"
 proves T38
 take "x y w h" real_frame_of "$W1"

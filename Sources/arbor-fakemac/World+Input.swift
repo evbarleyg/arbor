@@ -334,7 +334,8 @@ extension World {
     }
   }
 
-  func lift(at target: CGPoint) {
+  /// - Parameter modifiers: the keys that are down as the button comes up, if the line said.
+  func lift(at target: CGPoint, modifiers: RectangleGesture.Modifiers? = nil) {
     let point = onScreen(target)
     system.cursor = point
     let released = held
@@ -379,7 +380,7 @@ extension World {
 
     case .rectangle(let start, let clicks):
       guard let arbor else { return }
-      switch arbor.gesture.mouseUp(at: point) {
+      switch arbor.gesture.mouseUp(at: point, modifiers: modifiers) {
       case .replay:
         // A plain modifier-click: the app gets the press it missed, then this release.
         system.mouseDown = true

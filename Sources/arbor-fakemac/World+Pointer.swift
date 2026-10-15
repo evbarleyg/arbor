@@ -137,7 +137,7 @@ extension World {
       movePointer(to: target)
       for click in 1...count {
         press(at: target, modifiers: held, clicks: click, right: right)
-        lift(at: target)
+        lift(at: target, modifiers: held)
       }
 
     case "drag":
@@ -161,7 +161,7 @@ extension World {
       drag(to: end)
       // The real tool rests here before it lets go, which is what lets a drop target activate (F09).
       arbor?.scheduler.advance(by: 0.25 + Double(hold))
-      if release { lift(at: end) }
+      if release { lift(at: end, modifiers: held) }
 
     case "drag-on":
       let steps = try arguments.option("--steps").map { max(1, min(1000, Int(try arguments.number($0)))) } ?? 30
@@ -188,7 +188,7 @@ extension World {
           message: "pointer (rehearsal): release, but the button is not down; was the drag --no-release?")
       }
       drag(to: target)
-      lift(at: target)
+      lift(at: target, modifiers: held)
 
     case "calm":
       // Lets go of whatever is still held: the button, and a shortcut with its modifiers. Other modifiers never outlive a line.
