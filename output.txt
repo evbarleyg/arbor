@@ -1,0 +1,15 @@
+# mac-shell: scripts/mac-shell/probe-no-question.sh at a46c445, macOS 26.6.2, 2026-10-15T02:54Z
+python3 is Python 3.15.0
+   0 s  STEP 1: scripts/release-tools-test.sh as it now is
+   1 s     exit 0, 1 s, 41 ✔, 0 ✘
+  41 s     forty seconds later: 0 alert(s)
+  41 s  STEP 2: scripts/mac-shell/serve.py, asked for a file
+  41 s     answered: yes
+  82 s     forty seconds later: 0 alert(s)
+  82 s  CONTROL, try 1: python3 -m http.server --bind 127.0.0.1
+ 127 s     0 alert(s)
+ 127 s  CONTROL, try 2: python3 -m http.server --bind 127.0.0.1
+ 128 s  ** WATCHER: 0 -> 1 alert(s) on screen
+ 172 s     1 alert(s)
+RESULT: after the two as they now are: 0 alert(s); after the control: 1
+exit code 0

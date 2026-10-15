@@ -1,0 +1,46 @@
+version.sh
+  ✔ the version is the VERSION file's
+  ✔ without Git the build is 0 and the commit unknown
+  ✔ ARBOR_VERSION replaces it
+  ✔ what is not a version is refused
+  ✔ so is a path
+  ✔ this repository's own VERSION is accepted
+release-notes.sh
+  ✔ they start with the top section's first line
+  ✔ wrapped list items are joined
+  ✔ wrapped paragraphs are joined
+  ✔ the next item starts a new line
+  ✔ code blocks keep their lines
+  ✔ tables keep their rows
+  ✔ older sections stay out
+  ✔ the heading of the section stays out
+  ✔ the first launch is explained
+  ✔ and the way around it
+  ✔ the files are named after the version
+  ✔ the checksums are listed
+  ✔ a notarized build's notes leave Gatekeeper out
+publish-release.sh
+  ✔ it refuses to run before make release
+  ✔ a dry run needs no token and names the tag
+  ✔ a dry run says it is a draft
+  ✔ without a token nothing is sent
+  ✔ it succeeds
+  ✔ an earlier draft for the version is replaced
+  ✔ other releases are left alone
+  ✔ the release is a draft on the commit, named after the version
+  ✔ not a pre-release
+  ✔ the notes are its body
+  ✔ the disk image is uploaded as it is
+  ✔ so is the archive
+  ✔ so are the checksums
+  ✔ so is the cask
+  ✔ every call carries the token
+  ✔ the token is not printed
+  ✔ it says where the draft is
+  ✔ a published release is never replaced
+  ✔ nor is anything sent after finding one
+  ✔ a release candidate can be published at once
+  ✔ as a pre-release
+  ✔ GitHub's refusal fails the script
+release tools test passed
+./scripts/release-tools-test.sh: line 10:  9589 Terminated: 15          python3 "$root/github.py" "$root"
