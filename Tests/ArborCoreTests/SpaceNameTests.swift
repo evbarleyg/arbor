@@ -57,7 +57,7 @@ import Testing
     #expect(problem("") == "a name needs at least one character")
     #expect(problem(String(repeating: "x", count: 41)) == "a name can have at most 40 characters")
     #expect(problem("a\u{7}") == "a name cannot hold control characters or invisible formatting")
-    #expect(problem("Left") == "a space cannot be named `Left`: `go Left` means the neighbouring space")
+    #expect(problem("Left") == "a space cannot be named `Left`: `go Left` means the neighboring space")
   }
 
   @Test func whatIsNotTidyIsNotTidy() {
@@ -148,7 +148,7 @@ import Testing
   }
 
   @Test func namesThatCannotBeAreRefusedWithTheReason() {
-    #expect(throws: Command.ParseError(refusing: "a space cannot be named `left`: `go left` means the neighbouring space")) {
+    #expect(throws: Command.ParseError(refusing: "a space cannot be named `left`: `go left` means the neighboring space")) {
       try Command.parse("name left")
     }
     #expect(throws: Command.ParseError(refusing: "a name can have at most 40 characters")) {

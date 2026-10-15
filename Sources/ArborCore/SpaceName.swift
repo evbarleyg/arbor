@@ -28,7 +28,7 @@ public enum SpaceName {
       throw Problem(description: "a name cannot hold control characters or invisible formatting")
     }
     if words.count == 1, Edge(word: name) != nil {
-      throw Problem(description: "a space cannot be named `\(name)`: `go \(name)` means the neighbouring space")
+      throw Problem(description: "a space cannot be named `\(name)`: `go \(name)` means the neighboring space")
     }
     return name
   }

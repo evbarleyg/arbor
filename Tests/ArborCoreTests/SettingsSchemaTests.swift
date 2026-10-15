@@ -188,7 +188,7 @@ private let simpleEntries = SettingsSchema.entries.filter {
     let report = SettingsSchema.report(Settings()), page = SettingsSchema.markdown()
     for words in [
       "`toggle-auto-dock` switches it too.", "`resize` moves a window's edge whatever this says.",
-      "0 leaves it as it is, 1 is black.", "0 is grey, 1 is the colour itself.",
+      "0 leaves it as it is, 1 is black.", "0 is gray, 1 is the color itself.",
       "That is `dock auto` and a rule for `*`; a rule that names an app docks its windows whatever their size.",
     ] {
       #expect(report.contains(words) && page.contains(words), "\(words)")

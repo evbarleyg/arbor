@@ -108,7 +108,7 @@ private let third = DisplaySnapshot(
 
   @Test func aNameThatCannotBeIsRefusedWithTheReason() {
     let d = Desk()
-    #expect(d.h.run("name left").message == "a space cannot be named `left`: `go left` means the neighbouring space")
+    #expect(d.h.run("name left").message == "a space cannot be named `left`: `go left` means the neighboring space")
     #expect(d.h.run("name " + String(repeating: "x", count: 41)).message == "a name can have at most 40 characters")
     // Not everything comes through the parser: a binding, a rule or another feature can hand over a command.
     for text in ["", "  ", "up", "a\u{7}", "a\nb\u{1B}", String(repeating: "é", count: 500)] {
@@ -1141,7 +1141,7 @@ private let third = DisplaySnapshot(
     #expect(fresh.answer(to: "MAIL") == .init(command: .name("MAIL"), note: "↩ moves the name here from Notes and Mail"))
     #expect(
       fresh.answer(to: "up")
-        == .init(command: nil, note: "a space cannot be named `up`: `go up` means the neighbouring space", isProblem: true))
+        == .init(command: nil, note: "a space cannot be named `up`: `go up` means the neighboring space", isProblem: true))
     #expect(fresh.answer(to: String(repeating: "x", count: 41)).isProblem)
     for text in ["", "Web", "MAIL"] { #expect(!fresh.answer(to: text).isProblem, "\(text)") }
     #expect(!NamePromptModel.Answer(command: nil, note: "").isProblem)

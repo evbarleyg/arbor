@@ -149,7 +149,7 @@ extension Controller {
     var notes = Self.sentence(about: resolution, excluded: excluded, opening: opening)
     let away = Self.unique(placed.compactMap { windows[$0] }.filter { !$0.isPresent }.map(\.appName))
     if !away.isEmpty {
-      notes.append("\(Self.list(away, joinedBy: "and")) \(away.count == 1 ? "is" : "are") minimised or hidden, and will be in place when back")
+      notes.append("\(Self.list(away, joinedBy: "and")) \(away.count == 1 ? "is" : "are") minimized or hidden, and will be in place when back")
     }
     // Until tab groups have strips (F04), nothing on screen says that they are there.
     let behind = tree.preorder().reduce(0) { count, leaf in

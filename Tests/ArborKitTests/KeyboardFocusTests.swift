@@ -87,7 +87,7 @@ private let side = sideDisplay
     #expect(h.workspace.camera == camera && h.system.isVisible(a), "the view has not moved")
     #expect(go(h, "left") == a)
     #expect(h.workspace.camera == camera)
-    // Not the other way: there it is the neighbouring space, as ever.
+    // Not the other way: there it is the neighboring space, as ever.
     #expect(h.run("focus left").message == "no window or space to the left")
   }
 

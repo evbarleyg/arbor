@@ -237,7 +237,7 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
 
     h.system.setMinimized(w(103), true)
     let result = h.run("layout Safari | Mail | Mail | Desktop")
-    #expect(result.message == "arranged 3 windows; Mail is minimised or hidden, and will be in place when back")
+    #expect(result.message == "arranged 3 windows; Mail is minimized or hidden, and will be in place when back")
     let alone = try #require(h.frame(w(101))).width
     h.system.setMinimized(w(102), false)
     #expect(try #require(h.frame(w(101))).width < alone)

@@ -60,7 +60,7 @@ import Testing
       (KeyChord(shifted, .up), .neighbor(.top)), (KeyChord(shifted, .down), .neighbor(.bottom)),
       (KeyChord(base, .right), .neighbor(.right)), (KeyChord(base, .left), .neighbor(.left)),
     ]
-    #expect(rows(shortcuts) == ["⌃⌥← Space to the Left", "⌃⌥→ Space to the Right", "⌃⌥⇧ + arrow Neighbouring Space"])
+    #expect(rows(shortcuts) == ["⌃⌥← Space to the Left", "⌃⌥→ Space to the Right", "⌃⌥⇧ + arrow Neighboring Space"])
   }
 
   @Test func twoShortcutsForOneCommandAreBothListed() {

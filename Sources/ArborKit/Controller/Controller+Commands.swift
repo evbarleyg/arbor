@@ -732,7 +732,7 @@ extension Controller {
 
     switch Self.seam(on: edge, of: leaf, in: view, layout: layout) {
     case .noNeighbour:
-      return .failure("\(id) has no neighbour on the \(edge.rawValue)")
+      return .failure("\(id) has no neighbor on the \(edge.rawValue)")
     case .notInView:
       return .failure("that edge is not in view\(adviceToStepOut)")
     case .seam(let seam):

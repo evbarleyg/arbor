@@ -149,7 +149,7 @@
       #expect(art.cells.count == 2)
       let left = canvas.pixel(art.cells[0].frame.midX, art.cells[0].frame.midY)
       let right = canvas.pixel(art.cells[1].frame.midX, art.cells[1].frame.midY)
-      #expect(left.red > left.blue && right.blue > right.red, "each window in its app's colour")
+      #expect(left.red > left.blue && right.blue > right.red, "each window in its app's color")
       let badge = try #require(art.badge)
       #expect(canvas.count(in: badge.frame) { $0.brightness > 0.85 } > 3, "the digit")
     }

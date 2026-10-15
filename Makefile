@@ -13,6 +13,7 @@ lint:
 	@for test in scripts/test-public-*.py; do python3 $$test || exit 1; done
 	@python3 scripts/gh-state.py --self-test
 	@python3 scripts/reality-ledger.py --self-test && python3 scripts/reality-ledger.py --check
+	@python3 scripts/lint-spelling.py --self-test && python3 scripts/lint-spelling.py
 
 # Reads what this branch adds (lines, file names, commit messages, its own name) for what should stay private, and checks
 # that its history begins where the public repository's does. Before every push (docs/PUBLIC.md).
