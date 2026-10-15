@@ -131,9 +131,7 @@ extension Controller {
     workspaces[display] = updated
     // Node ids start again in the new tree, and would be mistaken for slots somebody squeezed in the old one.
     forgetSqueezes(on: display)
-    // A change of the arrangement, which never takes a floating window out of view (`placeFloatingWindows`).
-    relayout(display, reason: .structure)
-    moveFloatingWindowsOntoDesktop(on: display, andToTheirOwnSize: Set(floated))
+    layOutAnew(display, undocked: floated)
     notifyOfReset(display)
     scheduleSave()
 
@@ -194,29 +192,26 @@ extension Controller {
     return after.desktopFrame != nil && after.tiles.count < before.tiles.count ? wider : usual
   }
 
-  /// Floating windows live on the Desktop. A layout leaves alone those the user put over docked windows on
-  /// purpose (`placeFloatingWindows`), but here the docked space is all new, so none of them is where it is on purpose.
-  /// Those in `undocked` have just left their slots and still have the slots' shape, wherever they are (F48).
-  private func moveFloatingWindowsOntoDesktop(on displayID: DisplayID, andToTheirOwnSize undocked: Set<WindowID>) {
-    guard let floating = workspaces[displayID]?.floating, let display = display(displayID) else { return }
-    guard let desktop = layouts[displayID]?.desktopFrame else {
-      // The Desktop is too small to use. What is in view stays in view, over the docked windows, at its own size.
-      for window in undocked.sorted() where !parked.contains(window) && windows[window]?.isPresent == true {
-        if let frame = floating[window] { putBack(window, at: frame, on: display) }
+  /// Lays out the arrangement a line has made. A change of the arrangement, which never takes a floating window out of view
+  /// (`placeFloatingWindows`) and leaves alone those their user put over docked windows on purpose. But here the docked
+  /// space is all new, so none of them lies there on purpose. The layout is told so, and it alone moves them: a line is one
+  /// action, and for one action a window is given one frame. `undocked` have just left their slots and still have the
+  /// slots' shape (F48).
+  private func layOutAnew(_ displayID: DisplayID, undocked: [WindowID]) {
+    func inView() -> [(window: WindowID, frame: CGRect)] {
+      undocked.sorted().filter { !parked.contains($0) && windows[$0]?.isPresent == true }.compactMap { window in
+        workspaces[displayID]?.floating[window].map { (window, $0) }
       }
-      return
     }
-    for (window, preferred) in floating.sorted(by: { $0.key < $1.key }) where !parked.contains(window) {
-      // A pinned window keeps its place over whatever the view shows (Controller+Pin.swift).
-      guard workspaces[displayID]?.isPinned(window) != true else { continue }
-      guard let current = windows[window], current.isPresent, isManaged(window),
-        !desktop.contains(current.frame) || (undocked.contains(window) && current.frame.size != preferred.size),
-        let actual = system.setFrame(
-          floatingFrame(preferred, on: desktop, of: display, minimum: minimumSizes[window]), of: window)
-      else { continue }
-      windows[window]?.frame = actual
-      settled[window] = actual
-    }
+    // The Desktop is too small to use. What is in view stays in view, over the docked windows, at its own size.
+    let toPutBack = layoutToCome(on: displayID)?.desktopFrame == nil ? inView() : []
+    placedOnPurpose = Set(toPutBack.map(\.window))
+    displayArrangedAnew = displayID
+    defer { (placedOnPurpose, displayArrangedAnew) = ([], nil) }
+    relayout(displayID, reason: .structure, puttingBack: toPutBack)
+    // A window refused its slot, and the room it took has cost the Desktop that was to come. Nothing has moved these yet.
+    guard toPutBack.isEmpty, layouts[displayID]?.desktopFrame == nil, let display = display(displayID) else { return }
+    for (window, frame) in inView() { putBack(window, at: frame, on: display) }
   }
 
   /// What was asked for and not found: "no window of Mail or Notes", "only 1 window of Safari", "opening Slack".

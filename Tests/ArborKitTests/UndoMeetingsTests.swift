@@ -955,9 +955,6 @@ private final class Listener {
       let steps = undoLabels(h).count
       try change()
       h.scheduler.advance(by: 2)  // whatever is left open for more of the same closes
-      // `layout` squeezes windows that are where their apps put them onto the Desktop's own width, and every layout after
-      // it lets them have the margin beside it as well (`floatingRegion`). Not undo's affair: the picture that lasts counts.
-      if ["layout", "five columns"].contains(name) { h.run("relayout") }
       // Where a pointer lands differs from world to world: a drop that rearranges nothing is no step.
       guard undoLabels(h).count != steps else { continue }
       #expect(undoLabels(h).count == steps + 1, "\(world): \(name) is one step")

@@ -113,7 +113,7 @@ extension ChaosRunner {
         open 102 Music pid 1006 at -194 842 716 615
         open 103 Terminal pid 1003 at -546 784 760 249
         layout Terminal | Finder
-        move 101 1245 330 468 618
+        move 101 1245 330 480 618
         close 102
         """,
       """
@@ -140,15 +140,8 @@ extension ChaosRunner {
     ChaosKnownFailure(
       rule: "left-its-place", owner: "the controller",
       story: "With something docked, a display that comes or goes beside this one makes Arbor lay this one out again: a floating window that lay over a docked neighbour is moved "
-        + "onto the Desktop's part, or by the width of the gap, though nothing about its own display has changed.",
+        + "onto the Desktop's part, though nothing about its own display has changed.",
       script: """
-        open 104 Music pid 1006 at 638 248 352 519 max 310 1909 title main.swift
-        launch
-        open 113 Mail pid 1002 at -1019 232 732 742 min 732 742 title Untitled
-        layout Preview | (Safari / Music)
-        displays side:-1440,109,1440,900:0,0,0,43 main:0,0,1440,900:25,0,0,0* windows-late
-        """,
-      """
         launch
         open 102 Finder pid 1005 at -435 193 1915 2399 min 1915 2399
         dock left
@@ -166,7 +159,7 @@ extension ChaosRunner {
     ChaosKnownFailure(
       rule: "moved-twice", owner: "rule 3: a refused size costs no second move", severity: 2,
       story: "A window is docked whose app will not take the slot's size. Arbor has moved the NEIGHBOURS to make the first layout by then, lays out again and moves "
-        + "them a second time. Every second ordinary walk meets it. Also: a floating window squeezed twice by one command.",
+        + "them a second time. Every second ordinary walk meets it.",
       script: """
         launch
         open 102 Terminal pid 1003 at 388 150 543 541
@@ -182,12 +175,6 @@ extension ChaosRunner {
         key down dock right
         open 103 Mail pid 1002 at 289 102 1078 539 min 760 400
         key down dock top
-        """,
-      """
-        launch
-        open 103 Xcode pid 1004 at 1372 303 824 577 title Draft
-        open 104 Mail pid 1002 at -413 158 554.5 698.25 title Untitled
-        layout Xcode | Terminal
         """),
     ChaosKnownFailure(
       rule: "moved-twice-sizing", owner: "rule 3: a refused size costs no second move", severity: 3,

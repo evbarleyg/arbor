@@ -6,7 +6,7 @@ A.. items are Arbor-only. Levels are explained in `collab/README.md`.
 
 **TrellisWM parity: 39 of 52 reference items shipped (75%), 15 verified on real windows.**
 
-Levels: verified 18, tested 92, partial 7, planned 7, missing 1, not-planned 3.
+Levels: verified 18, tested 93, partial 7, planned 7, missing 1, not-planned 3.
 
 Real-window evidence: mac-shell: scripts/mac-shell/proof.sh at ab40b20, macOS 26.6.2, 2026-10-14T06:48Z.
 
@@ -159,6 +159,7 @@ Real-window evidence: mac-shell: scripts/mac-shell/proof.sh at ab40b20, macOS 26
 | A155 | Print the arrangement as a line that recreates it |  | `layout`, `layout --titles`, `layout --ids` | tested | tests 13/13, real windows 0/1 | [F54](features/F54-layouts-as-text.md) |
 | A156 | Errors in a line name the column and what was expected |  | "column 15: `\|` and `/` are mixed here: put brackets around one of them", with a `^` under it; no input traps | tested | tests 8/8 | [F54](features/F54-layouts-as-text.md) |
 | A157 | Open the apps an arrangement is missing |  | `layout --open …`: each window takes its place as it appears, and the view stays put | tested | tests 8/8 | [F54](features/F54-layouts-as-text.md) |
+| A158 | A line moves each window once |  | For one `layout` a window is given one frame, the one it ends at: those the line places, those it takes out of their slots, those that floated already; the same line again moves nothing | tested | tests 7/7 | [F54](features/F54-layouts-as-text.md) |
 | A65 | Zoom with a mouse |  | ⌃⌥ + scroll: up steps in toward the pointer, down steps out; one step per notch; `scrollZoom`, `scrollZoomThreshold`, `scrollOnDesktopZooms`. Off as it ships (`pointerGestures`, Q26) | tested | tests 9/9 | [F55](features/F55-zoom-with-a-mouse.md) |
 | A91 | Switching windows keeps the level |  | From a framed window, ⌘Tab or a Dock click frames the window you go to; from a group the view steps out just far enough | tested | tests 5/5 | [F01](features/F01-dock-and-zoom.md) |
 | A63 | Accessibility permission taken away while running |  | noticed within 3 s and at the next command; nothing pretends; the ways home lead to the switch; everything in view when it returns | tested | tests 11/11 | [F63](features/F63-permission-taken-away.md) |

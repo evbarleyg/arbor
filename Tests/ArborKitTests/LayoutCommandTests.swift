@@ -247,24 +247,23 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
 
   // MARK: Windows that are not mentioned
 
-  @Test func windowsNotMentionedFloatOnTheDesktop() throws {
+  @Test func windowsNotMentionedFloatOnTheDesktop() {
     let h = harness("Safari", "Mail", "Notes", "Slack")
     h.run("arrange")
     #expect(h.workspace.tree.allWindows.count == 4)
     let result = h.run("layout Safari | Desktop | Mail")
     #expect(result.message == "arranged 2 windows, floated 2")
-    let desktop = try #require(h.layout?.desktopFrame)
     for window in [w(103), w(104)] {
       #expect(h.workspace.isFloating(window))
-      #expect(desktop.contains(try #require(h.frame(window))), "\(window)")
+      #expect(isOnDesktop(window, h), "\(window)")
     }
     expectNothingLost(h)
   }
 
-  @Test func windowsThatFloatedAlreadyMoveOffTheDockedOnes() throws {
+  @Test func windowsThatFloatedAlreadyMoveOffTheDockedOnes() {
     let h = harness("Safari", "Mail", "Notes")
     #expect(h.run("layout Safari | Mail | Desktop").ok)
-    #expect(try #require(h.layout?.desktopFrame).contains(try #require(h.frame(w(103)))))
+    #expect(isOnDesktop(w(103), h))
   }
 
   @Test func aPinnedWindowKeepsItsPlaceUnlessTheLineNamesIt() throws {
@@ -299,6 +298,146 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
     // Asked for again, it is already so, which is not a failure: scripts can say what they want to be true.
     #expect(h.run("layout Desktop").ok)
     expectNothingLost(h)
+  }
+
+  // MARK: A window moves once
+
+  /// What Arbor has asked of each window since the log was last cleared: "w103 (960,200 480×420)".
+  func given(_ h: Harness) -> [String] { h.system.frameLog.map { "\($0.window) \($0.frame.brief)" } }
+
+  /// None of `windows` has been given more than one frame since the log was last cleared, and each is where that one put it.
+  func expectMovedAtMostOnce(_ h: Harness, _ windows: [WindowID], _ story: String, sourceLocation: SourceLocation = #_sourceLocation) {
+    for window in windows {
+      let frames = h.system.frameLog.filter { $0.window == window }.map(\.frame)
+      #expect(frames.count <= 1, "\(story): \(window) was given \(frames.map(\.brief))", sourceLocation: sourceLocation)
+      if let last = frames.last { #expect(h.frame(window) == last, "\(story): \(window)", sourceLocation: sourceLocation) }
+    }
+  }
+
+  /// A line is one action, and for one action a window is given one frame: the one it ends at. That goes for the windows the
+  /// line places, for those it takes out of their slots, and for those that floated already and have to make way.
+  @Test(arguments: ["102", "B", "B | Desktop", "Desktop | B", "B / Desktop", "C | B", "Desktop"], [0.46, 0])
+  func whateverALineMovesMovesOnce(line: String, duration: Double) {
+    var settings = Settings()
+    settings.animationDuration = duration
+    let h = harness("A", "B", "C", settings: settings)
+    #expect(h.run("layout A | Desktop | B").ok, "C floats on the Desktop")
+    h.scheduler.advance(by: 2)
+    h.system.clearFrameLog()
+    #expect(h.run("layout \(line)").ok)
+    h.scheduler.advance(by: 2)
+    expectMovedAtMostOnce(h, [w(101), w(102), w(103)], "layout \(line)")
+    expectWindowsMatchLayout(h)
+  }
+
+  /// The same from other beginnings: a window that will float alone, one that fills the view, one its user laid over a docked
+  /// window, a Desktop too small to use, before the line or after it.
+  @Test(arguments: [
+    (["layout A | B | C"], "B | C | Desktop"), (["layout A | B | C"], "C"), (["layout A | B | C", "zoom 101"], "B | Desktop"),
+    (["layout A | B | C", "zoom 101"], "B | C"), (["layout A | B | Desktop", "hand"], "B | A | Desktop"), (["layout A | B", "hand"], "B"),
+    (["layout A | B | C"], "A | Desktop:0.01"), (["layout A | B | Desktop:0.01"], "A | Desktop"), (["layout A | B | Desktop:0.01"], "B"),
+  ])
+  func whereverItStartsFromALineMovesAWindowOnce(before: [String], line: String) {
+    let h = harness("A", "B", "C")
+    for step in before {
+      if step == "hand" { h.system.userMove(w(103), to: CGRect(x: 60, y: 120, width: 400, height: 300)) } else { #expect(h.run(step).ok) }
+      h.scheduler.advance(by: 2)
+    }
+    h.system.clearFrameLog()
+    #expect(h.run("layout \(line)").ok)
+    h.scheduler.advance(by: 2)
+    expectMovedAtMostOnce(h, [w(101), w(102), w(103)], "\(before), layout \(line)")
+    for window in [w(101), w(102), w(103)] { #expect(h.system.isVisible(window), "\(before), layout \(line): \(window)") }
+    // And it is where the next layout, whatever it is for, would leave it.
+    h.system.clearFrameLog()
+    #expect(h.run("relayout").ok)
+    #expect(given(h).isEmpty, "\(before), layout \(line): \(given(h))")
+    expectWindowsMatchLayout(h)
+  }
+
+  /// Where the Desktop is too small to use, a window that leaves its slot stays in view at its own size, over the docked ones. It is
+  /// put back as `float` puts its window back: one whose app keeps it larger than it floated is slid wholly onto the display,
+  /// and it counts as lying where its user had it, so that no later layout squeezes it onto a Desktop that has room again.
+  @Test func overADesktopTooSmallToUseAWindowIsPutBackAndNotPlaced() throws {
+    let h = harness("A", "B", "C")
+    #expect(h.run("layout A | B | C").ok)
+    h.system.setMinimumSize(w(103), CGSize(width: 400, height: 700))
+    h.system.clearFrameLog()
+    #expect(h.run("layout A | Desktop:0.01").ok)
+    #expect(h.layout?.desktopFrame == nil)
+    expectMovedAtMostOnce(h, [w(101), w(102)], "the one that takes any size")
+    #expect(h.frame(w(102))?.size == CGSize(width: 640, height: 420))
+    #expect(h.visibleFrame.contains(try #require(h.frame(w(103)))), "\(given(h))")
+    let frames = [w(102), w(103)].map { h.frame($0) }
+    #expect(h.run("resize 101 right -500").ok)
+    #expect(h.layout?.desktopFrame != nil)
+    #expect([w(102), w(103)].map { h.frame($0) } == frames)
+  }
+
+  /// A window refuses its slot, which Arbor could not know, and the room it takes costs the Desktop that was to come. The window
+  /// that left its slot has its own size all the same, and has still moved once.
+  @Test func aSlotThatIsRefusedCostsAWindowThatLeavesItsSlotNoSecondMove() {
+    let h = harness("A", "B")
+    #expect(h.run("layout B").ok)
+    h.scheduler.advance(by: 2)
+    h.system.setMinimumSize(w(101), CGSize(width: 1250, height: 300))
+    h.system.clearFrameLog()
+    #expect(h.run("layout A | Desktop").ok)
+    h.scheduler.advance(by: 2)
+    #expect(h.layout?.desktopFrame == nil, "or this tries nothing")
+    expectMovedAtMostOnce(h, [w(102)], "layout A | Desktop")
+    #expect(h.frame(w(102))?.size == CGSize(width: 640, height: 420), "\(given(h))")
+    #expect(h.system.isVisible(w(102)))
+  }
+
+  /// A window its user's own hand left hanging over the edge of the screen, where the Desktop still reaches that edge, hangs there
+  /// after a line as after every other layout. (It used to be fetched by the line and sent back by the next layout.)
+  @Test func aWindowLeftHangingOverTheEdgeOfTheScreenIsNotFetchedAndSentBack() {
+    let h = harness("A", "B", "C")
+    #expect(h.run("layout A | Desktop").ok)
+    let hanging = CGRect(x: 1200, y: 300, width: 400, height: 300)
+    h.system.userMove(w(103), to: hanging)
+    h.system.clearFrameLog()
+    #expect(h.run("layout B | Desktop").ok)
+    #expect(h.frame(w(103)) == hanging, "\(given(h))")
+    #expect(h.run("dock 101 left").ok)
+    #expect(h.frame(w(103)) == hanging, "\(given(h))")
+  }
+
+  /// Two walks of the chaos lab's that ended at this: a floating window squeezed twice by one line, and one moved by the width of
+  /// the gap when a display came to stand beside its own, which was the first layout after the line.
+  @Test(arguments: [
+    """
+    launch
+    open 103 Xcode pid 1004 at 1372 303 824 577 title Draft
+    open 104 Mail pid 1002 at -413 158 554.5 698.25 title Untitled
+    layout Xcode | Terminal
+    """,
+    """
+    open 104 Music pid 1006 at 638 248 352 519 max 310 1909 title main.swift
+    launch
+    open 113 Mail pid 1002 at -1019 232 732 742 min 732 742 title Untitled
+    layout Preview | (Safari / Music)
+    displays side:-1440,109,1440,900:0,0,0,43 main:0,0,1440,900:25,0,0,0* windows-late
+    """,
+  ])
+  func theWalksThatFoundItBreakNeitherRuleAnyMore(script: String) {
+    let others = ChaosRunner.knownRules.subtracting(["moved-twice", "left-its-place"])
+    #expect(ChaosRunner.replay(ChaosAction.script(script), excusing: others)?.violations.map(\.rule) ?? [] == [])
+  }
+
+  /// What is so already is not made so again: the line said a second time moves nothing, docked or floating.
+  @Test(arguments: ["A | Desktop | B", "A | B", "B | Desktop", "Desktop | B", "B / Desktop", "Desktop"])
+  func theSameLineAgainMovesNothing(line: String) {
+    let h = harness("A", "B", "C", "D")
+    #expect(h.run("layout \(line)").ok)
+    h.scheduler.advance(by: 2)
+    let frames = [w(101), w(102), w(103), w(104)].map { h.frame($0) }
+    h.system.clearFrameLog()
+    #expect(h.run("layout \(line)").ok)
+    h.scheduler.advance(by: 2)
+    #expect(given(h).isEmpty, "layout \(line): \(given(h))")
+    #expect([w(101), w(102), w(103), w(104)].map { h.frame($0) } == frames)
   }
 
   // MARK: The view

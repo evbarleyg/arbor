@@ -7,9 +7,6 @@ open Simulator
 open Terminal
 open Slack
 layout Xcode:2 | (Simulator / Terminal) | Desktop
-# Known (board 1.18): the layout puts a floating window on the Desktop out to the edge of the screen, the line's own step
-# takes that margin for off the Desktop and moves it again, 12 points, and the next layout moves it back.
-expect jolt 104
 expect ok
 expect count docked 3
 expect left-of 101 102
@@ -29,7 +26,6 @@ expect fills 101
 expect count docked 3
 # The same line again only looks: the arrangement is already there.
 layout Xcode:2 | (Simulator / Terminal) | Desktop
-expect jolt 104
 expect ok
 expect camera root
 back
@@ -47,9 +43,6 @@ expect above 105 103
 expect count docked 3
 # The Desktop alone: back to a normal Mac on this display.
 layout Desktop
-expect jolt 103
-expect jolt 104
-expect jolt 105
 expect ok
 expect count docked 0
 expect visible 101
@@ -58,8 +51,6 @@ expect visible 105
 # narrow to use, so it is made wide enough, and the Terminal stays in view with the keyboard in it.
 focus 103
 layout Xcode | Simulator | Slack
-expect jolt 103
-expect jolt 105
 expect ok
 expect count docked 3
 expect floating 103

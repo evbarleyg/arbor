@@ -58,5 +58,6 @@ Different from the spec:
 - From a URL, `--open` and a line that names no window are refused unless `allowAllURLCommands` is on.
 - The Desktop that is added is wider than `arrangeDesktopWeight` says when windows float on it and it would otherwise be too narrow to use.
 - Saved views and history are kept where their spaces still hold the same windows, rather than cleared as `arrange` clears them.
+- For one line a window is given one frame, the one it ends at. Floating windows are moved by the layout alone, which `layout` tells that the docked space is all new. So "on the Desktop" means after a line what it means after every layout: out to the edge of the screen where nothing is docked beside the Desktop, and a window its user left hanging over that edge goes on hanging.
 
 Not shipped: rules' `then` (it does not exist yet); presets (I2), which get `LayoutNotation.Spec` (Codable as its line) and `WindowSlot.assign` to build on. "One step for undo" comes with I3, whose recording wraps every command.

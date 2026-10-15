@@ -457,7 +457,8 @@ extension Controller {
       // Of a window that hangs over the edge of the screen, the part that showed is what was on the Desktop or not.
       let showed = previous.map { current.frame.intersection($0.frame) } ?? .zero
       let wasOnDesktop =
-        previous?.desktopFrame.map {
+        displayArrangedAnew == displayID
+        || previous?.desktopFrame.map {
           (!showed.isEmpty && $0.insetBy(dx: -slack, dy: -slack).contains(showed)) || whereArborPutIt || whereItsAppPutIt
         }
         // The Desktop was a tile, and it was Arbor that laid the window over the docked ones.

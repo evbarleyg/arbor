@@ -331,6 +331,9 @@ public final class Controller {
   /// dropped, the ones `float-all` has just put back (Controller+UndockedFrames.swift), or the ones that lay over a view that
   /// is taken back (Controller+Focus.swift).
   var placedOnPurpose: Set<WindowID> = []
+  /// The opposite: the display whose docked space is all new in the layout in progress, so that no floating window
+  /// lies over it on purpose and all of them make way (`layout`, Controller+LayoutNotation.swift).
+  var displayArrangedAnew: DisplayID?
   /// What each display showed when it was last laid out, for the next transition to start from
   /// (Controller+Transitions.swift).
   var keyframes: [DisplayID: Keyframe] = [:]
