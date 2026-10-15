@@ -4,7 +4,8 @@
 #   scripts/mac-shell/run.sh scripts/mac-shell/shots-gallery.sh scripts/mac-shell/shots-gallery-moves.sh \
 #     scripts/mac-shell/shots-gallery-looks.sh scripts/mac-shell/shots-offscreen.sh
 #
-#   shots-gallery.sh          the tour, light and dark
+#   shots-gallery.sh          as it ships, with nothing set, light and dark; then the tour of everything Arbor can draw, options
+#                             switched on, light and dark
 #   shots-gallery-moves.sh    motion; a large display and a Retina one; real apps, light and dark
 #   shots-gallery-looks.sh    the tour with Increase Contrast, light and dark, and with Reduce Transparency; the panels over the
 #                             worst there is behind them
@@ -20,8 +21,8 @@
 # What to ask of each picture: can it be read; is it aligned; does the text fit; does it look as if macOS had drawn it; is it quiet;
 # does it say what a person needs, in words they know.
 #
-# What a hosted Mac cannot show: translucency. Every material macOS has comes out as one flat colour there (shots-F15.sh's sheet of
-# materials), which is also what a person with Reduce Transparency sees.
+# The hosted Macs come with Reduce Transparency switched on, as with Reduce Motion, and every material then comes out as one flat
+# colour. The gallery switches it off (`scene`), for the look a Mac comes with; the looks ending in -opaque have it on.
 #
 # Each session records a trace (docs/TRACES.md), which comes back in traces/.
 #
@@ -33,8 +34,9 @@ needs_throwaway_mac "switch dark mode, the wallpaper, Increase Contrast, Reduce 
 SCENERY="$ARBOR_ROOT/.build/mac-shell/scenery"
 AXFIND="$ARBOR_ROOT/.build/mac-shell/axfind"
 TITLE="Arbor Settings"
-# What to take: looks (light, dark, each also -contrast and -opaque), and the sessions motion, large, apps-<look> and grounds-<look>.
-PARTS=${GALLERY_PARTS:-light dark}
+# What to take: looks (light, dark, each also -contrast and -opaque), and the sessions ships-<look>, motion, large, apps-<look> and
+# grounds-<look>.
+PARTS=${GALLERY_PARTS:-ships-light ships-dark light dark}
 mkdir -p "$ARBOR_OUT/traces"
 
 claim() { echo; echo "▸ $*"; }
@@ -121,9 +123,9 @@ SETTINGS='{
   "excludedBundleIDs": ["com.example.music"]
 }'
 
-# session <name> <windows>: Arbor as a person has it, with its shortcuts, its menu bar item and a newer release to be told about.
+# session <name> <windows> [settings]: Arbor as a person has it, with its shortcuts, its menu bar item and a newer release to be told about.
 session() {
-  arbor_settings "$SETTINGS"
+  arbor_settings "${3:-$SETTINGS}"
   arbor_start "$2" ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 ARBOR_PANELS_IN_PICTURES=1 \
     ARBOR_RELEASES_URL=http://127.0.0.1:8765/latest.json
   read -r sx sy sw sh <<< "$(arbor_ask screen)"
@@ -179,6 +181,91 @@ in_a_bundle() {
     "Arbor 0.9.0"*) ARBOR_BIN="$app/Contents/MacOS"; echo "Arbor runs from a bundle: $("$ARBOR_BIN/Arbor" --version)" ;;
     *) echo "the bundle does not answer as Arbor 0.9.0"; return 1 ;;
   esac
+}
+
+# MARK: As it ships
+
+# What a newcomer sees who has changed nothing: no setting is set, so whatever is an option and ships off is not in these
+# pictures, and whatever is in them was drawn unasked or in answer to something done. Scored by itself. Windows are arranged by
+# commands, since which keys ship is being decided; what a key or a hand brings up is brought up by a key or a hand.
+ships() {
+  local p="ships-$1" x y w h before
+
+  session "$p" 5 '{}'
+
+  claim "before anything is docked  ($p)"
+  shot "$p-01-nothing-docked"
+  closeup "$p-01b-the-menu-bar" "$((sx + sw - 420))" 0 420 "$sy"
+
+  claim "two windows docked  ($p)"
+  ctl dock "$W1" left
+  ctl dock "$W2" right
+  # shellcheck disable=SC2046
+  click $(center_of "$W1")
+  pointer_away
+  shot "$p-02-two-docked"
+
+  claim "a third, and a fourth  ($p)"
+  ctl dock "$W3" right
+  shot "$p-03-three-docked"
+  ctl dock "$W4" right
+  shot "$p-04-four-docked"
+
+  claim "one fills the screen, and back  ($p)"
+  ctl zoom "$W1"
+  shot "$p-05-one-fills-the-screen"
+  ctl show-all
+  shot "$p-06-everything-again"
+
+  claim "a plain drag of a floating window over a docked one  ($p)"
+  read -r x y w h <<< "$(frame_of "$W1")"
+  # shellcheck disable=SC2046
+  drag $(titlebar_of "$W5") "$((x + w / 2))" "$((y + h - 60))" --no-release
+  shot "$p-07-a-plain-drag"
+  release
+  shot "$p-08-let-go"
+
+  claim "the same with ⌘ held  ($p)"
+  is docked "$W5" && ctl float "$W5"
+  # shellcheck disable=SC2046
+  drag $(titlebar_of "$W5") "$((x + w / 2))" "$((y + h - 60))" --mods cmd --no-release
+  shot "$p-09-a-drag-with-command"
+  release --mods cmd
+  shot "$p-10-let-go"
+
+  claim "the pointer over a gap  ($p)"
+  read -r x y <<< "$(seam_right_of "$W1")"
+  move "$x" "$((y - 70))"
+  shot "$p-11-over-a-gap"
+  pointer_away
+
+  claim "Go to…  ($p)"
+  before=$(ids_on)
+  key ctrl+opt+g
+  both "$p-12-go-to" "$before"
+  key escape
+
+  claim "the menu  ($p)"
+  before=$(ids_on)
+  # shellcheck disable=SC2046
+  rightclick $(status_item)
+  both "$p-13-menu" "$before"
+  menu_is_open && key escape
+
+  claim "a key that can do nothing is answered  ($p)"
+  before=$(ids_on)
+  key ctrl+opt+space
+  both "$p-14-the-line" "$before" 0.3
+  sleep 3
+
+  claim "paused, and resumed  ($p)"
+  before=$(ids_on)
+  key ctrl+opt+escape
+  both "$p-15-paused" "$before" 0.5
+  key ctrl+opt+escape
+  shot_after 1 "$p-16-resumed"
+
+  session_over "$p-17-after-quit"
 }
 
 # MARK: One look
@@ -694,6 +781,7 @@ for part in $PARTS; do
       ;;
     apps-*) scene "${part#apps-}"; apps "${part#apps-}" ;;
     grounds-*) scene "${part#grounds-}"; grounds "${part#grounds-}" ;;
+    ships-*) scene "${part#ships-}"; ships "${part#ships-}" ;;
     *) scene "$part"; tour "$part" ;;
   esac
 done
