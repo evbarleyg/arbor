@@ -206,6 +206,17 @@ rehearse:
 polish-selftest:
 	@python3 scripts/polish/judge.py --self-test
 
+.PHONY: reality
+# How far the stand-ins are from a real Mac: the same script rehearsed here and run on a hosted Mac, step by step, and the differences counted.
+# On Linux only. make reality MAC=collab/evidence/reality-mac compares with the run that was committed, without a Mac (docs/TESTING.md, section 11; scripts/reality.sh has the rest).
+reality:
+	@MAC="$(MAC)" CHECK="$(CHECK)" KNOWN="$(KNOWN)" REF="$(REF)" PRIORITY="$(PRIORITY)" ./scripts/reality.sh
+
+.PHONY: reality-trunk
+# After every batch that lands, from a checkout of the trunk's head: a hosted Mac plays it at once, this rehearses it, and the last line is green or RED.
+reality-trunk:
+	@MAC="$(MAC)" CHECK=1 REF=swarm/trunk PRIORITY=1 STILL="$(STILL)" ./scripts/reality.sh
+
 # Hostile and broken clients against the control socket of arbor-sim --serve, for half a minute (scripts/socket-attack.py).
 attack: build
 	@python3 scripts/socket-attack.py

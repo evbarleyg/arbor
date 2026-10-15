@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Checks that the tools which say "all is well" can also say the opposite.
 
-parity.py, ci-step.py, scenarios.sh with arbor-sim, lint-imports.py, lint-mac-shell.py, mutate.py, fuzz-launch.py, ci-mtimes.py and the safety nets of
+parity.py, ci-step.py, scenarios.sh with arbor-sim, lint-imports.py, lint-mac-shell.py, mutate.py, fuzz-launch.py, ci-mtimes.py, reality-diff.py and the safety nets of
 scripts/mac-shell/lib.sh each get situations that must come out as failures (a misspelt status, a test that was renamed, a record cut off by a crash, a scenario whose
 commands do nothing) next to ones that must pass. Every row here passed when it should have failed
 before 2026-10-14.
@@ -48,6 +48,10 @@ spec.loader.exec_module(mac_lint)
 spec = importlib.util.spec_from_file_location("fuzz_launch", os.path.join(HERE, "fuzz-launch.py"))
 fuzz_launch = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(fuzz_launch)
+
+spec = importlib.util.spec_from_file_location("reality_diff", os.path.join(HERE, "reality-diff.py"))
+reality_diff = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(reality_diff)
 
 rows = []
 
@@ -1947,6 +1951,230 @@ print(opener.open("http://127.0.0.1:%%d/" %% server.server_address[1], timeout=5
     row("serve.py: without a port it says how it is used", subprocess.run([sys.executable, os.path.join(HERE, "mac-shell", "serve.py")], capture_output=True, check=False).returncode, 1)
 
 
+def check_reality_diff():
+    for situation in reality_diff.situations():
+        row(*situation)
+
+
+def check_reality_observer():
+    """reality.py must write the same words in both worlds, and nothing of what the script itself asked."""
+    tool = os.path.join(HERE, "mac-shell", "reality.py")
+    header = {"trace": 1, "displays": []}
+    window = {"id": 4501, "pid": 70, "frame": [0, 0, 10, 10]}
+    asked = [{"command": "state", "from": "script"}, {"call": "focus", "id": 4501}, {"done": "state", "ok": True, "message": "running"}]
+    dock = [{"command": "dock 4501 left", "from": "script"}, {"call": "setFrame", "id": 4501, "frame": [12, 43.4, 494, 650], "result": [12, 43, 494, 650]},
+            {"call": "focusedWindow", "result": 4501}, {"read": "stackedWindows", "result": []}, {"timer": "save"}, {"raw": "AXWindowMoved w4501"},
+            {"done": "dock 4501 left", "ok": True, "message": "docked w4501 at the left edge"}]
+    mark = [{"note": "reality: a step"}]
+
+    def line(*parts):
+        with tempfile.TemporaryDirectory() as folder:
+            paths = {name: os.path.join(folder, name) for name in ("look", "names", "trace")}
+            with open(paths["look"], "w", encoding="utf-8") as handle:
+                handle.write('{"belief": null, "truth": {}}')
+            with open(paths["names"], "w", encoding="utf-8") as handle:
+                handle.write("4501 W1\n40 W2\n")
+            with open(paths["trace"], "w", encoding="utf-8") as handle:
+                handle.writelines(json.dumps(entry) + "\n" for entry in [header] + [entry for part in parts for entry in part])
+            result = subprocess.run([sys.executable, tool, "line", "j", "a step", "1", "yes", paths["look"], paths["names"], paths["trace"], "arbor=60", "app=70"],
+                                    capture_output=True, text=True, check=False)
+        written = json.loads(result.stdout)
+        return written["reports"], written["replies"]
+
+    docked = (["setFrame:W1 12,43 494x650→12,43 494x650"], ["docked W1 at the left edge"])
+    row("reality.py: a call with its answer, a reply, and no reads, timers or raw lines", line(dock, mark), docked)
+    row("reality.py: what the script's own question set off is left out", line(asked, dock, asked, mark), docked)
+    row("reality.py: only what came since the mark before", line(dock, mark, [{"event": "focused", "id": 4501}], mark), (["focused:W1"], []))
+    row("reality.py: what came after the last mark waits for the next", line(dock, mark, [{"event": "focused", "id": 4501}]), docked)
+    row("reality.py: unless the trace has ended", line(dock, mark, [{"call": "stop"}, {"end": "Arbor stopped", "lines": 9, "thinned": 0}]), (["stop"], []))
+    row("reality.py: whose doing a change is, and what the window is now",
+        line([{"event": "changed", "user": True, "window": dict(window, minimized=True)}, {"event": "changed", "user": False, "window": window}], mark),
+        (["changed:W1:user+minimized", "changed:W1:arbor"], []))
+    row("reality.py: a window nobody has named, a process by its name, a shortcut's command",
+        line([{"event": "destroyed", "id": 9}, {"call": "unhideApp", "args": [70]}, {"command": "zoom 4501", "from": "shortcut"}], mark),
+        (["destroyed:W?", "unhideApp:app", "command:zoom W1:shortcut"], []))
+
+    # On a hosted Mac window ids are small numbers, and so are gaps, points and counts.
+    def said(command, reply):
+        return [{"command": command, "from": "script"}, {"done": command, "ok": True, "message": reply}]
+
+    def pressed(command):
+        return line([{"command": command, "from": "shortcut"}], mark)[0]
+
+    row("reality.py: a number in a reply that happens to be a window's id is a number", line(said("set gap 40", "gap = 40 (was 12)"), mark), ([], ["gap = 40 (was 12)"]))
+    row("reality.py: Arbor's replies write w and the id", line(said("zoom 40", "framed w40, 40 points wide"), mark), ([], ["framed W2, 40 points wide"]))
+    row("reality.py: in a command only the places of windows hold windows",
+        pressed("resize 40 right 40") + pressed("dock 40 beside 4501 bottom") + pressed("swap 40 4501") + pressed("set gap 40") + pressed("view 40")
+        + pressed("move-to-display next 40") + pressed("grow 40"),
+        ["command:resize W2 right 40:shortcut", "command:dock W2 beside W1 bottom:shortcut", "command:swap W2 W1:shortcut", "command:set gap 40:shortcut",
+         "command:view 40:shortcut", "command:move-to-display next W2:shortcut", "command:grow 40:shortcut"])
+    uuid = "07230EFA-7A8D-4E37-845C-19CC8737EEF5"
+    row("reality.py: what is recorded by name is written by what each of its arguments is: nothing that only one world has gets through",
+        line([{"event": "windowFound", "args": [dict(window, id=40, title="title[3]", bundle=None, app="ArborTestWindows")]},
+              {"event": "windowReplaced", "args": [4501, dict(window, id=40, minimized=True)]}, {"action": "peekOutlineClicked", "args": [uuid]},
+              {"action": "minimapClicked", "args": [uuid, 40.0, 12.4]}, {"action": "finderChose", "args": [{"window": 40}]},
+              {"action": "finderChose", "args": [{"display": uuid, "space": 7}]}, {"call": "setMinimized", "args": [40, True]},
+              {"event": "shortcut", "args": ["ctrl+opt+return", "zoom 40", "pressed"]}], mark)[0],
+        ["windowFound:W2", "windowReplaced:W1,W2+minimized", "action:peekOutlineClicked:display", "action:minimapClicked:display,40,12", "action:finderChose:W2",
+         "action:finderChose:space", "setMinimized:W2,true", "shortcut:ctrl+opt+return,zoom W2,pressed"])
+    row("reality.py: a test app is a test app, whatever each world calls it; macOS's own apps have one name everywhere",
+        line([{"event": "applicationActivated", "args": [None, "ArborTestWindows"]}, {"event": "applicationActivated", "args": ["dev.arbor.testwindows2", "ArborTestWindows2"]},
+              {"event": "applicationActivated", "args": ["com.apple.finder", "Finder"]}, {"event": "applicationActivated"}], mark)[0],
+        ["applicationActivated:test-app", "applicationActivated:test-app", "applicationActivated:Finder", "applicationActivated"])
+    row("reality.py: of a name nobody has told it about, only the name", line([{"event": "somethingNew", "args": [40, uuid]}], mark)[0], ["somethingNew:…"])
+    for question in ("get gap", "help", "watch windows --titles", "settings --json", "launch-at-login", "layout", "layout @2 --ids", "menu-bar", "stats reset"):
+        row(f"reality.py: `{question}` is a question too", line(said(question, "an answer"), dock, mark), docked)
+    for command in ("launch-at-login on", "layout 40 | Desktop", "set gap 40"):
+        row(f"reality.py: `{command}` is none", line(said(command, "done"), mark), ([], ["done"]))
+
+    # Three tables in reality.py say what Arbor's sources say. Asked of the tree, so that one that has drifted goes red.
+    sys.path.insert(0, os.path.dirname(tool))  # it borrows from state.py, which lies beside it
+    spec = importlib.util.spec_from_file_location("reality", tool)
+    observer = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(observer)
+
+    def source(*parts):
+        with open(os.path.join(ROOT, "Sources", *parts), encoding="utf-8") as handle:
+            return handle.read()
+
+    def cases_of_is_query(text):
+        body = text[text.index("var isQuery: Bool {"):]
+        return set(re.findall(r"\.(\w+)", " ".join(found for found in re.findall(r"case (.*?):", body[:body.index("default:")]))))
+
+    row("reality.py: its questions are the cases of Command.isQuery",
+        sorted(observer.QUESTIONS), sorted(cases_of_is_query(source("ArborCore", "Command.swift")) - {"settings"}
+                                           | cases_of_is_query(source("ArborCore", "SettingsCommand.swift"))))
+    row("reality.py: the verbs it takes a window after are those Command.text writes one after",
+        sorted(observer.WINDOW_FIRST), sorted(set(re.findall(r'return "([a-z-]+)" \+ w\(', source("ArborCore", "Command.swift")))))
+    named = set()
+    for folder, _, files in os.walk(os.path.join(ROOT, "Sources", "ArborKit")):
+        for name in files:
+            with open(os.path.join(folder, name), encoding="utf-8") as handle:
+                code = "\n".join(text for text in handle.read().splitlines() if not text.lstrip().startswith("//"))
+            named |= set(re.findall(r'recorder\??\.(?:event|call|action)\(\s*"(\w+)"', code)) | set(re.findall(r'\btraced\("(\w+)"', code))
+    row("reality.py: it knows the arguments of everything that is recorded by name", sorted(observer.NAMED), sorted(named))
+
+    def look(windows):
+        with tempfile.TemporaryDirectory() as folder:
+            for name, text in (("windows", windows), ("on-screen", windows), ("keyboard", "70 4502\n"), ("names", "4501 W1\n")):
+                with open(os.path.join(folder, name), "w", encoding="utf-8") as handle:
+                    handle.write(text)
+            result = subprocess.run([sys.executable, tool, "look", folder, os.path.join(folder, "names"), "arbor=60", "app=70"],
+                                    capture_output=True, text=True, check=False)
+        seen = json.loads(result.stdout)
+        return seen["belief"], seen["truth"]["order"], seen["truth"]["overlays"], seen["truth"]["furniture"], seen["truth"]["front"], seen["truth"]["keyboard"]
+
+    row("reality.py: a new window gets the next name; a helper, macOS's furniture and Arbor's own panels get none",
+        look("9001 60 3 0 0 10 10 on Arbor\n4502 70 0 5 5 480 352 on App\n4503 70 0 5 5 40 20 on App\n4501 70 0 0 0 480 352 on App\n77 80 0 0 0 900 700 on Window Server\n"),
+        (None, ["W2", "W1"], {"3": 1}, {"Window Server": 1}, "app", "W2"))
+
+
+def check_fakemac_traces():
+    """A rehearsal's traces are files as a Mac's are: they grow while they are recorded, and afterwards they are the script's."""
+    fakemac = os.path.join(ROOT, ".build", "debug", "arbor-fakemac")
+    if not os.access(fakemac, os.X_OK):
+        print("SKIPPED the rows about a rehearsal's traces: no .build/debug/arbor-fakemac; run swift build first (on Linux)")
+        return
+    with tempfile.TemporaryDirectory() as session:
+        home = os.path.join(session, "home")
+        os.makedirs(home)
+        environment = {**os.environ, "ARBOR_HOME": home, "ARBOR_SOCKET": "", "SWIFT_DETERMINISTIC_HASHING": "1", "ARBOR_ONLY_PIDS": "70"}
+
+        def mac(*words):
+            return subprocess.run([fakemac, *words], env=environment, capture_output=True, text=True, check=False)
+
+        def traces():
+            folder = os.path.join(home, "traces")
+            return {name: len(open(os.path.join(folder, name), encoding="utf-8").readlines()) for name in os.listdir(folder)}
+
+        mac("app-start", "70", "dev.arbor.testwindows", "ArborTestWindows", "--count", "2")
+        # A process that is alive for as long as this takes: whoever finds Arbor's gone takes it for killed.
+        mac("arbor-start", str(os.getpid()), "0")
+        mac("arborctl", "trace", "on", "one")
+        [begun] = traces().values()
+        mac("arborctl", "dock", "101", "left")
+        [grown] = traces().values()
+        mac("arborctl", "trace", "off")
+        [name] = traces()
+        row("arbor-fakemac: a trace grows with what is done while it is recorded", begun < grown < traces()[name], True)
+        os.remove(os.path.join(home, "traces", name))
+        mac("arborctl", "dock", "102", "right")
+        row("arbor-fakemac: a finished trace that the script has taken away does not come back", traces(), {})
+        mac("arborctl", "trace", "on", "two")
+        row("arbor-fakemac: nor with the next one", [name.endswith("-two.jsonl") for name in traces()], [True])
+
+
+def check_reality_wrapper():
+    """scripts/reality.sh (`make reality`) in a checkout made up for it, with a stand-in for the rehearsal."""
+    observation = json.dumps({"journey": "j", "step": "dock", "n": 1, "settled": True, "reports": [], "replies": [], "belief": None,
+                              "truth": {"windows": {"W1": {"frame": [0, 0, 480, 348], "on": True}}}})
+    listed = "# a remark\nj/dock/truth/frame/W1 a word written by hand\n"
+
+    def wrapper(tool=None, stale=None, **environment):
+        """The exit code, whether it rehearsed, and the list afterwards."""
+        with tempfile.TemporaryDirectory() as root:
+            for folder in ("scripts/mac-shell", "collab/evidence", "mac", "empty", ".build/reality"):
+                os.makedirs(os.path.join(root, folder))
+            shutil.copy(os.path.join(HERE, "reality.sh"), os.path.join(root, "scripts"))
+            if tool is None:
+                shutil.copy(os.path.join(HERE, "reality-diff.py"), os.path.join(root, "scripts"))
+            files = {"scripts/mac-shell/rehearse.sh": "#!/bin/bash\ntouch rehearsed\nmkdir -p .build/rehearsal/out/reality\n"
+                                                      f"echo '{observation.replace('348', '352')}' > .build/rehearsal/out/reality/j.jsonl\n",
+                     "collab/evidence/reality-known.txt": listed, "mac/j.jsonl": observation + "\n"}
+            if tool is not None:
+                files["scripts/reality-diff.py"] = tool
+            if stale is not None:
+                files[".build/reality/known.txt"] = stale
+            for name, text in files.items():
+                with open(os.path.join(root, name), "w", encoding="utf-8") as handle:
+                    handle.write(text)
+            os.chmod(os.path.join(root, "scripts/mac-shell/rehearse.sh"), 0o755)
+            code = subprocess.run(["bash", os.path.join(root, "scripts", "reality.sh")], capture_output=True, check=False,
+                                  env={**os.environ, "CHECK": "", "KNOWN": "", **environment}).returncode
+            with open(os.path.join(root, "collab/evidence/reality-known.txt"), encoding="utf-8") as handle:
+                return code, os.path.exists(os.path.join(root, "rehearsed")), handle.read()
+
+    row("reality.sh: a run and a rehearsal that part as the list says", wrapper(MAC="mac", CHECK="1"), (0, True, listed))
+    row("reality.sh: a folder without observations is refused before anything is rehearsed", wrapper(MAC="empty"), (2, False, listed))
+    row("reality.sh: so is the second of two", wrapper(MAC="mac empty"), (2, False, listed))
+    row("reality.sh: KNOWN=1 keeps the remarks and the words", wrapper(MAC="mac", KNOWN="1"), (0, True, listed))
+    row("reality.sh: KNOWN=1 and a tool that crashes: the list stays, whatever an earlier run left lying about",
+        wrapper(MAC="mac", KNOWN="1", tool="import sys\nsys.exit(3)\n", stale="j/dock/truth/frame/W1 ?\n"), (3, True, listed))
+
+    def at_a_ref(slip):
+        """`make reality-trunk` in a checkout of origin/trunk: the exit code, what run.sh was asked for, whether it rehearsed, the last line."""
+        with tempfile.TemporaryDirectory() as root:
+            for folder in ("scripts/mac-shell", "collab/evidence", "Sources"):
+                os.makedirs(os.path.join(root, folder))
+            for name in ("reality.sh", "reality-diff.py"):
+                shutil.copy(os.path.join(HERE, name), os.path.join(root, "scripts"))
+            files = {"scripts/mac-shell/rehearse.sh": "#!/bin/bash\ntouch rehearsed\nmkdir -p .build/rehearsal/out/reality\n"
+                                                      f"echo '{observation.replace('348', '352')}' > .build/rehearsal/out/reality/j.jsonl\n",
+                     "scripts/mac-shell/run.sh": "#!/bin/bash\necho \"$*\" > asked\nmkdir -p run/reality\necho 1234567890 > run/reality/commit.txt\n"
+                                                 f"echo '{observation}' > run/reality/j.jsonl\necho output: run\n",
+                     "collab/evidence/reality-known.txt": listed, "Sources/a.swift": "let a = 1\n", "Package.swift": "\n",
+                     ".gitignore": ".build\nrun\nasked\nrehearsed\n"}
+            for name, text in files.items():
+                with open(os.path.join(root, name), "w", encoding="utf-8") as handle:
+                    handle.write(text)
+                os.chmod(os.path.join(root, name), 0o755)
+            subprocess.run("git init -q . && git add -A && git -c user.name=m -c user.email=m@example.com commit -q -m all"
+                           " && git update-ref refs/remotes/origin/trunk HEAD", shell=True, cwd=root, check=True)
+            if slip:
+                with open(os.path.join(root, "Sources/a.swift"), "w", encoding="utf-8") as handle:
+                    handle.write("let a = 2\n")
+            done = subprocess.run(["bash", os.path.join(root, "scripts", "reality.sh")], capture_output=True, check=False, text=True,
+                                  env={**os.environ, "MAC": "", "KNOWN": "", "CHECK": "1", "REF": "trunk", "PRIORITY": "1", "STILL": "0"})
+            asked = os.path.join(root, "asked")
+            return (done.returncode, open(asked, encoding="utf-8").read().strip() if os.path.exists(asked) else None,
+                    os.path.exists(os.path.join(root, "rehearsed")), (done.stdout.strip().splitlines() or [""])[-1])
+
+    row("reality.sh: REF: the Mac is asked for that branch at that priority, and the last line is the verdict", at_a_ref(slip=False),
+        (0, "--priority 1 scripts/mac-shell/reality.sh trunk", True,
+         "trunk at 1234567: green: 1 divergences in 1 steps of 1 journeys (new: 0, known: 1, gone: 0)"))
+    row("reality.sh: REF, and the code here is not that branch's: no Mac is asked, nothing is rehearsed", at_a_ref(slip=True), (2, None, False, ""))
+
+
 def main():
     canary, since = subprocess.Popen(["sleep", "600"]), time.time()
     check_parity()
@@ -1968,6 +2196,10 @@ def main():
     check_preflight()
     check_fuzz_launch()
     check_no_server_asks_its_name()
+    check_reality_diff()
+    check_reality_observer()
+    check_fakemac_traces()
+    check_reality_wrapper()
     wrong = 0
     for what, got, expected in rows:
         if got != expected:
