@@ -30,6 +30,9 @@
 ARBOR_TIME_LIMIT=1100
 source "$(dirname "$0")/lib.sh"
 needs_throwaway_mac "switch dark mode, the wallpaper, Increase Contrast, Reduce Transparency and Reduce Motion, and plug in a display"
+# A run brings 40 MB home unless a script asks for more (scripts/ci-keep-output.py), and leaves out the largest pictures first: of the
+# third run those were 292 of 709, every whole screen over the landscape among them. The three scripts of the gallery make 131 MB.
+echo 160 > "$ARBOR_OUT/keep-mb.txt"
 
 SCENERY="$ARBOR_ROOT/.build/mac-shell/scenery"
 AXFIND="$ARBOR_ROOT/.build/mac-shell/axfind"
@@ -116,6 +119,7 @@ SETTINGS='{
   "menuBarControls": true,
   "animationDuration": 0.46,
   "pointerGestures": true,
+  "shortcuts": "all",
   "rules": [
     { "app": "com.example.mail", "title": "Inbox", "action": "dock left" },
     { "app": "com.example.player", "action": "float" }
@@ -197,6 +201,13 @@ ships() {
   shot "$p-01-nothing-docked"
   closeup "$p-01b-the-menu-bar" "$((sx + sw - 420))" 0 420 "$sy"
 
+  claim "a key that can do nothing is answered  ($p)"
+  before=$(ids_on)
+  key ctrl+opt+z
+  both "$p-01c-the-line" "$before" 0.3
+  check "on screen" test -f "$ARBOR_OUT/$p-01c-the-line-alone-1.png"
+  sleep 3
+
   claim "two windows docked  ($p)"
   ctl dock "$W1" left
   ctl dock "$W2" right
@@ -251,12 +262,6 @@ ships() {
   rightclick $(status_item)
   both "$p-13-menu" "$before"
   menu_is_open && key escape
-
-  claim "a key that can do nothing is answered  ($p)"
-  before=$(ids_on)
-  key ctrl+opt+space
-  both "$p-14-the-line" "$before" 0.3
-  sleep 3
 
   claim "paused, and resumed  ($p)"
   before=$(ids_on)
@@ -486,7 +491,7 @@ tour() {
   before=$(ids_on)
   key ctrl+opt+up
   both "$p-19-line-problem" "$before" 0.4
-  check "a key that cannot act is answered on screen" has_come "$before"
+  check "a key that cannot act is answered on screen" test -f "$ARBOR_OUT/$p-19-line-problem-alone-1.png"
   key ctrl+opt+9
   both "$p-20-line-sentence" "$before" 0.4
   key ctrl+opt+return
@@ -568,7 +573,7 @@ grounds() {
     shot "$1-on-$ground-5c-name-problem"
     key escape
     # A problem's words; then a sentence, the dot, and a hint with keys in it (said three times and not a fourth).
-    key ctrl+opt+space
+    key ctrl+opt+up
     shot_after 0.4 "$1-on-$ground-6-line-problem"
     sleep 2
     # shellcheck disable=SC2046
