@@ -1068,6 +1068,19 @@ does not count as parked. A call that fails at once means that the process is go
 if nothing reported its end (an accessory app, one started from a shell), it is
 forgotten then.
 
+The one exception to "on the main thread" is a layout that moves windows of several apps (`AXWindowSystem.moveTogether`). What giving a
+window a frame asks of its app is a value that touches nothing but two elements (`AXFrameJob`); each app's jobs run on a queue of its
+own, in the order foretold, **while the main thread waits for all of them**, as it waits for each in `setFrame`. So the wait is the slowest
+app's instead of the sum (a real app takes 5 to 150 ms to lay its content out for a new size), two hung apps cost one second
+instead of two, and nothing else is new: no notification is judged meanwhile, no call outlives the batch, nothing arrives late. The books
+(what the layer believes, which echoes it expects, who is silent, whether the permission is gone) are kept on the main thread
+afterwards (`book`). An app's batch ends at its first call without an answer. The answers are kept for the `setFrame` calls that follow, and
+no longer than until whoever foretold the moves has returned: an older one would be given for a window that has been moved away since.
+What nobody asked for is reported then, never from inside `moveTogether`, whose caller is in the middle of a layout. (The stand-in keeps
+answers until the next forecast and reports from inside it, moves one app's windows ahead as well, and takes a window through every frame
+it is foretold: all within the contract, which is about what the calls return.)
+`scripts/mac-on-linux/tests/Together.swift` tells all of this on the model of a Mac, and `mutants.py` takes each piece out again.
+
 ## Traces
 
 Each platform seam is wrapped in a decorator (`Sources/ArborKit/Trace/`): `RecordingWindowSystem`, `RecordingOverlays` and
@@ -1758,6 +1771,7 @@ Everything else is a view of it:
 | `ARBOR_NO_PICTURES=1` | Take no pictures of windows, as without Screen Recording permission |
 | `ARBOR_NO_OPENING=1` | Open no app: `summon` with no window to bring answers as if there were no such app |
 | `ARBOR_NO_REHEARSAL=1` | Get nothing ready for the first motion ahead of time (`first-dock.sh` measures what that saves) |
+| `ARBOR_ONE_BY_ONE=1` | At a layout, wait for one app after the other instead of asking them side by side (`probe-together.sh` measures what that saves) |
 | `ARBOR_RELEASES_URL=http://…` | Ask there instead of GitHub's releases API (tests of the real app) |
 | `ARBOR_BUILD=abc1234` | Which commit this build is, for the header of traces |
 

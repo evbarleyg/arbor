@@ -61,7 +61,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
     // Each seam is wrapped in a decorator that records what crosses it while `trace on` is in effect
     // (docs/TRACES.md) and otherwise only passes it on.
     let recorder = TraceRecorder()
-    let windowSystem = AXWindowSystem(onlyPIDs: environment.onlyPIDs)
+    let windowSystem = AXWindowSystem(onlyPIDs: environment.onlyPIDs, oneByOne: environment.oneByOne)
     windowSystem.recorder = recorder
     overlays.recorder = recorder
     let controller = Controller(

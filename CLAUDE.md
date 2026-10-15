@@ -123,7 +123,9 @@ against fakes.
   event tap callbacks run on `EventTapThread` (`Input/EventTap.swift`), because
   macOS holds every tapped event system-wide until the callback returns. Keep
   them cheap, keep their state in a lock-protected box, and hop to the main
-  actor with `DispatchQueue.main.async` only to run a command or draw.
+  actor with `DispatchQueue.main.async` only to run a command or draw. And a layout that moves windows of several apps asks them
+  side by side, each on a queue of its own, while the main thread waits for all (`AX/AXFrameJob.swift`): a job touches
+  nothing but the elements it is handed, and the books are kept on the main thread afterwards.
 - Coordinates are global, top-left origin, y down (the AX/CGWindowList space).
   Convert to AppKit only in `ScreenGeometry`.
 - New user actions are `Command` cases with a text form (`parse`/`text`/`helpText`),

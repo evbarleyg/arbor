@@ -154,8 +154,9 @@ MUTANTS = [
     },
     {
         "name": "a shortened plan is never followed by the full one",
-        "old": "    if let taken = result, let more = FramePlan.makingUp(for: steps, result: taken, target: frame) {\n",
-        "new": "    if let taken = result, false, let more = FramePlan.makingUp(for: steps, result: taken, target: frame) {\n",
+        "file": "ArborKit/AX/AXFrameJob.swift",
+        "old": "    if let taken = result, let more = FramePlan.makingUp(for: steps, result: taken, target: target) {\n",
+        "new": "    if let taken = result, false, let more = FramePlan.makingUp(for: steps, result: taken, target: target) {\n",
         "red": ["the frame Arbor believes a window has is out of date: a move that was thought to need no resize gets one"],
     },
     {
@@ -307,6 +308,94 @@ MUTANTS = [
         "red": [
             "Arbor moves a window 80 points, 20 ms later the button goes down on its title bar and the pointer goes across, served on time: the drag is reported to begin",
         ],
+    },
+    # Several apps asked side by side (tests/Together.swift).
+    {
+        "name": "apps are never asked side by side",
+        "old": "    guard batches.count > 1, !oneByOne else { return }\n",
+        "new": "    guard batches.count > .max, !oneByOne else { return }\n",
+        "red": [
+            "four windows of three slow apps are moved together: they are where they belong when the call returns",
+            "two apps of three hang while they are moved together: Arbor waits one second for both, where it used to wait two",
+            "8 small windows of 8 slow apps are arranged: in little more than it takes one of them",
+        ],
+    },
+    {
+        "name": "what was moved is not expected to be reported",
+        "old": "      echoes.expect(actual, for: job.window, at: uptime)\n",
+        "new": "      _ = uptime\n",
+        "red": ["four windows of three slow apps are moved together: the apps' reports follow, and count as echoes"],
+    },
+    {
+        "name": "an app that is silent is asked about its other windows as well",
+        "old": "          guard case .took = outcome else { break }\n",
+        "new": "          _ = outcome\n",
+        "red": ["one app of three hangs while they are moved together: Arbor waits for one call, a second, and not once for each of the app's windows"],
+    },
+    {
+        "name": "how long an app kept Arbor waiting is taken to be as long as the slowest did",
+        "old": "      answersAhead[job.window] = (job.target, book(outcome, of: job, waited: waited))\n",
+        "new": "      answersAhead[job.window] = (job.target, book(outcome, of: job, waited: max(waited, 1)))\n",
+        "red": ["an app is gone, unannounced, when it is to be moved with others that are slow: its window is reported gone: it failed at once, however long the others took"],
+    },
+    {
+        "name": "answers nobody asked for are dropped without a word",
+        "old": "      if let record = records[window], !record.isBackgroundTab { events?.windowChanged(record.snapshot, userInitiated: false) }\n",
+        "new": "      _ = window\n",
+        "red": [
+            "moves are foretold and nobody asks for them: "
+            "as soon as whoever foretold them is done, the three that were not asked for are reported where they are, as Arbor's own doing",
+            "moves are foretold, nobody asks for them, and more are foretold at once: afterwards all four are reported where they are",
+        ],
+    },
+    {
+        "name": "an answer waits until something is heard, however long",
+        "old": "    Task { @MainActor [weak self] in self?.dropAnswersAhead() }\n",
+        "new": "    _ = 0\n",
+        "red": [
+            "moves are foretold and nobody asks for them: "
+            "as soon as whoever foretold them is done, the three that were not asked for are reported where they are, as Arbor's own doing",
+        ],
+    },
+    {
+        "name": "a window of which nothing is known is reported all the same",
+        "old": "    for (window, ahead) in answersAhead where ahead.answer != nil { toReport.insert(window) }\n",
+        "new": "    for (window, _) in answersAhead { toReport.insert(window) }\n",
+        "red": [
+            "one app of three hangs while they are moved together, and nobody asks what came of it: "
+            "the others are reported where they are, the app's windows not: a report would say that it answers",
+        ],
+    },
+    {
+        "name": "an earlier forecast's answers are still given after the next",
+        "old": "    retireAnswersAhead()\n    var batches",
+        "new": "    _ = 0\n    var batches",
+        "red": ["moves are foretold, nobody asks for them, and more are foretold at once: the first forecast's answers are not given any more: the app is asked"],
+    },
+    {
+        "name": "an answer is given whichever frame is asked for",
+        "old": "    if let ahead = answersAhead.removeValue(forKey: window), ahead.requested == frame { return ahead.answer }\n",
+        "new": "    if let ahead = answersAhead.removeValue(forKey: window) { return ahead.answer }\n",
+        "red": ["a window is foretold one frame and asked for another: the layer answers with the other"],
+    },
+    {
+        "name": "answers outlive a pause",
+        "old": "    answersAhead.removeAll()\n    toReport.removeAll()\n    waitingToObserve.removeAll()\n",
+        "new": "    _ = 0\n    toReport.removeAll()\n    waitingToObserve.removeAll()\n",
+        "red": ["Arbor is paused and resumed in one go, with answers nobody has asked for: it asks the app, and the window moves"],
+    },
+    {
+        "name": "a window goes through every frame it is foretold",
+        "old": "      guard seen.insert(window).inserted, let record = records[window], answers(record.snapshot.pid), !record.snapshot.isFullScreen\n",
+        "new": "      guard seen.insert(window).inserted || true, let record = records[window], answers(record.snapshot.pid), !record.snapshot.isFullScreen\n",
+        "red": ["a window is foretold two frames at once: it has the first"],
+    },
+    {
+        "name": "the enhanced user interface stays off",
+        "file": "ArborKit/AX/AXFrameJob.swift",
+        "old": "    if enhanced { app?.setBool(\"AXEnhancedUserInterface\", true) }\n",
+        "new": "    _ = enhanced\n",
+        "red": ["an app with the enhanced user interface on is moved with others: and it has it on again"],
     },
 ]
 

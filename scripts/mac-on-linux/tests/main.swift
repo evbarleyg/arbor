@@ -158,6 +158,7 @@ tellOfSlowApps(book)
 tellOfTheFlightToTheDock(book)
 tellOfTwoDisplays(book)
 tellOfWhatTheWalkFoundUpstairs(book)
+tellOfMovingTogether(book)
 tellOfTheWalk(book)
 if let replay = book.options.replay { exit(replayWalk(replay)) }
 exit(book.tellAll())
