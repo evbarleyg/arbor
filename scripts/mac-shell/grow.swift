@@ -23,9 +23,12 @@
 //                                                   "waited" from the return of the call before the wait, "sincePosition" from the return of the position call, to the start of the last call
 //   put <name> <x y w h>                            put the window there, and say where it is then
 //   look <name>                                     where the window is by Accessibility and by the window server, where the pointer is, whether the button is down
-//   chain <name> [after-release <ms>] (size <w> <h> | pos <x> <y>)…      those calls back to back where the window is, nothing read between them; then the frame at once and 50, 200 and 500 ms after the
+//   pause <ms>                                      let that long pass
+//   chain <name> [after-release <ms> | after-move <points>] (size <w> <h> | pos <x> <y> | under <dx> <dy>)…      those calls back to back where the window is, nothing read between them; then the frame at once and 50, 200 and 500 ms after the
 //                                                   last call returned (spun, so on time), each with the pointer and the button. For a window that a hand holds. after-release: first wait
-//                                                   until the left button comes up, and that many milliseconds more
+//                                                   until the left button comes up, and that many milliseconds more. after-move: first wait until the pointer has gone that many points from where
+//                                                   it is now: for a call made while the hand moves. under: a position call that puts the window's origin dx, dy up and left of where the pointer is
+//                                                   at that moment
 // With GROW_BRIEF in the environment the lines about the window and the displays are left out.
 // A number is a sum of numbers and of these, for display 1 (the main one) and 2: l1 t1 r1 b1 (its frame's edges) and vl1 vt1 vr1 vb1 (its
 // visible frame's), in global coordinates, y down: `vb1-12.5`, `r1-494`. A step that names a display that is not there is skipped, and says so.
@@ -115,7 +118,9 @@ let listed = (attribute(app, "AXWindows") as? [AnyObject] ?? [])
 let chosen =
   arguments[1] == "first"
   ? listed.first { attribute($0, "AXSubrole") as? String == "AXStandardWindow" }
-  : listed.first { number(of: $0) == CGWindowID(arguments[1]) ?? 0 }
+  // Safari, with the panel under its address field open, lists under its main window's number something that is not that window.
+  : listed.first { number(of: $0) == CGWindowID(arguments[1]) ?? 0 && attribute($0, "AXSubrole") as? String == "AXStandardWindow" }
+    ?? listed.first { number(of: $0) == CGWindowID(arguments[1]) ?? 0 }
 guard let window = chosen else { fail("process \(pid) lists no window \(arguments[1]) (it lists \(listed.count))", 69) }
 AXUIElementSetMessagingTimeout(window, 3)
 let windowID = number(of: window)
@@ -237,15 +242,23 @@ func looks() -> [[String: Any]] {
 }
 
 enum Call {
-  case size(CGSize), position(CGPoint)
-  var word: String { if case .size = self { return "size" } else { return "pos" } }
+  case size(CGSize), position(CGPoint), under(CGPoint)
+  var word: String {
+    switch self {
+    case .size: return "size"
+    case .position: return "pos"
+    case .under: return "under"
+    }
+  }
   var asked: [Double] {
     switch self {
     case .size(let size): return [Double(size.width), Double(size.height)]
-    case .position(let point): return [Double(point.x), Double(point.y)]
+    case .position(let point), .under(let point): return [Double(point.x), Double(point.y)]
     }
   }
 }
+/// Where the last position call asked the window to go.
+var sentTo = CGPoint.zero
 
 /// Makes the call. With `reads`, says what came of it and returns the frame read back.
 @discardableResult
@@ -258,6 +271,13 @@ func make(_ call: Call, reads: Bool, quiet: Bool = false) -> CGRect? {
     value = AXValueCreate(.cgSize, &size)
     name = "AXSize"
   case .position(var point):
+    sentTo = point
+    value = AXValueCreate(.cgPoint, &point)
+    name = "AXPosition"
+  case .under(let offset):
+    let pointer = CGEvent(source: nil)?.location ?? .zero
+    var point = CGPoint(x: pointer.x - offset.x, y: pointer.y - offset.y)
+    sentTo = point
     value = AXValueCreate(.cgPoint, &point)
     name = "AXPosition"
   }
@@ -366,9 +386,20 @@ func glance(since time: Double) -> [String: Any] {
   ]
 }
 
-func chain(_ name: String, _ plan: [Call], afterRelease: Double?) {
+func chain(_ name: String, _ plan: [Call], afterRelease: Double?, afterMove: Double?) {
   var line: [String: Any] = ["kind": "hand", "label": label, "name": name]
-  if let afterRelease {
+  if let afterMove {
+    let from = CGEvent(source: nil)?.location ?? .zero
+    let patience = now() + 15
+    var gone = 0.0
+    while gone < afterMove, now() < patience {
+      let here = CGEvent(source: nil)?.location ?? from
+      gone = Double(hypot(here.x - from.x, here.y - from.y))
+    }
+    line["afterMove"] = afterMove
+    line["gone"] = round3(gone)
+    line["before"] = glance(since: now())
+  } else if let afterRelease {
     let patience = now() + 15
     while CGEventSource.buttonState(.hidSystemState, button: .left), now() < patience {}
     let up = now()
@@ -384,7 +415,9 @@ func chain(_ name: String, _ plan: [Call], afterRelease: Double?) {
   var made: [[String: Any]] = []
   for call in plan {
     make(call, reads: false, quiet: true)
-    made.append(["call": call.word, "asked": call.asked, "epoch": epoch(begun), "began": round3((begun - time) * 1000), "ms": round3((returned - begun) * 1000)])
+    var said: [String: Any] = ["call": call.word, "asked": call.asked, "epoch": epoch(begun), "began": round3((begun - time) * 1000), "ms": round3((returned - begun) * 1000)]
+    if case .size = call {} else { said["sentTo"] = [Double(sentTo.x), Double(sentTo.y)] }
+    made.append(said)
   }
   let last = returned
   line["once"] = glance(since: last)
@@ -557,6 +590,10 @@ while let raw = readLine() {
     let placed = place(wanted)
     emit(["kind": "put", "label": label, "name": words[1], "epoch": epoch(now()), "wanted": list(wanted), "ax": list(placed), "ws": list(serverFrame(of: windowID)), "right": same(placed, wanted)])
 
+  case "pause":
+    guard words.count == 2, let time = Double(words[1]) else { fail("pause <ms>") }
+    spin(until: now() + time / 1000)
+
   case "look":
     guard words.count == 2 else { fail("look <name>") }
     var line = glance(since: now())
@@ -570,8 +607,12 @@ while let raw = readLine() {
   case "chain":
     var rest = Array(words.dropFirst(2))
     var wait: Double?
+    var move: Double?
     if rest.first == "after-release", rest.count > 2 {
       wait = Double(rest[1])
+      rest.removeFirst(2)
+    } else if rest.first == "after-move", rest.count > 2 {
+      move = Double(rest[1])
       rest.removeFirst(2)
     }
     var plan: [Call] = []
@@ -579,12 +620,13 @@ while let raw = readLine() {
       switch rest[0] {
       case "size": plan.append(.size(CGSize(width: a, height: b)))
       case "pos": plan.append(.position(CGPoint(x: a, y: b)))
-      default: fail("chain: size or pos, not \(rest[0])")
+      case "under": plan.append(.under(CGPoint(x: a, y: b)))
+      default: fail("chain: size, pos or under, not \(rest[0])")
       }
       rest.removeFirst(3)
     }
-    guard words.count > 2, !plan.isEmpty, rest.isEmpty else { fail("chain <name> [after-release <ms>] (size <w> <h> | pos <x> <y>)…: \(text)") }
-    chain(words[1], plan, afterRelease: wait)
+    guard words.count > 2, !plan.isEmpty, rest.isEmpty else { fail("chain <name> [after-release <ms> | after-move <points>] (size <w> <h> | pos <x> <y> | under <dx> <dy>)…: \(text)") }
+    chain(words[1], plan, afterRelease: wait, afterMove: move)
 
   case "turn":
     guard words.count == 13, let times = Int(words[11]) else { fail("turn <name> <x y w h> <x y w h> <waits> <n> <orders>: \(text)") }
