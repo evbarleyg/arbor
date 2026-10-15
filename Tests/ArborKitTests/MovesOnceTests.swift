@@ -228,12 +228,13 @@ import Testing
     #expect(h.frame(fixed)?.size == CGSize(width: 230, height: 408))
   }
 
-  /// A first meeting with a window that has one fixed side, like a settings window, or two, and does not say so.
-  @Test(arguments: ["left", "right", "top", "bottom"], [CGSize(width: 500, height: 2000), CGSize(width: 3000, height: 400), CGSize(width: 500, height: 400)])
+  /// A first meeting with a window that has one fixed side, like a settings window, or two, and does not say so. Well short of every
+  /// slot it is given: less than a character cell short, nobody can tell it from a terminal (`CellsTests`).
+  @Test(arguments: ["left", "right", "top", "bottom"], [CGSize(width: 500, height: 2000), CGSize(width: 3000, height: 380), CGSize(width: 500, height: 380)])
   func aWindowThatTurnsOutUnableToGrowGoesStraightToTheMiddle(side: String, most: CGSize) throws {
     let h = Harness()
     let a = h.system.open(app: "A")
-    let settings = h.system.open(app: "Settings", frame: CGRect(x: 400, y: 200, width: 500, height: 400))
+    let settings = h.system.open(app: "Settings", frame: CGRect(x: 400, y: 200, width: 500, height: 380))
     h.system.setMaximumSize(settings, most)
     h.start()
     h.run("dock \(a.rawValue) left")

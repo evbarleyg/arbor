@@ -379,6 +379,14 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     return parts.count == 2 ? CGSize(width: parts[0], height: parts[1]) : nil
   }
   func usage(_ text: String) -> (String, Bool) { ("usage: \(text)", false) }
+  /// `<WxH> [down] [margin WxH]`, and the index of the word after it.
+  func cellWords(from first: Int) -> (cell: CGSize, down: Bool, margin: CGSize, next: Int)? {
+    guard words.count > first, let cell = size(words[first]), cell.width >= 0, cell.height >= 0 else { return nil }
+    var (down, margin, next) = (false, CGSize.zero, first + 1)
+    if words.count > next, words[next] == "down" { (down, next) = (true, next + 1) }
+    if words.count > next + 1, words[next] == "margin", let parsed = size(words[next + 1]) { (margin, next) = (parsed, next + 2) }
+    return (cell, down, margin, next)
+  }
 
   switch words[0] {
   case "open":
@@ -386,11 +394,15 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     var frame = CGRect(x: 300, y: 200, width: 640, height: 420)
     var minimum = CGSize.zero
     var isResizable = true
+    var cells: (cell: CGSize, down: Bool, margin: CGSize)?
     var index = 2
     while index < words.count {
       if words[index] == "min", index + 1 < words.count, let parsed = size(words[index + 1]) {
         minimum = parsed
         index += 2
+      } else if words[index] == "cell", let parsed = cellWords(from: index + 1) {
+        cells = (parsed.cell, parsed.down, parsed.margin)
+        index = parsed.next
       } else if words[index] == "fixed" {
         isResizable = false
         index += 1
@@ -402,7 +414,9 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
       }
     }
     let id = system.open(
-      app: app, pid: pid(ofApp: app), frame: frame, minimumSize: minimum, isResizable: isResizable)
+      app: app, pid: pid(ofApp: app), frame: frame, minimumSize: minimum, isResizable: isResizable,
+      sizeStep: cells.flatMap { $0.cell.width >= 1 && $0.cell.height >= 1 ? $0.cell : nil }, stepsRoundDown: cells?.down ?? false,
+      sizeMargin: cells?.margin ?? .zero)
     return ("opened \(id.rawValue) (\(app))", true)
   case "close":
     guard let id = window(1) else { return usage("close <id>") }
@@ -619,6 +633,14 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     guard let id = window(1), words.count > 2, let minimum = size(words[2]) else { return usage("min <id> <WxH>") }
     system.setMinimumSize(id, minimum)
     return ("\(id.rawValue) refuses to be smaller than \(words[2])", true)
+  case "cell":
+    guard let id = window(1), let parsed = cellWords(from: 2), parsed.next == words.count else {
+      return usage("cell <id> <WxH> [down] [margin WxH]")
+    }
+    guard system.windows[id] != nil else { return ("error: there is no window \(id.rawValue)", false) }
+    let none = parsed.cell.width < 1 || parsed.cell.height < 1
+    system.setSizeStep(id, none ? nil : parsed.cell, down: parsed.down, margin: parsed.margin)
+    return (none ? "\(id.rawValue) takes any size" : "\(id.rawValue) comes in cells of \(words[2])", true)
   case "wait":
     guard words.count > 1, let seconds = Double(words[1]), seconds >= 0, seconds <= 1_000_000 else {
       return usage("wait <seconds>")

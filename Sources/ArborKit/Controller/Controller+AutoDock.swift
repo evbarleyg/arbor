@@ -112,9 +112,8 @@ extension Controller {
   /// Offers a floating window the slot it would get, and says whether it fits. If its app keeps it larger, that size
   /// is remembered and no other window has been disturbed. Nil if the window cannot be moved at all.
   private func takesSlot(_ id: WindowID, _ slot: CGRect) -> Bool? {
-    guard let first = system.setFrame(slot, of: id) else { return nil }
     // A terminal takes the whole character cells nearest to what it is asked for. A little too large is not a refusal.
-    let actual = askForLess(id, slot: slot, took: first)
+    guard let actual = offer(slot, to: id) else { return nil }
     windows[id]?.frame = actual
     let tooWide = actual.width > slot.width + 2
     let tooTall = actual.height > slot.height + 2

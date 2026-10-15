@@ -97,8 +97,7 @@ extension Controller {
   /// Puts a question. Returns true if the window refused to be that small (a new minimum size was learned).
   func ask(_ window: WindowID, _ question: CGRect, on displayID: DisplayID) -> Bool {
     // Its app does not answer: `place` finds that out as well, and sees to it.
-    guard let was = windows[window]?.frame.size, var actual = system.setFrame(question, of: window) else { return false }
-    actual = askForLess(window, slot: question, took: actual)
+    guard let was = windows[window]?.frame.size, let actual = offer(question, to: window) else { return false }
     windows[window]?.frame = actual
     settled[window] = actual
     justAnswered[window] = question.size
@@ -153,7 +152,7 @@ extension Controller {
     let limit = seenSizes[window.id]?.limit(now: window.frame.size, offered: slot.size) ?? (width: nil, height: nil)
     let expected = CGSize(
       width: min(limit.width ?? slot.width, slot.width), height: min(limit.height ?? slot.height, slot.height))
-    return expected.width < slot.width - 2 || expected.height < slot.height - 2 ? Self.centred(expected, in: slot) : slot
+    return expected.width < slot.width - 2 || expected.height < slot.height - 2 ? restingFrame(of: window.id, expected, in: slot) : slot
   }
 
   /// The frame to ask of a window that is to fill `slot`.
@@ -161,11 +160,11 @@ extension Controller {
     // It has just said what it makes of this size, so it is only moved. Offered the slot again, a terminal would round
     // up again and be talked down again.
     if let offered = justAnswered[window.id], abs(offered.width - slot.width) <= 1, abs(offered.height - slot.height) <= 1 {
-      return Self.centred(window.frame.size, in: slot)
+      return restingFrame(of: window.id, window.frame.size, in: slot)
     }
     // Where it is expected to end up, but the whole size: a sheet may have been open, that time. So finding out that it can
     // grow again costs nothing as long as it cannot.
-    return CGRect(origin: expectedFrame(of: window, in: slot).origin, size: slot.size)
+    return CGRect(origin: expectedFrame(of: window, in: slot).origin, size: fitted(slot, for: window.id).size)
   }
 
   /// A window of `size` in the middle of `slot`. Where it is the larger of the two it begins where the slot does.

@@ -87,6 +87,9 @@ extension Controller: WindowSystemEvents {
     // Every window Arbor moves reports back what Arbor knows already. Storing that would count as a change of `windows`.
     if previous != window { windows[window.id] = window }
     lettingBeNotes(window, movedByItsUser: userInitiated && previous?.frame != window.frame)
+    // Not where Arbor's own call left it: what that may disprove (Controller+SizeSteps.swift).
+    // In full screen it is as large as macOS makes it.
+    if previous?.frame.size != window.frame.size, !window.isFullScreen { seenSizes[window.id]?.cells.see(window.frame.size) }
     if owedTheWayBack[window.id] != nil { payTheWayBack(to: window.id) }
     noteWhetherItCameBack(window, was: previous)
     putBackIfItLeftFullScreen(window, was: previous)

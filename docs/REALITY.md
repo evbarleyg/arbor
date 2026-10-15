@@ -1218,9 +1218,9 @@ Late or partial answers: a call returns before the deed, after it, with half of 
 - **Expected:** What an app answers to setFrame is what it can do.
 - **Happened:** A busy app, or one with an open sheet, refuses once, and its window was a tile until it closed. An app may also resize a moment late, so that a round of arranging learns a minimum that is none; that has not been measured.
 - **Found by:** A usability review; no run on a real app is named.
-- **Stand-ins play it:** partly (`FakeWindowSystem.willSetFrame`, `FakeWindowSystem.setMinimumSize`)
-- **Guard:** `test: aWindowThatRefusedOnceIsAWindowAgainAtTheFirstLayoutTenMinutesLater`; `e2e: a window stops accepting small sizes` (on CI's Macs)
-- **Arbor copes:** Sources/ArborKit/Controller/Controller+LearnedSizes.swift lets learned sizes expire: the window is asked again at the first layout after ten minutes. No app in the fakes answers late.
+- **Stand-ins play it:** partly (`FakeWindowSystem.willSetFrame`, `FakeWindowSystem.setMinimumSize`, `FakeWindowSystem.resizesLate`)
+- **Guard:** `test: aWindowThatRefusedOnceIsAWindowAgainAtTheFirstLayoutTenMinutesLater`; `e2e: a window stops accepting small sizes` (on CI's Macs); `test: anAppThatIsOnlySlowHasNoCells`; `test: anAppThatWasLateOnceHasItsSlotAtOnce`
+- **Arbor copes:** Sources/ArborKit/Controller/Controller+LearnedSizes.swift lets learned sizes expire: the window is asked again at the first layout after ten minutes. An app in the fakes can take a size a moment late (`resizesLate`); so far only what is learnt of character cells is tried against it: a window that was talked down like a terminal because it was late once is asked for a point less, gives it, and is offered its slot again.
 - **Read in:** `collab/QUESTIONS.md`, `collab/BACKLOG.md`
 
 ### quitting-while-an-app-hangs-strands-its-windows
@@ -2292,12 +2292,12 @@ Geometry: displays, bars, sizes and coordinates that are not what was assumed.
 *hurt 2 · at the seam · K031 · K1140 · K1814 · K1582 · touches `lost`, `size-lost`*
 
 - **Expected:** An app takes the frame it is asked for, or has a minimum and a maximum. An answer larger than what was asked means that the window will not be made that small.
-- **Happened:** Terminal takes the whole characters nearest to what it is asked, which half the time is more: 494×656 became 492×649, 244 became 247, 1000 became 1003, 858 became 861 (a step of 7 points wide). Read as refusals, three points made a docked Terminal a tile. A floating one squeezed onto the Desktop taught Arbor a minimum of 861 for a window that goes down to 177, and the next dock gave 574, 245 and 861 instead of thirds.
+- **Happened:** Terminal takes the whole characters nearest to what it is asked, which half the time is more: 494×656 became 492×649, 244 became 247, 1000 became 1003, 858 became 861 (a step of 7 points wide). Read as refusals, three points made a docked Terminal a tile. A floating one squeezed onto the Desktop taught Arbor a minimum of 861 for a window that goes down to 177, and the next dock gave 574, 245 and 861 instead of thirds. And what it was talked down from was forgotten: every time its slot came back a docked Terminal grew a line past it and was talked down again, 840, 855, 840, ending at the same size each time.
 - **Found by:** Traces of a real Terminal on a hosted Mac (terminal-commands, terminal-rounds-up, terminal-edge). The floating case came out of a simulated working day with the cells measured there.
-- **Stand-ins play it:** yes (`FakeWindowSystem.setSizeStep`, `FakeWindow.sizeStep`, `SizeSteps`)
-- **Guard:** `test: aWindowThatRoundsToTheNearestStepStaysInsideItsSlot`; `test: aFloatingTerminalSqueezedOntoTheDesktopTeachesNoMinimum`; `test: aWindowThatComesInStepsIsNotTakenToRefuseByACell`; `test: aTerminalThatFillsTheDesktopTeachesNoMinimumEither`; `test: anAppThatRoundsToStepsIsNotTakenForOneWithAMinimumSize`; `trace: terminal-rounds-up.expect`; `trace: terminal-drag.expect`
-- **Arbor copes:** Controller.askForLess takes up to 36 points over for sizing in steps and asks for less, up to four times, before a minimum is learned. It does so for docked, floating and new windows.
-- **Read in:** `collab/evidence/traces/README.md`, `docs/features/F23-automatic-docking.md`, `docs/TRACES.md`, `collab/QUESTIONS.md`, `Tests/ArborKitTests/SizeStepTests.swift`
+- **Stand-ins play it:** yes (`FakeWindowSystem.setSizeStep`, `FakeWindow.sizeStep`, `SizeSteps`, `FakeWindow.sizeMargin`, `FakeWindow.stepsRoundDown`)
+- **Guard:** `test: aWindowThatRoundsToTheNearestStepStaysInsideItsSlot`; `test: aFloatingTerminalSqueezedOntoTheDesktopTeachesNoMinimum`; `test: aWindowThatComesInStepsIsNotTakenToRefuseByACell`; `test: aTerminalThatFillsTheDesktopTeachesNoMinimumEither`; `test: anAppThatRoundsToStepsIsNotTakenForOneWithAMinimumSize`; `trace: terminal-rounds-up.expect`; `trace: terminal-drag.expect`; `test: theViewGoesAwayAndComesBackTenTimes`; `test: eachReturnIsOneFrameSet`; `test: itIsTalkedDownOnce`; `test: anAppThatWasLateOnceHasItsSlotAtOnce`; `test: aLeastSizeThatPassesIsNoCell`; `test: aPullByOneCellStandsWhateverIsLeftOfTheSlot`; `scenario: 62-a-terminal-keeps-its-frame.sim`
+- **Arbor copes:** Controller.askForLess takes up to 36 points over for sizing in steps and asks for less, up to four times, before a minimum is learned. It does so for docked, floating and new windows. What the talking down shows is kept (`Cells`): the step the window came down by is its cell, and from then on it is asked for the whole cells that fit its slot, which it takes as they are. Less than a cell short, it has its slot and stays in the slot's top-left corner.
+- **Read in:** `collab/evidence/traces/README.md`, `docs/features/F23-automatic-docking.md`, `docs/TRACES.md`, `collab/QUESTIONS.md`, `Tests/ArborKitTests/SizeStepTests.swift`, `Tests/ArborKitTests/CellsTests.swift`
 
 ### the-dock-keeps-a-window-as-large-as-the-display
 
@@ -5577,7 +5577,7 @@ Counted by grep at commit `a391fe4`. "Rude" means on unless a test switches it o
 | `minimumSize:`, `setMinimumSize` | FWS | polite (zero) | an app that will not be made smaller | 168 / 63; lab `limits`; sim `min` |
 | `maximumSize`, `setMaximumSize` | FWS | polite (none) | an app that cannot grow to its slot | 24 / 18; lab |
 | `isResizable: false` | FWS | polite | a window of a fixed size | 6 / 2 |
-| `setSizeStep` | FWS | polite | Terminal's character cells: the nearest step, which can be the larger | 8 / 7; the trace replayer learns steps; lab, sim, fake Mac: never |
+| `setSizeStep` | FWS | polite | Terminal's character cells: the nearest step, which can be the larger, or the steps that fit (`down:`), beside a margin (`margin:`) | 8 / 7; the trace replayer learns steps; arbor-sim: `cell`; lab, fake Mac: never |
 | `openTab`, `selectTab`, `closeTab` | FWS | polite | native tabs: a new id replaces the old, which is no longer listed | 25 / 13, 5 / 4, 1 / 1; lab; fake Mac |
 | `openTab(grownBy:)` | FWS | polite (0) | Terminal grows by its tab bar (31 points) | 1 / 1 |
 | `dragAndLoseTheRelease`, `loseTheReleaseOfTheDrag`, `loseTheRelease` | FWS; FakeWindowSystem+Chaos.swift | polite | the mouse-up nobody sees | 20 / 6; lab |

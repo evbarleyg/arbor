@@ -25,7 +25,11 @@ extension Controller {
         continue
       }
       // The first frame `apply` asks for.
-      moves.append((window, questionBeforePlacing(current, in: target, on: displayID) ?? request(for: current, in: target)))
+      let question = questionBeforePlacing(current, in: target, on: displayID).map { fitted($0, for: window) }
+      let first = question ?? request(for: current, in: target)
+      // It is there: `place` asks for nothing.
+      if !parked.contains(window), first.approximatelyEquals(current.frame, tolerance: 1) { continue }
+      moves.append((window, first))
     }
     // With `shrinkOutOfView` a window is parked at another size, which `parkingSize` works out and remembers in one
     // go: not for a forecast. Those moves wait on their own.

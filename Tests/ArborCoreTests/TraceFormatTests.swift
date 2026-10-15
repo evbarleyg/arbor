@@ -87,6 +87,31 @@ private let display = TraceDisplay(
       ], "least, most, where it stopped, the offer it came close to, what it took; an entry that is anything else says nothing")
   }
 
+  /// Of a window that comes in character cells two pairs more: the cell, and a size it has had with such cells.
+  @Test func whatIsKnownOfAWindowsCellsTravelsToo() throws {
+    var seen = SeenSizes(CGSize(width: 462, height: 840))
+    seen.cells.height = Cells.Side(cell: 15, on: 840)
+    var header = TraceHeader(
+      name: "terminal", arbor: "0.1.0", os: "macOS 26.6", recorded: "2026-10-15T04:00:00Z", displays: [display], windows: [window],
+      settings: Settings(), workspaces: [:], focused: nil, cursor: .zero, mouseDown: false, thinning: 0)
+    header.seenSizes = [window.id: seen]
+    #expect(try roundTrip(header).seenSizes == header.seenSizes)
+    let json = #"{"trace":1,"displays":[],"seenSizes":{"9":[[462,840],[462,840],[0,0],[0,0],[0,0],[0,15],[0,840]]}}"#
+    #expect(try JSONDecoder().decode(TraceHeader.self, from: Data(json.utf8)).seenSizes == [WindowID(9): seen])
+  }
+
+  /// A header written by hand, badly: what is no cell is no cell, and an entry of another length says nothing.
+  @Test func junkAboutCellsIsNotBelieved() throws {
+    let plain = "[462,840],[462,840],[0,0],[0,0],[0,0]"
+    for junk in ["[-7,1e300],[500,500]", "[7,15],[-1,0]", "[400,0.5],[500,500]"] {
+      let json = #"{"trace":1,"displays":[],"seenSizes":{"9":[\#(plain),\#(junk)]}}"#
+      let seen = try #require(try JSONDecoder().decode(TraceHeader.self, from: Data(json.utf8)).seenSizes[WindowID(9)])
+      #expect(seen.cells == Cells(), "\(junk)")
+    }
+    let short = #"{"trace":1,"displays":[],"seenSizes":{"9":[\#(plain),[7,15]]}}"#
+    #expect(try JSONDecoder().decode(TraceHeader.self, from: Data(short.utf8)).seenSizes.isEmpty)
+  }
+
   @Test func aHeaderWrittenByHandNeedsOnlyTheVersionAndTheDisplays() throws {
     let json = #"{"trace":1,"displays":[{"id":"main","frame":[0,0,1440,900],"visible":[0,25,1440,875],"main":true}]}"#
     let header = try JSONDecoder().decode(TraceHeader.self, from: Data(json.utf8))

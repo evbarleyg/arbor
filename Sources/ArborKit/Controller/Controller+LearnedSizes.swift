@@ -82,8 +82,7 @@ extension Controller {
     guard let learned = minimumSizes[window], let current = windows[window]?.frame else { return false }
     let question = CGRect(
       origin: current.origin, size: CGSize(width: min(current.width, size.width), height: min(current.height, size.height)))
-    guard var actual = system.setFrame(question, of: window) else { return false }
-    actual = askForLess(window, slot: question, took: actual)
+    guard let actual = offer(question, to: window) else { return false }
     windows[window]?.frame = actual
     settled[window] = actual
     return judge(window, took: actual, asked: size, learned: learned)
@@ -115,9 +114,8 @@ extension Controller {
     // was asked to be would reach into view. So it is placed as if it kept the width on record.
     let atWorst = CGSize(width: max(size.width, learned.width), height: max(size.height, learned.height))
     let question = CGRect(origin: parkingOrigin(for: atWorst, of: window, on: display), size: size)
-    guard var actual = system.setFrame(question, of: window) else { return false }
     // A character cell too large is not a refusal (Controller+SizeSteps.swift). What is asked next is smaller, in the same corner.
-    actual = askForLess(window, slot: question, took: actual)
+    guard var actual = offer(question, to: window) else { return false }
     if actual.width > size.width + 2 || actual.height > size.height + 2 {
       // It stays a tile, with one point on screen like every window out of view.
       let corner = parkingOrigin(for: actual.size, of: window, on: display)

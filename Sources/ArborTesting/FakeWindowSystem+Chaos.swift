@@ -41,7 +41,9 @@ extension FakeWindowSystem {
       applied.size.width = min(applied.width, maximum.width)
       applied.size.height = min(applied.height, maximum.height)
     }
-    if let step = fake.sizeStep { applied.size = rounded(applied.size, toStepsOf: step) }
+    if let step = fake.sizeStep {
+      applied.size = rounded(applied.size, toStepsOf: step, down: fake.stepsRoundDown, margin: fake.sizeMargin)
+    }
     return applied
   }
 

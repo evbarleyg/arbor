@@ -61,14 +61,12 @@ extension Controller {
     else { return }
 
     // An app that rounds its size (a terminal snapping to character cells) can
-    // sit some points inside its slot. Measuring each edge against where the
-    // window sat before the resize as well keeps an edge the user did not
-    // touch from counting as moved.
+    // sit some points inside its slot. So each edge is measured against where the
+    // window sat before the resize, not against the slot: an edge the user did not
+    // touch does not count as moved, and one pulled by a cell does, also where that
+    // takes it to within a few points of the slot's own edge. A hand is no rounding.
     let before = settled[window] ?? slot
-    let moved = Edge.allCases.filter { edge in
-      abs(frame.position(of: edge) - slot.position(of: edge)) > edgeTolerance
-        && abs(frame.position(of: edge) - before.position(of: edge)) > edgeTolerance
-    }
+    let moved = Edge.allCases.filter { edge in abs(frame.position(of: edge) - before.position(of: edge)) > edgeTolerance }
     guard !moved.isEmpty else {
       // Too little to tell from an app's rounding which gap was meant, so none follows. But this is the end of a resize: it was a hand, and
       // the window is not a few points out of its slot because its app wants it so. It goes back, in one move.

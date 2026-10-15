@@ -165,6 +165,8 @@ extension Controller {
     let moves = unknown.compactMap { window, slot, _ in
       windows[window].flatMap { isStillToBePlaced($0, in: slot) ? (window: window, frame: request(for: $0, in: slot)) : nil }
     }
+    // Not who is there already: `place` asks for nothing.
+    .filter { move in parked.contains(move.window) || windows[move.window]?.frame.approximatelyEquals(move.frame, tolerance: 1) != true }
     if moves.count > 1 { system.moveTogether(moves) }
     // Whatever it answered: a window that is part of the layout is in its slot when the layout has been applied.
     for (window, slot, _) in unknown {
@@ -182,8 +184,9 @@ extension Controller {
       return false
     }
     let asked = request(for: current, in: target)
-    // It has answered where it stood, and that is where the answer belongs: there is nothing left to ask for.
-    let isThere = justAnswered[window] != nil && !parked.contains(window) && asked.approximatelyEquals(current.frame, tolerance: 1)
+    // It has answered where it stood, and that is where the answer belongs: there is nothing left to ask for. Nor of a terminal
+    // whose slot has changed by less than a cell.
+    let isThere = !parked.contains(window) && asked.approximatelyEquals(current.frame, tolerance: 1)
     guard var actual = isThere ? current.frame : system.setFrame(asked, of: window) else {
       unplaced.insert(window)
       return false
@@ -191,13 +194,16 @@ extension Controller {
     unplaced.remove(window)
     // One that was only moved, at the size it has, has been through this where it stood.
     // Where it was asked, not by way of the slot's corner.
-    if asked.size == target.size { actual = askForLess(window, slot: asked, took: actual) }
-    // A window that cannot grow to its slot (Calculator, System Settings) sits in the middle of it,
-    // which looks meant, rather than in its top-left corner, which looks broken.
+    if !isThere, asked.size == fitted(target, for: window).size {
+      let slot = CGRect(origin: asked.origin, size: target.size)
+      actual = askForLess(window, slot: slot, took: offeredAnew(window, slot, unlessItTook: asked, took: actual))
+    }
+    // A window that cannot grow to its slot (Calculator, System Settings) sits in the middle of it, which looks meant, rather
+    // than far from filling it in its top-left corner, which looks broken. Less than a cell short, it has filled it, and stays.
     if actual.width < target.width - 2 || actual.height < target.height - 2 {
-      let centred = Self.centred(actual.size, in: target)
+      let rest = restingFrame(of: window, actual.size, in: target)
       // One that was known not to grow is there already.
-      if !actual.approximatelyEquals(centred, tolerance: 1) { actual = system.setFrame(centred, of: window) ?? actual }
+      if !actual.approximatelyEquals(rest, tolerance: 1) { actual = system.setFrame(rest, of: window) ?? actual }
     } else if asked.origin != target.origin, !actual.approximatelyEquals(target, tolerance: 1) {
       // It was not expected to grow, and has.
       actual = system.setFrame(target, of: window) ?? actual
@@ -380,13 +386,12 @@ extension Controller {
       }
       if let current = windows[window], !isInPlace(current, at: target) {
         // Its app does not answer, so it is where it was, out of view if it was. It is placed when the app answers.
-        guard var actual = system.setFrame(target, of: window) else {
+        // A few points over can be the nearest character cell, not a refusal (Controller+SizeSteps.swift), as in `apply`.
+        guard var actual = offer(target, to: window) else {
           unplaced.insert(window)
           continue
         }
         unplaced.remove(window)
-        // A few points over can be the nearest character cell, not a refusal (Controller+SizeSteps.swift), as in `apply`.
-        actual = askForLess(window, slot: target, took: actual)
         if actual.width > target.width + 2 || actual.height > target.height + 2, let room,
           var preferred = workspace.floating[window]
         {

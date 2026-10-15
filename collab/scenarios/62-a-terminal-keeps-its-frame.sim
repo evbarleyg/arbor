@@ -1,0 +1,91 @@
+# Board 1.62. Whoever can run Arbor today builds it, and docks a terminal first. Terminal sizes its window in whole character
+# cells (7 x 15 points beside a margin of 2 x 4, measured) and takes the cells NEAREST to what it is asked for, which half the time
+# is more: offered 852 points it takes 859. It used to be talked down a line every time its slot came back: a line up and a line
+# down at every return of the view.
+quiet
+display-size 1440x900 24
+open Terminal 585x394 cell 7x15 margin 2x4
+open Notes
+
+# The first meeting. Nobody can know a cell before an app has shown it: it is talked down once, where it stands.
+dock 101 left
+expect docked 101
+expect at 101 12 36
+expect size 101 702x844
+
+# From then on it is asked for the whole cells that fit its slot, and takes them as they are: one move.
+dock 102 right
+expect moved-once
+expect at 101 12 36
+expect size 101 464x844
+
+# Away and back, as often as one likes: the same frame, by one move.
+zoom 102
+home
+expect moved-once
+expect at 101 12 36
+expect size 101 464x844
+zoom 102
+home
+expect moved-once
+expect size 101 464x844
+zoom 102
+home
+expect moved-once
+expect size 101 464x844
+
+# A layout of the same slot asks it for nothing.
+show-all
+expect still
+
+# What is left of the slot, less than a cell, is at the bottom, where the app leaves it. Nobody pays for it: Notes has its own
+# slot, and the gap between the two is where it was.
+expect left-of 101 102
+expect at 102 964 36
+expect size 102 464x852
+
+# A gap moved by less than a cell: the terminal has nothing to do. By more: one move.
+resize 101 right 3
+expect still 101
+resize 101 right 10
+expect moved-once
+expect at 101 12 36
+expect size 101 478x844
+
+# Zoomed in on: another slot, and what is asked for is worked out from that one. And back.
+zoom 101
+expect moved-once
+expect at 101 12 36
+expect size 101 1416x844
+home
+expect at 101 12 36
+expect size 101 478x844
+
+# A terminal that takes the cells that fit, never more, is asked for the slot itself, and stays in its corner as well.
+open iTerm 600x400 cell 8x17 down margin 2x30
+dock 103 beside 101 bottom
+expect at 101 12 36
+expect size 101 478x409
+expect at 103 12 468
+expect size 103 474x404
+zoom 102
+home
+expect moved-once
+expect at 103 12 468
+expect size 103 474x404
+expect size 101 478x409
+
+# Quit, which gives every window its own size back, and start again. Arbor knows nothing of cells any more, and finds the same frames.
+relaunch
+expect size 101 478x409
+expect size 103 474x404
+
+# A larger font: other cells, so what was learnt of the old ones is worth nothing. It is learnt anew, and holds again.
+cell 101 8x17 margin 2x4
+relayout
+expect docked 101
+expect at 101 12 36
+zoom 102
+home
+expect moved-once
+expect at 101 12 36
