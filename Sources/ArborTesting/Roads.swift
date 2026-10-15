@@ -1,9 +1,9 @@
 import ArborCore
 import CoreGraphics
 
-/// The road a window takes when Arbor moves it. A window moves once, to where it ends up. One Arbor does not know yet is
-/// asked for a size where it stands and goes to its place afterwards, which is also how the Accessibility layer moves any
-/// window: the size, then the position. So counting requests says little. What a person sees is the road.
+/// The road a window takes when Arbor moves it. A window moves once, to where it ends up. One of which Arbor does not know how
+/// small it goes is asked to shrink where it stands and goes to its place afterwards (Controller+AskFirst.swift). So counting requests
+/// says little. What a person sees is the road.
 extension FakeWindowSystem {
   /// Every frame `window` had from entry `mark` of `moveLog` on, wherever Arbor changed it, beginning with the frame it had
   /// before. Where somebody else moved it in between, the frame Arbor found it at is part of the road. Empty if Arbor changed

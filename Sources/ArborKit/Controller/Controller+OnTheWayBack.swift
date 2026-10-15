@@ -97,7 +97,8 @@ extension Controller {
   }
 
   /// Called by `apply` for a window that did not take the frame of its slot. True if that means nothing yet: then it
-  /// does not count as a misfit, nothing is learned about its sizes, and its display is laid out again shortly.
+  /// does not count as a misfit, nothing is concluded about its sizes (`place` notes where one that has heard stopped growing, which
+  /// only says where it is sent next), and its display is laid out again shortly.
   func postponesJudgement(of window: WindowID, on displayID: DisplayID) -> Bool {
     guard let landing = landsAt[window] else { return false }
     let left = landing.timeIntervalSince(now())

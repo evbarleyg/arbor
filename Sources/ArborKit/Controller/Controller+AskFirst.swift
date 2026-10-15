@@ -6,12 +6,12 @@ import CoreGraphics
 /// An answer that is not the size of the slot changes the layout (room is made, or the window becomes a tile) or the
 /// window's place in its slot (one that cannot grow sits in the middle), and whatever has been moved by then is moved again.
 /// So it is a matter of order, and of using what is known (`SeenSizes`):
-/// - **a window of which it is not known is asked where it stands.** Only one that has to become smaller or larger than it
-///   has ever been seen can refuse to. It is asked for the size of its slot without going anywhere, and then only moved, at
-///   the size it took, to where that belongs: never by way of a place that turns out wrong. To the eye it is what moving a
-///   window has always been, for the Accessibility layer sets the size and then the position;
-/// - **those who may refuse to shrink are asked before anybody is moved** (`askingFirst`), because their answer decides where
-///   everybody goes. Whether a window can grow decides only its own place, so that is asked when the others have gone (`apply`);
+/// - **a window of which it is not known whether it can be as small as its slot is asked where it stands.** Only one that has to
+///   become smaller than it has ever been seen can refuse to. It is asked to without going anywhere, and goes to where the
+///   size it took belongs: never by way of a place that turns out wrong;
+/// - **those are asked before anybody is moved** (`askingFirst`), because their answer decides where everybody goes;
+/// - **nobody in view is asked to grow where it stands** (`question`): the answer would be the screen's, not the window's. It grows
+///   in its slot, and one that turns out unable to goes on to the middle of it, once;
 /// - **a size that is said not to change is known beforehand** (`noteFixedSizes`);
 /// - **a window that could not grow is expected not to** (`request`): it goes straight to the middle of its slot.
 extension Controller {
@@ -72,26 +72,47 @@ extension Controller {
     return seen
   }
 
-  /// What `apply` asks a window before it moves it into `slot`, if anything: whether it can grow that far.
+  /// What `apply` asks a window before it moves it into `slot`, if anything: whether it can grow that far. Out of view, where
+  /// a question costs the eye nothing.
   func questionBeforePlacing(_ window: WindowSnapshot, in slot: CGRect, on displayID: DisplayID) -> CGRect? {
-    guard seen(window).mayRefuseToGrow(to: slot.size, now: window.frame.size),
-      // macOS lets a window be as large as the display it is on allows (`FramePlan`). On another display the answer
-      // would be that display's, not the window's.
-      parked.contains(window.id) || !displays.contains(where: { $0.id != displayID && $0.frame.contains(window.frame.center) })
-    else { return nil }
+    guard parked.contains(window.id), seen(window).mayRefuseToGrow(to: slot.size, now: window.frame.size) else { return nil }
     return question(window, toTake: slot.size)
   }
 
-  /// `size`, where the window stands. Nil if it cannot be asked there, and is offered its slot like anybody. In the corner to the
-  /// left of a display what shows of a window depends on its width, so it would grow into view or shrink out of reach. And a
-  /// window its person has left lower than macOS lets anybody put one would not stay where it stands.
+  /// `size`, where the window stands, as far as it can be asked for there. Nil if nothing can, and the window is offered its slot like
+  /// anybody.
+  ///
+  /// Where it stands, macOS lets a window grow no further than to the bottom of the visible frame and the right edge of its display
+  /// (measured on macOS 26: at 170,220, asked to be 650 high above a Dock that begins at 705, a window became 484 high). That is
+  /// the room there was, not what the window can do; taken for that, it left every window docked from lower down short of its
+  /// slot. And a window that grows where it stands lies over its neighbours, in neither its old frame nor its new one. So each side is
+  /// only asked to shrink. A window past both those lines, which is where Arbor parks them, was seen to grow as it is asked to.
+  ///
+  /// In the corner to the left of a display what shows of a window depends on its width, so it would grow into view or shrink
+  /// out of reach. And a window its person has left lower than macOS lets anybody put one would not stay where it stands.
   private func question(_ window: WindowSnapshot, toTake size: CGSize) -> CGRect? {
-    let question = CGRect(origin: window.frame.origin, size: size)
+    let has = window.frame
+    let growsAsAsked =
+      parked.contains(window.id) && stopper(of: has.origin).map { has.maxX > $0.frame.maxX && has.maxY > $0.visibleFrame.maxY } == true
+    let question = CGRect(
+      origin: has.origin,
+      size: growsAsAsked ? size : CGSize(width: min(size.width, has.width), height: min(size.height, has.height)))
+    guard abs(question.width - has.width) > 1 || abs(question.height - has.height) > 1 else { return nil }
     guard parked.contains(window.id) else {
       let staysThere = whereItStops(question.origin, titleBar: titleBars[window.id] ?? Self.guessedTitleBar) == question.origin
       return staysThere ? question : nil
     }
-    return isOutOfView(question.union(window.frame)) && displays.contains { question.overlaps($0.frame) } ? question : nil
+    return isOutOfView(question.union(has)) && displays.contains { question.overlaps($0.frame) } ? question : nil
+  }
+
+  /// Whether it may have been the screen that kept a window from growing to `asked` while it stood at `origin`: it `took` as much as ends
+  /// on a line macOS lets no window grow across where it stands (`question`). Those lines are where they are at that moment,
+  /// whatever Arbor has been told: the Dock's was seen to move by two points a third of a second before the news came.
+  func mayHaveBeenStoppedByTheScreen(_ took: CGSize, shortOf asked: CGSize, at origin: CGPoint) -> Bool {
+    guard let display = stopper(of: origin) else { return false }
+    func ends(_ edge: CGFloat, on lines: CGFloat...) -> Bool { lines.contains { abs(edge - $0) <= 4 } }
+    return took.height < asked.height - 2 && ends(origin.y + took.height, on: display.visibleFrame.maxY)
+      || took.width < asked.width - 2 && ends(origin.x + took.width, on: display.frame.maxX, display.visibleFrame.maxX)
   }
 
   /// Puts a question. Returns true if the window refused to be that small (a new minimum size was learned).
@@ -160,12 +181,15 @@ extension Controller {
   func request(for window: WindowSnapshot, in slot: CGRect) -> CGRect {
     // It has just said what it makes of this size, so it is only moved. Offered the slot again, a terminal would round
     // up again and be talked down again.
-    if let offered = justAnswered[window.id], abs(offered.width - slot.width) <= 1, abs(offered.height - slot.height) <= 1 {
-      return Self.centred(window.frame.size, in: slot)
-    }
+    let answered = justAnswered[window.id]
+    if answered == slot.size { return Self.centred(window.frame.size, in: slot) }
     // Where it is expected to end up, but the whole size: a sheet may have been open, that time. So finding out that it can
-    // grow again costs nothing as long as it cannot.
-    return CGRect(origin: expectedFrame(of: window, in: slot).origin, size: slot.size)
+    // grow again costs nothing as long as it cannot. But for a side it has just answered for, where it stood.
+    return CGRect(
+      origin: expectedFrame(of: window, in: slot).origin,
+      size: CGSize(
+        width: answered?.width == slot.width ? window.frame.width : slot.width,
+        height: answered?.height == slot.height ? window.frame.height : slot.height))
   }
 
   /// A window of `size` in the middle of `slot`. Where it is the larger of the two it begins where the slot does.
