@@ -1994,7 +1994,7 @@ echo "$*" >> "$CALLS"
 case "$*" in
   *dispatches*) printf '%s\n' "$@" > "$NOTED"; [ -n "${GOES:-}" ] || exit 1; eval "$GOES" ;;
   *rate_limit*) echo '{}' ;;
-  *"runs?event=workflow_dispatch"*) if [ -f "$NOTED" ]; then echo 7; else echo 0; fi ;;
+  *"runs?event=workflow_dispatch"*) if [ -n "${LOST:-}" ] && [ -f "$NOTED" ]; then :; elif [ -f "$NOTED" ]; then echo 7; else echo 0; fi ;;
   *actions/runs/7*) echo "${STATUS:-in_progress}" ;;
   *) echo 0 ;;
 esac
@@ -2058,6 +2058,20 @@ esac
     row("run.sh: nor with --limit", started("--limit", "4801", "a.sh", "feat/x")[:2], (97, NOT_STARTED))
     row("run.sh: --limit 0, --limit soon", [started("--limit", value, "a.sh", "feat/x")[:2] for value in ("0", "soon")], [(97, NOT_STARTED)] * 2)
     row("run.sh: it says beforehand how long, and for whose sake", "each script may take 2400 s: through.sh asks for it" in ran("a.sh", "through.sh", "feat/x")[0].stdout, True)
+    # The title: GitHub cuts a long one, and the branch and the tag stand at its end.
+    titled = lambda *arguments: started(*arguments, "feat/x")[2]
+    tools = ["scripts/mac-shell/run.sh", "scripts/mac-shell/preflight.sh"]
+    row("run.sh: the title: one script by its path, as ever", titled(tools[0]).get("inputs[script]"), tools[0])
+    row("run.sh: the title: several by their names", titled(*tools, "a.sh").get("inputs[script]"), "run.sh preflight.sh a.sh")
+    row("run.sh: the title: four are still named", titled("a.sh", "b.sh", "c.sh", "d.sh").get("inputs[script]"), "a.sh b.sh c.sh d.sh")
+    many = titled(*[f"{number}.sh" for number in range(9)])
+    row("run.sh: the title: of more than four the first three, and how many more", many.get("inputs[script]"), "0.sh 1.sh 2.sh and 6 more")
+    row("run.sh: what runs is in the plan, all nine of them by their paths", [f'{number}.sh' in many.get("inputs[macs]", "") for number in range(9)], [True] * 9)
+    row("run.sh: and several by their paths there too", tools[1] in titled(*tools).get("inputs[macs]", ""), True)
+    done, noted, _ = ran("a.sh", "feat/x", GOES="true", LOST="yes", MAC_SHELL_TAG="u", MAC_SHELL_FIND="0")
+    row("run.sh: GitHub took the run and it is not found: 98, and the word that it may stand in the line all the same, how to look, and where its output will be",
+        (done.returncode, os.path.exists(noted), [part in done.stderr for part in ("IT MAY STAND IN THE LINE ALL THE SAME: look before you send it again", "what stands there:  gh api 'repos/", ".display_title)", "on mac-shell-out/u")]),
+        (98, True, [True] * 4))
     row("run.sh: three scripts go to one Mac", started("a.sh", "./b.sh", "c.sh", "feat/x")[:2], (97, ["home", "feat/x", "a.sh b.sh c.sh", '[{"parts":"1-3","of":3,"scripts":"a.sh b.sh c.sh"}]']))
     row("run.sh: five are too many for one", started("a.sh", "b.sh", "c.sh", "d.sh", "e.sh", "feat/x")[1][3], '[{"parts":"1-3","of":5,"scripts":"a.sh b.sh c.sh"},{"parts":"4-5","of":5,"scripts":"d.sh e.sh"}]')
     row("run.sh: --macs 3", started("--macs", "3", "a.sh", "b.sh", "c.sh", "d.sh", "feat/x")[1][3], '[{"parts":"1-2","of":4,"scripts":"a.sh b.sh"},{"parts":"3-3","of":4,"scripts":"c.sh"},{"parts":"4-4","of":4,"scripts":"d.sh"}]')
@@ -2154,6 +2168,9 @@ sys.exit(int(turns[min(look, len(turns) - 1)]))
     row("run.sh: eight looks where nothing else is said", looks("2", "4", **soon), (97, True, 9))
     row("run.sh: and it says so", "held back for 2 looks at a busy queue: goes now, whatever waits (three are waiting)" in ran(
         "a.sh", "feat/x", ARBOR_MAC_PRIORITY="2", TURN="4", MAC_SHELL_POLL="0", MAC_SHELL_AGE="2", **soon)[0].stdout, True)
+    row("run.sh: the looks it held back before it was started again count", [looks("2", "4", MAC_SHELL_AGE="2", MAC_SHELL_HELD=held, **soon) for held in "012"],
+        [(97, True, 3), (97, True, 2), (97, True, 1)])
+    row("run.sh: MAC_SHELL_HELD is a number", ran("a.sh", "feat/x", ARBOR_MAC_PRIORITY="2", TURN="0", MAC_SHELL_HELD="long")[0].returncode, 97)
     row("run.sh: the branch's own runs are not outwaited", looks("2", "6 6 6 6 6 6 0", MAC_SHELL_AGE="2"), (97, True, 7))
     row("run.sh: nor is a train, however long the run has held back before it", looks("2", "4 4 5 5 5 4", MAC_SHELL_AGE="2", **soon), (97, True, 6))
     row("run.sh: it says why it is not off yet", "what held everybody back is over: priority 1 goes first, this has priority 2" in ran(
@@ -2186,6 +2203,8 @@ sys.exit(int(turns[min(look, len(turns) - 1)]))
     row("run.sh: so with the second of two files", with_rules("4 0", "NOTHING STARTS UNTIL NOON", into=second), (95, False, ["--- new in more-rules.md:", "NOTHING STARTS UNTIL NOON"]))
     row("run.sh: so with a file that was not there when the waiting began", with_rules("4 0", "NOTHING STARTS UNTIL NOON", there=False)[:2], (95, False))
     row("run.sh: so with a run that has held back long enough to go whatever waits", with_rules("4", "NOTHING STARTS UNTIL NOON", MAC_SHELL_AGE="1", **soon)[:2], (95, False))
+    row("run.sh: and it says with what to start it again, so that its waiting counts", "with MAC_SHELL_HELD=1 before it" in ran(
+        "a.sh", "feat/x", ARBOR_MAC_PRIORITY="2", TURN="4", MAC_SHELL_POLL="0", MAC_SHELL_AGE="1", WRITES="NOTHING STARTS UNTIL NOON", INTO=first, ARBOR_MAC_RULES=first, **soon)[0].stderr, True)
     row("run.sh: it held back and nothing was written: it starts", with_rules("4 0"), (97, True, []))
     row("run.sh: a file nobody watches may change", with_rules("4 0", "NOTHING STARTS UNTIL NOON", into=second, watched=first), (97, True, []))
     row("run.sh: no rules are named: as it was", with_rules("4 0", "NOTHING STARTS UNTIL NOON", watched=""), (97, True, []))
