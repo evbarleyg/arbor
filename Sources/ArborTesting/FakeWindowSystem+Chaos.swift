@@ -41,7 +41,7 @@ extension FakeWindowSystem {
       applied.size.width = min(applied.width, maximum.width)
       applied.size.height = min(applied.height, maximum.height)
     }
-    if let step = fake.sizeStep { applied.size = rounded(applied.size, toStepsOf: step) }
+    if let step = fake.sizeStep { applied.size = rounded(applied.size, toStepsOf: step, margin: fake.sizeMargin) }
     return applied
   }
 
@@ -80,13 +80,17 @@ extension FakeWindowSystem {
   /// deleting steps from a script does not renumber the windows opened later.
   public func open(
     id: WindowID, app: String, bundleID: String?, title: String, pid: Int32, frame: CGRect,
-    minimumSize: CGSize = .zero, maximumSize: CGSize? = nil, behaviour: Behaviour = .normal
+    minimumSize: CGSize = .zero, maximumSize: CGSize? = nil, behaviour: Behaviour = .normal, cells: RealApp.Cells? = nil
   ) {
     guard !existingWindowIDs().contains(id) else { return }
     nextID = max(nextID, id.rawValue &+ 1)
+    var frame = frame
+    // It opens with whole steps, as it has them ever after.
+    if let cells { frame.size = Self.rounded(frame.size, toStepsOf: cells.step, margin: cells.margin) }
     let snapshot = WindowSnapshot(id: id, pid: pid, bundleID: bundleID, appName: app, title: title, frame: frame)
     windows[id] = FakeWindow(
       snapshot: snapshot, minimumSize: minimumSize, maximumSize: maximumSize, behaviour: behaviour)
+    if let cells { (windows[id]!.sizeStep, windows[id]!.sizeMargin) = (cells.step, cells.margin) }
     guard started else { return }
     // As in `open(app:)`.
     if echoes.keyboard {
@@ -101,6 +105,12 @@ extension FakeWindowSystem {
   /// The app quits: its windows go one after the other, as `AXWindowSystem.forget(pid:)` reports it.
   public func quitApp(pid: Int32) {
     for id in windows.keys.sorted() where windows[id]!.snapshot.pid == pid { close(id) }
+  }
+
+  /// A click on its icon in the Dock, or ⌘Tab: all of an app's windows come to lie in front of the others', in the order they had among themselves. Which of them
+  /// gets the keyboard is another matter, and is reported.
+  public func bringForward(pid: Int32) {
+    for id in windowsFrontToBack().filter({ windows[$0]?.snapshot.pid == pid }).reversed() { bringToFront(id) }
   }
 
   /// Gives a window a new number without telling anyone, as restarting its app (or the Mac) does
