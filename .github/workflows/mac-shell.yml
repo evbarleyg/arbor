@@ -26,7 +26,7 @@ on:
         required: true
         type: string
       macs:
-        description: 'For more than one Mac: a JSON list with the scripts for each, e.g. ["a.sh b.sh", "c.sh"] (run.sh --macs writes it)'
+        description: 'Written by run.sh: a JSON list with, for each Mac, its scripts and which playings of how many they are, e.g. [{"parts":"1-2","of":3,"scripts":"a.sh b.sh"},{"parts":"3-3","of":3,"scripts":"c.sh"}]'
         required: false
         default: ""
         type: string
@@ -75,6 +75,8 @@ permissions:
 
 jobs:
   shell:
+    # The range is for whoever has to tell from GitHub's list of jobs which playings got a Mac.
+    name: shell (parts ${{ matrix.mac.parts }}, ${{ matrix.mac.scripts }})
     runs-on: ${{ inputs.runner || 'macos-26' }}
     # Each script has twenty minutes (scripts/ci-mac-shell.sh); this is for a Mac on which nothing moves any more.
     timeout-minutes: 100
@@ -82,11 +84,11 @@ jobs:
       fail-fast: false
       max-parallel: ${{ fromJSON(inputs.at-once || '5') }}
       matrix:
-        scripts: ${{ fromJSON(inputs.macs || format('["{0}"]', inputs.script)) }}
+        mac: ${{ fromJSON(inputs.macs || format('[{{"parts":"","of":0,"scripts":"{0}"}}]', inputs.script)) }}
     permissions:
       contents: write # to push mac-shell-out/<tag>; nothing else is written
     env:
-      SCRIPT: ${{ matrix.scripts }}
+      SCRIPT: ${{ matrix.mac.scripts }}
       REF: ${{ inputs.ref }}
       # For the build below and for lib.sh's arbor_build, which then finds nothing left to do.
       ARBOR_CONFIGURATION: ${{ inputs.configuration || 'debug' }}
@@ -95,7 +97,8 @@ jobs:
         id: inputs
         env:
           TAG: ${{ inputs.tag || github.run_id }}
-          ALL: ${{ inputs.script }}
+          PARTS: ${{ matrix.mac.parts }}
+          OF: ${{ matrix.mac.of }}
           INDEX: ${{ strategy.job-index }}
           TOTAL: ${{ strategy.job-total }}
         run: |
@@ -123,10 +126,13 @@ jobs:
           echo "TAG=$TAG" >> "$GITHUB_ENV"
           # For a script that is given to several Macs and shares its work out among them: "2/3" on the second of three.
           echo "MAC_SHELL_SHARE=$((INDEX + 1))/$TOTAL" >> "$GITHUB_ENV"
-          # How many playings the whole dispatch has (scripts/ci-mac-shell.sh): all its scripts, or of one script as many as there are Macs.
-          parts=$(echo $ALL | wc -w | tr -d ' ')
-          if [ "$parts" -le 1 ]; then parts=$TOTAL; fi
-          echo "MAC_SHELL_PARTS=$parts" >> "$GITHUB_ENV"
+          # Which playings of the whole dispatch this Mac has, and of how many (scripts/ci-mac-shell.sh). Started by hand: its own, from 1.
+          case "$PARTS-$OF" in
+            *[!0-9-]* | -* | *--* | *-0) ;;
+            *)
+              echo "MAC_SHELL_FIRST_PART=${PARTS%-*}" >> "$GITHUB_ENV"
+              echo "MAC_SHELL_PARTS=$OF" >> "$GITHUB_ENV" ;;
+          esac
 
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
