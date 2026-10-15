@@ -270,7 +270,7 @@ def judge(ledger, gate, listed=None):
             found.update((finding["detector"], finding["id"]) for finding in run.get("findings") or [])
 
     # Who holds input back. A figure over a run says what the journey is made of as much as who held anything: a press on a window of an app that is not in front takes
-    # macOS twenty times as long as any other. So like is compared with like: a journey with its own control, kind of event by kind of event. Of several controls the
+    # macOS twenty to a hundred times as long as any other. So like is compared with like: a journey with its own control, kind of event by kind of event. Of several controls the
     # quickest is the measure.
     quiet, met, compared = {}, set(), set()
     for run in runs:
