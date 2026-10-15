@@ -772,6 +772,8 @@ public struct CommandResult: Codable, Sendable, Equatable {
   public var ok: Bool
   public var message: String
   public var state: StateSnapshot?
+  /// A report: what was asked for, in lines. `arborctl` prints it instead of the message, to standard output even where `ok` is
+  /// false (`CLIInvocation.printed`), so a refusal has none.
   public var text: String?
 
   public init(ok: Bool, message: String, state: StateSnapshot? = nil, text: String? = nil) {

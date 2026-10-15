@@ -1615,6 +1615,28 @@ levels
         row("rehearse.sh: the fake Mac lists the heads-up line, the panel of shortcuts, the update window and the backdrop, front to back, and none after Quit",
             [line for line in said.splitlines() if line.startswith("levels:")], ["levels: 6 3 -2147483602", "levels: 5 3 -2147483602", "levels:"])
 
+        # The stand-in wrote everything to standard output, so no rehearsal could show what a Mac did: `$(arborctl doctor)` empty, for one ✘ row.
+        with open(script, "w", encoding="utf-8") as handle:
+            handle.write(f"""source '{HERE}/mac-shell/lib.sh'
+where() {{
+  arborctl "$@" > "$ARBOR_OUT/out.txt" 2> "$ARBOR_OUT/err.txt"
+  echo "where: $1 $? $(test -s "$ARBOR_OUT/out.txt" && echo out) $(head -c 10 "$ARBOR_OUT/err.txt")"
+}}
+arbor_build
+arbor_start 1
+where doctor
+echo '{{"gap": "wide"}}' > "$ARBOR_HOME/settings.json"
+arborctl reload-settings > /dev/null 2>&1
+where doctor
+where dock 999 left
+where --json dock 999 left
+""")
+        said = subprocess.run(
+            ["bash", os.path.join(HERE, "mac-shell", "rehearse.sh"), script], env=environment, capture_output=True, text=True, check=False).stdout
+        row("rehearse.sh: the fake arborctl writes where the real one does: a report to standard output whatever it found, a refusal to the other, behind its name; with --json the exit code stays",
+            [line for line in said.splitlines() if line.startswith("where:")],
+            ["where: doctor 0 out ", "where: doctor 1 out ", "where: dock 1  arborctl: ", "where: --json 1 out "])
+
         # macOS's own preview, round the window that is held where macOS tiles, and gone with the release. With ⌥ it is up for the line after too.
         with open(script, "w", encoding="utf-8") as handle:
             handle.write(f"""source '{HERE}/mac-shell/lib.sh'

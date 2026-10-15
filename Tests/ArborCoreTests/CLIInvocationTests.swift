@@ -93,10 +93,28 @@ import Testing
     #expect(CLIInvocation.batch("a\u{2028}b\u{0C}c").map(\.command) == ["a", "b", "c"])
   }
 
+  private typealias Printed = CLIInvocation.Printed
+
   @Test func refusalsAreComplaints() {
-    #expect(CLIInvocation.outcome(ok: true) == (false, .ok))
-    #expect(CLIInvocation.outcome(ok: false) == (true, .refused))
+    #expect(CLIInvocation.printed(ok: true, message: "docked", text: nil) == Printed(answer: "docked", complaint: nil, exitCode: .ok))
+    #expect(CLIInvocation.printed(ok: false, message: "no", text: nil) == Printed(answer: nil, complaint: "no", exitCode: .refused))
+    // A batch names the line.
+    #expect(CLIInvocation.printed(ok: false, message: "no", text: nil, place: "line 2: ").complaint == "line 2: no")
+    #expect(CLIInvocation.printed(ok: true, message: "docked", text: nil, place: "line 2: ").complaint == nil)
     #expect(CLIInvocation.ExitCode.usage.rawValue == 64)
+  }
+
+  /// `arborctl doctor > report.txt` on a Mac as it comes left an empty file, and the report on the screen behind the tool's name.
+  @Test func aReportIsAnAnswerWhateverItFound() {
+    let rows = "✘ one\n✔ two"
+    #expect(CLIInvocation.printed(ok: true, message: "no problems", text: rows) == Printed(answer: rows, complaint: nil, exitCode: .ok))
+    // Alone: the exit code says that it found something, and nothing else does.
+    #expect(CLIInvocation.printed(ok: false, message: "1 problem(s)", text: rows) == Printed(answer: rows, complaint: nil, exitCode: .refused))
+    // Among others it stops the rest, or decides the exit code under --keep-going: which one did is said, as of a refusal.
+    #expect(
+      CLIInvocation.printed(ok: false, message: "1 problem(s)", text: rows, place: "line 2: ")
+        == Printed(answer: rows, complaint: "line 2: 1 problem(s)", exitCode: .refused))
+    #expect(CLIInvocation.printed(ok: false, message: "1 problem(s)", text: rows, place: "").complaint == "1 problem(s)")
   }
 
   @Test func theUsageTextNamesEveryOptionAndExitCode() {

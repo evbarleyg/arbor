@@ -521,8 +521,8 @@ arborctl watch view focus     # one line of JSON whenever the view or the focuse
 arborctl toggle-auto-dock     # new windows dock beside the focused window, or float as usual
 ```
 
-It exits with 0 when the command worked, 1 when Arbor said no (the reason goes to standard error), 2 when Arbor is not
-running, 4 when it did not answer in time. `arborctl - < file` runs a file of commands, `arborctl completions zsh` prints a
+It exits with 0 when the command worked, 1 when Arbor said no (the reason goes to standard error) or `doctor` found something
+(its report goes to standard output all the same), 2 when Arbor is not running, 4 when it did not answer in time. `arborctl - < file` runs a file of commands, `arborctl completions zsh` prints a
 completion script, `arborctl --help` lists the options.
 [Scripting Arbor](docs/SCRIPTING.md) has every event, `state`, URLs, exit codes, and
 recipes for SketchyBar, shell loops and `jq`.

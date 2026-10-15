@@ -167,6 +167,36 @@ batch 'show-all\nwatch view\ndesktop\n'
 check "watch in a batch is refused: exit code 64" is "$code" 64
 check "  with its line" has "$dir/err" "arborctl: line 2: watch"
 check "  and what follows is not run" is "$(wc -l < "$dir/out" | tr -d ' ')" 1
+
+echo "a report"
+try macos tidy
+try doctor
+check "with nothing wrong: exit code 0, on standard output, no complaint" is "$code: $(grep -c '^✘' "$dir/out"): $(wc -c < "$dir/err" | tr -d ' ')" "0: 0: 0"
+rows=$(wc -l < "$dir/out" | tr -d ' ')
+# As a Mac comes: macOS's own tiling is on, which is a ✘ row.
+try macos defaults
+try doctor
+check "with a ✘ among its rows: exit code 1" is "$code" 1
+check "  all of it on standard output all the same, the worst first" is "$(head -c 3 "$dir/out"): $(($(wc -l < "$dir/out") >= rows))" "✘: 1"
+check "  without the tool's name" is "$(grep -c arborctl "$dir/out")" 0
+check "  and nothing on standard error: the exit code alone says it" empty "$dir/err"
+found=$(wc -l < "$dir/out" | tr -d ' ')
+try --json doctor
+check "--json: the exit code stays, the whole reply goes to standard output" is "$code: $(grep -c '"ok":false' "$dir/out")" "1: 1"
+try -q doctor
+check "-q: exit code 1, and nothing printed" is "$code: $(cat "$dir/out" "$dir/err" | wc -c | tr -d ' ')" "1: 0"
+try show-all , doctor , desktop
+check "in a list it stops the rest as a refusal does: exit code 1" is "$code" 1
+check "  one answer, the report, and what follows is not run" is "$(wc -l < "$dir/out" | tr -d ' ')" $((found + 1))
+check "  which is said on standard error, in a line" is "$(cat "$dir/err")" "arborctl: 1 problem(s)"
+batch 'show-all\ndoctor\ndesktop\n'
+check "so it does in a batch: exit code 1" is "$code" 1
+check "  which names its line" is "$(cat "$dir/err")" "arborctl: line 2: 1 problem(s)"
+check "  one answer, the report, and what follows is not run" is "$(wc -l < "$dir/out" | tr -d ' ')" $((found + 1))
+batch 'show-all\ndoctor\nzoom 999\ndesktop' --keep-going
+check "--keep-going: whatever decided the exit code has its line" is "$code:$(cut -d: -f2 "$dir/err" | tr -d '\n')" "1: line 2 line 3"
+try macos tidy
+
 try - < /dev/null
 check "an empty batch is done: exit code 0" is "$code" 0
 # A program at the other end that waits for each answer before it sends the next command.

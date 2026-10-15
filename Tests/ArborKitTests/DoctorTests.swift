@@ -168,6 +168,26 @@ import Testing
     #expect(check(h, "Displays")?.detail == "1 (1440×900 main)", "read from macOS, since Arbor has not started")
   }
 
+  /// What `arborctl` goes by. On a Mac as it comes `arborctl doctor > file` left the file empty: one ✘ made the whole report a complaint.
+  @Test func aReportWithAProblemInItIsStillTheAnswer() {
+    var facts = Self.healthy
+    facts.accessibility = false
+    let h = Harness()
+    h.controller.accessibilityGranted = false
+    h.controller.systemFacts = { facts }
+    func printed(_ result: CommandResult) -> CLIInvocation.Printed {
+      CLIInvocation.printed(ok: result.ok, message: result.message, text: result.text)
+    }
+    let found = printed(h.run("doctor"))
+    #expect(found.answer?.hasPrefix("✘ Accessibility: ") == true && found.answer?.contains("\n✔ ") == true, "all of it, on standard output")
+    #expect(found.complaint == nil && found.exitCode == .refused, "the exit code alone says 1")
+    let healthy = printed(makeHarness().run("doctor"))
+    #expect(healthy.answer?.contains("✘") == false && healthy.complaint == nil && healthy.exitCode == .ok)
+    // A refusal has nothing to report, and stays a complaint.
+    let refusal = printed(h.run("dock 999 left"))
+    #expect(refusal.answer == nil && refusal.complaint?.isEmpty == false && refusal.exitCode == .refused)
+  }
+
   @Test func screenRecordingIsOptional() {
     var facts = Self.healthy
     facts.screenRecording = false

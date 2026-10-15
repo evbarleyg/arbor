@@ -66,9 +66,8 @@ tail -n 6 "$ARBOR_OUT/install-adhoc.txt"
 check "make install says aloud that the build is signed ad hoc" says "$ARBOR_OUT/install-adhoc.txt" "NOTE: THIS BUILD IS SIGNED AD HOC"
 check "and what that costs" says "$ARBOR_OUT/install-adhoc.txt" "macOS will ask for the Accessibility permission again"
 start_copy "$installed"
-# With a ✘ among its rows `doctor` fails, and arborctl writes the answer of a command that failed to the other output. A Mac as it comes has
-# such a row: macOS's own tiling is on.
-check "doctor names it" with "$(ask doctor 2>&1)" "– Signature: ad hoc, so to macOS every build is a new app"
+# On standard output alone: a report is an answer, also with a ✘ among its rows, which a Mac as it comes may have (macOS's own tiling is on).
+check "doctor names it" with "$(ask doctor 2> /dev/null)" "– Signature: ad hoc, so to macOS every build is a new app"
 stop_copy
 check "the property list is still valid" plutil -lint "$app/Contents/Info.plist"
 
@@ -122,7 +121,21 @@ check "arborctl --version, through the link, knows its version, and has nothing 
 check "the running app reports the same" same "$(arborctl version | head -n 1)" "Arbor $expected"
 check "status shows it, on a line of its own" same "$(arborctl status | tail -n 1)" "Arbor $expected"
 check "so does the binary itself, beside the running copy" same "$("$installed/Contents/MacOS/Arbor" --version)" "Arbor $expected"
-check "doctor names the signature" with "$(arborctl doctor 2>&1)" "✔ Signature: this Mac’s own certificate"
+# One run, both outputs and the exit code. First as this Mac is, then with a ✘ that is surely there: an entry of settings.json that is skipped.
+examine() { arborctl doctor > "$sandbox/doctor.txt" 2> "$sandbox/doctor-complaint.txt"; code=$?; }
+examine
+check "doctor names the signature" says "$sandbox/doctor.txt" "✔ Signature: this Mac’s own certificate"
+cp "$ARBOR_HOME/settings.json" "$sandbox/settings-before.json" 2> /dev/null
+echo '{"gap": "wide"}' > "$ARBOR_HOME/settings.json"
+arborctl reload-settings > /dev/null 2>&1
+examine
+head -n 2 "$sandbox/doctor.txt"
+check "with a ✘ among its rows the report is on standard output all the same, the worst first" says "$sandbox/doctor.txt" "✘ settings.json: "
+check "whole" says "$sandbox/doctor.txt" "✔ Signature: this Mac’s own certificate"
+check "it says nothing on the other output" test ! -s "$sandbox/doctor-complaint.txt"
+check "the exit code alone says that a row is ✘" same "$code" 1
+if [ -f "$sandbox/settings-before.json" ]; then cp "$sandbox/settings-before.json" "$ARBOR_HOME/settings.json"; else echo '{}' > "$ARBOR_HOME/settings.json"; fi
+arborctl reload-settings > /dev/null 2>&1
 echo "  launch at login, only asked about: $(arborctl launch-at-login)"
 
 step "4  a different build, the same requirement"

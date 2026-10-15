@@ -5630,19 +5630,29 @@
   {
    "id": "doctor-fails-on-a-mac-as-it-comes",
    "kind": "toolchain",
-   "layer": "test",
+   "layer": "controller",
    "expected": "`$(arborctl doctor)` holds the report, so a script can look for a row in it.",
-   "happened": "It was empty, with the whole report on the screen and the row looked for in it. A Mac as it comes has macOS's own tiling on, which is a ✘ row; with a ✘ among its rows `doctor` fails; and arborctl writes the answer of a command that failed to standard error, behind its own name. On Linux the facts a test hands to `doctor` are a healthy Mac's unless it says otherwise.",
+   "happened": "It was empty, with the whole report on the screen and the row looked for in it. A Mac as it comes has macOS's own tiling on, which is a ✘ row; with a ✘ among its rows `doctor` fails; and arborctl writes the answer of a command that failed to standard error, behind its own name. On Linux the facts a test hands to `doctor` are a healthy Mac's unless it says otherwise, and the stand-in for arborctl wrote everything to standard output, refusals too, so no rehearsal could have shown it. A person who ran `arborctl doctor > file` or `| less` got nothing.",
    "found": "`scripts/mac-shell/check-F13.sh`, run to its end for the first time, on macOS 26.6.2 on 2026-10-15: two of its four failures. A third was the harness's own: `lib.sh` has a function `arborctl`, for the checkout's debug build, and a function wins over PATH, so what meant the link in ~/.local/bin never asked it.",
-   "modelled": "cannot",
-   "knobs": [],
+   "modelled": "partly",
+   "knobs": [
+    "World.arborctl"
+   ],
    "guards": [
-    "e2e: doctor names the signature",
+    "test: aReportIsAnAnswerWhateverItFound",
+    "test: aReportWithAProblemInItIsStillTheAnswer",
+    "tool: cli-smoke.sh",
+    "tool: test-tooling.py",
+    "e2e: it says nothing on the other output",
     "e2e: arborctl is that link"
    ],
-   "copes": "scripts/mac-shell/check-F13.sh reads both outputs of `doctor`, and `scripts/mac-shell/lib-F13.sh` takes the function away.",
+   "copes": "CLIInvocation.printed takes a reply that carries a report for the answer, whatever it found: all of it goes to standard output, without the tool's name, and the exit code alone says that a row is ✘ (the product owner's ruling); among other commands a line on standard error says which stopped the rest. `scripts/cli-smoke.sh` drives the real arborctl through it. The stand-in for arborctl asks the same function, but the fake Mac still hands `doctor` no switches, so a rehearsed Mac as it comes has no ✘ row. `scripts/mac-shell/lib-F13.sh` takes the function away.",
    "hurt": 4,
    "sources": [
+    "Sources/ArborCore/CLIInvocation.swift",
+    "Sources/arborctl/main.swift",
+    "Sources/arbor-fakemac/World+Arbor.swift",
+    "scripts/cli-smoke.sh",
     "scripts/mac-shell/check-F13.sh",
     "scripts/mac-shell/lib-F13.sh",
     "Sources/ArborKit/Controller/Controller+Doctor.swift"

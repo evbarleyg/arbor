@@ -376,13 +376,17 @@ extension World {
     } catch {
       result = .failure("\(error)")
     }
+    let printed = CLIInvocation.printed(ok: result.ok, message: result.message, text: result.text)
     if rawJSON || arguments.first == "state" {
       let encoder = JSONEncoder()
       encoder.outputFormatting = [.sortedKeys]
       let reply = (try? encoder.encode(result)).map { String(decoding: $0, as: UTF8.self) }
-      return .printing(reply ?? #"{"ok":false,"message":"encoding failed"}"#)
+      // The whole reply, and the exit code tells the truth all the same.
+      return Reply(out: (reply ?? #"{"ok":false,"message":"encoding failed"}"#) + "\n", code: printed.exitCode.rawValue)
     }
-    return Reply(out: (result.text ?? result.message) + "\n", code: result.ok ? 0 : 1)
+    return Reply(
+      out: printed.answer.map { $0 + "\n" } ?? "", err: printed.complaint.map { "arborctl: \($0)\n" } ?? "",
+      code: printed.exitCode.rawValue)
   }
 
   /// `open <url>` and `ArborApp.handleURLEvent`. macOS hands URLs to app bundles only, and this one does not

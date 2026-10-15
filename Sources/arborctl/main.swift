@@ -17,7 +17,8 @@ import Foundation
 //
 // What the arguments mean is worked out by `CLIInvocation` (ArborCore), where tests reach it, and `arborctl --help`
 // prints it. Answers go to standard output, and whatever went wrong to standard error, so that `$(arborctl …)` holds
-// an answer or nothing. The exit codes are `CLIInvocation.ExitCode`. See docs/SCRIPTING.md.
+// an answer or nothing; a report is an answer whatever it found (`CLIInvocation.printed`). The exit codes are
+// `CLIInvocation.ExitCode`. See docs/SCRIPTING.md.
 
 func complain(_ message: String) {
   // Not `write(_:)`, which raises an exception when nobody reads standard error any more.
@@ -26,29 +27,33 @@ func complain(_ message: String) {
 
 func leave(_ code: CLIInvocation.ExitCode) -> Never { exit(code.rawValue) }
 
-/// Sends one command and prints what comes back. `place` goes before a complaint: the line of a batch.
-func run(_ line: String, as invocation: CLIInvocation, place: String = "") -> CLIInvocation.ExitCode {
+/// Sends one command and prints what comes back. `place` goes before a complaint: the line of a batch, nothing in a list; nil
+/// for a command that stands alone.
+func run(_ line: String, as invocation: CLIInvocation, place: String? = nil) -> CLIInvocation.ExitCode {
   do {
     let reply = try ControlClient.send(line, timeout: invocation.timeout)
     guard let object = try JSONSerialization.jsonObject(with: Data(reply.utf8)) as? [String: Any] else {
       if !invocation.quiet { print(reply) }
       return .ok
     }
-    let outcome = CLIInvocation.outcome(ok: object["ok"] as? Bool ?? false)
+    let printed = CLIInvocation.printed(
+      ok: object["ok"] as? Bool ?? false, message: object["message"] as? String ?? "", text: object["text"] as? String,
+      place: place)
     if invocation.quiet {
       // The exit code says it all.
     } else if invocation.rawJSON || CLIInvocation.verb(of: line) == "state" {
       // The whole reply, refusals too: whoever asked for JSON reads `ok` and `message` from it.
       print(reply)
-    } else if let answer = object["text"] as? String ?? object["message"] as? String {
-      if outcome.toStandardError { complain(place + answer) } else { print(answer) }
+    } else {
+      if let answer = printed.answer { print(answer) }
+      if let complaint = printed.complaint { complain(complaint) }
     }
-    return outcome.exitCode
+    return printed.exitCode
   } catch let failure as ControlClient.Failure {
-    if !invocation.quiet { complain(place + failure.description) }
+    if !invocation.quiet { complain((place ?? "") + failure.description) }
     return failure.timedOut ? .timedOut : .unreachable
   } catch {
-    if !invocation.quiet { complain(place + "\(error)") }
+    if !invocation.quiet { complain((place ?? "") + "\(error)") }
     return .unreachable
   }
 }
@@ -116,8 +121,9 @@ case .commands(let commands) where CLIInvocation.verb(of: commands[0].joined(sep
 
 case .commands(let commands):
   var tally = Tally(keepGoing: invocation.keepGoing)
+  let place = commands.count > 1 ? "" : nil
   for words in commands {
-    guard tally.carryOn(after: run(words.joined(separator: " "), as: invocation)) else { break }
+    guard tally.carryOn(after: run(words.joined(separator: " "), as: invocation, place: place)) else { break }
   }
   leave(tally.worst)
 

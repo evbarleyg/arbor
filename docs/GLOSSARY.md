@@ -67,8 +67,9 @@ JSON keys, values, exit codes and options are promised never to change once rele
 | A space's number | `node`, for `zoom-node` |
 | Rectangles | `{"x", "y", "width", "height"}`, global points, origin at the top left of the main display, y downward |
 | Window titles | `title`, only when asked for with `--titles` (`state`, the debugging view, always has them) |
-| Exit codes | 0 done; 1 Arbor said no; 2 not running; 3 `watch` was cut off; 4 no answer in time; 64 the line cannot be read and nothing was sent |
+| Exit codes | 0 done; 1 Arbor said no, or a report found something; 2 not running; 3 `watch` was cut off; 4 no answer in time; 64 the line cannot be read and nothing was sent |
 | A refusal | The reason on **stderr**, exit code 1, nothing on stdout, with `--json` too: the exit code always tells the truth. During a pause the queries answer the empty list with 0; `status` and the events say that it is a pause |
+| A report | An answer, whatever it found: all of `doctor` on **stdout**, without the tool's name, and the exit code alone (1) says that a row is ✘. Among other commands (`a , b`, a batch) it stops the rest as a refusal does, and one line on stderr says which did: `arborctl: line 2: 1 problem(s)` |
 | Options | `arborctl`'s own (`--json`, `-q`, `--timeout`, `--keep-going`, `--help`, `--version`) anywhere on the line. Any other `--option` before the command word is refused (64); after it, it belongs to the command |
 | Several commands | `a , b , c` on one line, or `arborctl - < file`. Both stop at the first failure unless `--keep-going` |
 

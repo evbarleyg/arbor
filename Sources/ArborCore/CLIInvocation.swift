@@ -39,7 +39,7 @@ public struct CLIInvocation: Equatable, Sendable {
   /// `arborctl`'s exit codes, for scripts. 64 is EX_USAGE of sysexits.h.
   public enum ExitCode: Int32, Sendable {
     case ok = 0
-    /// Arbor answered that it would not or could not do it.
+    /// Arbor answered that it would not or could not do it. Or, with a report: that it found something.
     case refused = 1
     /// Arbor is not running, or its socket cannot be reached.
     case unreachable = 2
@@ -73,7 +73,7 @@ public struct CLIInvocation: Equatable, Sendable {
     arborctl completions zsh|bash|fish   print a completion script for that shell
 
     What was asked for goes to standard output, complaints to standard error.
-    exit codes: 0 done, 1 Arbor refused, 2 Arbor is not running, 3 `watch` lost Arbor,
+    exit codes: 0 done, 1 Arbor refused (`doctor`: a row is ✘), 2 Arbor is not running, 3 `watch` lost Arbor,
                 4 no answer in time (Arbor may still do it when it gets to it),
                 64 arborctl did not understand its arguments
     """
@@ -161,10 +161,33 @@ public struct CLIInvocation: Equatable, Sendable {
     return result
   }
 
-  /// Where a reply's text goes and how `arborctl` exits. A refusal is a complaint: on standard output
-  /// it would end up in the variable or the pipe that expected the answer.
-  public static func outcome(ok: Bool) -> (toStandardError: Bool, exitCode: ExitCode) {
-    ok ? (false, .ok) : (true, .refused)
+  /// What `arborctl` makes of a reply.
+  public struct Printed: Equatable, Sendable {
+    /// For standard output.
+    public var answer: String?
+    /// For standard error, behind the tool's name.
+    public var complaint: String?
+    public var exitCode: ExitCode
+
+    public init(answer: String?, complaint: String?, exitCode: ExitCode) {
+      self.answer = answer
+      self.complaint = complaint
+      self.exitCode = exitCode
+    }
+  }
+
+  /// A refusal is a complaint: on standard output it would end up in the variable or the pipe that
+  /// expected the answer. A report (a reply with a `text`) is the answer whatever it found: `doctor`
+  /// with a ✘ among its rows goes where `doctor > file` and `doctor | less` look for it, whole, and
+  /// the exit code alone says how it came out.
+  ///
+  /// - Parameter place: nil for a command that stands alone. Among others it goes before a complaint
+  ///   ("line 2: " in a batch, nothing in a list), and a report that found something is followed by
+  ///   its `message` as one: it stops the rest, or decides the exit code, and that has to be said.
+  public static func printed(ok: Bool, message: String, text: String?, place: String? = nil) -> Printed {
+    if ok { return Printed(answer: text ?? message, complaint: nil, exitCode: .ok) }
+    guard let text else { return Printed(answer: nil, complaint: (place ?? "") + message, exitCode: .refused) }
+    return Printed(answer: text, complaint: place.map { $0 + message }, exitCode: .refused)
   }
 }
 

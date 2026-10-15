@@ -31,6 +31,8 @@ other option belongs to the command if it follows the command's first word (`wat
 (64). After `--` everything belongs to the command.
 
 Answers go to standard output. Whatever went wrong goes to standard error, so `$(arborctl …)` holds an answer or nothing.
+A report is an answer whatever it found: `arborctl doctor` prints all its rows to standard output, and exits with 1 if one of them is ✘.
+Nothing goes to standard error then, unless it is one of several commands: it stops the rest, and a line says which did.
 With `--json` the whole reply goes to standard output, refusals too.
 
 **Exit codes**
@@ -38,7 +40,7 @@ With `--json` the whole reply goes to standard output, refusals too.
 | Code | Meaning |
 |---|---|
 | 0 | The command succeeded. For `watch`: Arbor quit, or whoever was reading the events left |
-| 1 | Arbor said no: it does not know the command, or cannot do it now (the reason goes to standard error). Also a request longer than 64 KB, and the 65th connection at a time |
+| 1 | Arbor said no: it does not know the command, or cannot do it now (the reason goes to standard error). `doctor`: one of its rows is ✘. Also a request longer than 64 KB, and the 65th connection at a time |
 | 2 | Arbor could not be reached: it is not running |
 | 3 | `watch` only: the events stopped without a goodbye, see [When it ends](#when-it-ends) |
 | 4 | Arbor is running but did not answer in time (five seconds, or `--timeout`): it is probably waiting for an app that is busy. Do not start another. **It does not mean the command was not done**: Arbor has it and runs it when it gets to it, so trying again can do it twice, which undoes a `toggle-…` |
