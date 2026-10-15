@@ -98,8 +98,18 @@ tell() {
   brief_lines < "$STEPS/trial"
   : > "$STEPS/trial"
 }
+# The presses are aimed by arithmetic, from where the window was put. On a hosted Mac a click on the bare wallpaper sweeps every window off the displays (macOS's "click wallpaper to reveal desktop", on as it ships), and
+# every trial after it would press on the wallpaper again. So before the button goes down: is it this window that lies at the point? If not, nothing of the trial's is done with the pointer, and that is said.
+MISSED=""
+on_the_window() { [ "$(apptool top-at "$1" "$2" 2> /dev/null | cut -d ' ' -f 1)" = "$WINDOW" ]; }
 # hand <words for the pointer tool>: and what they were, with the time
 hand() {
+  if [ "$1" = drag ] && ! on_the_window "$2" "$3"; then
+    MISSED=yes
+    echo "MISSED: $LABEL: at $2 $3 lies '$(apptool top-at "$2" "$3" 2> /dev/null)', not window $WINDOW, which is at $(pointer frame "$WINDOW"): no press, and no more of this trial with the pointer"
+    printf '{"kind":"missed","label":"%s","at":[%s,%s]}\n' "$LABEL" "$2" "$3" >> "$RESULTS"
+  fi
+  [ -z "$MISSED" ] || [ "$1" = key ] || return 0
   printf '{"kind":"pointer","label":"%s","epoch":%s,"words":"%s"}\n' "$LABEL" "$(stamp)" "$*" >> "$RESULTS"
   # lib.sh's `key` keeps the record of keys that are down, so that they come up whatever ends the script.
   # shellcheck disable=SC2068
@@ -118,7 +128,7 @@ in_time() {
 }
 # begin <trial> <which time> <x y w h>: sets LABEL, marks every log, puts the window there
 begin() {
-  LABEL="$APP.$1.$2"
+  LABEL="$APP.$1.$2" MISSED=""
   in_time "$LABEL" || return 1
   step "$LABEL"
   printf '{"kind":"trial","label":"%s","epoch":%s,"start":[%s,%s,%s,%s]}\n' "$LABEL" "$(stamp)" "$3" "$4" "$5" "$6" >> "$RESULTS"
@@ -404,6 +414,7 @@ BUDGET=$((BUDGET + 30))
 comes_along() {
   local before after
   before=$(pointer frame "$WINDOW")
+  on_the_window $((200 + $1)) $((150 + $2)) || { echo "  held $1 from the left, $2 from the top: the window does not lie there ($before): no press"; return 1; }
   arbor_input drag $((200 + $1)) $((150 + $2)) $((200 + $1 + 12)) $((150 + $2 + 12)) --steps 3 --duration 0.1 --hold 0.1 > /dev/null
   sleep 0.2
   after=$(pointer frame "$WINDOW")
