@@ -1,0 +1,701 @@
+# mac-shell: scripts/mac-shell/probe-how-far-a-window-grows.sh at 60b4dd7, macOS 26.6.2, 2026-10-15T06:54Z
+built Arbor, the pointer tool and the app bundles in 8s
+
+== the Mac
+ProductName:		macOS
+ProductVersion:		26.6.2
+BuildVersion:		25G83
+the Dock: orientation not set, autohide not set, tilesize not set
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1024 768 1 main 0 0 305419896
+
+== base: control both looks orders no-looks on hanging exact late
+  window 31 of dev.arbor.testwindows (AXWindow, AXStandardWindow) at 170 220 480 348
+  displays (start): 1: 0 0 1024 768 visible 0 31 1024 674
+  displays (A the control): 1: 0 0 1024 768 visible 0 31 1024 674
+  A1-grows-where-it-stands                     size       170 220 480 348 -> 170 220 494 650: 170 220 494 484 OTHER | short 0 0 0 166 | half way - | moved 0 resized 1 | 29.3 ms
+  A2-parked-it-grows                           size       1023 677 325 524 -> 1023 677 1000 650: 1023 677 1000 650 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 3.1 ms
+  A3-sent-to-the-corner                        pos        170 220 480 348 -> 1023 767 480 348: 1023 677 480 348 OTHER | short 0 -90 0 0 | half way - | moved 1 resized 0 | 1.8 ms
+  displays (B four orders): 1: 0 0 1024 768 visible 0 31 1024 674
+  B1-grows                                     SPS  reads 170 220 480 348 -> 12 43 494 650: 12 43 494 650 RIGHT | short 0 0 0 0 | half way 170 220 494 484; 12 43 494 484 | moved 1 resized 2 | 5.6 ms | LATE: at once 12 43 494 650 (server 170 220 494 484); 50 ms 12 43 494 650 (server 12 43 494 650); 200 ms 12 43 494 650 (server 12 43 494 650); 600 ms 12 43 494 650 (server 12 43 494 650)
+  B1-grows                                     SPS  blind 170 220 480 348 -> 12 43 494 650: 12 43 494 650 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 2 | 3.2 ms | LATE: at once 12 43 494 650 (server 170 220 480 348); 50 ms 12 43 494 650 (server 12 43 494 650); 200 ms 12 43 494 650 (server 12 43 494 650); 600 ms 12 43 494 650 (server 12 43 494 650)
+  B1-grows                                     PS   reads 170 220 480 348 -> 12 43 494 650: 12 43 494 650 RIGHT | short 0 0 0 0 | half way 12 43 480 348 | moved 1 resized 1 | 3.5 ms | LATE: at once 12 43 494 650 (server 12 43 480 348); 50 ms 12 43 494 650 (server 12 43 494 650); 200 ms 12 43 494 650 (server 12 43 494 650); 600 ms 12 43 494 650 (server 12 43 494 650)
+  B1-grows                                     PS   blind 170 220 480 348 -> 12 43 494 650: 12 43 494 650 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 3.4 ms | LATE: at once 12 43 494 650 (server 12 43 480 348); 50 ms 12 43 494 650 (server 12 43 494 650); 200 ms 12 43 494 650 (server 12 43 494 650); 600 ms 12 43 494 650 (server 12 43 494 650)
+  B1-grows                                     SP   reads 170 220 480 348 -> 12 43 494 650: 12 43 494 484 OTHER | short 0 0 0 166 | half way 170 220 494 484 | moved 1 resized 1 | 5.9 ms | LATE: at once 12 43 494 484 (server 170 220 494 484); 50 ms 12 43 494 484 (server 12 43 494 484); 200 ms 12 43 494 484 (server 12 43 494 484); 600 ms 12 43 494 484 (server 12 43 494 484)
+  B1-grows                                     SP   blind 170 220 480 348 -> 12 43 494 650: 12 43 494 484 OTHER | short 0 0 0 166 | half way - | moved 1 resized 1 | 6.4 ms | LATE: at once 12 43 494 484 (server 170 220 480 348); 50 ms 12 43 494 484 (server 170 220 494 484); 200 ms 12 43 494 484 (server 12 43 494 484); 600 ms 12 43 494 484 (server 12 43 494 484)
+  B1-grows                                     sPS  reads 170 220 480 348 -> 12 43 494 650: 12 43 494 650 RIGHT | short 0 0 0 0 | half way 170 220 480 348; 12 43 480 348 | moved 1 resized 1 | 5.2 ms | LATE: at once 12 43 494 650 (server 12 43 480 348); 50 ms 12 43 494 650 (server 12 43 494 650); 200 ms 12 43 494 650 (server 12 43 494 650); 600 ms 12 43 494 650 (server 12 43 494 650)
+  B1-grows                                     sPS  blind 170 220 480 348 -> 12 43 494 650: 12 43 494 650 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 3.4 ms | LATE: at once 12 43 494 650 (server 12 43 480 348); 50 ms 12 43 494 650 (server 12 43 494 650); 200 ms 12 43 494 650 (server 12 43 494 650); 600 ms 12 43 494 650 (server 12 43 494 650)
+  B2-shrinks                                   SPS  reads 12 43 1000 650 -> 600 300 300 200: 600 300 300 200 RIGHT | short 0 0 0 0 | half way 12 43 300 200; 600 300 300 200 | moved 1 resized 1 | 12.8 ms | LATE: at once 600 300 300 200 (server 12 43 300 200); 50 ms 600 300 300 200 (server 600 300 300 200); 200 ms 600 300 300 200 (server 600 300 300 200); 600 ms 600 300 300 200 (server 600 300 300 200)
+  B2-shrinks                                   SPS  blind 12 43 1000 650 -> 600 300 300 200: 600 300 300 200 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 3.6 ms | LATE: at once 600 300 300 200 (server 12 43 1000 650); 50 ms 600 300 300 200 (server 12 43 300 200); 200 ms 600 300 300 200 (server 600 300 300 200); 600 ms 600 300 300 200 (server 600 300 300 200)
+  B2-shrinks                                   PS   reads 12 43 1000 650 -> 600 300 300 200: 600 300 300 200 RIGHT | short 0 0 0 0 | half way 600 300 1000 650 | moved 1 resized 1 | 4.8 ms | LATE: at once 600 300 300 200 (server 600 300 1000 650); 50 ms 600 300 300 200 (server 600 300 300 200); 200 ms 600 300 300 200 (server 600 300 300 200); 600 ms 600 300 300 200 (server 600 300 300 200)
+  B2-shrinks                                   PS   blind 12 43 1000 650 -> 600 300 300 200: 600 300 300 200 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 2.5 ms | LATE: at once 600 300 300 200 (server 600 300 1000 650); 50 ms 600 300 300 200 (server 600 300 300 200); 200 ms 600 300 300 200 (server 600 300 300 200); 600 ms 600 300 300 200 (server 600 300 300 200)
+  B2-shrinks                                   SP   reads 12 43 1000 650 -> 600 300 300 200: 600 300 300 200 RIGHT | short 0 0 0 0 | half way 12 43 300 200 | moved 1 resized 1 | 6.7 ms | LATE: at once 600 300 300 200 (server 12 43 300 200); 50 ms 600 300 300 200 (server 600 300 300 200); 200 ms 600 300 300 200 (server 600 300 300 200); 600 ms 600 300 300 200 (server 600 300 300 200)
+  B2-shrinks                                   SP   blind 12 43 1000 650 -> 600 300 300 200: 600 300 300 200 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 3.3 ms | LATE: at once 600 300 300 200 (server 12 43 1000 650); 50 ms 600 300 300 200 (server 600 300 300 200); 200 ms 600 300 300 200 (server 600 300 300 200); 600 ms 600 300 300 200 (server 600 300 300 200)
+  B2-shrinks                                   sPS  reads 12 43 1000 650 -> 600 300 300 200: 600 300 300 200 RIGHT | short 0 0 0 0 | half way 12 43 300 200; 600 300 300 200 | moved 1 resized 1 | 7.0 ms | LATE: at once 600 300 300 200 (server 12 43 300 200); 50 ms 600 300 300 200 (server 600 300 300 200); 200 ms 600 300 300 200 (server 600 300 300 200); 600 ms 600 300 300 200 (server 600 300 300 200)
+  B2-shrinks                                   sPS  blind 12 43 1000 650 -> 600 300 300 200: 600 300 300 200 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 2.8 ms | LATE: at once 600 300 300 200 (server 12 43 1000 650); 50 ms 600 300 300 200 (server 600 300 300 200); 200 ms 600 300 300 200 (server 600 300 300 200); 600 ms 600 300 300 200 (server 600 300 300 200)
+  B3-wider-and-lower                           SPS  reads 518 43 494 650 -> 12 380 1000 313: 12 380 1000 313 RIGHT | short 0 0 0 0 | half way 518 43 506 313; 12 380 506 313 | moved 1 resized 2 | 8.3 ms | LATE: at once 12 380 1000 313 (server 518 43 506 313); 50 ms 12 380 1000 313 (server 12 380 1000 313); 200 ms 12 380 1000 313 (server 12 380 1000 313); 600 ms 12 380 1000 313 (server 12 380 1000 313)
+  B3-wider-and-lower                           SPS  blind 518 43 494 650 -> 12 380 1000 313: 12 380 1000 313 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 2 | 4.3 ms | LATE: at once 12 380 1000 313 (server 518 43 506 313); 50 ms 12 380 1000 313 (server 12 380 1000 313); 200 ms 12 380 1000 313 (server 12 380 1000 313); 600 ms 12 380 1000 313 (server 12 380 1000 313)
+  B3-wider-and-lower                           PS   reads 518 43 494 650 -> 12 380 1000 313: 12 380 1000 313 RIGHT | short 0 0 0 0 | half way 12 380 494 650 | moved 1 resized 1 | 6.7 ms | LATE: at once 12 380 1000 313 (server 12 380 494 650); 50 ms 12 380 1000 313 (server 12 380 494 650); 200 ms 12 380 1000 313 (server 12 380 1000 313); 600 ms 12 380 1000 313 (server 12 380 1000 313)
+  B3-wider-and-lower                           PS   blind 518 43 494 650 -> 12 380 1000 313: 12 380 1000 313 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 4.4 ms | LATE: at once 12 380 1000 313 (server 12 380 494 650); 50 ms 12 380 1000 313 (server 12 380 1000 313); 200 ms 12 380 1000 313 (server 12 380 1000 313); 600 ms 12 380 1000 313 (server 12 380 1000 313)
+  B3-wider-and-lower                           SP   reads 518 43 494 650 -> 12 380 1000 313: 12 380 506 313 OTHER | short 0 0 494 0 | half way 518 43 506 313 | moved 1 resized 1 | 13.7 ms | LATE: at once 12 380 506 313 (server 518 43 506 313); 50 ms 12 380 506 313 (server 12 380 506 313); 200 ms 12 380 506 313 (server 12 380 506 313); 600 ms 12 380 506 313 (server 12 380 506 313)
+  B3-wider-and-lower                           SP   blind 518 43 494 650 -> 12 380 1000 313: 12 380 506 313 OTHER | short 0 0 494 0 | half way - | moved 1 resized 1 | 3.3 ms | LATE: at once 12 380 506 313 (server 518 43 494 650); 50 ms 12 380 506 313 (server 12 380 506 313); 200 ms 12 380 506 313 (server 12 380 506 313); 600 ms 12 380 506 313 (server 12 380 506 313)
+  B3-wider-and-lower                           sPS  reads 518 43 494 650 -> 12 380 1000 313: 12 380 1000 313 RIGHT | short 0 0 0 0 | half way 518 43 494 313; 12 380 494 313 | moved 1 resized 2 | 8.1 ms | LATE: at once 12 380 1000 313 (server 518 43 494 313); 50 ms 12 380 1000 313 (server 12 380 1000 313); 200 ms 12 380 1000 313 (server 12 380 1000 313); 600 ms 12 380 1000 313 (server 12 380 1000 313)
+  B3-wider-and-lower                           sPS  blind 518 43 494 650 -> 12 380 1000 313: 12 380 1000 313 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 2 | 5.8 ms | LATE: at once 12 380 1000 313 (server 518 43 494 313); 50 ms 12 380 1000 313 (server 12 380 1000 313); 200 ms 12 380 1000 313 (server 12 380 1000 313); 600 ms 12 380 1000 313 (server 12 380 1000 313)
+  B4-narrower-and-taller                       SPS  reads 12 380 1000 313 -> 518 43 494 650: 518 43 494 650 RIGHT | short 0 0 0 0 | half way 12 380 494 324; 518 43 494 324 | moved 1 resized 2 | 7.2 ms | LATE: at once 518 43 494 650 (server 12 380 494 324); 50 ms 518 43 494 650 (server 518 43 494 650); 200 ms 518 43 494 650 (server 518 43 494 650); 600 ms 518 43 494 650 (server 518 43 494 650)
+  B4-narrower-and-taller                       SPS  blind 12 380 1000 313 -> 518 43 494 650: 518 43 494 650 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 2 | 4.0 ms | LATE: at once 518 43 494 650 (server 12 380 1000 313); 50 ms 518 43 494 650 (server 518 43 494 650); 200 ms 518 43 494 650 (server 518 43 494 650); 600 ms 518 43 494 650 (server 518 43 494 650)
+  B4-narrower-and-taller                       PS   reads 12 380 1000 313 -> 518 43 494 650: 518 43 494 650 RIGHT | short 0 0 0 0 | half way 518 43 1000 313 | moved 1 resized 1 | 7.1 ms | LATE: at once 518 43 494 650 (server 518 43 1000 313); 50 ms 518 43 494 650 (server 518 43 494 650); 200 ms 518 43 494 650 (server 518 43 494 650); 600 ms 518 43 494 650 (server 518 43 494 650)
+  B4-narrower-and-taller                       PS   blind 12 380 1000 313 -> 518 43 494 650: 518 43 494 650 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 7.1 ms | LATE: at once 518 43 494 650 (server 518 43 1000 313); 50 ms 518 43 494 650 (server 518 43 494 650); 200 ms 518 43 494 650 (server 518 43 494 650); 600 ms 518 43 494 650 (server 518 43 494 650)
+  B4-narrower-and-taller                       SP   reads 12 380 1000 313 -> 518 43 494 650: 518 43 494 324 OTHER | short 0 0 0 326 | half way 12 380 494 324 | moved 1 resized 1 | 5.2 ms | LATE: at once 518 43 494 324 (server 12 380 494 324); 50 ms 518 43 494 324 (server 518 43 494 324); 200 ms 518 43 494 324 (server 518 43 494 324); 600 ms 518 43 494 324 (server 518 43 494 324)
+  B4-narrower-and-taller                       SP   blind 12 380 1000 313 -> 518 43 494 650: 518 43 494 324 OTHER | short 0 0 0 326 | half way - | moved 1 resized 1 | 10.1 ms | LATE: at once 518 43 494 324 (server 12 380 494 324); 50 ms 518 43 494 324 (server 518 43 494 324); 200 ms 518 43 494 324 (server 518 43 494 324); 600 ms 518 43 494 324 (server 518 43 494 324)
+  B4-narrower-and-taller                       sPS  reads 12 380 1000 313 -> 518 43 494 650: 518 43 494 650 RIGHT | short 0 0 0 0 | half way 12 380 494 313; 518 43 494 313 | moved 1 resized 2 | 12.9 ms | LATE: at once 518 43 494 650 (server 12 380 494 313); 50 ms 518 43 494 650 (server 518 43 494 650); 200 ms 518 43 494 650 (server 518 43 494 650); 600 ms 518 43 494 650 (server 518 43 494 650)
+  B4-narrower-and-taller                       sPS  blind 12 380 1000 313 -> 518 43 494 650: 518 43 494 650 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 2 | 10.2 ms | LATE: at once 518 43 494 650 (server 12 380 494 313); 50 ms 518 43 494 650 (server 12 380 494 313); 200 ms 518 43 494 650 (server 518 43 494 650); 600 ms 518 43 494 650 (server 518 43 494 650)
+  B5-back-from-the-corner                      SPS  reads 1023 677 325 524 -> 12 43 494 650: 12 43 494 650 RIGHT | short 0 0 0 0 | half way 1023 677 494 650; 12 43 494 650 | moved 1 resized 1 | 16.5 ms | LATE: at once 12 43 494 650 (server 1023 677 494 650); 50 ms 12 43 494 650 (server 12 43 494 650); 200 ms 12 43 494 650 (server 12 43 494 650); 600 ms 12 43 494 650 (server 12 43 494 650)
+  B5-back-from-the-corner                      SPS  blind 1023 677 325 524 -> 12 43 494 650: 12 43 494 650 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 8.1 ms | LATE: at once 12 43 494 650 (server 1023 677 325 524); 50 ms 12 43 494 650 (server 1023 677 494 650); 200 ms 12 43 494 650 (server 12 43 494 650); 600 ms 12 43 494 650 (server 12 43 494 650)
+  B5-back-from-the-corner                      PS   reads 1023 677 325 524 -> 12 43 494 650: 12 43 494 650 RIGHT | short 0 0 0 0 | half way 12 43 325 524 | moved 1 resized 1 | 3.8 ms | LATE: at once 12 43 494 650 (server 12 43 325 524); 50 ms 12 43 494 650 (server 12 43 494 650); 200 ms 12 43 494 650 (server 12 43 494 650); 600 ms 12 43 494 650 (server 12 43 494 650)
+  B5-back-from-the-corner                      PS   blind 1023 677 325 524 -> 12 43 494 650: 12 43 494 650 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 9.9 ms | LATE: at once 12 43 494 650 (server 12 43 325 524); 50 ms 12 43 494 650 (server 12 43 494 650); 200 ms 12 43 494 650 (server 12 43 494 650); 600 ms 12 43 494 650 (server 12 43 494 650)
+  B5-back-from-the-corner                      SP   reads 1023 677 325 524 -> 12 43 494 650: 12 43 494 650 RIGHT | short 0 0 0 0 | half way 1023 677 494 650 | moved 1 resized 1 | 19.1 ms | the same 50, 200 and 600 ms later
+  B5-back-from-the-corner                      SP   blind 1023 677 325 524 -> 12 43 494 650: 12 43 494 650 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 7.1 ms | LATE: at once 12 43 494 650 (server 1023 677 325 524); 50 ms 12 43 494 650 (server 12 43 494 650); 200 ms 12 43 494 650 (server 12 43 494 650); 600 ms 12 43 494 650 (server 12 43 494 650)
+  B5-back-from-the-corner                      sPS  reads 1023 677 325 524 -> 12 43 494 650: 12 43 494 650 RIGHT | short 0 0 0 0 | half way 1023 677 325 524; 12 43 325 524 | moved 1 resized 1 | 17.8 ms | LATE: at once 12 43 494 650 (server 12 43 325 524); 50 ms 12 43 494 650 (server 12 43 494 650); 200 ms 12 43 494 650 (server 12 43 494 650); 600 ms 12 43 494 650 (server 12 43 494 650)
+  B5-back-from-the-corner                      sPS  blind 1023 677 325 524 -> 12 43 494 650: 12 43 494 650 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 15.4 ms | LATE: at once 12 43 494 650 (server 12 43 325 524); 50 ms 12 43 494 650 (server 12 43 494 650); 200 ms 12 43 494 650 (server 12 43 494 650); 600 ms 12 43 494 650 (server 12 43 494 650)
+  displays (C hanging over an edge): 1: 0 0 1024 768 visible 0 31 1024 674
+  C1-right-over-taller                         size       800 100 400 300 -> 800 100 400 500: 800 100 400 500 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 5.2 ms
+  C2-right-over-wider                          size       800 100 400 300 -> 800 100 500 300: 800 100 500 300 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 5.0 ms
+  C3-right-over-taller-than-the-line           size       800 100 400 300 -> 800 100 400 705: 800 100 400 604 OTHER | short 0 0 0 101 | half way - | moved 0 resized 1 | 3.9 ms
+  C4-right-over-both                           size       800 100 400 300 -> 800 100 500 500: 800 100 500 500 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 2.9 ms
+  C5-right-over-narrower-and-taller            size       800 100 400 300 -> 800 100 300 500: 800 100 300 500 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 6.6 ms
+  C6-bottom-over-wider                         size       100 500 300 400 -> 100 500 500 400: 100 500 500 400 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 4.4 ms
+  C7-bottom-over-wider-than-the-display        size       100 500 300 400 -> 100 500 1124 400: 100 500 924 400 OTHER | short 0 0 200 0 | half way - | moved 0 resized 1 | 6.0 ms
+  C8-bottom-over-taller                        size       100 500 300 400 -> 100 500 300 500: 100 500 300 500 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 4.3 ms
+  C9-bottom-over-both                          size       100 500 300 400 -> 100 500 500 500: 100 500 500 500 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 4.8 ms
+  C10-left-over-wider                          size       -200 100 400 300 -> -200 100 600 300: -200 100 600 300 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 4.6 ms
+  C11-left-over-taller                         size       -200 100 400 300 -> -200 100 400 500: -200 100 400 500 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 4.2 ms
+  C12-left-over-past-both                      size       -200 100 400 300 -> -200 100 1424 705: -200 100 1224 604 OTHER | short 0 0 200 101 | half way - | moved 0 resized 1 | 5.7 ms
+  C13-right-and-bottom-over                    size       800 500 400 400 -> 800 500 600 600: 800 500 600 600 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 4.6 ms
+  C14-right-edge-at-the-edge                   size       624 100 400 300 -> 624 100 500 300: 624 100 400 300 OTHER | short 0 0 100 0 | half way - | moved 0 resized 0 | 2.5 ms
+  C15-bottom-one-above-the-visible-bottom      size       100 404 300 300 -> 100 404 300 400: 100 404 300 300 OTHER | short 0 0 0 100 | half way - | moved 0 resized 0 | 4.3 ms
+  C16-bottom-at-the-visible-bottom             size       100 405 300 300 -> 100 405 300 400: 100 405 300 300 OTHER | short 0 0 0 100 | half way - | moved 0 resized 0 | 2.3 ms
+  C17-bottom-one-past-the-visible-bottom       size       100 406 300 300 -> 100 406 300 400: 100 406 300 300 OTHER | short 0 0 0 100 | half way - | moved 0 resized 0 | 4.4 ms
+  C18-right-edge-one-past                      size       625 100 400 300 -> 625 100 500 300: 625 100 500 300 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 2.5 ms
+  displays (D exactly at a line): 1: 0 0 1024 768 visible 0 31 1024 674
+  D1-ends-at-the-visible-bottom                SPS  reads 170 220 480 348 -> 12 43 494 662: 12 43 494 661 OTHER | short 0 0 0 1 | half way 170 220 494 484; 12 43 494 484 | moved 1 resized 2 | 16.2 ms
+  D1-ends-at-the-visible-bottom                PS   reads 170 220 480 348 -> 12 43 494 662: 12 43 494 661 OTHER | short 0 0 0 1 | half way 12 43 480 348 | moved 1 resized 1 | 9.3 ms
+  D2-ends-one-above                            SPS  reads 170 220 480 348 -> 12 43 494 661: 12 43 494 661 RIGHT | short 0 0 0 0 | half way 170 220 494 484; 12 43 494 484 | moved 1 resized 2 | 4.5 ms
+  D2-ends-one-above                            PS   reads 170 220 480 348 -> 12 43 494 661: 12 43 494 661 RIGHT | short 0 0 0 0 | half way 12 43 480 348 | moved 1 resized 1 | 23.5 ms
+  D3-half-y-ends-at-the-visible-bottom         SPS  reads 170 220 480 348 -> 12 43.5 494 661.5: 12 44 494 660 OTHER | short 0 0.5 0 1.5 | half way 170 220 494 484; 12 44 494 484 | moved 1 resized 2 | 12.3 ms
+  D3-half-y-ends-at-the-visible-bottom         PS   reads 170 220 480 348 -> 12 43.5 494 661.5: 12 44 494 660 OTHER | short 0 0.5 0 1.5 | half way 12 44 480 348 | moved 1 resized 1 | 11.4 ms
+  D4-half-y-ends-one-above                     SPS  reads 170 220 480 348 -> 12 43.5 494 660.5: 12 44 494 660 OTHER | short 0 0.5 0 0.5 | half way 170 220 494 484; 12 44 494 484 | moved 1 resized 2 | 13.5 ms
+  D4-half-y-ends-one-above                     PS   reads 170 220 480 348 -> 12 43.5 494 660.5: 12 44 494 660 OTHER | short 0 0.5 0 0.5 | half way 12 44 480 348 | moved 1 resized 1 | 11.0 ms
+  D5-ends-at-the-right-edge                    SPS  reads 170 220 480 348 -> 530 43 494 400: 530 43 494 400 RIGHT | short 0 0 0 0 | half way 170 220 494 400; 530 43 494 400 | moved 1 resized 1 | 9.9 ms
+  D5-ends-at-the-right-edge                    PS   reads 170 220 480 348 -> 530 43 494 400: 530 43 494 400 RIGHT | short 0 0 0 0 | half way 530 43 480 348 | moved 1 resized 1 | 6.9 ms
+  D6-ends-one-past-the-right-edge              SPS  reads 170 220 480 348 -> 530 43 495 400: 530 43 495 400 RIGHT | short 0 0 0 0 | half way 170 220 495 400; 530 43 495 400 | moved 1 resized 1 | 17.9 ms
+  D6-ends-one-past-the-right-edge              PS   reads 170 220 480 348 -> 530 43 495 400: 530 43 494 400 OTHER | short 0 0 1 0 | half way 530 43 480 348 | moved 1 resized 1 | 14.9 ms
+  D7-half-x-ends-at-the-right-edge             SPS  reads 170 220 480 348 -> 529.5 43 494.5 400: 529 43 494 400 OTHER | short -0.5 0 0.5 0 | half way 170 220 494 400; 529 43 494 400 | moved 1 resized 1 | 18.2 ms
+  D7-half-x-ends-at-the-right-edge             PS   reads 170 220 480 348 -> 529.5 43 494.5 400: 529 43 494 400 OTHER | short -0.5 0 0.5 0 | half way 529 43 480 348 | moved 1 resized 1 | 3.7 ms
+  D8-the-whole-visible-frame                   SPS  reads 170 220 480 348 -> 0 31 1024 674: 0 31 1024 673 OTHER | short 0 0 0 1 | half way 170 220 854 484; 0 31 854 484 | moved 1 resized 2 | 18.2 ms
+  D8-the-whole-visible-frame                   PS   reads 170 220 480 348 -> 0 31 1024 674: 0 31 1024 673 OTHER | short 0 0 0 1 | half way 0 31 480 348 | moved 1 resized 1 | 12.1 ms
+  D9-taller-than-the-display                   size       170 220 480 348 -> 170 220 480 768: 170 220 480 484 OTHER | short 0 0 0 284 | half way - | moved 0 resized 1 | 4.1 ms
+  D10-wider-than-the-display                   size       170 220 480 348 -> 170 220 1024 348: 170 220 854 348 OTHER | short 0 0 170 0 | half way - | moved 0 resized 1 | 8.9 ms
+  D11-sent-to-the-bottom                       pos        170 220 480 348 -> 170 767 480 348: 170 677 480 348 OTHER | short 0 -90 0 0 | half way - | moved 1 resized 0 | 5.5 ms
+  D12-sent-under-the-menu-bar                  pos        170 220 480 348 -> 170 0 480 348: 170 31 480 348 OTHER | short 0 31 0 0 | half way - | moved 1 resized 0 | 4.0 ms
+  D13-sent-above-the-display                   pos        170 220 480 348 -> 170 -50 480 348: 170 31 480 348 OTHER | short 0 81 0 0 | half way - | moved 1 resized 0 | 2.9 ms
+  D14-sent-far-left                            pos        170 220 480 348 -> -600 220 480 348: -440 220 480 348 OTHER | short 160 0 0 0 | half way - | moved 1 resized 0 | 3.0 ms
+  D15-sent-far-right                           pos        170 220 480 348 -> 1524 220 480 348: 984 220 480 348 OTHER | short -540 0 0 0 | half way - | moved 1 resized 0 | 2.8 ms
+  displays (H who moves late): 1: 0 0 1024 768 visible 0 31 1024 674
+  H1-taller-and-wider                          size       100 100 600 400 -> 100 100 700 500: 100 100 700 500 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 3.1 ms | LATE: at once 100 100 700 500 (server 100 100 600 400); 50 ms 100 100 700 500 (server 100 100 700 500); 200 ms 100 100 700 500 (server 100 100 700 500); 600 ms 100 100 700 500 (server 100 100 700 500)
+  H2-smaller                                   size       100 100 700 500 -> 100 100 600 400: 100 100 600 400 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 12.0 ms | the same 50, 200 and 600 ms later
+  H3-moved                                     pos        100 100 600 400 -> 300 150 600 400: 300 150 600 400 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 1.5 ms | LATE: at once 300 150 600 400 (server 100 100 600 400); 50 ms 300 150 600 400 (server 300 150 600 400); 200 ms 300 150 600 400 (server 300 150 600 400); 600 ms 300 150 600 400 (server 300 150 600 400)
+  H4-sent-to-the-corner                        pos        100 100 600 400 -> 1023 767 600 400: 1023 677 600 400 OTHER | short 0 -90 0 0 | half way - | moved 1 resized 0 | 2.9 ms | LATE: at once 1023 677 600 400 (server 100 100 600 400); 50 ms 1023 677 600 400 (server 1023 677 600 400); 200 ms 1023 677 600 400 (server 1023 677 600 400); 600 ms 1023 677 600 400 (server 1023 677 600 400)
+  H5-back-from-the-corner                      pos        1023 677 600 400 -> 100 100 600 400: 100 100 600 400 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 1.7 ms | LATE: at once 100 100 600 400 (server 1023 677 600 400); 50 ms 100 100 600 400 (server 100 100 600 400); 200 ms 100 100 600 400 (server 100 100 600 400); 600 ms 100 100 600 400 (server 100 100 600 400)
+  H6-taller-than-there-is-room                 size       170 220 600 348 -> 170 220 600 650: 170 220 600 484 OTHER | short 0 0 0 166 | half way - | moved 0 resized 1 | 2.9 ms | LATE: at once 170 220 600 484 (server 170 220 600 348); 50 ms 170 220 600 484 (server 170 220 600 484); 200 ms 170 220 600 484 (server 170 220 600 484); 600 ms 170 220 600 484 (server 170 220 600 484)
+  H7-into-a-slot                               SPS  blind 170 220 600 348 -> 12 43 700 650: 12 43 700 650 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 2 | 5.7 ms | LATE: at once 12 43 700 650 (server 170 220 700 484); 50 ms 12 43 700 650 (server 12 43 700 650); 200 ms 12 43 700 650 (server 12 43 700 650); 600 ms 12 43 700 650 (server 12 43 700 650)
+  H7-into-a-slot                               PS   blind 170 220 600 348 -> 12 43 700 650: 12 43 700 650 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 2.2 ms | LATE: at once 12 43 700 650 (server 12 43 600 348); 50 ms 12 43 700 650 (server 12 43 700 650); 200 ms 12 43 700 650 (server 12 43 700 650); 600 ms 12 43 700 650 (server 12 43 700 650)
+  H8-out-of-the-slot                           SPS  blind 12 43 700 650 -> 300 200 600 348: 300 200 600 348 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 7.8 ms | LATE: at once 300 200 600 348 (server 12 43 700 650); 50 ms 300 200 600 348 (server 300 200 600 348); 200 ms 300 200 600 348 (server 300 200 600 348); 600 ms 300 200 600 348 (server 300 200 600 348)
+  H8-out-of-the-slot                           PS   blind 12 43 700 650 -> 300 200 600 348: 300 200 600 348 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 3.2 ms | LATE: at once 300 200 600 348 (server 300 200 700 650); 50 ms 300 200 600 348 (server 300 200 600 348); 200 ms 300 200 600 348 (server 300 200 600 348); 600 ms 300 200 600 348 (server 300 200 600 348)
+  displays (end): 1: 0 0 1024 768 visible 0 31 1024 674
+shot: mac-shell/base.png
+the Dock: orientation left, autohide 0, tilesize not set
+
+== dock-left: control orders exact dock
+  window 31 of dev.arbor.testwindows (AXWindow, AXStandardWindow) at 300 200 600 348
+  displays (start): 1: 0 0 1024 768 visible 50 31 974 737
+  displays (A the control): 1: 0 0 1024 768 visible 50 31 974 737
+  A1-grows-where-it-stands                     size       170 283 480 348 -> 170 283 494 650: 170 283 494 485 OTHER | short 0 0 0 165 | half way - | moved 0 resized 1 | 9.7 ms
+  A2-parked-it-grows                           size       1023 740 325 524 -> 1023 740 1000 650: 1023 740 1000 650 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 5.2 ms
+  A3-sent-to-the-corner                        pos        170 283 480 348 -> 1023 767 480 348: 1023 740 480 348 OTHER | short 0 -27 0 0 | half way - | moved 1 resized 0 | 2.7 ms
+  displays (B four orders): 1: 0 0 1024 768 visible 50 31 974 737
+  B1-grows                                     SPS  reads 220 220 480 348 -> 62 43 494 713: 62 43 494 713 RIGHT | short 0 0 0 0 | half way 220 220 494 548; 62 43 494 548 | moved 1 resized 2 | 13.2 ms
+  B1-grows                                     PS   reads 220 220 480 348 -> 62 43 494 713: 62 43 494 713 RIGHT | short 0 0 0 0 | half way 62 43 480 348 | moved 1 resized 1 | 7.6 ms
+  B1-grows                                     SP   reads 220 220 480 348 -> 62 43 494 713: 62 43 494 548 OTHER | short 0 0 0 165 | half way 220 220 494 548 | moved 1 resized 1 | 6.9 ms
+  B1-grows                                     sPS  reads 220 220 480 348 -> 62 43 494 713: 62 43 494 713 RIGHT | short 0 0 0 0 | half way 220 220 480 348; 62 43 480 348 | moved 1 resized 1 | 9.3 ms
+  B2-shrinks                                   SPS  reads 62 43 950 713 -> 600 300 300 200: 600 300 300 200 RIGHT | short 0 0 0 0 | half way 62 43 300 200; 600 300 300 200 | moved 1 resized 1 | 12.8 ms
+  B2-shrinks                                   PS   reads 62 43 950 713 -> 600 300 300 200: 600 300 300 200 RIGHT | short 0 0 0 0 | half way 600 300 950 713 | moved 1 resized 1 | 4.2 ms
+  B2-shrinks                                   SP   reads 62 43 950 713 -> 600 300 300 200: 600 300 300 200 RIGHT | short 0 0 0 0 | half way 62 43 300 200 | moved 1 resized 1 | 20.2 ms
+  B2-shrinks                                   sPS  reads 62 43 950 713 -> 600 300 300 200: 600 300 300 200 RIGHT | short 0 0 0 0 | half way 62 43 300 200; 600 300 300 200 | moved 1 resized 1 | 10.9 ms
+  B3-wider-and-lower                           SPS  reads 518 43 494 713 -> 62 443 950 313: 62 443 950 313 RIGHT | short 0 0 0 0 | half way 518 43 506 313; 62 443 506 313 | moved 1 resized 2 | 21.2 ms
+  B3-wider-and-lower                           PS   reads 518 43 494 713 -> 62 443 950 313: 62 443 950 313 RIGHT | short 0 0 0 0 | half way 62 443 494 713 | moved 1 resized 1 | 7.7 ms
+  B3-wider-and-lower                           SP   reads 518 43 494 713 -> 62 443 950 313: 62 443 506 313 OTHER | short 0 0 444 0 | half way 518 43 506 313 | moved 1 resized 1 | 9.9 ms
+  B3-wider-and-lower                           sPS  reads 518 43 494 713 -> 62 443 950 313: 62 443 950 313 RIGHT | short 0 0 0 0 | half way 518 43 494 313; 62 443 494 313 | moved 1 resized 2 | 12.5 ms
+  B4-narrower-and-taller                       SPS  reads 62 443 950 313 -> 518 43 494 713: 518 43 494 713 RIGHT | short 0 0 0 0 | half way 62 443 494 325; 518 43 494 325 | moved 1 resized 2 | 11.7 ms
+  B4-narrower-and-taller                       PS   reads 62 443 950 313 -> 518 43 494 713: 518 43 494 713 RIGHT | short 0 0 0 0 | half way 518 43 950 313 | moved 1 resized 1 | 7.9 ms
+  B4-narrower-and-taller                       SP   reads 62 443 950 313 -> 518 43 494 713: 518 43 494 325 OTHER | short 0 0 0 388 | half way 62 443 494 325 | moved 1 resized 1 | 8.1 ms
+  B4-narrower-and-taller                       sPS  reads 62 443 950 313 -> 518 43 494 713: 518 43 494 713 RIGHT | short 0 0 0 0 | half way 62 443 494 313; 518 43 494 313 | moved 1 resized 2 | 17.5 ms
+  B5-back-from-the-corner                      SPS  reads 1023 740 325 524 -> 62 43 494 713: 62 43 494 713 RIGHT | short 0 0 0 0 | half way 1023 740 494 713; 62 43 494 713 | moved 1 resized 1 | 17.2 ms
+  B5-back-from-the-corner                      PS   reads 1023 740 325 524 -> 62 43 494 713: 62 43 494 713 RIGHT | short 0 0 0 0 | half way 62 43 325 524 | moved 1 resized 1 | 21.2 ms
+  B5-back-from-the-corner                      SP   reads 1023 740 325 524 -> 62 43 494 713: 62 43 494 713 RIGHT | short 0 0 0 0 | half way 1023 740 494 713 | moved 1 resized 1 | 13.9 ms
+  B5-back-from-the-corner                      sPS  reads 1023 740 325 524 -> 62 43 494 713: 62 43 494 713 RIGHT | short 0 0 0 0 | half way 1023 740 325 524; 62 43 325 524 | moved 1 resized 1 | 6.7 ms
+  displays (D exactly at a line): 1: 0 0 1024 768 visible 50 31 974 737
+  D1-ends-at-the-visible-bottom                SPS  reads 220 220 480 348 -> 62 43 494 725: 62 43 494 725 RIGHT | short 0 0 0 0 | half way 220 220 494 548; 62 43 494 548 | moved 1 resized 2 | 5.0 ms
+  D1-ends-at-the-visible-bottom                PS   reads 220 220 480 348 -> 62 43 494 725: 62 43 494 725 RIGHT | short 0 0 0 0 | half way 62 43 480 348 | moved 1 resized 1 | 8.9 ms
+  D2-ends-one-above                            SPS  reads 220 220 480 348 -> 62 43 494 724: 62 43 494 724 RIGHT | short 0 0 0 0 | half way 220 220 494 548; 62 43 494 548 | moved 1 resized 2 | 14.7 ms
+  D2-ends-one-above                            PS   reads 220 220 480 348 -> 62 43 494 724: 62 43 494 724 RIGHT | short 0 0 0 0 | half way 62 43 480 348 | moved 1 resized 1 | 7.8 ms
+  D3-half-y-ends-at-the-visible-bottom         SPS  reads 220 220 480 348 -> 62 43.5 494 724.5: 62 44 494 724 OTHER | short 0 0.5 0 0.5 | half way 220 220 494 548; 62 44 494 548 | moved 1 resized 2 | 11.3 ms
+  D3-half-y-ends-at-the-visible-bottom         PS   reads 220 220 480 348 -> 62 43.5 494 724.5: 62 44 494 724 OTHER | short 0 0.5 0 0.5 | half way 62 44 480 348 | moved 1 resized 1 | 8.9 ms
+  D4-half-y-ends-one-above                     SPS  reads 220 220 480 348 -> 62 43.5 494 723.5: 62 44 494 723 OTHER | short 0 0.5 0 0.5 | half way 220 220 494 548; 62 44 494 548 | moved 1 resized 2 | 10.7 ms
+  D4-half-y-ends-one-above                     PS   reads 220 220 480 348 -> 62 43.5 494 723.5: 62 44 494 723 OTHER | short 0 0.5 0 0.5 | half way 62 44 480 348 | moved 1 resized 1 | 7.4 ms
+  D5-ends-at-the-right-edge                    SPS  reads 220 220 480 348 -> 530 43 494 400: 530 43 494 400 RIGHT | short 0 0 0 0 | half way 220 220 494 400; 530 43 494 400 | moved 1 resized 1 | 10.5 ms
+  D5-ends-at-the-right-edge                    PS   reads 220 220 480 348 -> 530 43 494 400: 530 43 494 400 RIGHT | short 0 0 0 0 | half way 530 43 480 348 | moved 1 resized 1 | 7.5 ms
+  D6-ends-one-past-the-right-edge              SPS  reads 220 220 480 348 -> 530 43 495 400: 530 43 495 400 RIGHT | short 0 0 0 0 | half way 220 220 495 400; 530 43 495 400 | moved 1 resized 1 | 10.1 ms
+  D6-ends-one-past-the-right-edge              PS   reads 220 220 480 348 -> 530 43 495 400: 530 43 494 400 OTHER | short 0 0 1 0 | half way 530 43 480 348 | moved 1 resized 1 | 6.4 ms
+  D7-half-x-ends-at-the-right-edge             SPS  reads 220 220 480 348 -> 529.5 43 494.5 400: 529 43 494 400 OTHER | short -0.5 0 0.5 0 | half way 220 220 494 400; 529 43 494 400 | moved 1 resized 1 | 8.5 ms
+  D7-half-x-ends-at-the-right-edge             PS   reads 220 220 480 348 -> 529.5 43 494.5 400: 529 43 494 400 OTHER | short -0.5 0 0.5 0 | half way 529 43 480 348 | moved 1 resized 1 | 4.5 ms
+  D8-the-whole-visible-frame                   SPS  reads 220 220 480 348 -> 50 31 974 737: 50 31 974 737 RIGHT | short 0 0 0 0 | half way 220 220 804 548; 50 31 804 548 | moved 1 resized 2 | 5.7 ms
+  D8-the-whole-visible-frame                   PS   reads 220 220 480 348 -> 50 31 974 737: 50 31 974 737 RIGHT | short 0 0 0 0 | half way 50 31 480 348 | moved 1 resized 1 | 4.4 ms
+  D9-taller-than-the-display                   size       220 220 480 348 -> 220 220 480 768: 220 220 480 548 OTHER | short 0 0 0 220 | half way - | moved 0 resized 1 | 2.2 ms
+  D10-wider-than-the-display                   size       220 220 480 348 -> 220 220 1024 348: 220 220 804 348 OTHER | short 0 0 220 0 | half way - | moved 0 resized 1 | 3.0 ms
+  D11-sent-to-the-bottom                       pos        220 220 480 348 -> 220 767 480 348: 220 740 480 348 OTHER | short 0 -27 0 0 | half way - | moved 1 resized 0 | 1.5 ms
+  D12-sent-under-the-menu-bar                  pos        220 220 480 348 -> 220 0 480 348: 220 31 480 348 OTHER | short 0 31 0 0 | half way - | moved 1 resized 0 | 1.4 ms
+  D13-sent-above-the-display                   pos        220 220 480 348 -> 220 -50 480 348: 220 31 480 348 OTHER | short 0 81 0 0 | half way - | moved 1 resized 0 | 3.0 ms
+  D14-sent-far-left                            pos        220 220 480 348 -> -600 220 480 348: -390 220 480 348 OTHER | short 210 0 0 0 | half way - | moved 1 resized 0 | 1.5 ms
+  D15-sent-far-right                           pos        220 220 480 348 -> 1524 220 480 348: 984 220 480 348 OTHER | short -540 0 0 0 | half way - | moved 1 resized 0 | 2.1 ms
+  displays (E at the edge of the Dock): 1: 0 0 1024 768 visible 50 31 974 737
+  E1-sent-under-the-Dock                       pos        220 220 480 348 -> 0 220 480 348: 0 220 480 348 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 1.7 ms
+  E2-sent-half-under-the-Dock                  pos        220 220 480 348 -> 20 220 480 348: 20 220 480 348 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 1.4 ms
+  E3-sent-past-the-left-edge                   pos        220 220 480 348 -> -100 220 480 348: -100 220 480 348 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 1.6 ms
+  E4-under-the-Dock-wider                      size       0 220 300 200 -> 0 220 600 200: 0 220 600 200 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 5.7 ms
+  E5-under-the-Dock-taller                     size       0 220 300 200 -> 0 220 300 400: 0 220 300 400 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 2.1 ms
+  displays (end): 1: 0 0 1024 768 visible 50 31 974 737
+shot: mac-shell/dock-left.png
+the Dock: orientation bottom, autohide 1, tilesize not set
+
+== dock-hidden: control exact
+  window 31 of dev.arbor.testwindows (AXWindow, AXStandardWindow) at 0 220 300 400
+  displays (start): 1: 0 0 1024 768 visible 0 31 1024 737
+  displays (A the control): 1: 0 0 1024 768 visible 0 31 1024 737
+  A1-grows-where-it-stands                     size       170 283 480 348 -> 170 283 494 650: 170 283 494 485 OTHER | short 0 0 0 165 | half way - | moved 0 resized 1 | 7.2 ms
+  A2-parked-it-grows                           size       1023 740 325 524 -> 1023 740 1000 650: 1023 740 1000 650 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 4.5 ms
+  A3-sent-to-the-corner                        pos        170 283 480 348 -> 1023 767 480 348: 1023 740 480 348 OTHER | short 0 -27 0 0 | half way - | moved 1 resized 0 | 3.2 ms
+  displays (D exactly at a line): 1: 0 0 1024 768 visible 0 31 1024 737
+  D1-ends-at-the-visible-bottom                SPS  reads 170 220 480 348 -> 12 43 494 725: 12 43 494 725 RIGHT | short 0 0 0 0 | half way 170 220 494 548; 12 43 494 548 | moved 1 resized 2 | 5.2 ms
+  D1-ends-at-the-visible-bottom                PS   reads 170 220 480 348 -> 12 43 494 725: 12 43 494 725 RIGHT | short 0 0 0 0 | half way 12 43 480 348 | moved 1 resized 1 | 7.5 ms
+  D2-ends-one-above                            SPS  reads 170 220 480 348 -> 12 43 494 724: 12 43 494 724 RIGHT | short 0 0 0 0 | half way 170 220 494 548; 12 43 494 548 | moved 1 resized 2 | 11.6 ms
+  D2-ends-one-above                            PS   reads 170 220 480 348 -> 12 43 494 724: 12 43 494 724 RIGHT | short 0 0 0 0 | half way 12 43 480 348 | moved 1 resized 1 | 8.4 ms
+  D3-half-y-ends-at-the-visible-bottom         SPS  reads 170 220 480 348 -> 12 43.5 494 724.5: 12 44 494 724 OTHER | short 0 0.5 0 0.5 | half way 170 220 494 548; 12 44 494 548 | moved 1 resized 2 | 5.8 ms
+  D3-half-y-ends-at-the-visible-bottom         PS   reads 170 220 480 348 -> 12 43.5 494 724.5: 12 44 494 724 OTHER | short 0 0.5 0 0.5 | half way 12 44 480 348 | moved 1 resized 1 | 6.1 ms
+  D4-half-y-ends-one-above                     SPS  reads 170 220 480 348 -> 12 43.5 494 723.5: 12 44 494 723 OTHER | short 0 0.5 0 0.5 | half way 170 220 494 548; 12 44 494 548 | moved 1 resized 2 | 11.2 ms
+  D4-half-y-ends-one-above                     PS   reads 170 220 480 348 -> 12 43.5 494 723.5: 12 44 494 723 OTHER | short 0 0.5 0 0.5 | half way 12 44 480 348 | moved 1 resized 1 | 7.5 ms
+  D5-ends-at-the-right-edge                    SPS  reads 170 220 480 348 -> 530 43 494 400: 530 43 494 400 RIGHT | short 0 0 0 0 | half way 170 220 494 400; 530 43 494 400 | moved 1 resized 1 | 8.5 ms
+  D5-ends-at-the-right-edge                    PS   reads 170 220 480 348 -> 530 43 494 400: 530 43 494 400 RIGHT | short 0 0 0 0 | half way 530 43 480 348 | moved 1 resized 1 | 11.9 ms
+  D6-ends-one-past-the-right-edge              SPS  reads 170 220 480 348 -> 530 43 495 400: 530 43 495 400 RIGHT | short 0 0 0 0 | half way 170 220 495 400; 530 43 495 400 | moved 1 resized 1 | 8.1 ms
+  D6-ends-one-past-the-right-edge              PS   reads 170 220 480 348 -> 530 43 495 400: 530 43 494 400 OTHER | short 0 0 1 0 | half way 530 43 480 348 | moved 1 resized 1 | 3.9 ms
+  D7-half-x-ends-at-the-right-edge             SPS  reads 170 220 480 348 -> 529.5 43 494.5 400: 529 43 494 400 OTHER | short -0.5 0 0.5 0 | half way 170 220 494 400; 529 43 494 400 | moved 1 resized 1 | 14.1 ms
+  D7-half-x-ends-at-the-right-edge             PS   reads 170 220 480 348 -> 529.5 43 494.5 400: 529 43 494 400 OTHER | short -0.5 0 0.5 0 | half way 529 43 480 348 | moved 1 resized 1 | 9.4 ms
+  D8-the-whole-visible-frame                   SPS  reads 170 220 480 348 -> 0 31 1024 737: 0 31 1024 737 RIGHT | short 0 0 0 0 | half way 170 220 854 548; 0 31 854 548 | moved 1 resized 2 | 13.2 ms
+  D8-the-whole-visible-frame                   PS   reads 170 220 480 348 -> 0 31 1024 737: 0 31 1024 737 RIGHT | short 0 0 0 0 | half way 0 31 480 348 | moved 1 resized 1 | 10.0 ms
+  D9-taller-than-the-display                   size       170 220 480 348 -> 170 220 480 768: 170 220 480 548 OTHER | short 0 0 0 220 | half way - | moved 0 resized 1 | 5.2 ms
+  D10-wider-than-the-display                   size       170 220 480 348 -> 170 220 1024 348: 170 220 854 348 OTHER | short 0 0 170 0 | half way - | moved 0 resized 1 | 4.4 ms
+  D11-sent-to-the-bottom                       pos        170 220 480 348 -> 170 767 480 348: 170 740 480 348 OTHER | short 0 -27 0 0 | half way - | moved 1 resized 0 | 3.1 ms
+  D12-sent-under-the-menu-bar                  pos        170 220 480 348 -> 170 0 480 348: 170 31 480 348 OTHER | short 0 31 0 0 | half way - | moved 1 resized 0 | 3.1 ms
+  D13-sent-above-the-display                   pos        170 220 480 348 -> 170 -50 480 348: 170 31 480 348 OTHER | short 0 81 0 0 | half way - | moved 1 resized 0 | 2.9 ms
+  D14-sent-far-left                            pos        170 220 480 348 -> -600 220 480 348: -440 220 480 348 OTHER | short 160 0 0 0 | half way - | moved 1 resized 0 | 2.9 ms
+  D15-sent-far-right                           pos        170 220 480 348 -> 1524 220 480 348: 984 220 480 348 OTHER | short -540 0 0 0 | half way - | moved 1 resized 0 | 3.6 ms
+  displays (end): 1: 0 0 1024 768 visible 0 31 1024 737
+the Dock: orientation bottom, autohide 0, tilesize not set
+
+== base-again: control
+  window 31 of dev.arbor.testwindows (AXWindow, AXStandardWindow) at 984 220 480 348
+  displays (start): 1: 0 0 1024 768 visible 0 31 1024 674
+  displays (A the control): 1: 0 0 1024 768 visible 0 31 1024 674
+  A1-grows-where-it-stands                     size       170 220 480 348 -> 170 220 494 650: 170 220 494 484 OTHER | short 0 0 0 166 | half way - | moved 0 resized 1 | 11.6 ms
+  A2-parked-it-grows                           size       1023 677 325 524 -> 1023 677 1000 650: 1023 677 1000 650 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 5.1 ms
+  A3-sent-to-the-corner                        pos        170 220 480 348 -> 1023 767 480 348: 1023 677 480 348 OTHER | short 0 -90 0 0 | half way - | moved 1 resized 0 | 3.0 ms
+  displays (end): 1: 0 0 1024 768 visible 0 31 1024 674
+Reduce Motion: true
+Reduce Motion: false
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.GWGHxz/scratch/oak.txt
+pid 14699 lists (id role subrole x y w h flags):
+  47 AXWindow AXStandardWindow 79 56 673 439 main
+
+== textedit: app late
+  window 47 of com.apple.TextEdit (AXWindow, AXStandardWindow) at 79 56 673 439
+  displays (start): 1: 0 0 1024 768 visible 0 31 1024 677
+  displays (G a real app): 1: 0 0 1024 768 visible 0 31 1024 677
+  A1-grows-where-it-stands                     size       170 223 480 348 -> 170 223 494 650: 170 223 494 484 OTHER | short 0 0 0 166 | half way - | moved 0 resized 1 | 59.2 ms
+  A2-parked-it-grows                           size       1023 676 325 524 -> 1023 676 1000 650: 1023 676 1000 650 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 4.1 ms
+  A3-sent-to-the-corner                        pos        170 223 480 348 -> 1023 767 480 348: 1023 676 480 348 OTHER | short 0 -91 0 0 | half way - | moved 1 resized 0 | 1.6 ms
+  B1-grows                                     SPS  reads 170 220 480 348 -> 12 43 494 653: 12 43 494 653 RIGHT | short 0 0 0 0 | half way 170 220 494 487; 12 43 494 487 | moved 1 resized 2 | 13.9 ms
+  B1-grows                                     PS   reads 170 220 480 348 -> 12 43 494 653: 12 43 494 653 RIGHT | short 0 0 0 0 | half way 12 43 480 348 | moved 1 resized 1 | 10.5 ms
+  B1-grows                                     SP   reads 170 220 480 348 -> 12 43 494 653: 12 43 494 487 OTHER | short 0 0 0 166 | half way 170 220 494 487 | moved 1 resized 1 | 6.0 ms
+  B1-grows                                     sPS  reads 170 220 480 348 -> 12 43 494 653: 12 43 494 653 RIGHT | short 0 0 0 0 | half way 170 220 480 348; 12 43 480 348 | moved 1 resized 1 | 5.2 ms
+  B4-narrower-and-taller                       SPS  reads 12 383 1000 313 -> 518 43 494 653: 518 43 494 653 RIGHT | short 0 0 0 0 | half way 12 383 494 324; 518 43 494 324 | moved 1 resized 2 | 12.1 ms
+  B4-narrower-and-taller                       PS   reads 12 383 1000 313 -> 518 43 494 653: 518 43 494 653 RIGHT | short 0 0 0 0 | half way 518 43 1000 313 | moved 1 resized 1 | 10.2 ms
+  B4-narrower-and-taller                       SP   reads 12 383 1000 313 -> 518 43 494 653: 518 43 494 324 OTHER | short 0 0 0 329 | half way 12 383 494 324 | moved 1 resized 1 | 20.0 ms
+  B4-narrower-and-taller                       sPS  reads 12 383 1000 313 -> 518 43 494 653: 518 43 494 653 RIGHT | short 0 0 0 0 | half way 12 383 494 313; 518 43 494 313 | moved 1 resized 2 | 28.1 ms
+  C1-right-over-taller                         size       800 100 400 300 -> 800 100 400 500: 800 100 400 500 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 16.1 ms
+  C2-right-over-wider                          size       800 100 400 300 -> 800 100 500 300: 800 100 500 300 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 10.1 ms
+  C3-right-over-taller-than-the-line           size       800 100 400 300 -> 800 100 400 708: 800 100 400 607 OTHER | short 0 0 0 101 | half way - | moved 0 resized 1 | 21.1 ms
+  D9-taller-than-the-display                   size       170 220 480 348 -> 170 220 480 768: 170 220 480 487 OTHER | short 0 0 0 281 | half way - | moved 0 resized 1 | 10.9 ms
+  D10-wider-than-the-display                   size       170 220 480 348 -> 170 220 1024 348: 170 220 854 348 OTHER | short 0 0 170 0 | half way - | moved 0 resized 1 | 13.7 ms
+  displays (H who moves late): 1: 0 0 1024 768 visible 0 31 1024 677
+  H1-taller-and-wider                          size       100 100 600 400 -> 100 100 700 500: 100 100 700 500 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 15.8 ms | the same 50, 200 and 600 ms later
+  H2-smaller                                   size       100 100 700 500 -> 100 100 600 400: 100 100 600 400 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 5.1 ms | LATE: at once 100 100 600 400 (server 100 100 700 500); 50 ms 100 100 600 400 (server 100 100 600 400); 200 ms 100 100 600 400 (server 100 100 600 400); 600 ms 100 100 600 400 (server 100 100 600 400)
+  H3-moved                                     pos        100 100 600 400 -> 300 150 600 400: 300 150 600 400 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 1.9 ms | LATE: at once 300 150 600 400 (server 100 100 600 400); 50 ms 300 150 600 400 (server 300 150 600 400); 200 ms 300 150 600 400 (server 300 150 600 400); 600 ms 300 150 600 400 (server 300 150 600 400)
+  H4-sent-to-the-corner                        pos        100 100 600 400 -> 1023 767 600 400: 1023 676 600 400 OTHER | short 0 -91 0 0 | half way - | moved 1 resized 0 | 3.0 ms | LATE: at once 1023 676 600 400 (server 100 100 600 400); 50 ms 1023 676 600 400 (server 1023 676 600 400); 200 ms 1023 676 600 400 (server 1023 676 600 400); 600 ms 1023 676 600 400 (server 1023 676 600 400)
+  H5-back-from-the-corner                      pos        1023 676 600 400 -> 100 100 600 400: 100 100 600 400 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 3.5 ms | LATE: at once 100 100 600 400 (server 1023 676 600 400); 50 ms 100 100 600 400 (server 100 100 600 400); 200 ms 100 100 600 400 (server 100 100 600 400); 600 ms 100 100 600 400 (server 100 100 600 400)
+  H6-taller-than-there-is-room                 size       170 223 600 348 -> 170 223 600 650: 170 223 600 484 OTHER | short 0 0 0 166 | half way - | moved 0 resized 1 | 15.5 ms | LATE: at once 170 223 600 484 (server 170 223 600 348); 50 ms 170 223 600 484 (server 170 223 600 484); 200 ms 170 223 600 484 (server 170 223 600 484); 600 ms 170 223 600 484 (server 170 223 600 484)
+  H7-into-a-slot                               SPS  blind 170 220 600 348 -> 12 43 700 653: 12 43 700 653 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 2 | 21.5 ms | LATE: at once 12 43 700 653 (server 170 220 700 487); 50 ms 12 43 700 653 (server 12 43 700 653); 200 ms 12 43 700 653 (server 12 43 700 653); 600 ms 12 43 700 653 (server 12 43 700 653)
+  H7-into-a-slot                               PS   blind 170 220 600 348 -> 12 43 700 653: 12 43 700 653 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 8.1 ms | LATE: at once 12 43 700 653 (server 12 43 600 348); 50 ms 12 43 700 653 (server 12 43 700 653); 200 ms 12 43 700 653 (server 12 43 700 653); 600 ms 12 43 700 653 (server 12 43 700 653)
+  H8-out-of-the-slot                           SPS  blind 12 43 700 653 -> 300 200 600 348: 300 200 600 348 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 17.7 ms | LATE: at once 300 200 600 348 (server 12 43 600 348); 50 ms 300 200 600 348 (server 300 200 600 348); 200 ms 300 200 600 348 (server 300 200 600 348); 600 ms 300 200 600 348 (server 300 200 600 348)
+  H8-out-of-the-slot                           PS   blind 12 43 700 653 -> 300 200 600 348: 300 200 600 348 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 4.6 ms | LATE: at once 300 200 600 348 (server 300 200 700 653); 50 ms 300 200 600 348 (server 300 200 600 348); 200 ms 300 200 600 348 (server 300 200 600 348); 600 ms 300 200 600 348 (server 300 200 600 348)
+  displays (end): 1: 0 0 1024 768 visible 0 31 1024 677
+> open -g -b com.apple.finder /tmp/arbor-apps.GWGHxz/scratch/grove
+pid 334 lists (id role subrole x y w h flags):
+  51 AXWindow AXStandardWindow 52 92 920 436 main,toolbar
+  0 AXScrollArea - 0 0 1024 768 fixed-size,fixed-position,no-close,no-minimize,no-zoom
+
+== finder: app late
+  window 51 of com.apple.finder (AXWindow, AXStandardWindow) at 52 92 920 436
+  displays (start): 1: 0 0 1024 768 visible 0 31 1024 677
+  displays (G a real app): 1: 0 0 1024 768 visible 0 31 1024 677
+  A1-grows-where-it-stands                     size       170 223 501 348 -> 170 223 494 650: 170 223 501 484 OTHER | short 0 0 -7 166 | half way - | moved 0 resized 1 | 24.5 ms
+  A2-parked-it-grows                           size       1023 656 501 524 -> 1023 656 1000 650: 1023 656 1000 650 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 64.2 ms
+  A3-sent-to-the-corner                        pos        170 223 501 348 -> 1023 767 501 348: 1023 656 501 348 OTHER | short 0 -111 0 0 | half way - | moved 1 resized 0 | 4.5 ms
+  B1-grows                                     SPS  reads 170 220 501 348 -> 12 43 494 653: 12 43 501 653 OTHER | short 0 0 -7 0 | half way 170 220 501 487; 12 43 501 487 | moved 1 resized 2 | 38.0 ms
+  B1-grows                                     PS   reads 170 220 501 348 -> 12 43 494 653: 12 43 501 653 OTHER | short 0 0 -7 0 | half way 12 43 501 348 | moved 1 resized 1 | 12.4 ms
+  B1-grows                                     SP   reads 170 220 501 348 -> 12 43 494 653: 12 43 501 487 OTHER | short 0 0 -7 166 | half way 170 220 501 487 | moved 1 resized 1 | 28.8 ms
+  B1-grows                                     sPS  reads 170 220 501 348 -> 12 43 494 653: 12 43 501 653 OTHER | short 0 0 -7 0 | half way 170 220 501 348; 12 43 501 348 | moved 1 resized 1 | 29.3 ms
+  B4-narrower-and-taller                       SPS  reads 12 383 1000 313 -> 518 43 494 653: 518 43 501 653 OTHER | short 0 0 -7 0 | half way 12 383 501 324; 518 43 501 324 | moved 1 resized 2 | 36.2 ms
+  B4-narrower-and-taller                       PS   reads 12 383 1000 313 -> 518 43 494 653: 518 43 501 653 OTHER | short 0 0 -7 0 | half way 518 43 1000 313 | moved 1 resized 1 | 30.1 ms
+  B4-narrower-and-taller                       SP   reads 12 383 1000 313 -> 518 43 494 653: 518 43 501 324 OTHER | short 0 0 -7 329 | half way 12 383 501 324 | moved 1 resized 1 | 30.6 ms
+  B4-narrower-and-taller                       sPS  reads 12 383 1000 313 -> 518 43 494 653: 518 43 501 653 OTHER | short 0 0 -7 0 | half way 12 383 501 313; 518 43 501 313 | moved 1 resized 2 | 37.3 ms
+  C1-right-over-taller                         size       800 100 501 300 -> 800 100 400 500: 800 100 501 500 OTHER | short 0 0 -101 0 | half way - | moved 0 resized 1 | 11.8 ms
+  C2-right-over-wider                          size       800 100 501 300 -> 800 100 500 300: 800 100 501 300 OTHER | short 0 0 -1 0 | half way - | moved 0 resized 0 | 3.1 ms
+  C3-right-over-taller-than-the-line           size       800 100 501 300 -> 800 100 400 708: 800 100 501 607 OTHER | short 0 0 -101 101 | half way - | moved 0 resized 1 | 23.0 ms
+  D9-taller-than-the-display                   size       170 220 501 348 -> 170 220 480 768: 170 220 501 487 OTHER | short 0 0 -21 281 | half way - | moved 0 resized 1 | 17.3 ms
+  D10-wider-than-the-display                   size       170 220 501 348 -> 170 220 1024 348: 170 220 854 348 OTHER | short 0 0 170 0 | half way - | moved 0 resized 1 | 57.1 ms
+  displays (H who moves late): 1: 0 0 1024 768 visible 0 31 1024 677
+  H1-taller-and-wider                          size       100 100 600 400 -> 100 100 700 500: 100 100 700 500 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 39.5 ms | LATE: at once 100 100 700 500 (server 100 100 600 400); 50 ms 100 100 700 500 (server 100 100 700 500); 200 ms 100 100 700 500 (server 100 100 700 500); 600 ms 100 100 700 500 (server 100 100 700 500)
+  H2-smaller                                   size       100 100 700 500 -> 100 100 600 400: 100 100 600 400 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 28.2 ms | LATE: at once 100 100 600 400 (server 100 100 700 500); 50 ms 100 100 600 400 (server 100 100 600 400); 200 ms 100 100 600 400 (server 100 100 600 400); 600 ms 100 100 600 400 (server 100 100 600 400)
+  H3-moved                                     pos        100 100 600 400 -> 300 150 600 400: 300 150 600 400 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 3.3 ms | LATE: at once 300 150 600 400 (server 100 100 600 400); 50 ms 300 150 600 400 (server 300 150 600 400); 200 ms 300 150 600 400 (server 300 150 600 400); 600 ms 300 150 600 400 (server 300 150 600 400)
+  H4-sent-to-the-corner                        pos        100 100 600 400 -> 1023 767 600 400: 1023 656 600 400 OTHER | short 0 -111 0 0 | half way - | moved 1 resized 0 | 3.0 ms | LATE: at once 1023 656 600 400 (server 100 100 600 400); 50 ms 1023 656 600 400 (server 1023 656 600 400); 200 ms 1023 656 600 400 (server 1023 656 600 400); 600 ms 1023 656 600 400 (server 1023 656 600 400)
+  H5-back-from-the-corner                      pos        1023 656 600 400 -> 100 100 600 400: 100 100 600 400 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 7.4 ms | the same 50, 200 and 600 ms later
+  H6-taller-than-there-is-room                 size       170 223 600 348 -> 170 223 600 650: 170 223 600 484 OTHER | short 0 0 0 166 | half way - | moved 0 resized 1 | 10.5 ms | LATE: at once 170 223 600 484 (server 170 223 600 348); 50 ms 170 223 600 484 (server 170 223 600 484); 200 ms 170 223 600 484 (server 170 223 600 484); 600 ms 170 223 600 484 (server 170 223 600 484)
+  H7-into-a-slot                               SPS  blind 170 220 600 348 -> 12 43 700 653: 12 43 700 653 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 2 | 54.7 ms | LATE: at once 12 43 700 653 (server 170 220 700 487); 50 ms 12 43 700 653 (server 12 43 700 653); 200 ms 12 43 700 653 (server 12 43 700 653); 600 ms 12 43 700 653 (server 12 43 700 653)
+  H7-into-a-slot                               PS   blind 170 220 600 348 -> 12 43 700 653: 12 43 700 653 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 39.6 ms | LATE: at once 12 43 700 653 (server 12 43 600 348); 50 ms 12 43 700 653 (server 12 43 700 653); 200 ms 12 43 700 653 (server 12 43 700 653); 600 ms 12 43 700 653 (server 12 43 700 653)
+  H8-out-of-the-slot                           SPS  blind 12 43 700 653 -> 300 200 600 348: 300 200 600 348 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 34.6 ms | LATE: at once 300 200 600 348 (server 12 43 600 348); 50 ms 300 200 600 348 (server 300 200 600 348); 200 ms 300 200 600 348 (server 300 200 600 348); 600 ms 300 200 600 348 (server 300 200 600 348)
+  H8-out-of-the-slot                           PS   blind 12 43 700 653 -> 300 200 600 348: 300 200 600 348 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 28.7 ms | LATE: at once 300 200 600 348 (server 12 43 700 653); 50 ms 300 200 600 348 (server 300 200 600 348); 200 ms 300 200 600 348 (server 300 200 600 348); 600 ms 300 200 600 348 (server 300 200 600 348)
+  displays (end): 1: 0 0 1024 768 visible 0 31 1024 677
+> open -g -b com.apple.Terminal 
+pid 17177 lists (id role subrole x y w h flags):
+  52 AXWindow AXStandardWindow 40 51 877 499 main
+
+== terminal: app late
+  window 52 of com.apple.Terminal (AXWindow, AXStandardWindow) at 40 51 877 499
+  displays (start): 1: 0 0 1024 768 visible 0 31 1024 679
+  displays (G a real app): 1: 0 0 1024 768 visible 0 31 1024 679
+  A1-grows-where-it-stands                     size       170 225 478 349 -> 170 225 494 650: 170 225 492 484 OTHER | short 0 0 2 166 | half way - | moved 0 resized 1 | 8.0 ms
+  A2-parked-it-grows                           size       1023 678 324 529 -> 1023 678 1000 650: 1023 678 1003 649 OTHER | short 0 0 -3 1 | half way - | moved 0 resized 1 | 7.3 ms
+  A3-sent-to-the-corner                        pos        170 225 478 349 -> 1023 767 478 349: 1023 678 478 349 OTHER | short 0 -89 0 0 | half way - | moved 1 resized 0 | 3.8 ms
+  B1-grows                                     SPS  reads 170 220 478 349 -> 12 43 494 655: 12 43 492 649 OTHER | short 0 0 2 6 | half way 170 220 492 484; 12 43 492 484 | moved 1 resized 2 | 29.0 ms
+  B1-grows                                     PS   reads 170 220 478 349 -> 12 43 494 655: 12 43 492 649 OTHER | short 0 0 2 6 | half way 12 43 478 349 | moved 1 resized 1 | 15.4 ms
+  B1-grows                                     SP   reads 170 220 478 349 -> 12 43 494 655: 12 43 492 484 OTHER | short 0 0 2 171 | half way 170 220 492 484 | moved 1 resized 1 | 19.7 ms
+  B1-grows                                     sPS  reads 170 220 478 349 -> 12 43 494 655: 12 43 492 649 OTHER | short 0 0 2 6 | half way 170 220 478 349; 12 43 478 349 | moved 1 resized 1 | 19.7 ms
+  B4-narrower-and-taller                       SPS  reads 12 385 1003 319 -> 518 43 494 655: 518 43 492 649 OTHER | short 0 0 2 6 | half way 12 385 492 319; 518 43 492 319 | moved 1 resized 2 | 26.4 ms
+  B4-narrower-and-taller                       PS   reads 12 385 1003 319 -> 518 43 494 655: 518 43 492 649 OTHER | short 0 0 2 6 | half way 518 43 1003 319 | moved 1 resized 1 | 15.3 ms
+  B4-narrower-and-taller                       SP   reads 12 385 1003 319 -> 518 43 494 655: 518 43 492 319 OTHER | short 0 0 2 336 | half way 12 385 492 319 | moved 1 resized 1 | 16.8 ms
+  B4-narrower-and-taller                       sPS  reads 12 385 1003 319 -> 518 43 494 655: 518 43 492 649 OTHER | short 0 0 2 6 | half way 12 385 492 319; 518 43 492 319 | moved 1 resized 2 | 28.5 ms
+  C1-right-over-taller                         size       800 100 401 304 -> 800 100 400 500: 800 100 401 499 OTHER | short 0 0 -1 1 | half way - | moved 0 resized 1 | 10.1 ms
+  C2-right-over-wider                          size       800 100 401 304 -> 800 100 500 300: 800 100 499 304 OTHER | short 0 0 1 -4 | half way - | moved 0 resized 1 | 9.5 ms
+  C3-right-over-taller-than-the-line           size       800 100 401 304 -> 800 100 400 710: 800 100 401 604 OTHER | short 0 0 -1 106 | half way - | moved 0 resized 1 | 11.4 ms
+  D9-taller-than-the-display                   size       170 220 478 349 -> 170 220 480 768: 170 220 478 484 OTHER | short 0 0 2 284 | half way - | moved 0 resized 1 | 17.7 ms
+  D10-wider-than-the-display                   size       170 220 478 349 -> 170 220 1024 348: 170 220 856 349 OTHER | short 0 0 168 -1 | half way - | moved 0 resized 1 | 13.1 ms
+  displays (H who moves late): 1: 0 0 1024 768 visible 0 31 1024 679
+  H1-taller-and-wider                          size       100 100 597 394 -> 100 100 700 500: 100 100 702 499 OTHER | short 0 0 -2 1 | half way - | moved 0 resized 1 | 16.2 ms | the same 50, 200 and 600 ms later
+  H2-smaller                                   size       100 100 702 499 -> 100 100 600 400: 100 100 597 394 OTHER | short 0 0 3 6 | half way - | moved 0 resized 1 | 7.8 ms | LATE: at once 100 100 597 394 (server 100 100 702 499); 50 ms 100 100 597 394 (server 100 100 597 394); 200 ms 100 100 597 394 (server 100 100 597 394); 600 ms 100 100 597 394 (server 100 100 597 394)
+  H3-moved                                     pos        100 100 597 394 -> 300 150 597 394: 300 150 597 394 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 2.4 ms | LATE: at once 300 150 597 394 (server 100 100 597 394); 50 ms 300 150 597 394 (server 300 150 597 394); 200 ms 300 150 597 394 (server 300 150 597 394); 600 ms 300 150 597 394 (server 300 150 597 394)
+  H4-sent-to-the-corner                        pos        100 100 597 394 -> 1023 767 597 394: 1023 678 597 394 OTHER | short 0 -89 0 0 | half way - | moved 1 resized 0 | 1.9 ms | LATE: at once 1023 678 597 394 (server 100 100 597 394); 50 ms 1023 678 597 394 (server 1023 678 597 394); 200 ms 1023 678 597 394 (server 1023 678 597 394); 600 ms 1023 678 597 394 (server 1023 678 597 394)
+  H5-back-from-the-corner                      pos        1023 678 597 394 -> 100 100 597 394: 100 100 597 394 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 2.0 ms | LATE: at once 100 100 597 394 (server 1023 678 597 394); 50 ms 100 100 597 394 (server 100 100 597 394); 200 ms 100 100 597 394 (server 100 100 597 394); 600 ms 100 100 597 394 (server 100 100 597 394)
+  H6-taller-than-there-is-room                 size       170 225 597 349 -> 170 225 600 650: 170 225 597 484 OTHER | short 0 0 3 166 | half way - | moved 0 resized 1 | 11.3 ms | LATE: at once 170 225 597 484 (server 170 225 597 349); 50 ms 170 225 597 484 (server 170 225 597 484); 200 ms 170 225 597 484 (server 170 225 597 484); 600 ms 170 225 597 484 (server 170 225 597 484)
+  H7-into-a-slot                               SPS  blind 170 220 597 349 -> 12 43 700 655: 12 43 702 649 OTHER | short 0 0 -2 6 | half way - | moved 1 resized 2 | 28.1 ms | LATE: at once 12 43 702 649 (server 170 220 702 484); 50 ms 12 43 702 649 (server 12 43 702 649); 200 ms 12 43 702 649 (server 12 43 702 649); 600 ms 12 43 702 649 (server 12 43 702 649)
+  H7-into-a-slot                               PS   blind 170 220 597 349 -> 12 43 700 655: 12 43 702 649 OTHER | short 0 0 -2 6 | half way - | moved 1 resized 1 | 9.5 ms | LATE: at once 12 43 702 649 (server 12 43 597 349); 50 ms 12 43 702 649 (server 12 43 702 649); 200 ms 12 43 702 649 (server 12 43 702 649); 600 ms 12 43 702 649 (server 12 43 702 649)
+  H8-out-of-the-slot                           SPS  blind 12 43 702 649 -> 300 200 600 348: 300 200 597 349 OTHER | short 0 0 3 -1 | half way - | moved 1 resized 1 | 22.8 ms | LATE: at once 300 200 597 349 (server 12 43 597 349); 50 ms 300 200 597 349 (server 300 200 597 349); 200 ms 300 200 597 349 (server 300 200 597 349); 600 ms 300 200 597 349 (server 300 200 597 349)
+  H8-out-of-the-slot                           PS   blind 12 43 702 649 -> 300 200 600 348: 300 200 597 349 OTHER | short 0 0 3 -1 | half way - | moved 1 resized 1 | 23.5 ms | LATE: at once 300 200 597 349 (server 300 200 702 649); 50 ms 300 200 597 349 (server 300 200 597 349); 200 ms 300 200 597 349 (server 300 200 597 349); 600 ms 300 200 597 349 (server 300 200 597 349)
+  displays (end): 1: 0 0 1024 768 visible 0 31 1024 679
+> open -g -b com.apple.Safari /tmp/arbor-apps.GWGHxz/scratch/page.html
+pid 18801 lists (id role subrole x y w h flags):
+  61 AXWindow AXStandardWindow 0 31 1024 679 main,toolbar
+
+== safari: app late
+  window 61 of com.apple.Safari (AXWindow, AXStandardWindow) at 0 31 1024 679
+  displays (start): 1: 0 0 1024 768 visible 0 31 1024 679
+  displays (G a real app): 1: 0 0 1024 768 visible 0 31 1024 679
+  A1-grows-where-it-stands                     size       170 225 574 348 -> 170 225 494 650: 170 225 574 484 OTHER | short 0 0 -80 166 | half way - | moved 0 resized 1 | 81.2 ms
+  A2-parked-it-grows                           size       1023 658 574 524 -> 1023 658 1000 650: 1023 658 1000 650 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 34.4 ms
+  A3-sent-to-the-corner                        pos        170 225 574 348 -> 1023 767 574 348: 1023 658 574 348 OTHER | short 0 -109 0 0 | half way - | moved 1 resized 0 | 3.5 ms
+  B1-grows                                     SPS  reads 170 220 574 348 -> 12 43 494 655: 12 43 574 655 OTHER | short 0 0 -80 0 | half way 170 220 574 489; 12 43 574 489 | moved 1 resized 2 | 31.0 ms
+  B1-grows                                     PS   reads 170 220 574 348 -> 12 43 494 655: 12 43 574 655 OTHER | short 0 0 -80 0 | half way 12 43 574 348 | moved 1 resized 1 | 31.5 ms
+  B1-grows                                     SP   reads 170 220 574 348 -> 12 43 494 655: 12 43 574 489 OTHER | short 0 0 -80 166 | half way 170 220 574 489 | moved 1 resized 1 | 34.7 ms
+  B1-grows                                     sPS  reads 170 220 574 348 -> 12 43 494 655: 12 43 574 655 OTHER | short 0 0 -80 0 | half way 170 220 574 348; 12 43 574 348 | moved 1 resized 1 | 25.0 ms
+  B4-narrower-and-taller                       SPS  reads 12 385 1000 313 -> 518 43 494 655: 518 43 574 655 OTHER | short 0 0 -80 0 | half way 12 385 574 324; 518 43 574 324 | moved 1 resized 2 | 55.0 ms
+  B4-narrower-and-taller                       PS   reads 12 385 1000 313 -> 518 43 494 655: 518 43 574 655 OTHER | short 0 0 -80 0 | half way 518 43 1000 313 | moved 1 resized 1 | 33.8 ms
+  B4-narrower-and-taller                       SP   reads 12 385 1000 313 -> 518 43 494 655: 518 43 574 324 OTHER | short 0 0 -80 331 | half way 12 385 574 324 | moved 1 resized 1 | 39.6 ms
+  B4-narrower-and-taller                       sPS  reads 12 385 1000 313 -> 518 43 494 655: 518 43 574 655 OTHER | short 0 0 -80 0 | half way 12 385 574 313; 518 43 574 313 | moved 1 resized 2 | 58.8 ms
+  C1-right-over-taller                         size       800 100 574 300 -> 800 100 400 500: 800 100 574 500 OTHER | short 0 0 -174 0 | half way - | moved 0 resized 1 | 26.4 ms
+  C2-right-over-wider                          size       800 100 574 300 -> 800 100 500 300: 800 100 574 300 OTHER | short 0 0 -74 0 | half way - | moved 0 resized 0 | 2.4 ms
+  C3-right-over-taller-than-the-line           size       800 100 574 300 -> 800 100 400 710: 800 100 574 609 OTHER | short 0 0 -174 101 | half way - | moved 0 resized 1 | 23.8 ms
+  D9-taller-than-the-display                   size       170 220 574 348 -> 170 220 480 768: 170 220 574 489 OTHER | short 0 0 -94 279 | half way - | moved 0 resized 1 | 27.9 ms
+  D10-wider-than-the-display                   size       170 220 574 348 -> 170 220 1024 348: 170 220 854 348 OTHER | short 0 0 170 0 | half way - | moved 0 resized 1 | 38.4 ms
+  displays (H who moves late): 1: 0 0 1024 768 visible 0 31 1024 679
+  H1-taller-and-wider                          size       100 100 600 400 -> 100 100 700 500: 100 100 700 500 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 40.2 ms | the same 50, 200 and 600 ms later
+  H2-smaller                                   size       100 100 700 500 -> 100 100 600 400: 100 100 600 400 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 24.0 ms | the same 50, 200 and 600 ms later
+  H3-moved                                     pos        100 100 600 400 -> 300 150 600 400: 300 150 600 400 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 6.5 ms | LATE: at once 300 150 600 400 (server 100 100 600 400); 50 ms 300 150 600 400 (server 300 150 600 400); 200 ms 300 150 600 400 (server 300 150 600 400); 600 ms 300 150 600 400 (server 300 150 600 400)
+  H4-sent-to-the-corner                        pos        100 100 600 400 -> 1023 767 600 400: 1023 658 600 400 OTHER | short 0 -109 0 0 | half way - | moved 1 resized 0 | 11.5 ms | LATE: at once 1023 658 600 400 (server 100 100 600 400); 50 ms 1023 658 600 400 (server 1023 658 600 400); 200 ms 1023 658 600 400 (server 1023 658 600 400); 600 ms 1023 658 600 400 (server 1023 658 600 400)
+  H5-back-from-the-corner                      pos        1023 658 600 400 -> 100 100 600 400: 100 100 600 400 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 10.8 ms | the same 50, 200 and 600 ms later
+  H6-taller-than-there-is-room                 size       170 225 600 348 -> 170 225 600 650: 170 225 600 484 OTHER | short 0 0 0 166 | half way - | moved 0 resized 1 | 28.5 ms | the same 50, 200 and 600 ms later
+  H7-into-a-slot                               SPS  blind 170 220 600 348 -> 12 43 700 655: 12 43 700 655 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 2 | 59.6 ms | the same 50, 200 and 600 ms later
+  H7-into-a-slot                               PS   blind 170 220 600 348 -> 12 43 700 655: 12 43 700 655 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 39.6 ms | the same 50, 200 and 600 ms later
+  H8-out-of-the-slot                           SPS  blind 12 43 700 655 -> 300 200 600 348: 300 200 600 348 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 34.2 ms | LATE: at once 300 200 600 348 (server 12 43 600 348); 50 ms 300 200 600 348 (server 300 200 600 348); 200 ms 300 200 600 348 (server 300 200 600 348); 600 ms 300 200 600 348 (server 300 200 600 348)
+  H8-out-of-the-slot                           PS   blind 12 43 700 655 -> 300 200 600 348: 300 200 600 348 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 37.7 ms | the same 50, 200 and 600 ms later
+  displays (end): 1: 0 0 1024 768 visible 0 31 1024 679
+
+== Chrome
+there is no Chrome, or it does not open
+
+== a Java app
+  70 AXWindow AXStandardWindow 62 31 900 679 main
+
+== java: app late
+  window 70 of net.java.openjdk.jconsole (AXWindow, AXStandardWindow) at 62 31 900 679
+  displays (start): 1: 0 0 1024 768 visible 0 31 1024 679
+  displays (G a real app): 1: 0 0 1024 768 visible 0 31 1024 679
+  A1-grows-where-it-stands                     size       170 225 480 348 -> 170 225 494 650: 170 225 494 484 OTHER | short 0 0 0 166 | half way - | moved 0 resized 1 | 21.7 ms
+  A2-parked-it-grows                           size       1023 682 325 524 -> 1023 682 1000 650: 1023 682 1000 650 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 27.8 ms
+  A3-sent-to-the-corner                        pos        170 225 480 348 -> 1023 767 480 348: 1023 682 480 348 OTHER | short 0 -85 0 0 | half way - | moved 1 resized 0 | 20.1 ms
+  B1-grows                                     SPS  reads 170 220 480 348 -> 12 43 494 655: 12 43 494 655 RIGHT | short 0 0 0 0 | half way 170 220 494 489; 12 43 494 489 | moved 1 resized 2 | 40.6 ms
+  B1-grows                                     PS   reads 170 220 480 348 -> 12 43 494 655: 12 43 494 655 RIGHT | short 0 0 0 0 | half way 12 43 480 348 | moved 1 resized 1 | 31.8 ms
+  B1-grows                                     SP   reads 170 220 480 348 -> 12 43 494 655: 12 43 494 489 OTHER | short 0 0 0 166 | half way 170 220 494 489 | moved 1 resized 1 | 30.6 ms
+  B1-grows                                     sPS  reads 170 220 480 348 -> 12 43 494 655: 12 43 494 655 RIGHT | short 0 0 0 0 | half way 170 220 480 348; 12 43 480 348 | moved 1 resized 1 | 24.2 ms
+  B4-narrower-and-taller                       SPS  reads 12 385 1000 313 -> 518 43 494 655: 518 43 494 655 RIGHT | short 0 0 0 0 | half way 12 385 494 324; 518 43 494 324 | moved 1 resized 2 | 26.0 ms
+  B4-narrower-and-taller                       PS   reads 12 385 1000 313 -> 518 43 494 655: 518 43 494 655 RIGHT | short 0 0 0 0 | half way 518 43 1000 313 | moved 1 resized 1 | 27.6 ms
+  B4-narrower-and-taller                       SP   reads 12 385 1000 313 -> 518 43 494 655: 518 43 494 324 OTHER | short 0 0 0 331 | half way 12 385 494 324 | moved 1 resized 1 | 27.4 ms
+  B4-narrower-and-taller                       sPS  reads 12 385 1000 313 -> 518 43 494 655: 518 43 494 655 RIGHT | short 0 0 0 0 | half way 12 385 494 313; 518 43 494 313 | moved 1 resized 2 | 41.5 ms
+  C1-right-over-taller                         size       800 100 400 300 -> 800 100 400 500: 800 100 400 500 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 15.0 ms
+  C2-right-over-wider                          size       800 100 400 300 -> 800 100 500 300: 800 100 500 300 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 10.7 ms
+  C3-right-over-taller-than-the-line           size       800 100 400 300 -> 800 100 400 710: 800 100 400 609 OTHER | short 0 0 0 101 | half way - | moved 0 resized 1 | 8.9 ms
+  D9-taller-than-the-display                   size       170 220 480 348 -> 170 220 480 768: 170 220 480 489 OTHER | short 0 0 0 279 | half way - | moved 0 resized 1 | 17.8 ms
+  D10-wider-than-the-display                   size       170 220 480 348 -> 170 220 1024 348: 170 220 854 348 OTHER | short 0 0 170 0 | half way - | moved 0 resized 1 | 16.0 ms
+  displays (H who moves late): 1: 0 0 1024 768 visible 0 31 1024 679
+  H1-taller-and-wider                          size       100 100 600 400 -> 100 100 700 500: 100 100 700 500 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 17.9 ms | the same 50, 200 and 600 ms later
+  H2-smaller                                   size       100 100 700 500 -> 100 100 600 400: 100 100 600 400 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 20.6 ms | the same 50, 200 and 600 ms later
+  H3-moved                                     pos        100 100 600 400 -> 300 150 600 400: 300 150 600 400 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 6.2 ms | LATE: at once 300 150 600 400 (server 100 100 600 400); 50 ms 300 150 600 400 (server 300 150 600 400); 200 ms 300 150 600 400 (server 300 150 600 400); 600 ms 300 150 600 400 (server 300 150 600 400)
+  H4-sent-to-the-corner                        pos        100 100 600 400 -> 1023 767 600 400: 1023 682 600 400 OTHER | short 0 -85 0 0 | half way - | moved 1 resized 0 | 6.5 ms | LATE: at once 1023 682 600 400 (server 100 100 600 400); 50 ms 1023 682 600 400 (server 1023 682 600 400); 200 ms 1023 682 600 400 (server 1023 682 600 400); 600 ms 1023 682 600 400 (server 1023 682 600 400)
+  H5-back-from-the-corner                      pos        1023 682 600 400 -> 100 100 600 400: 100 100 600 400 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 8.1 ms | LATE: at once 100 100 600 400 (server 1023 682 600 400); 50 ms 100 100 600 400 (server 100 100 600 400); 200 ms 100 100 600 400 (server 100 100 600 400); 600 ms 100 100 600 400 (server 100 100 600 400)
+  H6-taller-than-there-is-room                 size       170 225 600 348 -> 170 225 600 650: 170 225 600 484 OTHER | short 0 0 0 166 | half way - | moved 0 resized 1 | 19.2 ms | the same 50, 200 and 600 ms later
+  H7-into-a-slot                               SPS  blind 170 220 600 348 -> 12 43 700 655: 12 43 700 655 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 2 | 21.8 ms | LATE: at once 12 43 700 655 (server 12 43 700 489); 50 ms 12 43 700 655 (server 12 43 700 655); 200 ms 12 43 700 655 (server 12 43 700 655); 600 ms 12 43 700 655 (server 12 43 700 655)
+  H7-into-a-slot                               PS   blind 170 220 600 348 -> 12 43 700 655: 12 43 700 655 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 19.4 ms | LATE: at once 12 43 700 655 (server 12 43 600 348); 50 ms 12 43 700 655 (server 12 43 700 655); 200 ms 12 43 700 655 (server 12 43 700 655); 600 ms 12 43 700 655 (server 12 43 700 655)
+  H8-out-of-the-slot                           SPS  blind 12 43 700 655 -> 300 200 600 348: 300 200 600 348 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 18.7 ms | LATE: at once 300 200 600 348 (server 12 43 600 348); 50 ms 300 200 600 348 (server 300 200 600 348); 200 ms 300 200 600 348 (server 300 200 600 348); 600 ms 300 200 600 348 (server 300 200 600 348)
+  H8-out-of-the-slot                           PS   blind 12 43 700 655 -> 300 200 600 348: 300 200 600 348 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 21.1 ms | LATE: at once 300 200 600 348 (server 300 200 700 655); 50 ms 300 200 600 348 (server 300 200 600 348); 200 ms 300 200 600 348 (server 300 200 600 348); 600 ms 300 200 600 348 (server 300 200 600 348)
+  displays (end): 1: 0 0 1024 768 visible 0 31 1024 679
+what else is installed, for whoever looks for an app that is not AppKit's:
+Firefox.app;Google Chrome for Testing.app;Google Chrome.app;Microsoft Edge.app;PowerShell.app;Python 3.11;Python 3.12;Python 3.13;Python 3.14;Safari.app;Utilities;Xcode_26.0.1.app;Xcode_26.0.app;Xcode_26.1.1.app;Xcode_26.1.app;Xcode_26.2.0.app;Xcode_26.2.app;Xcode_26.3.0.app;Xcode_26.3.app;Xcode_26.4.1.app;Xcode_26.4.app;Xcode_26.5.0.app;Xcode_26.5.app;Xcode_26.6.0.app;Xcode_26.6.app;Xcode.app;
+
+== base-after-the-apps: control
+  window 31 of dev.arbor.testwindows (AXWindow, AXStandardWindow) at 1023 677 480 348
+  displays (start): 1: 0 0 1024 768 visible 0 31 1024 679
+  displays (A the control): 1: 0 0 1024 768 visible 0 31 1024 679
+  A1-grows-where-it-stands                     size       170 225 480 348 -> 170 225 494 650: 170 225 494 484 OTHER | short 0 0 0 166 | half way - | moved 0 resized 1 | 8.3 ms
+  A2-parked-it-grows                           size       1023 682 325 524 -> 1023 682 1000 650: 1023 682 1000 650 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 4.2 ms
+  A3-sent-to-the-corner                        pos        170 225 480 348 -> 1023 767 480 348: 1023 682 480 348 OTHER | short 0 -85 0 0 | half way - | moved 1 resized 0 | 1.9 ms
+  displays (end): 1: 0 0 1024 768 visible 0 31 1024 679
+> display_add 800 600: display 2, D741716A-D4E7-417B-91AC-A93B88A57B6D
+> display_move right: now at 1920 0 800 600
+1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1920 1080 1 main 0 0 305419896
+2 D741716A-D4E7-417B-91AC-A93B88A57B6D 1920 0 800 600 1 - 42928 1 1
+
+== two-right: control two exact
+  window 31 of dev.arbor.testwindows (AXWindow, AXStandardWindow) at 450 372 480 348
+  displays (start): 1: 0 0 1920 1080 visible 0 31 1920 971; 2: 1920 0 800 600 visible 1920 31 800 569
+  displays (A the control): 1: 0 0 1920 1080 visible 0 31 1920 971; 2: 1920 0 800 600 visible 1920 31 800 569
+  A1-grows-where-it-stands                     size       170 517 480 348 -> 170 517 494 650: 170 517 494 484 OTHER | short 0 0 0 166 | half way - | moved 0 resized 1 | 9.7 ms
+  A2-parked-it-grows                           size       1919 974 325 524 -> 1919 974 1000 650: 1919 974 1000 650 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 4.0 ms
+  A3-sent-to-the-corner                        pos        170 517 480 348 -> 1919 1079 480 348: 1919 974 480 348 OTHER | short 0 -105 0 0 | half way - | moved 1 resized 0 | 12.7 ms
+  displays (F two displays): 1: 0 0 1920 1080 visible 0 31 1920 971; 2: 1920 0 800 600 visible 1920 31 800 569
+  F1-on-the-main-one-wider-than-it             size       1420 81 400 300 -> 1420 81 900 300: 1420 81 500 300 OTHER | short 0 0 400 0 | half way - | moved 0 resized 1 | 8.1 ms
+  F2-on-the-main-one-taller-than-it            size       100 602 400 300 -> 100 602 400 900: 100 602 400 399 OTHER | short 0 0 0 501 | half way - | moved 0 resized 1 | 7.8 ms
+  F3-on-the-second-wider-than-it               size       2420 81 250 200 -> 2420 81 700 200: 2420 81 300 200 OTHER | short 0 0 400 0 | half way - | moved 0 resized 1 | 5.5 ms
+  F4-on-the-second-taller-than-it              size       2020 300 300 200 -> 2020 300 250 700: 2020 300 250 300 OTHER | short 0 0 0 400 | half way - | moved 0 resized 1 | 11.4 ms
+  F5-across-the-right-edge-wider               size       1820 81 400 300 -> 1820 81 1200 300: 1820 81 900 300 OTHER | short 0 0 300 0 | half way - | moved 0 resized 1 | 6.2 ms
+  F6-large-sent-to-the-smaller                 pos        12 43 1000 567 -> 1932 43 1000 567: 1932 43 1000 567 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 6.5 ms
+  F7-large-sent-to-the-smaller-ones-corner     pos        12 43 1000 567 -> 1920 31 1000 567: 1920 31 1000 567 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 8.1 ms
+  F8-large-to-a-slot-on-the-smaller            SPS  reads 12 43 1000 567 -> 1932 43 776 545: 1932 43 776 545 RIGHT | short 0 0 0 0 | half way 12 43 776 545; 1932 43 776 545 | moved 1 resized 1 | 20.1 ms
+  F8-large-to-a-slot-on-the-smaller            PS   reads 12 43 1000 567 -> 1932 43 776 545: 1932 43 776 545 RIGHT | short 0 0 0 0 | half way 1932 43 1000 567 | moved 1 resized 1 | 10.2 ms
+  F8-large-to-a-slot-on-the-smaller            SP   reads 12 43 1000 567 -> 1932 43 776 545: 1932 43 776 545 RIGHT | short 0 0 0 0 | half way 12 43 776 545 | moved 1 resized 1 | 6.5 ms
+  F8-large-to-a-slot-on-the-smaller            sPS  reads 12 43 1000 567 -> 1932 43 776 545: 1932 43 776 545 RIGHT | short 0 0 0 0 | half way 12 43 776 545; 1932 43 776 545 | moved 1 resized 1 | 8.7 ms
+  F9-back-to-the-larger                        SPS  reads 1932 43 776 545 -> 12 43 1000 650: 12 43 1000 557 OTHER | short 0 0 0 93 | half way 1932 43 788 557; 12 43 788 557 | moved 1 resized 2 | 6.4 ms
+  F9-back-to-the-larger                        PS   reads 1932 43 776 545 -> 12 43 1000 650: 12 43 1000 557 OTHER | short 0 0 0 93 | half way 12 43 776 545 | moved 1 resized 1 | 11.7 ms
+  F9-back-to-the-larger                        SP   reads 1932 43 776 545 -> 12 43 1000 650: 12 43 788 557 OTHER | short 0 0 212 93 | half way 1932 43 788 557 | moved 1 resized 1 | 12.7 ms
+  F9-back-to-the-larger                        sPS  reads 1932 43 776 545 -> 12 43 1000 650: 12 43 1000 557 OTHER | short 0 0 0 93 | half way 1932 43 776 545; 12 43 776 545 | moved 1 resized 1 | 12.2 ms
+  F10-small-to-the-whole-of-the-second         SPS  reads 100 131 300 200 -> 1920 31 800 569: 1920 31 800 569 RIGHT | short 0 0 0 0 | half way 100 131 800 569; 1920 31 800 569 | moved 1 resized 1 | 10.7 ms
+  F10-small-to-the-whole-of-the-second         PS   reads 100 131 800 200 -> 1920 31 800 569: 1920 31 800 569 RIGHT | short 0 0 0 0 | half way 1920 31 800 200 | moved 1 resized 1 | 10.1 ms
+  F10-small-to-the-whole-of-the-second         SP   reads 100 131 800 200 -> 1920 31 800 569: 1920 31 800 569 RIGHT | short 0 0 0 0 | half way 100 131 800 569 | moved 1 resized 1 | 7.3 ms
+  F10-small-to-the-whole-of-the-second         sPS  reads 100 131 800 200 -> 1920 31 800 569: 1920 31 800 569 RIGHT | short 0 0 0 0 | half way 100 131 800 200; 1920 31 800 200 | moved 1 resized 1 | 18.5 ms
+  displays (D exactly at a line): 1: 0 0 1920 1080 visible 0 31 1920 971; 2: 1920 0 800 600 visible 1920 31 800 569
+  D1-ends-at-the-visible-bottom                SPS  reads 170 220 800 348 -> 12 43 494 959: 12 43 494 958 OTHER | short 0 0 0 1 | half way 170 220 494 781; 12 43 494 781 | moved 1 resized 2 | 22.3 ms
+  D1-ends-at-the-visible-bottom                PS   reads 170 220 480 348 -> 12 43 494 959: 12 43 494 958 OTHER | short 0 0 0 1 | half way 12 43 480 348 | moved 1 resized 1 | 9.8 ms
+  D2-ends-one-above                            SPS  reads 170 220 480 348 -> 12 43 494 958: 12 43 494 958 RIGHT | short 0 0 0 0 | half way 170 220 494 781; 12 43 494 781 | moved 1 resized 2 | 7.1 ms
+  D2-ends-one-above                            PS   reads 170 220 480 348 -> 12 43 494 958: 12 43 494 958 RIGHT | short 0 0 0 0 | half way 12 43 480 348 | moved 1 resized 1 | 16.0 ms
+  D3-half-y-ends-at-the-visible-bottom         SPS  reads 170 220 480 348 -> 12 43.5 494 958.5: 12 44 494 957 OTHER | short 0 0.5 0 1.5 | half way 170 220 494 781; 12 44 494 781 | moved 1 resized 2 | 19.4 ms
+  D3-half-y-ends-at-the-visible-bottom         PS   reads 170 220 480 348 -> 12 43.5 494 958.5: 12 44 494 957 OTHER | short 0 0.5 0 1.5 | half way 12 44 480 348 | moved 1 resized 1 | 11.4 ms
+  D4-half-y-ends-one-above                     SPS  reads 170 220 480 348 -> 12 43.5 494 957.5: 12 44 494 957 OTHER | short 0 0.5 0 0.5 | half way 170 220 494 781; 12 44 494 781 | moved 1 resized 2 | 24.3 ms
+  D4-half-y-ends-one-above                     PS   reads 170 220 480 348 -> 12 43.5 494 957.5: 12 44 494 957 OTHER | short 0 0.5 0 0.5 | half way 12 44 480 348 | moved 1 resized 1 | 6.5 ms
+  D5-ends-at-the-right-edge                    SPS  reads 170 220 480 348 -> 1426 43 494 400: 1426 43 494 400 RIGHT | short 0 0 0 0 | half way 170 220 494 400; 1426 43 494 400 | moved 1 resized 1 | 17.2 ms
+  D5-ends-at-the-right-edge                    PS   reads 170 220 480 348 -> 1426 43 494 400: 1426 43 494 400 RIGHT | short 0 0 0 0 | half way 1426 43 480 348 | moved 1 resized 1 | 11.1 ms
+  D6-ends-one-past-the-right-edge              SPS  reads 170 220 480 348 -> 1426 43 495 400: 1426 43 495 400 RIGHT | short 0 0 0 0 | half way 170 220 495 400; 1426 43 495 400 | moved 1 resized 1 | 15.3 ms
+  D6-ends-one-past-the-right-edge              PS   reads 170 220 480 348 -> 1426 43 495 400: 1426 43 494 400 OTHER | short 0 0 1 0 | half way 1426 43 480 348 | moved 1 resized 1 | 6.6 ms
+  D7-half-x-ends-at-the-right-edge             SPS  reads 170 220 480 348 -> 1425.5 43 494.5 400: 1425 43 494 400 OTHER | short -0.5 0 0.5 0 | half way 170 220 494 400; 1425 43 494 400 | moved 1 resized 1 | 16.0 ms
+  D7-half-x-ends-at-the-right-edge             PS   reads 170 220 480 348 -> 1425.5 43 494.5 400: 1425 43 494 400 OTHER | short -0.5 0 0.5 0 | half way 1425 43 480 348 | moved 1 resized 1 | 11.5 ms
+  D8-the-whole-visible-frame                   SPS  reads 170 220 480 348 -> 0 31 1920 971: 0 31 1920 970 OTHER | short 0 0 0 1 | half way 170 220 1750 781; 0 31 1750 781 | moved 1 resized 2 | 22.3 ms
+  D8-the-whole-visible-frame                   PS   reads 170 220 480 348 -> 0 31 1920 971: 0 31 1920 970 OTHER | short 0 0 0 1 | half way 0 31 480 348 | moved 1 resized 1 | 10.9 ms
+  D9-taller-than-the-display                   size       170 220 480 348 -> 170 220 480 1080: 170 220 480 781 OTHER | short 0 0 0 299 | half way - | moved 0 resized 1 | 4.3 ms
+  D10-wider-than-the-display                   size       170 220 480 348 -> 170 220 1920 348: 170 220 1750 348 OTHER | short 0 0 170 0 | half way - | moved 0 resized 1 | 4.7 ms
+  D11-sent-to-the-bottom                       pos        170 220 480 348 -> 170 1079 480 348: 170 974 480 348 OTHER | short 0 -105 0 0 | half way - | moved 1 resized 0 | 2.9 ms
+  D12-sent-under-the-menu-bar                  pos        170 220 480 348 -> 170 0 480 348: 170 31 480 348 OTHER | short 0 31 0 0 | half way - | moved 1 resized 0 | 3.3 ms
+  D13-sent-above-the-display                   pos        170 220 480 348 -> 170 -50 480 348: 170 31 480 348 OTHER | short 0 81 0 0 | half way - | moved 1 resized 0 | 3.0 ms
+  D14-sent-far-left                            pos        170 220 480 348 -> -600 220 480 348: -440 220 480 348 OTHER | short 160 0 0 0 | half way - | moved 1 resized 0 | 2.9 ms
+  D15-sent-far-right                           pos        170 220 480 348 -> 2420 220 480 348: 2420 220 480 348 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 6.0 ms
+  displays (end): 1: 0 0 1920 1080 visible 0 31 1920 971; 2: 1920 0 800 600 visible 1920 31 800 569
+shot: mac-shell/two-right.png
+> display_move left: now at -800 0 800 600
+1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1920 1080 1 main 0 0 305419896
+2 D741716A-D4E7-417B-91AC-A93B88A57B6D -800 0 800 600 1 - 42928 1 1
+
+== two-left: two
+  window 31 of dev.arbor.testwindows (AXWindow, AXStandardWindow) at -300 220 480 348
+  displays (start): 1: 0 0 1920 1080 visible 0 31 1920 971; 2: -800 0 800 600 visible -800 31 800 569
+  displays (F two displays): 1: 0 0 1920 1080 visible 0 31 1920 971; 2: -800 0 800 600 visible -800 31 800 569
+  F1-on-the-main-one-wider-than-it             size       1420 81 400 300 -> 1420 81 900 300: 1420 81 500 300 OTHER | short 0 0 400 0 | half way - | moved 0 resized 1 | 8.3 ms
+  F2-on-the-main-one-taller-than-it            size       100 602 400 300 -> 100 602 400 900: 100 602 400 399 OTHER | short 0 0 0 501 | half way - | moved 0 resized 1 | 5.8 ms
+  F3-on-the-second-wider-than-it               size       -300 81 250 200 -> -300 81 700 200: -300 81 300 200 OTHER | short 0 0 400 0 | half way - | moved 0 resized 1 | 5.1 ms
+  F4-on-the-second-taller-than-it              size       -700 300 250 200 -> -700 300 250 700: -700 300 250 300 OTHER | short 0 0 0 400 | half way - | moved 0 resized 1 | 4.8 ms
+  F5-across-the-right-edge-wider               size       1820 81 400 300 -> 1820 81 1200 300: 1820 81 1200 300 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 5.5 ms
+  F6-large-sent-to-the-smaller                 pos        12 43 1000 650 -> -788 43 1000 650: -788 31 1000 569 OTHER | short 0 -12 0 81 | half way - | moved 0 resized 1 | 6.5 ms
+  F7-large-sent-to-the-smaller-ones-corner     pos        12 43 1000 650 -> -800 31 1000 650: -800 31 1000 569 OTHER | short 0 0 0 81 | half way - | moved 0 resized 1 | 5.8 ms
+  F8-large-to-a-slot-on-the-smaller            SPS  reads 12 43 1000 650 -> -788 43 776 545: -788 43 776 545 RIGHT | short 0 0 0 0 | half way 12 43 776 545; -788 43 776 545 | moved 1 resized 1 | 20.0 ms
+  F8-large-to-a-slot-on-the-smaller            PS   reads 12 43 1000 567 -> -788 43 776 545: -788 43 812 545 OTHER | short 0 0 -36 0 | half way -788 43 1000 567 | moved 1 resized 1 | 22.8 ms
+  F8-large-to-a-slot-on-the-smaller            SP   reads 12 43 1000 567 -> -788 43 776 545: -788 43 776 545 RIGHT | short 0 0 0 0 | half way 12 43 776 545 | moved 1 resized 1 | 11.3 ms
+  F8-large-to-a-slot-on-the-smaller            sPS  reads 12 43 1000 567 -> -788 43 776 545: -788 43 776 545 RIGHT | short 0 0 0 0 | half way 12 43 776 545; -788 43 776 545 | moved 1 resized 1 | 19.5 ms
+  F9-back-to-the-larger                        SPS  reads -788 43 776 545 -> 12 43 1000 650: 12 43 1000 557 OTHER | short 0 0 0 93 | half way -788 43 788 557; 12 43 788 557 | moved 1 resized 2 | 21.5 ms
+  F9-back-to-the-larger                        PS   reads -788 43 776 545 -> 12 43 1000 650: 12 43 1000 557 OTHER | short 0 0 0 93 | half way 12 43 776 545 | moved 1 resized 1 | 21.6 ms
+  F9-back-to-the-larger                        SP   reads -788 43 776 545 -> 12 43 1000 650: 12 43 788 557 OTHER | short 0 0 212 93 | half way -788 43 788 557 | moved 1 resized 1 | 7.2 ms
+  F9-back-to-the-larger                        sPS  reads -788 43 776 545 -> 12 43 1000 650: 12 43 1000 557 OTHER | short 0 0 0 93 | half way -788 43 776 545; 12 43 776 545 | moved 1 resized 1 | 8.6 ms
+  F10-small-to-the-whole-of-the-second         SPS  reads 100 131 300 200 -> -800 31 800 569: -800 31 800 569 RIGHT | short 0 0 0 0 | half way 100 131 800 569; -800 31 800 569 | moved 1 resized 1 | 20.7 ms
+  F10-small-to-the-whole-of-the-second         PS   reads 100 131 300 200 -> -800 31 800 569: -800 31 800 569 RIGHT | short 0 0 0 0 | half way -800 31 300 200 | moved 1 resized 1 | 12.6 ms
+  F10-small-to-the-whole-of-the-second         SP   reads 100 131 300 200 -> -800 31 800 569: -800 31 800 569 RIGHT | short 0 0 0 0 | half way 100 131 800 569 | moved 1 resized 1 | 11.4 ms
+  F10-small-to-the-whole-of-the-second         sPS  reads 100 131 300 200 -> -800 31 800 569: -800 31 800 569 RIGHT | short 0 0 0 0 | half way 100 131 300 200; -800 31 300 200 | moved 1 resized 1 | 18.3 ms
+  displays (end): 1: 0 0 1920 1080 visible 0 31 1920 971; 2: -800 0 800 600 visible -800 31 800 569
+> display_move below: now at 0 1080 800 600
+1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1920 1080 1 main 0 0 305419896
+2 D741716A-D4E7-417B-91AC-A93B88A57B6D 0 1080 800 600 1 - 42928 1 1
+
+== two-below: control two
+  window 31 of dev.arbor.testwindows (AXWindow, AXStandardWindow) at 0 1111 800 520
+  displays (start): 1: 0 0 1920 1080 visible 0 31 1920 1049; 2: 0 1080 800 600 visible 0 1111 800 520
+  displays (A the control): 1: 0 0 1920 1080 visible 0 31 1920 1049; 2: 0 1080 800 600 visible 0 1111 800 520
+  A1-grows-where-it-stands                     size       170 595 480 520 -> 170 595 494 650: 170 595 494 650 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 12.7 ms
+  A2-parked-it-grows                           size       1919 1052 325 524 -> 1919 1052 1000 650: 1919 1052 1000 650 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 5.1 ms
+  A3-sent-to-the-corner                        pos        170 595 480 348 -> 1919 1079 480 348: 1919 1052 480 348 OTHER | short 0 -27 0 0 | half way - | moved 1 resized 0 | 4.8 ms
+  displays (F two displays): 1: 0 0 1920 1080 visible 0 31 1920 1049; 2: 0 1080 800 600 visible 0 1111 800 520
+  F1-on-the-main-one-wider-than-it             size       1420 81 400 300 -> 1420 81 900 300: 1420 81 500 300 OTHER | short 0 0 400 0 | half way - | moved 0 resized 1 | 4.9 ms
+  F2-on-the-main-one-taller-than-it            size       100 680 400 300 -> 100 680 400 900: 100 680 400 400 OTHER | short 0 0 0 500 | half way - | moved 0 resized 1 | 4.5 ms
+  F3-on-the-second-wider-than-it               size       500 1161 250 200 -> 500 1161 700 200: 500 1161 300 200 OTHER | short 0 0 400 0 | half way - | moved 0 resized 1 | 5.2 ms
+  F4-on-the-second-taller-than-it              size       100 1331 250 200 -> 100 1331 250 700: 100 1331 250 299 OTHER | short 0 0 0 401 | half way - | moved 0 resized 1 | 2.8 ms
+  F5-across-the-right-edge-wider               size       1820 81 400 300 -> 1820 81 1200 300: 1820 81 1200 300 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 2.9 ms
+  F6-large-sent-to-the-smaller                 pos        12 43 1000 650 -> 12 1123 1000 650: 12 1111 1000 520 OTHER | short 0 -12 0 130 | half way - | moved 0 resized 1 | 10.5 ms
+  F7-large-sent-to-the-smaller-ones-corner     pos        12 43 1000 650 -> 0 1111 1000 650: 0 1111 1000 520 OTHER | short 0 0 0 130 | half way - | moved 0 resized 1 | 6.8 ms
+  F8-large-to-a-slot-on-the-smaller            SPS  reads 12 43 1000 650 -> 12 1123 776 496: 12 1123 776 496 RIGHT | short 0 0 0 0 | half way 12 43 776 496; 12 1123 776 496 | moved 1 resized 1 | 16.0 ms
+  F8-large-to-a-slot-on-the-smaller            PS   reads 12 43 798 650 -> 12 1123 776 496: 12 1111 776 496 OTHER | short 0 -12 0 0 | half way 12 1111 798 520 | moved 0 resized 2 | 14.1 ms
+  F8-large-to-a-slot-on-the-smaller            SP   reads 12 43 798 650 -> 12 1123 776 496: 12 1123 776 496 RIGHT | short 0 0 0 0 | half way 12 43 776 496 | moved 1 resized 1 | 10.9 ms
+  F8-large-to-a-slot-on-the-smaller            sPS  reads 12 43 798 650 -> 12 1123 776 496: 12 1123 776 496 RIGHT | short 0 0 0 0 | half way 12 43 776 496; 12 1123 776 496 | moved 1 resized 1 | 18.6 ms
+  F9-back-to-the-larger                        SPS  reads 12 1123 776 496 -> 12 43 1000 650: 12 43 788 650 OTHER | short 0 0 212 0 | half way 12 1123 788 507; 12 43 788 507 | moved 1 resized 2 | 19.5 ms
+  F9-back-to-the-larger                        PS   reads 12 1123 776 496 -> 12 43 1000 650: 12 43 788 650 OTHER | short 0 0 212 0 | half way 12 43 776 496 | moved 1 resized 1 | 29.2 ms
+  F9-back-to-the-larger                        SP   reads 12 1123 776 496 -> 12 43 1000 650: 12 43 788 507 OTHER | short 0 0 212 143 | half way 12 1123 788 507 | moved 1 resized 1 | 13.1 ms
+  F9-back-to-the-larger                        sPS  reads 12 1123 776 496 -> 12 43 1000 650: 12 43 788 650 OTHER | short 0 0 212 0 | half way 12 1123 776 496; 12 43 776 496 | moved 1 resized 1 | 23.7 ms
+  F10-small-to-the-whole-of-the-second         SPS  reads 100 131 300 200 -> 0 1111 800 520: 0 1111 800 520 RIGHT | short 0 0 0 0 | half way 100 131 800 520; 0 1111 800 520 | moved 1 resized 1 | 15.9 ms
+  F10-small-to-the-whole-of-the-second         PS   reads 100 131 300 520 -> 0 1111 800 520: 0 1111 800 520 RIGHT | short 0 0 0 0 | half way 0 1111 300 520 | moved 1 resized 1 | 13.5 ms
+  F10-small-to-the-whole-of-the-second         SP   reads 100 131 300 520 -> 0 1111 800 520: 0 1111 800 520 RIGHT | short 0 0 0 0 | half way 100 131 800 520 | moved 1 resized 1 | 11.7 ms
+  F10-small-to-the-whole-of-the-second         sPS  reads 100 131 300 520 -> 0 1111 800 520: 0 1111 800 520 RIGHT | short 0 0 0 0 | half way 100 131 300 520; 0 1111 300 520 | moved 1 resized 1 | 22.6 ms
+  displays (end): 1: 0 0 1920 1080 visible 0 31 1920 1049; 2: 0 1080 800 600 visible 0 1111 800 520
+> display_remove
+
+== base-at-the-end: control
+  window 31 of dev.arbor.testwindows (AXWindow, AXStandardWindow) at 170 220 480 348
+  displays (start): 1: 0 0 1024 768 visible 0 31 1024 680
+  displays (A the control): 1: 0 0 1024 768 visible 0 31 1024 680
+  A1-grows-where-it-stands                     size       170 226 480 348 -> 170 226 494 650: 170 226 494 484 OTHER | short 0 0 0 166 | half way - | moved 0 resized 1 | 14.5 ms
+  A2-parked-it-grows                           size       1023 683 325 524 -> 1023 683 1000 650: 1023 683 1000 650 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 6.8 ms
+  A3-sent-to-the-corner                        pos        170 226 480 348 -> 1023 767 480 348: 1023 683 480 348 OTHER | short 0 -84 0 0 | half way - | moved 1 resized 0 | 2.8 ms
+  displays (end): 1: 0 0 1024 768 visible 0 31 1024 680
+> open -g -b com.apple.Preview /tmp/arbor-apps.GWGHxz/scratch/leaf.png
+pid 27642 lists (id role subrole x y w h flags):
+  100 AXWindow AXStandardWindow 4 35 708 424 main,toolbar
+
+== preview: late
+  window 100 of com.apple.Preview (AXWindow, AXStandardWindow) at 4 35 708 424
+  displays (start): 1: 0 0 1024 768 visible 0 31 1024 680
+  displays (H who moves late): 1: 0 0 1024 768 visible 0 31 1024 680
+  H1-taller-and-wider                          size       100 100 708 400 -> 100 100 700 500: 100 100 708 500 OTHER | short 0 0 -8 0 | half way - | moved 0 resized 1 | 9.7 ms | the same 50, 200 and 600 ms later
+  H2-smaller                                   size       100 100 708 500 -> 100 100 600 400: 100 100 708 400 OTHER | short 0 0 -108 0 | half way - | moved 0 resized 1 | 16.1 ms | LATE: at once 100 100 708 400 (server 100 100 708 500); 50 ms 100 100 708 400 (server 100 100 708 400); 200 ms 100 100 708 400 (server 100 100 708 400); 600 ms 100 100 708 400 (server 100 100 708 400)
+  H3-moved                                     pos        100 100 708 400 -> 300 150 708 400: 300 150 708 400 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 3.3 ms | LATE: at once 300 150 708 400 (server 100 100 708 400); 50 ms 300 150 708 400 (server 300 150 708 400); 200 ms 300 150 708 400 (server 300 150 708 400); 600 ms 300 150 708 400 (server 300 150 708 400)
+  H4-sent-to-the-corner                        pos        100 100 708 400 -> 1023 767 708 400: 1023 659 708 400 OTHER | short 0 -108 0 0 | half way - | moved 1 resized 0 | 3.5 ms | LATE: at once 1023 659 708 400 (server 100 100 708 400); 50 ms 1023 659 708 400 (server 1023 659 708 400); 200 ms 1023 659 708 400 (server 1023 659 708 400); 600 ms 1023 659 708 400 (server 1023 659 708 400)
+  H5-back-from-the-corner                      pos        1023 659 708 400 -> 100 100 708 400: 100 100 708 400 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 3.7 ms | LATE: at once 100 100 708 400 (server 1023 659 708 400); 50 ms 100 100 708 400 (server 100 100 708 400); 200 ms 100 100 708 400 (server 100 100 708 400); 600 ms 100 100 708 400 (server 100 100 708 400)
+  H6-taller-than-there-is-room                 size       170 226 708 348 -> 170 226 600 650: 170 226 708 484 OTHER | short 0 0 -108 166 | half way - | moved 0 resized 1 | 11.3 ms | LATE: at once 170 226 708 484 (server 170 226 708 348); 50 ms 170 226 708 484 (server 170 226 708 484); 200 ms 170 226 708 484 (server 170 226 708 484); 600 ms 170 226 708 484 (server 170 226 708 484)
+  H7-into-a-slot                               SPS  blind 170 220 708 348 -> 12 43 700 656: 12 43 708 656 OTHER | short 0 0 -8 0 | half way - | moved 1 resized 2 | 29.8 ms | LATE: at once 12 43 708 656 (server 170 220 708 490); 50 ms 12 43 708 656 (server 12 43 708 656); 200 ms 12 43 708 656 (server 12 43 708 656); 600 ms 12 43 708 656 (server 12 43 708 656)
+  H7-into-a-slot                               PS   blind 170 220 708 348 -> 12 43 700 656: 12 43 708 656 OTHER | short 0 0 -8 0 | half way - | moved 1 resized 1 | 26.0 ms | LATE: at once 12 43 708 656 (server 12 43 708 348); 50 ms 12 43 708 656 (server 12 43 708 656); 200 ms 12 43 708 656 (server 12 43 708 656); 600 ms 12 43 708 656 (server 12 43 708 656)
+  H8-out-of-the-slot                           SPS  blind 12 43 708 656 -> 300 200 600 348: 300 200 708 348 OTHER | short 0 0 -108 0 | half way - | moved 1 resized 1 | 12.7 ms | LATE: at once 300 200 708 348 (server 12 43 708 656); 50 ms 300 200 708 348 (server 300 200 708 348); 200 ms 300 200 708 348 (server 300 200 708 348); 600 ms 300 200 708 348 (server 300 200 708 348)
+  H8-out-of-the-slot                           PS   blind 12 43 708 656 -> 300 200 600 348: 300 200 708 348 OTHER | short 0 0 -108 0 | half way - | moved 1 resized 1 | 4.7 ms | LATE: at once 300 200 708 348 (server 300 200 708 656); 50 ms 300 200 708 348 (server 300 200 708 348); 200 ms 300 200 708 348 (server 300 200 708 348); 600 ms 300 200 708 348 (server 300 200 708 348)
+  displays (end): 1: 0 0 1024 768 visible 0 31 1024 680
+> open -g -b com.apple.ScriptEditor2 /tmp/arbor-apps.GWGHxz/scratch/hello.applescript
+pid 28648 lists (id role subrole x y w h flags):
+  107 AXWindow AXStandardWindow 20 31 700 680 main,toolbar
+
+== script-editor: late
+  window 107 of com.apple.ScriptEditor2 (AXWindow, AXStandardWindow) at 20 31 700 680
+  displays (start): 1: 0 0 1024 768 visible 0 31 1024 680
+  displays (H who moves late): 1: 0 0 1024 768 visible 0 31 1024 680
+  H1-taller-and-wider                          size       100 100 600 413 -> 100 100 700 500: 100 100 700 500 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 11.6 ms | LATE: at once 100 100 700 500 (server 100 100 600 413); 50 ms 100 100 700 500 (server 100 100 700 500); 200 ms 100 100 700 500 (server 100 100 700 500); 600 ms 100 100 700 500 (server 100 100 700 500)
+  H2-smaller                                   size       100 100 700 500 -> 100 100 600 400: 100 100 600 413 OTHER | short 0 0 0 -13 | half way - | moved 0 resized 1 | 18.9 ms | LATE: at once 100 100 600 413 (server 100 100 700 500); 50 ms 100 100 600 413 (server 100 100 600 413); 200 ms 100 100 600 413 (server 100 100 600 413); 600 ms 100 100 600 413 (server 100 100 600 413)
+  H3-moved                                     pos        100 100 600 413 -> 300 150 600 413: 300 150 600 413 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 1.8 ms | LATE: at once 300 150 600 413 (server 100 100 600 413); 50 ms 300 150 600 413 (server 300 150 600 413); 200 ms 300 150 600 413 (server 300 150 600 413); 600 ms 300 150 600 413 (server 300 150 600 413)
+  H4-sent-to-the-corner                        pos        100 100 600 413 -> 1023 767 600 413: 1023 659 600 413 OTHER | short 0 -108 0 0 | half way - | moved 1 resized 0 | 3.3 ms | LATE: at once 1023 659 600 413 (server 100 100 600 413); 50 ms 1023 659 600 413 (server 1023 659 600 413); 200 ms 1023 659 600 413 (server 1023 659 600 413); 600 ms 1023 659 600 413 (server 1023 659 600 413)
+  H5-back-from-the-corner                      pos        1023 659 600 413 -> 100 100 600 413: 100 100 600 413 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 3.0 ms | LATE: at once 100 100 600 413 (server 1023 659 600 413); 50 ms 100 100 600 413 (server 100 100 600 413); 200 ms 100 100 600 413 (server 100 100 600 413); 600 ms 100 100 600 413 (server 100 100 600 413)
+  H6-taller-than-there-is-room                 size       170 226 600 413 -> 170 226 600 650: 170 226 600 484 OTHER | short 0 0 0 166 | half way - | moved 0 resized 1 | 13.9 ms | LATE: at once 170 226 600 484 (server 170 226 600 413); 50 ms 170 226 600 484 (server 170 226 600 484); 200 ms 170 226 600 484 (server 170 226 600 484); 600 ms 170 226 600 484 (server 170 226 600 484)
+  H7-into-a-slot                               SPS  blind 170 220 600 413 -> 12 43 700 656: 12 43 700 656 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 2 | 12.9 ms | LATE: at once 12 43 700 656 (server 170 220 700 490); 50 ms 12 43 700 656 (server 12 43 700 656); 200 ms 12 43 700 656 (server 12 43 700 656); 600 ms 12 43 700 656 (server 12 43 700 656)
+  H7-into-a-slot                               PS   blind 170 220 600 413 -> 12 43 700 656: 12 43 700 656 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 27.4 ms | LATE: at once 12 43 700 656 (server 12 43 600 413); 50 ms 12 43 700 656 (server 12 43 700 656); 200 ms 12 43 700 656 (server 12 43 700 656); 600 ms 12 43 700 656 (server 12 43 700 656)
+  H8-out-of-the-slot                           SPS  blind 12 43 700 656 -> 300 200 600 348: 300 200 600 413 OTHER | short 0 0 0 -65 | half way - | moved 1 resized 1 | 23.9 ms | LATE: at once 300 200 600 413 (server 12 43 600 413); 50 ms 300 200 600 413 (server 300 200 600 413); 200 ms 300 200 600 413 (server 300 200 600 413); 600 ms 300 200 600 413 (server 300 200 600 413)
+  H8-out-of-the-slot                           PS   blind 12 43 700 656 -> 300 200 600 348: 300 200 600 413 OTHER | short 0 0 0 -65 | half way - | moved 1 resized 1 | 22.8 ms | LATE: at once 300 200 600 413 (server 300 200 700 656); 50 ms 300 200 600 413 (server 300 200 600 413); 200 ms 300 200 600 413 (server 300 200 600 413); 600 ms 300 200 600 413 (server 300 200 600 413)
+  displays (end): 1: 0 0 1024 768 visible 0 31 1024 680
+> open -g -b com.apple.ActivityMonitor 
+pid 29174 lists (id role subrole x y w h flags):
+  112 AXWindow AXStandardWindow 32 51 960 640 main,toolbar
+
+== activity-monitor: late
+  window 112 of com.apple.ActivityMonitor (AXWindow, AXStandardWindow) at 32 51 960 640
+  displays (start): 1: 0 0 1024 768 visible 0 31 1024 680
+  displays (H who moves late): 1: 0 0 1024 768 visible 0 31 1024 680
+  H1-taller-and-wider                          size       100 100 740 400 -> 100 100 700 500: 100 100 740 500 OTHER | short 0 0 -40 0 | half way - | moved 0 resized 1 | 22.2 ms | LATE: at once 100 100 740 500 (server 100 100 740 400); 50 ms 100 100 740 500 (server 100 100 740 500); 200 ms 100 100 740 500 (server 100 100 740 500); 600 ms 100 100 740 500 (server 100 100 740 500)
+  H2-smaller                                   size       100 100 740 500 -> 100 100 600 400: 100 100 740 400 OTHER | short 0 0 -140 0 | half way - | moved 0 resized 1 | 35.3 ms | LATE: at once 100 100 740 400 (server 100 100 740 500); 50 ms 100 100 740 400 (server 100 100 740 400); 200 ms 100 100 740 400 (server 100 100 740 400); 600 ms 100 100 740 400 (server 100 100 740 400)
+  H3-moved                                     pos        100 100 740 400 -> 300 150 740 400: 300 150 740 400 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 10.1 ms | LATE: at once 300 150 740 400 (server 100 100 740 400); 50 ms 300 150 740 400 (server 300 150 740 400); 200 ms 300 150 740 400 (server 300 150 740 400); 600 ms 300 150 740 400 (server 300 150 740 400)
+  H4-sent-to-the-corner                        pos        100 100 740 400 -> 1023 767 740 400: 1023 659 740 400 OTHER | short 0 -108 0 0 | half way - | moved 1 resized 0 | 7.1 ms | LATE: at once 1023 659 740 400 (server 100 100 740 400); 50 ms 1023 659 740 400 (server 1023 659 740 400); 200 ms 1023 659 740 400 (server 1023 659 740 400); 600 ms 1023 659 740 400 (server 1023 659 740 400)
+  H5-back-from-the-corner                      pos        1023 659 740 400 -> 100 100 740 400: 100 100 740 400 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 7.6 ms | LATE: at once 100 100 740 400 (server 1023 659 740 400); 50 ms 100 100 740 400 (server 100 100 740 400); 200 ms 100 100 740 400 (server 100 100 740 400); 600 ms 100 100 740 400 (server 100 100 740 400)
+  H6-taller-than-there-is-room                 size       170 226 740 384 -> 170 226 600 650: 170 226 740 484 OTHER | short 0 0 -140 166 | half way - | moved 0 resized 1 | 85.2 ms | the same 50, 200 and 600 ms later
+  H7-into-a-slot                               SPS  blind 170 220 740 384 -> 12 43 700 656: 12 43 740 656 OTHER | short 0 0 -40 0 | half way - | moved 1 resized 2 | 223.1 ms | LATE: at once 12 43 740 656 (server 12 43 740 490); 50 ms 12 43 740 656 (server 12 43 740 656); 200 ms 12 43 740 656 (server 12 43 740 656); 600 ms 12 43 740 656 (server 12 43 740 656)
+  H7-into-a-slot                               PS   blind 170 220 740 384 -> 12 43 700 656: 12 43 740 656 OTHER | short 0 0 -40 0 | half way - | moved 1 resized 1 | 36.7 ms | LATE: at once 12 43 740 656 (server 12 43 740 384); 50 ms 12 43 740 656 (server 12 43 740 656); 200 ms 12 43 740 656 (server 12 43 740 656); 600 ms 12 43 740 656 (server 12 43 740 656)
+  H8-out-of-the-slot                           SPS  blind 12 43 740 656 -> 300 200 600 348: 300 200 740 384 OTHER | short 0 0 -140 -36 | half way - | moved 1 resized 1 | 43.9 ms | the same 50, 200 and 600 ms later
+  H8-out-of-the-slot                           PS   blind 12 43 740 656 -> 300 200 600 348: 300 200 740 384 OTHER | short 0 0 -140 -36 | half way - | moved 1 resized 1 | 10.1 ms | LATE: at once 300 200 740 384 (server 300 200 740 656); 50 ms 300 200 740 384 (server 300 200 740 384); 200 ms 300 200 740 384 (server 300 200 740 384); 600 ms 300 200 740 384 (server 300 200 740 384)
+  displays (end): 1: 0 0 1024 768 visible 0 31 1024 680
+> open -g -b com.apple.Console 
+pid 29999 lists (id role subrole x y w h flags):
+  118 AXWindow AXStandardWindow 12 149 1000 500 main,toolbar
+
+== console: late
+  window 118 of com.apple.Console (AXWindow, AXStandardWindow) at 12 149 1000 500
+  displays (start): 1: 0 0 1024 768 visible 0 31 1024 680
+  displays (H who moves late): 1: 0 0 1024 768 visible 0 31 1024 680
+  H1-taller-and-wider                          size       100 100 600 400 -> 100 100 700 500: 100 100 700 500 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 57.0 ms | the same 50, 200 and 600 ms later
+  H2-smaller                                   size       100 100 700 500 -> 100 100 600 400: 100 100 600 400 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 39.7 ms | LATE: at once 100 100 600 400 (server 100 100 700 500); 50 ms 100 100 600 400 (server 100 100 600 400); 200 ms 100 100 600 400 (server 100 100 600 400); 600 ms 100 100 600 400 (server 100 100 600 400)
+  H3-moved                                     pos        100 100 600 400 -> 300 150 600 400: 300 150 600 400 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 6.1 ms | LATE: at once 300 150 600 400 (server 100 100 600 400); 50 ms 300 150 600 400 (server 300 150 600 400); 200 ms 300 150 600 400 (server 300 150 600 400); 600 ms 300 150 600 400 (server 300 150 600 400)
+  H4-sent-to-the-corner                        pos        100 100 600 400 -> 1023 767 600 400: 1023 659 600 400 OTHER | short 0 -108 0 0 | half way - | moved 1 resized 0 | 4.6 ms | LATE: at once 1023 659 600 400 (server 100 100 600 400); 50 ms 1023 659 600 400 (server 1023 659 600 400); 200 ms 1023 659 600 400 (server 1023 659 600 400); 600 ms 1023 659 600 400 (server 1023 659 600 400)
+  H5-back-from-the-corner                      pos        1023 659 600 400 -> 100 100 600 400: 100 100 600 400 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 5.4 ms | LATE: at once 100 100 600 400 (server 1023 659 600 400); 50 ms 100 100 600 400 (server 100 100 600 400); 200 ms 100 100 600 400 (server 100 100 600 400); 600 ms 100 100 600 400 (server 100 100 600 400)
+  H6-taller-than-there-is-room                 size       170 226 600 400 -> 170 226 600 650: 170 226 600 484 OTHER | short 0 0 0 166 | half way - | moved 0 resized 1 | 35.4 ms | the same 50, 200 and 600 ms later
+  H7-into-a-slot                               SPS  blind 170 220 600 400 -> 12 43 700 656: 12 43 700 656 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 2 | 66.4 ms | LATE: at once 12 43 700 656 (server 170 220 700 490); 50 ms 12 43 700 656 (server 12 43 700 656); 200 ms 12 43 700 656 (server 12 43 700 656); 600 ms 12 43 700 656 (server 12 43 700 656)
+  H7-into-a-slot                               PS   blind 170 220 600 400 -> 12 43 700 656: 12 43 700 656 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 43.1 ms | LATE: at once 12 43 700 656 (server 12 43 600 400); 50 ms 12 43 700 656 (server 12 43 700 656); 200 ms 12 43 700 656 (server 12 43 700 656); 600 ms 12 43 700 656 (server 12 43 700 656)
+  H8-out-of-the-slot                           SPS  blind 12 43 700 656 -> 300 200 600 348: 300 200 600 400 OTHER | short 0 0 0 -52 | half way - | moved 1 resized 1 | 35.7 ms | LATE: at once 300 200 600 400 (server 12 43 600 400); 50 ms 300 200 600 400 (server 300 200 600 400); 200 ms 300 200 600 400 (server 300 200 600 400); 600 ms 300 200 600 400 (server 300 200 600 400)
+  H8-out-of-the-slot                           PS   blind 12 43 700 656 -> 300 200 600 348: 300 200 600 400 OTHER | short 0 0 0 -52 | half way - | moved 1 resized 1 | 27.4 ms | the same 50, 200 and 600 ms later
+  displays (end): 1: 0 0 1024 768 visible 0 31 1024 680
+> open -g -b com.apple.Notes 
+pid 30892 lists (id role subrole x y w h flags):
+  124 AXWindow AXStandardWindow 12 39 1000 660 main,close-disabled,sheets=1
+something is in the way:
+  AXWindow/AXStandardWindow 12 39 1000 660
+    AXButton/AXCloseButton 20 47 16 16
+    AXButton/AXZoomButton 66 47 16 16
+    AXButton/AXMinimizeButton 43 47 16 16
+    AXSheet/- 275 69 475 600
+      AXButton/- 646 620 85 30 "Continue"
+pressed "Continue": 0
+pressed "Cancel": 0
+
+== notes: late
+  window 124 of com.apple.Notes (AXWindow, AXStandardWindow) at 12 39 1000 660
+  displays (start): 1: 0 0 1024 768 visible 0 31 1024 680
+  displays (H who moves late): 1: 0 0 1024 768 visible 0 31 1024 680
+  H1-taller-and-wider                          size       100 100 709 400 -> 100 100 700 500: 100 100 709 500 OTHER | short 0 0 -9 0 | half way - | moved 0 resized 1 | 25.5 ms | LATE: at once 100 100 709 500 (server 100 100 709 400); 50 ms 100 100 709 500 (server 100 100 709 500); 200 ms 100 100 709 500 (server 100 100 709 500); 600 ms 100 100 709 500 (server 100 100 709 500)
+  H2-smaller                                   size       100 100 709 500 -> 100 100 600 400: 100 100 709 400 OTHER | short 0 0 -109 0 | half way - | moved 0 resized 1 | 27.6 ms | LATE: at once 100 100 709 400 (server 100 100 709 500); 50 ms 100 100 709 400 (server 100 100 709 400); 200 ms 100 100 709 400 (server 100 100 709 400); 600 ms 100 100 709 400 (server 100 100 709 400)
+  H3-moved                                     pos        100 100 709 400 -> 300 150 709 400: 300 150 709 400 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 6.4 ms | LATE: at once 300 150 709 400 (server 100 100 709 400); 50 ms 300 150 709 400 (server 300 150 709 400); 200 ms 300 150 709 400 (server 300 150 709 400); 600 ms 300 150 709 400 (server 300 150 709 400)
+  H4-sent-to-the-corner                        pos        100 100 709 400 -> 1023 767 709 400: 1023 659 709 400 OTHER | short 0 -108 0 0 | half way - | moved 1 resized 0 | 9.4 ms | LATE: at once 1023 659 709 400 (server 100 100 709 400); 50 ms 1023 659 709 400 (server 1023 659 709 400); 200 ms 1023 659 709 400 (server 1023 659 709 400); 600 ms 1023 659 709 400 (server 1023 659 709 400)
+  H5-back-from-the-corner                      pos        1023 659 709 400 -> 100 100 709 400: 100 100 709 400 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 3.4 ms | LATE: at once 100 100 709 400 (server 1023 659 709 400); 50 ms 100 100 709 400 (server 100 100 709 400); 200 ms 100 100 709 400 (server 100 100 709 400); 600 ms 100 100 709 400 (server 100 100 709 400)
+  H6-taller-than-there-is-room                 size       170 226 709 348 -> 170 226 600 650: 170 226 709 484 OTHER | short 0 0 -109 166 | half way - | moved 0 resized 1 | 19.7 ms | LATE: at once 170 226 709 484 (server 170 226 709 348); 50 ms 170 226 709 484 (server 170 226 709 484); 200 ms 170 226 709 484 (server 170 226 709 484); 600 ms 170 226 709 484 (server 170 226 709 484)
+  H7-into-a-slot                               SPS  blind 170 220 709 348 -> 12 43 700 656: 12 43 709 656 OTHER | short 0 0 -9 0 | half way - | moved 1 resized 2 | 33.4 ms | LATE: at once 12 43 709 656 (server 170 220 709 490); 50 ms 12 43 709 656 (server 12 43 709 656); 200 ms 12 43 709 656 (server 12 43 709 656); 600 ms 12 43 709 656 (server 12 43 709 656)
+  H7-into-a-slot                               PS   blind 170 220 709 348 -> 12 43 700 656: 12 43 709 656 OTHER | short 0 0 -9 0 | half way - | moved 1 resized 1 | 27.9 ms | LATE: at once 12 43 709 656 (server 12 43 709 348); 50 ms 12 43 709 656 (server 12 43 709 656); 200 ms 12 43 709 656 (server 12 43 709 656); 600 ms 12 43 709 656 (server 12 43 709 656)
+  H8-out-of-the-slot                           SPS  blind 12 43 709 656 -> 300 200 600 348: 300 200 709 348 OTHER | short 0 0 -109 0 | half way - | moved 1 resized 1 | 31.4 ms | LATE: at once 300 200 709 348 (server 12 43 709 348); 50 ms 300 200 709 348 (server 300 200 709 348); 200 ms 300 200 709 348 (server 300 200 709 348); 600 ms 300 200 709 348 (server 300 200 709 348)
+  H8-out-of-the-slot                           PS   blind 12 43 709 656 -> 300 200 600 348: 300 200 709 348 OTHER | short 0 0 -109 0 | half way - | moved 1 resized 1 | 31.3 ms | LATE: at once 300 200 709 348 (server 300 200 709 656); 50 ms 300 200 709 348 (server 300 200 709 348); 200 ms 300 200 709 348 (server 300 200 709 348); 600 ms 300 200 709 348 (server 300 200 709 348)
+  displays (end): 1: 0 0 1024 768 visible 0 31 1024 680
+> open -g -b com.apple.iCal 
+pid 31871 lists (id role subrole x y w h flags):
+  137 AXWindow AXStandardWindow 89 31 935 598 main,toolbar
+
+== calendar: late
+  window 137 of com.apple.iCal (AXWindow, AXStandardWindow) at 89 31 935 598
+  displays (start): 1: 0 0 1024 768 visible 0 31 1024 680
+  displays (H who moves late): 1: 0 0 1024 768 visible 0 31 1024 680
+  H1-taller-and-wider                          size       100 100 680 503 -> 100 100 700 500: 100 100 700 503 OTHER | short 0 0 0 -3 | half way - | moved 0 resized 1 | 26.9 ms | the same 50, 200 and 600 ms later
+  H2-smaller                                   size       100 100 700 503 -> 100 100 600 400: 100 100 680 503 OTHER | short 0 0 -80 -103 | half way - | moved 0 resized 1 | 32.8 ms | LATE: at once 100 100 680 503 (server 100 100 700 503); 50 ms 100 100 680 503 (server 100 100 680 503); 200 ms 100 100 680 503 (server 100 100 680 503); 600 ms 100 100 680 503 (server 100 100 680 503)
+  H3-moved                                     pos        100 100 680 503 -> 300 150 680 503: 300 150 680 503 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 13.7 ms | the same 50, 200 and 600 ms later
+  H4-sent-to-the-corner                        pos        100 100 680 503 -> 1023 767 680 503: 1023 659 680 503 OTHER | short 0 -108 0 0 | half way - | moved 1 resized 0 | 5.3 ms | LATE: at once 1023 659 680 503 (server 100 100 680 503); 50 ms 1023 659 680 503 (server 1023 659 680 503); 200 ms 1023 659 680 503 (server 1023 659 680 503); 600 ms 1023 659 680 503 (server 1023 659 680 503)
+  H5-back-from-the-corner                      pos        1023 659 680 503 -> 100 100 680 503: 100 100 680 503 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 7.5 ms | LATE: at once 100 100 680 503 (server 1023 659 680 503); 50 ms 100 100 680 503 (server 100 100 680 503); 200 ms 100 100 680 503 (server 100 100 680 503); 600 ms 100 100 680 503 (server 100 100 680 503)
+  H6-taller-than-there-is-room                 size       170 226 680 503 -> 170 226 600 650: 170 226 680 503 OTHER | short 0 0 -80 147 | half way - | moved 0 resized 0 | 3.7 ms | the same 50, 200 and 600 ms later
+  H7-into-a-slot                               SPS  blind 170 220 680 503 -> 12 43 700 656: 12 43 700 656 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 2 | 72.6 ms | LATE: at once 12 43 700 656 (server 170 220 700 503); 50 ms 12 43 700 656 (server 12 43 700 656); 200 ms 12 43 700 656 (server 12 43 700 656); 600 ms 12 43 700 656 (server 12 43 700 656)
+  H7-into-a-slot                               PS   blind 170 220 680 503 -> 12 43 700 656: 12 43 700 656 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 39.5 ms | the same 50, 200 and 600 ms later
+  H8-out-of-the-slot                           SPS  blind 12 43 700 656 -> 300 200 600 348: 300 200 680 503 OTHER | short 0 0 -80 -155 | half way - | moved 1 resized 1 | 47.5 ms | LATE: at once 300 200 680 503 (server 12 43 680 503); 50 ms 300 200 680 503 (server 300 200 680 503); 200 ms 300 200 680 503 (server 300 200 680 503); 600 ms 300 200 680 503 (server 300 200 680 503)
+  H8-out-of-the-slot                           PS   blind 12 43 700 656 -> 300 200 600 348: 300 200 680 503 OTHER | short 0 0 -80 -155 | half way - | moved 1 resized 1 | 53.0 ms | the same 50, 200 and 600 ms later
+  displays (end): 1: 0 0 1024 768 visible 0 31 1024 680
+
+== Firefox
+there is no Firefox, or it does not open
+Reduce Motion: true
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.GWGHxz/scratch/oak.txt
+pid 35235 lists (id role subrole x y w h flags):
+  146 AXWindow AXStandardWindow 79 56 673 439 main
+
+== textedit-reduce-motion: late
+  window 146 of com.apple.TextEdit (AXWindow, AXStandardWindow) at 79 56 673 439
+  displays (start): 1: 0 0 1024 768 visible 0 31 1024 680
+  displays (H who moves late): 1: 0 0 1024 768 visible 0 31 1024 680
+  H1-taller-and-wider                          size       100 100 600 400 -> 100 100 700 500: 100 100 700 500 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 37.7 ms | the same 50, 200 and 600 ms later
+  H2-smaller                                   size       100 100 700 500 -> 100 100 600 400: 100 100 600 400 RIGHT | short 0 0 0 0 | half way - | moved 0 resized 1 | 16.9 ms | LATE: at once 100 100 600 400 (server 100 100 700 500); 50 ms 100 100 600 400 (server 100 100 600 400); 200 ms 100 100 600 400 (server 100 100 600 400); 600 ms 100 100 600 400 (server 100 100 600 400)
+  H3-moved                                     pos        100 100 600 400 -> 300 150 600 400: 300 150 600 400 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 3.8 ms | LATE: at once 300 150 600 400 (server 100 100 600 400); 50 ms 300 150 600 400 (server 300 150 600 400); 200 ms 300 150 600 400 (server 300 150 600 400); 600 ms 300 150 600 400 (server 300 150 600 400)
+  H4-sent-to-the-corner                        pos        100 100 600 400 -> 1023 767 600 400: 1023 679 600 400 OTHER | short 0 -88 0 0 | half way - | moved 1 resized 0 | 2.6 ms | LATE: at once 1023 679 600 400 (server 100 100 600 400); 50 ms 1023 679 600 400 (server 1023 679 600 400); 200 ms 1023 679 600 400 (server 1023 679 600 400); 600 ms 1023 679 600 400 (server 1023 679 600 400)
+  H5-back-from-the-corner                      pos        1023 679 600 400 -> 100 100 600 400: 100 100 600 400 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 0 | 3.4 ms | LATE: at once 100 100 600 400 (server 1023 679 600 400); 50 ms 100 100 600 400 (server 100 100 600 400); 200 ms 100 100 600 400 (server 100 100 600 400); 600 ms 100 100 600 400 (server 100 100 600 400)
+  H6-taller-than-there-is-room                 size       170 226 600 348 -> 170 226 600 650: 170 226 600 484 OTHER | short 0 0 0 166 | half way - | moved 0 resized 1 | 16.7 ms | LATE: at once 170 226 600 484 (server 170 226 600 348); 50 ms 170 226 600 484 (server 170 226 600 484); 200 ms 170 226 600 484 (server 170 226 600 484); 600 ms 170 226 600 484 (server 170 226 600 484)
+  H7-into-a-slot                               SPS  blind 170 220 600 348 -> 12 43 700 656: 12 43 700 656 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 2 | 19.2 ms | LATE: at once 12 43 700 656 (server 170 220 600 348); 50 ms 12 43 700 656 (server 12 43 700 656); 200 ms 12 43 700 656 (server 12 43 700 656); 600 ms 12 43 700 656 (server 12 43 700 656)
+  H7-into-a-slot                               PS   blind 170 220 600 348 -> 12 43 700 656: 12 43 700 656 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 13.4 ms | LATE: at once 12 43 700 656 (server 12 43 600 348); 50 ms 12 43 700 656 (server 12 43 700 656); 200 ms 12 43 700 656 (server 12 43 700 656); 600 ms 12 43 700 656 (server 12 43 700 656)
+  H8-out-of-the-slot                           SPS  blind 12 43 700 656 -> 300 200 600 348: 300 200 600 348 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 15.4 ms | LATE: at once 300 200 600 348 (server 12 43 600 348); 50 ms 300 200 600 348 (server 300 200 600 348); 200 ms 300 200 600 348 (server 300 200 600 348); 600 ms 300 200 600 348 (server 300 200 600 348)
+  H8-out-of-the-slot                           PS   blind 12 43 700 656 -> 300 200 600 348: 300 200 600 348 RIGHT | short 0 0 0 0 | half way - | moved 1 resized 1 | 10.1 ms | LATE: at once 300 200 600 348 (server 300 200 700 656); 50 ms 300 200 600 348 (server 300 200 600 348); 200 ms 300 200 600 348 (server 300 200 600 348); 600 ms 300 200 600 348 (server 300 200 600 348)
+  displays (end): 1: 0 0 1024 768 visible 0 31 1024 680
+
+== done
+844 calls, 466 results in grow.jsonl
+still running when the script had ended, and stopped now:
+  7611 sleep
+exit code 0
