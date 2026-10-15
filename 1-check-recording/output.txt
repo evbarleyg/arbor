@@ -1,0 +1,94 @@
+# mac-shell: scripts/mac-shell/check-recording.sh at 61d8204, macOS 26.6.2, 2026-10-15T03:17Z
+built Arbor and the pointer tool in 5s
+
+== a second app, to switch to
+session 1: Arbor pid 19018, test windows 32 33 34 (pid 18995)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ recording began with the session
+
+== a dock, a click, a drag
+  ✔ the step began the next trace
+> dock 32 left
+docked w32 at the left edge
+> dock 33 right
+docked w33 at the right edge
+> dock 31 beside 33 bottom
+docked w31 below w33
+> click 849 204
+  ✔ the window that was clicked has the keyboard
+> drag 512 152 512 500
+
+== the other app comes forward, and the first again
+> click 849 537
+  ✔ the other app's window has the keyboard
+> click 174 370
+  ✔ the first app's window has it again
+
+== no trace begins in the middle of a drag
+> drag 513 456 512 300 --no-release
+
+== with the window in the hand
+  ✔ the trace that was running goes on
+> release
+
+== a word to the recorder leaves a peek alone
+> zoom 32
+framed w32
+> click 512 370
+> key ctrl+opt+space --down
+  ✔ the key is held and Arbor peeks
+  ✔ a remark is taken
+  ✔ and the peek goes on
+> key ctrl+opt+space --up
+> show-all
+showing everything
+
+== what a word to the recorder costs
+a remark: 10.50 ms
+the next trace: 16.00 ms
+
+== a check that fails leaves the moment behind
+  (✘) this one fails on purpose
+    ↳ the screen at that moment: failed-01.png, the windows on it: failed-01.txt
+  ✔ the picture is there
+  ✔ and the list of windows, with a test window in it
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 32 is back on screen after quitting
+  ✔ window 33 is back on screen after quitting
+  ✔ window 34 is back on screen after quitting
+
+== what came back
+  3117 check-recording-1-01.jsonl
+  23961 check-recording-1-02.jsonl
+  6711 check-recording-1-03.jsonl
+  14181 check-recording-1-04.jsonl
+  16736 check-recording-1-05.jsonl
+  3858 check-recording-1-06.jsonl
+  3218 check-recording-1-07.jsonl
+  3218 check-recording-1-08.jsonl
+  3218 check-recording-1-09.jsonl
+  3218 check-recording-1-10.jsonl
+  3218 check-recording-1-11.jsonl
+  3218 check-recording-1-12.jsonl
+  3218 check-recording-1-13.jsonl
+  3218 check-recording-1-14.jsonl
+  3218 check-recording-1-15.jsonl
+  3218 check-recording-1-16.jsonl
+  4395 check-recording-1-17.jsonl
+  ✔ a trace for every step of the session
+  ✔ Arbor's log is there, at debug level
+  ✔ a trace holds an app coming forward
+  ✔ a trace holds a press
+  ✔ a trace holds the key that was held
+  ✔ headings are remarks
+  ✔ so are checks
+  ✔ the last one ends with the quit
+  ✔ every one of them replays without a problem
+  ✔ no title is in any of them
+
+25 passed, 0 failed
+exit code 0

@@ -1,0 +1,697 @@
+# arbor-e2e 2026-10-15T03:17Z on macOS 26.6.2, commit 61d8204
+test windows: w52 w53 w54 (pid 20769)
+this Mac: screen locked: no; display asleep: no; screen saver: no; on the console: yes; last input: 3 s ago
+
+▸ start watching events  (watch)
+  ✔ hello arrives at once
+  ✔ hello says that Arbor is running
+  ✔ hello lists the test windows, floating
+display 07230EFA-7A8D-4E37-845C-19CC8737EEF5 visible frame (0,31 1024×674)
+
+▸ dock the first window on the left  (dock 52 left)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w52 is docked
+  ✔ w52 sits at the left edge
+
+▸ dock the second window on the right  (dock 53 right)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w53 sits at the right edge
+  ✔ the Desktop stays between them
+
+▸ dock the third window below the first  (dock 54 beside 52 bottom)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w54 is below w52
+  ✔ w54 shares w52's column
+
+▸ look behind the docked windows  (status)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ the backdrop is on screen just above the Desktop's icons
+  ✔ it covers the display's visible frame
+
+▸ frame the first window on its own  (zoom 52)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w52 fills the screen
+  ✔ w53 is out of view
+  ✔ w54 is out of view
+
+▸ go back  (back)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w52 is back in view
+  ✔ w53 is back in view
+  ✔ w54 is back in view
+  ✔ w52 is back in its slot
+
+▸ resize the first window by command  (resize 52 right 100)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w52 is 100 points wider
+
+▸ resize by an absurd amount  (resize 52 right 1e300)
+  ✔ the command is refused
+  ✔ Arbor is still running
+
+▸ float the second window  (float 53)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w53 is floating
+  ✔ the Desktop reaches the right edge
+  ✔ w53 has its old size back
+  ✔ all of it is on the display
+
+▸ a window that floats alone takes the Desktop  (reload-settings)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w53 fills the Desktop, (670,43 342×650)
+  ✔ w53 is still floating
+
+▸ without the setting it has its own frame back  (reload-settings)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w53 is back at (670,194 354×348)
+
+▸ move the floating window across two gaps  (the app moves w53 and brings it to the front)
+  ✔ w53 lies across the gap below w52 and the gap beside it
+
+▸ resize under the floating window  (resize 52 right -40)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ two gap handles lie under w53
+  ✔ and none of Arbor's panels over it
+
+▸ arrange everything  (arrange)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ all three are docked
+  ✔ w52 is in view
+  ✔ w53 is in view
+  ✔ w54 is in view
+
+▸ change the gap with a command  (set gap 40)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ windows start 40 points from the edge
+  ✔ only the gap changed in settings.json
+
+▸ replace settings.json as most editors do  (no command)
+  ✔ Arbor uses the new gap
+  ✔ windows match Arbor's layout
+  ✔ windows start 24 points from the edge
+
+▸ write into settings.json in place  (no command)
+  ✔ Arbor uses the new gap
+  ✔ windows match Arbor's layout
+  ✔ windows start 12.0 points from the edge
+
+▸ show the shortcuts on screen  (show-shortcuts)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ the panel is on screen
+
+▸ put the shortcuts away  (show-shortcuts)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ the panel is gone
+
+▸ arrange by a line of text  (layout 53 | Desktop | (54 / 52))
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w53 is left of the Desktop
+  ✔ w54 is right of the Desktop
+  ✔ w54 is above w52
+  ✔ `layout --ids` prints the same line
+
+▸ arrange by app name, the rest as tabs  (layout "ArborTestWindows" | "ArborTestWindows"*)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ all three are docked
+  ✔ two of them show
+  ✔ the tab behind, w54, is out of view
+
+▸ put the three side by side again  (arrange)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ all three show
+
+▸ show the Desktop  (desktop)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w52 is out of view
+  ✔ w53 is out of view
+  ✔ w54 is out of view
+
+▸ look behind the Desktop  (status)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ there is no backdrop while nothing docked is in view
+
+▸ stop arranging an app  (exclude com.example.second)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ only that list changed in settings.json
+
+▸ arrange it again  (include com.example.second)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ settings.json is as it was, byte for byte
+
+▸ reload a settings file with a typo  (reload-settings)
+  ✔ the reload is refused
+  ✔ the reply says where the typo is
+  ✔ a change is refused meanwhile
+  ✔ the file with the typo is left alone
+  ✔ mended, it loads again
+
+▸ what the watcher heard  (watch)
+  ✔ the Desktop on its own, last
+  ✔ every line is an event
+  ✔ w52 was docked
+  ✔ w53 was docked
+  ✔ w54 was docked
+  ✔ w53 was floated
+  ✔ w52 framed on its own, with a way back
+  ✔ a layout with all three windows in view
+  ✔ a test window getting the keyboard
+  ✔ no window titles, which nobody asked for
+  ✔ still connected
+
+▸ find a window by its title  (find test 2)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w53 is in view
+  ✔ w53 has the keyboard
+
+▸ open Go to…  (find)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ the palette is on screen
+  ✔ AppKit says it has the keyboard
+  ✔ Accessibility says so too: what has the keyboard is Arbor's
+  ✔ w53 still counts as focused: Arbor did not become the active app
+
+▸ close Go to…  (find)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ the palette has gone
+
+▸ open Go to… once more  (find)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ the palette is on screen
+
+▸ another window takes the keyboard  (the app makes w52 key)
+  ✔ the palette closes when the keyboard goes elsewhere
+  ✔ no palette is left behind
+
+▸ send the third window to the Dock  (the app minimizes w54)
+  ✔ Arbor sees it
+
+▸ frame the first window again  (zoom 52)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w53 is out of view
+
+▸ bring the minimised window back  (reveal 54)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w54 is no longer minimised
+  ✔ w54 has its slot, and is not a tile
+  ✔ the windows match Arbor's layout once it is back
+  ✔ w54 is in view
+  ✔ w54 has the keyboard
+
+▸ hide the app  (the app hides itself, as ⌘H does)
+  ✔ Arbor sees it
+
+▸ bring a window of the hidden app back  (reveal 53)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ the app shows again
+  ✔ w53 is in view
+  ✔ the windows match Arbor's layout
+  ✔ the app is not left hidden
+
+▸ show everything behind the settings window  (show-all)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+
+▸ give a window the keyboard before opening the settings window  (zoom 52)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w52 has the keyboard
+
+▸ open the settings window  (settings-window)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ a window of its size, Arbor's own, is on screen
+  ✔ it has the keyboard, and so floats above tiles and gap handles
+
+▸ change the gap behind the open settings window  (set gap 30)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ the window is still there, above the panels that were drawn again
+  ✔ it turns to a pane by name
+  ✔ a pane it does not have is refused
+
+▸ close the settings window  (settings-window close)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ it is gone
+  ✔ the window that had the keyboard has it again
+
+▸ quit Arbor  (quit)
+  ✔ Arbor exited
+  ✔ w52 is visible after quitting
+  ✔ w53 is visible after quitting
+  ✔ w54 is visible after quitting
+  ✔ w52 is back where it was before Arbor
+  ✔ w54 is back where it was before Arbor
+
+▸ the watcher is told that Arbor quit  (watch)
+  ✔ the watch ended as arborctl's exit code 0
+  ✔ quitting is the last event
+  ✔ the watchdog does not start Arbor again after a quit
+
+▸ start Arbor again  (launch)
+  ✔ Arbor is arranging the windows
+  ✔ the arrangement is back
+
+▸ arrange, so that what follows depends on nothing before it  (arrange)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ all three show
+
+▸ clients that hang up without reading the reply  (state)
+  ✔ Arbor is still running
+  ✔ Arbor still answers
+
+▸ a second copy of Arbor  (launch)
+  ✔ the second copy leaves by itself
+  ✔ its exit code says that Arbor is running already
+  ✔ the first copy still answers
+  ✔ nothing moved
+
+▸ frame the first window before the crash  (zoom 52)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w53 is out of view
+  ✔ w54 is out of view
+
+▸ kill Arbor while windows are parked  (kill -9)
+  ✔ Arbor was running
+  ✔ the watchdog starts Arbor again
+  ✔ the arrangement survived
+  ✔ the camera is where it was
+
+▸ show everything after the crash  (show-all)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w52 is back in view
+  ✔ w53 is back in view
+  ✔ w54 is back in view
+
+▸ show the Desktop before crashing again and again  (desktop)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w52 is out of view
+  ✔ w53 is out of view
+  ✔ w54 is out of view
+
+▸ pause, as for a game  (pause)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w52 is back in view
+  ✔ w53 is back in view
+  ✔ w54 is back in view
+
+▸ kill Arbor during the pause  (kill -9)
+  ✔ the watchdog starts Arbor a second time, and it is still paused
+  ✔ w52 stays in view
+  ✔ w53 stays in view
+  ✔ w54 stays in view
+
+▸ resume  (resume)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ Arbor is running again
+  ✔ the arrangement is as it was
+
+▸ show the Desktop again before the last crash  (desktop)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w52 is out of view
+  ✔ w53 is out of view
+  ✔ w54 is out of view
+
+▸ kill Arbor a third time within two minutes  (kill -9)
+  ✔ the third time Arbor only rescues the windows and quits
+  ✔ w52 is visible after the rescue
+  ✔ w53 is visible after the rescue
+  ✔ w54 is visible after the rescue
+  ✔ Arbor stays away
+  ✔ the saved state was set aside
+
+▸ start Arbor after the rescue and arrange again  (launch, arrange, quit)
+  ✔ Arbor starts afresh
+  ✔ the windows are arranged again
+  ✔ Arbor exited
+
+second app: w97 (pid 21575)
+
+▸ start again  (Arbor, same home folder)
+  ✔ the arrangement survived
+  ✔ the other app's window floats
+
+▸ show everything  (show-all)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ all three have a slot
+
+▸ minimize a docked window  (the app minimizes w53)
+  ✔ Arbor sees it
+  ✔ it takes no space
+  ✔ it keeps its place in the tree
+  ✔ the others share the space
+
+▸ restore it  (the app restores w53)
+  ✔ every window is back in its slot
+
+▸ move a docked window from outside  (the app moves w52)
+  ✔ it left its slot
+  ✔ Arbor puts it back
+
+▸ an app that insists on its own frame  (the app keeps moving w52 back)
+  ✔ Arbor gives up on it
+  ✔ and the window is left in peace
+  ✔ it is still docked
+
+▸ lay out again once it has calmed down  (relayout)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ every window is back in its slot
+
+▸ an app that answers every move at once  (the app moves w52 back within 0.05 s)
+  ✔ Arbor notices, and gives up on it too
+  ✔ it is still docked
+
+▸ lay out again after that  (relayout)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ every window is back in its slot
+
+▸ open a native tab in a docked window  (the app opens a tab in w52)
+  ✔ the tab takes over the slot
+  ✔ the covered tab leaves no ghost
+  ✔ nothing else changed
+  ✔ windows match Arbor's layout
+
+▸ choose the first tab again  (the app selects w52)
+  ✔ it has its slot back
+  ✔ the other tab leaves no ghost
+
+▸ close the tab in front  (the app selects w104 and closes it)
+  ✔ the second tab is in the slot
+  ✔ the remaining tab inherits the slot
+
+▸ make a docked window full screen  (the app toggles full screen for w53)
+  ✔ it gives up its slot
+  ✔ it keeps its place in the tree
+
+▸ leave full screen  (the app toggles full screen for w53)
+  ✔ every window is back in its slot
+  ✔ it is a window, not a tile
+
+▸ move the camera while the app hangs  (the app hangs for 6 s; zoom 54)
+  ✔ Arbor answers all the same
+  ✔ within three seconds
+  ✔ and goes on answering
+  ✔ the windows are placed once the app wakes up
+
+▸ show everything after the hang  (show-all)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ every window is back in its slot
+
+▸ dock the other app's window  (dock 97 right)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w97 is docked
+
+▸ frame a window of the first app  (zoom 52)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w97 is out of view
+  ✔ the keyboard crossed over to the first app
+
+▸ switch to the other app  (the other app activates itself)
+  ✔ the camera moves to show its window
+  ✔ w97 is in view
+
+▸ frame a window of the first app  (zoom 52)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w97 is out of view
+  ✔ the keyboard crossed over to the first app
+
+▸ switch to the other app  (the other app activates itself)
+  ✔ the camera moves to show its window
+  ✔ w97 is in view
+
+▸ frame a window of the first app  (zoom 52)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w97 is out of view
+  ✔ the keyboard crossed over to the first app
+
+▸ switch to the other app  (the other app activates itself)
+  ✔ the camera moves to show its window
+  ✔ w97 is in view
+
+▸ frame a window of the first app  (zoom 52)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w97 is out of view
+  ✔ the keyboard crossed over to the first app
+
+▸ switch to the other app  (the other app activates itself)
+  ✔ the camera moves to show its window
+  ✔ w97 is in view
+
+▸ frame a window of the first app  (zoom 52)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w97 is out of view
+  ✔ the keyboard crossed over to the first app
+
+▸ switch to the other app  (the other app activates itself)
+  ✔ the camera moves to show its window
+  ✔ w97 is in view
+
+▸ frame a window of the first app  (zoom 52)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w97 is out of view
+  ✔ the keyboard crossed over to the first app
+
+▸ switch to the other app  (the other app activates itself)
+  ✔ the camera moves to show its window
+  ✔ w97 is in view
+
+▸ frame a window of the first app  (zoom 52)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w97 is out of view
+  ✔ the keyboard crossed over to the first app
+
+▸ switch to the other app  (the other app activates itself)
+  ✔ the camera moves to show its window
+  ✔ w97 is in view
+
+▸ frame a window of the first app  (zoom 52)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w97 is out of view
+  ✔ the keyboard crossed over to the first app
+
+▸ switch to the other app  (the other app activates itself)
+  ✔ the camera moves to show its window
+  ✔ w97 is in view
+
+▸ frame a window of the first app  (zoom 52)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w97 is out of view
+  ✔ the keyboard crossed over to the first app
+
+▸ switch to the other app  (the other app activates itself)
+  ✔ the camera moves to show its window
+  ✔ w97 is in view
+
+▸ frame a window of the first app  (zoom 52)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w97 is out of view
+  ✔ the keyboard crossed over to the first app
+
+▸ switch to the other app  (the other app activates itself)
+  ✔ the camera moves to show its window
+  ✔ w97 is in view
+
+(in those twenty switches macOS named the app in front late 16 time(s))
+
+▸ frame the other app's window  (zoom 97)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w53 is out of view
+  ✔ the keyboard is with the other app
+
+▸ a dialog opens over a window that is out of view  (the first app opens a dialog over w53)
+  ✔ Arbor brings it into view
+
+▸ an app in the background changes its focused window  (the first app makes w53 its key window)
+  ✔ the camera stays where the user is
+
+▸ show everything before docking a large window  (show-all)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+
+▸ float the third window  (float 54)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+
+▸ a window stops accepting small sizes  (the app sets a minimum size of 700 × 524 for w54)
+
+▸ dock a window that cannot shrink to its slot  (dock 54 beside 52 bottom)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ it becomes a tile
+  ✔ the window itself is out of view
+  ✔ the camera stays where it was
+  ✔ w52 is still in view
+
+▸ close a docked window  (the app closes w53)
+  ✔ it leaves the tree
+  ✔ the others share the space
+
+▸ frame one window before quitting  (zoom 97)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w52 is out of view
+
+▸ minimize a window that is in the tree  (the app minimizes w52)
+  ✔ Arbor sees it
+
+▸ quit while zoomed in  (quit)
+  ✔ Arbor exited
+  ✔ w52 is on screen after quitting
+  ✔ w54 is on screen after quitting
+  ✔ w97 is on screen after quitting
+
+▸ start with a minimized window  (Arbor, same home folder)
+  ✔ it kept its place in the tree
+  ✔ a launch shows everything
+
+▸ show everything with the window still minimized  (show-all)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ it takes no space
+
+▸ restore the window that was minimized at the start  (the app restores w52)
+  ✔ it gets its slot
+  ✔ and keeps it
+  ✔ windows match Arbor's layout
+
+▸ the other app is killed  (SIGTERM to pid 21575)
+  ✔ it is gone
+
+▸ frame a window, which sends the others out of view  (zoom 54)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ the dead app's window leaves the tree
+  ✔ w52 is out of view
+
+▸ hide the app whose windows are out of view, then quit  (the app hides; quit; the app unhides)
+  ✔ Arbor sees it
+  ✔ Arbor exited
+  ✔ w52 is on screen when the app shows again
+  ✔ w54 is on screen when the app shows again
+
+▸ start once more  (Arbor, same home folder, settings.json without the typo)
+
+▸ start from a normal Mac  (float-all)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+
+▸ dock one window  (dock 52 left)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w52 is docked
+  ✔ it has the keyboard
+
+▸ a new window, as things are by default  (the app opens a window)
+  ✔ it floats where its app put it
+
+▸ switch automatic docking on  (toggle-auto-dock)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ settings.json says so
+  ✔ and kept what Arbor does not know or could not read
+
+▸ give the docked window the keyboard  (zoom 52)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ it has the keyboard
+
+▸ show everything again  (show-all)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+
+▸ a new window docks beside the focused one  (the app opens a window)
+  ✔ it is docked
+  ✔ the two share the slot the focused window had
+  ✔ the new one comes after it
+  ✔ nothing became a tile
+  ✔ the view stayed
+  ✔ windows match Arbor's layout
+  ✔ it has the keyboard
+
+▸ a small window floats  (the app opens a window of 300 x 200)
+  ✔ it floats where its app put it
+  ✔ nobody made room
+
+▸ a window of a fixed size floats  (the app opens a window that cannot be resized)
+  ✔ it floats where its app put it
+  ✔ nobody made room
+
+▸ a window that fits nowhere floats  (the app opens a window that insists on nearly all of the display)
+  ✔ it is back where its app put it
+  ✔ every window is back in its slot
+  ✔ nothing became a tile
+
+▸ a native tab takes no slot of its own  (the app opens a tab in w136)
+  ✔ the tab takes over the slot
+  ✔ and nothing else docked
+  ✔ the first tab has the slot back
+
+▸ closing the window gives its room back  (the app closes w136)
+  ✔ the first window has its slot back
+
+▸ switch automatic docking off  (toggle-auto-dock)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ settings.json says so
+
+▸ a new window floats again  (the app opens a window)
+  ✔ it floats where its app put it
+
+▸ quit for the last time  (quit)
+  ✔ Arbor exited
+  ✔ w52 is on screen after quitting
+  ✔ w54 is on screen after quitting
+
+416 passed, 0 failed
