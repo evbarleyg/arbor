@@ -158,7 +158,7 @@ Distances are in points. "Changes" means by more than 2, because apps round and 
 | `focus` | 4 | the window switched to does not end wholly in view with its app in front and itself its app's focused window; a key typed into a witness window arrives elsewhere; or the app in front changes during an act that is no switch | samples, `apptool`, the witness | partly |
 | `size-lost` | 5 | after pause, Float All or Quit a window's size differs from its own: the last size it had while nobody but its person and its app decided it. After Float All and Quit its place too | samples | `jolts.py`, rule 5 (place: today `ODD`) |
 | `input-held` | 6 | the button is not up within 50 ms of the posted mouse-up; a click 300 ms after a drop does not arrive in the window that lies there; a key, click or scroll that is not Arbor's does not reach the witness, or reaches it more than 10 ms later (99th percentile) than in the run without Arbor | the witness, samples | to build |
-| `slow` | 3 | a window Arbor moves is not at rest 1,500 ms after the act's event was posted; the first act after a start has 3,000. From 700 ms (1,500 after a start) it is listed, as a class that explains itself, and goes on the scoreboard: the motion takes 460. **These numbers wait for the release build**: the first hosted days were debug builds on three virtual cores | samples | partly: `settled=` |
+| `slow` | 3 | a window Arbor moves is not at rest 1,500 ms after the act's event was posted; the first act after a start has 3,000. From 700 ms (1,500 after a start) it is listed, as a class that explains itself, and goes on the scoreboard: the motion takes 460. Hosted Macs get no numbers of their own: release and debug builds were measured within 50 ms of each other there, and with the icons out of the way docks and frames take 580 to 710 ms | samples | partly: `settled=` |
 | `crash` | severity 2 | Arbor's process ends unasked; a crash report of Arbor's appears; `arborctl status` takes longer than a second; Quit takes longer than five | the script | partly |
 | `busy` | daily use | during `idle` acts Arbor uses more than 1 % of a core on average, or writes more than 20 lines of log a minute | `ps`, `arbor.log` | to build |
 | `left-behind` | 5 | after Quit a process, a panel or an event tap of Arbor's is still there | the window list, `ps` | partly |
@@ -265,7 +265,7 @@ What the product owner asks of the rubric, whatever else it holds. The first fiv
 
 | Row | Passes when |
 |---|---|
-| Length | the motion takes `animationDuration` (460 ms) give or take 60 |
+| Length | the motion takes `animationDuration` (460 ms) give or take 60. A motion that is corrected, because an app had the last word on its frame, gets what is left of it, at least 150 ms: up to 610 in all |
 | Curve | fast start, gentle settle: no stand-in ever goes back on its road, none overshoots by more than 2 points |
 | Cadence | no two frames of the stage are more than 34 ms apart, with eight windows. The stage's own log is the app's view of it; the film is the screen's |
 | Hand-over | at the first and the last frame each stand-in is within 2 points of its real window; and inside each window's own rectangle, window to card to window is a fade: no step of more than 10 % of full scale from one frame to the next (some 130 ms or more). Measured inside the rectangle, because a window that grows changes the whole display's brightness, rightly |
