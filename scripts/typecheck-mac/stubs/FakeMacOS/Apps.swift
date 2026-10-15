@@ -89,6 +89,12 @@ extension FakeMac {
     let (deactivated, activated) = app.reportsFocusTwiceAndLate ? (0.0045, 0.0443) : (timing.deactivatedAfterNotice, timing.activatedAfterNotice)
     if let old, old.isAlive { report("AXApplicationDeactivated", about: old, after: notice + deactivated - timing.report) }
     report("AXApplicationActivated", about: app, after: notice + activated - timing.report)
+    // "When switching to an application, switch to a Space with open windows", which is how macOS comes.
+    if !stack.contains(where: { $0.app === app && isShowing($0) }),
+      let elsewhere = stack.first(where: { $0.app === app && $0.isOpen && $0.isFrontTab && !$0.isMinimized && $0.space != activeSpace && $0.canTakeKeyboard })
+    {
+      switchSpace(to: elsewhere.space)
+    }
   }
 
   /// `NSRunningApplication.activate()`, which since macOS 14 is only a request.

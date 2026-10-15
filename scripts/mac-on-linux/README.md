@@ -103,7 +103,8 @@ Then take the cure the story is about out of the layer, see it go red, and keep 
 
 `known-failures.txt` lists the checks that are red on the trunk, each with a word on it. **The run fails when a check that is not listed fails, and when one that is listed passes**, so whoever lands a cure deletes its lines in the same pull request; and when a line matches no check any more, and when two checks of a story have
 one name. The list excuses what it was written for and nothing else. A rule of the walk is listed with the number of the usual seeds that break it, `[8 of 40 seeds]`: another number is news. `sometimes: ` marks what only other seeds (`--seeds`) show; with the usual ones, where every run is the same, it excuses nothing.
-A walk ends where a fault has spoilt the layer's picture of the Mac, so known faults make the net smaller: the run says how many steps each kind of manners took (969 of 1,600 under all four, on 2026-10-15).
+Where a listed fault has spoilt the layer's picture of the Mac, whatever broke next might follow from it; there the walk stops and starts the layer, as a pause does, and goes on. (It used to end there, and known faults made the net smaller: 969 of 1,600 steps under all four.) The run says how many steps each kind of manners
+took and how often it started afresh. Going on found three faults at once that no walk had reached: of a start while an app hangs, of a window put away before the start, and of a move that a hang swallows.
 
 ## What was heard
 

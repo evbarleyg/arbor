@@ -113,12 +113,14 @@ enum Rule {
   static let falseTab = "no window is taken for a tab of another"
   static let tabAsWindow = "a tab is not announced as a window of its own"
   static let tabLeftBehind = "when the tab in front goes, Arbor knows the one that shows instead"
+  static let hungAtTheStart = "the windows of an app that hung when the layer started are known once it has woken"
   static let focusDespiteWorkspace = "a window whose app came forward while NSWorkspace still named another is reported focused"
   static let focusAfterHang = "a window whose app hung as it came forward is reported focused once the app wakes"
   static let flags = "Arbor knows which windows are minimized, hidden, in full screen or on another Space"
   static let frames = "Arbor knows where every window is"
   static let once = "every window is announced once"
   static let asNew = "a window that has just opened is announced as new"
+  static let putAwayBeforeTheStart = "a window that was put away when the layer started is announced as new when it is shown again"
   static let noFalseDeath = "no window is reported gone that is still open"
   static let strangers = "nothing is reported about a window that was not announced or is gone"
   static let agrees = "what the layer has announced is what it lists"
@@ -129,11 +131,11 @@ enum Rule {
   static let patience = "Arbor's main thread waits at most two seconds for one hang"
 
   static let all = [
-    knowsAll, noGhosts, ghostWithoutAWord, ghostOfASilentEnd, falseTab, tabAsWindow, tabLeftBehind, flags, frames, once, asNew, noFalseDeath, strangers, agrees, keyboard, focusReported,
+    knowsAll, noGhosts, ghostWithoutAWord, ghostOfASilentEnd, falseTab, tabAsWindow, tabLeftBehind, hungAtTheStart, flags, frames, once, asNew, putAwayBeforeTheStart, noFalseDeath, strangers, agrees, keyboard, focusReported,
     focusDespiteWorkspace, focusAfterHang, grabs, grabOrder, patience,
   ]
-  /// After a breach of one of these the layer's picture of the Mac is wrong, and whatever breaks next may be a consequence: the walk ends there.
-  static let spoilTheRest: Set<String> = [knowsAll, noGhosts, ghostWithoutAWord, ghostOfASilentEnd, falseTab, tabAsWindow, tabLeftBehind, once, noFalseDeath, strangers, agrees]
+  /// After a breach of one of these the layer's picture of the Mac is wrong, and whatever breaks next may be a consequence: the layer is started afresh there.
+  static let spoilTheRest: Set<String> = [knowsAll, noGhosts, ghostWithoutAWord, ghostOfASilentEnd, falseTab, tabAsWindow, tabLeftBehind, hungAtTheStart, once, noFalseDeath, strangers, agrees]
 }
 
 /// Folds what the layer reports into what a listener believes, and notes what cannot be.
@@ -144,11 +146,14 @@ final class WalkLedger {
   private(set) var breaches: [Breach] = []
   /// Windows that opened, or opened again, while the layer ran and have not been announced since.
   var owedAsNew: Set<UInt32> = []
+  /// Closed, and kept by the window server, when the layer started.
+  private let putAwayAtTheStart: Set<UInt32>
   let mac: FakeMac
 
   init(mac: FakeMac, atStart: [UInt32]) {
     self.mac = mac
     believed = Set(atStart)
+    putAwayAtTheStart = Set(mac.stack.filter { !$0.isOpen && $0.exists }.map(\.number))
   }
 
   private func breach(_ rule: String, _ detail: String) { breaches.append(Breach(rule: rule, detail: detail)) }
@@ -176,7 +181,7 @@ final class WalkLedger {
     switch event {
     case .appeared(let id): announceAlone(id, event)
     case .found(let id):
-      if owedAsNew.contains(id) { breach(Rule.asNew, event.text) }
+      if owedAsNew.contains(id) { breach(putAwayAtTheStart.contains(id) ? Rule.putAwayBeforeTheStart : Rule.asNew, event.text) }
       announceAlone(id, event)
     case .replaced(let old, let new):
       if believed.remove(old) == nil { breach(Rule.strangers, event.text) }
@@ -219,9 +224,10 @@ final class Walk {
   let mac = FakeMac()
   let layer = AXWindowSystem()
   let heard = Listener()
-  let ledger: WalkLedger
-  private let keyAtStart: UInt32?
+  private(set) var ledger: WalkLedger
+  private var keyAtStart: UInt32?
   private var endedWithoutAWord: Set<pid_t> = []
+  private var hungAtTheStart: Set<pid_t> = []
   /// The model forgets a window that has closed; whether it went without a word is asked while it goes.
   private var closing: [FakeMac.Window] = []
   private var closedWithoutAWord: Set<UInt32> { Set(closing.filter { !$0.isOpen && $0.closedWithoutAWord }.map(\.number)) }
@@ -249,6 +255,23 @@ final class Walk {
   func end() {
     layer.stop()
     mac.end()
+  }
+
+  /// A fault that is listed has left the layer with a wrong picture of the Mac, and whatever broke next might follow from it. So the layer is stopped and started, as at a pause: it looks at the Mac afresh, and
+  /// the walk goes on. Otherwise faults that are known would make the net smaller.
+  func startAfresh() {
+    mac.note("THE LAYER IS STOPPED AND STARTED AGAIN, its picture of the Mac being spoilt")
+    mac.release()
+    layer.stop()
+    mac.pass(0.5)
+    heard.clear()
+    hungAtTheStart = Set(mac.apps.filter(\.isHung).map(\.pid))
+    layer.start()
+    let fresh = WalkLedger(mac: mac, atStart: layer.allWindows().map(\.id.rawValue))
+    ledger = fresh
+    heard.onEvent = { fresh.hear($0) }
+    mac.pass(1)
+    keyAtStart = mac.keyWindow?.number
   }
 
   // Whom a step happens to.
@@ -284,11 +307,12 @@ final class Walk {
       guard mac.stack.count < 12, let app = pick(awake.filter { !$0.isHidden }, a) else { return }
       mac.open("d", in: app, frame: frame(b), subrole: "AXDialog")
     case .close:
-      guard let window = pick(openWindows, a) else { return }
+      // By hand: so one that shows.
+      guard let window = pick(showing, a) else { return }
       closing.append(window)
       mac.close(window)
     case .putAway:
-      guard let window = pick(openWindows.filter { $0.tabGroup == nil }, a) else { return }
+      guard let window = pick(showing.filter { $0.tabGroup == nil }, a) else { return }
       closing.append(window)
       mac.close(window, putAway: true)
     case .reopen:
@@ -340,7 +364,7 @@ final class Walk {
     // Nothing can be known about the windows of an app that hangs.
     let standard = mac.standardWindows.filter { !$0.app.isHung }
     for window in standard where mac.isShowing(window) && known[window.number] == nil {
-      breach(window.tabGroup == nil ? Rule.knowsAll : Rule.tabLeftBehind, "w\(window.number)")
+      breach(hungAtTheStart.contains(window.app.pid) ? Rule.hungAtTheStart : window.tabGroup == nil ? Rule.knowsAll : Rule.tabLeftBehind, "w\(window.number)")
     }
     for (id, snapshot) in known.sorted(by: { $0.key < $1.key }) {
       guard let window = mac.window(id), window.isOpen, window.app.isAlive else {
@@ -385,7 +409,12 @@ final class Walk {
         breach(Rule.keyboard, "w\(key.number) has it; the layer's last word is \(word.map { "w\($0)" } ?? "nobody")")
       }
       // "The keyboard may be somewhere else, ask me" does not move the view. Whoever got the keyboard last must be the last to have been reported focused.
-      let reported = heard.all.last { if case .focused = $0 { true } else { false } }
+      // A tab that takes the place of the window that was reported focused has been reported with that.
+      var reported: Heard?
+      for event in heard.all {
+        if case .focused = event { reported = event }
+        if case .replaced(let old, let new) = event, reported == .focused(old) { reported = .focused(new) }
+      }
       if reported != .focused(key.number), !(reported == nil && key.number == keyAtStart) {
         // An app that hung as it came forward is lost for that reason, whatever NSWorkspace said.
         let rule = key.app.hasHungInFront ? Rule.focusAfterHang : key.app.noticeOutranTheProperty ? Rule.focusDespiteWorkspace : Rule.focusReported
@@ -412,14 +441,17 @@ enum Walker {
 
   /// How many steps the latest run took before it ended.
   private(set) static var stepsWalked = 0
+  /// And how often the layer was started afresh on the way.
+  private(set) static var freshStarts = 0
 
   /// Runs a script. Returns the first breach of a rule that is not in `ignoring`, and after how many steps it showed.
   static func run(
-    _ script: [WalkStep], manners: WalkManners, seed: UInt64, ignoring: Set<String>, journal: Bool = false, toTheEnd: Bool = false, seen: ((Breach) -> Void)? = nil,
+    _ script: [WalkStep], manners: WalkManners, seed: UInt64, ignoring: Set<String>, journal: Bool = false, seen: ((Breach) -> Void)? = nil,
     atTheEnd: (([String]) -> Void)? = nil
   ) -> (breach: Breach, after: Int, journal: [String])? {
     let walk = Walk(manners: manners, seed: seed, keepsJournal: journal)
     stepsWalked = 0
+    freshStarts = 0
     defer {
       atTheEnd?(walk.mac.journal)
       walk.end()
@@ -437,7 +469,7 @@ enum Walker {
         seen?(breach)
         if !ignoring.contains(breach.rule) { return (breach, index + 1, walk.mac.journal) }
         // What else is wrong now may follow from it.
-        if Rule.spoilTheRest.contains(breach.rule), !toTheEnd {
+        if Rule.spoilTheRest.contains(breach.rule) {
           isSpoilt = true
           return nil
         }
@@ -455,7 +487,11 @@ enum Walker {
       } else {
         settle(2)
         if let found = look(index) { return found }
-        if isSpoilt { return nil }
+        if isSpoilt {
+          walk.startAfresh()
+          freshStarts += 1
+          isSpoilt = false
+        }
       }
     }
     // The end: everybody wakes, the button comes up, things settle.
@@ -526,7 +562,7 @@ func tellOfTheWalk(_ book: Book) {
       let seeds = book.options.walkSeeds ?? 1...40
       var first: [String: Walker.Finding] = [:]
       var counts: [String: Int] = [:]
-      var walked = 0
+      var (walked, freshStarts) = (0, 0)
       for seed in seeds {
         let script = WalkStep.script(seed: seed, steps: book.options.walkSteps)
         // A rule that has broken is left out from then on, so that the walk goes on and the others get their turn.
@@ -540,9 +576,10 @@ func tellOfTheWalk(_ book: Book) {
         }
         // The last run went as far as a walk goes with all that is broken left out.
         walked += Walker.stepsWalked
+        freshStarts += Walker.freshStarts
       }
-      // A walk ends where a fault has spoilt the layer's picture of the Mac. So faults that are known make the net smaller, and that must not go unsaid.
-      book.remark("the rude walk (\(manners.name)) took \(walked) of \(seeds.count * book.options.walkSteps) steps")
+      // How much of a net it was must not go unsaid.
+      book.remark("the rude walk (\(manners.name)) took \(walked) of \(seeds.count * book.options.walkSteps) steps, and started the layer afresh \(freshStarts) times after a listed fault")
       if book.options.heardFile != nil, book.isWholeRun { book.writeDown(Walker.heard(manners: manners, seeds: seeds, steps: book.options.walkSteps)) }
       for rule in rules {
         guard let finding = first[rule] else {
@@ -580,7 +617,7 @@ func replayWalk(_ text: String) -> Int32 {
     return 2
   }
   var all: [Breach] = []
-  _ = Walker.run(script, manners: manners, seed: seed, ignoring: Set(Rule.all), journal: true, toTheEnd: true, seen: { all.append($0) }) { for line in $0 { print(line) } }
+  _ = Walker.run(script, manners: manners, seed: seed, ignoring: Set(Rule.all), journal: true, seen: { all.append($0) }) { for line in $0 { print(line) } }
   if all.isEmpty { print("no rule is broken") }
   for breach in all { print("✘ \(breach.rule): \(breach.detail)") }
   return all.isEmpty ? 0 : 1

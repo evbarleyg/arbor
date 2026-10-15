@@ -38,6 +38,24 @@ func tellOfOpening(_ book: Book) {
 
 @MainActor
 func tellOfOddOpenings(_ book: Book) {
+  // The same, but the window was closed before Arbor started (or while it was paused): what the layer remembers of windows put away it remembers from having seen them go.
+  for first in [false, true] {
+    book.story("an app's one window was put away before Arbor started, and is shown again\(first ? ", the focus reported first" : "")") { story in
+      var window: FakeMac.Window!
+      let one = StoreyOne(story) { mac in
+        window = mac.open("library", in: mac.launch("Music"))
+        mac.pass(1)
+        mac.close(window, putAway: true)
+      }
+      story.check("Arbor does not count it among the windows", one.known.isEmpty, "\(one.known)")
+      story.check("the window server has the number all the same", one.layer.existingWindowIDs().contains(WindowID(window.number)))
+      window.app.reportsFocusBeforeCreated = first
+      one.mac.reopen(window)
+      one.mac.pass(1)
+      story.check("it is announced as a window that has just opened", one.heard.outline.first == .appeared(window.number), one.heard.texts)
+    }
+  }
+
   // Apps with one window (Music, Notes, Calendar) put it away when it is closed and show it again under the same number, and the window server has it all the while.
   for rude in [false, true] {
     book.story("an app closes its one window and opens it again under the same number\(rude ? ", after a trip to another Space, the focus reported first" : "")") { story in
