@@ -248,12 +248,12 @@ func tellOfSlowApps(_ book: Book) {
   }
 
   // What Arbor reads back right after a move of such an app is the old frame. Whoever then spares a call because the window "is there already" leaves it where the move that is still to be carried out takes it.
-  for late in [0.05, 0.2] {
-    book.story("an app carries out \(Int(late * 1000)) ms late what it is asked, one of its windows floats, and the view goes to another window and comes back at once") { story in
+  for (late, gap) in [(0.05, 0.0), (0.2, 0.0), (0.05, 0.1), (0.05, 0.2), (0.05, 0.3), (0.05, 0.4), (0.2, 0.3), (0.2, 0.45)] {
+    book.story("an app carries out \(Int(late * 1000)) ms late what it is asked, one of its windows floats, and the view goes to another window and comes back \(gap > 0 ? "\(gap) s later" : "at once")") { story in
       let (two, mine, theirs) = stage(story)
       two.run("float \(theirs[1].number)")
       theirs[0].app.carriesOutAfter = late
-      two.run("zoom \(mine.number)", then: 0)
+      two.run("zoom \(mine.number)", then: gap)
       two.run("show-all", then: 5)
       story.check("the one that floats is in view", two.isInView(theirs[1]), two.whereabouts(theirs[1]))
       story.check("so is the docked one", two.isInView(theirs[0]), two.whereabouts(theirs[0]))
@@ -262,20 +262,58 @@ func tellOfSlowApps(_ book: Book) {
 
   // Found by the walk upstairs under all four (`upstairs, all four|10|resize 21 29; dock 70 20; launch 70 0; zoom 8 96`), told without dice. The app comes forward at once and makes the window main late, so its OTHER window is
   // reported focused first: the view goes there, the Desktop out of view, and back a moment later.
-  for late in [0.05, 0.2] {
-    book.story("apps carry out \(Int(late * 1000)) ms late what they are asked, and Arbor is asked for a floating window of an app in the background whose docked window had its keyboard") { story in
+  // ⌘Tab, not a click: since floating windows no longer make way, mine lies under the docked one. With its app in front all along the same command is another story, and has a control with apps that are on time.
+  for (late, inFront) in [(0.05, false), (0.2, false), (0, true), (0.05, true), (0.2, true)] {
+    let manners = late == 0 ? "apps are on time" : "apps carry out \(Int(late * 1000)) ms late what they are asked"
+    book.story("\(manners), and Arbor is asked for a floating window of an app in \(inFront ? "front" : "the background") whose docked window had its keyboard") { story in
       let (two, mine, theirs) = stage(story)
       two.run("float \(theirs[1].number)")
       two.run("float \(mine.number)")
       two.mac.click(theirs[0])
       two.mac.pass(1)
-      two.mac.click(mine)
+      if !inFront { two.mac.activate(mine.app) }
       two.mac.pass(1)
       for app in [mine.app, theirs[0].app] { app.carriesOutAfter = late }
       story.check("the command is taken", two.run("zoom \(theirs[1].number)", then: 5).ok)
       story.check("the window that was asked for is in view", two.isInView(theirs[1]), two.whereabouts(theirs[1]))
       story.check("and has the keyboard", two.mac.keyWindow === theirs[1], "w\(two.mac.keyWindow?.number ?? 0) has it")
       story.check("the other floating window is in view with it", two.isInView(mine), two.whereabouts(mine))
+    }
+  }
+
+  // The same by two commands a moment apart (`upstairs, all four|134|open 8 42; back 26 82; dock 9 67; zoom 67 23; focus 97 16 +0.3; back 13 88`): the belief is stale until somebody has read the frame again.
+  for gap in [0.1, 0.2, 0.3, 0.4, 0.6] {
+    book.story("apps carry out 70 ms late what they are asked, the view goes from the Desktop to a docked window, and back \(gap) s later") { story in
+      let (two, mine, theirs) = stage(story)
+      two.run("float \(theirs[1].number)")
+      two.run("float \(mine.number)")
+      two.run("zoom \(theirs[1].number)", then: 2)
+      story.check("what floats is in view", two.isInView(theirs[1]) && two.isInView(mine), places(two, [theirs[1], mine]))
+      for app in [mine.app, theirs[0].app] { app.carriesOutAfter = 0.07 }
+      two.run("focus \(theirs[0].number)", then: gap)
+      two.run("back", then: 5)
+      story.check("what floats is in view again", two.isInView(theirs[1]) && two.isInView(mine), places(two, [theirs[1], mine]))
+      story.check("the window with the keyboard is in view", two.mac.keyWindow.map { two.isInView($0) } ?? false, two.mac.keyWindow.map { two.whereabouts($0) } ?? "nobody has it")
+    }
+  }
+
+  // The same of the layer alone, which is where a call is spared; by the author of a change under review. The belief is stale until the second look has been TAKEN, and that look waits at the door of an app that has fallen to work.
+  for back in [0.1, 0.25, 0.45, 0.6, 0.8, 1.5] {
+    book.story("the layer sends a window of an app that carries out 70 ms late away, the app falls to work 0.2 s later, and \(back) s after it was sent away the window is sent for") { story in
+      var window: FakeMac.Window!
+      let one = StoreyOne(story) { mac in window = mac.open("a", in: mac.launch("Busy"), frame: CGRect(x: 100, y: 100, width: 400, height: 300)) }
+      let home = window.frame, away = CGRect(x: 1023, y: 700, width: 400, height: 300)
+      window.app.carriesOutAfter = 0.07
+      let began = one.mac.now
+      _ = one.layer.setFrame(away, of: WindowID(window.number))
+      one.mac.pass(min(back, 0.2))
+      if back > 0.2 {
+        one.mac.hang(window.app, for: 0.7)
+        one.mac.pass(began + back - one.mac.now)
+      }
+      _ = one.layer.setFrame(home, of: WindowID(window.number))
+      one.mac.pass(6)
+      story.check("it is where it was sent for", window.frame == home, window.frame.text)
     }
   }
 

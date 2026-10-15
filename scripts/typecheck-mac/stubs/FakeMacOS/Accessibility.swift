@@ -203,10 +203,9 @@ extension FakeMac {
       }
       return .success
     }
-    let answer = carryOut(value, attribute, element, app)
-    // That the call which sends a window to the Dock, or fetches it, returns only when the flight is over is a GUESS, from `AXRaise`, which does (`perform`): the probe did not time it.
-    if attribute == "AXMinimized", answer == .success, app.windowsInFlight > 0 { return waitForTheFlight(of: app, timeout: timeout) }
-    return answer
+    // The call that sets `AXMinimized`, to yes or to no, RETURNS AT ONCE, and the flight follows: 0.2 to 0.6 ms, 8 of 8, a test window and TextEdit, their app in front (a probe on a hosted Mac, macOS 26.6.2, 2026-10-15:
+    // origin/mac-shell-out/minimized.stays). Unlike `AXRaise` (`perform`). This model guessed otherwise for two hours.
+    return carryOut(value, attribute, element, app)
   }
 
   /// The call that set a flight off is answered when it is over.
@@ -297,12 +296,18 @@ extension FakeMac {
   /// Where a window ends up that was asked to go to `point`.
   /// - Whole points: 150.5 became 150, 261.5 became 261 (x), 46.5 became 47 (y) (traces/README.md, row 4).
   /// - A title bar never goes below the visible frame: asked for y 767 the test windows took 677 (673 in older traces), which is the visible frame's bottom less the
-  ///   title bar (row 3; `Window.titleBarHeight`). x is not limited.
-  /// - Nor under the menu bar. Common knowledge about AppKit; not in a trace.
+  ///   title bar (row 3; `Window.titleBarHeight`).
+  /// - Nor under the menu bar: y 0 and −50 became 31, 8 of 8 (the probe of `roomToGrow`).
+  /// - x is free while some of the window is on a display: 1023 stays 1023. Sent wholly off all displays it is pulled back until 40 points show: 1524 became 984, −600 became −440 for a window 480 wide; with the Dock at the
+  ///   left −390, 40 points past the Dock (the same probe; 5 of 5).
   func allowedOrigin(_ point: CGPoint, for window: Window) -> CGPoint {
     var origin = CGPoint(x: (point.x - 0.5).rounded(.up), y: (point.y + 0.5).rounded(.down))
     let visible = screen(of: CGRect(origin: origin, size: window.frame.size)).visibleFrame
     origin.y = min(max(origin.y, visible.minY), visible.maxY - window.titleBarHeight)
+    let width = window.frame.width
+    if !screens.isEmpty, !screens.contains(where: { origin.x < $0.frame.maxX && origin.x + width > $0.frame.minX }) {
+      origin.x = origin.x >= visible.maxX ? visible.maxX - 40 : visible.minX + 40 - width
+    }
     return origin
   }
 
@@ -311,7 +316,8 @@ extension FakeMac {
   func allowedSize(_ size: CGSize, for window: Window, at origin: CGPoint) -> CGSize {
     let visible = screen(of: CGRect(origin: origin, size: size)).visibleFrame
     func fit(_ wanted: CGFloat, _ least: CGFloat, _ most: CGFloat, _ room: CGFloat) -> CGFloat {
-      max(min(wanted.rounded(), most, max(room, least)), least)
+      // Half points in a size go down: 494.5 became 494, 723.5 became 723, 12 of 12 (the probe of `roomToGrow`).
+      max(min(wanted.rounded(.down), most, max(room, least)), least)
     }
     return CGSize(
       width: fit(size.width, window.minimumSize.width, window.maximumSize.width, visible.width),
@@ -323,10 +329,32 @@ extension FakeMac {
     // macOS accepts a new frame for a full-screen window and does nothing.
     guard !window.isFullScreen else { return }
     let before = window.frame
-    let origin = allowedOrigin(point, for: window)
-    // On the way to a smaller display a large window is cut to what fits there.
-    let size = allowedSize(before.size, for: window, at: origin)
+    var origin = allowedOrigin(point, for: window)
+    var size = before.size
+    // A POSITION CALL THAT TAKES A WINDOW TO A DISPLAY WHOSE VISIBLE FRAME IS LOWER THAN THE WINDOW cuts its height to that visible height and puts y at the visible top, in the same call; the width is left alone, and
+    // the one report is "resized". 12,43 1000×650 sent to −788,43 became −788,31 1000×569; sent to 12,1123, 12,1111 1000×520: 5 of 5, a display of 800×600 to the left of one of 1920×1080 and below it (the probe of
+    // `roomToGrow`). To the right, above, or for a window that is only too wide: not tried.
+    let (from, to) = (display(holding: before), display(holding: CGRect(origin: origin, size: size)))
+    let isCut = to.id != from.id && size.height > to.visibleFrame.height
+    if isCut {
+      origin.y = to.visibleFrame.minY
+      size.height = max(to.visibleFrame.height, window.minimumSize.height)
+    }
+    if to.id != from.id { window.cameFrom = (from, now + timing.theOldDisplayJudgesFor) }
+    window.saysOnlyResized = isCut
     change(window, to: CGRect(origin: origin, size: size), goingBackTo: before)
+    window.saysOnlyResized = false
+  }
+
+  /// The display a window belongs to, for what it may grow to: the one that holds the larger part of it (1820,81 400×300, a quarter of it on the main display, grew to the NEIGHBOUR's right edge: the probe of `roomToGrow`).
+  /// One that lies on none belongs where its corner is, or nearest.
+  func display(holding frame: CGRect) -> Screen {
+    func part(_ screen: Screen) -> CGFloat {
+      let common = screen.frame.intersection(frame)
+      return common.isNull ? 0 : common.width * common.height
+    }
+    guard let most = screens.max(by: { part($0) < part($1) }), part(most) > 0 else { return screen(of: frame) }
+    return most
   }
 
   func setSize(_ size: CGSize, of window: Window) {
@@ -337,23 +365,35 @@ extension FakeMac {
   }
 
   /// HOW FAR A WINDOW MAY GROW WHERE IT STANDS. A size call that makes a window grow stops where its bottom edge comes to the visible frame's bottom less 1, and its right edge to the display's right edge. The origin stays.
-  /// Read off 182 `setFrame` calls of Arbor's in the recordings of one run on a hosted Mac (macOS 26.6.2, 2026-10-15; collab/evidence/reality-mac/traces): bottom 704 with the visible bottom at 705, 23 answers of 23
-  /// (170,220 asked 494×650 took 494×484; 12,374 asked 1000×650 took 1000×330); right edge 1024, twice (687,106 asked 494 wide took 337).
+  /// TWO SOURCES, both hosted Macs, macOS 26.6.2, 2026-10-15. (a) 182 `setFrame` calls of Arbor's in the recordings of one run (collab/evidence/reality-mac/traces): bottom 704 with the visible bottom at 705, 23 answers of 23
+  /// (170,220 asked 494×650 took 494×484; 12,374 asked 1000×650 took 1000×330); right edge 1024, twice. (b) A probe without Arbor, call by call (branch probe/how-far-a-window-grows, `grow.jsonl`: 844 calls).
+  /// VARIED IN (b): the Dock at the bottom, at the left, hidden; one display of 1024×768, and 1920×1080 with one of 800×600 to its right, to its left, below; a test window, ten of Apple's apps, one Java app; Reduce Motion.
+  /// NOT VARIED: the Mac and its macOS; scale 1; one Space; apps in the background; calls 1 to 10 ms apart.
   /// - What decides is where the window IS when the call arrives: of size, position, size the last call comes at the new place and makes good what the first was denied.
-  /// - It holds back growth only. A window at the line keeps its height (249,356 ×348, bottom 704, asked ×650: ×348). An edge that is past the line already is not held: parked at 1023,677 a window took 1000×650 whole.
+  /// - It holds back growth only. The window's own minimum size beats it. Real apps are clipped alike (10 of 10 that could be judged).
+  /// - "LESS 1" BELONGS TO THE DOCK AT THE BOTTOM of the window's display (57 of 57). With the Dock at the left or hidden, or on a display without the Dock, growth goes to the display's bottom whole (18 of 18).
   /// - It goes by the Dock as it is at that moment: 706 with a window just gone into the Dock, before Arbor had heard.
-  /// - The window's own minimum size beats it. Position calls know nothing of it.
-  /// CIRCUMSTANCES, none of them varied: AppKit's plain test windows; one display of 1024×768; the Dock at the bottom. NOT SEEN: one edge past its line and the other not (taken edge by edge here: a GUESS); the Dock at a
-  /// side; a second display; any other app, so whether AppKit does this or the window server. Why "less 1" at the bottom and not at the right, nobody knows.
+  /// - EACH EDGE BY ITSELF, and an edge is free only when it is OFF THE DISPLAY: a bottom at 704, 705, 706 (in the Dock's strip) keeps its height; at 900 it is free; a right edge at 1024 is held, at 1025 free. Between 730 and
+  ///   899 nobody has looked: that it turns at the display's bottom is a GUESS.
+  /// - The display is the one that holds the larger part of the window (`display(holding:)`), its own edge, not the desktop's.
+  /// - RIGHT AFTER A POSITION CALL HAS TAKEN THE WINDOW TO ANOTHER DISPLAY THE ONE IT CAME FROM STILL JUDGES: back from 800×600 to 12,43 on 1920×1080, asked 1000×650 it took 1000×557 (the old display's bottom, 600) or, from
+  ///   below, 788×650 (its right edge, 800): 10 calls of the 10 that can tell, 0.5 to 5.6 ms after the position call, in all four orders of calls, and it stays so. At 200 ms and later the new display judges (4 of 4). Where
+  ///   between it turns is not known: `Timing.theOldDisplayJudgesFor`, a GUESS. Seen once and not played: shrinking is held back then as well (asked 776 wide, took 812: 24 points stayed on the old display).
   private func roomToGrow(_ size: CGSize, for window: Window) -> CGSize {
-    let (before, screen) = (window.frame, screen(of: window.frame))
-    func held(_ wanted: CGFloat, has: CGFloat, from start: CGFloat, line: CGFloat, least: CGFloat) -> CGFloat {
-      guard wanted > has, start + has <= line else { return wanted }
-      return max(min(wanted, line - start), least)
+    let before = window.frame
+    var screen = display(holding: before)
+    if let old = window.cameFrom {
+      if now < old.until { screen = old.screen } else { window.cameFrom = nil }
     }
+    func held(_ wanted: CGFloat, has: CGFloat, from start: CGFloat, line: CGFloat, edge: CGFloat, least: CGFloat) -> CGFloat {
+      guard wanted > has, start + has <= edge else { return wanted }
+      return max(min(wanted, max(has, line - start)), least)
+    }
+    let hasTheDockBelow = screen.visibleFrame.maxY < screen.frame.maxY
     return CGSize(
-      width: held(size.width, has: before.width, from: before.minX, line: screen.frame.maxX, least: window.minimumSize.width),
-      height: held(size.height, has: before.height, from: before.minY, line: screen.visibleFrame.maxY - 1, least: window.minimumSize.height))
+      width: held(size.width, has: before.width, from: before.minX, line: screen.frame.maxX, edge: screen.frame.maxX, least: window.minimumSize.width),
+      height: held(
+        size.height, has: before.height, from: before.minY, line: hasTheDockBelow ? screen.visibleFrame.maxY - 1 : screen.frame.maxY, edge: screen.frame.maxY, least: window.minimumSize.height))
   }
 
   /// Gives a window a frame on behalf of somebody outside its app, at once or, with "enhanced user interface", in steps.
@@ -388,7 +428,7 @@ extension FakeMac {
     }
     if frame != before { window.road.append(frame) }
     if before.size != frame.size { report("AXResized", about: window) }
-    if before.origin != frame.origin { report("AXMoved", about: window) }
+    if before.origin != frame.origin, !window.saysOnlyResized { report("AXMoved", about: window) }
   }
 
   // MARK: Observers

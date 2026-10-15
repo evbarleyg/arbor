@@ -430,6 +430,8 @@ extension FakeMac {
     /// after the first; nothing in the 0.67 s before (a recording of a hosted Mac: origin/mac-shell-out/sweep.proof, sweep.jsonl, "s6 the control").
     public var focusBeforeMiniaturized: TimeInterval = 0.0066
     public var minimizing: TimeInterval = 0.55
+    /// How long after a position call that changed the display the old display judges a size call (`roomToGrow`). Seen: still at 5.6 ms, no more at 200 ms. The number between is a GUESS.
+    public var theOldDisplayJudgesFor: TimeInterval = 0.1
     /// What was seen is Arbor's own `displaysChanged`, of a layer that passed every notice on at once: 20.4 and 15.3 ms after "miniaturized", 13.6 and 24.4 ms after
     /// "deminiaturized" (`minimize-restore`, `app-minimize`). The notice itself is in no trace.
     public var dockAfterMinimizing: TimeInterval = 0.018
@@ -529,12 +531,12 @@ extension FakeMac {
     /// how long nobody has measured.
     public var listLagsBy: TimeInterval = 0
     /// Whatever it is asked to set it says yes to at once, and carries out so much later: a read in between gets the old answer. Seen of Safari on its way out of full screen ("answers success to all three calls, reads back the
-    /// old frame", docs/REALITY.md); in general, and for how long, a GUESS.
+    /// old frame", docs/REALITY.md); in general, and for how long, a GUESS. NONE SEEN among twelve (a test window, ten of Apple's apps, one Java app: 170 results of 170, a probe on a hosted Mac, 2026-10-15).
     public var carriesOutAfter: TimeInterval = 0
     /// A new size is applied so long after the call returned.
     public var appliesSizeAfter: TimeInterval = 0
     /// It says yes to a new place at once and is there so much later, while a size that follows is applied at once: where the window still stands, and with the room there is to grow THERE (`roomToGrow`). A GUESS that any
-    /// app does so: "the window server applies moves a moment later" (docs/REALITY.md) is all there is.
+    /// app does so: "the window server applies moves a moment later" (docs/REALITY.md) is all there is. NONE SEEN among twelve (as for `carriesOutAfter`).
     public var appliesPlaceAfter: TimeInterval = 0
     /// Posts no "moved" while a window is dragged, only one at the end.
     public var isSilentDuringDrags = false
@@ -587,6 +589,9 @@ extension FakeMac {
     public var title: String
     /// Where its app has it, which is what Accessibility answers.
     public internal(set) var frame: CGRect
+    /// The display a position call has just taken it from, which goes on judging how far it may grow for a moment (`roomToGrow`).
+    var cameFrom: (screen: Screen, until: TimeInterval)?
+    var saysOnlyResized = false
     /// Every frame its app has given it, in order, for those who ask what showed on the way. Theirs to clear.
     public var road: [CGRect] = []
     /// Where the window server has it. Ahead of `frame` during a drag.

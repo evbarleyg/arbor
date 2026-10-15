@@ -65,8 +65,11 @@ func tellOfPlacing(_ book: Book) {
     book.story("on its way to a slot a window \(how)") { story in
       let (one, window) = stage(story, frame: start)
       window.road.removeAll()
+      let (asked, calls) = (window.timesAskedForAFrame, one.mac.calls)
       let answer = one.layer.setFrame(target, of: WindowID(window.number))
+      let (askedNow, callsNow) = (window.timesAskedForAFrame - asked, one.mac.calls - calls)
       one.mac.pass(1)
+      story.onFailure { "    ASKED FOR A PLACE OR A SIZE \(askedNow) TIMES, \(callsNow) calls in all; \(one.heard.all.count) reports passed on" }
       story.check("it ends in its slot, whole", window.frame == target, window.frame.text)
       story.check("and the layer says so", answer == target, answer?.text ?? "no answer")
       story.check(
@@ -75,6 +78,43 @@ func tellOfPlacing(_ book: Book) {
       story.check("it is never larger, either way, than at one of the ends", window.road.allSatisfy { $0.width <= max(start.width, target.width) && $0.height <= max(start.height, target.height) })
       story.check("none of the reports counts as the person's doing", !one.heard.all.contains(where: isByUser), one.heard.texts)
     }
+  }
+
+  // A frame that hangs over a line cannot be grown into once the window is there; it can be reached by a window that was sized where there was room and then moved (the probe of `roomToGrow`: D6, one point over the right edge: size,
+  // position, size whole, position, size a point short, 4 of 4). Where there is room nowhere, no order of calls reaches it.
+  for (how, start, target, reach) in [
+    ("one point over the right edge, from a place with room", CGRect(x: 170, y: 220, width: 480, height: 348), CGRect(x: 530, y: 43, width: 495, height: 400), CGSize(width: 495, height: 400)),
+    ("one point over the right edge, from a place without room", CGRect(x: 600, y: 220, width: 400, height: 348), CGRect(x: 530, y: 43, width: 495, height: 400), CGSize(width: 494, height: 400)),
+    ("below the Dock's line, from the corner where it is out of view", CGRect(x: 1023, y: 677, width: 494, height: 348), CGRect(x: 12, y: 238, width: 494, height: 650), CGSize(width: 494, height: 650)),
+    // Sized where it stands it gets 604; moved, its bottom is off the display, where an edge is free: that it is free from the display's bottom on is a GUESS (`roomToGrow`). Moved first it would stop at 466.
+    ("below the Dock's line, from a place in view", CGRect(x: 170, y: 100, width: 480, height: 348), CGRect(x: 12, y: 238, width: 494, height: 650), CGSize(width: 494, height: 650)),
+  ] {
+    book.story("a window is to grow into a frame that hangs \(how)") { story in
+      let (one, window) = stage(story, frame: start)
+      window.road.removeAll()
+      let answer = one.layer.setFrame(target, of: WindowID(window.number))
+      one.mac.pass(1)
+      story.check("it is at the place", window.frame.origin == target.origin, window.frame.text)
+      story.check(
+        "as large as any order of calls can make it there: \(Int(reach.width))×\(Int(reach.height))", window.frame.size == reach,
+        "\(window.frame.text), by way of " + window.road.map(\.text).joined(separator: ", then "))
+      story.check("and the layer says what is so", answer == window.frame && one.snapshot(window)?.frame == window.frame, answer?.text ?? "no answer")
+    }
+  }
+
+  // What is known of a window is a belief. By the belief this is a window that only gets narrower; in truth it has to grow, from a place where macOS lets it grow no further than the Dock.
+  book.story("a window has gone back to a small frame low on the screen, nobody has heard, and Arbor makes it narrower, as it believes") { story in
+    let (one, window) = stage(story)
+    _ = one.layer.setFrame(CGRect(x: 12, y: 43, width: 1000, height: 650), of: WindowID(window.number))
+    one.mac.pass(1)
+    story.check("Arbor has it at 12,43 1000×650", one.snapshot(window)?.frame == CGRect(x: 12, y: 43, width: 1000, height: 650))
+    one.mac.changeSilently(window, to: CGRect(x: 518, y: 220, width: 480, height: 348))
+    window.road.removeAll()
+    let target = CGRect(x: 12, y: 43, width: 494, height: 650)
+    let answer = one.layer.setFrame(target, of: WindowID(window.number))
+    one.mac.pass(1)
+    story.check("it ends in its slot, whole", window.frame == target, "\(window.frame.text), by way of " + window.road.map(\.text).joined(separator: ", then "))
+    story.check("and the layer says what is so", answer == window.frame && one.snapshot(window)?.frame == window.frame, "\(answer?.text ?? "no answer"), and it has \(one.snapshot(window)?.frame.text ?? "nothing")")
   }
 
   // traces/README.md, rows 3 to 5.

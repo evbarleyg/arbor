@@ -122,6 +122,62 @@ func tellOfArrangements(_ book: Book) {
     }
   }
 
+  // With no gap a slot ends at the visible frame's bottom, and with the Dock below no window can: macOS stops it a point short, in every order of calls (the probe of `roomToGrow`: D1, D8, 8 of 8). That is no refusal.
+  book.story("with no gap, a window is docked left: its slot ends at the Dock") { story in
+    var window: FakeMac.Window!
+    var settings = Settings()
+    settings.gap = 0
+    let two = StoreyTwo(story, settings: settings) { mac in window = mac.open("a", in: mac.launch("Notes"), frame: CGRect(x: 170, y: 100, width: 480, height: 348)) }
+    story.check("the command is taken", two.run("dock \(window.number) left", then: 3).ok && two.isDocked(window))
+    let place = two.controller.freshLayout(of: two.layer.displays()[0].id)?.windowFrames[WindowID(window.number)]
+    story.check("its slot ends at the visible bottom", place?.maxY == 705, place?.text ?? "none")
+    story.check("it is at the top of its slot, a point short at the bottom", window.frame.minY == 31 && window.frame.maxY == 704, two.whereabouts(window))
+    let asked = window.timesAskedForAFrame
+    two.mac.pass(5)
+    story.check("and Arbor has done with it", window.timesAskedForAFrame == asked, "asked \(window.timesAskedForAFrame - asked) times more")
+    let seen = two.controller.seenSizes[WindowID(window.number)]
+    story.check("the point is not written down as where the app stops growing", (seen?.stoppedAt ?? .zero) == .zero, "stopped at \(seen.map { "\(Int($0.stoppedAt.width))×\(Int($0.stoppedAt.height))" } ?? "")")
+    story.check("nor is the window down as one that does not fit its slot", two.controller.misfits[WindowID(window.number)] == nil)
+  }
+
+  // A window has just gone into the Dock, which is two points lower for it: macOS goes by the Dock as it is, Arbor by what it last heard (seen: an answer cut at 706 while Arbor still had 705).
+  book.story("a window stands low on the screen and is docked a moment after another has landed in the Dock") { story in
+    var window: FakeMac.Window!, other: FakeMac.Window!
+    let two = StoreyTwo(story) { mac in
+      let app = mac.launch("Notes")
+      other = mac.open("b", in: app, frame: CGRect(x: 560, y: 60, width: 400, height: 300))
+      window = mac.open("a", in: app, frame: CGRect(x: 170, y: 220, width: 480, height: 348))
+    }
+    two.mac.minimize(other)
+    two.mac.pass(0.56)
+    story.check("the command is taken", two.run("dock \(window.number) left", then: 4).ok && two.isDocked(window))
+    let place = two.controller.freshLayout(of: two.layer.displays()[0].id)?.windowFrames[WindowID(window.number)]
+    story.check("it fills the place Arbor has for it", place == window.frame, "\(two.whereabouts(window)); Arbor's place for it is \(place?.text ?? "none")")
+  }
+
+  // Let go low on the screen, a window that was docked is given its own size back where there is no room for it.
+  book.story("a docked window whose own size is tall is dragged out and let go low on the screen, and docked again") { story in
+    var window: FakeMac.Window!
+    var others: [FakeMac.Window] = []
+    let two = StoreyTwo(story) { mac in
+      window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 300, y: 60, width: 400, height: 600))
+      let app = mac.launch("Safari")
+      others = [mac.open("b", in: app, frame: CGRect(x: 500, y: 100, width: 400, height: 300)), mac.open("c", in: app, frame: CGRect(x: 540, y: 140, width: 400, height: 300))]
+    }
+    story.check("three windows are arranged", two.run("arrange").ok && ([window] + others).allSatisfy { two.isDocked($0) })
+    story.check("it is in a slot lower than its own size", window.frame.height < 400, two.whereabouts(window))
+    let slot = window.frame
+    two.mac.drag(from: CGPoint(x: slot.midX, y: slot.minY + 12), to: CGPoint(x: 915, y: 432), steps: 8, interval: 0.04, rest: 0.02)
+    two.mac.pass(0.6)
+    two.mac.release()
+    two.mac.pass(3)
+    story.check("let go over the Desktop, it floats", !two.isDocked(window), two.whereabouts(window))
+    let floating = window.frame
+    two.run("dock \(window.number) left", then: 2)
+    two.run("float \(window.number)", then: 3)
+    story.check("docked and floated again, it has its own size: 400×600", window.frame.size == CGSize(width: 400, height: 600), "\(two.whereabouts(window)); let go, it was at \(floating.text)")
+  }
+
   // An answer that is short because of where the window stood when the size call reached it says nothing about the app. Two kinds of late app: one carries out everything it is asked so much later, in order, so that what
   // Arbor reads back at once is the old frame; the other is sized at once and moved late, so that the size call finds it at the old place, whatever the order of the calls.
   for late in [0.05, 0.2] {

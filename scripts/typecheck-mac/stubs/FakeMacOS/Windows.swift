@@ -144,6 +144,7 @@ extension FakeMac {
   /// - At the end, in this order: "focused window changed" and "main window changed" of the next window, "miniaturized"; 0 to 32 ms from first to last, mostly 1 to 4 (6.6 in another recording: `Timing`).
   /// - From the first of these on the window answers `AXMinimized` = yes (20 of 20, within 2 ms).
   /// - The window server lists it on screen all the way, in a box that changes from 25 to 90 ms after the hand (twice later), and drops it within 30 ms or so of the first report (`boxInFlight`).
+  /// - The call that sets `AXMinimized` returns at once (`write`); the flight follows. With ONE window left TextEdit posts no "focused window changed" before "miniaturized" (the same later probe).
   /// What waits in the app's queue is served after the landing: a GUESS as to the order.
   public func minimize(_ window: Window) {
     guard window.isOpen, !window.isMinimized, !window.isInFlight else { return }
