@@ -46,7 +46,11 @@ extension FakeMac {
       self.wait(until: now + wait) { !app.isHung || !app.isAlive }
       guard app.isAlive else { return .cannotComplete }
       if app.isHung || hasEnded {
-        if !isOnAThread { secondsWaitedInVain += wait }
+        if !isOnAThread {
+          secondsWaitedInVain += wait
+          app.secondsWaitedForInThisHang += wait
+          longestWaitForOneHang = max(longestWaitForOneHang, app.secondsWaitedForInThisHang)
+        }
         note("    (\(isOnAThread ? "a thread of Arbor's" : "Arbor") waited \(wait) s for pid \(pid), which hangs)")
         return .cannotComplete
       }

@@ -21,13 +21,13 @@ public final class FakeMac: @unchecked Sendable {
   public nonisolated(unsafe) static var current = FakeMac()
 
   public init() {
-    arbor = App(pid: getpid(), name: "Arbor", bundleID: "com.evbarleyg.arbor", policy: .accessory)
+    arbor = App(pid: Self.getpid(), name: "Arbor", bundleID: "com.evbarleyg.arbor", policy: .accessory)
     apps = [arbor]
   }
 
   // MARK: What it consists of
 
-  /// Arbor itself: the process that runs the test. An accessory app, never in front unless a story says so.
+  /// Arbor itself. An accessory app, never in front unless a story says so.
   public let arbor: App
   /// The apps that run, in the order they were launched.
   public internal(set) var apps: [App]
@@ -91,6 +91,8 @@ public final class FakeMac: @unchecked Sendable {
   /// How many Accessibility calls Arbor has made, and how long it waited in them for apps that did not answer.
   public internal(set) var calls = 0
   public internal(set) var secondsWaitedInVain: TimeInterval = 0
+  /// The most it has waited in vain for one app in one hang.
+  public internal(set) var longestWaitForOneHang: TimeInterval = 0
   /// How long Arbor's main thread has stood still in all: in calls to apps that did not answer, and waiting for its own other threads.
   public internal(set) var secondsTheMainThreadWaited: TimeInterval = 0
   var workers: [Worker] = []
@@ -296,6 +298,10 @@ public final class FakeMac: @unchecked Sendable {
 
   // MARK: Processes
 
+  /// What `getpid()` becomes in the copy: Arbor's own number on the model. Not that of the process the test runs in, which in a fresh container may be any small number, one of the
+  /// model's apps' among them.
+  public static func getpid() -> pid_t { 400 }
+
   /// What `kill(pid, 0)` becomes in the copy: whether the process is there. The model's pids are nobody's on the machine the test runs on.
   public static func kill(_ pid: pid_t, _ signal: Int32) -> Int32 {
     precondition(signal == 0, "the model's processes can only be asked whether they are there")
@@ -430,6 +436,9 @@ extension FakeMac {
     var wokeAt: TimeInterval = 0
     /// When the notice that it came forward was delivered, `NSWorkspace` still named another app.
     public internal(set) var noticeOutranTheProperty = false
+
+    /// How long Arbor's main thread has waited for it in vain since it last began to hang.
+    public internal(set) var secondsWaitedForInThisHang: TimeInterval = 0
 
     /// What was asked of it, and what it would have posted, while it hung.
     var backlog: [(label: String, run: () -> Void)] = []

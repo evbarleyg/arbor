@@ -225,7 +225,6 @@ final class Walk {
   /// The model forgets a window that has closed; whether it went without a word is asked while it goes.
   private var closing: [FakeMac.Window] = []
   private var closedWithoutAWord: Set<UInt32> { Set(closing.filter { !$0.isOpen && $0.closedWithoutAWord }.map(\.number)) }
-  private var hangs = 0
 
   init(manners: WalkManners, seed: UInt64, keepsJournal: Bool) {
     FakeMac.current = mac
@@ -316,7 +315,6 @@ final class Walk {
     case .hang:
       guard let app = pick(awake, a) else { return }
       mac.hang(app)
-      hangs += 1
     case .wake: if let app = pick(apps.filter(\.isHung), a) { mac.wake(app) }
     case .space: mac.switchSpace(to: 1 + a % 3, lists: mac.manners.staleness > 0 && b % 2 == 0 ? .neither : .right, appComesForwardFirst: b % 3 != 0)
     case .tab:
@@ -396,7 +394,7 @@ final class Walk {
     }
 
     if !mac.mouse.isDown, let grab = ledger.openGrab { breach(Rule.grabs, grab.text) }
-    if mac.secondsWaitedInVain > 2 * Double(max(hangs, 0)) { breach(Rule.patience, "\(mac.secondsWaitedInVain) s for \(hangs) hang(s)") }
+    if mac.longestWaitForOneHang > 2 { breach(Rule.patience, "\(mac.longestWaitForOneHang) s for one hang of one app") }
     return breaches
   }
 }
@@ -412,12 +410,16 @@ enum Walker {
     var breach: Breach
   }
 
+  /// How many steps the latest run took before it ended.
+  private(set) static var stepsWalked = 0
+
   /// Runs a script. Returns the first breach of a rule that is not in `ignoring`, and after how many steps it showed.
   static func run(
     _ script: [WalkStep], manners: WalkManners, seed: UInt64, ignoring: Set<String>, journal: Bool = false, toTheEnd: Bool = false, seen: ((Breach) -> Void)? = nil,
     atTheEnd: (([String]) -> Void)? = nil
   ) -> (breach: Breach, after: Int, journal: [String])? {
     let walk = Walk(manners: manners, seed: seed, keepsJournal: journal)
+    stepsWalked = 0
     defer {
       atTheEnd?(walk.mac.journal)
       walk.end()
@@ -446,6 +448,7 @@ enum Walker {
     for (index, step) in script.enumerated() {
       walk.mac.note("STEP \(step.text)")
       walk.take(step)
+      stepsWalked += 1
       if let gap = step.gap {
         let next = index + 1 < script.count ? script[index + 1] : nil
         walk.mac.pass(step.isByHand && next?.isByHand == true ? max(gap, 0.25) : gap)
@@ -523,6 +526,7 @@ func tellOfTheWalk(_ book: Book) {
       let seeds = book.options.walkSeeds ?? 1...40
       var first: [String: Walker.Finding] = [:]
       var counts: [String: Int] = [:]
+      var walked = 0
       for seed in seeds {
         let script = WalkStep.script(seed: seed, steps: book.options.walkSteps)
         // A rule that has broken is left out from then on, so that the walk goes on and the others get their turn.
@@ -534,7 +538,11 @@ func tellOfTheWalk(_ book: Book) {
             first[found.breach.rule] = Walker.Finding(manners: manners, seed: seed, script: Array(script.prefix(found.after)), breach: found.breach)
           }
         }
+        // The last run went as far as a walk goes with all that is broken left out.
+        walked += Walker.stepsWalked
       }
+      // A walk ends where a fault has spoilt the layer's picture of the Mac. So faults that are known make the net smaller, and that must not go unsaid.
+      book.remark("the rude walk (\(manners.name)) took \(walked) of \(seeds.count * book.options.walkSteps) steps")
       if book.options.heardFile != nil, book.isWholeRun { book.writeDown(Walker.heard(manners: manners, seeds: seeds, steps: book.options.walkSteps)) }
       for rule in rules {
         guard let finding = first[rule] else {
@@ -547,7 +555,8 @@ func tellOfTheWalk(_ book: Book) {
         let again = Walker.run(short, manners: manners, seed: finding.seed, ignoring: others, journal: true)
         story.check(
           rule, false,
-          "\(counts[rule] ?? 0) of \(seeds.count) seeds; first seed \(finding.seed): \(again?.breach.detail ?? finding.breach.detail)\n      --replay '\(manners.name)|\(finding.seed)|\(text)'")
+          "\(counts[rule] ?? 0) of \(seeds.count) seeds; first seed \(finding.seed): \(again?.breach.detail ?? finding.breach.detail)\n      --replay '\(manners.name)|\(finding.seed)|\(text)'",
+          count: "\(counts[rule] ?? 0) of \(seeds.count) seeds")
         if book.options.isVerbose || book.isNew(story, rule) {
           story.onFailure { "    \(rule): seed \(finding.seed), \(short.count) steps of \(finding.script.count)\n" + (again?.journal ?? []).map { "      " + $0 }.joined(separator: "\n") }
         }
@@ -564,7 +573,12 @@ func replayWalk(_ text: String) -> Int32 {
     print("--replay wants 'manners|seed|step; step; …', as a failing walk prints it")
     return 2
   }
-  let script = parts[2].components(separatedBy: ";").compactMap { WalkStep(text: $0.trimmingCharacters(in: .whitespaces)) }
+  let words = parts[2].components(separatedBy: ";").map { $0.trimmingCharacters(in: .whitespaces) }
+  let script = words.compactMap { WalkStep(text: $0) }
+  guard script.count == words.count else {
+    print("--replay cannot read these steps: \(words.filter { WalkStep(text: $0) == nil }.map { "\"\($0)\"" }.joined(separator: ", "))")
+    return 2
+  }
   var all: [Breach] = []
   _ = Walker.run(script, manners: manners, seed: seed, ignoring: Set(Rule.all), journal: true, toTheEnd: true, seen: { all.append($0) }) { for line in $0 { print(line) } }
   if all.isEmpty { print("no rule is broken") }

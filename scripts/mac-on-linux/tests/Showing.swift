@@ -256,7 +256,7 @@ func tellOfShowing(_ book: Book) {
           "it has its old frame", one.snapshot(window)?.frame == CGRect(x: 100, y: 100, width: 600, height: 400),
           "\(one.snapshot(window)?.frame.text ?? "")")
         story.check("both windows show", one.snapshot(window)?.isOnActiveSpace == true && one.snapshot(other)?.isOnActiveSpace == true)
-        story.check("nothing is reported gone or new", !one.heard.outline.contains { if case .focused = $0 { false } else { true } }, one.heard.texts)
+        story.check("and again nothing is reported gone or new", !one.heard.outline.contains { if case .focused = $0 { false } else { true } }, one.heard.texts)
       }
     }
   }

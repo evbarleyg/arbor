@@ -30,7 +30,6 @@ fi
 if [ -n "${SOURCES:-}" ]; then
   sources=$(cd "$SOURCES" && pwd) || exit 2
   work="$root/.build/mac-on-linux-$(echo "$sources" | sha256sum | cut -c1-7)"
-  if [ ! -d "$work" ] && [ -d "$root/.build/mac-on-linux" ]; then cp -R "$root/.build/mac-on-linux" "$work" && rm -rf "$work/module-cache"; fi
 fi
 if [ -n "${COVERAGE:-}" ]; then work="$work-coverage"; fi
 if [ "$(uname)" = Darwin ]; then echo "On a Mac the real thing runs: make e2e."; exit 2; fi
@@ -43,18 +42,26 @@ libraries="ArborCore ArborIPC ArborKit ArborTesting"
 # and the two the layer reads its environment and macOS's settings from. UI, Input and the rest of App stay out: their stand-ins do nothing, so
 # running them would show nothing.
 kit="Controller Platform Support Trace AX App/FrontmostAppWatcher.swift App/ArborEnvironment.swift App/MacFacts.swift"
-# These must know no clock but the model's (retime.py).
-onTheModelsClock="ArborKit/AX ArborKit/App ArborKit/Support/AppLanes.swift ArborKit/Support/CallStats.swift ArborKit/Platform/Scheduler.swift"
+# All of ArborKit must know no clock but the model's, and these have threads of their own, which must be the model's too (retime.py).
+withThreads="ArborKit/AX ArborKit/Support/AppLanes.swift"
 
 mkdir -p "$work/modules" "$work/objects" "$work/src"
 cd "$work" || exit 2
+# What a message calls the work folder.
+shown=".build/${work##*/.build/}"
+# Two runs at once would tear each other's copy apart.
+exec 9> "$work/lock"
+if ! flock -n 9; then
+  echo "another run is at work in $shown; waiting for it…"
+  flock 9
+fi
 jobs=$(nproc)
 flags=(-swift-version 6 -Onone -I modules -no-color-diagnostics -diagnostic-style llvm -module-cache-path "$work/module-cache")
 for headers in "$typecheck"/stubs/*/include; do flags+=(-I "$headers"); done
 report() { grep -E "^[^ ].*:[0-9]+:[0-9]+: error:|^error:|^<unknown>:0: error:" | sed -e "s#^$root/##" -e 's#^src/#Sources/#' | sort -u | head -40; }
 
 # --- The stand-ins change seldom: compile them again only when they, or the compiler, have.
-stamp=$( (swiftc --version 2>&1; for module in $frameworks; do find "$typecheck/stubs/$module" -type f | sort | xargs cat; done) | sha256sum | cut -d' ' -f1)
+stamp=$( (swiftc --version 2>&1; for module in $frameworks; do find "$typecheck/stubs/$module" -type f -print0 | sort -z | xargs -0 cat; done) | sha256sum | cut -d' ' -f1)
 if [ "$(cat objects/stand-ins.stamp 2>/dev/null)" != "$stamp" ]; then
   echo "compiling the stand-ins…"
   # What was compiled against the old ones is void.
@@ -65,7 +72,7 @@ if [ "$(cat objects/stand-ins.stamp 2>/dev/null)" != "$stamp" ]; then
       -emit-module-path "../../modules/$module.swiftmodule" -c -wmo -num-threads "$jobs" "$typecheck/stubs/$module"/*.swift) > "log-$module.txt" 2>&1
     then
       report < "log-$module.txt"
-      echo "the stand-in for $module does not compile (whole output: .build/mac-on-linux/log-$module.txt)"
+      echo "the stand-in for $module does not compile (whole output: $shown/log-$module.txt)"
       exit 1
     fi
   done
@@ -97,13 +104,13 @@ copy_sources() {
   rm -rf staging
   mkdir -p staging/ArborKit/App
   for target in $libraries; do
-    [ "$target" = ArborKit ] || cp -R "$sources/$target" staging/
+    [ "$target" = ArborKit ] || cp -R "$sources/$target" staging/ || return 1
   done
-  for part in $kit; do cp -R "$sources/ArborKit/$part" "staging/ArborKit/$part"; done
+  for part in $kit; do cp -R "$sources/ArborKit/$part" "staging/ArborKit/$part" || return 1; done
   "$typecheck/prepare.py" "$work/staging" | sed 's#^#Sources/#'
   [ "${PIPESTATUS[0]}" -eq 0 ] || return 1
   # shellcheck disable=SC2086
-  "$here/retime.py" "$work/staging" $onTheModelsClock | sed 's#^#Sources/#'
+  "$here/retime.py" "$work/staging" ArborKit $withThreads | sed 's#^#Sources/#'
   [ "${PIPESTATUS[0]}" -eq 0 ] || return 1
   take_over
 }
@@ -138,7 +145,7 @@ SWEEP
     -module-name "$module" -emit-module -emit-module-path "modules/$module.swiftmodule" -c "${files[@]}" > "log-$module.txt" 2>&1
   then
     report < "log-$module.txt"
-    echo "$module does not compile (whole output: .build/mac-on-linux/log-$module.txt)"
+    echo "$module does not compile (whole output: $shown/log-$module.txt)"
     return 1
   fi
 }
@@ -150,7 +157,7 @@ build() {
   [ -n "${COVERAGE:-}" ] && counting=(-profile-generate)
   if ! swiftc "${counting[@]}" -o "$1" objects/*/*.o > log-link.txt 2>&1; then
     grep -E "error|undefined" log-link.txt | head -20
-    echo "it does not link (whole output: .build/mac-on-linux/log-link.txt)"
+    echo "it does not link (whole output: $shown/log-link.txt)"
     return 1
   fi
 }
@@ -162,6 +169,32 @@ copy_sources || exit 1
 
 if [ "${1:-}" = --self-test ]; then
   rm -f self-test-failed
+  # --- The program's own book-keeping, on the layer as it is.
+  build "$work/mac-on-linux" || exit 1
+  # A run that was asked for nothing, or for what cannot be read, has shown nothing and must not pass for one that found nothing.
+  refuses() {
+    "$work/mac-on-linux" --quiet "$@" > /dev/null 2>&1
+    if [ $? -eq 2 ]; then echo "✔ refused: $*"; else echo "✘ not refused with exit code 2: $*"; touch self-test-failed; fi
+  }
+  refuses --only zzzzz
+  refuses --replay 'polite|1|open 1 1; nonsense'
+  refuses --replay 'polite|1|'
+  refuses --seeds 3-x
+  refuses --seeds 5-3
+  refuses --steps abc
+  refuses --steps 0
+  refuses --no-such-argument
+  # The list of known failures excuses what it was written for and nothing else.
+  excuses_not() {
+    if "$work/mac-on-linux" --quiet --known known-changed.txt --only "walk (polite" > /dev/null 2>&1
+    then echo "✘ $1 excuses a rule of the walk that breaks"; touch self-test-failed; else echo "✔ $1 excuses nothing"; fi
+  }
+  grep -q '^the rude walk (polite): .* seeds\]' "$here/known-failures.txt" || { echo "✘ no rule of the polite walk is listed any more: write these two checks anew"; touch self-test-failed; }
+  sed 's/^\(the rude walk (polite): .*\) \[[0-9]* of 40 seeds\]/\1 [39 of 40 seeds]/' "$here/known-failures.txt" > known-changed.txt
+  excuses_not "a line with another number of seeds"
+  sed 's/^\(the rude walk (polite): .*\) \[[0-9]* of 40 seeds\]/sometimes: \1/' "$here/known-failures.txt" > known-changed.txt
+  excuses_not "a line that says sometimes, with the usual seeds,"
+  # --- The net.
   # First the whole list: a list that cannot be had, or is empty, is no self-test that passed.
   "$here/mutants.py" --list > mutants.txt && [ -s mutants.txt ] || { echo "✘ scripts/mac-on-linux/mutants.py lists no change to make"; exit 1; }
   while IFS=$'\t' read -r -a fields <&3; do
@@ -173,7 +206,7 @@ if [ "${1:-}" = --self-test ]; then
       echo "✘ $name: the change no longer fits the sources; look at scripts/mac-on-linux/mutants.py"
     elif ! build "$work/mutant"; then
       echo "✘ $name: the changed copy does not build"
-    elif ! "$work/mutant" --quiet "${expected[@]}"; then
+    elif ! "$work/mutant" --quiet --known "$here/known-failures.txt" "${expected[@]}"; then
       echo "✘ $name: not every check that should notice does"
     else
       echo "✔ without the cure the story goes red: $name"
@@ -197,7 +230,7 @@ if [ -n "${COVERAGE:-}" ]; then
   # Neither rewriting step moves a line, so the copy's lines are the sources'.
   llvm-cov report "$work/mac-on-linux" -instr-profile run.profdata src/ArborKit/AX src/ArborKit/App | sed "s#$work/src/#Sources/#"
   llvm-cov show "$work/mac-on-linux" -instr-profile run.profdata src/ArborKit/AX > coverage.txt
-  echo "line by line: .build/${work##*/.build/}/coverage.txt (a count of 0 marks what no story enters)"
+  echo "line by line: $shown/coverage.txt (a count of 0 marks what no story enters)"
   exit "$code"
 fi
 # What the layer was heard to report is kept for the checkout's own sources.

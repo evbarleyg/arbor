@@ -49,6 +49,11 @@ NEWER = [
 ]
 ASKS = re.compile(r"available\(macOS (1[5-9]|[2-9][0-9])")
 
+# What the stand-ins have for their own ends, and for the model of a Mac behind some of them (README.md, "The part that does something"). It has to be public, one module to the
+# next, so the compiler here would let Arbor's code use it. No Mac has it.
+STAND_INS_OWN = re.compile(r"\bimport FakeMacOS\b|\bFakeMac\b|\bFakeDispatch\w+|\b_CFTypeWithID\b|\._typeID\b|\bCFUUID\(_text:|\._onRunLoop\b"
+                           r"|\b_standInForAXUIElementGetWindow\b")
+
 REWRITES = [
     # Darwin's are computed properties; glibc's are global variables, which Swift 6 lets nobody touch.
     (re.compile(r"(?<![\w.])std(err|out|in)\b(?!\w)"), r"MacFoundation.std\1"),
@@ -93,6 +98,8 @@ def main():
                 how = ("conditional downcast to Core Foundation type '%s' will always succeed" if match.group(1) == "as?"
                        else "'is' test is always true because '%s' is a Core Foundation type")
                 problems.append(f"{shown}:{number}:{match.start() + 1}: error: {how % match.group(2)}; compare CFGetTypeID, then 'as!'")
+            for match in STAND_INS_OWN.finditer(code):
+                problems.append(f"{shown}:{number}:{match.start() + 1}: error: '{match.group(0).lstrip('.')}' is the stand-ins' own: no Mac has it")
             for match in HASHED_GEOMETRY.finditer(code):
                 problems.append(f"{shown}:{number}:{match.start() + 1}: error: conformance of '{match.group(1) or match.group(2)}' to 'Hashable' "
                                 "is only available in macOS 15 or newer, and Arbor runs on 14")

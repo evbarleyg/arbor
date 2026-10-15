@@ -10,7 +10,7 @@ extension FakeMac {
   public func launch(
     _ name: String, bundleID: String? = nil, policy: Policy = .regular, announced: Bool = true, readyAfter: TimeInterval = 0, comesForward: Bool = true
   ) -> App {
-    Self.lastPID += Self.lastPID + 1 == getpid() ? 2 : 1
+    Self.lastPID += 1
     let app = App(pid: Self.lastPID, name: name, bundleID: bundleID ?? "test.\(name.lowercased())", policy: policy)
     app.refusesObserversUntil = now + readyAfter
     apps.append(app)
@@ -139,6 +139,7 @@ extension FakeMac {
     if let seconds { send(after: seconds, from: .system, "") { [self] in wake(app) } }
     note("\(app.name) (pid \(app.pid)) hangs")
     app.isHung = true
+    app.secondsWaitedForInThisHang = 0
     if frontmost === app { app.hasHungInFront = true }
   }
 

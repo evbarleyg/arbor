@@ -9,7 +9,7 @@ struct Options {
   var only: [String] = []
   var isVerbose = false
   var isQuiet = false
-  /// For the self-test: the run succeeds if every one of these checks ("story: check") fails.
+  /// For the self-test: the run succeeds if every one of these checks ("story: check") fails, and the list of known failures does not excuse it.
   var expectsRed: [String] = []
   var knownFailuresFile: String?
   var listsOnly = false
@@ -26,9 +26,12 @@ final class Book {
   private(set) var stories: [(name: String, tell: @MainActor (Story) -> Void)] = []
   /// "story: check" → why it is known to fail.
   private var known: [String: String] = [:]
-  /// Those that fail only now and then: with other seeds than the usual ones.
+  /// Those that only other seeds than the usual ones show. With the usual seeds, where every run is the same and they pass, they excuse nothing.
   private var sometimes: Set<String> = []
-  private var failed: Set<String> = []
+  /// In how many of the usual seeds a rule of the walk is known to break ("8 of 40 seeds"). Another number is news.
+  private var knownCounts: [String: String] = [:]
+  /// What is to be said at the end whatever else is said.
+  private var remarks: [String] = []
   private var passed = 0
   private var newFailures: [String] = []
   private var knownFailuresSeen: [String] = []
@@ -61,7 +64,12 @@ final class Book {
     return false
   }
 
-  /// One failure to a line: `story: check`, then ` # ` and a word on it.
+  func remark(_ text: String) {
+    say("  \(text)")
+    remarks.append(text)
+  }
+
+  /// One failure to a line: `story: check`, then ` # ` and a word on it. A rule of the walk has ` [8 of 40 seeds]` behind it.
   func readKnownFailures() {
     guard let path = options.knownFailuresFile, let text = try? String(contentsOfFile: path, encoding: .utf8) else { return }
     for line in text.split(separator: "\n") where !line.hasPrefix("#") && !line.allSatisfy(\.isWhitespace) {
@@ -70,6 +78,10 @@ final class Book {
       if key.hasPrefix("sometimes: ") {
         key.removeFirst("sometimes: ".count)
         sometimes.insert(key)
+      }
+      if key.hasSuffix("]"), let open = key.range(of: " [", options: .backwards) {
+        knownCounts[String(key[..<open.lowerBound])] = String(key[open.upperBound...].dropLast())
+        key = String(key[..<open.lowerBound])
       }
       known[key] = parts.dropFirst().joined(separator: " # ")
     }
@@ -82,28 +94,38 @@ final class Book {
     fflush(nil)
   }
 
-  func record(_ story: Story, _ what: String, _ ok: Bool, _ detail: String) {
+  /// `count`: for a rule of the walk that breaks, in how many seeds.
+  func record(_ story: Story, _ what: String, _ ok: Bool, _ detail: String, count: String? = nil) {
     let key = "\(story.name): \(what)"
-    checksSeen.insert(key)
-    if !ok { failed.insert(key) }
+    func isNews(_ why: String = "") {
+      newFailures.append(key + why)
+      say("  ✘ \(what)\(detail.isEmpty ? "" : "  (\(detail))")\(why)")
+      story.hasNewFailure = true
+    }
+    // One listed line would excuse both.
+    guard checksSeen.insert(key).inserted else { return isNews("   ← TWO CHECKS OF ONE NAME IN ONE STORY: give them names of their own") }
+    // The list is written for the usual seeds, with which every run is the same. With others a walk may miss what it usually finds, and find what it usually misses.
+    let seedsAreTheUsual = options.walkSeeds == nil
+    let isOfTheWalk = story.name.hasPrefix("the rude walk")
     switch (ok, known[key]) {
     case (true, nil):
       passed += 1
       say("  ✔ \(what)")
-    // The list is written for the usual seeds. With others a walk may miss what it usually finds.
-    case (true, .some) where sometimes.contains(key) || (options.walkSeeds != nil && story.name.hasPrefix("the rude walk")):
+    case (true, .some) where sometimes.contains(key) || (isOfTheWalk && !seedsAreTheUsual):
       passed += 1
       say("  ✔ \(what)")
     case (true, .some):
       knownThatPassed.append(key)
       say("  ✔ \(what)   ← LISTED AS A KNOWN FAILURE, AND IT PASSES: delete its line in known-failures.txt")
+    case (false, .some) where sometimes.contains(key) && seedsAreTheUsual:
+      isNews("   ← listed as showing with other seeds only; with the usual ones it is news")
+    case (false, .some) where isOfTheWalk && seedsAreTheUsual && knownCounts[key] != count:
+      isNews("   ← listed with [\(knownCounts[key] ?? "no count")], and it is [\(count ?? "?")] now: better or worse, it is not the same fault any more")
     case (false, let word?):
       knownFailuresSeen.append(key)
       say("  ✘ \(what)\(detail.isEmpty ? "" : "  (\(detail))")   ← known: \(word)")
     case (false, nil):
-      newFailures.append(key)
-      say("  ✘ \(what)\(detail.isEmpty ? "" : "  (\(detail))")")
-      story.hasNewFailure = true
+      isNews()
     }
   }
 
@@ -113,6 +135,11 @@ final class Book {
   /// Tells the chosen stories. Returns the exit code.
   func tellAll() -> Int32 {
     let chosen = stories.filter { story in options.only.isEmpty || options.only.contains { story.name.localizedCaseInsensitiveContains($0) } }
+    // A run that was asked for nothing has shown nothing.
+    guard !chosen.isEmpty else {
+      print("no story's name contains \(options.only.map { "\"\($0)\"" }.joined(separator: " or ")) (--list)")
+      return 2
+    }
     if options.listsOnly {
       for story in chosen { print(story.name) }
       return 0
@@ -125,14 +152,18 @@ final class Book {
       if (story.hasNewFailure && options.expectsRed.isEmpty) || options.isVerbose { say(story.account()) }
     }
     if !options.expectsRed.isEmpty {
-      let green = options.expectsRed.filter { !failed.contains($0) }
-      for key in green { print("    \(checksSeen.contains(key) ? "stays green" : "there is no such check"): \(key)") }
-      return green.isEmpty ? 0 : 1
+      // Red, and news: a check that the list of known failures excuses would let the same fault through in an ordinary run.
+      let unnoticed = options.expectsRed.filter { key in !newFailures.contains { $0 == key || $0.hasPrefix(key + "   ←") } }
+      for key in unnoticed {
+        print("    \(knownFailuresSeen.contains(key) ? "goes red, and the list of known failures excuses it" : checksSeen.contains(key) ? "stays green" : "there is no such check"): \(key)")
+      }
+      return unnoticed.isEmpty ? 0 : 1
     }
 
     // A line nobody meets any more protects nothing and hides a slip of the pen.
     let unmet = options.only.isEmpty ? known.keys.filter { !checksSeen.contains($0) }.sorted() : []
     print("\n\(chosen.count) stories, \(passed) ✔, \(knownFailuresSeen.count) ✘ known, \(newFailures.count) ✘ new")
+    for remark in remarks { print("  \(remark)") }
     for key in newFailures { print("  ✘ NEW: \(key)") }
     for key in knownThatPassed { print("  ✔ listed as a known failure, and it passes; delete its line: \(key)") }
     for key in unmet { print("  ? listed as a known failure, and no story has such a check: \(key)") }
@@ -158,7 +189,9 @@ final class Story {
   }
 
   /// `what` says what a person would see, or what Arbor must have understood for them to see it.
-  func check(_ what: String, _ ok: Bool, _ detail: @autoclosure () -> String = "") { book.record(self, what, ok, ok ? "" : detail()) }
+  func check(_ what: String, _ ok: Bool, _ detail: @autoclosure () -> String = "", count: String? = nil) {
+    book.record(self, what, ok, ok ? "" : detail(), count: count)
+  }
 
   /// What this listener hears from now on goes into the file of what was heard.
   func listens(_ listener: Listener, storey: Int, from start: TimeInterval) {

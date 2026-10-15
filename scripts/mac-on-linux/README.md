@@ -21,7 +21,7 @@ On Linux only (in the container CI uses: `make linux` has the image). It works i
 | | |
 |---|---|
 | Unchanged | `Sources/ArborKit/AX` (all of it), `Controller`, `Platform`, `Support`, `Trace`, `App/FrontmostAppWatcher.swift`, `App/ArborEnvironment.swift`, `App/MacFacts.swift`; `ArborCore`, `ArborIPC`, `ArborTesting` |
-| Rewritten in a copy, line for line | What `scripts/typecheck-mac/prepare.py` does for any Linux compiler (`@objc`, `#if os(macOS)`…), and four things by `retime.py`: `Task.sleep` → `FakeMac.sleep`, `ProcessInfo.processInfo.systemUptime` → `FakeMac.uptime`, `….operatingSystemVersion` → `FakeMac.operatingSystemVersion` (macOS 26.6), `kill(` → `FakeMac.kill(` |
+| Rewritten in a copy, line for line | What `scripts/typecheck-mac/prepare.py` does for any Linux compiler (`@objc`, `#if os(macOS)`…), and by `retime.py`: `Task.sleep` → `FakeMac.sleep`, `ProcessInfo.processInfo.systemUptime` → `FakeMac.uptime`, `DispatchTime` → `FakeDispatchTime`, `….operatingSystemVersion` → `FakeMac.operatingSystemVersion` (macOS 26.6), `kill(` → `FakeMac.kill(`, `getpid()` → `FakeMac.getpid()` (a fixed number: the test's own could be one of the model's apps'); and in the layer, for threads of its own, `DispatchQueue(label:)`, `DispatchSemaphore`, `DispatchGroup` and `DispatchQueue.main.async` → the model's |
 | In place of Apple's frameworks | The stand-ins of `scripts/typecheck-mac/stubs`. The functions the layer calls have bodies that ask the model, `stubs/FakeMacOS`; the rest still does nothing |
 | Left out | `UI`, `Input`, the rest of `App`: their stand-ins do nothing, so running them would show nothing |
 
@@ -31,7 +31,10 @@ app's own `MainQueueScheduler` and `FrontmostAppWatcher`; only what draws (`Fake
 **Time** is the model's. A story says `mac.pass(0.3)` and whatever falls due is delivered in order, with no real waiting. A call to an app that hangs moves the clock by the whole messaging timeout, and what fell due meanwhile is
 delivered afterwards, as to a busy main thread. After each delivery Arbor's tasks run until none is runnable (`stubs/FakeMacOS/Pump.swift`): jobs for the main actor are taken from libdispatch's main queue the way CoreFoundation's run loop takes them; jobs for the
 global pool (`Task.detached`) are caught by the runtime's hook and run on the same thread, marked as being off the main one. Everything is a function of the story: no thread, no clock, no chance. The program checks at its start that the pump
-works with this toolchain and refuses to go on if not. `retime.py` fails the build if the layer waits or tells the time in a way it does not know (`asyncAfter`, `Timer`, `Date()`…): such code would stand still while the model's time passes.
+works with this toolchain and refuses to go on if not. `retime.py` fails the build if anything in ArborKit waits or tells the time in a way it does not know (`asyncAfter`, `Timer`, `Date()`, `usleep`…): such code would stand still while the model's time passes. The three places that may are listed there, each with its reason.
+
+**Other threads** than the main one (`stubs/FakeMacOS/Threads.swift`) are real threads that pass ONE BATON: a queue's thread runs only while it holds it, and gives it back when its block is done or when it waits for an app, which takes the model's time. So a call on a queue to an app that hangs takes a second during which the main thread, the other
+queues and the Mac go on, and still every run is the same. While the main thread waits (on a semaphore, a group, or in a call of its own to an app that hangs) nothing is delivered to it; it is served afterwards. The trunk's layer has no such threads yet; the program proves at its start that they work.
 
 ## Has it been right?
 
@@ -95,8 +98,9 @@ Then take the cure the story is about out of the layer, see it go red, and keep 
 
 ## Known failures
 
-`known-failures.txt` lists the checks that are red on the trunk, each with a word on it. **The run fails when a check that is not listed fails, and when one that is listed passes**, so whoever lands a cure deletes its lines in the same pull request; and when a line matches no check any more. `sometimes: ` marks what
-only some seeds of the walk show.
+`known-failures.txt` lists the checks that are red on the trunk, each with a word on it. **The run fails when a check that is not listed fails, and when one that is listed passes**, so whoever lands a cure deletes its lines in the same pull request; and when a line matches no check any more, and when two checks of a story have
+one name. The list excuses what it was written for and nothing else. A rule of the walk is listed with the number of the usual seeds that break it, `[8 of 40 seeds]`: another number is news. `sometimes: ` marks what only other seeds (`--seeds`) show; with the usual ones, where every run is the same, it excuses nothing.
+A walk ends where a fault has spoilt the layer's picture of the Mac, so known faults make the net smaller: the run says how many steps each kind of manners took (969 of 1,600 under all four, on 2026-10-15).
 
 ## What was heard
 
@@ -106,7 +110,8 @@ hears. If the file is out of date the run rewrites it and fails that once: look 
 ## Does the net hold? (`make mac-on-linux-selftest`)
 
 A story that stays green without the cure it is about proves nothing. `mutants.py` has twenty-one small changes to the copy, each of which takes one cure out of the layer again (the count of windows that tells a new one from a found one, the looks at an app macOS does not name in front yet, the watch for a lost release, the second reading of the lists after a Space switch, the
-look at the window server during a drag…), and names the checks that must go red. Only the changed file is compiled again: eight seconds each. A change that no longer fits the sources is reported: write it anew, or delete it with its story.
+look at the window server during a drag…), and names the checks that must go red, **and be news: one that the list of known failures excuses does not count**. Only the changed file is compiled again: eight seconds each. Before that it holds the program to its own book-keeping: arguments that select nothing or cannot be read
+(`--only zzzzz`, `--seeds 3-x`, `--steps 0`, a `--replay` with a step it does not know) are refused with exit code 2, and a listed line with another number of seeds, or with `sometimes: `, excuses nothing. A change that no longer fits the sources is reported: write it anew, or delete it with its story.
 
 ## The rude walk (`tests/Walk.swift`)
 
@@ -122,7 +127,7 @@ one pair of hands are a quarter of a second apart; what happens by itself may co
 | late calls | A call may be carried out up to 80 ms after it returned |
 
 After each step two seconds pass in which Arbor's main thread was not held up, and the rules are checked (`Rule` in `Walk.swift`): Arbor knows every standard window that shows, and none that has closed, with the right flags and frames; every window is announced once, as new if it has just opened; none is reported gone
-that is open; nothing is reported about a stranger; the last word on the keyboard is right, and whoever got the keyboard was reported focused; no drag or resize is left open with the button up; the main thread waits at most two seconds for one hang. Each kind of manners is a story and each rule a check: it holds if no
+that is open; nothing is reported about a stranger; the last word on the keyboard is right, and whoever got the keyboard was reported focused; no drag or resize is left open with the button up; the main thread waits at most two seconds for one hang of one app. Each kind of manners is a story and each rule a check: it holds if no
 seed breaks it. A breach prints how many seeds show it and the shortest script that deleting steps gives:
 
 ```
@@ -149,7 +154,7 @@ now, and lines in `known-failures.txt` that say which lines of the layer are con
 | The self-test | 3 minutes |
 | 400 seeds of the walk | 1 minute |
 
-The stand-ins are compiled whole, with a stamp as in `check.sh`. Arbor's modules and the stories are compiled incrementally, as `swift build` does it: the copy is brought up to date file by file, touching only those whose text differs.
+`REF=` and `SOURCES=` build in a work folder of their own, from nothing the first time (2 minutes). A second run in the same work folder waits for the first. The stand-ins are compiled whole, with a stamp as in `check.sh`. Arbor's modules and the stories are compiled incrementally, as `swift build` does it: the copy is brought up to date file by file, touching only those whose text differs.
 
 ## When it breaks
 

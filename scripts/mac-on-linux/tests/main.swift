@@ -29,13 +29,19 @@ while !arguments.isEmpty {
     book.options.only.append(key.components(separatedBy: ": ")[0])
   case "--list": book.options.listsOnly = true
   case "--seeds":
-    let bounds = value().components(separatedBy: "-").compactMap { UInt64($0) }
-    guard let first = bounds.first, let last = bounds.last, first <= last else {
-      print("--seeds wants a range, like 1-500")
+    let words = value().components(separatedBy: "-")
+    let bounds = words.compactMap { UInt64($0) }
+    guard bounds.count == words.count, (1...2).contains(bounds.count), let first = bounds.first, let last = bounds.last, first <= last else {
+      print("--seeds wants a range, like 1-500, or one seed")
       exit(2)
     }
     book.options.walkSeeds = first...last
-  case "--steps": book.options.walkSteps = Int(value()) ?? 40
+  case "--steps":
+    guard let steps = Int(value()), steps > 0 else {
+      print("--steps wants a number of steps, 1 or more")
+      exit(2)
+    }
+    book.options.walkSteps = steps
   case "--replay": book.options.replay = value()
   case "--heard": book.options.heardFile = value()
   case "--help":
