@@ -490,13 +490,15 @@ final class World {
 
   /// `FrontmostAppWatcher`, which goes on looking during a pause. The workspace gives one notice for each app that comes forward and none
   /// for one that is in front already, so Arbor hears one word, by one road: the fake's own, which `userFocus` takes as well and which says
-  /// nothing twice. Two processes of one app are one to the fake, which goes by the name: of the second the world tells itself.
+  /// nothing twice. Two processes of one app are one to the fake, which goes by the name: of the second the world tells itself. So it does during
+  /// a pause, when nobody listens on the fake's road: or an Arbor that has paused for an app never hears that the app was left, and stays paused.
   func tellWhoIsInFront() {
     guard toldInFront != frontApp else { return }
     toldInFront = frontApp
     let before = system.frontmost
+    let isHeard = system.events != nil
     if let app = frontmostApp { system.activate(bundleID: app.bundleID, name: app.name) }
-    if system.frontmost == before { arbor?.controller.reports.applicationActivated(frontmostApp) }
+    if !isHeard || system.frontmost == before { arbor?.controller.reports.applicationActivated(frontmostApp) }
   }
 
   var frontmostApp: FrontmostApp? {
