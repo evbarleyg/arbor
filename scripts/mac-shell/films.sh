@@ -175,6 +175,7 @@ if ! camera_start; then
   echo "the stream gave no frames; trying one picture after another"
   camera_start --poll || die "no camera: neither the stream nor pictures"
 fi
+sampler_start
 # A regular app, as people's apps are: in the Dock and in ⌘⇥.
 ARBOR_TEST_WINDOWS_ARGS="--regular"
 # Shortcuts on, as a person has them; and the two panels that keep out of shared screens let the camera see them.
@@ -417,4 +418,5 @@ appearance light
 wallpaper "#000000"
 macos_tiling on
 
+sampler_stop
 camera_stop
