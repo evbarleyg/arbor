@@ -1,0 +1,39 @@
+# Story: somebody who has read nothing has Arbor running and has docked nothing. Safari, Mail and Notes lie about; they write in
+# Notes and put it into the Dock with ⌘M. On a Mac alone Notes stays in front with no window, and nothing else stirs.
+# With Arbor, a moment later Mail jumps forward: Arbor has handed it the keyboard, "so that keys never go nowhere".
+# Nobody asked. Two thirds of what a stranger's walk finds with nothing docked is this one habit (26 times in 1,000 acts).
+# Decided (Q29): Arbor hands the keyboard on only where Arbor itself took the window away, or at a move of the view.
+# After a person's own act (⌘M, ⌘H, ⌘W, a click on the wallpaper) macOS decides.
+# Told here by what the next command meets: with nobody in front, `dock left` has no window to dock and says so.
+# Reference: Q29; rules 2 and 7 of issue #3; board 0.20.
+open Safari 500x400
+open Mail 500x400
+open Notes 500x400
+focus 101
+focus 102
+focus 103
+minimize 103
+wait 1
+dock left
+expect fail
+expect floating 101
+expect floating 102
+expect count docked 0
+# The same at ⌘W.
+restore 103
+focus 103
+close 103
+wait 1
+dock left
+expect fail
+expect count docked 0
+# And with an arrangement: two halves, the right one closes. The left one is not given the keyboard either.
+focus 101
+dock 101 left
+dock 102 right
+focus 102
+close 102
+wait 1
+undock
+expect fail
+expect docked 101
