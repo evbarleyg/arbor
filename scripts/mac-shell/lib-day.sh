@@ -499,7 +499,9 @@ day_write_manifest() {
     "$(sw_vers -productVersion) ($(sw_vers -buildVersion))" "$SECONDS" << 'PYTHON'
 import json, os, sys
 path, commit, script, macos, seconds = sys.argv[1:]
+# Several scripts can share one run of the workflow: which of them this is, and of how many, is for the batch to say before the first begins.
 run = {"gate": 1, "commit": commit, "run": os.environ.get("GITHUB_RUN_ID", ""), "attempt": int(os.environ.get("GITHUB_RUN_ATTEMPT", "1")),
+       "part": int(os.environ.get("MAC_SHELL_PART", "1")), "parts": int(os.environ.get("MAC_SHELL_PARTS", "1")),
        "script": script, "settings": "shipped", "build": "debug", "macos": macos, "seconds": int(seconds)}
 for line in os.environ["DAY_MANIFEST"].splitlines():
     key, _, value = line.partition("=")
