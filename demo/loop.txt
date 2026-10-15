@@ -1,0 +1,66 @@
+# The loop for the README: a dozen seconds that end as they begin. Two keys and an arrow, twice; the gap; and undo, three times, which
+# gives every window its own place and size back. A script for `arbor-sim film` (docs/FILM.md), painted without the band.
+# It plays Arbor as it comes: no setting is changed.
+
+display 1440x810 bar 24 dock 76
+reserve 196
+
+app Browser icon icons/Browser.rgba
+app Mail icon icons/Mail.rgba
+app Notes icon icons/Notes.rgba
+app Chat icon icons/Chat.rgba
+
+open Browser 820x520
+open Mail 640x440
+open Notes 380x270
+open Chat 420x330
+title 101 How a tree grows
+title 102 Inbox
+title 103 Field notes
+title 104 garden
+move 101 60 44 820 520
+move 102 540 120 640 440
+move 103 96 372 380 270
+move 104 968 316 420 330
+# From back to front as the loop leaves them, so that its end is its beginning.
+focus 103
+focus 104
+focus 101
+focus 102
+pointer 760 690
+launch
+wait 0.5
+
+glide window 101 visible in 0.5
+click
+wait 0.55
+tap ctrl+opt+left
+expect docked 101
+wait 1.0
+
+glide window 102 visible in 0.5
+click
+wait 0.55
+tap ctrl+opt+right
+expect docked 102
+expect left-of 101 102
+wait 1.0
+
+glide gap 101 102 in 0.5
+wait 0.2
+press
+glide 872 379 in 0.8
+wait 0.25
+lift
+wait 0.9
+
+tap ctrl+opt+z
+wait 0.75
+tap ctrl+opt+z
+expect floating 102
+wait 0.75
+tap ctrl+opt+z
+expect floating 101
+glide 760 690 in 0.5
+# Until Arbor's line of words has gone, if it said any: the loop ends as it begins. And until the keys have gone.
+wait 2.0

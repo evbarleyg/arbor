@@ -1,0 +1,129 @@
+<!doctype html>
+<!-- All of the scenery on a few pages, to look at while changing scenery.js.
+     gallery.html             one desktop: wallpaper, menu bar, Dock, six windows in a heap, the pointer
+     gallery.html?page=sizes  every app's window at five sizes, with and without the focus
+     gallery.html?page=icons  every icon at five sizes, the pointers, the Dock with a badge and a bounce
+     &scale=1.1111            pixels per point, if not the 1.3333 of a display that fills a picture 1920 wide
+     gallery.mjs saves each canvas as a PNG. -->
+<meta charset="utf-8">
+<title>Scenery</title>
+<style>
+  body { margin: 0; background: #22242a; }
+  canvas { display: block; margin: 0 0 24px; }
+</style>
+<script src="scenery.js"></script>
+<script>
+  const query = new URLSearchParams(location.search);
+  const pixelsPerPoint = Number(query.get('scale')) || 1920 / 1440;
+  const names = Object.keys(Scenery.apps);
+  const titles = {
+    Browser: 'How a tree grows', Mail: 'Inbox', Terminal: 'arbor: make check', Chat: 'garden',
+    Notes: 'Field notes', Call: 'Mia and Tom',
+  };
+
+  function sheet(name, width, height) {
+    const canvas = document.createElement('canvas');
+    canvas.id = name;
+    canvas.width = Math.round(width * pixelsPerPoint);
+    canvas.height = Math.round(height * pixelsPerPoint);
+    canvas.style.width = `${width}px`;
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+    ctx.scale(pixelsPerPoint, pixelsPerPoint);
+    return ctx;
+  }
+
+  const heap = [
+    { app: 'Browser', x: 96, y: 52, width: 820, height: 560 },
+    { app: 'Mail', x: 470, y: 112, width: 760, height: 500 },
+    { app: 'Terminal', x: 48, y: 400, width: 540, height: 316 },
+    { app: 'Chat', x: 968, y: 58, width: 430, height: 500 },
+    { app: 'Call', x: 1000, y: 420, width: 400, height: 290 },
+    { app: 'Notes', x: 640, y: 300, width: 340, height: 400, focused: true },
+  ];
+
+  function desktop(ctx) {
+    Scenery.wallpaper(ctx, 1440, 810);
+    for (const w of heap) Scenery.window(ctx, { title: titles[w.app], focused: false, ...w });
+    const { slot } = Scenery.menuBar(ctx, 1440, 24, { app: 'Notes', clock: '9:41', slotWidth: 26 });
+    Scenery.dock(ctx, 1440, 810, { apps: names, running: names, badges: { Chat: 1 }, bounce: {} });
+    Scenery.pointer(ctx, 812, 316, { down: false, kind: 'arrow' });
+    return slot;
+  }
+
+  const pages = {
+    desktop() {
+      const ctx = sheet('desktop', 1440, 810);
+      desktop(ctx);
+      // How long a whole desktop takes once the caches are warm; gallery.mjs prints it.
+      const rounds = 40, before = performance.now();
+      for (let i = 0; i < rounds; i += 1) desktop(ctx);
+      ctx.getImageData(0, 0, 1, 1);
+      window.millisecondsPerDesktop = (performance.now() - before) / rounds;
+
+      const bare = sheet('wallpaper', 1440, 810);
+      Scenery.wallpaper(bare, 1440, 810);
+      const { slot } = Scenery.menuBar(bare, 1440, 24, { app: 'Browser', clock: '9:41', slotWidth: 26 });
+      bare.strokeStyle = 'rgba(255,0,0,0.6)';
+      bare.strokeRect(slot.x, slot.y, slot.width, slot.height);
+      bare.fillStyle = 'rgba(0,0,0,0.25)';
+      bare.fillRect(300, 24, 500, 710);
+      Scenery.dock(bare, 1440, 810, { apps: names, running: ['Browser', 'Chat'], badges: {}, bounce: {} });
+    },
+
+    sizes() {
+      for (const app of names) {
+        const ctx = sheet(`sizes-${app}`, 1480, 1960);
+        Scenery.wallpaper(ctx, 1480, 1960);
+        const places = [
+          [32, 32, 1416, 716, true], [32, 780, 940, 716, false], [984, 780, 464, 716, true],
+          [32, 1528, 464, 375, true], [528, 1528, 240, 160, true], [800, 1528, 240, 160, false],
+          [1072, 1528, 376, 300, false],
+        ];
+        for (const [x, y, width, height, focused] of places) {
+          Scenery.window(ctx, { app, title: titles[app], x, y, width, height, focused });
+        }
+      }
+    },
+
+    icons() {
+      const ctx = sheet('icons', 1440, 810);
+      Scenery.wallpaper(ctx, 1440, 810);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 1440, 150);
+      ctx.fillStyle = '#1e1f24';
+      ctx.fillRect(0, 150, 1440, 60);
+      names.forEach((app, i) => {
+        const x = 24 + i * 236;
+        Scenery.icon(ctx, app, x, 20, 16);
+        Scenery.icon(ctx, app, x + 24, 16, 24);
+        Scenery.icon(ctx, app, x + 56, 8, 48);
+        Scenery.icon(ctx, app, x + 108, 8, 128);
+        Scenery.icon(ctx, app, x, 160, 16);
+        Scenery.icon(ctx, app, x + 24, 156, 24);
+        Scenery.icon(ctx, app, x + 56, 156, 48);
+        Scenery.icon(ctx, app, x - 10, 230, 256);
+      });
+      const pointers = [['arrow', false], ['arrow', true], ['resizeLeftRight', false], ['resizeUpDown', false]];
+      pointers.forEach(([kind, down], i) => {
+        Scenery.pointer(ctx, 60 + i * 60, 540, { kind, down });
+        Scenery.pointer(ctx, 60 + i * 60, 110, { kind, down });
+        Scenery.pointer(ctx, 60 + i * 60 + 900, 180, { kind, down });
+      });
+      // A window behind the Dock, to see the frosted glass.
+      const behind = { x: 420, y: 560, width: 560, height: 230 };
+      Scenery.window(ctx, { app: 'Mail', title: titles.Mail, focused: true, ...behind });
+      Scenery.dock(ctx, 1440, 810, {
+        apps: names,
+        running: ['Browser', 'Chat', 'Call'],
+        badges: { Chat: 1, Mail: 12 },
+        bounce: { Chat: 1, Notes: 0.5 },
+      });
+    },
+  };
+
+  addEventListener('DOMContentLoaded', () => {
+    (pages[query.get('page')] || pages.desktop)();
+    document.body.dataset.painted = 'yes';
+  });
+</script>

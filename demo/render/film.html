@@ -1,0 +1,48 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Arbor: the demo film, frame by frame</title>
+<style>html, body { margin: 0; background: #000 } canvas { display: block }</style>
+<canvas id="picture" width="1920" height="1080"></canvas>
+<script src="scenery.js"></script>
+<script src="paint.js"></script>
+<script src="timeline.js"></script>
+<script>
+  // `render.mjs` loads a film into this page and asks for one picture after the other.
+  const Film = {
+    // The fonts everything was laid out in. A browser puts another in the place of one that is missing and says nothing.
+    missingFonts() {
+      const ctx = document.createElement('canvas').getContext('2d');
+      const width = (family) => { ctx.font = `72px ${family}`; return ctx.measureText('Arbor mmlli 0123 ⌃⌥⇧⌘↩').width; };
+      return ['Inter', 'Inter Display', 'DejaVu Sans'].filter(
+        (name) => ['monospace', 'serif'].every((other) => width(`'${name}', ${other}`) === width(other)));
+    },
+    load(text) {
+      const missing = this.missingFonts();
+      if (missing.length) throw new Error(`not installed: the font ${missing.join(', ')}`);
+      const lines = text.split('\n').filter(Boolean).map((line) => JSON.parse(line));
+      this.film = lines[0];
+      this.frames = lines.slice(1);
+      this.timeline = Timeline.make(this.film, this.frames);
+      return this.frames.length;
+    },
+    // `plain`: the display and a strip for the keys, without the band.
+    size(width, height) {
+      const canvas = document.getElementById('picture');
+      canvas.width = width;
+      canvas.height = height;
+    },
+    paint(n, plain) {
+      const ctx = document.getElementById('picture').getContext('2d');
+      if (plain) Paint.displayOnly(ctx, this.film, this.frames[n], this.timeline.at(n));
+      else Paint.picture(ctx, this.film, this.frames[n], this.timeline.at(n));
+    },
+    async png(n, plain) {
+      this.paint(n, plain);
+      const blob = await new Promise((done) => document.getElementById('picture').toBlob(done, 'image/png'));
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      let text = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) text += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      return btoa(text);
+    },
+  };
+</script>

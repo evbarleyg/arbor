@@ -1,0 +1,235 @@
+# The long film (demo/STORYBOARD.md): the short one, and then a window found by typing, three side by side, undo, a drag with ⌘, Quit,
+# and a new start. A script for `arbor-sim film` (docs/FILM.md).
+# It plays Arbor as it comes: no setting is changed.
+#
+# Every line is either what a person does (pointer, button, keys), what another app does, or a note of the film's own (caption, shot,
+# mark). What the windows do in answer is Arbor's business: nothing here says where a window goes once Arbor has it.
+# The `expect` lines hold the story to the truth: if Arbor stops doing what a caption says, there is no film.
+
+display 1440x810 bar 24 dock 76
+reserve 196
+
+# The colour of each app is what Arbor takes from its icon (demo/render/icons.mjs writes the icons down as Arbor samples them).
+app Browser icon icons/Browser.rgba
+app Mail icon icons/Mail.rgba
+app Notes icon icons/Notes.rgba
+app Chat icon icons/Chat.rgba
+
+# ---- The heap. These windows were open before Arbor was. Notes and Chat lie at the back, mostly buried, and where no gap will come to lie:
+# a loose window behind two docked ones shows through the gap between them, and a press there is a press on it.
+open Browser 820x520
+open Mail 640x440
+open Notes 380x270
+open Chat 420x330
+title 101 How a tree grows
+title 102 Inbox
+title 103 Field notes
+title 104 garden
+move 101 60 44 820 520
+move 102 540 120 640 440
+move 103 96 372 380 270
+move 104 968 316 420 330
+focus 103
+focus 104
+focus 101
+focus 102
+pointer 1240 690
+
+shot 1
+caption Too many windows. One screen.
+wait 0.8
+glide window 103 visible
+click
+wait 0.5
+glide window 101 visible
+click
+wait 0.6
+
+shot 2
+caption Meet Arbor. Nothing moves until you say so.
+wait 0.4
+launch
+mark look item
+wait 2.5
+mark look
+mark still.start 101 102 103 104
+wait 0.1
+mark still.start
+
+shot 3
+caption One shortcut. Snapped left.
+wait 1.6
+tap ctrl+opt+left
+expect docked 101
+wait 1.9
+
+shot 4
+caption One more. Snapped right.
+glide window 102 visible
+click
+wait 0.7
+tap ctrl+opt+right
+expect docked 102
+expect left-of 101 102
+expect floating 103
+expect floating 104
+wait 0.4
+# Two halves, and what was left alone has not been touched.
+mark alike 101 102
+mark still.start 103 104
+wait 1.3
+
+# Every viewer asked where the other two had gone.
+shot 4b
+caption Nothing closed. The rest wait behind.
+wait 2.6
+mark alike
+
+shot 5
+caption Drag the gap. Both windows resize.
+glide gap 101 102 in 0.8
+wait 0.5
+press
+glide 872 379 in 1.1
+wait 0.4
+lift
+# Not halves any more: an arrangement of this person's own.
+mark wider 101 102
+mark keep.mine on
+glide 1250 768 in 0.7
+wait 0.8
+mark wider
+# While one window fills the screen Arbor still takes the loose ones out of view, behind it, and puts them back: nothing of that is seen,
+# but untouched they are not. From here on the claim is that they are where they were.
+mark still.start
+
+shot 6
+caption Need room? Fill the screen.
+wait 1.6
+tap ctrl+opt+return
+expect fills 102
+wait 2.0
+
+shot 7a
+caption Hit the same keys…
+wait 1.5
+tap ctrl+opt+return
+expect camera root
+wait 0.9
+
+shot 7b
+caption …and your layout is right back.
+mark same.mine 101 102
+mark same.start 103 104
+wait 2.5
+mark same.mine
+mark same.start
+
+shot 8
+caption Lost a window? Just type its name.
+wait 0.9
+tap ctrl+opt+g
+wait 0.9
+type cha each 0.35
+wait 0.9
+tap return
+expect visible 104
+expect floating 104
+wait 0.3
+# It comes forward where it lay.
+mark same.start 104
+wait 1.6
+mark same.start
+
+shot 9
+caption Add a third. The others make room.
+wait 1.5
+tap ctrl+opt+right
+expect docked 104
+expect left-of 101 102
+expect left-of 102 104
+wait 2.3
+
+shot 10
+caption Wrong move? Undo it.
+wait 1.4
+tap ctrl+opt+z
+expect floating 104
+expect docked 101
+expect docked 102
+wait 0.3
+# The two have their room again, as this person had shared it out, and Chat lies where it lay.
+mark same.mine 101 102
+mark same.start 104
+wait 1.9
+mark same.mine
+mark same.start
+
+shot 11
+caption Hold ⌘ and drop a window where you want it.
+wait 0.6
+mark note No ⌘, no Arbor. A plain drag stays a plain drag.
+wait 0.5
+keydown cmd
+glide window 104 title in 0.6
+wait 0.3
+press
+wait 0.1
+glide window 102 0.5 0.72 in 1.0
+wait 1.1
+lift
+wait 0.3
+keyup cmd
+expect docked 104
+expect above 102 104
+expect left-of 101 102
+glide 1250 768 in 0.7
+mark keep.last on
+wait 1.9
+mark note
+
+# The band says what is chosen from the menu, and that is the announcement: the caption comes with the result.
+shot 12
+caption
+glide item menu in 0.6
+click
+wait 0.3
+glide menu Quit Arbor in 0.6
+wait 1.0
+click
+glide 1240 700 in 0.8
+caption Quit. Arbor puts everything back.
+mark same.start 101 102 103 104
+wait 2.7
+
+shot 13
+caption Reopen it. Your layout is waiting.
+wait 1.3
+mark same.start
+launch
+mark look item
+expect docked 101
+expect docked 102
+expect docked 104
+expect camera root
+wait 1.0
+mark same.last 101 102 104
+wait 2.2
+mark look
+
+# ---- The end card.
+shot card
+caption
+mark card.1 mark
+mark card.2 title Arbor
+wait 0.6
+mark card.3 sub Your windows, in order.
+mark card.4 sub Your Mac forgets your layout. Arbor remembers.
+wait 2.0
+mark card.5 line Free and open source.
+mark card.6 line Nothing moves until you ask.
+mark card.7 line Always a way back.
+wait 1.2
+mark card.8 lead Find it at
+mark card.9 link github.com/evbarleyg/arbor
+wait 4.2
