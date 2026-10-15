@@ -284,6 +284,21 @@ import Testing
     expectWindowsMatchLayout(h, on: h.display)
   }
 
+  @Test func closedInFullScreenItsNeighboursCloseUpOnce() {
+    let (h, a, others) = makeRow()
+    h.system.enterFullScreen(a, leaving: others)
+    h.scheduler.advance(by: 3)
+    h.system.clearSightings()
+    // Its Space goes with it, and macOS shows the one it came from.
+    h.system.close(a)
+    for other in others { h.system.setOnActiveSpace(other, true) }
+    h.scheduler.advance(by: 2)
+    for other in others { #expect(h.system.sightings(of: other).count <= 1, "\(h.system.sightings(of: other))") }
+    #expect(!h.system.sightings.isEmpty, "they have its room")
+    #expect(h.controller.invariantViolations().isEmpty, "\(h.controller.invariantViolations())")
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
   @Test func aSpaceThatNeverGoesAwayIsLaidOutAllTheSame() {
     let (h, a, others) = makeRow()
     // Only the first two reports: whatever became of the rest.
