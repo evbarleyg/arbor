@@ -1,0 +1,675 @@
+{
+ "sampler": "samples 6161 seconds 161.1 hz 38.2 cost-ms 2.39 late 21 longest-gap-ms 544 whole-samples 8747 whole-seconds 228.7 whole-late 39",
+ "input": {
+  "events": 16,
+  "p50_us": 314,
+  "p99_us": 2076,
+  "max_us": 2076,
+  "kinds": {
+   "key": {
+    "events": 16,
+    "p50_us": 314,
+    "p99_us": 2076,
+    "max_us": 2076
+   }
+  },
+  "rounds": {
+   "before": {
+    "forward": {
+     "events": 8,
+     "p50_us": 30993,
+     "p99_us": 94470,
+     "max_us": 94470
+    },
+    "up": {
+     "events": 8,
+     "p50_us": 604,
+     "p99_us": 3932,
+     "max_us": 3932
+    }
+   },
+   "started": {
+    "forward": {
+     "events": 8,
+     "p50_us": 27795,
+     "p99_us": 54144,
+     "max_us": 54144
+    },
+    "up": {
+     "events": 8,
+     "p50_us": 681,
+     "p99_us": 5416,
+     "max_us": 5416
+    }
+   },
+   "last": {
+    "forward": {
+     "events": 8,
+     "p50_us": 31484,
+     "p99_us": 66792,
+     "max_us": 66792
+    },
+    "up": {
+     "events": 8,
+     "p50_us": 1986,
+     "p99_us": 8437,
+     "max_us": 8437
+    }
+   },
+   "after": {
+    "forward": {
+     "events": 8,
+     "p50_us": 34762,
+     "p99_us": 42902,
+     "max_us": 42902
+    },
+    "up": {
+     "events": 8,
+     "p50_us": 295,
+     "p99_us": 3601,
+     "max_us": 3601
+    }
+   }
+  },
+  "judged": [],
+  "silent": {
+   "down": "fewer than 10 such events in a round without Arbor",
+   "forward": "fewer than 10 such events in a round without Arbor",
+   "up": "fewer than 10 such events in a round without Arbor",
+   "key": "fewer than 10 such events in a round without Arbor",
+   "dragged": "fewer than 10 such events in a round without Arbor",
+   "scroll": "fewer than 10 such events in a round without Arbor"
+  }
+ },
+ "stage_seen": false,
+ "witnessed": true,
+ "steps": [
+  {
+   "number": 15,
+   "slug": "input-before",
+   "chapter": "Before Arbor: the apps are open already",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792066274164,
+   "milliseconds": 10535,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 16,
+   "slug": "launch",
+   "chapter": "The walk",
+   "text": "starts Arbor",
+   "act": "quit-and-start",
+   "judged": true,
+   "performed": true,
+   "began": 1792066285035,
+   "milliseconds": 2468,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 17,
+   "slug": "input-started",
+   "chapter": "The walk",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792066287827,
+   "milliseconds": 10156,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 18,
+   "slug": "display-plug",
+   "chapter": "The walk",
+   "text": "the second display: plug",
+   "act": "display-change",
+   "judged": false,
+   "performed": true,
+   "began": 1792066298357,
+   "milliseconds": 6604,
+   "moved": {
+    "461": [
+     1,
+     1,
+     0
+    ],
+    "464": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 19,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792066305238,
+   "milliseconds": 1421,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 20,
+   "slug": "display-unplug",
+   "chapter": "The walk",
+   "text": "the second display: unplug",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792066307016,
+   "milliseconds": 2747,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 21,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792066309987,
+   "milliseconds": 1307,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 22,
+   "slug": "display-plug",
+   "chapter": "The walk",
+   "text": "the second display: plug",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792066311567,
+   "milliseconds": 6120,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 23,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792066318213,
+   "milliseconds": 1429,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 24,
+   "slug": "display-unplug",
+   "chapter": "The walk",
+   "text": "the second display: unplug",
+   "act": "display-change",
+   "judged": false,
+   "performed": true,
+   "began": 1792066319987,
+   "milliseconds": 3051,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 25,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792066323458,
+   "milliseconds": 1309,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 26,
+   "slug": "display-plug",
+   "chapter": "The walk",
+   "text": "the second display: plug",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792066325046,
+   "milliseconds": 6297,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 27,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792066331587,
+   "milliseconds": 1321,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 28,
+   "slug": "display-left",
+   "chapter": "The walk",
+   "text": "the second display: left",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792066333119,
+   "milliseconds": 5996,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 29,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792066339556,
+   "milliseconds": 1444,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 30,
+   "slug": "display-right",
+   "chapter": "The walk",
+   "text": "the second display: right",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792066341349,
+   "milliseconds": 5998,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 31,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792066347868,
+   "milliseconds": 1348,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 32,
+   "slug": "display-unplug",
+   "chapter": "The walk",
+   "text": "the second display: unplug",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792066349531,
+   "milliseconds": 2725,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 33,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792066352531,
+   "milliseconds": 1286,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 34,
+   "slug": "display-plug",
+   "chapter": "The walk",
+   "text": "the second display: plug",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792066354083,
+   "milliseconds": 6029,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 35,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792066360484,
+   "milliseconds": 1340,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 36,
+   "slug": "display-unplug",
+   "chapter": "The walk",
+   "text": "the second display: unplug",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792066362117,
+   "milliseconds": 2730,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 37,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792066365158,
+   "milliseconds": 1398,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 38,
+   "slug": "display-plug",
+   "chapter": "The walk",
+   "text": "the second display: plug",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792066366867,
+   "milliseconds": 6050,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 39,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792066373220,
+   "milliseconds": 1372,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 40,
+   "slug": "display-unplug",
+   "chapter": "The walk",
+   "text": "the second display: unplug",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792066374816,
+   "milliseconds": 2679,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 41,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792066377743,
+   "milliseconds": 1313,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 42,
+   "slug": "display-plug",
+   "chapter": "The walk",
+   "text": "the second display: plug",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792066379293,
+   "milliseconds": 5971,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 43,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792066385554,
+   "milliseconds": 1376,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 44,
+   "slug": "display-unplug",
+   "chapter": "The walk",
+   "text": "the second display: unplug",
+   "act": "display-change",
+   "judged": true,
+   "performed": true,
+   "began": 1792066387164,
+   "milliseconds": 2675,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 45,
+   "slug": "view-home",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792066390085,
+   "milliseconds": 1363,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 46,
+   "slug": "input-last",
+   "chapter": "The end",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792066391706,
+   "milliseconds": 10764,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 47,
+   "slug": "quit",
+   "chapter": "The end",
+   "text": "chooses Quit Arbor in Arbor's menu",
+   "act": "quit-and-start",
+   "judged": true,
+   "performed": true,
+   "began": 1792066402766,
+   "milliseconds": 3199,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "textedit (w461)",
+     "what": "is 165,65 656×422; its own size was 165,65 673×439",
+     "trace": null
+    },
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "terminal (w464)",
+     "what": "is 40,51 863×499; its own size was 40,51 877×499",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 48,
+   "slug": "input-after",
+   "chapter": "The end",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792066406151,
+   "milliseconds": 10038,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 49,
+   "slug": "dock-icon-finder",
+   "chapter": "The end",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792066416397,
+   "milliseconds": 1756,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 50,
+   "slug": "dock-icon-safari",
+   "chapter": "The end",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792066418518,
+   "milliseconds": 1763,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 51,
+   "slug": "dock-icon-textedit",
+   "chapter": "The end",
+   "text": "clicks textedit's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792066420477,
+   "milliseconds": 1807,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 52,
+   "slug": "dock-icon-terminal",
+   "chapter": "The end",
+   "text": "clicks terminal's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792066422493,
+   "milliseconds": 1794,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 53,
+   "slug": "dock-icon-notes",
+   "chapter": "The end",
+   "text": "clicks notes's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792066424504,
+   "milliseconds": 1816,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 54,
+   "slug": "dock-icon-calendar",
+   "chapter": "The end",
+   "text": "clicks calendar's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792066426527,
+   "milliseconds": 1789,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 55,
+   "slug": "dock-icon-settings",
+   "chapter": "The end",
+   "text": "clicks settings's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792066428559,
+   "milliseconds": 1908,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 56,
+   "slug": "dock-icon-preview",
+   "chapter": "The end",
+   "text": "clicks preview's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792066430739,
+   "milliseconds": 1910,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 57,
+   "slug": "dock-icon-mail",
+   "chapter": "The end",
+   "text": "clicks mail's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792066432901,
+   "milliseconds": 1788,
+   "moved": {},
+   "findings": []
+  }
+ ]
+}
