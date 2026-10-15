@@ -471,16 +471,18 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     #expect(heard.contains(.layout(h.display)))
   }
 
-  @Test func pinningAWindowThatLiesBehindAnotherBringsItToTheFront() {
+  @Test func pinningAWindowThatLiesBehindADockedOneBringsItToLight() {
     let (h, _, browser, call) = makeHarness()
     h.run("unpin \(call.rawValue)")
     h.system.userFocus(browser)
     h.scheduler.advance(by: 1)
-    #expect(h.system.windowsFrontToBack().first == browser)
+    #expect(h.system.windowsFrontToBack().first == browser && h.frame(browser)!.overlaps(h.frame(call)!))
     h.system.clearRaiseLog()
     h.run("pin \(call.rawValue)")
     h.scheduler.advance(by: 1)
-    #expect(h.system.raiseLog == [call])
+    // No raise could: the browser has the keyboard. It makes room (collab/QUESTIONS.md Q25), and then there is nothing to raise it over.
+    #expect(!h.frame(browser)!.overlaps(h.frame(call)!))
+    #expect(h.system.raiseLog.isEmpty)
     #expect(h.system.focused == browser)
   }
 
@@ -499,15 +501,16 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     _ = call
   }
 
-  @Test func holdingTheMouseButtonDoesNotRaiseItAgainAndAgain() {
-    let (h, _, browser, call) = makeHarness()
+  @Test func holdingTheMouseButtonRaisesNothing() {
+    let (h, _, browser, _) = makeHarness()
+    h.system.clearRaiseLog()
     h.system.mouseDown = true
     h.system.userFocus(browser)
     h.scheduler.advance(by: 10)
-    #expect(h.system.raiseLog == [call], "once it is in front there is nothing to do")
+    #expect(h.system.raiseLog.isEmpty)
     h.system.mouseDown = false
     h.scheduler.advance(by: 1)
-    #expect(h.system.raiseLog == [call])
+    #expect(h.system.raiseLog.isEmpty)
   }
 
   @Test func anAppReportingItsRaisedWindowAsFocusedDoesNotLeaveTheKeyboardOutOfView() {
@@ -526,7 +529,8 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     #expect(h.layout?.windowFrames[browser] != nil, "the window with the keyboard is in view")
   }
 
-  @Test func ofTwoPinnedWindowsTheOneUsedLastEndsUpInFrontWhicheverOpenedFirst() {
+  @Test func ofTwoPinnedWindowsTheOneUsedLastStaysInFrontOfTheOtherWhicheverOpenedFirst() {
+    // By macOS's own order, which Arbor leaves alone.
     let (h, _, browser, call) = makeHarness()
     let timer = h.system.open(app: "Timer", pid: 1007, frame: corner.offsetBy(dx: -40, dy: 40))
     h.run("pin \(timer.rawValue)")
@@ -536,12 +540,12 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
       h.system.clearRaiseLog()
       h.system.userFocus(browser)
       h.scheduler.advance(by: 1)
-      #expect(h.system.raiseLog == [first, last])
-      #expect(h.system.windowsFrontToBack().first == last)
+      #expect(h.system.raiseLog.isEmpty)
+      #expect(h.system.windowsFrontToBack().prefix(3) == [browser, last, first])
     }
   }
 
-  @Test func aWindowOfAnExcludedAppThatCoversItIsPutBehindItToo() {
+  @Test func aWindowOfAnExcludedAppThatCoversItIsToldAndNotFought() {
     let (h, _, _, call) = makeHarness()
     let game = h.system.open(app: "Game", pid: 1006, frame: CGRect(x: 900, y: 40, width: 500, height: 400))
     h.run("exclude com.example.game")
@@ -549,6 +553,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     h.system.clearRaiseLog()
     h.system.userFocus(game)
     h.scheduler.advance(by: 1)
-    #expect(h.system.raiseLog == [call])
+    #expect(h.system.raiseLog.isEmpty)
+    #expect(h.controller.snapshot().windows.first { $0.id == call }?.covered == true)
   }
 }

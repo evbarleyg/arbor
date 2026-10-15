@@ -279,6 +279,8 @@ extension Controller {
     endWaitIfOver()
     Log.info("\(window.id) is back in its saved slot")
     relayout(display, reason: .structure)
+    // It may have been kept in view until now, on another display, which has its room back (Controller+PinnedRoom.swift).
+    makeRoomWhereKeptWindowsAre(on: workspaces.keys.sorted().filter { $0 != display }, asked: true)
     scheduleSave()
   }
 

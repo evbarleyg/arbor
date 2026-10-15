@@ -432,6 +432,9 @@ extension Controller {
     let previous = workspaces
     for (display, restoration) in restorations { workspaces[display] = restoration.workspace }
     for (display, restoration) in restorations.sorted(by: { $0.key < $1.key }) {
+      // Where the windows kept in view go does not hang on the layout, and the layout hangs on it (Controller+PinnedRoom.swift).
+      let first = floatingPlan(for: restoration, replacing: previous[display], on: display)
+      keptWindowsGoTo = first.places.merging(first.homes) { place, _ in place }.filter { restoration.workspace.isPinned($0.key) }
       let plan = floatingPlan(for: restoration, replacing: previous[display], on: display)
       // What the person squeezed into a tile is remembered by node (Controller+MakeRoom.swift), and a number can mean another place now.
       if let old = previous[display]?.tree {

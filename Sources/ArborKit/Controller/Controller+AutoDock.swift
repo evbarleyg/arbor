@@ -26,7 +26,7 @@ extension Controller {
 
   /// Docks `id`, a new window that floats on `display`, where there is room. Returns what happened, for the log.
   func dockAutomatically(_ id: WindowID, on display: DisplayID) -> String {
-    guard let opening = windows[id], let visibleFrame = self.display(display)?.visibleFrame else { return "\(id) is gone" }
+    guard let opening = windows[id], let room = self.display(display).map(roomForViews(on:)) else { return "\(id) is gone" }
     guard opening.isPresent else { return "\(id) takes no room now, so it floats" }
     // Making room would pull windows out from under the pointer. And a window that opens with the button down is
     // in the user's hand: a tab torn off a browser. Where it is dropped decides, as for any dragged window.
@@ -53,7 +53,7 @@ extension Controller {
       // The layout after the docking makes room before it makes a tile (F61), so the plan reckons with that.
       let terms = settings.makeRoom ? roomTerms(on: display, docking: id) : nil
       let plan = AutoDock.plan(
-        for: id, in: workspace, recent: recent, frame: visibleFrame, options: options(for: display).layoutOptions,
+        for: id, in: workspace, recent: recent, frame: room, options: options(for: display).layoutOptions,
         tabsEnabled: settings.tabsEnabled, isPresent: { present.contains($0) }, minimumSize: { minimums[$0] },
         emptyDesktopWeight: desktopIsEmpty(but: id, in: workspace) ? settings.arrangeDesktopWeight : nil,
         makingRoom: terms)

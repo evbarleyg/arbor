@@ -88,7 +88,13 @@ extension Controller {
         workspaces[display]?.unpin(id)
         logRule(index, "\(id) floats")
       }
-      if let dockedOn { relayout(dockedOn, reason: .structure) } else { notify(.layout(display)) }
+      if let dockedOn {
+        relayout(dockedOn, reason: .structure)
+      } else {
+        // The docked windows make room for it, or take back what a rule that matched too early had reserved.
+        makeRoomWhereKeptWindowsAre(on: [display], asked: true)
+        notify(.layout(display))
+      }
     case .dock(let edge):
       dockNewWindow(id, at: .cameraEdge(edge), on: display, theViewMayFollow: theViewMayFollow)
       logRule(index, "docked \(id) at the \(edge.rawValue) edge of the view")

@@ -394,6 +394,8 @@ import Testing
 
   @Test func aWindowKeptInViewIsTicked() {
     let (h, _, _, c) = makeHarness()
+    // Near an edge, where room is made for it. Elsewhere the row says that it can be covered (KeepInViewMakesRoomTests).
+    h.system.userMove(c, to: CGRect(x: 1100, y: 60, width: 300, height: 200))
     h.system.userFocus(c)
     let row = h.controller.menuModel().item("Keep This Window in View")
     #expect(row?.isTicked == false && row?.help != nil)

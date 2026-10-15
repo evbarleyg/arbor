@@ -180,14 +180,14 @@
     "World.press"
    ],
    "guards": [
-    "test: clickingInTheWindowThatAlreadyHasTheKeyboardDoesNotBuryIt",
+    "test: clickingInTheWindowThatAlreadyHasTheKeyboardDoesNotCoverIt",
     "test: whileTheButtonStaysDownInThatWindowItIsNotLeftCovered",
-    "test: framingTheWindowThatAlreadyHasTheKeyboardDoesNotBuryIt",
-    "test: withSummonStaysAClickInTheWindowThatAlreadyHasTheKeyboardDoesNotBuryIt",
+    "test: framingTheWindowThatAlreadyHasTheKeyboardDoesNotCoverIt",
+    "test: withSummonStaysAClickInTheWindowThatAlreadyHasTheKeyboardRaisesNothing",
     "e2e: after clicking the browser again",
-    "e2e: after a second click on the editor nothing covers it either"
+    "e2e: a second click on the editor raises nothing"
    ],
-   "copes": "Controller.lookAfterPinnedWindowsAfterAPress looks at every press (`pointerPressed`), every 0.2 s while the button is down and three more times after.",
+   "copes": "Controller.pinnedRoom: a click in a docked window covers nothing, because docked windows keep clear of a pinned one (QUESTIONS Q25). Arbor no longer looks at every press. A pin that has no room, and a summoned window that stays, can be covered by such a click: `state` says so (Controller.isKeptInViewButCovered), and nothing is raised.",
    "hurt": 2,
    "touches": [
     "behind"
@@ -387,11 +387,11 @@
     "FakeWindowSystem.windowsFrontToBack"
    ],
    "guards": [
-    "test: aClickedWindowThatComesToTheFrontLateIsStillPutBehindIt",
+    "test: aClickedWindowThatComesToTheFrontLateDoesNotCoverItEither",
     "test: whileTheButtonStaysDownInThatWindowItIsNotLeftCovered",
     "e2e: the ring is still directly above its window after a click into it"
    ],
-   "copes": "Controller.keepPinsInFront looks when the event is over and twice more, 0.2 s apart, not counting looks with the button down. The focus line is put above its window again at every mouse-up, 0.15 s later and after every update (Sources/ArborKit/UI/FocusRingPanel.swift).",
+   "copes": "Controller.pinnedRoom: docked windows keep clear of a pinned window (QUESTIONS Q25), so in which order a clicked one takes the keyboard and comes forward no longer matters to a pin, and Arbor looks at no stacking after a click. The focus line is put above its window again at every mouse-up, 0.15 s later and after every update (Sources/ArborKit/UI/FocusRingPanel.swift).",
    "hurt": 2,
    "touches": [
     "behind"
@@ -5930,7 +5930,7 @@
    "kind": "never-exercised",
    "layer": "at the seam",
    "expected": "F49: a pinned window keeps its place through every move of the view and stays in front, and the keyboard stays where it was. It is an item of the menu.",
-   "happened": "Nobody knows: whether a pin is in front again after a real click under it, and what Float All does to a pin that something other than a hand has moved. `check-F49.sh` ran for the first time on a hosted Mac on 2026-10-15 (the trunk of between 02:20 and 02:55 UTC, macOS 26.6.2, one display of 1024×768, once, every key and click a posted event; its output is not in the repository), with its virtual second display: 95 passed, 19 failed. 17 of the reds are the known raise or follow from it (raise-does-not-lift-a-window-over-the-active-apps-key-window): the call lay wholly hidden behind the framed editor while `state` said pinned. So what the script asks about the front could not be seen, and will be asked anew once Keep in View makes room instead (the board, 1.25). The run brought out two faults of Arbor's own that arbor-sim plays just as well, so they are the board's and no cases here: a pin that a hand left with under half of it showing is pulled in at the next layout (251 points on the Mac), and a pin that comes back with its display loses its overhang (40 points). A third was only read from the code and one picture then, and is recorded since: at the mended script's second run (98 passed, 16 failed; the trunk at `9b4cd51e`) the call, which no hand had moved, is at 544,51 after Quit and after the relaunch, and not at 515,42 where it was (the board, 1.69); it had been through the main display's change of resolution (plugging-in-the-virtual-display-changes-the-main-one). Of that run's other reds eleven are the raise and two follow from it. The pin that is pulled in was not tried again: the mended script no longer leaves it hanging over. One fault was the script's, mended since: it dragged the call 251 points off the display and then pressed at x -11. Nothing automatic starts the script. The spec still says \"is written and has not run\".",
+   "happened": "Nobody knows: whether a pin is in front again after a real click under it, and what Float All does to a pin that something other than a hand has moved. `check-F49.sh` ran for the first time on a hosted Mac on 2026-10-15 (the trunk of between 02:20 and 02:55 UTC, macOS 26.6.2, one display of 1024×768, once, every key and click a posted event; its output is not in the repository), with its virtual second display: 95 passed, 19 failed. 17 of the reds are the known raise or follow from it (raise-does-not-lift-a-window-over-the-active-apps-key-window): the call lay wholly hidden behind the framed editor while `state` said pinned. So what the script asks about the front could not be seen, and will be asked anew once Keep in View makes room instead (the board, 1.25). The run brought out two faults of Arbor's own that arbor-sim plays just as well, so they are the board's and no cases here: a pin that a hand left with under half of it showing is pulled in at the next layout (251 points on the Mac), and a pin that comes back with its display loses its overhang (40 points). A third was only read from the code and one picture then, and is recorded since: at the mended script's second run (98 passed, 16 failed; the trunk at `9b4cd51e`) the call, which no hand had moved, is at 544,51 after Quit and after the relaunch, and not at 515,42 where it was (the board, 1.69); it had been through the main display's change of resolution (plugging-in-the-virtual-display-changes-the-main-one). Of that run's other reds eleven are the raise and two follow from it. The pin that is pulled in was not tried again: the mended script no longer leaves it hanging over. One fault was the script's, mended since: it dragged the call 251 points off the display and then pressed at x -11. With room of its own beside every view (Q25; the board, 1.25) the script asks another question, whether all of the call is to be seen, and asks the window server: at its third run (2026-10-15, a hosted Mac, one display of 1024×768 and the virtual second one, once) 132 passed and 3 failed. All twelve checks of the name \"nothing covers the call\" passed, with one raise in the log where there had been 36; Float All, a pause, Quit and the relaunch left the call where it was; it came back with its display where it had been. The three reds are docked windows short of their slots (a-size-clipped-by-the-screen-was-taken-for-the-apps-refusal). A pin that a hand leaves hanging over is still only played on Linux. Nothing automatic starts the script.",
    "found": "A census of the tests and specs, then the script's first run.",
    "modelled": "partly",
    "knobs": [
@@ -5939,9 +5939,8 @@
     "FakeWindowSystem.userClick"
    ],
    "guards": [
-    "e2e: pinning alone brings it in front of the other app's windows",
-    "e2e: real clicks on the window under it",
-    "e2e: no storm: a second of rest raises nothing",
+    "e2e: real clicks on the windows beside it",
+    "e2e: one raise, as it was pinned, and none since",
     "e2e: 5: quit and launch again on the same windows"
    ],
    "copes": "open",
@@ -8598,17 +8597,26 @@
    "id": "raise-does-not-lift-a-window-over-the-active-apps-key-window",
    "kind": "late-or-partial-answer",
    "layer": "at the seam",
-   "expected": "`raise` puts a window in front of every other. `FakeWindowSystem.raise` and the fake Mac do exactly that, and a pin (F49), a summoned window that stays (F53) and every check that says \"raised\" rest on it.",
-   "happened": "Accessibility's raise action lifts a window of an app in the background over everything but the key window of the active app. So a pinned window of another app lies behind the very window the person is working in, which is where a pin matters. All of it is green on Linux and false on a Mac: the gravest of the six differences that run brought out. Decided since (the board, 1.25): Keep in View is to make room beside the pinned window instead of fighting for the front. Not built yet.",
+   "expected": "`raise` puts a window in front of every other. `FakeWindowSystem.raise` and the fake Mac did exactly that until 2026-10-15, and a pin (F49), a summoned window that stays (F53) and every check that said \"raised\" rested on it.",
+   "happened": "Accessibility's raise action lifts a window of an app in the background over everything but the key window of the active app. So a pinned window of another app lay behind the very window the person is working in, which is where a pin matters. All of it was green on Linux and false on a Mac: the gravest of the six differences that run brought out. A second script on a hosted Mac counted 36 raises in vain, and ten checks of the name \"nothing covers the call\" red. Decided (QUESTIONS Q25; the board, 1.25) and built: Keep in View makes room beside the pinned window instead of fighting for the front.",
    "found": "The first run, on hosted Macs, of a suite of real-window checks that is not on the trunk yet (macOS 26.6.2; 1,406 of 1,454 checks passed), beside its rehearsal on Linux, where this was green. Borne out twice on 2026-10-15, in the first runs of the two features' own checks. In `check-F49.sh` only the first of 54 raises in the trace reached the front, and Finder was the active app then; the call lay wholly hidden behind the framed editor while `state` said pinned. In `check-F53.sh`, with `summonStays`, seven raises left the window list as it was, the summoned window wholly behind the editor.",
-   "modelled": "no",
-   "knobs": [],
-   "guards": [
-    "e2e: pinning alone brings it in front of the other app's windows",
-    "e2e: nothing covers the call",
-    "e2e: after a second click on the editor nothing covers it either"
+   "modelled": "yes",
+   "knobs": [
+    "FakeWindowSystem.raise",
+    "FakeWindowSystem.bringToFront",
+    "FakeWindowSystem.raiseLog"
    ],
-   "copes": "open",
+   "guards": [
+    "test: theStandInsRaiseStopsBehindTheWindowThatHasTheKeyboardAsAMacsDoes",
+    "test: theWindowThatFillsTheScreenFillsWhatIsLeft",
+    "test: everyViewIsLaidOutBesideIt",
+    "test: nothingThatHappensLaterRaisesIt",
+    "scenario: 49-the-call-has-room-of-its-own.sim",
+    "e2e: pinning raises it over everything but the window that has the keyboard",
+    "e2e: nothing covers the call",
+    "e2e: a second click on the editor raises nothing"
+   ],
+   "copes": "Controller.pinnedRoom: a pinned window reserves the cheapest strip of its display and every view is laid out in what is left (PinnedRoom in ArborCore). It is raised once, as it is pinned. Where no room can be made (over four tenths of the display) the reply, a line on screen, the menu's row and `state` say that it can be covered.",
    "hurt": 2,
    "touches": [
     "behind"
@@ -8621,6 +8629,10 @@
     "docs/features/F49-pin.md",
     "scripts/mac-shell/check-F49.sh",
     "collab/BOARD.md",
+    "Sources/ArborCore/PinnedRoom.swift",
+    "Sources/ArborKit/Controller/Controller+PinnedRoom.swift",
+    "Tests/ArborKitTests/KeepInViewMakesRoomTests.swift",
+    "collab/QUESTIONS.md",
     "scripts/mac-shell/check-F53.sh"
    ]
   },
@@ -11046,7 +11058,7 @@
     "FakeWindowSystem.stackingIsUnknown"
    ],
    "guards": [
-    "test: whenTheStackingCannotBeToldItIsRaisedAnyway"
+    "test: whenTheStackingCannotBeToldItIsRaisedAtThePin"
    ],
    "copes": "AXWindowSystem.countWindows keeps the last count, and each other caller has a safe default (without the list the event is left to the app). The fake can empty the stacking order only.",
    "hurt": 2,

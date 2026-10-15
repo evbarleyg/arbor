@@ -27,7 +27,8 @@ extension Controller {
         let handles = settings.appearanceOptions.gapHandles == .off ? [] : layout.seams.map(\.frame)
         // Sorted, so that two answers about the same state are equal.
         return DesktopGuardZones.Display(
-          view: layout.frame, windows: Self.sorted(inView.filter { $0.overlaps(layout.frame) }),
+          // The whole of it, the strips of windows kept in view included: there is wallpaper beside a call too (Controller+PinnedRoom.swift).
+          view: display.visibleFrame, windows: Self.sorted(inView.filter { $0.overlaps(display.visibleFrame) }),
           panels: Self.sorted(
             layout.tiles.map(\.frame) + handles + [minimapClickFrame(on: display.id)].compactMap { $0 }))
       })

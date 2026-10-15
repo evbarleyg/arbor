@@ -9,9 +9,10 @@ import CoreGraphics
 public enum AsciiRenderer {
   public static func render(
     _ layout: Layout, tree: LayoutTree, floating: [WindowID: CGRect] = [:], columns: Int = 72,
-    rows: Int = 22, names: [String: NodeID] = [:], label: (WindowID) -> String = { $0.description }
+    rows: Int = 22, names: [String: NodeID] = [:], canvas: CGRect? = nil, label: (WindowID) -> String = { $0.description }
   ) -> String {
-    let frame = layout.frame
+    // The whole display, where the layout has only part of it: beside windows that are kept in view (`PinnedRoom`).
+    let frame = canvas ?? layout.frame
     guard frame.width > 0, frame.height > 0, columns > 2, rows > 2 else { return "" }
     var grid = Array(repeating: Array(repeating: Character(" "), count: columns), count: rows)
 

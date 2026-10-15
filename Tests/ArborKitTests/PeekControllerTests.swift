@@ -197,8 +197,10 @@ private let side = DisplaySnapshot(
 
   @Test func pointingAtAWindowKeptInViewChoosesNothingUnderneath() {
     let desk = Desk()
-    let call = desk.h.system.open(app: "zoom.us", frame: CGRect(x: 1150, y: 500, width: 240, height: 180))
+    // Too large for a strip of its own, so docked windows lie under it (collab/QUESTIONS.md Q25).
+    let call = desk.h.system.open(app: "zoom.us", frame: CGRect(x: 800, y: 200, width: 560, height: 500))
     #expect(desk.h.run("pin \(call.rawValue)").ok)
+    #expect(desk.h.layout?.frame == desk.h.visibleFrame)
     desk.h.system.userFocus(desk.a)
     desk.hold()
     desk.point(at: desk.c)

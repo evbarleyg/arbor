@@ -248,7 +248,7 @@ you are looking at, with the keyboard in it; ⌃⌥` again, or a click on anythi
 ### A call comes in
 
 A call window should stay put while you look things up, and floating windows go out of view when the view leaves the Desktop. So pin it: with the call window in front, choose **Keep "zoom.us" in View** from the menu. It
-keeps its place on the display wherever you zoom, and Arbor never gives it the keyboard by itself. Drag it where you like: a pinned window moves and never docks (to dock it, use ⌃⌥⌘ + arrow or Dock Focused Window, or unpin it first). If you clicked in it and then move the view with a shortcut, the keyboard goes to the window that arrives. The same menu item, now with a tick, ends it.
+keeps its place on the display wherever you zoom, and Arbor never gives it the keyboard by itself. Near a screen edge it has room of its own, as the Dock has: whatever fills the screen fills what is left beside it, and neither covers the other. (In the middle of the screen there is no room to make: it stays in view, but other windows can cover it, and Arbor says so.) Drag it where you like, and the docked windows follow when you let go: a pinned window moves and never docks (to dock it, use ⌃⌥⌘ + arrow or Dock Focused Window, or unpin it first). If you clicked in it and then move the view with a shortcut, the keyboard goes to the window that arrives. The same menu item, now with a tick, ends it.
 
 To have every call pinned as it opens, use a rule (below): `{ "app": "us.zoom.xos", "title": "Meeting", "action": "pin" }`. The same goes for a timer, a music player or a reference document. The README's "Pinned windows" has the details and the limits.
 

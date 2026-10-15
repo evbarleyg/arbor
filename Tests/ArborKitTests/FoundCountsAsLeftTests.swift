@@ -593,9 +593,9 @@ import Testing
     #expect(main.visibleFrame.contains(h.frame(notes)!), "\(h.frame(notes)!)")
   }
 
-  /// Found by the random walks. A window that is kept in view is dragged over the edge, and its pin brings it in again, as ever. Given back
-  /// where the hand left it, the pin would fetch it once more: there and back for one key. What its pin promises comes first.
-  @Test(arguments: waysOut) func aWindowKeptInViewIsNotGivenBackOverTheEdge(way: String) {
+  /// A window that is kept in view is dragged over the edge, and stays there: since Keep in View makes room (QUESTIONS Q25) a pin fetches nothing
+  /// that a hand has left. So there is no second move to fear, and it is given back where it is, like any other: no move at all.
+  @Test(arguments: waysOut) func aWindowKeptInViewStaysOverTheEdgeWhereAHandLeftIt(way: String) {
     let h = Harness()
     let (safari, mail) = (h.system.open(app: "Safari"), h.system.open(app: "Mail"))
     let notes = h.system.open(app: "Notes", frame: CGRect(x: 700, y: 200, width: 600, height: 400))
@@ -605,12 +605,11 @@ import Testing
     h.system.userMove(notes, to: Self.parkedByHand[2])
     h.system.setMinimized(mail, true)
     letTimePass(h)
-    let broughtIn = h.frame(notes)!
-    #expect(h.system.isVisible(notes) && broughtIn != Self.parkedByHand[2], "or this proves nothing: \(broughtIn)")
+    #expect(h.frame(notes) == Self.parkedByHand[2], "the next layout fetches it: \(h.frame(notes)!)")
     h.system.clearFrameLog()
     leave(h, by: way)
-    #expect(moves(of: notes, h).count <= 1, "\(h.system.frameLog)")
-    #expect(h.system.isVisible(notes), "\(h.frame(notes)!)")
+    #expect(moves(of: notes, h).isEmpty, "\(h.system.frameLog)")
+    #expect(h.frame(notes) == Self.parkedByHand[2], "\(h.frame(notes)!)")
   }
 
   /// Found by the random walks. Left lower than macOS lets Arbor put a window: it keeps a title bar above the bottom edge, and stops the

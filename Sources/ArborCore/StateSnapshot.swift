@@ -7,6 +7,8 @@ public struct StateSnapshot: Codable, Sendable, Equatable {
     public var id: DisplayID
     public var frame: CGRect
     public var visibleFrame: CGRect
+    /// What is left of `visibleFrame` for views: all of it, unless windows kept in view have reserved strips along its edges (F49).
+    public var room: CGRect = .zero
     public var camera: NodeID
     public var tree: LayoutTree
     public var windowFrames: [WindowID: CGRect]
@@ -64,6 +66,8 @@ public struct StateSnapshot: Codable, Sendable, Equatable {
     public var fullScreen: Bool
     /// Floating, and kept in view wherever the camera goes.
     public var pinned = false
+    /// Pinned or summoned, and another window lies over part of it all the same: macOS lets nobody keep a window in front.
+    public var covered = false
     /// Floating, and brought over the view by `summon` until the keyboard goes elsewhere.
     public var summoned = false
     /// Floating, and out of view until it is summoned again.

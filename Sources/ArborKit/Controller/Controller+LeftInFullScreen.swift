@@ -50,7 +50,7 @@ extension Controller {
     var options = options(for: display.id).layoutOptions
     options.minimumUsableSize = .zero
     let layout = LayoutEngine.layout(
-      workspace.tree, camera: workspace.tree.root, in: display.visibleFrame, options: options, isPresent: { _ in true })
+      workspace.tree, camera: workspace.tree.root, in: roomForViews(on: display), options: options, isPresent: { _ in true })
     return workspace.tree.leaf(containing: window).flatMap { layout.nodeFrames[$0] }
   }
 

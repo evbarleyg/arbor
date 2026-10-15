@@ -25,7 +25,8 @@ extension Harness {
 
   /// The displays whose last layout is not what a layout would give now. That is never right once a command or an event
   /// is over, whatever the apps do with the frames they are given, unless a layout is scheduled: a switch of macOS
-  /// Spaces, or an app being hidden, is laid out once all of its reports are in. arbor-sim asks after every line.
+  /// Spaces, or an app being hidden, is laid out once all of its reports are in, and docked windows follow a window kept in view
+  /// once it has stood still. arbor-sim asks after every line.
   public func staleLayouts(on only: DisplayID? = nil) -> [String] {
     var problems: [String] = []
     for display in system.displayList.map(\.id) where only == nil || only == display {
@@ -37,7 +38,8 @@ extension Harness {
         problems.append("\(display) was never laid out")
         continue
       }
-      if last != fresh { problems.append("\(display) was not laid out again: \(Self.difference(from: last, to: fresh))") }
+      // (Behind a held view's back a window kept in view may have been moved by its app: that is followed when the hold ends.)
+      if last != fresh, !(controller.isHeld && last.frame != fresh.frame) { problems.append("\(display) was not laid out again: \(Self.difference(from: last, to: fresh))") }
     }
     return problems
   }

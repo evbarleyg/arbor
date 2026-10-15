@@ -95,6 +95,7 @@ extension Controller {
     // Whatever the command changes in an arrangement becomes an undo step (Controller+Undo.swift).
     let undoScope = beginUndoStep(for: command)
     defer { endUndoStep(undoScope) }
+    let roomless = windowsKeptInViewWithoutRoom(asLaidOut: true)
     let result: CommandResult
     switch command {
     case .showAll: result = showAll()
@@ -187,6 +188,12 @@ extension Controller {
     case .minimap: result = toggleMinimap()
     case .undo: result = undo()
     case .redo: result = redo()
+    }
+    // Whatever it did to a window kept in view (`grow`, `shrink`, another display), the docked ones make room where that is now.
+    if workspaces.values.contains(where: { $0.pinned != nil }) {
+      // (A script is nobody in front of an audience.)
+      makeRoomWhereKeptWindowsAre(on: workspaces.keys.sorted(), asked: headsUp.source?.isAnsweredOnScreen == true)
+      sayWhoHasLostItsRoom(since: roomless)
     }
     // Replies call a named space by its name; the log, which people paste into bug reports, does not (F20).
     let message = Self.withoutNames(forTheLog(result.message), namesBefore.union(everyName()).union(command.namesInText))
@@ -589,7 +596,7 @@ extension Controller {
     // of a layout with everything in view and present and nothing too small. What is arranged already stays as it is.
     let places = self.display(display).map {
       LayoutEngine.layout(
-        workspace.tree, camera: workspace.tree.root, in: $0.visibleFrame,
+        workspace.tree, camera: workspace.tree.root, in: roomForViews(on: $0),
         options: LayoutOptions(gap: CGFloat(options(for: display).gap), minimumUsableSize: .zero), isPresent: { _ in true })
     }
     func place(_ window: WindowID) -> CGRect {

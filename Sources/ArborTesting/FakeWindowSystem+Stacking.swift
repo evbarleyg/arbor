@@ -3,10 +3,16 @@ import ArborKit
 
 /// Which window is in front of which. In a file of its own so that it stays out of the way of other additions.
 extension FakeWindowSystem {
+  /// As the Accessibility raise does on a Mac (macOS 26, the real-window suite): a window of the app in front comes to the very front; a
+  /// window of any other app comes in front of everything but the window that has the keyboard, and stays behind that.
   public func raise(_ window: WindowID) {
-    guard windows[window] != nil else { return }
+    guard let raisedOne = windows[window]?.snapshot else { return }
     raiseLog.append(window)
     bringToFront(window)
+    guard let key = focused, key != window, let holder = windows[key]?.snapshot,
+      (holder.pid, holder.bundleID) != (raisedOne.pid, raisedOne.bundleID)
+    else { return }
+    bringToFront(key)
   }
 
   /// Focusing or raising a window brings it to the front. Windows that never were lie behind the
@@ -29,7 +35,8 @@ extension FakeWindowSystem {
     if release { mouseDown = false }
   }
 
-  func bringToFront(_ window: WindowID) {
+  /// In front of everything, the window that has the keyboard included: what macOS does, and no call of Arbor's can.
+  public func bringToFront(_ window: WindowID) {
     raised.removeAll { $0 == window }
     raised.insert(window, at: 0)
   }

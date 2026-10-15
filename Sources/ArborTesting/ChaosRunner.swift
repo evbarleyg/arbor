@@ -108,7 +108,7 @@ public final class ChaosRunner {
   var lastCommandSucceeded = false
   /// What Arbor answered to the commands of the current step that it refused. A script whose `hold` was refused says nothing about holds.
   public private(set) var refusals: [String] = []
-  var beforeUndo: (workspaces: [DisplayID: Workspace], parked: Set<WindowID>, slots: [DisplayID: [WindowID: CGRect]])?
+  var beforeUndo: (workspaces: [DisplayID: Workspace], parked: Set<WindowID>, slots: [DisplayID: [WindowID: CGRect]], rooms: [DisplayID: CGRect])?
   var holdBefore: HoldLevel?
   var staleSinceAPeek = false
   var wasPeekingBefore = false
@@ -667,9 +667,12 @@ public final class ChaosRunner {
     // Not while a layout is still to come, which would be taken for the work of undo and redo.
     // Nor during a peek: undo ends it, and leaves the view on everything by design (`back` returns).
     if command == .undo, isRunning, !controller.aPeekIsUnderWay,
-      !harness.scheduler.pendingKeys.contains(where: { $0.hasPrefix("space-") || $0.hasPrefix("enforce-") })
+      !harness.scheduler.pendingKeys.contains(where: { $0.hasPrefix("space-") || $0.hasPrefix("enforce-") || $0.hasPrefix("pinned-room-") })
     {
-      beforeUndo = (controller.workspaces, controller.parked, controller.layouts.mapValues(\.windowFrames))
+      beforeUndo = (controller.workspaces, controller.parked, controller.layouts.mapValues(\.windowFrames), controller.layouts.mapValues(\.frame))
+    } else if command == .undo {
+      // Or the picture of an undo before this one would be held against the redo of this one.
+      beforeUndo = nil
     }
     let reply = controller.perform(command)
     lastCommandSucceeded = reply.ok

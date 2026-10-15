@@ -60,10 +60,13 @@ extension Controller {
     let start = DispatchTime.now()
     defer { stats.record("controller", "lay out a display", seconds: CallStats.seconds(since: start)) }
     var waiting = handedOver
+    for (window, frame) in handedOver where isPinned(window) { keptWindowsGoTo[window] = frame }
     func putBackWhatWaits() {
       guard let display = display(displayID) else { return }
       for (window, frame) in waiting { putBack(window, at: frame, on: display) }
       waiting = []
+      // From here on they are where they are, which is for their apps to say.
+      keptWindowsGoTo = [:]
     }
     // However this ends: a window that was promised a place gets it.
     defer { putBackWhatWaits() }
@@ -120,6 +123,12 @@ extension Controller {
     rememberSqueezes(in: layout, on: displayID)
     noteWhereTheGapsStand(in: layout, on: displayID, for: reason)
     placeFloatingWindows(on: displayID, layout: layout, reason: reason)
+    // A window kept in view was on its way, and its app has made something else of the frame it was given: room is where it is.
+    if let display = display(displayID), roomForViews(on: display) != layout.frame, let around = self.layout(of: displayID) {
+      layout = around
+      _ = apply(layout, on: displayID)
+    }
+    noteTheRoomLaidOut(on: displayID)
     layouts[displayID] = layout
     lettingBeEndsWithAPlace(in: layout)
     settleTransition(staged, on: displayID, layout: layout)
@@ -477,8 +486,13 @@ extension Controller {
       }
       // Back in view, at the place in macOS's order that it had. A guest raised over its host would cover the very
       // window its person has just switched to, which is how ⌘Tab brings a view back. ⌃⌥D shows all that floats.
-      // Only a window kept in view is raised: pinned while it was out of view, this is the raise at the pin.
-      if parked.remove(window) != nil, workspace.staysInView(window) { system.raise(window) }
+      // One window is raised: pinned while it was out of view, this is the raise at the pin (Controller+Pin.swift).
+      // It has been asked to come into view. What its app made of that is where it is.
+      comingIntoView.remove(window)
+      if parked.remove(window) != nil, window == beingPinned {
+        system.raise(window)
+        Log.debug("raised \(window), which stays in view")
+      }
     }
   }
 
@@ -608,7 +622,9 @@ extension Controller {
   func floatingRegion(_ desktop: CGRect, on display: DisplaySnapshot) -> CGRect {
     let visible = display.visibleFrame
     let margin = options(for: display.id).layoutOptions.outerGap
-    let content = visible.insetBy(dx: margin, dy: margin)
+    // Through the room of a window kept in view too: only docked windows keep clear of that (Controller+PinnedRoom.swift), and a pin that is set
+    // pushes no floating window aside.
+    let content = roomForViews(on: display).insetBy(dx: margin, dy: margin)
     let minX = desktop.minX <= content.minX + 1 ? visible.minX : desktop.minX
     let minY = desktop.minY <= content.minY + 1 ? visible.minY : desktop.minY
     let maxX = desktop.maxX >= content.maxX - 1 ? visible.maxX : desktop.maxX

@@ -80,9 +80,8 @@ extension Controller {
   /// Stacks the stand-ins like the real windows. `Transition.leaveOpen` joins in with the change that teaches
   /// the stage to draw holes: a hole it does not draw is a window that vanishes for as long as the motion lasts.
   ///
-  /// Windows that stay in view (pinned, summoned) go in front whatever the stacking says. The stack is read before anything moves, and one of
-  /// them that nothing covered yet may lie behind the window that is about to reach under it; Arbor raises the real one as soon as the move
-  /// is over (`raisePinnedWindows`), and for the time of the motion its stand-in must not be buried either.
+  /// Windows that stay in view (pinned, summoned) go in front whatever the stacking says: docked windows end up beside them
+  /// (Controller+PinnedRoom.swift), and a stand-in that passes on its way there must not bury the one thing that stands still.
   private func fit(_ transition: inout Transition, to stack: [StackedWindow]) {
     let order = stack.map(\.id)
     transition.stack(frontToBack: order.filter(staysInView) + order.filter { !staysInView($0) })
@@ -93,7 +92,6 @@ extension Controller {
   public func pointerPressed() {
     guard isRunning else { return }
     overlays.finishAnimations()
-    lookAfterPinnedWindowsAfterAPress()
     // "Any key or click": the panel itself hears only of clicks in other apps and of losing the keyboard. A press on a gap
     // handle or on the Desktop's tile is neither.
     hideCheatSheet()

@@ -115,7 +115,7 @@ extension Controller {
     let minimums = minimumSizes
     func layout(_ camera: NodeID, counting present: Set<WindowID>) -> Layout {
       LayoutEngine.layout(
-        tree, camera: camera, in: display.visibleFrame, options: options, isPresent: { present.contains($0) },
+        tree, camera: camera, in: roomForViews(on: display), options: options, isPresent: { present.contains($0) },
         minimumSize: { minimums[$0] })
     }
     let plain = layout(camera, counting: present)

@@ -53,6 +53,7 @@ extension Controller: WindowSystemEvents {
     spokeOfItsPlace[id] = nil
     shrunk[id] = nil
     fittedToADisplay[id] = nil
+    keptWindowsLeavingFullScreen[id] = nil
     hints[id] = nil
     let hadKeyboard = hadKeyboard(id)
     keyboardHandOver.newcomers[id] = nil
@@ -94,6 +95,7 @@ extension Controller: WindowSystemEvents {
     noteWhetherItCameBack(window, was: previous)
     putBackIfItLeftFullScreen(window, was: previous)
     meetAtItsSlotIfItLeftFullScreen(window, was: previous)
+    noteIfAKeptWindowLeavesFullScreen(window, was: previous)
     defer { focusRingFollows(window) }
     if previous?.title != window.title { refreshHoldCaller() }
     defer { if previous?.frame != window.frame { notify(.frames) } }
@@ -175,6 +177,9 @@ extension Controller: WindowSystemEvents {
       workspaces[display]!.floating[window.id]?.size = window.frame.size
     }
 
+    // Whoever moved or sized a window kept in view, and whatever the move is taken for: the docked ones follow (Controller+PinnedRoom.swift).
+    if previous?.frame != window.frame, workspaces[display]!.isPinned(window.id) { keptWindowMoved(on: display) }
+
     guard userInitiated, drag?.window != window.id, !parked.contains(window.id) else { return }
 
     // A display has come or gone and Arbor has not heard yet: the report waits until the displays have settled
@@ -203,6 +208,7 @@ extension Controller: WindowSystemEvents {
       if destination != display { notify(.windows) }
       scheduleSave()
       floatingWindowMoved(window.id, from: display)
+      if role == .pinned, destination != display { keptWindowMoved(on: destination) }
       return
     }
 

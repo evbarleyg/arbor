@@ -182,6 +182,10 @@ import Testing
         $0.keepPushed = keepPushed
       }
       guard let dragged = windows.filter({ !h.controller.parked.contains($0) }).randomElement(using: &random) else { continue }
+      // A second exception: where a window kept in view is left, there the docked ones make room (KeepInViewMakesRoomTests), and what floats
+      // on the Desktop goes with the Desktop, as at any change of the arrangement. Then `troubles` alone is asked: everybody is where a
+      // layout has them, nobody is lost, and nothing of the drag is left.
+      let takesItsRoomAlong = h.controller.isPinned(dragged)
       let docked = h.controller.workspaces.values.contains { $0.isDocked(dragged) }
       let slot = h.frame(dragged)
       let before = picture(h, without: dragged)
@@ -192,13 +196,14 @@ import Testing
       if h.system.macTile(at: h.system.cursor) != nil { continue }
       h.system.loseTheReleaseOfTheDrag()
       h.system.heldModifiers = []
-      expectNone(picture(h, without: dragged).differences(from: before), seed)
+      if !takesItsRoomAlong { expectNone(picture(h, without: dragged).differences(from: before), seed) }
       if docked, let slot, h.frame(dragged)?.approximatelyEquals(slot, tolerance: 1) != true {
         Issue.record("seed \(seed): it is not back in its slot")
       }
       expectNone(troubles(h, leftByTheUser: [dragged]), seed)
       h.scheduler.runPending()
-      expectNone(picture(h, without: dragged).differences(from: before), seed, ", a moment later")
+      if !takesItsRoomAlong { expectNone(picture(h, without: dragged).differences(from: before), seed, ", a moment later") }
+      expectNone(troubles(h, leftByTheUser: [dragged]), seed, ", a moment later")
     }
   }
 

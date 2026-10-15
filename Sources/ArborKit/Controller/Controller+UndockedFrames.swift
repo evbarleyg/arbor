@@ -173,15 +173,16 @@ extension Controller {
 
   /// Where a floating window goes when Arbor lets go of it. What its person's own hand left on this display as it is, however little
   /// of it shows, is given back as it was, if a hand could get hold of it there: the next layout would fetch it otherwise, a second
-  /// move. So would its pin, of a window that is kept in view. Of any other frame nobody knows how it came to hang there (`asItWas`).
+  /// move. Of any other frame nobody knows how it came to hang there (`asItWas`).
   func whereItWasLeft(_ window: WindowID, _ preferred: CGRect, on display: DisplaySnapshot) -> CGRect {
     isWhereItWasLeft(window, preferred, on: display) ? preferred : asItWas(preferred, on: display)
   }
 
   /// Whether `frame` is known to be where floating `window`'s person left it, or Arbor found it, on this display as it is, and a place to
-  /// leave it in: a hand could get hold of it there, and nothing of Arbor's would fetch it from there.
+  /// leave it in: a hand could get hold of it there, and nothing of Arbor's would fetch it from there. A pin fetches nothing that a hand
+  /// has left (QUESTIONS Q25); a summons does.
   func isWhereItWasLeft(_ window: WindowID, _ frame: CGRect, on display: DisplaySnapshot) -> Bool {
-    wasLeftThereByItsUser(frame, of: window, on: display) && titleBarIsWithinReach(frame) && !staysInView(window)
+    wasLeftThereByItsUser(frame, of: window, on: display) && titleBarIsWithinReach(frame) && (isPinned(window) || !staysInView(window))
   }
 
   /// Lets go of a docked window: back to where it floated, or, if that is not known, into view at `slot`.
@@ -195,8 +196,10 @@ extension Controller {
 
   /// Whether a floating window is somewhere else than `preferred`, where the user left it: docked windows
   /// pushed it aside or squeezed it to keep it on the Desktop. Letting go means undoing that as well.
+  /// Nobody pushes a window aside that is kept in view: where it is, is where it stays, whoever moved it there.
   func wasPushedAside(_ window: WindowID, from preferred: CGRect) -> Bool {
-    windows[window].map { !$0.frame.approximatelyEquals(preferred, tolerance: 1) } ?? false
+    guard !isPinned(window) else { return false }
+    return windows[window].map { !$0.frame.approximatelyEquals(preferred, tolerance: 1) } ?? false
   }
 
   /// Moves a window to exactly `frame`, which is in view as far as it should be (`placeVisibly` would pull all

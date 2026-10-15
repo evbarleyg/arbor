@@ -187,12 +187,14 @@ import Testing
     #expect(transition[b]?.to == h.frame(b))
   }
 
-  @Test func aPinnedWindowIsBroughtBackIntoViewOnStageLikeAnyOther() throws {
+  /// Until 2026-10-15 the next layout fetched a pinned window that a hand had pushed nearly off the display, and this test said that it did so on
+  /// stage. Once pinned a window is never moved (collab/QUESTIONS.md Q25), so on stage it stands still, wherever it was left.
+  @Test func aPinnedWindowStandsStillOnStageWhereverAHandLeftIt() throws {
     let (h, a, _, c) = makeHarness()
     #expect(h.run("pin \(c.rawValue)").ok)
-    // Pushed nearly off the display by hand: the next layout brings it back.
     let pushed = CGRect(x: 1400, y: 300, width: 400, height: 300)
     h.system.userMove(c, to: pushed)
+    h.scheduler.advance(by: 1)
     h.overlays.clearTransitions()
     let moved = h.system.frameLog.count
     var movedByThen: Int?
@@ -200,9 +202,9 @@ import Testing
     h.run("zoom \(a.rawValue)")
     #expect(movedByThen == moved, "making the plan moves nothing")
     let item = try #require(h.overlays.transitions.first?[c])
-    #expect(item.from == pushed && item.to == h.frame(c))
-    #expect(screen.contains(item.to) && !h.controller.parked.contains(c), "it stays in view")
-    #expect(h.system.frameLog.dropFirst(moved).filter { $0.window == c }.count == 1, "and is moved once")
+    #expect(item.from == pushed && item.to == pushed)
+    #expect(h.frame(c) == pushed && !h.controller.parked.contains(c))
+    #expect(h.system.frameLog.dropFirst(moved).allSatisfy { $0.window != c }, "and is not moved")
   }
 
   @Test func seamDragsFollowTheMouseWithoutAnimation() {

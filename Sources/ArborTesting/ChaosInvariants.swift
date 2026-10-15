@@ -12,7 +12,7 @@ import Foundation
 /// name the window, node or display in the message. The order of the problems does not matter: they are sorted.
 extension ChaosRunner {
   /// Timers the controller may have pending, by prefix. A key that matches none has leaked.
-  static let knownTimers = ["save", "undo-continuation", "enforce-", "space-", "resume", "focus", "rule-title-", "pending-slots", "peek", "raise-pins",
+  static let knownTimers = ["save", "undo-continuation", "enforce-", "space-", "resume", "focus", "rule-title-", "pending-slots", "peek", "pinned-room-",
     "settings-file", "update-check", "summon-wait", "accessibility",
     "landed-", "drag-dwell", "sole-float-after-launch", "layout-open ", "release", "call-over",
     "events", "control-connection-",
@@ -31,7 +31,10 @@ extension ChaosRunner {
   func check(after action: ChaosAction) -> [InvariantViolation] {
     let timers = harness.scheduler.pendingKeys
     // A Space switch is laid out once all of its reports are in (Controller+Spaces.swift).
-    let awaitingLayout = timers.isEmpty ? [] : Set(controller.displays.map(\.id).filter { timers.contains("space-" + $0.rawValue) })
+    // And docked windows follow a window kept in view once the button is up (Controller+PinnedRoom.swift).
+    let awaitingLayout =
+      timers.isEmpty
+      ? [] : Set(controller.displays.map(\.id).filter { timers.contains("space-" + $0.rawValue) || timers.contains("pinned-room-" + $0.rawValue) })
     let awaitingPutBack = timers.isEmpty ? [] : Set(controller.displays.map(\.id).filter { timers.contains("enforce-" + $0.rawValue) })
     var inside = controller.invariantViolations(awaitingLayout: awaitingLayout, awaitingPutBack: awaitingPutBack)
     // A rule name of its own for a known failure (ChaosKnownFailures.swift), so that the rule still guards everything else.
@@ -72,6 +75,7 @@ extension ChaosRunner {
     // What a start takes out of view has a rule of its own, also where the start is part of a way back.
     if !isTryingOutADrop, !wasTryingOutADrop, action != .wayBack(.startAgain) { vanishedViolations(&problems) }
     pinViolations(&problems)
+    if !isTryingOutADrop { pinnedRoomViolations(&problems) }
     nameViolations(&problems)
     undoViolations(after: action, &problems)
     holdViolations(&problems)
@@ -90,12 +94,13 @@ extension ChaosRunner {
 
   /// Whether a timer is going to lay `display` out again: to put back what something else moved
   /// (once the mouse is up), or after a Space switch.
-  private func isDueForLayout(_ display: DisplayID) -> Bool {
+  func isDueForLayout(_ display: DisplayID) -> Bool {
     let timers = harness.scheduler.pendingKeys
     guard !timers.isEmpty else { return false }
     // A window on its way back (from the Dock, full screen, a hidden app) is judged once it has landed.
     return timers.contains("enforce-" + display.rawValue) || timers.contains("space-" + display.rawValue)
-      || timers.contains("landed-" + display.rawValue)
+      || timers.contains("landed-" + display.rawValue) || timers.contains("pinned-room-" + display.rawValue)
+      || timers.contains("pinned-room-" + display.rawValue + "-back")
   }
 
   /// Whether the window's app does what it is asked, within its size limits.
@@ -531,7 +536,10 @@ extension ChaosRunner {
             ? "floating was \(workspace.floating.sorted { $0.key < $1.key }), is \(now.floating.sorted { $0.key < $1.key })"
             : "history, saved views, guests, pins or remembered frames differ"
         problems.append(.init("undo-redo", "undo and redo changed \(display): \(what)"))
-      } else if controller.layouts[display]?.windowFrames != before.slots[display] {
+      } else if controller.layouts[display]?.windowFrames != before.slots[display],
+        // (Redoing a pin puts the window wholly in view. Where a hand had pushed it mostly out meanwhile, its room is another.)
+        controller.layouts[display]?.frame == before.rooms[display]
+      {
         problems.append(.init("undo-redo", "undo and redo changed the slots on \(display)"))
       }
     }
