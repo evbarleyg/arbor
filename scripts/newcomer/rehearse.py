@@ -215,9 +215,11 @@ def with_arbor(work):
     check("task 6", "task 6 of 8" in run.mac("done")[1])
     check("giving up: task 7", "task 7 of 8" in run.mac("giveup", "the Finder window is nowhere to be seen")[1])
     time.sleep(1)
+    run.mac("stuck", "I do not remember where they were")
     said = run.mac("click", "700", "30")[1]
     check("its time runs out, which the next picture says", "task 8 of 8" in said and "the time for the task before this one was up" in said, said)
     check("and a word that was on its way is not carried out, which its sender is told", "was NOT carried out" in said, said)
+    check("the remark that went with it waits for the next", os.path.exists(os.path.join(run.kit, ".remarks")))
     check("the next word is in step again", "your last word: key ctrl+opt+q" in run.mac("key", "ctrl+opt+q")[1])
     check("after the last task it is over", "That was the last task" in run.mac("done")[1])
     check("and nothing more is sent", run.mac("click", "1", "1")[0] == 1)
@@ -234,7 +236,7 @@ def with_arbor(work):
     check("a key that does nothing changes nothing on the screen", next(entry for entry in rounds if entry["line"] == "key f5")["cells"] == 0)
     check("what Arbor takes back is seen", any("it did not stay" in note for entry in journal if entry["kind"] == "task-end" for note in entry["notes"]))
     check("remarks are kept with their task and picture", [(entry["task"], entry["verb"]) for entry in journal if entry["kind"] == "remark"]
-          == [("side-by-side", "surprised"), ("find", "lookup"), ("undo", "giveup")])
+          == [("side-by-side", "surprised"), ("find", "lookup"), ("undo", "giveup"), ("quit", "stuck")])
     check("nonsense is counted, and none of it is kept", len([entry for entry in journal if entry["kind"] == "nonsense"]) == 8 and len([entry for entry in journal if entry["kind"] == "late"]) == 1 and "passwd" not in json.dumps(journal) and "rm -rf" not in json.dumps(journal))
     check("nor is any of it quoted", all(quoted == "…" for entry in journal if entry["kind"] == "nonsense" for quoted in re.findall(r"'([^']*)'", entry["why"])))
     check("what Arbor took back after the last act was moved by nobody", [each["owner"] for entry in journal if entry["kind"] == "task-end" and entry["task"] == "fill" for each in entry["idle_moved"]] == ["Calendar"])

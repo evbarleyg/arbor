@@ -50,15 +50,18 @@ deliver() {
   return "$code"
 }
 
-# push <git push's arguments after the remote>
+# push <git push's arguments after the remote>. A connection that stalls is given up: everything waits for the one who holds the token.
 push() {
+  local patience=45
+  # The last record has every picture in it.
+  [ "$last" -lt 1000000 ] || patience=110
   if [ -n "$token" ]; then
     # In the environment of this one command, which is root's, for as long as the push takes.
     GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="http.https://github.com/.extraheader" \
       GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$token" | base64 | tr -d '\n')" \
-      git --git-dir="$store/git" push --quiet "$remote" "$@"
+      perl -e 'alarm shift; exec @ARGV' "$patience" git --git-dir="$store/git" push --quiet "$remote" "$@"
   else
-    git --git-dir="$store/git" push --quiet "$remote" "$@"
+    perl -e 'alarm shift; exec @ARGV' "$patience" git --git-dir="$store/git" push --quiet "$remote" "$@"
   fi
 }
 

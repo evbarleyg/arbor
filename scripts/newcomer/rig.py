@@ -69,6 +69,7 @@ class RealMac:
         self.questions = 0
         self.arm = options.arm
         self.log_read_to = 0
+        self.still_held = []
         self.cdhash = options.cdhash
         # Arbor as the newcomer starts it lives in the account's own folders, whatever lib.sh has set up for this script.
         self.clean = {name: value for name, value in os.environ.items() if not name.startswith("ARBOR_")}
@@ -166,7 +167,7 @@ class RealMac:
         code, out = run([app + "/Contents/Helpers/arborctl", "state"], timeout=4, env=self.clean)
         try:
             return sorted(str(each["id"]) for each in json.loads(out)["state"]["windows"] if each.get("managed") and each.get("docked"))
-        except (ValueError, KeyError, TypeError):
+        except (ValueError, KeyError, TypeError, AttributeError):
             return []
 
     def said(self):
@@ -180,17 +181,25 @@ class RealMac:
             return []
         return [line[:160] for line in fresh.decode("utf-8", "replace").split("\n") if " INFO " in line][:15]
 
+    def listed(self, *arguments):
+        """What the pointer tool lists, asked a second time if it says nothing: an empty list would read as every window gone."""
+        for _ in range(2):
+            code, out = self.tool("pointer", *arguments)
+            if code == 0 and out.strip():
+                break
+        return out.decode("utf-8", "replace").split("\n")
+
     def look(self):
         self.frames()
         found, order = {}, []
-        code, out = self.tool("pointer", "windows")
-        for line in out.decode("utf-8", "replace").split("\n"):
+        for line in self.listed("windows"):
             parts = line.split()
-            if len(parts) >= 9:
-                found[parts[0]] = {"pid": int(parts[1]), "layer": int(parts[2]), "frame": [float(each) for each in parts[3:7]],
-                                   "on": parts[7] == "on", "owner": " ".join(parts[8:])}
-        code, out = self.tool("pointer", "windows", "--on-screen")
-        for line in out.decode("utf-8", "replace").split("\n"):
+            try:
+                found[str(int(parts[0]))] = {"pid": int(parts[1]), "layer": int(parts[2]), "frame": [float(each) for each in parts[3:7]],
+                                             "on": parts[7] == "on", "owner": " ".join(parts[8:])}
+            except (ValueError, IndexError):
+                continue
+        for line in self.listed("windows", "--on-screen"):
             if line.split():
                 order.append(line.split()[0])
         code, out = self.tool("apptool", "focused", timeout=5)
@@ -241,9 +250,12 @@ class RealMac:
         if verb == "drag":
             # Slowly, and with a rest before letting go, as somebody who watches for a preview: macOS and Arbor both want a moment at an edge.
             extra = ["--duration", "0.9", "--hold", "1.0"] + (["--no-release"] if action.get("keep") else [])
+            # `release` lets go of the keys it is told of.
+            self.still_held = held if action.get("keep") else []
             return self.tool("pointer", "drag", action["x"], action["y"], action["to_x"], action["to_y"], *(extra + held))[0] == 0
         if verb == "release":
-            return self.tool("pointer", "release", *([action["x"], action["y"]] if "x" in action else []))[0] == 0
+            held, self.still_held = self.still_held, []
+            return self.tool("pointer", "release", *(([action["x"], action["y"]] if "x" in action else []) + held))[0] == 0
         if verb == "scroll":
             return self.tool("witness", "wheel", action["x"], action["y"], action["notches"], *["--" + name for name in action.get("holding", "").split("+") if name])[0] == 0
         if verb in ("key", "type"):
@@ -258,6 +270,7 @@ class RealMac:
         return False
 
     def calm(self):
+        self.still_held = []
         self.tool("pointer", "calm")
 
     def password(self):
@@ -379,6 +392,7 @@ class Rig:
         self.stopped = False
         self.timing = {}
         self.answering = 0
+        self.sent = True
         self.in_hand = None
         self.helped_note = []
 
@@ -406,13 +420,14 @@ class Rig:
         self.answering = 0
         with open(os.path.join(self.screen, "status.txt"), "w") as file:
             file.write("\n".join(["picture %d (screen.jpg, %d x %d)" % ((self.round,) + (self.size or (0, 0)))] + lines) + "\n")
-        sent = self.post.send("screen")
+        sent = self.sent = self.post.send("screen")
         self.shown = time.time()
         self.timing.update(shot=round(shot - began, 2), push=round(self.shown - shot, 2), pushed=sent)
         if size:
             self.mac.smaller(path, os.path.join(self.kept, "%03d.jpg" % self.round))
-        # While the newcomer thinks. Nobody waits for it.
-        self.post.send("record", patience=0)
+        # While the newcomer thinks. Nobody waits for it. Not over a request for the picture that the courier has not got round to: there is room for one.
+        if sent:
+            self.post.send("record", patience=0)
 
     def glance(self):
         """What the screen looks like this moment, in cells: taken right before an act, since the picture on show is as old as the newcomer's thinking is long, and
@@ -431,6 +446,9 @@ class Rig:
             asked = time.time()
             data = self.inbox.poll()
             if data is None:
+                if not self.sent and time.time() - self.shown > 5:
+                    # The picture on show never got out: GitHub was away, or the courier busy. Nobody can answer what nobody has seen.
+                    self.sent, self.shown = self.post.send("screen"), time.time()
                 time.sleep(max(0.0, self.options.poll - (time.time() - asked)))
                 continue
             self.timing.update(thought=round(time.time() - self.shown, 2), fetch=round(time.time() - asked, 2))
@@ -586,17 +604,21 @@ class Rig:
         first = self.mac.look()
         self.write("run", run=options.run, arm=options.arm, build=options.build, system=options.system, helped=options.helped,
                    cast=self.cast, display=first["display"], visible=first["visible"], tasks=[task["id"] for task in self.tasks])
-        self.lines = ["Nothing has begun. Read HOWTO.md; when you are ready to begin, say: ./mac ready"]
-        self.show(self.lines)
         waited = time.time()
-        # No longer than leaves every task its whole time: a run whose last tasks are cut short measures nothing there.
+        # No longer than leaves every task its whole time: a run whose last tasks are cut short measures nothing there. But seven minutes at the least: a Mac that was slow
+        # to set up and gives nobody the time to come measures nothing at all.
         needed = sum(self.limits.get(task["id"], task["minutes"] * options.haste) * 60 + 30 * options.haste for task in self.tasks)
+        deadline = min(waited + options.patience, max(options.until - needed, waited + 420 * options.haste))
+        self.lines = ["Nothing has begun. Read HOWTO.md; when you are ready to begin, say: ./mac ready   (this Mac waits about %d minutes for it)" % ((deadline - waited) / 60)]
+        self.show(self.lines)
         while True:
-            remarks, act = self.hear(min(waited + options.patience, options.until - needed))
+            remarks, act = self.hear(deadline)
             if remarks is None:
                 self.write("end", how="cut" if self.stopped else "nobody came")
                 self.farewell("Nobody said ready in time: this Mac has gone.")
                 return 3
+            for remark in remarks:
+                self.write("remark", task="before ready", round=self.round, verb=remark["verb"], words=remark["words"])
             if act and act["verb"] == "ready":
                 break
             self.show(self.lines + ["nothing has begun yet: say ready"])
@@ -604,7 +626,8 @@ class Rig:
         first = self.mac.look()
         self.write("ready", look=first, waited=round(time.time() - waited, 1))
         # For the task that asks for all of it back: nobody remembers a picture seen an hour ago.
-        shutil.copy(os.path.join(self.screen, "screen.jpg"), os.path.join(self.screen, "first.jpg"))
+        if os.path.exists(os.path.join(self.screen, "screen.jpg")):
+            shutil.copy(os.path.join(self.screen, "screen.jpg"), os.path.join(self.screen, "first.jpg"))
         how = "played"
         for index in range(len(self.tasks)):
             if not self.play(index, first):
@@ -666,8 +689,11 @@ def main():
         return rig.go()
     except Exception as error:  # whatever it is, what was seen so far has to get home
         rig.write("end", how="the rig broke", why="%s: %s" % (type(error).__name__, words.plain(str(error), 200)))
-        rig.farewell("The rig has broken down, which is no fault of yours: this Mac has gone.")
-        raise
+        try:
+            rig.farewell("The rig has broken down, which is no fault of yours: this Mac has gone.")
+        except Exception:  # the workflow's last step says goodbye then
+            pass
+        raise error
     finally:
         mac.calm()
 

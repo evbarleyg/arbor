@@ -127,14 +127,18 @@ until git push --quiet --force origin "$commit:$action" 2> .push; do
   [ "$tries" -lt 3 ] || { cat .push >&2; die "could not push; nothing was sent. Try the same again"; }
   sleep 2
 done
-rm -f .remarks
 
 # The Mac looks every two seconds, acts, lets the windows come to rest and pushes the next picture.
 waited=0
-until fetch_screen; do
+until fetch_screen || [ "$(cat round 2>/dev/null)" != "$round" ]; do
   waited=$((waited + 1))
   [ "$waited" -lt "${NEWCOMER_TRIES:-90}" ] || die "no new picture after two minutes. ./mac look tries again; if it stays so, the Mac has gone"
   sleep "${NEWCOMER_NAP:-1}"
 done
-[ "$(cat answers 2>/dev/null)" = "$round" ] || echo "NOTE: the picture had changed before your word arrived, so it was NOT carried out. Look again, then act."
+# Remarks that went with a word that came too late or was not understood were not written down: they wait for the next.
+if [ "$(cat answers 2>/dev/null)" != "$round" ]; then
+  echo "NOTE: the picture had changed before your word arrived, so it was NOT carried out. Look again, then act."
+elif ! grep -q '^not understood' status.txt; then
+  rm -f .remarks
+fi
 show
