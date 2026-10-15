@@ -11,6 +11,7 @@ not Arbor and not macOS.
 
 import json
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -51,7 +52,8 @@ class Run:
         subprocess.run([os.path.join(HERE, "lay-kit.sh"), self.box, name, arm, os.path.join(ROOT, "README.md")], check=True)
         with open(os.path.join(self.folder, "world.json"), "w") as file:
             json.dump(WORLD, file)
-        self.courier = subprocess.Popen(["bash", os.path.join(HERE, "courier.sh"), self.box, self.origin, name], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL)
+        self.courier = subprocess.Popen(["bash", os.path.join(HERE, "courier.sh"), self.box, self.origin, name], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
+                                        env=dict(os.environ, TZ="UTC"))
         self.courier.stdin.write(b"\n")
         self.courier.stdin.close()
         self.rig = subprocess.Popen([sys.executable, os.path.join(HERE, "rig.py"), "--run", name, "--arm", arm, "--box", self.box, "--remote", self.origin,
@@ -72,7 +74,7 @@ class Run:
     def mac(self, *words):
         """What the newcomer types: (exit code, what it read)."""
         done = subprocess.run(["sh", "./mac"] + list(words), cwd=self.kit, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                              env=dict(os.environ, NEWCOMER_NAP="0.03", NEWCOMER_TRIES="400"))
+                              env=dict(os.environ, NEWCOMER_NAP="0.03", NEWCOMER_TRIES="400", TZ="America/Los_Angeles"))
         if VERBOSE:
             print("    $ ./mac %s\n%s" % (" ".join(words), "".join("      %s\n" % line for line in done.stdout.decode().split("\n") if line)), end="")
         return done.returncode, done.stdout.decode()
@@ -116,6 +118,31 @@ class Run:
         return [json.loads(line) for line in text.split("\n") if line]
 
 
+def holder():
+    """The one name the repository's check knows, read from where it reads it."""
+    with open(os.path.join(ROOT, "LICENSE")) as file:
+        line = next(line for line in file if line.startswith("Copyright"))
+    return " ".join(word for word in line.split() if word.isalpha() and word != "Copyright")
+
+
+def no_python(work):
+    """A PATH with git and the shell's usual tools, and no python3."""
+    folder = os.path.join(work, "no-python")
+    os.makedirs(folder, exist_ok=True)
+    for tool in ("git", "sh", "cat", "sed", "cut", "wc", "grep", "dirname", "sleep", "rm", "mv"):
+        if not os.path.exists(os.path.join(folder, tool)):
+            os.symlink(shutil.which(tool), os.path.join(folder, tool))
+    return folder
+
+
+def functions(kit):
+    """The functions of ./mac by themselves, to ask them one at a time."""
+    text = open(os.path.join(kit, "mac")).read()
+    with open(os.path.join(kit, "functions"), "w") as file:
+        file.write(text[text.index("is_modifier()"):text.index("# clean <text>")])
+    return kit
+
+
 def ends(journal):
     return {entry["task"]: (entry["how"], entry["done"]) for entry in journal if entry["kind"] == "task-end"}
 
@@ -125,18 +152,29 @@ def with_arbor(work):
     run.clone()
     files = sorted(os.listdir(run.kit))
     check("the newcomer gets its script, its words of use, the README's first screen, a picture, and nothing of the source",
-          files == [".git", "HOWTO.md", "README-first-screen.md", "answers", "check", "mac", "round", "run", "screen.jpg", "status.txt"], files)
+          files == [".git", "HOWTO.md", "LICENSE", "README-first-screen.md", "answers", "check", "mac", "round", "run", "screen.jpg", "status.txt"], files)
     check("the words of use are whole", "@ABOUT@" not in open(os.path.join(run.kit, "HOWTO.md")).read() and "called Arbor" in open(os.path.join(run.kit, "HOWTO.md")).read())
     check("before `ready` nothing has begun", "Nothing has begun" in run.mac("look")[1])
     check("and an act is not carried out", "nothing has begun yet" in run.mac("click", "5", "5")[1])
-    check("ready: the first task", "task 1 of 7" in run.mac("ready")[1])
+    check("ready: the first task", "task 1 of 8" in run.mac("ready")[1])
 
     # What must not become public is stopped on the newcomer's side, before anything is written to Git. (Spelled in two halves, or this file would not pass either.)
     tip = git(run.origin, "rev-parse", "refs/heads/" + run.branch("action")).stdout
     for name, words in (("a path", ("surprised", "see /Us" "ers/somebody/x")), ("an address", ("type", "write to me@example.org")), ("an id of a session", ("type", "session" "_0123456789abcdefghijklmn")),
                         ("a link", ("stuck", "https://example.org")), ("what is not ASCII", ("surprised", "⌘ did nothing")), ("a word that is none", ("sudo", "rm")),
-                        ("a remark of 201 characters", ("wrong", "x" * 201))):
+                        ("a remark of 201 characters", ("wrong", "x" * 201)), ("words after an act", ("click", "my", "neighbour", "lives", "in", "Berlin")), ("words after done", ("done", "it", "was", "easy")),
+                        ("a host after wait", ("wait", "wiki.example.org")), ("a path after password", ("password", "/etc/hosts")), ("an id after release", ("release", "0123abcd-0123-abcd")),
+                        ("a path in giving up", ("giveup", "see /etc/hosts")), ("121 characters to type", ("type", "x" * 121)), ("a key that is none", ("key", "cmd+banana")),
+                        ("a line hidden in an argument", ("click", "1", "2\nstuck at home")), ("the name in LICENSE", ("surprised", holder()))):
         check("refused by ./mac: %s" % name, run.mac(*words)[0] == 1)
+    for name, environment, words_file in (("there is no python3", {"PATH": no_python(work)}, ""), ("the check cannot tell", {}, "/nowhere/at/all")):
+        if words_file:
+            git(run.kit, "config", "arbor.privateWords", words_file)
+        done = subprocess.run(["sh", "./mac", "stuck", "nothing private in this"], cwd=run.kit, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=dict(os.environ, **environment))
+        git(run.kit, "config", "--unset", "arbor.privateWords")
+        check("words are not sent when %s" % name, done.returncode == 1, done.stdout.decode())
+    for words in (("key", "fn+ctrl+left"), ("key", "cmd+shift+["), ("key", "'"), ("key", "7"), ("scroll", "5", "5", "-3", "holding", "ctrl+opt"), ("drag", "1", "2", "3", "4", "holding", "fn+cmd", "keep")):
+        check("not refused: %s" % " ".join(words), subprocess.run(["sh", "-c", 'verb=$1; shift; . ./functions; numbers_and_names "$@"', "sh"] + list(words), cwd=functions(run.kit)).returncode == 0)
     check("and nothing of that was pushed or kept", git(run.origin, "rev-parse", "refs/heads/" + run.branch("action")).stdout == tip and not os.path.exists(os.path.join(run.kit, ".remarks")))
 
     # Nonsense, as somebody could push it who does not use the script.
@@ -153,24 +191,32 @@ def with_arbor(work):
 
     check("install: the download is opened", "your last word: double-click 1200 700" in run.mac("double-click", "1200", "700")[1])
     check("the password is typed for it", "typed for you" in run.mac("password")[1])
-    check("done: the next task", "task 2 of 7" in run.mac("done")[1])
-    run.mac("drag", "110", "105", "0", "400")
+    check("done: the next task", "task 2 of 8" in run.mac("done")[1])
+    check("from ready on the first picture is kept", os.path.exists(os.path.join(run.kit, "first.jpg")))
+    # What the Mac's account could do to the folder the courier pushes must not run in the newcomer's.
+    with open(os.path.join(run.box, "screen", "mac"), "a") as file:
+        file.write("echo overwritten\n")
+    run.mac("drag", "110", "105", "6", "400")
     check("a remark waits for the next act", run.mac("surprised", "another window went away, I had touched only one")[1].startswith("noted"))
     run.mac("drag", "950", "155", "1439", "400", "keep")
     run.mac("release")
-    check("task 3", "task 3 of 7" in run.mac("done")[1])
+    check("the script that runs is the one that was cloned, whatever is pushed later", "overwritten" not in open(os.path.join(run.kit, "mac")).read())
+    check("task 3", "task 3 of 8" in run.mac("done")[1])
+    run.mac("double-click", "900", "30")
+    run.mac("key", "ctrl+opt+z")
+    check("task 4", "task 4 of 8" in run.mac("done")[1])
     run.mac("key", "cmd+tab", "cmd+tab", "cmd+tab")
     run.mac("key", "f5")
     run.mac("double-click", "300", "210")
-    check("task 4", "task 4 of 7" in run.mac("done")[1])
+    check("task 5", "task 5 of 8" in run.mac("done")[1])
     run.mac("lookup", "how to switch windows: the Window menu")
     run.mac("key", "cmd+tab", "cmd+tab", "cmd+tab", "cmd+tab")
     run.mac("key", "cmd+tab")
-    check("task 5", "task 5 of 7" in run.mac("done")[1])
-    check("giving up: task 6", "task 6 of 7" in run.mac("giveup", "the Finder window is nowhere to be seen")[1])
+    check("task 6", "task 6 of 8" in run.mac("done")[1])
+    check("giving up: task 7", "task 7 of 8" in run.mac("giveup", "the Finder window is nowhere to be seen")[1])
     time.sleep(1)
     said = run.mac("click", "700", "30")[1]
-    check("its time runs out, which the next picture says", "task 7 of 7" in said and "the time for the task before this one was up" in said, said)
+    check("its time runs out, which the next picture says", "task 8 of 8" in said and "the time for the task before this one was up" in said, said)
     check("and a word that was on its way is not carried out, which its sender is told", "was NOT carried out" in said, said)
     check("the next word is in step again", "your last word: key ctrl+opt+q" in run.mac("key", "ctrl+opt+q")[1])
     check("after the last task it is over", "That was the last task" in run.mac("done")[1])
@@ -179,7 +225,7 @@ def with_arbor(work):
 
     journal = run.journal()
     check("the journal comes back on the record branch, whole", journal and journal[0]["kind"] == "run" and journal[-1] == dict(journal[-1], kind="end", how="played"), journal[-1:])
-    check("what became of each task", ends(journal) == {"install": ("done", True), "side-by-side": ("done", True), "fill": ("done", False), "find": ("done", True),
+    check("what became of each task", ends(journal) == {"install": ("done", True), "side-by-side": ("done", True), "return": ("done", True), "fill": ("done", False), "find": ("done", True),
                                                         "undo": ("giveup", False), "back": ("time", False), "quit": ("done", False)}, ends(journal))
     rounds = [entry for entry in journal if entry["kind"] == "round"]
     first_drag = next(entry for entry in rounds if entry["verb"] == "drag")
@@ -190,10 +236,14 @@ def with_arbor(work):
     check("remarks are kept with their task and picture", [(entry["task"], entry["verb"]) for entry in journal if entry["kind"] == "remark"]
           == [("side-by-side", "surprised"), ("find", "lookup"), ("undo", "giveup")])
     check("nonsense is counted, and none of it is kept", len([entry for entry in journal if entry["kind"] == "nonsense"]) == 8 and len([entry for entry in journal if entry["kind"] == "late"]) == 1 and "passwd" not in json.dumps(journal) and "rm -rf" not in json.dumps(journal))
+    check("nor is any of it quoted", all(quoted == "…" for entry in journal if entry["kind"] == "nonsense" for quoted in re.findall(r"'([^']*)'", entry["why"])))
+    check("what Arbor took back after the last act was moved by nobody", [each["owner"] for entry in journal if entry["kind"] == "task-end" and entry["task"] == "fill" for each in entry["idle_moved"]] == ["Calendar"])
+    check("a drag that ends a few pixels short of the edge ends on it", next(entry for entry in rounds if entry["line"] == "drag 110 105 6 400")["moved"][0]["to"][:2] == [0, 25])
     check("every part of a round was timed", all(part in rounds[3]["timing"] for part in ("shot", "push", "thought", "fetch", "act", "settle")), rounds[3]["timing"])
     for which in ("screen", "action", "record"):
-        log = git(run.origin, "log", "--format=%ae %s", "refs/heads/" + run.branch(which)).stdout.decode().strip().split("\n")
-        check("the %s branch is one commit, made as the output of a Mac shell run is" % which, len(log) == 1 and log[0].startswith("mac-shell@users.noreply.github.com mac-shell: "), log)
+        log = git(run.origin, "log", "--format=%ae %ad %s", "--date=format:%z", "refs/heads/" + run.branch(which)).stdout.decode().strip().split("\n")
+        check("the %s branch is one commit, made as the output of a Mac shell run is, and tells no time zone" % which,
+              len(log) == 1 and log[0].startswith("mac-shell@users.noreply.github.com +0000 mac-shell: "), log)
     check("every picture is kept, small", len(os.listdir(os.path.join(run.out, "screens"))) == int(run.round()), os.listdir(os.path.join(run.out, "screens"))[-3:])
     return run
 
@@ -202,15 +252,16 @@ def macos_alone(work):
     run = Run(work, "alone", "macos")
     run.clone()
     check("macOS alone: no README of Arbor's", not os.path.exists(os.path.join(run.kit, "README-first-screen.md")) and "Arbor" not in open(os.path.join(run.kit, "HOWTO.md")).read())
-    check("macOS alone: five tasks", "task 1 of 5" in run.mac("ready")[1])
-    for words in (("drag", "110", "105", "0", "400"), ("drag", "950", "155", "1439", "400"), ("done",), ("key", "cmd+tab", "cmd+tab", "cmd+tab"), ("double-click", "300", "210"), ("done",),
+    check("macOS alone: six tasks", "task 1 of 6" in run.mac("ready")[1])
+    for words in (("drag", "110", "105", "0", "400"), ("drag", "950", "155", "1439", "400"), ("done",), ("double-click", "900", "30"), ("double-click", "900", "30"), ("done",),
+                  ("key", "cmd+tab", "cmd+tab", "cmd+tab"), ("double-click", "300", "210"), ("done",),
                   ("key", "cmd+tab", "cmd+tab", "cmd+tab", "cmd+tab"), ("key", "cmd+tab"), ("done",)):
         run.mac(*words)
     # Cut off in the middle of a task, as a job that is cancelled or out of time is.
     run.rig.send_signal(signal.SIGTERM)
     check("cut off, the rig still ends by itself", run.end() == 0)
     journal = run.journal()
-    check("and what there was comes back", ends(journal) == {"side-by-side": ("done", True), "fill": ("done", True), "find": ("done", True), "undo": ("cut", False)} and journal[-1]["how"] == "cut", ends(journal))
+    check("and what there was comes back", ends(journal) == {"side-by-side": ("done", True), "return": ("done", True), "fill": ("done", True), "find": ("done", True), "undo": ("cut", False)} and journal[-1]["how"] == "cut", ends(journal))
     check("without Arbor nothing moved that was not touched", not [each for entry in journal if entry["kind"] == "round" for each in entry["moved"] if each["id"] not in entry["touched"]])
     return run
 
@@ -232,7 +283,7 @@ def main():
         score = subprocess.run([sys.executable, os.path.join(HERE, "score.py"), first.folder, second.folder], stdout=subprocess.PIPE).stdout.decode()
         if VERBOSE:
             print(score)
-        for wanted in ("| two windows side by side | Arbor abc1234 | yes | 3 | 0 | 0 | 1 | 0 | 1 |", "|  | macOS alone | yes | 2 | 0 | 0 | 0 | 0 | 0 |", "| WORSE |",
+        for wanted in ("| two windows side by side | Arbor abc1234 | yes | 3 | 0 | 0 | 1 | 0 | 1 | 1 |", "|  | macOS alone | yes | 2 | 0 | 0 | 0 | 0 | 0 | 0 |", "| WORSE |",
                        "| one window fills the screen, and stays | Arbor abc1234 | NO (thought so) |", "| install and start it | Arbor abc1234 | yes | 2 |", "a cost macOS alone does not have",
                        "**surprised**: another window went away, I had touched only one"):
             check("the score has: %s" % wanted, wanted in score, score)

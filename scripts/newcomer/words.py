@@ -11,7 +11,8 @@ Written for Python 3.9, which is what a hosted Mac has.
 
 import re
 
-MODIFIERS = ("ctrl", "opt", "shift", "cmd")
+# fn is the key macOS draws as a globe: its own shortcuts for tiling are made with it.
+MODIFIERS = ("fn", "ctrl", "opt", "shift", "cmd")
 # The names scripts/mac-shell/pointer.swift knows, which are the ones settings.json uses.
 KEYS = set("abcdefghijklmnopqrstuvwxyz0123456789") | set("[]-=,./;'`\\") | {
     "space", "return", "enter", "tab", "escape", "esc", "delete", "left", "right", "down", "up",
@@ -51,7 +52,7 @@ def plain(text, most=40):
 def modifiers(word):
     names = word.split("+")
     if not names or len(set(names)) != len(names) or any(name not in MODIFIERS for name in names):
-        raise Nonsense("after 'holding' come ctrl, opt, shift, cmd, joined by +, not '%s'" % plain(word))
+        raise Nonsense("after 'holding' come fn, ctrl, opt, shift, cmd, joined by +, not '%s'" % plain(word))
     return "+".join(name for name in MODIFIERS if name in names)
 
 
@@ -64,7 +65,7 @@ def chord(word):
     if key not in KEYS:
         raise Nonsense("there is no key '%s': letters, digits, space return tab escape delete left right up down f1 to f12 and [ ] - = , . / ; ' ` \\" % plain(key))
     if len(set(held)) != len(held) or any(name not in MODIFIERS for name in held):
-        raise Nonsense("before the key come ctrl, opt, shift, cmd, joined by +, not '%s'" % plain(word))
+        raise Nonsense("before the key come fn, ctrl, opt, shift, cmd, joined by +, not '%s'" % plain(word))
     return "+".join([name for name in MODIFIERS if name in held] + [key])
 
 
@@ -139,12 +140,15 @@ def parse_line(line, width, height):
         return {"verb": verb, "x": x, "y": y}
     if verb == "scroll":
         x, y = point(0, ", then how many notches")
-        if len(rest) != 3:
+        if len(rest) < 3:
             raise Nonsense("scroll takes x, y and how many notches: positive is up")
         notches = number(rest[2], "the number of notches", -20, 20)
         if notches == 0:
             raise Nonsense("scroll by 0 does nothing")
-        return {"verb": verb, "x": x, "y": y, "notches": notches}
+        held = options(3, ("holding",))
+        if any(name not in ("ctrl", "opt") for name in held.get("holding", "ctrl").split("+")):
+            raise Nonsense("the wheel can be turned holding ctrl, opt or both")
+        return dict({"verb": verb, "x": x, "y": y, "notches": notches}, **held)
     if verb == "key":
         if not 1 <= len(rest) <= 4:
             raise Nonsense("key takes one to four chords, as in: key cmd+tab")

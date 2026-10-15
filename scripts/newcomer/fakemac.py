@@ -53,7 +53,7 @@ class FakeMac:
                                             "on": window["on"], "owner": window["owner"]} for window in self.windows},
             "order": [str(window["id"]) for window in shown],
             "focused": str(shown[0]["id"]) if shown else None,
-            "display": list(self.display), "visible": list(self.visible), "arbor": self.arbor}
+            "display": list(self.display), "visible": list(self.visible), "arbor": self.arbor, "docked": []}
 
     def picture(self, path):
         self.pictures += 1
@@ -163,6 +163,14 @@ class FakeMac:
             self.windows = [each for each in self.windows if each["owner"] != "Arbor"]
             return "typed for you: Arbor has the permission now"
         return "nobody was asking for one"
+
+    def help(self, how):
+        self.arbor = "running"
+        self.windows = [each for each in self.windows if each["owner"] != "Arbor"]
+        return "installed, started and given the permission"
+
+    def said(self):
+        return []
 
     def settle(self, *_):
         pass

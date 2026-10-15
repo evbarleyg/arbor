@@ -979,6 +979,23 @@ was none (after Quit one window covered the others, and every click fell on the 
 
 For a script of your own, `lib-day.sh` is the harness below the acts (its header lists everything) and `jolts.py`'s header lists the marks and keys.
 
+### A newcomer's eval (`make newcomer`, `scripts/newcomer`)
+
+The day finds faults; it cannot find "I could not find it" or "it took five steps". For that, somebody who has never seen this repository gets what a stranger
+gets (the top of the README, a build to install, a hosted Mac with the same real apps on it) and eight small tasks, sees nothing but pictures of the screen and acts only with real keys,
+clicks and drags: an agent, through Git, one picture and one act a round, with no key and no call to GitHub's API. The same tasks are played with macOS alone, and the score
+sets the two side by side, task by task: done or not (read from the window server's list), acts, wrong turns, stuck, surprised, looked up, windows that moved though the act did not touch them.
+
+```bash
+make newcomer RUN=n1                  # macOS alone; prints the two lines to give the newcomer when the first picture is up
+make newcomer RUN=n2 BUILD=3deb36a    # with Arbor, built from that commit, lying zipped in Downloads, marked as a browser marks a download (UNMARKED=1: spared Gatekeeper)
+scripts/newcomer/fetch.sh n1 n2 && scripts/newcomer/score.py .newcomer/n2 .newcomer/n1
+```
+
+**Whoever has read the repository is no newcomer, and whoever has played once is none either**: start a fresh one each time, without the source and without notes.
+`scripts/newcomer/README.md` has the tasks, what counts as what, how a round goes, what can leak, hang or be sent as nonsense, and what the eval does not tell. All of it but the Mac is
+tried on Linux by `scripts/newcomer/rehearse.py`, a row of `make lint`.
+
 ## 8. Type-checking macOS-only code on Linux (`make typecheck-mac`)
 
 Half of Arbor builds only on macOS: `ArborKit/{AX,UI,Input,App,IPC}`, `Arbor`, `arborctl`, `arbor-e2e`, `ArborTestWindows`, the test files with `#if os(macOS)` in them, and the Mac shell's helper tools (`scripts/mac-shell/*.swift`), which only a script that is already running on a Mac compiles. `make typecheck-mac`

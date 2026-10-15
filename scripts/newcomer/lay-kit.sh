@@ -15,7 +15,8 @@ echo "$run" > "$box/screen/run"
 awk -v about="$here/kit/about-$arm.md" '$0 == "@ABOUT@" { while ((getline line < about) > 0) print line; next } { print }' "$here/kit/HOWTO.md" > "$box/screen/HOWTO.md"
 # What reads every remark before it is sent: the repository's own check, with the two files it reads.
 cp "$root/scripts/public-check.py" "$root/scripts/public-check.allow" "$box/screen/check/scripts/"
-cp "$root/LICENSE" "$box/screen/check/LICENSE"
+# At the top of the clone, where the check looks for the one name it knows.
+cp "$root/LICENSE" "$box/screen/LICENSE"
 if [ "$arm" = arbor ]; then
   [ -f "$readme" ] || { echo "lay-kit.sh: with Arbor it takes the README of the build under test" >&2; exit 64; }
   head -n 45 "$readme" > "$box/screen/README-first-screen.md"

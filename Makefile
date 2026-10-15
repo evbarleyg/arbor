@@ -155,6 +155,12 @@ day:
 	@./scripts/mac-shell/run.sh --no-preflight "the fake Mac knows no apptool, no sampler and no stock apps yet" \
 	  scripts/mac-shell/day$(if $(CONTROL),-control,$(if $(OFF),-off,$(if $(STILL),-still,$(if $(SABOTAGE),-sabotage)))).sh
 
+# From anywhere: a hosted Mac for somebody who knows nothing about Arbor (scripts/newcomer/README.md). RUN=<a name>; BUILD=<commit or branch>: with that Arbor
+# to install, otherwise macOS alone; UNMARKED=1: the download is spared macOS's Gatekeeper. Runs the rig of the commit that is checked out.
+.PHONY: newcomer
+newcomer:
+	@./scripts/newcomer/start.sh $(RUN) $(if $(BUILD),arbor $(BUILD) $(if $(UNMARKED),unmarked),macos)
+
 # On Linux: type-checks all the macOS-only code against stand-ins for Apple's frameworks (scripts/typecheck-mac/README.md).
 # Not proof, but fifteen seconds instead of a macOS job. REF=origin/some-branch checks that commit's Sources instead.
 typecheck-mac:

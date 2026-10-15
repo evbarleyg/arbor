@@ -110,6 +110,7 @@ struct Pointer {
     Modifier(names: ["opt", "option", "alt", "⌥"], flag: .maskAlternate, code: 58),
     Modifier(names: ["shift", "⇧"], flag: .maskShift, code: 56),
     Modifier(names: ["cmd", "command", "⌘"], flag: .maskCommand, code: 55),
+    Modifier(names: ["fn", "globe"], flag: .maskSecondaryFn, code: 63),
   ]
 
   /// Virtual key codes under the names settings.json uses (`KeyChord.Key` in ArborCore).
