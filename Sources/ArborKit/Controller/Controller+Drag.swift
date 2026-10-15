@@ -20,7 +20,7 @@ extension Controller {
     /// Live reflow does not open the slot again for it.
     var isNowhere = false
     /// Let go here, the window is macOS's, which tiles it, and this is why (`MacTiling`). Arbor stands aside: the target is
-    /// `.float`, nothing is previewed, and no frame is set on a window that macOS is about to move.
+    /// `.float`, nothing is previewed, and no frame is set on a window that macOS may be about to move.
     var leftToMacOS: MacTiling.Claim?
   }
 
@@ -39,7 +39,7 @@ extension Controller {
     /// Where the window would land on the active target, if it would dock.
     var landing: CGRect?
     /// The size a command meant to give the window while it was in the hand (`putBack`), or its own if it was taken in hand while it
-    /// was small out of view. It takes it when it is let go.
+    /// was small out of view. It takes it when it is let go. (So does one that is let go as large as a slot it left: `finishDrop`.)
     var sizeOwed: CGSize?
     /// What live reflow has moved (Controller+Reflow.swift).
     var reflow = Reflow()
@@ -62,8 +62,6 @@ extension Controller {
   }
   /// The timer that activates the target under the pointer.
   static let dragDwellKey = "drag-dwell"
-  /// The timer that looks at what macOS made of a window that was left to it.
-  static let leftToMacOSKey = "left-to-macos"
 
   // MARK: Events
 
@@ -213,7 +211,19 @@ extension Controller {
       let onDesktop =
         seen.layout.leafOrTile(at: point, in: seen.tree) == seen.tree.desktop
         || seen.layout.desktopFrame.map { floatingRegion($0, on: display).contains(point) } == true
-      if !onDesktop { return Hover(display: displayID, target: .none, isNowhere: true) }
+      // Nor in the band that is macOS's, short of macOS's own point, though the Desktop reaches up to that edge: nothing is offered there.
+      // Where another display begins beyond the edge nobody pushes a window against it: that is the way across. Nor has anybody carried a window
+      // to an edge in whose band the pointer took hold and stayed: with small gaps the title bars of the top row lie in it.
+      let inMacOSsBand = DropResolver.screenEdges(near: point, visibleFrame: display.visibleFrame, options: dropOptions)
+        .intersection(drag?.macTiling.edges ?? [])
+        .subtracting(drag?.edgesNeverLeft ?? [])
+        .contains { edge in
+          let beyond =
+            edge == .top ? CGPoint(x: point.x, y: display.frame.minY - 1)
+            : CGPoint(x: edge == .left ? display.frame.minX - 1 : display.frame.maxX, y: point.y)
+          return !displays.contains { $0.frame.contains(beyond) }
+        }
+      if !onDesktop || inMacOSsBand { return Hover(display: displayID, target: .none, isNowhere: true) }
     }
     // Dropped there it would widen a held view (Controller+Hold.swift). A docked window goes back to its
     // place; a floating one stays where it is let go.
@@ -296,16 +306,12 @@ extension Controller {
     finishDrop(session.window, on: hover, at: session.point, sizeOwed: session.sizeOwed, after: session.reflow)
     soleFloatDropped(session.window, from: session.sourceDisplay, leftToMacOS: hover.leftToMacOS != nil)
     noteWhereItsUserLeftIt(session.window)
-    // Whoever meant Arbor's edge and got macOS's tile is told where that can be changed. Whoever held ⌥ asked macOS. Said once macOS
-    // has moved the window, which it does not always do: thrown into the menu bar and let go at once, it stays as it is.
-    // Whoever has no edges of Arbor's there (a band of 0) meant none.
-    if let claim = hover.leftToMacOS, claim != .optionKey, let display = hover.display,
-      options(for: display).dropOptions.offersScreenEdges, let letGo = windows[session.window]?.frame
-    {
-      scheduler.schedule(Self.leftToMacOSKey, after: 0.5) { [weak self] in
-        guard let self, let now = self.windows[session.window]?.frame, now != letGo else { return }
-        self.teach(.leftToMacOS, on: display)
-      }
+    if let claim = hover.leftToMacOS, let display = hover.display, let letGo = windows[session.window]?.frame {
+      leave(
+        session.window,
+        toMacOS: LeftToMacOS(pointer: session.point, letGo: letGo, claim: claim, display: display, view: workspaces[display]?.camera))
+    } else if isDockedThoughMacOSNeverHadIt(session.window) {
+      leftAsLargeAsTheirSlots[session.window] = nil
     }
   }
 
@@ -324,6 +330,16 @@ extension Controller {
     // Dropped to float, it is where its user let go of it.
     defer { noteWhereItsUserLeftIt(window) }
     var changed: [DisplayID] = []
+    // It floats as large as the slot it left where macOS tiles: still, because macOS left it alone, or again, because macOS gives a window dragged
+    // off its tile the size it took it at. That is nobody's size, and it takes its own. Asked now and not while macOS shrinks it in the
+    // hand, whose last steps are too small to tell from a move.
+    var sizeOwed = sizeOwed
+    if let home = workspaceID(containing: window), workspaces[home]?.isFloating(window) == true,
+      let own = windows[window].flatMap({ ownSize(of: window, ifItIsAsLargeAsTheSlotItLeft: $0.frame.size) })
+    {
+      workspaces[home]?.floating[window]?.size = own
+      sizeOwed = sizeOwed ?? own
+    }
     // The window may have closed, or its app been excluded, since it was picked up. Or it has left the screen: ⌘M, ⌘H
     // and full screen all work with the button down. What is under no pointer is dropped nowhere, and its frame
     // (the whole display, in full screen) is no place to float at. One reported on another Space is dropped all the
@@ -341,15 +357,23 @@ extension Controller {
       let remembered = frameToRemember(of: window, movedFrom: current.frame, to: current.frame)
       // Asked while the display it leaves still remembers it, and noted if it is docked on the other, which may be refused.
       let own = home.flatMap { $0 == display ? nil : frameToTakeAlong(of: window, from: $0)?.size }
+      // The size it had in its slot, which is not always the one it has now: see `leaves`.
+      let inItsSlot = home.flatMap { home in
+        frameToTakeAlong(of: window, from: home, ifDocked: true).flatMap { own in
+          (settled[window] ?? layouts[home]?.windowFrames[window]).map { LeftAsLargeAsItsSlot(slot: $0.size, own: own.size) }
+        }
+      }
       changed = drop.apply(to: &workspaces)
       if let own, let arrived = workspaces[display]?.undockedFrame(of: window) {
         noteFit(of: window, own: own, into: arrived.size, on: display)
       }
-      // Out of its slot, it has shrunk back to the size it floated at (Controller+UndockedFrames.swift).
+      // Out of its slot, now or earlier, it has shrunk back to the size it floated at (Controller+UndockedFrames.swift).
       if drop.frame != current.frame {
         shrinkDropped(window, to: drop.frame, on: display)
       } else if !wasDocked, hover.target == .float {
         workspaces[display]?.floating[window] = remembered
+      } else if hover.leftToMacOS != nil, let inItsSlot {
+        leaves(window, inItsSlot, on: display)
       }
       // With the Desktop out of view it would be gone at the next move of the view: it belongs to this one.
       if wasDocked, hover.target == .float, layout(of: display)?.desktopFrame == nil {
@@ -371,7 +395,7 @@ extension Controller {
 
   /// What letting go of `window` over `target` on `display` would do, for the real drop and for live reflow's trials.
   /// Made while the window is still where it was: what is remembered about a docked window goes when it is undocked.
-  /// `leftToMacOS`: it floats as it is, because macOS is about to give it a frame.
+  /// `leftToMacOS`: it floats as it is, because macOS may be about to give it a frame.
   func drop(
     of window: WindowID, on target: DropTarget, display: DisplayID, at pointer: CGPoint?, sizeOwed: CGSize? = nil,
     leftToMacOS: Bool = false

@@ -257,6 +257,8 @@ extension Controller {
     check("chosenOnShape", chosenOnShape.keys)
     check("fittedToADisplay", fittedToADisplay.keys)
     check("fittedFrames", fittedFrames.keys)
+    check("leftAsLargeAsTheirSlots", leftAsLargeAsTheirSlots.keys)
+    check("leftToMacOS", leftToMacOS.keys)
     if Set(focusHistory).count != focusHistory.count {
       problems.append(.init("leak", "focusHistory lists a window twice: \(focusHistory)"))
     }
@@ -337,6 +339,9 @@ extension Controller {
 
   /// Windows whose app did not answer when they were to be moved, and have not been moved since.
   public var windowsOwedAMove: Set<WindowID> { unplaced.union(owedMoves) }
+
+  /// Windows that were let go where macOS may tile them and have not been looked at yet (Controller+LeftToMacOS.swift). No layout has touched them since.
+  public var windowsLeftToMacOS: Set<WindowID> { Set(leftToMacOS.keys) }
 
   /// The docked window being resized by its edges, if any.
   public var edgeResizedWindow: WindowID? { edgeResize?.window }

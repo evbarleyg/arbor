@@ -237,7 +237,8 @@ public final class ChaosRunner {
     timersBefore = harness.scheduler.pendingKeys
     wasTryingOutADrop = controller.draggedWindow != nil && controller.settings.reflowWhileDragging
     holdBefore = isRunning ? controller.holdLevel : nil
-    owedAMoveBefore = controller.windowsOwedAMove
+    // (What was left to macOS when the view moved follows once Arbor has looked, like a window whose app hung.)
+    owedAMoveBefore = controller.windowsOwedAMove.union(controller.windowsLeftToMacOS)
     wasPeekingBefore = timersBefore.contains("peek")
     let movesBefore = system.windows.mapValues(\.movesNotArbors)
     inHandBefore = system.dragging ?? system.resizing
