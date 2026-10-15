@@ -29,9 +29,9 @@ KEYS_Y=0
 # The key where a US keyboard has X.
 X=7
 
-front_is() { [ "$("$KEYS" frontmost)" = "$1" ]; }
-received() { grep -c "down code=$1 " "$KEYS_LOG"; }
-received_is() { [ "$(received "$1")" = "$2" ]; }
+witness_in_front() { [ "$("$KEYS" frontmost)" = "$KEYS_ID" ]; }
+seen() { grep -c "down code=$1 " "$KEYS_LOG"; }
+seen_is() { [ "$(seen "$1")" = "$2" ]; }
 # Window levels: the field is the only one of Arbor's windows at the level of a modal panel; Go to…, the panel of shortcuts and the minimap share one.
 field() { has_overlay 8; }
 panel() { has_overlay 5; }
@@ -44,24 +44,24 @@ is_managed() { is managed "$1"; }
 # reaches "<when>": a plain x gets to the app, which is in front.
 reaches() {
   local before
-  before=$(received $X)
+  before=$(seen $X)
   key x
-  check "$1: an x reaches the app" eventually received_is $X $((before + 1))
-  check "$1: the app is in front" front_is "$KEYS_ID"
+  check "$1: an x reaches the app" eventually seen_is $X $((before + 1))
+  check "$1: the app is in front" witness_in_front
 }
 # kept "<when>": a plain x does not get to the app.
 kept() {
   local before
-  before=$(received $X)
+  before=$(seen $X)
   key x
   sleep 0.5
-  check "$1: an x does not reach the app" received_is $X "$before"
+  check "$1: an x does not reach the app" seen_is $X "$before"
 }
 # The app has the keyboard, by a click in its window, and shows it.
 begin() {
   step "$1"
   click "$KEYS_X" "$KEYS_Y"
-  eventually front_is "$KEYS_ID"
+  eventually witness_in_front
   reaches "before"
 }
 
@@ -178,11 +178,11 @@ session() {
   begin "the panel of shortcuts, put away by any key"
   key ctrl+opt+shift+/
   check "the panel is up" eventually panel
-  before=$(received $X)
+  before=$(seen $X)
   key x
   check "an x puts it away" eventually gone panel
   # Whose that x was is the spec's to say. It is written down, not judged.
-  echo "the x that put the panel away: $(($(received $X) - before)) reached the app"
+  echo "the x that put the panel away: $(($(seen $X) - before)) reached the app"
   reaches "after that key"
 
   begin "the minimap, tapped"
