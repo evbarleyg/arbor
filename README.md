@@ -219,7 +219,7 @@ when a window closes and when Arbor pauses or quits.
 | ⌃⌥↩ | Frame the focused window; again to return |
 | ⌃⌥[ / ⌃⌥] | Back / forward |
 | ⌃⌥D | Desktop |
-| ⌃⌥G | Go to…: find a window, a named space or a saved view by typing |
+| ⌃⌥G | Go to…: find a window, a named space, a saved view or a command by typing |
 | ⌃⌥M | Minimap: click a window in it to frame it; again to put it away. Held: let go over a window to frame it, ⎋ to give up |
 | ⌃⌥⌘ + arrow | Dock the focused window at that edge, or move it one place |
 | ⌃⌥F / ⌃⌥⇧F | Float or dock the focused window / float all windows |
@@ -375,7 +375,11 @@ apps you told it not to arrange, every named space and every saved view. Type to
 of each row is where the window is now: in view, out of view, tab, tile, floating, kept in view, summoned, out of view until summoned, minimised, hidden, full screen, on another macOS Space, not arranged, and on
 which display if there are several.
 
-A shortcut can go straight to a window: `"ctrl+opt+cmd+f1": "find mail inbox"` in `bindings`.
+**It finds commands too.** Type what a thing is called in the menu: `bal` ↩ is Adjust ▸ Balance Sizes, `dock left` Dock Focused Window ▸ Left, `float all` Float All Windows. Every row of
+the menu that runs a command is there, and the commands that have a shortcut but no row (Space to the Left, Window Above). A command's row says `command` at the right, with its shortcut if it has one, or `not now` where
+the menu would grey it out. It acts on the window you were in. Before you type, the list holds places only, and a piece of a window's name still finds the window first.
+
+A shortcut can go straight to a window: `"ctrl+opt+cmd+f1": "find mail inbox"` in `bindings`. (`find` with text goes to places; it never runs a command.)
 
 ## Summoning
 
