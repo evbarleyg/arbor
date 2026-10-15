@@ -697,6 +697,7 @@ copy from before the repository was public, and say what the script does once it
 | `check-resume.sh` | trunk | **never**: ends with 77 | | Calculator and TextEdit opened, brought forward in turn, and quit; `ARBOR_APPS_HERE=1` does not open it |
 | `shots-F15-apps.sh` | trunk | **never**: ends with 77 | | Ten real apps opened for their icons, and killed |
 | `check-keyboard-returns.sh` | trunk | **never**: ends with 77 | | Plain letters typed after each of Arbor's panels has closed: with a fault in Arbor they land in whichever app has the keyboard |
+| `probe-signing-key.sh` (`lib-F13.sh`) | trunk | **never**: ends with 77 | | A codesign that may not use a key asks in a dialog on the screen. Everything else is in a throwaway `HOME` and keychains of its own in `/tmp` |
 | `first-dock.sh` (`first-dock.py`) | trunk | **never**: ends with 77 | | Nine real apps opened and quit, every window arranged, Reduce Motion, the display's size |
 | `check-F52.sh`, `check-F63.sh` | not landed, trunk | **never**: end with 77 | | Virtual displays, Accessibility taken from every app |
 | `check-F59.sh` | not landed | safe | 30 s | During a carry nobody's app gets arrows, ↩ or ⎋ |
