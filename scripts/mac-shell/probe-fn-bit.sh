@@ -56,13 +56,14 @@ registered() {
     ROUND="$name.$hand"
     for chord in $KEYS; do
       code=$(awk -v chord="$chord" '$3 == chord { print $1 }' "$CODES")
-      front_again
+      front_again || continue
       mark "$chord"
       "$EARS" press "$code" "$mods" hid "${repeats:-0}"
       sleep 0.2
     done
     mark -
   done
+  had_the_keyboard "$name"
   kill_started "$RIVAL_PID"
   RIVAL_PID=""
   sleep 0.3
@@ -127,6 +128,7 @@ ctl arrange
 ROUND=holes
 mark -
 front_again
+had_the_keyboard "before the hammer"
 since=$(wall)
 hammer 24
 sleep 1

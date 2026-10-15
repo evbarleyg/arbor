@@ -99,6 +99,7 @@ step "2b  is there a moment at which Arbor lets go? ⌃⌥A twenty-five times a 
 ROUND=holes
 mark -
 front_again
+had_the_keyboard "before the hammer"
 since=$(wall)
 hammer 34
 sleep 1

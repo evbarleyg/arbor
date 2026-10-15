@@ -380,12 +380,44 @@ for when, ear, after in found[:60]:
 PY
 }
 in_front() { [ "$("$EARS" frontmost)" = "$FRONT_PID" ]; }
+# "In front" is not "has the keyboard". A panel that does not activate its app can make itself key, as Arbor's welcome window does at the launch and again at the grant: macOS goes on
+# naming the app in front, both title bars are lit, and every key goes into the panel. A round that expects the app to get nothing then passes on any Arbor (seen on a hosted Mac).
+# So the app is asked with a key: a plain J, which nobody holds, and which its own ear has to write down. Under the mark of no key: or its lines would be booked to the key before.
+J=38
+js_heard() { grep -c " local down code=$J mods=none " "$HEARD"; }
+hears() {
+  local before tries=0
+  mark -
+  before=$(js_heard)
+  "$ARBOR_POINTER" key j
+  until [ "$(js_heard)" -gt "$before" ]; do
+    tries=$((tries + 1))
+    [ "$tries" -le 8 ] || return 1
+    sleep 0.05
+  done
+}
+# Whoever hears the key has the keyboard, so nobody need be asked who is in front while all is well. WITHOUT_THE_KEYBOARD counts the times it could not be had: whoever presses
+# all the same proves nothing, so nobody does: press_all and odd_hands leave the key out, and `had_the_keyboard` makes a check of it.
+WITHOUT_THE_KEYBOARD=0
 front_again() {
-  in_front && return 0
-  kill -USR1 "$FRONT_PID"
-  eventually in_front && return 0
-  "$ARBOR_POINTER" click "$FRONT_X" "$FRONT_Y"
-  eventually in_front
+  local tries=0
+  until hears; do
+    tries=$((tries + 1))
+    if [ "$tries" -gt 4 ]; then
+      WITHOUT_THE_KEYBOARD=$((WITHOUT_THE_KEYBOARD + 1))
+      echo "(THE APP HAS NOT GOT THE KEYBOARD; in front by macOS's word: $(in_front && echo yes || echo no): nothing is pressed)"
+      return 1
+    fi
+    kill -USR1 "$FRONT_PID"
+    sleep 0.4
+    "$ARBOR_POINTER" click "$FRONT_X" "$FRONT_Y"
+    sleep 0.4
+  done
+}
+# had_the_keyboard <round>: a check, and the count begins anew.
+had_the_keyboard() {
+  check "$1: the app had the keyboard before every press: a plain J reached it" test "$WITHOUT_THE_KEYBOARD" -eq 0
+  WITHOUT_THE_KEYBOARD=0
 }
 # Arbor's own panels take the keyboard, or lie over the app: away with them before the next key.
 tidy() {
@@ -407,18 +439,18 @@ tidy() {
 }
 # press_all <round> <chord…>
 press_all() {
-  local chord missed=0
+  local chord
   ROUND=$1
   shift
   for chord in "$@"; do
-    front_again || missed=$((missed + 1))
+    front_again || continue
     mark "$chord"
     "$ARBOR_POINTER" key "$chord"
     sleep 0.25
     tidy
   done
   mark -
-  [ "$missed" -eq 0 ] || echo "NOTE: $missed times the app could not be brought to the front before a press"
+  had_the_keyboard "$ROUND"
   table "$ROUND"
 }
 # table <round>: who heard what. The whole of it goes into a file; here, the sums, and every key that went another way than most.
@@ -471,7 +503,7 @@ odd_hands() {
     ROUND="$state.$name"
     for chord in $FEW; do
       code=$(awk -v chord="$chord" '$3 == chord { print $1 }' "$CODES")
-      front_again
+      front_again || continue
       mark "$chord"
       "$EARS" press "$code" "$mods" "$road" ${repeats:+"$repeats"}
       sleep 0.25
@@ -481,6 +513,7 @@ odd_hands() {
     done
     mark -
   done
+  had_the_keyboard "$state, by odd hands"
   python3 - "$HEARD" "$state" "$ARBOR_OUT/commands.txt" "$ARBOR_HOME/arbor.log" <<'PY'
 import collections, os, re, sys
 heard, state, commands, log = sys.argv[1:5]
