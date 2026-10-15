@@ -11487,6 +11487,26 @@
    "certainty": "suspected"
   },
   {
+   "id": "the-workspace-says-once-that-an-app-came-forward",
+   "kind": "extra-report",
+   "layer": "test",
+   "expected": "The fake Mac tells Arbor that an app came forward as often as a Mac does.",
+   "happened": "A Mac's workspace gives one notice for each app that comes forward, and `FrontmostAppWatcher` passes on one word. The fake Mac said it by three roads: `World.bringForward` every time it was called, news or not, which is two or three times for one coming forward; `World.leaveFront` once more; and `FakeWindowSystem.userFocus` when the app's name changed. The controller ignores what is no news, so nothing showed until the word went through the recorder: then a rehearsal's trace had it two or three times at a step.",
+   "found": "The comparison of a rehearsal with a run on a hosted Mac, once both record an app's coming forward.",
+   "modelled": "yes",
+   "knobs": [
+    "World.tellWhoIsInFront",
+    "FakeWindowSystem.activate"
+   ],
+   "guards": [],
+   "copes": "Controller.applicationActivated ignores an app that it already knows to be in front.",
+   "hurt": 4,
+   "sources": [
+    "Sources/arbor-fakemac/World.swift",
+    "Sources/ArborTesting/FakeWindowSystem.swift"
+   ]
+  },
+  {
    "id": "timers-and-events-keep-to-no-order",
    "kind": "order-of-reports",
    "layer": "at the seam",

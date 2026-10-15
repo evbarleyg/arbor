@@ -56,7 +56,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | [order-of-reports](#order-of-reports) | 28 | 3 | 9 | 11 | 3 | 5 | 18 | 1 | 3 | 6 | 4 |
 | [missing-report](#missing-report) | 44 | 7 | 14 | 7 | 4 | 19 | 24 | 1 | 5 | 14 | 11 |
-| [extra-report](#extra-report) | 9 | 0 | 3 | 3 | 1 | 2 | 6 | 0 | 0 | 3 | 1 |
+| [extra-report](#extra-report) | 10 | 0 | 4 | 3 | 1 | 2 | 6 | 0 | 0 | 4 | 1 |
 | [late-or-partial-answer](#late-or-partial-answer) | 46 | 9 | 12 | 16 | 5 | 13 | 29 | 0 | 6 | 11 | 15 |
 | [second-actor](#second-actor) | 54 | 6 | 18 | 20 | 9 | 7 | 35 | 0 | 4 | 15 | 10 |
 | [geometry](#geometry) | 35 | 2 | 11 | 15 | 7 | 2 | 24 | 1 | 2 | 8 | 6 |
@@ -67,7 +67,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [looks](#looks) | 21 | 0 | 0 | 0 | 1 | 20 | 2 | 2 | 3 | 14 | 6 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 45 | 1 | 0 | 1 | 4 | 40 | 26 | 1 | 2 | 16 | 7 |
-| **all** | 465 | 62 | 95 | 126 | 67 | 177 | 243 | 19 | 60 | 143 | 109 |
+| **all** | 466 | 62 | 96 | 126 | 67 | 177 | 243 | 19 | 60 | 144 | 109 |
 
 **Where the difference bit**
 
@@ -76,7 +76,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 144 | 89 | 46 | 13 | 33 | 52 |
 | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 164 | 98 | 125 | 0 | 11 | 28 |
 | controller | in the controller or the core, given reports that were right | 28 | 15 | 16 | 0 | 1 | 11 |
-| test | in a test, a script or a harness that expected the wrong thing | 83 | 0 | 29 | 5 | 11 | 38 |
+| test | in a test, a script or a harness that expected the wrong thing | 84 | 0 | 29 | 5 | 11 | 39 |
 | machine | in the machine, the toolchain or the way things are built and installed | 46 | 3 | 27 | 1 | 4 | 14 |
 
 Each case is counted under the best guard it has: one that goes red on any machine (a test, a scenario, a replayed trace, a tool that `make check` or CI runs), one that needs CI's Macs (a test for macOS alone, a step of a real-window run that CI starts), one that somebody has to start, or none.
@@ -1217,6 +1217,18 @@ Reports nobody expected: said twice, said of things that are no windows, said wh
 - **Guard:** `test: aTitleChangeIsNotAMove`; `test: aNewTitleAndAnAppThatShowsAgainAreNobodysDoing`; `test: hidingTheAppInFrontReportsItsWindowsThenTheAppThatComesForward`; `test: everyCommittedTraceReplays`; `trace: title-change.jsonl`; `trace: terminal-commands.jsonl`; `trace: hide-unhide.expect`; `trace: terminal-edge.jsonl`
 - **Arbor copes:** Controller.windowChanged compares frames before it believes a move: a report with the frame the window already had is no move, and for a docked window differences of up to 4 points count as the app's rounding.
 - **Read in:** `collab/evidence/traces/README.md`, `Sources/ArborKit/AX/AXWindowSystem.swift`, `Sources/ArborTesting/FakeWindowSystem.swift`, `Sources/ArborKit/Controller/Controller+Events.swift`
+
+### the-workspace-says-once-that-an-app-came-forward
+
+*hurt 4 · test*
+
+- **Expected:** The fake Mac tells Arbor that an app came forward as often as a Mac does.
+- **Happened:** A Mac's workspace gives one notice for each app that comes forward, and `FrontmostAppWatcher` passes on one word. The fake Mac said it by three roads: `World.bringForward` every time it was called, news or not, which is two or three times for one coming forward; `World.leaveFront` once more; and `FakeWindowSystem.userFocus` when the app's name changed. The controller ignores what is no news, so nothing showed until the word went through the recorder: then a rehearsal's trace had it two or three times at a step.
+- **Found by:** The comparison of a rehearsal with a run on a hosted Mac, once both record an app's coming forward.
+- **Stand-ins play it:** yes (`World.tellWhoIsInFront`, `FakeWindowSystem.activate`)
+- **Guard:** **none**
+- **Arbor copes:** Controller.applicationActivated ignores an app that it already knows to be in front.
+- **Read in:** `Sources/arbor-fakemac/World.swift`, `Sources/ArborTesting/FakeWindowSystem.swift`
 
 ## late-or-partial-answer
 

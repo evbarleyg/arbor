@@ -122,6 +122,8 @@ final class World {
   private var keyboardSeen: WindowID?
   /// Whether the press in progress has been reported already, among the reports of the keyboard it moved (`press(at:)`).
   var pressIsTold = false
+  /// The process that Arbor was last told is in front (`tellWhoIsInFront`).
+  var toldInFront: Int32?
   var held = Held.nothing
   /// Arbor's shortcuts that went down with `key … --down` and have not come up.
   var heldShortcuts: [KeyChord.Key: KeyBinding] = [:]
@@ -469,8 +471,18 @@ final class World {
   func bringForward(app pid: Int32) {
     recentApps.removeAll { $0 == pid }
     recentApps.insert(pid, at: 0)
-    // `FrontmostAppWatcher`, which goes on looking during a pause. The controller ignores what is no news.
-    arbor?.controller.reports.applicationActivated(frontmostApp)
+    tellWhoIsInFront()
+  }
+
+  /// `FrontmostAppWatcher`, which goes on looking during a pause. The workspace gives one notice for each app that comes forward and none
+  /// for one that is in front already, so Arbor hears one word, by one road: the fake's own, which `userFocus` takes as well and which says
+  /// nothing twice. Two processes of one app are one to the fake, which goes by the name: of the second the world tells itself.
+  func tellWhoIsInFront() {
+    guard toldInFront != frontApp else { return }
+    toldInFront = frontApp
+    let before = system.frontmost
+    if let app = frontmostApp { system.activate(bundleID: app.bundleID, name: app.name) }
+    if system.frontmost == before { arbor?.controller.reports.applicationActivated(frontmostApp) }
   }
 
   var frontmostApp: FrontmostApp? {
@@ -570,6 +582,6 @@ final class World {
     followKeyboard()
     recentApps.removeAll { $0 == pid }
     if system.focused == nil { bringForward(app: World.finderPID) }
-    arbor?.controller.reports.applicationActivated(frontmostApp)
+    tellWhoIsInFront()
   }
 }
