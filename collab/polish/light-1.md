@@ -37,7 +37,8 @@ A piece is a frame in which windows change place or size. Times are ms after the
 
 1. **Size and place are two askings, and the display shows the state between them.** In every dirty act the first bad frame is "new size, old place" (quit and pause: own size, docked place). The sampler has two steps for exactly those windows.
 2. **Windows are set one after another**, about a frame (8 to 17 ms) each: four take 2 to 4 frames, eight take 7. These are test windows that obey at once. Real apps will be slower.
-3. **The order.** On fill the windows that leave are sent first, so the desk has holes before the one that grows covers them.
+3. **What is seen first.** On fill the windows that leave are SEEN to leave before the one that grows is seen to grow, so the desk has holes for two frames. *(Corrected 2026-10-15. This line said that they "are sent first": a guess at the cause, written as if it had been seen, and wrong. Whoever
+   mends it read the code: the window that grows is asked first, the others afterwards. A place shows at once; a new size shows when the app has drawn itself. A film says what the display showed; why is for whoever reads the code.)*
 4. **The empty desk** is not a wait of the tiles'. By the trace all four windows are out of the way 7 ms after the key's command began and the command is done at +406 ms, with not one call to the window system between: the main thread is making four tiles for the first time, each asking for its app's icon and working its colour out. What gets apps ready ahead of time did so only for motion. (Found in this run's trace by whoever mends it.)
 
 ## The bar: macOS's own tiling of the same windows
