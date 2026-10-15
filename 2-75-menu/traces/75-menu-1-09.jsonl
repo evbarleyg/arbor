@@ -1,0 +1,26 @@
+{"arbor":"0.0.0","cursor":[544,618],"displays":[{"frame":[0,0,1024,768],"id":"5A42259C-47B8-4590-9762-97DBE4FE7F1B","main":true,"name":"display-1","visible":[0,31,1024,674]}],"focusHistory":[68,67,70],"focused":68,"framePlan":2,"mouseDown":false,"name":"75-menu-1-09","onlyPIDs":[12423,12451],"os":"macOS Version 26.6.2 (Build 25G83)","recorded":"2026-10-15T13:58:58Z","seenSizes":{"67":[[325,319],[1000,650],[0,0],[0,0],[0,0]],"68":[[325,319],[494,650],[0,0],[0,0],[0,0]],"69":[[391,319],[480,348],[0,0],[0,0],[0,0]],"70":[[325,319],[494,650],[0,0],[0,0],[0,0]]},"settings":{"allowAllURLCommands":false,"animationDuration":0.46,"appColourAmount":0.25,"appColours":true,"arrangeDesktopWeight":0.5,"autoDockMinimumHeight":300,"autoDockMinimumWidth":400,"automaticUpdateChecks":false,"bindings":{},"blurBehindArranged":0,"continuousZoom":false,"desktopEdge":0.05,"dimBehindArranged":0.25,"displays":[],"dropDwell":0.15,"excludedBundleIDs":[],"floatingWindowsMakeWay":false,"focusRing":true,"focusRingColour":"accent","focusRingRadius":0,"focusRingWidth":3,"frameRectangleModifier":"ctrl+opt","frameRectangleOnDesktop":true,"gap":12,"gapHandles":"shown","gesturesEnabled":true,"guardDesktopClicks":false,"historyButtons":true,"holdStillFor":[],"holdStillWhileCameraIsOn":false,"holdStillWhileMicrophoneIsOn":false,"hotkeysEnabled":true,"keepPushed":true,"makeRoom":true,"menuBarControls":true,"menuBarFill":0.25,"messages":"helpful","minimapDuration":0,"minimumUsableHeight":160,"minimumUsableWidth":240,"newWindows":"float","newWindowsWhileFramed":"guest","passThroughApps":[],"pauseForApps":[],"peek":true,"pinchThreshold":0.25,"pointerGestures":false,"previewDrags":true,"reflowWhileDragging":false,"resizeStep":40,"ruleTitleWait":2,"rules":[],"screenEdgeBand":12,"scrollOnDesktopZooms":false,"scrollZoom":true,"scrollZoomThreshold":40,"shareRemovedSpace":true,"shortcuts":"all","shortcutsFollowLayout":true,"shrinkOutOfView":false,"soleFloatTakesDesktop":false,"stepInToward":"auto","summonStays":false,"tabsEnabled":false,"tileFade":0.2,"tileRetryMinutes":10,"tileStyle":"icon","tintBehindArranged":0,"windowEdgeFraction":0.3,"windowPictures":false},"thinning":0.05,"trace":1,"windows":[{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[170,220,480,348],"id":67,"pid":12423,"title":"title[1]"},{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,43,494,650],"id":68,"pid":12423,"title":"title[2]"},{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[270,140,480,348],"id":69,"pid":12423,"title":"title[3]"},{"app":"ArborTestWindows2","bundle":"dev.arbor.testwindows2","frame":[170,220,480,348],"id":70,"pid":12451,"title":"title[1]"}],"workspaces":{"5A42259C-47B8-4590-9762-97DBE4FE7F1B":{"back":[],"camera":2,"floating":{"67":[[170,220],[480,348]],"69":[[270,140],[480,348]],"70":[[170,220],[480,348]]},"forward":[],"names":{},"savedViews":{},"tree":{"desktop":0,"loans":[],"nextRawID":7,"nodes":{"0":{"id":0,"kind":{"desktop":{}},"parent":2,"weight":1},"2":{"id":2,"kind":{"split":{"axis":"horizontal","children":[6,0]}},"weight":1},"6":{"id":6,"kind":{"stack":{"active":0,"windows":[68]}},"parent":2,"weight":1}},"root":2,"visits":[]},"undockedFrames":{"68":[[220,180],[480,348]]}}}}
+{"t":0.0021,"note":"launch-at-login on and off, by command: macOS takes the installed app on and lets it go again"}
+{"t":0.0231,"command":"launch-at-login","from":"script"}
+{"t":0.1449,"done":"launch-at-login","message":"off","ok":true}
+{"t":0.1567,"note":"✔ at first it does not open at login"}
+{"t":0.1673,"command":"launch-at-login on","from":"script"}
+{"t":0.1683,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":0.4455,"done":"launch-at-login on","message":"Arbor opens at login","ok":true}
+{"t":0.4463,"timer":"settings-file"}
+{"t":0.4470,"timer":"save"}
+{"t":0.4485,"event":"settingsFileMayHaveChanged"}
+{"t":0.4504,"event":"settingsFileMayHaveChanged"}
+{"t":0.4735,"note":"✔ launch-at-login on succeeds"}
+{"t":0.4939,"command":"launch-at-login","from":"script"}
+{"t":0.6417,"done":"launch-at-login","message":"on","ok":true}
+{"t":0.7191,"note":"✔ macOS says that it opens at login"}
+{"t":0.7404,"command":"launch-at-login off","from":"script"}
+{"t":0.7420,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":1.0116,"done":"launch-at-login off","message":"Arbor does not open at login","ok":true}
+{"t":1.0120,"timer":"settings-file"}
+{"t":1.0125,"timer":"heads-up"}
+{"t":1.0306,"note":"✔ launch-at-login off succeeds"}
+{"t":1.0517,"command":"launch-at-login","from":"script"}
+{"t":1.1668,"done":"launch-at-login","message":"off","ok":true}
+{"t":1.1817,"note":"✔ macOS says that it does not any more"}
+{"t":1.2243,"end":"another trace was started","lines":25,"thinned":0}

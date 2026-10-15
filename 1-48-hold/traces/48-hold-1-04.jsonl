@@ -1,0 +1,45 @@
+{"arbor":"dev","cursor":[876.5,227],"displays":[{"frame":[0,0,1024,768],"id":"5A42259C-47B8-4590-9762-97DBE4FE7F1B","main":true,"name":"display-1","visible":[0,31,1024,674]}],"focusHistory":[29,32,30],"focused":29,"framePlan":2,"mouseDown":false,"name":"48-hold-1-04","onlyPIDs":[6004,6137],"os":"macOS Version 26.6.2 (Build 25G83)","parked":[30,31,32],"recorded":"2026-10-15T13:57:04Z","seenSizes":{"29":[[325,319],[1000,650],[0,0],[0,0],[0,0]],"30":[[325,319],[494,348],[0,0],[0,0],[0,0]],"32":[[325,348],[480,650],[0,0],[0,0],[0,0]]},"settings":{"allowAllURLCommands":false,"animationDuration":0.46,"appColourAmount":0.25,"appColours":true,"arrangeDesktopWeight":0.5,"autoDockMinimumHeight":300,"autoDockMinimumWidth":400,"automaticUpdateChecks":false,"bindings":{},"blurBehindArranged":0,"continuousZoom":false,"desktopEdge":0.05,"dimBehindArranged":0.25,"displays":[],"dropDwell":0.15,"excludedBundleIDs":[],"floatingWindowsMakeWay":false,"focusRing":true,"focusRingColour":"accent","focusRingRadius":0,"focusRingWidth":3,"frameRectangleModifier":"ctrl+opt","frameRectangleOnDesktop":true,"gap":12,"gapHandles":"shown","gesturesEnabled":true,"guardDesktopClicks":false,"historyButtons":true,"holdStillFor":[],"holdStillWhileCameraIsOn":false,"holdStillWhileMicrophoneIsOn":false,"hotkeysEnabled":true,"keepPushed":true,"makeRoom":true,"menuBarControls":true,"menuBarFill":0.25,"messages":"helpful","minimapDuration":0,"minimumUsableHeight":160,"minimumUsableWidth":240,"newWindows":"float","newWindowsWhileFramed":"guest","passThroughApps":[],"pauseForApps":[],"peek":true,"pinchThreshold":0.25,"pointerGestures":false,"previewDrags":true,"reflowWhileDragging":false,"resizeStep":40,"ruleTitleWait":2,"rules":[],"screenEdgeBand":12,"scrollOnDesktopZooms":false,"scrollZoom":true,"scrollZoomThreshold":40,"shareRemovedSpace":true,"shortcuts":"all","shortcutsFollowLayout":true,"shrinkOutOfView":false,"soleFloatTakesDesktop":false,"stepInToward":"auto","summonStays":false,"tabsEnabled":false,"tileFade":0.2,"tileRetryMinutes":10,"tileStyle":"icon","tintBehindArranged":0,"windowEdgeFraction":0.3,"windowPictures":false},"thinning":0.05,"trace":1,"windows":[{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,43,1000,650],"id":29,"pid":6004,"title":"title[1]"},{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[1023,677,325,319],"id":30,"pid":6004,"title":"title[2]"},{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[1023,677,480,348],"id":31,"pid":6004,"title":"title[3]"},{"app":"ArborTestWindows2","bundle":"dev.arbor.testwindows2","frame":[1023,677,325,650],"id":32,"pid":6137,"title":"title[1]"}],"workspaces":{"5A42259C-47B8-4590-9762-97DBE4FE7F1B":{"back":[2],"camera":1,"floating":{"31":[[270,140],[480,348]]},"forward":[],"names":{},"savedViews":{},"tree":{"desktop":0,"loans":[],"nextRawID":6,"nodes":{"0":{"id":0,"kind":{"desktop":{}},"parent":2,"weight":1},"1":{"id":1,"kind":{"stack":{"active":0,"windows":[29]}},"parent":4,"weight":1},"2":{"id":2,"kind":{"split":{"axis":"horizontal","children":[4,0,5]}},"weight":1},"3":{"id":3,"kind":{"stack":{"active":0,"windows":[30]}},"parent":4,"weight":1},"4":{"id":4,"kind":{"split":{"axis":"vertical","children":[1,3]}},"parent":2,"weight":1},"5":{"id":5,"kind":{"stack":{"active":0,"windows":[32]}},"parent":2,"weight":1}},"root":2,"visits":[]},"undockedFrames":{"29":[[170,220],[480,348]],"30":[[220,180],[480,348]],"32":[[170,220],[480,348]]}}}}
+{"t":0.0011,"note":"⌃⌥F on the only window of a held view, which would float it and widen the view: it stays docked, and a line says why"}
+{"t":0.0517,"raw":"flagsChanged"}
+{"t":0.0808,"raw":"flagsChanged"}
+{"t":0.1522,"args":["ctrl+opt+f","toggle-float","pressed"],"event":"shortcut"}
+{"t":0.1524,"nested":true,"command":"toggle-float","from":"shortcut"}
+{"t":0.1531,"call":"focusedWindow","result":29}
+{"t":0.1533,"call":"focusedWindow","result":29}
+{"t":0.1534,"call":"focusedWindow","result":29}
+{"t":0.1536,"call":"focusedWindow","result":29}
+{"t":0.1542,"call":"focusedWindow","result":29}
+{"t":0.1544,"read":"strayDialogsWaiting","result":0}
+{"t":0.1547,"call":"focusedWindow","result":29}
+{"t":0.1573,"done":"toggle-float","message":"that would bring windows that are out of view into it, and the view is held; release it with ⌃⌥⎋, from Arbor's menu or with `release`","ok":false}
+{"t":0.1602,"timer":"accessibility"}
+{"t":0.1606,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":0.2536,"args":["ctrl+opt+f","toggle-float","released"],"event":"shortcut"}
+{"t":0.3047,"raw":"flagsChanged"}
+{"t":0.3632,"raw":"flagsChanged"}
+{"t":0.4070,"note":"✔ ⌃⌥F reaches Arbor"}
+{"t":0.4265,"note":"✔ Arbor says on screen why nothing happened"}
+{"t":0.4369,"command":"state","from":"script"}
+{"t":0.4375,"read":"strayDialogsWaiting","result":0}
+{"t":0.4390,"call":"focusedWindow","result":29}
+{"t":0.4395,"done":"state","message":"running: 1 display, 3 docked and 1 floating, 3 out of view; the view is held until `release`","ok":true}
+{"t":0.9473,"command":"state","from":"script"}
+{"t":0.9479,"read":"strayDialogsWaiting","result":0}
+{"t":0.9493,"call":"focusedWindow","result":29}
+{"t":0.9495,"done":"state","message":"running: 1 display, 3 docked and 1 floating, 3 out of view; the view is held until `release`","ok":true}
+{"t":1.4068,"command":"state","from":"script"}
+{"t":1.4072,"read":"strayDialogsWaiting","result":0}
+{"t":1.4083,"call":"focusedWindow","result":29}
+{"t":1.4084,"done":"state","message":"running: 1 display, 3 docked and 1 floating, 3 out of view; the view is held until `release`","ok":true}
+{"t":1.9115,"command":"state","from":"script"}
+{"t":1.9118,"read":"strayDialogsWaiting","result":0}
+{"t":1.9129,"call":"focusedWindow","result":29}
+{"t":1.9132,"done":"state","message":"running: 1 display, 3 docked and 1 floating, 3 out of view; the view is held until `release`","ok":true}
+{"t":1.9604,"note":"✔ it is still docked"}
+{"t":1.9700,"command":"state","from":"script"}
+{"t":1.9702,"read":"strayDialogsWaiting","result":0}
+{"t":1.9709,"call":"focusedWindow","result":29}
+{"t":1.9710,"done":"state","message":"running: 1 display, 3 docked and 1 floating, 3 out of view; the view is held until `release`","ok":true}
+{"t":2.0194,"note":"✔ it still fills the screen"}
+{"t":2.0534,"note":"✔ the other app's window is still out of view"}
+{"t":2.0721,"end":"another trace was started","lines":44,"thinned":0}

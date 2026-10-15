@@ -1,0 +1,311 @@
+# mac-shell: scripts/mac-shell/suite/44-name.sh at 70de776, macOS 26.6.2, 2026-10-15T13:59Z
+built Arbor, the pointer tool and the app bundles in 6s
+session 1: Arbor pid 15201, test windows 94 95 100 (pid 15144,15179)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 94 left
+docked w94 at the left edge
+> dock 95 right
+docked w95 at the right edge
+> dock 100 beside 95 bottom
+docked w100 below w95
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          349 43 326 655
+  w94 12 43 325 655        docked
+  w95 687 43 325 322       docked
+  w100 687 377 325 321      docked focused
+> zoom 95
+framed w95
+> out
+stepped out to ArborTestWindows and ArborTestWindows2 (n5)
+> click 512 221
+
+▸ ⌃⌥N, a name, ↩: a field in the upper middle takes the typing and the space in view has the name; the app behind stays in front, sees no letter and has the keyboard again
+  ✔ the second window has the keyboard
+> key ctrl+opt+n
+  ✔ ⌃⌥N reaches Arbor
+  ✔ the field is on screen
+  ✔ in the upper middle of the display
+  ✔ the app in front stays in front
+  ✔ its window is still the focused window
+  ✔ no window moved for it
+> key shift+p
+> key a
+> key i
+> key r
+  ✔ nothing has a name before ↩
+> key return
+  ✔ ↩ closes the field
+  ✔ the space in view has the name, capital and all
+  ✔ the app behind saw none of it
+  ✔ it is still in front
+> key x
+  ✔ the next letter goes to its window, without a click
+  ✔ the name is not in the log
+  ✔ no window moved
+  ✔ windows match Arbor's layout
+> zoom 95
+framed w95
+> out
+stepped out to Pair (n5)
+> click 512 221
+
+▸ ⌃⌥N on a space that has a name, other letters, ⎋: the field closes, the name stays and the app has the keyboard again
+> key ctrl+opt+n
+  ✔ ⌃⌥N reaches Arbor
+  ✔ the field is on screen
+> key d
+> key u
+> key o
+> key escape
+  ✔ ⎋ closes the field
+  ✔ the name is as it was
+  ✔ nothing is called what was typed
+  ✔ the app behind saw none of it
+> key x
+  ✔ the next letter goes to its window, without a click
+> zoom 95
+framed w95
+> out
+stepped out to Pair (n5)
+> click 512 221
+
+▸ type a direction for a name and press ↩: it is refused, the field stays open and takes a better name
+> key ctrl+opt+n
+  ✔ ⌃⌥N reaches Arbor
+  ✔ the field is on screen
+> key u
+> key p
+> key return
+  ✔ the field stays
+  ✔ nothing is called up
+  ✔ the name is as it was
+> key p
+> key e
+> key r
+> key return
+  ✔ ↩ closes the field now
+  ✔ the space is renamed to all that was typed
+  ✔ the old name is gone
+> zoom 95
+framed w95
+> out
+stepped out to upper (n5)
+> click 512 221
+
+▸ ⌃⌥N with the field open closes it, and changes nothing
+> key ctrl+opt+n
+  ✔ ⌃⌥N reaches Arbor
+  ✔ the field is on screen
+> key x
+> key ctrl+opt+n
+  ✔ ⌃⌥N again reaches Arbor, not the field
+  ✔ the field is gone
+  ✔ the name is as it was
+> key x
+  ✔ the next letter goes to the app's window
+> zoom 95
+framed w95
+> out
+stepped out to upper (n5)
+> click 512 221
+
+▸ click another window with the field open: the field closes, nothing is named and the click reaches the window
+> key ctrl+opt+n
+  ✔ ⌃⌥N reaches Arbor
+  ✔ the field is on screen
+> key x
+> click 512 658
+  ✔ the field is gone
+  ✔ the clicked window got the press
+  ✔ and has the keyboard
+  ✔ the name is as it was
+  ✔ nothing is called what was typed
+  ✔ the view stayed
+> zoom 95
+framed w95
+> out
+stepped out to upper (n5)
+> click 512 221
+
+▸ another app comes forward by itself with the field open: the field closes, and typing goes to that app
+> key ctrl+opt+n
+  ✔ ⌃⌥N reaches Arbor
+  ✔ the field is on screen
+> test windows: activate 100
+  ✔ the other app is in front
+  ✔ the field is gone
+> key x
+  ✔ the next letter goes to the other app's window
+  ✔ the name is as it was
+> click 512 555
+> zoom 95
+framed w95
+> out
+stepped out to upper (n5)
+> click 512 221
+
+▸ ⌘Tab with the field open: the field closes, and typing goes to the app that came forward
+  ✔ the first app is in front
+> key ctrl+opt+n
+  ✔ ⌃⌥N reaches Arbor
+  ✔ the field is on screen
+> key cmd+tab
+  ✔ ⌘Tab switched to the other app
+  ✔ the field is gone
+> key x
+  ✔ the next letter goes to the other app's window
+  ✔ the name is as it was
+> zoom 95
+framed w95
+> out
+stepped out to upper (n5)
+> click 512 221
+
+▸ ⌃⌥↑ with the field open: the view leaves the space and the field goes with it
+> key ctrl+opt+n
+  ✔ ⌃⌥N reaches Arbor
+  ✔ the field is on screen
+> key ctrl+opt+up
+  ✔ ⌃⌥↑ reaches Arbor, not the field
+  ✔ everything is in view
+  ✔ the field is gone
+  ✔ and stays away
+  ✔ the space keeps its name
+  ✔ windows match Arbor's layout
+> zoom 95
+framed w95
+> out
+stepped out to upper (n5)
+> click 512 221
+
+▸ ⌃⌥⎋ with the field open: Arbor pauses and the field closes, and resuming does not bring it back
+> key ctrl+opt+n
+  ✔ ⌃⌥N reaches Arbor
+  ✔ the field is on screen
+> key ctrl+opt+escape
+  ✔ Arbor is paused
+  ✔ the field is gone
+> key ctrl+opt+escape
+  ✔ Arbor runs again
+  ✔ the field stays away
+  ✔ the name outlived the pause
+> zoom 95
+framed w95
+> out
+stepped out to upper (n5)
+> click 512 221
+
+▸ choose the named space under Saved Views in the menu: it is ticked while in view, and from elsewhere the view goes there
+> click 732 15 --right
+  ✔ the menu has Saved Views
+> click 794 168
+  ✔ its submenu lists the name
+  ✔ ticked, because that space is in view
+> key escape
+> key escape
+> zoom 94
+framed w94
+  ✔ from the first window's view the column is out of view
+> click 732 15 --right
+> click 787.5 168
+> move 546 168
+> click 546 192
+  ✔ the row can be clicked
+  ✔ Arbor went there, and its log has the command without the name
+  ✔ the column fills the view
+  ✔ spaces says that it is in view
+  ✔ windows match Arbor's layout
+> zoom 95
+framed w95
+> out
+stepped out to upper (n5)
+> click 512 221
+
+▸ choose Name This Space… from the menu: the field opens with the keyboard, and emptied, ↩ takes the name off
+> click 732 15 --right
+> click 794 168
+> move 552.5 168
+> click 552.5 478
+  ✔ the row can be clicked
+  ✔ Arbor ran ask-name
+  ✔ the field is on screen
+  ✔ the app in front stays in front
+> key delete
+> key return
+  ✔ ↩ closes the field
+  ✔ no space has a name any more
+  ✔ the app behind saw neither key
+> key x
+  ✔ the next letter goes to its window, without a click
+> zoom 95
+framed w95
+> out
+stepped out to ArborTestWindows and ArborTestWindows2 (n5)
+> click 512 221
+
+▸ name a space, go to it by the beginning of its name and take the name off, by command
+> name Reading Room
+  ✔ name succeeds
+  ✔ the space in view has the name
+  ✔ no window moved
+> zoom 94
+framed w94
+  ✔ from the first window's view the column is out of view
+  ✔ go finds it by its first letters, whatever their case
+  ✔ the column fills the view
+> key ctrl+opt+[
+  ✔ ⌃⌥[ reaches Arbor
+  ✔ and leads back to the first window
+> go kitchen
+  ✔ a name nobody has is refused
+  ✔ the view stayed
+> unname read
+  ✔ unname needs the whole name
+> unname reading room
+  ✔ and takes it off from anywhere
+  ✔ no space has a name any more
+  ✔ windows match Arbor's layout
+> zoom 95
+framed w95
+> out
+stepped out to ArborTestWindows and ArborTestWindows2 (n5)
+> click 512 221
+
+▸ quit Arbor and start it again: the space has its name back, and go leads to the same windows
+> key ctrl+opt+n
+  ✔ ⌃⌥N reaches Arbor
+  ✔ the field is on screen
+> key shift+p
+> key a
+> key i
+> key r
+> key return
+  ✔ the space in view has the name
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+session 1: Arbor pid 19545, test windows 94 95 100 (pid 15144,15179)
+running: 1 display, 3 docked and 0 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ the name is there again
+> zoom 94
+framed w94
+  ✔ from the first window's view the column is out of view
+> go pair
+  ✔ go succeeds
+  ✔ the column fills the view
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+117 passed, 0 failed
+exit code 0

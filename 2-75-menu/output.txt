@@ -1,0 +1,125 @@
+# mac-shell: scripts/mac-shell/suite/75-menu.sh at 70de776, macOS 26.6.2, 2026-10-15T13:58Z
+built Arbor, the pointer tool and the app bundles in 4s
+session 1: Arbor pid 12473, test windows 67 68 69 70 (pid 12423,12451)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor 0.0.0 (build 0)
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+
+▸ the menu bar item opens a menu of commands
+  ✔ Arbor has an item in the menu bar
+> click 782 15 --right
+  ✔ the menu offers Show Everything
+Arbor's own windows with the menu open (id pid level x y w h on owner):
+72 12473 101 745 31 273 486 on Arbor
+  ✔ and Arrange Windows
+  ✔ and Float All Windows
+  ✔ and Quit Arbor
+> key escape
+and with the menu closed:
+Accessibility on a closed menu's item: pointer: process 12473 shows no menu item starting with Quit Arbor
+
+▸ choose Arrange Windows from the menu: every window docks
+> click 782 15 --right
+> click 881.5 48
+  ✔ the item can be clicked
+  ✔ Arbor ran arrange
+  ✔ all four are docked
+  ✔ nothing overlaps
+  ✔ the first window is in view
+  ✔ windows match Arbor's layout
+
+▸ choose Float All Windows from the menu: back to a normal Mac
+> zoom 67
+framed w67
+  ✔ the others are out of view
+> click 732 15 --right
+> click 787.5 358
+  ✔ the item can be clicked
+  ✔ Arbor ran float-all
+  ✔ nothing is docked
+  ✔ the first window is in view
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ the other app's window is in view
+
+▸ choose Dock Focused Window, Left from the menu
+> click 660 496
+> click 782 15 --right
+> click 881.5 227
+> move 676 227
+> click 676 227
+  ✔ the submenu's item can be clicked
+  ✔ Arbor ran dock left
+  ✔ the focused window docked at the left edge
+  ✔ windows match Arbor's layout
+
+▸ choose Don’t Arrange for the focused app: its windows are released, the other app's stay
+> dock 70 right
+docked w70 at the right edge
+> dock 67 beside 68 bottom
+docked w67 below w68
+> click 176 221
+> click 732 15 --right
+> click 787.5 275
+> move 528 275
+> click 528 310
+  ✔ the submenu's item can be clicked
+  ✔ Arbor ran exclude
+  ✔ the app's windows are no longer arranged
+  ✔ none of them
+  ✔ the other app's window is still docked
+  ✔ one is docked
+  ✔ the released windows stay in view
+> dock 68 left
+  ✔ a command on one of them is refused
+  ✔ settings.json has the app
+
+▸ choose the app under Arrange Again: its windows are arranged again
+> click 732 15 --right
+> click 787.5 382
+> move 544 382
+> click 544 618
+  ✔ the submenu's item can be clicked
+  ✔ Arbor ran include
+  ✔ the app's windows are arranged again
+  ✔ they float
+> dock 68 left
+  ✔ a command on one of them works
+  ✔ windows match Arbor's layout
+
+▸ exclude and include an app by command
+> exclude dev.arbor.testwindows2
+  ✔ exclude succeeds
+  ✔ its docked window is released
+  ✔ it stays in view
+> include dev.arbor.testwindows2
+  ✔ include succeeds
+  ✔ its window is arranged again
+
+▸ launch-at-login on and off, by command: macOS takes the installed app on and lets it go again
+  ✔ at first it does not open at login
+> launch-at-login on
+  ✔ launch-at-login on succeeds
+  ✔ macOS says that it opens at login
+> launch-at-login off
+  ✔ launch-at-login off succeeds
+  ✔ macOS says that it does not any more
+
+▸ choose Quit Arbor from the menu while zoomed in: every window comes back
+> dock 67 right
+docked w67 at the right edge
+> zoom 68
+framed w68
+  ✔ the others are out of view
+> click 732 15 --right
+> click 787.5 500
+  ✔ the item can be clicked
+  ✔ Arbor exits
+  ✔ the first window is in view
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ the other app's window is in view
+  ✔ its menu bar item is gone
+
+56 passed, 0 failed
+exit code 0

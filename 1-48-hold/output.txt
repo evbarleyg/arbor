@@ -1,0 +1,234 @@
+# mac-shell: scripts/mac-shell/suite/48-hold.sh at 70de776, macOS 26.6.2, 2026-10-15T13:56Z
+built Arbor, the pointer tool and the app bundles in 6s
+session 1: Arbor pid 6175, test windows 29 30 31 32 (pid 6004,6137)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 29 left
+docked w29 at the left edge
+> dock 30 beside 29 bottom
+docked w30 below w29
+> dock 32 right
+docked w32 at the right edge
+> click 176 221
+> zoom 29
+framed w29
+display 0 0 1024 768, visible 0 31 1024 674, camera n1, back yes
+  w29 12 43 1000 650       docked focused
+  w30 1023 677 325 319     docked parked
+  w31 1023 677 480 348     floating parked
+  w32 1023 677 325 650     docked parked
+
+▸ choose Hold This View from the menu with a window framed: no shortcut moves the view, and a line says why and what releases it
+  ✔ the others are out of view
+> click 732 15 --right
+> click 787.5 192
+> move 554.5 192
+> click 554.5 358
+  ✔ the submenu's item can be clicked
+  ✔ Arbor ran hold
+  ✔ status says that the view is held
+  ✔ the framed window has the keyboard
+> key ctrl+opt+space
+  ✔ ⌃⌥Space reaches Arbor
+  ✔ Arbor says on screen why nothing happened
+> key ctrl+opt+up
+  ✔ ⌃⌥↑ reaches Arbor
+> key ctrl+opt+d
+  ✔ ⌃⌥D reaches Arbor
+> key ctrl+opt+shift+f
+  ✔ ⌃⌥⇧F reaches Arbor
+  ✔ the framed window still fills the screen
+  ✔ the other app's window is still out of view
+  ✔ and so is the floating one
+  ✔ all three are still docked
+> click 780 15 --right
+  ✔ the menu's first line says that the view is held
+> key escape
+> click 780 15 --right
+> click 876.5 227
+  ✔ its submenu opens
+  ✔ Hold This View is ticked
+> key escape
+> key escape
+
+▸ an app comes forward by itself while the view is held: its window stays out of view and the keyboard goes back
+> test windows: activate 32
+  ✔ Arbor saw it take the keyboard
+  ✔ the keyboard is back in the framed window
+  ✔ its app is in front again
+  ✔ the window that came forward stays out of view
+  ✔ the framed window still fills the screen
+  ✔ nothing is said about it on the shared screen
+
+▸ ⌃⌥F on the only window of a held view, which would float it and widen the view: it stays docked, and a line says why
+> key ctrl+opt+f
+  ✔ ⌃⌥F reaches Arbor
+  ✔ Arbor says on screen why nothing happened
+  ✔ it is still docked
+  ✔ it still fills the screen
+  ✔ the other app's window is still out of view
+
+▸ ⌘-drag the only window of a held view out of its slot: nothing else comes into view
+> drag 546 55 606 135 --mods cmd --no-release
+  ✔ it follows the pointer while the button is held
+  ✔ the window below it stays out of view meanwhile
+> release --mods cmd
+  ✔ let go, the window below it stays out of view
+  ✔ and so does the other app's
+  ✔ and the floating one
+  ✔ the dragged window is in view
+  ✔ the view is still held
+> release
+released
+> dock 29 beside 30 top
+docked w29 above w30
+> click 512 221
+> zoom 29
+framed w29
+
+▸ hold a column of two windows: they can still be dragged beside and below each other, and nothing else comes into view
+> out
+stepped out to 2 ArborTestWindows windows (n7)
+  ✔ the column is in view
+  ✔ the other app's window is not
+> hold
+holding this view until `release`
+  ✔ the view is held
+> drag 546 55 137 533 --no-release
+  ✔ over the left part of the other window a preview shows
+> release
+  ✔ it docks on the left of the other
+  ✔ the other app's window is still out of view
+> drag 294 55 765 612 --no-release
+  ✔ over the lower part of the other window a preview shows
+> release
+  ✔ it docks below the other
+  ✔ the other app's window is out of view as before
+  ✔ and so is the floating one
+  ✔ the view is still held
+  ✔ windows match Arbor's layout
+> release
+released
+> click 512 552
+> zoom 29
+framed w29
+> hold
+holding this view until `release`
+
+▸ ⌘M on the only window of a held view: nothing else comes into view, and the menu says that nothing is in it
+  ✔ the framed window has the keyboard
+> key x
+  ✔ a letter arrives in it
+> key cmd+m
+  ✘ it is minimized — it is managed docked at 12 43 1000 650
+      picture: mac-shell/fail-48-hold-1.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n10, back yes
+      |   w29 12 43 1000 650       docked focused
+      |   w30 1023 677 1000 319    docked parked
+      |   w31 1023 677 480 348     floating parked
+      |   w32 1023 677 325 650     docked parked
+      log | INFO  trace 48-hold-1-06 ended: 624 lines, another trace was started
+      log | INFO  trace 48-hold-1-07: recording to /tmp/arbor-shell.ghhGeO/home/traces/2026-10-15-135728-48-hold-1-07.jsonl
+      log | INFO  hold: settings.json has changed; it is read when the view is released
+      log | DEBUG focus is on w30
+      log | DEBUG hold: focus report for w30, 0.790482458 s after the last click or modifier key
+      log | DEBUG w30 has the keyboard
+      log | INFO  hold: w30 took the keyboard out of view; sending it back
+      log | DEBUG focus is on w29
+      log | DEBUG hold: focus report for w29, 1.336920792 s after the last click or modifier key
+      log | DEBUG w29 has the keyboard
+  ✔ the other window of its column stays out of view
+  ✔ and so does the other app's
+  ✔ and the floating one
+  ✔ the view is still held
+> click 780 15 --right
+  ✘ the menu says that nothing is in the view — pointer: process 6175 shows no menu item starting with The view is held: nothing is in it
+      picture: mac-shell/fail-48-hold-2.png
+> key escape
+> test windows: restore 29
+  ✔ restored, it fills the screen as before
+  ✔ the other app's window is still out of view
+
+▸ ⌃⌥⎋ on a held view releases it and moves nothing; pressed again it pauses
+> click 512 383
+> key ctrl+opt+escape
+  ✔ ⌃⌥⎋ reaches Arbor
+  ✔ the view is no longer held
+  ✔ Arbor is not paused
+  ✔ Arbor says on screen that the same key again pauses
+  ✔ the framed window still fills the screen
+  ✔ the other app's window is still out of view
+> key ctrl+opt+escape
+  ✔ pressed again, it pauses
+  ✔ and every window comes into view
+> key ctrl+opt+escape
+  ✔ a third press resumes
+  ✔ with the view it had
+> key ctrl+opt+space
+  ✔ ⌃⌥Space works again
+  ✔ everything is in view
+  ✔ windows match Arbor's layout
+
+▸ choose Hold Still from the menu: an app that comes forward by itself is turned away, said once; one's own keys still move the view
+> click 176 552
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ frames the focused window
+  ✔ the other app's window is out of view
+> click 732 15 --right
+> click 787.5 192
+> move 554.5 192
+> click 554.5 382
+  ✔ the submenu's item can be clicked
+  ✔ Arbor ran hold still
+  ✔ status says that Arbor holds still
+> test windows: activate 32
+  ✔ Arbor saw it take the keyboard
+  ✔ the keyboard is back in the framed window
+  ✔ the window that came forward stays out of view
+  ✔ Arbor says on screen what it turned away
+> test windows: activate 32
+  ✔ it comes forward again, and is turned away again
+  ✔ the keyboard goes back once more
+  ✔ it still is out of view
+  ✔ and that is not said again
+> key ctrl+opt+space
+  ✔ ⌃⌥Space reaches Arbor
+  ✔ and shows everything
+  ✔ Arbor still holds still
+> click 732 15 --right
+> click 787.5 227
+  ✔ its submenu opens
+  ✔ Hold Still is ticked
+> key escape
+> key escape
+> click 732 15 --right
+> click 787.5 48
+  ✔ Release can be clicked
+  ✔ it ends
+  ✔ windows match Arbor's layout
+
+▸ put a window on holdStillFor in settings.json: Arbor holds still while it is open, and no longer
+> reload-settings
+  ✔ reload-settings succeeds
+  ✔ the app's other window does not count
+> test windows: open size=400x300 title=Weekly Meeting
+  ✔ status says why Arbor holds still
+> click 732 15 --right
+  ✔ so does the menu
+> key escape
+> test windows: close 62
+  ✔ closed, it ends
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+100 passed, 2 failed
+exit code 1

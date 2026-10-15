@@ -1,0 +1,189 @@
+# mac-shell: scripts/mac-shell/suite/47-whose-keys.sh at 70de776, macOS 26.6.2, 2026-10-15T14:00Z
+built Arbor, the pointer tool and the app bundles in 9s
+session 1: Arbor pid 20980, test windows 158 159 164 (pid 20874,20935)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 158 left
+docked w158 at the left edge
+> dock 164 right
+docked w164 at the right edge
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          349 43 326 655
+  w158 12 43 325 655        docked
+  w159 220 180 480 348      floating
+  w164 687 43 325 655       docked focused
+
+▸ turn Arbor's shortcuts off in the app in front, by command: they reach the app instead
+> click 176 389
+  ✔ the app is in front
+> key ctrl+opt+return
+  ✔ before, ⌃⌥↩ is Arbor's
+> key ctrl+opt+space
+  ✔ and so is ⌃⌥Space
+> pass-through dev.arbor.testwindows on
+  ✔ pass-through on succeeds
+  ✔ settings.json lists the app
+  ✔ Arbor lets go of all its shortcuts but one
+  ✔ status says where they are off
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ goes to the app
+> key ctrl+opt+d
+  ✔ ⌃⌥D goes to the app
+> key ctrl+opt+cmd+right
+  ✔ ⌃⌥⌘→ goes to the app
+  ✔ the camera stayed on everything
+  ✔ the other app's window is still in view
+  ✔ windows match Arbor's layout
+
+▸ with the shortcuts off in its app, a window dragged onto another still docks
+> drag 496 192 174 617
+  ✔ it is docked
+  ✔ below the first window
+  ✔ in its column
+> key ctrl+opt+f
+  ✔ the shortcuts are still the app's
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⎋ answers even in an app that keeps its keys: Arbor pauses, and resumes
+> click 176 221
+> key ctrl+opt+escape
+  ✔ Arbor is paused
+> key ctrl+opt+escape
+  ✔ Arbor runs again
+  ✔ the app saw neither press
+> key ctrl+opt+space
+  ✔ the other shortcuts are still the app's
+  ✔ windows match Arbor's layout
+
+▸ click another app's window: Arbor's shortcuts work again, and are off again back in the listed app
+> click 851 389
+  ✔ the other app is in front
+  ✔ all the shortcuts are registered again
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ reaches Arbor
+  ✔ the focused window fills the screen
+  ✔ the listed app's windows go out of view like any others
+> key ctrl+opt+space
+  ✔ ⌃⌥Space reaches Arbor
+  ✔ and they come back
+  ✔ the app in front saw neither
+> click 176 221
+  ✔ the listed app is in front
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ goes to the app again
+  ✔ windows match Arbor's layout
+
+▸ the menu's first row says that the shortcuts are off in the app in front, and switches them on again
+> click 732 15 --right
+  ✔ the first row says so
+> key escape
+> click 732 15 --right
+> click 816 310
+  ✔ the submenu of the focused window opens
+  ✔ Shortcuts Off in the app is ticked
+> key escape
+> key escape
+> click 732 15 --right
+> click 816 48
+  ✔ the first row can be clicked
+  ✔ Arbor ran pass-through for the app
+  ✔ settings.json no longer lists it
+  ✔ the app is still in front
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ reaches Arbor
+> key ctrl+opt+space
+  ✔ ⌃⌥Space too
+  ✔ windows match Arbor's layout
+
+▸ choose Shortcuts Off for the app in front from the menu: the shortcuts are the app's
+> click 176 221
+  ✔ the first app is in front
+> click 732 15 --right
+> click 787.5 275
+> move 528 275
+> click 528 334
+  ✔ the submenu's item can be clicked
+  ✔ settings.json lists the app
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ goes to the app
+> click 732 15 --right
+> click 816 310
+  ✔ the submenu opens again
+  ✔ the item is ticked
+> key escape
+> key escape
+  ✔ windows match Arbor's layout
+> dock 164 beside 158 bottom
+docked w164 below w158; its space is too small to show it, so it is a tile, and so is 1 other window now
+> dock 159 right
+moved w159 right
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back yes
+  Desktop          768 43 244 655
+  w158 12 43 488 322        docked
+  w159 512 43 244 655       docked focused
+  w164 12 377 488 321       docked
+
+▸ put an app on pauseForApps in settings.json: Arbor pauses when it comes to the front
+> reload-settings
+  ✔ reload-settings succeeds
+> click 254 221
+  ✔ Arbor runs while another app is in front
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ frames the focused window
+> key ctrl+opt+up
+  ✔ ⌃⌥↑ steps out to its column
+  ✔ the listed app's window is in view
+  ✔ the window at the other edge is not
+> click 512 555
+  ✔ the listed app is in front
+  ✔ Arbor is paused
+  ✔ status says for which app
+  ✔ the window that was out of view is back
+  ✔ only the shortcut that ends a pause is still registered
+> key ctrl+opt+space
+  ✔ ⌃⌥Space goes to the app
+  ✔ and not to Arbor
+> click 782 15 --right
+  ✔ the menu says for which app Arbor is paused
+> key escape
+
+▸ leave the app Arbor paused for: Arbor resumes, with the view it had
+> test windows: front 158
+> click 412 410
+  ✔ the first app is in front
+  ✔ Arbor runs again
+  ✔ the window at the other edge is out of view again
+  ✔ the clicked window is in its slot
+  ✔ and so is the listed app's
+  ✔ all the shortcuts are registered again
+> key ctrl+opt+space
+  ✔ ⌃⌥Space reaches Arbor
+  ✔ everything is in view
+  ✔ windows match Arbor's layout
+
+▸ a pause begun with ⌃⌥⎋ is not ended by visiting and leaving the app Arbor pauses for
+> key ctrl+opt+escape
+  ✔ Arbor is paused
+> test windows: front 164
+> test windows: front 164
+> click 412 410
+  ✔ the listed app is in front
+> test windows: front 158
+> click 412 410
+  ✔ the first app is in front again
+  ✔ Arbor stays paused
+> key ctrl+opt+escape
+  ✔ ⌃⌥⎋ ends it
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+84 passed, 0 failed
+exit code 0

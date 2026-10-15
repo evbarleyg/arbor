@@ -1,0 +1,23 @@
+{"arbor":"dev","cursor":[176,221],"displays":[{"frame":[0,0,1024,768],"id":"5A42259C-47B8-4590-9762-97DBE4FE7F1B","main":true,"name":"display-1","visible":[0,31,1024,679]}],"focusHistory":[158,159,164],"focused":158,"framePlan":2,"mouseDown":false,"name":"47-whose-keys-1-05","onlyPIDs":[20874,20935],"os":"macOS Version 26.6.2 (Build 25G83)","recorded":"2026-10-15T14:01:04Z","seenSizes":{"158":[[325,322],[1000,655],[0,0],[0,0],[0,0]],"159":[[325,321],[480,348],[0,0],[0,0],[0,0]],"164":[[325,348],[480,655],[0,0],[0,0],[0,0]]},"settings":{"allowAllURLCommands":false,"animationDuration":0.46,"appColourAmount":0.25,"appColours":true,"arrangeDesktopWeight":0.5,"autoDockMinimumHeight":300,"autoDockMinimumWidth":400,"automaticUpdateChecks":false,"bindings":{},"blurBehindArranged":0,"continuousZoom":false,"desktopEdge":0.05,"dimBehindArranged":0.25,"displays":[],"dropDwell":0.15,"excludedBundleIDs":[],"floatingWindowsMakeWay":false,"focusRing":true,"focusRingColour":"accent","focusRingRadius":0,"focusRingWidth":3,"frameRectangleModifier":"ctrl+opt","frameRectangleOnDesktop":true,"gap":12,"gapHandles":"shown","gesturesEnabled":true,"guardDesktopClicks":false,"historyButtons":true,"holdStillFor":[],"holdStillWhileCameraIsOn":false,"holdStillWhileMicrophoneIsOn":false,"hotkeysEnabled":true,"keepPushed":true,"makeRoom":true,"menuBarControls":true,"menuBarFill":0.25,"messages":"helpful","minimapDuration":0,"minimumUsableHeight":160,"minimumUsableWidth":240,"newWindows":"float","newWindowsWhileFramed":"guest","passThroughApps":["dev.arbor.testwindows"],"pauseForApps":[],"peek":true,"pinchThreshold":0.25,"pointerGestures":false,"previewDrags":true,"reflowWhileDragging":false,"resizeStep":40,"ruleTitleWait":2,"rules":[],"screenEdgeBand":12,"scrollOnDesktopZooms":false,"scrollZoom":true,"scrollZoomThreshold":40,"shareRemovedSpace":true,"shortcuts":"all","shortcutsFollowLayout":true,"shrinkOutOfView":false,"soleFloatTakesDesktop":false,"stepInToward":"auto","summonStays":false,"tabsEnabled":false,"tileFade":0.2,"tileRetryMinutes":10,"tileStyle":"icon","tintBehindArranged":0,"windowEdgeFraction":0.3,"windowPictures":false},"thinning":0.05,"trace":1,"windows":[{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,43,325,322],"id":158,"pid":20874,"title":"title[1]"},{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,377,325,321],"id":159,"pid":20874,"title":"title[2]"},{"app":"ArborTestWindows2","bundle":"dev.arbor.testwindows2","frame":[687,43,325,655],"id":164,"pid":20935,"title":"title[1]"}],"workspaces":{"5A42259C-47B8-4590-9762-97DBE4FE7F1B":{"back":[2,1],"camera":2,"floating":{},"forward":[],"names":{},"savedViews":{},"tree":{"desktop":0,"loans":[],"nextRawID":6,"nodes":{"0":{"id":0,"kind":{"desktop":{}},"parent":2,"weight":1},"1":{"id":1,"kind":{"stack":{"active":0,"windows":[158]}},"parent":5,"weight":1},"2":{"id":2,"kind":{"split":{"axis":"horizontal","children":[5,0,3]}},"weight":1},"3":{"id":3,"kind":{"stack":{"active":0,"windows":[164]}},"parent":2,"weight":1},"4":{"id":4,"kind":{"stack":{"active":0,"windows":[159]}},"parent":5,"weight":1},"5":{"id":5,"kind":{"split":{"axis":"vertical","children":[1,4]}},"parent":2,"weight":1}},"root":2,"visits":[]},"undockedFrames":{"158":[[170,220],[480,348]],"159":[[220,180],[480,348]],"164":[[170,220],[480,348]]}}}}
+{"t":0.0015,"note":"✔ Arbor runs again"}
+{"t":0.2361,"timer":"save"}
+{"t":0.7350,"timer":"menu-bar-room"}
+{"t":1.2788,"timer":"heads-up"}
+{"t":1.4724,"note":"✔ the app saw neither press"}
+{"t":1.5523,"command":"state","from":"script"}
+{"t":1.5542,"call":"focusedWindow","result":158}
+{"t":1.5544,"done":"state","message":"running: 1 display, 3 docked and 0 floating, 0 out of view; shortcuts and gestures are off in ArborTestWindows","ok":true}
+{"t":1.6327,"raw":"flagsChanged"}
+{"t":1.6869,"raw":"flagsChanged"}
+{"t":1.7805,"timer":"accessibility"}
+{"t":1.7814,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":1.9742,"raw":"flagsChanged"}
+{"t":2.0065,"raw":"flagsChanged"}
+{"t":3.5908,"note":"✔ the other shortcuts are still the app's"}
+{"t":3.6657,"command":"state","from":"script"}
+{"t":3.6872,"call":"focusedWindow","result":158}
+{"t":3.6876,"done":"state","message":"running: 1 display, 3 docked and 0 floating, 0 out of view; shortcuts and gestures are off in ArborTestWindows","ok":true}
+{"t":3.7929,"timer":"accessibility"}
+{"t":3.7944,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":3.7950,"note":"✔ windows match Arbor's layout"}
+{"t":3.8761,"end":"another trace was started","lines":22,"thinned":0}
