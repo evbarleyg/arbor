@@ -1,0 +1,356 @@
+# mac-shell: scripts/mac-shell/first-five-minutes.sh at f3dcf7b, macOS 26.6.2, 2026-10-15T14:18Z
+built Arbor, the pointer tool and the app bundles in 6s
+
+== the Mac, as it comes
+ProductName:		macOS ProductVersion:		26.6.2 BuildVersion:		25G83 
+the display is 1024 by 768 points
+  EnableTilingByEdgeDrag: not set
+  EnableTopTilingByEdgeDrag: not set
+  EnableTilingOptionAccelerator: not set
+  ✔ every switch is as macOS comes
+/tmp/arbor-shell.wVjAMW/Arbor.app: replacing existing signature
+
+== 1  the launch
+session 1: Arbor pid 6696, launched without the permission
+the windows as they were found: 170 220 480 348 | 220 180 480 348 | 270 140 480 348 | 320 100 480 348
+> status
+waiting for Accessibility permission (System Settings → Privacy & Security → Accessibility)
+Arbor 0.0.0 (build 0)
+  ✔ the welcome window opens by itself
+shot: mac-shell/10-launch.png
+shot: mac-shell/10-launch-window.png
+words: mac-shell/10-launch.txt
+  ✔ nothing has moved
+  ✔ it names the permission
+  ✔ and nothing else: not macOS's own tiling
+  ✔ what Arbor is for, and what it has over macOS's tiling
+  ✔ the keys, in a sentence
+  ✔ and what to do where the switch is on already: another build over an old grant
+  ✔ “under this icon” is the warning sign, which is what the menu bar shows while Arbor waits
+arborctl: ✘ Accessibility: not granted, so Arbor cannot move windows (System Settings → Privacy & Security → Accessibility; the `check-setup` command opens a window that explains it)
+✘ Desktop & Dock settings: as they stand, macOS reacts to the same clicks and drags as Arbor. `fix-setup` keeps them off for you while Arbor runs (and `fix-setup undo` ends that), or do it in System Settings → Desktop & Dock:
+    “Drag windows to left or right edge of screen to tile”: switch it off
+    “Drag windows to menu bar to fill screen”: switch it off
+    “Hold ⌥ key while dragging windows to tile”: switch it off
+    “Click wallpaper to reveal desktop” is on: a click on the wallpaper sweeps the windows aside, and the next one brings them back where they were. “Only in Stage Manager” switches that off
+– Gestures: not listening yet
+– Version: 0.0.0 (build 0)
+– Signature: ad hoc, so to macOS every build is a new app: after each `make install` or update it asks for the Accessibility permission again. `scripts/make-signing-identity.sh`, run once in a clone, ends that for builds made there (docs/IN
+✔ Displays have separate Spaces: yes
+✔ Other window managers: none running
+✔ VoiceOver: off
+✔ Input sources: 1
+✔ Shortcuts: 9 registered
+    macOS does not tell Arbor when another program has registered the same key: then both get it, or the other alone
+✔ Keyboard layout: U.S.
+✔ settings.json: no problems
+✔ Menu bar item: showing
+✔ Displays: 1 (1024×768 main)
+> click 780 15
+  ✔ a click on the menu bar item opens the menu
+shot: mac-shell/11-menu-without-permission.png
+    Arbor needs Accessibility permission · Check Setup…
+-----
+    Settings…
+    Help ▸
+        Keyboard Shortcuts…  (gray)
+        Welcome…
+        Check Setup…
+    -----
+        Settings File…
+        Reload Settings  (gray)
+        Show Log
+    -----
+        Check for Updates…
+        About Arbor
+-----
+    Quit Arbor  ⌘Q
+> key escape
+  ✔ the welcome names a key
+> key ctrl+opt+left
+shot: mac-shell/12-a-key-before-the-grant.png
+  ✔ Arbor takes the key and says why, on screen
+  ✔ nothing has moved
+  ✔ and macOS has not been made to ask
+
+== 2  the permission
+> click 699 330
+  ✔ macOS asks, with its own dialog
+shot: mac-shell/20-macos-asks.png
+  ✔ and Arbor has not opened System Settings over it
+> click 575 304
+shot: mac-shell/21-system-settings.png
+  ✔ its button opens System Settings
+  ✔ and the dialog is gone: nothing is left lying over the person's windows
+on the screen, front to back:
+55 7813 0 150 56 723 625 on System Settings
+35 6696 0 232 102 560 463 on Arbor
+33 6634 0 320 100 480 348 on ArborTestWindows
+32 6634 0 270 140 480 348 on ArborTestWindows
+31 6634 0 220 180 480 348 on ArborTestWindows
+30 6634 0 170 220 480 348 on ArborTestWindows
+> click 80 620
+> key j
+  ✔ typed before the grant, a plain J arrives in the app the person is in
+what it took for Arbor to see the grant: the row, a restart of tccd, and the notice System Settings posts
+> key j
+  ✔ typed just after the grant, it arrives there
+shot: mac-shell/22-granted.png
+shot: mac-shell/22-granted-window.png
+words: mac-shell/22-granted.txt
+on the screen, front to back:
+35 6696 3 592 227 420 379 on Arbor
+58 8213 0 20 520 260 160 on ArborKeys
+55 7813 0 150 56 723 625 on System Settings
+33 6634 0 320 100 480 348 on ArborTestWindows
+32 6634 0 270 140 480 348 on ArborTestWindows
+31 6634 0 220 180 480 348 on ArborTestWindows
+30 6634 0 170 220 480 348 on ArborTestWindows
+  ✔ Arbor noticed the permission by itself
+  ✔ the welcome window is in front of System Settings
+  ✔ with nothing else to decide it has gone on to the moves
+  ✔ nothing has moved
+> key j
+  ✔ typed after the page has turned, it arrives there still: the window has not taken the keyboard
+shot: mac-shell/23-the-keyboard-stays.png
+> welcome
+showing the welcome window
+> key j
+  ✔ after the window has been asked for, by the command welcome, it does not: the keyboard is in the window
+shot: mac-shell/24-asked-for.png
+> click 80 620
+> key j
+  ✔ clicked again, the app has the keyboard back
+
+== 3  the four moves, with macOS's settings as they come
+> trace on first-five-minutes-moves
+recording /tmp/arbor-shell.wVjAMW/home/traces/2026-10-15-142049-first-five-minutes-moves.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+shot: mac-shell/30-moves.png
+shot: mac-shell/30-moves-window.png
+words: mac-shell/30-moves.txt
+  ✔ nothing is ticked yet
+  ✔ no drag is taught
+> click 380 274
+  ✔ the window names the keys after “Click a window and press”
+> key ctrl+opt+left
+  ✔ the window docked
+  ✔ the first move is ticked
+shot: mac-shell/31-docked.png
+shot: mac-shell/31-docked-window.png
+words: mac-shell/31-docked.txt
+  ✔ the welcome window is in the corner away from the docked window
+the second window is at 270 140 480 348, the welcome window at 592 240 420 364
+> click 510 152
+  ✔ the window names the keys after “Click another and press”
+> key ctrl+opt+right
+  ✔ the second window docked
+  ✔ the second move is ticked
+shot: mac-shell/32-side-by-side.png
+shot: mac-shell/32-side-by-side-window.png
+words: mac-shell/32-side-by-side.txt
+  ✔ the window names the keys after “Then press”
+> key ctrl+opt+return
+  ✔ it fills the screen: the other is out of view
+  ✔ the third move is ticked
+shot: mac-shell/33-fills-the-screen.png
+shot: mac-shell/33-fills-the-screen-window.png
+words: mac-shell/33-fills-the-screen.txt
+  ✔ the fourth move is the same key again
+> key ctrl+opt+return
+  ✔ the other is back
+  ✔ the fourth move is ticked
+  ✔ the arrangement is back, to the point
+shot: mac-shell/34-back.png
+shot: mac-shell/34-back-window.png
+words: mac-shell/34-back.txt
+  ✔ after the last tick: what to do when the icon cannot be seen
+  ✔ macOS's settings have not been touched
+  ✔ and nothing is written down
+  ✔ it names one way back, with its key
+> key ctrl+opt+escape
+  ✔ the key pauses Arbor
+paused: 170 220 480 348 | 220 180 480 348 | 270 140 480 348 | 320 100 480 348
+found:  170 220 480 348 | 220 180 480 348 | 270 140 480 348 | 320 100 480 348
+  ✔ and every window is as it was
+shot: mac-shell/35-paused.png
+> key ctrl+opt+escape
+  ✔ the same key resumes
+> trace on first-five-minutes-drags
+recording /tmp/arbor-shell.wVjAMW/home/traces/2026-10-15-142110-first-five-minutes-drags.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> float-all
+floated 2 windows
+> click 972 562
+  ✔ Done closes the window
+
+== 4  a hand that drags to the edge all the same
+> drag 430 112 0 400 --hold 1.2 --no-release
+  ✔ the window came along
+shot: mac-shell/40-held-at-the-edge.png
+  ✔ with its tiling on, macOS shows its preview at the edge
+Arbor shows a preview too: no
+> release
+film: 6 pictures in .62 s
+shot: mac-shell/41-let-go-1.png
+shot: mac-shell/41-let-go-2.png
+shot: mac-shell/41-let-go-3.png
+shot: mac-shell/41-let-go-4.png
+shot: mac-shell/41-let-go-5.png
+shot: mac-shell/41-let-go-6.png
+shot: mac-shell/42-let-go.png
+the window ended at -1 32 512 677; Arbor says -1 32 512 677, it is managed at -1 32 512 677
+floating
+14:21:13.630Z DEBUG w33 has the keyboard
+14:21:13.921Z DEBUG w33 is being dragged
+14:21:13.923Z DEBUG drag of w33: on float
+14:21:15.964Z DEBUG drag of w33: on float, left to macOS’s tiling
+14:21:16.242Z DEBUG drag of w33: on float
+14:21:16.325Z DEBUG drag of w33: on float, left to macOS’s tiling
+14:21:18.875Z INFO  dropped w33 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5, left to macOS’s tiling
+14:21:19.389Z DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: macOS tiled this window; Arbor stood aside · ⌃⌥← docks it · Check Setup… in the menu
+  ✔ Arbor says on screen who took the window, and where that can be changed
+it is managed at -1 32 512 677
+> drag 110 44 430 112
+
+== 5  Check Setup…
+> check-setup
+showing the welcome window
+  ✔ Check Setup… opens the window
+shot: mac-shell/50-check-setup.png
+shot: mac-shell/50-check-setup-window.png
+words: mac-shell/50-check-setup.txt
+  ✔ here macOS's tiling is spoken of
+  ✔ with the three settings by their names
+> click 384 392
+shot: mac-shell/51-after-the-step.png
+shot: mac-shell/51-after-the-step-window.png
+words: mac-shell/51-after-the-step.txt
+  EnableTilingByEdgeDrag: 0
+  EnableTopTilingByEdgeDrag: 0
+  EnableTilingOptionAccelerator: 0
+  ✔ the three switches are off
+  ✔ and the click on the wallpaper is left as it was found
+what Arbor wrote down:
+[
+  {
+    "key" : "EnableTilingByEdgeDrag"
+  },
+  {
+    "key" : "EnableTopTilingByEdgeDrag"
+  },
+  {
+    "key" : "EnableTilingOptionAccelerator"
+  }
+]
+  ✔ the window says what was done
+  ✔ and how to undo it
+– Gestures: none, as the settings ask
+– Version: 0.0.0 (build 0)
+– Signature: ad hoc, so to macOS every build is a new app: after each `make install` or update it asks for the Accessibility permission again. `scripts/make-signing-identity.sh`, run once in a clone, ends that for builds made there (docs/IN
+✔ Accessibility: granted
+✔ Desktop & Dock settings: none in the way
+    “Click wallpaper to reveal desktop” is on: a click on the wallpaper sweeps the windows aside, and the next one brings them back where they were. “Only in Stage Manager” switches that off
+    Arbor keeps 3 of them off while it runs, and gives them back at a quit and at a pause; `fix-setup undo` ends that
+✔ Displays have separate Spaces: yes
+  ✔ no window moved for it
+> drag 425 109 0 400 --hold 1.2 --no-release
+shot: mac-shell/52-held-at-the-edge.png
+  ✔ macOS is seen to have stopped tiling: it shows no preview
+  ✔ Arbor shows where the window will land
+> release
+  ✔ the window docked
+  ✔ and is where Arbor put it
+shot: mac-shell/53-let-go.png
+> check-setup
+showing the welcome window
+shot: mac-shell/53-check-setup-with-something-docked.png
+shot: mac-shell/53-check-setup-with-something-docked-window.png
+words: mac-shell/53-check-setup-with-something-docked.txt
+> float-all
+floated 1 window
+> pause
+paused until `resume`; windows are back in view, in their own sizes
+  ✔ a pause gives macOS its tiling back
+shot: mac-shell/54-paused.png
+shot: mac-shell/54-paused-window.png
+words: mac-shell/54-paused.txt
+  ✔ and the window says so
+  ✔ a pause moves no floating window
+> resume
+resumed
+  ✔ resuming takes it again, unasked
+> check-setup
+showing the welcome window
+  ✔ asked for again, Check Setup… comes to the front
+> click 702 331
+shot: mac-shell/55-put-back.png
+shot: mac-shell/55-put-back-window.png
+words: mac-shell/55-put-back.txt
+  EnableTilingByEdgeDrag: not set
+  EnableTopTilingByEdgeDrag: not set
+  EnableTilingOptionAccelerator: not set
+  ✔ every switch is as it was found
+  ✔ and nothing is left written down
+> click 744 494
+  ✔ Done closes the window
+
+== 6  the menu
+> click 782 15
+  ✔ a click on the menu bar item opens the menu
+shot: mac-shell/60-menu.png
+    Arrange Windows
+    Windows ▸
+      ✓ ArborTestWindows: Arbor Test 4
+        ArborTestWindows: Arbor Test 3
+        ArborTestWindows: Arbor Test 1
+        ArborTestWindows: Arbor Test 2
+  ✓ Show Everything  ⌃⌥Space
+    Frame Focused Window  ⌃⌥↩
+    Go to…  ⌃⌥G
+    Saved Views ▸
+        Save This View As
+            View 1
+> key escape
+
+== 7  quitting
+> fix-setup
+switched off 3 settings of macOS under Desktop & Dock for as long as Arbor runs; `fix-setup undo` puts them back as they were for good
+  ✔ the three switches are off
+before: 170 220 480 348 | 220 180 480 348 | 270 140 480 348 | 315 97 481 349
+quitting
+  EnableTilingByEdgeDrag: not set
+  EnableTopTilingByEdgeDrag: not set
+  EnableTilingOptionAccelerator: not set
+  ✔ quitting leaves macOS's settings as they were found
+what stays written down is the choice:
+[
+  {
+    "givenBack" : true,
+    "key" : "EnableTilingByEdgeDrag"
+  },
+  {
+    "givenBack" : true,
+    "key" : "EnableTopTilingByEdgeDrag"
+  },
+  {
+    "givenBack" : true,
+    "key" : "EnableTilingOptionAccelerator"
+  }
+]
+after:  170 220 480 348 | 220 180 480 348 | 270 140 480 348 | 315 97 481 349
+found:  170 220 480 348 | 220 180 480 348 | 270 140 480 348 | 320 100 480 348
+  ✔ the two windows that no hand touched are exactly where they were found
+  ✔ window 33, docked and dragged, has its own size back — it is at 315 97 481 349
+  ✔ window 32, docked and dragged, has its own size back — it is at 270 140 480 348
+
+▸ quitting puts every window back in view
+> quit
+arborctl: Arbor is not running (no control socket at /tmp/arbor-shell.wVjAMW/home/arbor.sock); start it with `open -a Arbor`
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+shot: mac-shell/70-after-quit.png
+
+85 passed, 0 failed
+exit code 0

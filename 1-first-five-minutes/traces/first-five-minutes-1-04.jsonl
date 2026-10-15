@@ -1,0 +1,28 @@
+{"arbor":"0.0.0","cursor":[0,400],"displays":[{"frame":[0,0,1024,768],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"name":"display-1","visible":[0,31,1024,677]}],"focusHistory":[33,32],"focused":33,"framePlan":2,"mouseDown":false,"name":"first-five-minutes-1-04","onlyPIDs":[6634],"os":"macOS Version 26.6.2 (Build 25G83)","recorded":"2026-10-15T14:21:48Z","seenSizes":{"32":[[325,348],[1000,653],[0,0],[0,0],[0,0]],"33":[[325,348],[494,653],[0,0],[0,0],[0,0]]},"settings":{"allowAllURLCommands":false,"animationDuration":0.46,"appColourAmount":0.25,"appColours":true,"arrangeDesktopWeight":0.5,"autoDockMinimumHeight":300,"autoDockMinimumWidth":400,"automaticUpdateChecks":false,"bindings":{},"blurBehindArranged":0,"continuousZoom":false,"desktopEdge":0.05,"dimBehindArranged":0.25,"displays":[],"dropDwell":0.15,"excludedBundleIDs":[],"floatingWindowsMakeWay":false,"focusRing":true,"focusRingColour":"accent","focusRingRadius":0,"focusRingWidth":3,"frameRectangleModifier":"ctrl+opt","frameRectangleOnDesktop":true,"gap":12,"gapHandles":"shown","gesturesEnabled":true,"guardDesktopClicks":false,"historyButtons":true,"holdStillFor":[],"holdStillWhileCameraIsOn":false,"holdStillWhileMicrophoneIsOn":false,"hotkeysEnabled":true,"keepPushed":true,"makeRoom":true,"menuBarControls":true,"menuBarFill":0.25,"messages":"helpful","minimapDuration":0,"minimumUsableHeight":160,"minimumUsableWidth":240,"newWindows":"float","newWindowsWhileFramed":"guest","passThroughApps":[],"pauseForApps":[],"peek":true,"pinchThreshold":0.25,"pointerGestures":false,"previewDrags":true,"reflowWhileDragging":false,"resizeStep":40,"ruleTitleWait":2,"rules":[],"screenEdgeBand":12,"scrollOnDesktopZooms":false,"scrollZoom":true,"scrollZoomThreshold":40,"shareRemovedSpace":true,"shortcuts":"core","shortcutsFollowLayout":true,"shrinkOutOfView":false,"soleFloatTakesDesktop":false,"stepInToward":"auto","summonStays":false,"tabsEnabled":false,"tileFade":0.2,"tileRetryMinutes":10,"tileStyle":"icon","tintBehindArranged":0,"windowEdgeFraction":0.3,"windowPictures":false},"thinning":0.05,"trace":1,"windows":[{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[170,220,480,348],"id":30,"pid":6634,"title":"title[1]"},{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[220,180,480,348],"id":31,"pid":6634,"title":"title[2]"},{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[270,140,480,348],"id":32,"pid":6634,"title":"title[3]"},{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[315,97,481,349],"id":33,"pid":6634,"title":"title[4]"}],"workspaces":{"07230EFA-7A8D-4E37-845C-19CC8737EEF5":{"back":[],"camera":0,"floating":{"30":[[170,220],[480,348]],"31":[[220,180],[480,348]],"32":[[270,140],[480,348]],"33":[[315,97],[481,349]]},"forward":[],"names":{},"savedViews":{},"tree":{"desktop":0,"loans":[],"nextRawID":1,"nodes":{"0":{"id":0,"kind":{"desktop":{}},"weight":1}},"root":0,"visits":[]}}}}
+{"t":0.0009,"note":"✔ resuming takes it again, unasked"}
+{"t":0.0090,"command":"check-setup","from":"script"}
+{"t":0.0093,"args":[false],"read":"mayUseAccessibility","result":true}
+{"t":0.0100,"done":"check-setup","message":"showing the welcome window","ok":true}
+{"t":0.0534,"note":"✔ asked for again, Check Setup… comes to the front"}
+{"t":0.1719,"timer":"focus-ring-again"}
+{"t":0.1721,"call":"isMouseButtonDown","result":false}
+{"t":0.2383,"timer":"settings-file"}
+{"t":0.4475,"timer":"save"}
+{"t":0.7022,"raw":"leftMouseDown on a tile or a handle of Arbor's"}
+{"t":0.7025,"event":"pointerPressed"}
+{"t":0.7680,"command":"fix-setup undo","from":"script"}
+{"t":0.7696,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":0.7728,"done":"fix-setup undo","message":"put 3 settings of macOS under Desktop & Dock back as they were","ok":true}
+{"t":0.8537,"event":"settingsFileMayHaveChanged"}
+{"t":0.9240,"timer":"menu-bar-room"}
+{"t":1.1718,"timer":"settings-file"}
+{"t":2.9457,"timer":"accessibility"}
+{"t":2.9462,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":4.4678,"note":"✔ every switch is as it was found"}
+{"t":4.4792,"note":"✔ and nothing is left written down"}
+{"t":5.0001,"timer":"accessibility"}
+{"t":5.0004,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":5.1074,"raw":"leftMouseDown on a tile or a handle of Arbor's"}
+{"t":5.1079,"event":"pointerPressed"}
+{"t":5.2654,"note":"✔ Done closes the window"}
+{"t":5.2948,"end":"another trace was started","lines":27,"thinned":0}
