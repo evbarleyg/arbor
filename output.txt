@@ -1,0 +1,109 @@
+# mac-shell: scripts/mac-shell/probe-permission-grant.sh at d6fd7db, macOS 26.6.2, 2026-10-15T01:18Z
+built Arbor and the pointer tool in 6s
+
+== the asker's bundle
+/tmp/arbor-shell.IGFedL/ArborAsker.app: replacing existing signature
+
+== grant-1: a process started without the permission; then: written tccd_restarted announced
+  ✔ grant-1: the asker runs and writes
+  ✔ grant-1: it began without the permission
+  01:19:50.594 written
+  01:19:57.827 tccd_restarted
+  01:20:05.122 announced
+  what it was told, whenever that changed:
+    01:19:47.354 flag=no tap=no listen=yes
+    01:20:05.356 flag=yes tap=yes listen=yes
+  the last: flag=yes tap=yes listen=yes
+  a new process now: flag=yes tap=yes listen=yes
+
+== grant-2: a process started without the permission; then: written announced tccd_restarted
+  ✔ grant-2: the asker runs and writes
+  ✔ grant-2: it began without the permission
+  01:20:22.034 written
+  01:20:29.228 announced
+  01:20:36.283 tccd_restarted
+  what it was told, whenever that changed:
+    01:20:18.968 flag=no tap=no listen=yes
+    01:20:29.468 flag=yes tap=no listen=yes
+  the last: flag=yes tap=no listen=yes
+  a new process now: flag=yes tap=yes listen=yes
+
+== loss-1: a process started with the permission; then: denied tccd_restarted announced
+  ✘ loss-1: the asker runs and writes
+  ✘ loss-1: it began with the permission
+  01:20:53.785 denied
+  01:21:00.954 tccd_restarted
+  01:21:08.081 announced
+  what it was told, whenever that changed:
+    01:20:50.613 flag=no tap=no listen=yes
+  the last: flag=no tap=no listen=yes
+  a new process now: flag=no tap=no listen=yes
+
+== loss-2: a process started with the permission; then: reset_by_tccutil announced
+  ✔ loss-2: the asker runs and writes
+  ✔ loss-2: it began with the permission
+  01:21:25.179 reset_by_tccutil
+tccutil: No such bundle identifier "com.evbarleyg.arbor.probe-asker": The operation couldn’t be completed. (OSStatus error -10814.)
+  01:21:32.346 announced
+  what it was told, whenever that changed:
+    01:21:22.126 flag=yes tap=yes listen=yes
+  the last: flag=yes tap=yes listen=yes
+  a new process now: flag=yes tap=yes listen=yes
+
+== loss-3: a process started with the permission; then: deleted announced tccd_restarted
+  ✔ loss-3: the asker runs and writes
+  ✔ loss-3: it began with the permission
+  01:21:50.086 deleted
+  01:21:57.267 announced
+  01:22:04.342 tccd_restarted
+  what it was told, whenever that changed:
+    01:21:46.981 flag=yes tap=yes listen=yes
+    01:21:57.493 flag=no tap=yes listen=yes
+    01:21:57.983 flag=no tap=no listen=yes
+  the last: flag=no tap=no listen=yes
+  a new process now: flag=no tap=no listen=yes
+
+== who announced anything (com.apple.accessibility.api, as this script's own listener heard it)
+01:19:45.696 listening
+01:20:05.176 heard com.apple.accessibility.api from nobody
+01:20:29.252 heard com.apple.accessibility.api from nobody
+01:21:08.110 heard com.apple.accessibility.api from nobody
+01:21:32.369 heard com.apple.accessibility.api from nobody
+01:21:57.308 heard com.apple.accessibility.api from nobody
+
+== Arbor itself, as a bundle, launched without the permission; then: written, tccd restarted, announced
+session 1: Arbor pid 20367, test windows 32 33 (pid 20340)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+/tmp/arbor-shell.IGFedL/Arbor.app: replacing existing signature
+  01:22:22.765 launched: arborctl: Arbor is not running (no control socket at /tmp/ar
+  ✘ Arbor waits for the permission
+shot: mac-shell/arbor-1-waiting.png
+  01:22:25.475 written
+  01:22:33.457 seven seconds later: waiting for Accessibility permission (System Settings → Priv
+  01:22:33.473 tccd_restarted
+  01:22:41.454 seven seconds later: waiting for Accessibility permission (System Settings → Priv
+  01:22:41.476 announced
+  01:22:42.521 Arbor is running, after: announced
+  01:22:49.112 seven seconds later: running: 1 display, 0 docked and 2 floating, 0 out of view
+shot: mac-shell/arbor-2-afterwards.png
+WHAT WOKE ARBOR: announced
+  ✔ Arbor notices by itself, by one of the three
+01:22:18.236Z INFO  stopped; all windows returned to view
+01:22:18.236Z INFO  Arbor quit
+01:22:24.818Z INFO  Arbor 0.0.0 (build 0) starting, pid 20423, home /tmp/arbor-shell.IGFedL/home
+01:22:24.821Z INFO  control socket at /tmp/arbor-shell.IGFedL/home/arbor.sock
+01:22:24.917Z INFO  waiting for Accessibility permission
+01:22:41.603Z INFO  Accessibility permission granted
+01:22:41.606Z INFO  keyboard layout: U.S.
+01:22:41.632Z INFO  started: 1 display(s), 2 managed window(s)
+01:22:41.644Z INFO  registered 52 shortcuts in 1633 µs
+01:22:41.649Z INFO  pinch event tap installed
+01:22:41.650Z INFO  scroll event tap installed
+01:22:41.650Z INFO  rectangle event taps installed
+
+9 passed, 3 failed
+still running when the script had ended, and stopped now:
+  13916 asker
+exit code 1
