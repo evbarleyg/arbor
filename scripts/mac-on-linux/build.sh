@@ -194,4 +194,7 @@ if [ -n "${COVERAGE:-}" ]; then
   echo "line by line: .build/${work##*/.build/}/coverage.txt (a count of 0 marks what no story enters)"
   exit "$code"
 fi
-exec "$work/mac-on-linux" --known "$here/known-failures.txt" "$@"
+# What the layer was heard to report is kept for the checkout's own sources.
+heard=()
+[ -z "${REF:-}" ] && heard=(--heard "$root/collab/evidence/mac-on-linux/heard.jsonl")
+exec "$work/mac-on-linux" --known "$here/known-failures.txt" "${heard[@]}" "$@"

@@ -36,6 +36,35 @@ enum Heard: Equatable {
     }
   }
 
+  /// For the file of what was heard (collab/evidence/mac-on-linux): the kind, by the names of the cases here, which are those of `Report` in the rude fake, and the window's
+  /// number. No frame, no title.
+  var word: String {
+    switch self {
+    case .appeared(let id): "appeared \(id)"
+    case .found(let id): "found \(id)"
+    case .destroyed(let id): "destroyed \(id)"
+    case .focused(let id): "focused \(id)"
+    case .changed(let id, let byUser): byUser ? "changed \(id) user" : "changed \(id)"
+    case .replaced(let old, let new): "replaced \(old) \(new)"
+    case .keyboardMoved: "keyboardMoved"
+    case .pressed: "pressed"
+    case .displaysChanged: "displaysChanged"
+    case .refused: "refused"
+    case .dragBegan(let id): "dragBegan \(id)"
+    case .dragMoved(let id): "dragMoved \(id)"
+    case .dragEnded(let id): "dragEnded \(id)"
+    case .dragCancelled(let id): "dragCancelled \(id)"
+    case .resizeBegan(let id): "resizeBegan \(id)"
+    case .resizeEnded(let id): "resizeEnded \(id)"
+    }
+  }
+
+  /// The kind alone, with "user" for a change that was not Arbor's.
+  var kind: String { word.split(separator: " ").filter { UInt32($0) == nil }.joined(separator: " ") }
+
+  /// Every window it names.
+  var windows: [UInt32] { if case .replaced(let old, let new) = self { [old, new] } else { window.map { [$0] } ?? [] } }
+
   /// The window it is about.
   var window: UInt32? {
     switch self {
@@ -51,6 +80,8 @@ enum Heard: Equatable {
 @MainActor
 final class Listener: WindowSystemEvents {
   private(set) var all: [Heard] = []
+  /// All of it from the start, whatever a story has cleared, each with the model's time.
+  private(set) var everything: [(event: Heard, time: TimeInterval)] = []
   /// The snapshot that came with the latest report about each window.
   private(set) var latest: [UInt32: WindowSnapshot] = [:]
   var mac: FakeMac?
@@ -60,6 +91,7 @@ final class Listener: WindowSystemEvents {
 
   private func hear(_ event: Heard) {
     all.append(event)
+    everything.append((event, mac?.now ?? 0))
     onEvent?(event)
     mac?.note("        Arbor's layer reports: \(event.text)")
   }
@@ -164,6 +196,7 @@ final class StoreyOne {
     heard.mac = mac
     layer.events = heard
     mac.note("Arbor starts")
+    story.listens(heard, storey: 1, from: mac.now)
     layer.start()
     mac.pass(0.5)
     story.onFailure { [mac] in "    what happened on the Mac, and what Arbor's layer made of it:\n" + mac.journal.map { "      " + $0 }.joined(separator: "\n") }

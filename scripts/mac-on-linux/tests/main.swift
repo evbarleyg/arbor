@@ -37,6 +37,7 @@ while !arguments.isEmpty {
     book.options.walkSeeds = first...last
   case "--steps": book.options.walkSteps = Int(value()) ?? 40
   case "--replay": book.options.replay = value()
+  case "--heard": book.options.heardFile = value()
   case "--help":
     print(
       """
@@ -49,6 +50,7 @@ while !arguments.isEmpty {
       --seeds 1-500   the seeds of the rude walk (1-40), with --only walk for the walk alone
       --steps 40      how many steps each walk has
       --replay TEXT   one walk, as a failing one prints it, with everything that happened
+      --heard FILE    the file of what the layer was heard to report; a run of everything rewrites it if it is out of date, and fails that once
       """)
     exit(0)
   default:

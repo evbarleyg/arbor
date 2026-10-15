@@ -463,6 +463,30 @@ enum Walker {
     return look(script.count - 1)
   }
 
+  /// What the layer was heard to report on these walks, in short: which kind followed which, about the same window or another ("-": one of them is about none), and which
+  /// calls came twice in a row word for word, past the layer's own care to say a thing once.
+  static func heard(manners: WalkManners, seeds: ClosedRange<UInt64>, steps: Int) -> [String: Any] {
+    var pairs: Set<String> = []
+    var repeats: [String: Int] = [:]
+    for seed in seeds {
+      let walk = Walk(manners: manners, seed: seed, keepsJournal: false)
+      for step in WalkStep.script(seed: seed, steps: steps) {
+        walk.take(step)
+        walk.mac.pass(step.gap ?? 2)
+      }
+      let events = walk.heard.everything.map(\.event)
+      walk.end()
+      for (first, second) in zip(events, events.dropFirst()) {
+        let relation = first.windows.isEmpty || second.windows.isEmpty ? "-" : first.windows.contains(where: second.windows.contains) ? "same" : "other"
+        pairs.insert("\(first.kind) > \(second.kind) \(relation)")
+        if first == second { repeats[first.kind, default: 0] += 1 }
+      }
+    }
+    return [
+      "story": "the rude walk", "storey": 1, "manners": manners.name, "seeds": "\(seeds.lowerBound)-\(seeds.upperBound)", "steps": steps, "pairs": pairs.sorted(), "repeats": repeats,
+    ]
+  }
+
   /// The shortest script this can get by taking steps out, one at a time, for as long as the same rule breaks.
   static func shrink(_ script: [WalkStep], manners: WalkManners, seed: UInt64, rule: String, ignoring: Set<String>) -> [WalkStep] {
     var best = script
@@ -511,6 +535,7 @@ func tellOfTheWalk(_ book: Book) {
           }
         }
       }
+      if book.options.heardFile != nil, book.isWholeRun { book.writeDown(Walker.heard(manners: manners, seeds: seeds, steps: book.options.walkSteps)) }
       for rule in rules {
         guard let finding = first[rule] else {
           story.check(rule, true)

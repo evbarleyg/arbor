@@ -98,6 +98,11 @@ Then take the cure the story is about out of the layer, see it go red, and keep 
 `known-failures.txt` lists the checks that are red on the trunk, each with a word on it. **The run fails when a check that is not listed fails, and when one that is listed passes**, so whoever lands a cure deletes its lines in the same pull request; and when a line matches no check any more. `sometimes: ` marks what
 only some seeds of the walk show.
 
+## What was heard
+
+A run of everything writes down every call of `WindowSystemEvents` the layer made, story by story, and for the walk which kind followed which: `collab/evidence/mac-on-linux/heard.jsonl`, with a README. It is for those who keep stand-ins at the seam, and it shows in a diff what a change to the layer does to what the controller
+hears. If the file is out of date the run rewrites it and fails that once: look at the difference and commit it.
+
 ## Does the net hold? (`make mac-on-linux-selftest`)
 
 A story that stays green without the cure it is about proves nothing. `mutants.py` has twenty-one small changes to the copy, each of which takes one cure out of the layer again (the count of windows that tells a new one from a found one, the looks at an app macOS does not name in front yet, the watch for a lost release, the second reading of the lists after a Space switch, the
