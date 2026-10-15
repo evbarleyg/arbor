@@ -143,8 +143,8 @@ import Testing
     h.system.setSizeStep(a, CGSize(width: 7, height: 15))
     h.system.clearFrameLog()
     h.system.leaveFullScreen(a, with: [f], deafFor: 0)
-    // Once ahead of its landing; the layout then takes three to fit it into a slot that is new to it, as always.
-    #expect(h.system.frameLog.filter { $0.window == a }.count == 4, "\(h.system.frameLog)")
+    // Twice ahead of its landing; the layout then takes three to fit it into a slot that is new to it, as always.
+    #expect(h.system.frameLog.filter { $0.window == a }.count == 5, "\(h.system.frameLog)")
     h.scheduler.advance(by: 2)
     #expect(h.controller.invariantViolations().isEmpty, "\(h.controller.invariantViolations())")
   }
