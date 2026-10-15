@@ -64,7 +64,7 @@ extension FakeMac {
     appDoes(app, after: timing.focusBeforeDestroyed, "") { [self] in
       listWillChange(of: app)
       // Posted while there is still somebody subscribed.
-      if announced { report("AXUIElementDestroyed", about: window, mayBeDropped: true) }
+      window.closedWithoutAWord = !announced || !report("AXUIElementDestroyed", about: window, mayBeDropped: true)
       window.isOpen = false
       window.exists = putAway
       window.isMinimized = false
@@ -79,6 +79,7 @@ extension FakeMac {
     guard !window.isOpen, window.exists, window.app.isAlive else { return }
     note("\(window.app.name) shows w\(window.number) again, under the same number")
     window.space = activeSpace
+    window.closedWithoutAWord = false
     show(window, takesKeyboard: true)
   }
 
@@ -115,6 +116,7 @@ extension FakeMac {
   public func minimize(_ window: Window) {
     guard window.isOpen, !window.isMinimized else { return }
     note("w\(window.number) is being minimized")
+    window.isBusyUntil = now + timing.minimizing + 0.05
     appDoes(window.app, after: timing.minimizing, "") { [self] in
       guard window.isOpen, !window.isMinimized else { return }
       window.isMinimized = true
@@ -128,6 +130,7 @@ extension FakeMac {
   public func restore(_ window: Window) {
     guard window.isOpen, window.isMinimized else { return }
     note("w\(window.number) is being restored")
+    window.isBusyUntil = now + timing.minimizing + 0.05
     appDoes(window.app, after: timing.minimizing, "") { [self] in
       guard window.isOpen, window.isMinimized else { return }
       window.isMinimized = false
@@ -181,6 +184,7 @@ extension FakeMac {
   public func enterFullScreen(_ window: Window, saysSoLate: Bool = false, lists: ListsDuringTransition = .right) {
     guard window.isOpen, !window.isFullScreen, !window.isMinimized else { return }
     note("w\(window.number) enters full screen")
+    window.isBusyUntil = now + timing.spaceTransition + 0.1
     let display = screen(of: window.frame).frame
     window.frameBeforeFullScreen = window.frame
     window.homeSpace = window.space
@@ -211,6 +215,7 @@ extension FakeMac {
   public func leaveFullScreen(_ window: Window) {
     guard window.isOpen, window.isFullScreen || fullScreenHelpers[window.serial] != nil else { return }
     note("w\(window.number) leaves full screen")
+    window.isBusyUntil = now + timing.spaceTransition + 0.1
     for helper in fullScreenHelpers.removeValue(forKey: window.serial) ?? [] { close(helper) }
     let wasShowing = window.space == activeSpace
     appDoes(window.app, after: 0.1, "") { [self] in
@@ -240,12 +245,14 @@ extension FakeMac {
     frame.size.height += grows
     let tab = open(title, in: app, frame: frame)
     tab.tabGroup = window.tabGroup
+    tab.extraHeightAsTab = window.extraHeightAsTab + grows
     return tab
   }
 
   /// A click on a tab. It posts nothing but "main window changed".
   public func chooseTab(_ tab: Window) {
-    guard tab.isOpen, !tab.isFrontTab, let front = tab.app.windows.first(where: { $0.tabGroup == tab.tabGroup && $0.isFrontTab && $0.isOpen }) else { return }
+    guard tab.isOpen, !tab.isFrontTab, let front = tab.app.windows.first(where: { $0.tabGroup == tab.tabGroup && $0.isFrontTab && $0.isOpen }), isShowing(front)
+    else { return }
     note("the tab w\(tab.number) is chosen")
     bringTabForward(tab, insteadOf: front)
   }
@@ -255,8 +262,8 @@ extension FakeMac {
     front.isFrontTab = false
     tab.isFrontTab = true
     // The group is one window to the eye: the tabs share its place.
-    tab.frame.origin = front.frame.origin
-    tab.frame.size.width = front.frame.width
+    tab.frame = front.frame
+    tab.frame.size.height += tab.extraHeightAsTab - front.extraHeightAsTab
     tab.bounds = tab.frame
     tab.space = front.space
     if let index = stack.firstIndex(where: { $0 === front }) {

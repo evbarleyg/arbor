@@ -52,9 +52,12 @@ extension FakeMac {
     }
   }
 
-  func workspaceNotice(_ name: String, _ app: App?, after delay: TimeInterval) {
+  func workspaceNotice(_ name: String, _ app: App?, after delay: TimeInterval, first: @escaping () -> Void = {}) {
     let short = name.replacingOccurrences(of: "NSWorkspace", with: "").replacingOccurrences(of: "Notification", with: "")
-    send(after: delay, from: .workspace, "→ \(short)\(app.map { " pid \($0.pid)" } ?? "")") { Self.postsWorkspaceNotification(name, app?.pid) }
+    send(after: delay, from: .workspace, "→ \(short)\(app.map { " pid \($0.pid)" } ?? "")") {
+      first()
+      Self.postsWorkspaceNotification(name, app?.pid)
+    }
   }
 
   // MARK: Coming forward
@@ -71,13 +74,18 @@ extension FakeMac {
     activationHistory.removeAll { $0 === app }
     activationHistory.insert(app, at: 0)
     if raisingAll { raiseAll(of: app) }
+    // Arbor asks an app that fell silent whether it is back every half second here, every second and a half on a Mac.
+    app.hasHungInFront = app.isHung || now - app.wokeAt < 2
+    app.noticeOutranTheProperty = false
 
     let lag = frontmostLagsNoticeBy > 0 ? frontmostLagsNoticeBy : manners.lag(upTo: manners.staleness)
     let notice = timing.activationNotice
     send(after: lag > 0 ? notice + lag : notice / 2, from: .workspaceCache, lag > 0 ? "(NSWorkspace's frontmostApplication catches up: pid \(app.pid))" : "") {
       [self] in frontmostByWorkspace = app
     }
-    workspaceNotice("NSWorkspaceDidActivateApplicationNotification", app, after: notice)
+    workspaceNotice("NSWorkspaceDidActivateApplicationNotification", app, after: notice) { [self] in
+      if frontmost === app, frontmostByWorkspace !== app { app.noticeOutranTheProperty = true }
+    }
     if let old, old.isAlive { report("AXApplicationDeactivated", about: old, after: notice + timing.deactivatedAfterNotice - timing.report) }
     report("AXApplicationActivated", about: app, after: notice + timing.activatedAfterNotice - timing.report)
   }
@@ -129,6 +137,7 @@ extension FakeMac {
     guard app.isAlive, !app.isHung else { return }
     note("\(app.name) (pid \(app.pid)) hangs")
     app.isHung = true
+    if frontmost === app { app.hasHungInFront = true }
   }
 
   /// It goes on where it was: the calls that timed out are still in its queue and are carried out now, in order, each with its reports.
@@ -136,6 +145,7 @@ extension FakeMac {
     guard app.isAlive, app.isHung else { return }
     note("\(app.name) (pid \(app.pid)) wakes")
     app.isHung = false
+    app.wokeAt = now
     let backlog = app.backlog
     app.backlog.removeAll()
     for item in backlog {

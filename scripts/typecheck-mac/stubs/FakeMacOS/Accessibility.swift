@@ -335,27 +335,29 @@ extension FakeMac {
   /// The observer's owner has let go of it.
   public func retire(_ observer: Observer) { observers.removeAll { $0 === observer } }
 
-  func report(_ name: String, about window: Window, after delay: TimeInterval = 0, mayBeDropped: Bool = false) {
+  /// Returns false if it was dropped.
+  @discardableResult
+  func report(_ name: String, about window: Window, after delay: TimeInterval = 0, mayBeDropped: Bool = false) -> Bool {
     report(name, about: window.element, of: window.app, shown: "w\(window.number)", after: delay, mayBeDropped: mayBeDropped)
   }
 
   func report(_ name: String, about app: App, after delay: TimeInterval = 0) {
-    report(name, about: .app(app.pid), of: app, shown: "", after: delay, mayBeDropped: false)
+    _ = report(name, about: .app(app.pid), of: app, shown: "", after: delay, mayBeDropped: false)
   }
 
   /// An app posts a notification. Who is told is settled now, by who has subscribed by now; the word is then on its way.
   /// A subscription on the app's element gets what is posted about any of its windows: that is how "created" and "focused window changed"
   /// are subscribed to, and why they carry no window's number.
-  private func report(_ name: String, about element: Element, of app: App, shown: String, after delay: TimeInterval, mayBeDropped: Bool) {
-    guard app.isAlive else { return }
+  private func report(_ name: String, about element: Element, of app: App, shown: String, after delay: TimeInterval, mayBeDropped: Bool) -> Bool {
+    guard app.isAlive else { return true }
     if app.isHung {
       // Its main thread would have posted it.
-      app.backlog.append(("", { [self] in report(name, about: element, of: app, shown: shown, after: delay, mayBeDropped: mayBeDropped) }))
-      return
+      app.backlog.append(("", { [self] in _ = report(name, about: element, of: app, shown: shown, after: delay, mayBeDropped: false) }))
+      return true
     }
     if mayBeDropped, manners.chance(manners.drops) {
       note("(dropped: \(name) \(shown) of pid \(app.pid))")
-      return
+      return false
     }
     let times = manners.chance(manners.repeats) ? 2 : 1
     for observer in observers where observer.pid == app.pid {
@@ -369,6 +371,7 @@ extension FakeMac {
         }
       }
     }
+    return true
   }
 
   /// With the window its subscriptions go.

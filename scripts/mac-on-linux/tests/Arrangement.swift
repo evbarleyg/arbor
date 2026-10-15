@@ -133,6 +133,8 @@ func tellOfArrangements(_ book: Book) {
       two.mac.switchSpace(to: 1, lists: lists)
       two.mac.pass(3)
       story.check("both windows are docked where they were", two.isDocked(left) && two.isDocked(right) && left.frame == leftHome && right.frame == rightHome, "\(two.whereabouts(left)); \(two.whereabouts(right))")
+      two.run("zoom \(left.number)")
+      story.check("and Arbor goes on arranging them: one is framed, the other goes out of view", left.frame.width > 900 && two.isOutOfView(right), "\(two.whereabouts(left)); \(two.whereabouts(right))")
     }
   }
 

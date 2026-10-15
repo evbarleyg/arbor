@@ -62,6 +62,10 @@ public final class FakeMac: @unchecked Sendable {
 
   public internal(set) var screens: [Screen] = [Screen.hostedMac]
   public internal(set) var mouse = Mouse()
+  /// A loaded Mac. The monitors hear of a mouse-down so much later than usual; what follows it queues up behind it.
+  public var mouseDownIsLateBy: TimeInterval = 0
+  /// A loaded Mac. The window server begins to move a window that is dragged so long after the press, and then catches up with the pointer.
+  public var serverFollowsPointerAfter: TimeInterval = 0
   /// Whether Arbor has the Accessibility permission. Without it every call is refused with `apiDisabled`.
   public var isTrusted = true
 
@@ -147,12 +151,47 @@ public final class FakeMac: @unchecked Sendable {
   }
 
   private func takeNext(until end: TimeInterval) -> Pending? {
-    var best: Int?
-    for (index, item) in pending.enumerated() where item.due <= end {
-      if let current = best, (pending[current].due, pending[current].order) <= (item.due, item.order) { continue }
-      best = index
+    var best: (index: Int, key: (TimeInterval, Int, TimeInterval, Int))?
+    for (index, item) in pending.enumerated() {
+      let key = turn(of: item)
+      guard key.0 <= end else { continue }
+      if let best, best.key <= key { continue }
+      best = (index, key)
     }
-    return best.map { pending.remove(at: $0) }
+    guard let best else { return nil }
+    var item = pending.remove(at: best.index)
+    item.due = best.key.0
+    return item
+  }
+
+  // MARK: Arbor's main thread is busy
+
+  /// In which order what has queued up is served when the main thread is free again. Each source is a port or a queue of its own to the run loop,
+  /// which promises nothing about the order among them.
+  public enum Backlog: Sendable { case byTime, accessibilityFirst, mouseFirst }
+  private var arborIsBusyUntil: TimeInterval = 0
+  private var backlogOrder = Backlog.byTime
+
+  /// Arbor's main thread does something else for so long (a layout, a slow call, a loaded Mac that does not schedule it). The Mac goes on; whatever is
+  /// meant for Arbor waits, its own timers included, and is served at the end, when the mouse and the windows are where they are by then.
+  public func arborIsBusy(for seconds: TimeInterval, then order: Backlog = .byTime) {
+    note("Arbor's main thread is busy for \(seconds) s")
+    arborIsBusyUntil = now + seconds
+    backlogOrder = order
+  }
+
+  /// When an item's turn comes, and among those whose turn comes at the same time, which goes first.
+  private func turn(of item: Pending) -> (TimeInterval, Int, TimeInterval, Int) {
+    let rank: Int
+    switch item.source {
+    case .accessibility: rank = backlogOrder == .accessibilityFirst ? 0 : 1
+    case .mouse: rank = backlogOrder == .mouseFirst ? 0 : 1
+    case .workspace, .screens, .sleeper: rank = 1
+    // The Mac's own business waits for nobody.
+    case .workspaceCache, .mouseCache, .app, .system: return (item.due, 0, item.due, item.order)
+    }
+    guard item.due < arborIsBusyUntil else { return (item.due, 0, item.due, item.order) }
+    return (arborIsBusyUntil, backlogOrder == .byTime ? 0 : rank, item.due, item.order)
   }
 
   /// Lets `seconds` go by: whatever falls due is delivered in order, and after each delivery Arbor's tasks run until none is runnable.
@@ -337,6 +376,14 @@ extension FakeMac {
     /// It answers so many more calls and then hangs: in the middle of what Arbor is asking of it.
     public var hangsAfterCalls: Int?
 
+    // What has happened to it, for those who want to tell one cause of a fault from another.
+
+    /// It has hung at some time since it last came forward, or came forward hanging or just woken.
+    public internal(set) var hasHungInFront = false
+    var wokeAt: TimeInterval = 0
+    /// When the notice that it came forward was delivered, `NSWorkspace` still named another app.
+    public internal(set) var noticeOutranTheProperty = false
+
     /// What was asked of it, and what it would have posted, while it hung.
     var backlog: [(label: String, run: () -> Void)] = []
     /// The list of windows it still gives out although it has changed.
@@ -389,6 +436,13 @@ extension FakeMac {
     /// How often somebody outside its app has asked it for a place or a size.
     public internal(set) var timesAskedForAFrame = 0
     var lastMovedReport: TimeInterval = 0
+    var owesMovedReport = false
+    /// Until then it is in the middle of an animation (into the Dock, out of it, into full screen), and nobody can get hold of it.
+    public internal(set) var isBusyUntil: TimeInterval = 0
+    /// It has closed, and "destroyed" was never posted or got lost.
+    public internal(set) var closedWithoutAWord = false
+    /// By how much it is taller than the other tabs of its group (Terminal's first tab and its later ones differ by the tab bar).
+    var extraHeightAsTab: CGFloat = 0
     /// Goes back to the frame it had so long after every move from outside (traces `stubborn-fast`, `stubborn-slow`).
     public var goesBackAfter: TimeInterval?
 
@@ -446,6 +500,8 @@ extension FakeMac {
 
   public func app(_ pid: pid_t) -> App? { apps.first { $0.pid == pid } }
   public func window(_ number: UInt32) -> Window? { stack.first { $0.number == number } }
+  /// Also one that has closed and is forgotten by everybody else.
+  public func windowThatEverWas(_ number: UInt32) -> Window? { windowsBySerial.values.first { $0.number == number } }
   func window(for element: Element) -> Window? {
     if case .window(_, let serial) = element { windowsBySerial[serial] } else { nil }
   }

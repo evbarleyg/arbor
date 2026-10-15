@@ -25,6 +25,7 @@ extension FakeMac {
     var window: Window?
     var pressedAt: CGPoint
     var frameAtPress: CGRect
+    var time: TimeInterval = 0
   }
 
   /// `NSEvent.EventType`'s raw values, which for these are `CGEventType`'s too.
@@ -106,7 +107,7 @@ extension FakeMac {
       mouse.grab = Grab(kind: .arborsPanel, window: nil, pressedAt: point, frameAtPress: .zero)
       return tellMonitors(.leftMouseDown, toArbor: true)
     }
-    tellMonitors(.leftMouseDown, toArbor: false)
+    tellMonitors(.leftMouseDown, toArbor: false, after: mouseDownIsLateBy)
     // The resize area reaches a few points outside the frame.
     guard let window = windowShowing(at: point, reach: 4) else {
       mouse.grab = Grab(kind: .nothing, window: nil, pressedAt: point, frameAtPress: .zero)
@@ -125,7 +126,30 @@ extension FakeMac {
     } else {
       kind = .content
     }
-    mouse.grab = Grab(kind: kind, window: window, pressedAt: point, frameAtPress: frame)
+    mouse.grab = Grab(kind: kind, window: window, pressedAt: point, frameAtPress: frame, time: now)
+    if case .titleBar = kind, serverFollowsPointerAfter > 0 {
+      let time = now
+      send(after: serverFollowsPointerAfter, from: .system, "") { [self] in
+        if let grab = mouse.grab, grab.time == time, grab.window === window { serverFollowsPointer(grab, window) }
+      }
+    }
+  }
+
+  /// The window server puts a window that is held by its title bar where the pointer has taken it.
+  private func serverFollowsPointer(_ grab: Grab, _ window: Window) {
+    guard now >= grab.time + serverFollowsPointerAfter else { return }
+    let point = mouse.location
+    var origin = CGPoint(x: grab.frameAtPress.minX + point.x - grab.pressedAt.x, y: grab.frameAtPress.minY + point.y - grab.pressedAt.y)
+    origin.y = max(origin.y, screen(of: CGRect(origin: point, size: .zero)).visibleFrame.minY)
+    guard window.bounds.origin != origin else { return }
+    window.bounds.origin = origin
+    guard !window.app.isSilentDuringDrags else { return }
+    let bounds = window.bounds
+    appDoes(window.app, after: timing.dragReachesApp, "") { [self] in
+      guard window.isOpen, window.frame != bounds else { return }
+      window.frame = bounds
+      reportMoved(window)
+    }
   }
 
   /// The pointer moves.
@@ -141,19 +165,7 @@ extension FakeMac {
     guard let window = grab.window, window.isOpen else { return }
     let (dx, dy) = (point.x - grab.pressedAt.x, point.y - grab.pressedAt.y)
     switch grab.kind {
-    case .titleBar:
-      var origin = CGPoint(x: grab.frameAtPress.minX + dx, y: grab.frameAtPress.minY + dy)
-      origin.y = max(origin.y, screen(of: CGRect(origin: point, size: .zero)).visibleFrame.minY)
-      window.bounds.origin = origin
-      guard !window.app.isSilentDuringDrags else { return }
-      let bounds = window.bounds
-      appDoes(window.app, after: timing.dragReachesApp, "") { [self] in
-        guard window.isOpen, window.frame != bounds else { return }
-        window.frame = bounds
-        guard now - window.lastMovedReport >= timing.betweenMovedReports else { return }
-        window.lastMovedReport = now
-        report("AXMoved", about: window, mayBeDropped: true)
-      }
+    case .titleBar: serverFollowsPointer(grab, window)
     case .edge(let left, let right, let top, let bottom):
       guard !window.app.isHung else { return }
       var frame = grab.frameAtPress
@@ -187,6 +199,12 @@ extension FakeMac {
     note("the button comes up at \(Int(mouse.location.x)),\(Int(mouse.location.y))\(release == .lost ? ", and no monitor hears of it" : "")")
     setButton(false)
     let grab = mouse.grab
+    // However late it began, the window server leaves the window where the pointer let go of it.
+    if case .titleBar? = grab?.kind, let grab, let window = grab.window, window.isOpen {
+      var caughtUp = grab
+      caughtUp.time = -.infinity
+      serverFollowsPointer(caughtUp, window)
+    }
     mouse.grab = nil
     var toArbor = false
     if case .arborsPanel? = grab?.kind { toArbor = true }
@@ -200,8 +218,27 @@ extension FakeMac {
       appDoes(window.app, after: timing.dragReachesApp, "") { [self] in
         guard window.isOpen, window.frame != window.bounds, mouse.grab?.window !== window else { return }
         window.frame = window.bounds
+        reportMoved(window)
+      }
+    }
+  }
+
+  /// Eight to ten "moved" a second, however often the window moves; but the last place is always reported in the end (`flick-to-edge`: one more 30 ms after
+  /// the release).
+  private func reportMoved(_ window: Window) {
+    // The one that is owed will tell of this move too.
+    guard !window.owesMovedReport else { return }
+    let wait = window.lastMovedReport + timing.betweenMovedReports - now
+    if wait <= 0 {
+      window.lastMovedReport = now
+      report("AXMoved", about: window, mayBeDropped: mouse.grab?.window === window)
+    } else if !window.owesMovedReport {
+      window.owesMovedReport = true
+      appDoes(window.app, after: wait, "") { [self] in
+        window.owesMovedReport = false
+        guard window.isOpen else { return }
         window.lastMovedReport = now
-        report("AXMoved", about: window)
+        report("AXMoved", about: window, mayBeDropped: mouse.grab?.window === window)
       }
     }
   }
@@ -215,10 +252,11 @@ extension FakeMac {
     release()
   }
 
-  /// Presses at `start`, moves to `end` in `steps` steps `interval` apart, and holds. The traces' pointer moved every 0.05 to 0.1 s.
-  public func drag(from start: CGPoint, to end: CGPoint, steps: Int = 10, interval: TimeInterval = 0.08) {
+  /// Presses at `start`, rests for `rest`, moves to `end` in `steps` steps `interval` apart, and holds. The traces' pointer rested 0.18 to 0.23 s and moved
+  /// every 0.05 to 0.1 s.
+  public func drag(from start: CGPoint, to end: CGPoint, steps: Int = 10, interval: TimeInterval = 0.08, rest: TimeInterval = 0.15) {
     press(at: start)
-    pass(0.15)
+    pass(rest)
     for step in 1...max(steps, 1) {
       let part = CGFloat(step) / CGFloat(max(steps, 1))
       moveMouse(to: CGPoint(x: start.x + (end.x - start.x) * part, y: start.y + (end.y - start.y) * part))

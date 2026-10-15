@@ -22,8 +22,21 @@ while !arguments.isEmpty {
   case "--known": book.options.knownFailuresFile = value()
   case "--verbose": book.options.isVerbose = true
   case "--quiet": book.options.isQuiet = true
-  case "--expect-red": book.options.expectsRed = true
+  case "--expect-red":
+    // "story: check". The story is told, and no other.
+    let key = value()
+    book.options.expectsRed.append(key)
+    book.options.only.append(key.components(separatedBy: ": ")[0])
   case "--list": book.options.listsOnly = true
+  case "--seeds":
+    let bounds = value().components(separatedBy: "-").compactMap { UInt64($0) }
+    guard let first = bounds.first, let last = bounds.last, first <= last else {
+      print("--seeds wants a range, like 1-500")
+      exit(2)
+    }
+    book.options.walkSeeds = first...last
+  case "--steps": book.options.walkSteps = Int(value()) ?? 40
+  case "--replay": book.options.replay = value()
   case "--help":
     print(
       """
@@ -32,12 +45,15 @@ while !arguments.isEmpty {
       --verbose       what happened on the Mac, for the stories that pass as well
       --quiet         the sum only
       --known FILE    the failures that are known (known-failures.txt)
-      --expect-red    succeed if a check fails: for the self-test
+      --expect-red "STORY: CHECK"   succeed if that check fails (may be given several times): for the self-test
+      --seeds 1-500   the seeds of the rude walk (1-40), with --only walk for the walk alone
+      --steps 40      how many steps each walk has
+      --replay TEXT   one walk, as a failing one prints it, with everything that happened
       """)
     exit(0)
   default:
-    // The self-test names stories without further ado.
-    book.options.only.append(argument)
+    print("what is \(argument)? (--help)")
+    exit(2)
   }
 }
 
@@ -78,6 +94,9 @@ tellOfComingForward(book)
 tellOfGoing(book)
 tellOfShowing(book)
 tellOfDragging(book)
+tellOfLostDrags(book)
 tellOfPlacing(book)
 tellOfArrangements(book)
+tellOfTheWalk(book)
+if let replay = book.options.replay { exit(replayWalk(replay)) }
 exit(book.tellAll())

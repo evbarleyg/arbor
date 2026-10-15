@@ -56,9 +56,11 @@ final class Listener: WindowSystemEvents {
   var mac: FakeMac?
   /// Somebody who wants to hear as well: storey two's controller.
   var next: (any WindowSystemEvents)?
+  var onEvent: ((Heard) -> Void)?
 
   private func hear(_ event: Heard) {
     all.append(event)
+    onEvent?(event)
     mac?.note("        Arbor's layer reports: \(event.text)")
   }
 

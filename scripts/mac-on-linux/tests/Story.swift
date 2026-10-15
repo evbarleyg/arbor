@@ -9,8 +9,8 @@ struct Options {
   var only: [String] = []
   var isVerbose = false
   var isQuiet = false
-  /// For the self-test: the run succeeds if at least one check of the chosen stories fails.
-  var expectsRed = false
+  /// For the self-test: the run succeeds if every one of these checks ("story: check") fails.
+  var expectsRed: [String] = []
   var knownFailuresFile: String?
   var listsOnly = false
   var walkSeeds: ClosedRange<UInt64>?
@@ -24,6 +24,9 @@ final class Book {
   private(set) var stories: [(name: String, tell: @MainActor (Story) -> Void)] = []
   /// "story: check" → why it is known to fail.
   private var known: [String: String] = [:]
+  /// Those that fail only now and then: with other seeds than the usual ones.
+  private var sometimes: Set<String> = []
+  private var failed: Set<String> = []
   private var passed = 0
   private var newFailures: [String] = []
   private var knownFailuresSeen: [String] = []
@@ -37,7 +40,12 @@ final class Book {
     guard let path = options.knownFailuresFile, let text = try? String(contentsOfFile: path, encoding: .utf8) else { return }
     for line in text.split(separator: "\n") where !line.hasPrefix("#") && !line.allSatisfy(\.isWhitespace) {
       let parts = line.components(separatedBy: " # ")
-      known[parts[0].trimmingCharacters(in: .whitespaces)] = parts.dropFirst().joined(separator: " # ")
+      var key = parts[0].trimmingCharacters(in: .whitespaces)
+      if key.hasPrefix("sometimes: ") {
+        key.removeFirst("sometimes: ".count)
+        sometimes.insert(key)
+      }
+      known[key] = parts.dropFirst().joined(separator: " # ")
     }
   }
 
@@ -51,8 +59,13 @@ final class Book {
   func record(_ story: Story, _ what: String, _ ok: Bool, _ detail: String) {
     let key = "\(story.name): \(what)"
     checksSeen.insert(key)
+    if !ok { failed.insert(key) }
     switch (ok, known[key]) {
     case (true, nil):
+      passed += 1
+      say("  ✔ \(what)")
+    // The list is written for the usual seeds. With others a walk may miss what it usually finds.
+    case (true, .some) where sometimes.contains(key) || (options.walkSeeds != nil && story.name.hasPrefix("the rude walk")):
       passed += 1
       say("  ✔ \(what)")
     case (true, .some):
@@ -68,6 +81,9 @@ final class Book {
     }
   }
 
+  /// Whether a failure of this check would be news.
+  func isNew(_ story: Story, _ what: String) -> Bool { known["\(story.name): \(what)"] == nil }
+
   /// Tells the chosen stories. Returns the exit code.
   func tellAll() -> Int32 {
     let chosen = stories.filter { story in options.only.isEmpty || options.only.contains { story.name.localizedCaseInsensitiveContains($0) } }
@@ -80,9 +96,13 @@ final class Book {
       let story = Story(name: entry.name, book: self)
       entry.tell(story)
       story.finish()
-      if (story.hasNewFailure && !options.expectsRed) || options.isVerbose { say(story.account()) }
+      if (story.hasNewFailure && options.expectsRed.isEmpty) || options.isVerbose { say(story.account()) }
     }
-    if options.expectsRed { return newFailures.isEmpty && knownFailuresSeen.isEmpty ? 1 : 0 }
+    if !options.expectsRed.isEmpty {
+      let green = options.expectsRed.filter { !failed.contains($0) }
+      for key in green { print("    \(checksSeen.contains(key) ? "stays green" : "there is no such check"): \(key)") }
+      return green.isEmpty ? 0 : 1
+    }
 
     // A line nobody meets any more protects nothing and hides a slip of the pen.
     let unmet = options.only.isEmpty ? known.keys.filter { !checksSeen.contains($0) }.sorted() : []

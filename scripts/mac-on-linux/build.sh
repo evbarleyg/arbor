@@ -4,6 +4,7 @@
 #   scripts/mac-on-linux/build.sh --only TEXT     the stories whose names contain TEXT   (every other argument goes to the program too: --help)
 #   scripts/mac-on-linux/build.sh --self-test     does the net hold? each change in mutants.py is made to the copy, and its stories must go red
 #   scripts/mac-on-linux/build.sh --build-only
+#   REF=origin/fix/some-cure scripts/mac-on-linux/build.sh …   that commit's Sources, with this checkout's stand-ins, scripts and stories
 # Exit code 0 when it builds and everything is as expected.
 #
 # It calls the compiler itself, as scripts/typecheck-mac/check.sh does, whose stand-ins and prepare.py it uses: Package.swift knows nothing of
@@ -13,6 +14,17 @@ here=$(cd "$(dirname "$0")" && pwd)
 root=$(cd "$here/../.." && pwd)
 typecheck="$root/scripts/typecheck-mac"
 work="$root/.build/mac-on-linux"
+sources="$root/Sources"
+if [ -n "${REF:-}" ]; then
+  # A work folder of its own, so that going to and fro between two commits compiles nothing twice.
+  work="$root/.build/mac-on-linux-$(git -C "$root" rev-parse --short "$REF")" || exit 2
+  # Not the module cache, which knows where it lives.
+  if [ ! -d "$work" ] && [ -d "$root/.build/mac-on-linux" ]; then cp -R "$root/.build/mac-on-linux" "$work" && rm -rf "$work/module-cache"; fi
+  rm -rf "$work/checkout"
+  mkdir -p "$work/checkout"
+  git -C "$root" archive "$REF" Sources | tar -x -C "$work/checkout" || { echo "no such commit: $REF"; exit 2; }
+  sources="$work/checkout/Sources"
+fi
 if [ "$(uname)" = Darwin ]; then echo "On a Mac the real thing runs: make e2e."; exit 2; fi
 
 # The stand-ins the layer needs, each after the ones it imports. Here they are compiled for real, not only read for what they declare.
@@ -77,9 +89,9 @@ copy_sources() {
   rm -rf staging
   mkdir -p staging/ArborKit/App
   for target in $libraries; do
-    [ "$target" = ArborKit ] || cp -R "$root/Sources/$target" staging/
+    [ "$target" = ArborKit ] || cp -R "$sources/$target" staging/
   done
-  for part in $kit; do cp -R "$root/Sources/ArborKit/$part" "staging/ArborKit/$part"; done
+  for part in $kit; do cp -R "$sources/ArborKit/$part" "staging/ArborKit/$part"; done
   "$typecheck/prepare.py" "$work/staging" | sed 's#^#Sources/#'
   [ "${PIPESTATUS[0]}" -eq 0 ] || return 1
   # shellcheck disable=SC2086
@@ -140,13 +152,15 @@ if [ "${1:-}" = --self-test ]; then
   rm -f self-test-failed
   "$here/mutants.py" --list | while IFS=$'\t' read -r -a fields; do
     name=${fields[0]}
+    expected=()
+    for check in "${fields[@]:1}"; do expected+=(--expect-red "$check"); done
     take_over
     if ! "$here/mutants.py" --apply "$name" "$work/src"; then
       echo "✘ $name: the change no longer fits the sources; look at scripts/mac-on-linux/mutants.py"
     elif ! build "$work/mutant"; then
       echo "✘ $name: the changed copy does not build"
-    elif ! "$work/mutant" --quiet --expect-red "${fields[@]:1}"; then
-      echo "✘ $name: no story notices (${fields[*]:1})"
+    elif ! "$work/mutant" --quiet "${expected[@]}"; then
+      echo "✘ $name: not every check that should notice does"
     else
       echo "✔ without the cure the story goes red: $name"
       continue
