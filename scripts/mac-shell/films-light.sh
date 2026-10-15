@@ -11,13 +11,13 @@
 # arrives, how long it takes from the first change on the display to the last, and whether anything is seen on the way that is worse than a frame's delay: a hole, an empty desk,
 # a window over what neither its old frame nor its new one covers. The bar is macOS alone: its own tiling, chosen from the Window menu, of the same windows, with Arbor not running.
 #
-# UNTIL THE SECOND BUILD'S DEFAULTS ARE ON THE TRUNK its switches are written out here (LIGHT): take a key out of LIGHT the day its default lands, so that what is filmed is what ships.
+# Whatever of the second build's defaults the commit under test does not ship yet is written out (`second_build`), and said to be: from the day a default lands the film is of what ships.
 # The keys are asked of Arbor (`bindings`), so the films follow the map in effect.
 ARBOR_TIME_LIMIT=1000
 source "$(dirname "$0")/lib-film.sh"
 needs_throwaway_mac "film the whole display, and change Reduce Motion, the appearance, the wallpaper and the display's size"
 
-LIGHT='{"animationDuration": 0, "focusRing": false, "menuBarControls": false, "dimBehindArranged": 0}'
+second_build
 FACE="ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 ARBOR_PANELS_IN_PICTURES=1"
 
 press() {
