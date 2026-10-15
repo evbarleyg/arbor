@@ -187,7 +187,13 @@ let listener = Thread {
 listener.start()
 
 /// Lets time pass with the main run loop turning, so that AppKit hears of displays that change.
-func rest(_ seconds: Double) { RunLoop.main.run(until: Date().addingTimeInterval(seconds)) }
+/// A run loop with nothing to wait for returns at once, and one that has served something returns early: so it is asked until the time is up.
+func rest(_ seconds: Double) {
+  let deadline = Date().addingTimeInterval(seconds)
+  while Date() < deadline {
+    if !RunLoop.main.run(mode: .default, before: deadline) { usleep(1000) }
+  }
+}
 
 // MARK: Calls
 
