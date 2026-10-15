@@ -16,9 +16,14 @@ A plain random walk, until the generator of the Linux walks writes these words t
 import sys
 
 APPS = ["finder", "safari", "textedit", "terminal", "notes", "calendar", "settings", "preview", "mail"]
-# docs/VIABLE.md, acts_min. A drag where macOS tiles counts within the drags there, and is a kind of its own here.
-MIXTURE = [("switch", 480), ("open-close", 300), ("dock-key", 160), ("drag", 160), ("drag-where-macos-tiles", 80), ("view", 400),
-           ("resize", 80), ("macos-own", 80), ("way-out", 60), ("idle", 40)]
+# How often each kind of thing is chosen. Not docs/VIABLE.md's acts_min itself, but what makes the acts of a whole gate come out above it (gate.py's
+# self-test counts them): a dock, a new window and full screen each begin with a switch of their own, every journey calls its apps up after each quit, what
+# is opened is closed again, and drags and resizes are what a real screen most often has no room for when their turn comes.
+MIXTURE = [("switch", 90), ("tile-click", 22), ("open-close", 195), ("dock-key", 215), ("drag", 245), ("drag-where-macos-tiles", 115), ("view", 470),
+           ("resize", 120), ("macos-own", 62), ("way-out", 55), ("idle", 60)]
+
+
+IDLES = 4
 
 
 class Dice:
@@ -48,7 +53,7 @@ class Dice:
 
 
 def walk(seed, acts, two=False):
-    """The lines of a walk of about that many acts. Some words are two acts (a click on the wallpaper and a second one), one is a dozen.
+    """The lines of a walk of about that many acts. Some words are two acts (a click on the wallpaper and a second one), one is half a dozen.
     `two`: with a second display that comes, goes, moves and changes size; the dice are rolled as without it, so the rest of the walk is the same."""
     dice = Dice(seed)
     changes = Dice(f"{seed} displays")
@@ -79,14 +84,21 @@ def walk(seed, acts, two=False):
             continue
         if not restarted and count >= restart_at and not owed:
             restarted = True
-            say("quit_and_start", 12)
+            say("quit_and_start", 6)
             continue
         kind = dice.weighted(MIXTURE)
+        # Half a minute each: by chance a walk would have eight, and take longer than a run may.
+        if kind == "idle" and lines.count("idle_act") >= IDLES:
+            continue
         app, other = dice.pick(APPS), dice.pick(APPS)
         if kind == "switch":
             say(dice.weighted([(f"switch_dock {app}", 4), (f"switch_click {app}", 4), (f"switch_cmdtab {1 + dice.roll(3)}", 3),
-                               ("switch_backtick", 1), (f"tile_click {1 + dice.roll(2)}", 1), (f"focus_key {dice.pick(['left', 'right', 'up', 'down'])}", 2),
+                               ("switch_backtick", 1), (f"focus_key {dice.pick(['left', 'right', 'up', 'down'])}", 2),
                                (f"switch_menu {dice.pick(['safari', 'finder', 'textedit', 'terminal'])}", 1)]))
+        elif kind == "tile-click":
+            # A tile stands only where everything is shown and did not fit.
+            say("view all")
+            say(f"tile_click {1 + dice.roll(2)}")
         elif kind == "open-close":
             what = dice.roll(5)
             if what == 0:
@@ -207,7 +219,7 @@ WORDS = {"switch_dock", "switch_click", "switch_to", "switch_cmdtab", "switch_ba
          "redo", "rotate", "mirror", "pin", "peek", "save_view", "view_n", "resize_edge", "float_all_here", "hold_view", "open_new", "close_new", "minimize", "restore", "hide", "unhide",
          "quit_app", "reopen", "dock_key", "float_key", "drag_onto", "drag_out", "drag_by", "drag_edge", "view", "resize_gap", "resize_key", "full_screen",
          "wallpaper_click", "title_double_click", "pause", "resume", "float_all", "quit_and_start", "idle_act", "display", "send_across"}
-PINNED = ['view all', 'switch_dock calendar', 'minimize']
+PINNED = ['drag_onto mail preview right', 'switch_to mail', 'float_key']
 
 
 def main(arguments):
