@@ -1,0 +1,26 @@
+From 7fe00cb2f69f1a4df80c60e8e943add405781e09 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 11:50:07 +0000
+Subject: [PATCH] test(mac-shell): the probe beside the Dock puts its floating
+ window home before it resumes
+
+---
+ scripts/mac-shell/reality-variants.sh | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/scripts/mac-shell/reality-variants.sh b/scripts/mac-shell/reality-variants.sh
+index 2dcfda0b..dc8bcb1e 100644
+--- a/scripts/mac-shell/reality-variants.sh
++++ b/scripts/mac-shell/reality-variants.sh
+@@ -129,6 +129,8 @@ out_of_view_beside_the_dock() {
+   asked at-the-bottom-alone 300 767
+   asked in-the-middle-a-fifth-time 300 200
+   asked a-point-inside-the-visible-frame-at-the-right 973 767
++  # Home again: it floats, and Arbor leaves a floating window where it finds it, at a resume and at a quit.
++  asked in-the-middle-at-the-end 300 200
+   ctl resume
+   arbor_stop
+ }
+-- 
+2.43.0
+

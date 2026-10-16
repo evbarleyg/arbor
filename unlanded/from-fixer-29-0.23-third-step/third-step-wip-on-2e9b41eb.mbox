@@ -1,0 +1,628 @@
+From 1e54d52ffd82922ff3a1e2aeae022f4e397a685b Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 15:56:21 +0000
+Subject: [PATCH] wip: at a display's return no floating window is fetched
+ (board 0.23, the third step): the product, nine new tests, seventeen of
+ thirty-five stories turned and not all run yet
+
+---
+ .../Controller/Controller+Displays.swift      |  56 +++++-
+ .../AtADisplaysReturnTests.swift              | 178 ++++++++++++++++++
+ .../BehaviourSwitchScenarioTests.swift        |   4 +-
+ Tests/ArborKitTests/DisplayTests.swift        |  42 +++--
+ .../DisplaysComeAndGoTests.swift              |  18 +-
+ Tests/ArborKitTests/MovedDisplayTests.swift   |  23 ++-
+ Tests/ArborKitTests/RescuedWindowTests.swift  |   2 +
+ Tests/ArborKitTests/UndoTests.swift           |   3 +
+ Tests/ArborKitTests/UndockedFrameTests.swift  |   2 +
+ 9 files changed, 291 insertions(+), 37 deletions(-)
+ create mode 100644 Tests/ArborKitTests/AtADisplaysReturnTests.swift
+
+diff --git a/Sources/ArborKit/Controller/Controller+Displays.swift b/Sources/ArborKit/Controller/Controller+Displays.swift
+index 13a9e260..b9fb4f61 100644
+--- a/Sources/ArborKit/Controller/Controller+Displays.swift
++++ b/Sources/ArborKit/Controller/Controller+Displays.swift
+@@ -482,11 +482,12 @@ extension Controller {
+   static let asGoodAsBack: CGFloat = 4
+ 
+   /// Brings back the arrangement `displayID` had when it went away. Windows
+-  /// that are still open and not docked anywhere else return to their slots
+-  /// (floating ones to their frames); the rest are dropped from the restored
++  /// that are still open and not docked anywhere else return to their slots; the rest are dropped from the restored
+   /// tree, which moves the camera, history and saved views to the nodes that
+-  /// remain. Returns the windows that came back. `movedByMacOS`: the windows macOS has moved with this change of displays.
+-  func restoreDormantWorkspace(of displayID: DisplayID, movedByMacOS: Set<WindowID> = []) -> [WindowID] {
++  /// remain. A floating window in view is not fetched (`isLeftToMacOSAtAReturn`); the others return to their frames.
++  /// Returns the windows that came back. `movedByMacOS`: the windows macOS has moved with this change of displays. `atAStart`: which floating
++  /// windows are left where they were found has been decided by then (`forgetWhatFloatsInView`), and what is still remembered is to go home.
++  func restoreDormantWorkspace(of displayID: DisplayID, movedByMacOS: Set<WindowID> = [], atAStart: Bool = false) -> [WindowID] {
+     guard let entry = dormant.removeValue(forKey: displayID) else { return [] }
+     let arrived = workspaces[displayID] ?? Workspace()
+     guard arrived.tree.allWindows.isEmpty else {
+@@ -516,7 +517,20 @@ extension Controller {
+       if pendingSlots.contains(window) {
+         continue  // still waiting for its window, now on this display
+       } else if isManaged(window) && !dockedElsewhere && !neededElsewhere {
+-        returning.append(window)
++        if !atAStart, fillsAgain(window, in: restored) {
++          // Its mark and its own place sleep here. Its own size is what it has had on record since: it may have been filled and given back meanwhile.
++          // (Not if that record is the fill's frame: then the window spoke of this very move before macOS's list was new, and it was booked.)
++          if let own = workspaceID(containing: window).flatMap({ workspaces[$0]!.floating[window] }),
++            restored.filled?[window].map({ own.approximatelyEquals($0, tolerance: 0.99) }) != true
++          {
++            restored.floating[window]?.size = own.size
++          }
++          for id in workspaces.keys.sorted() { workspaces[id]!.floating[window] = nil }
++        } else if !atAStart, isLeftToMacOSAtAReturn(window, in: restored) {
++          restored.forget(window, shareSpace: settings.shareRemovedSpace)
++        } else {
++          returning.append(window)
++        }
+       } else {
+         restored.forget(window, shareSpace: settings.shareRemovedSpace)
+       }
+@@ -551,6 +565,36 @@ extension Controller {
+     return returning
+   }
+ 
++  /// At a display's return Arbor fetches no floating window (board 0.23, the third step): where macOS puts it, it is, and where macOS leaves it on the display
++  /// that stayed, it stays (`takeFloatingWindowsFromWhereTheyAre`, later in the same pass). On hosted Macs the fetching was a frame that changed
++  /// nothing, macOS having the window there already, or a frame against macOS: a display came back smaller, macOS put the window wholly on
++  /// it, and Arbor fetched it to a place remembered for the larger one, 176 points over the edge.
++  ///
++  /// What stays Arbor's: docked windows, windows kept in view, summoned or stashed, what Arbor has out of view just now, whose place is a corner it was
++  /// sent to, what nobody could get hold of, what is still as Arbor fitted it, which is given back, one that is in the Dock, hidden or on another
++  /// Space, and everything where floating windows make way.
++  private func isLeftToMacOSAtAReturn(_ window: WindowID, in sleeping: Workspace) -> Bool {
++    guard !settings.floatingWindowsMakeWay, sleeping.isFloating(window), sleeping.role(of: window) == nil, role(of: window) == nil,
++      !parked.contains(window), let current = windows[window], current.isPresent, titleBarIsWithinReach(current.frame),
++      let own = workspaceID(containing: window).flatMap({ workspaces[$0]!.floating[window] })
++    else { return false }
++    // The fill ended with its display, for good.
++    if sleeping.isFilled(window) { return true }
++    // (One that macOS left on no display when its own went, and that Arbor took in, stays too: it lies in view and its person has seen it there. No Mac
++    // was seen to leave a window in sight so. Should one: a note of where Arbor placed it, which counts while it lies there, and it goes home.)
++    return !isAsArborFittedIt(window, at: current.frame, whoseOwnSizeIs: own.size)
++  }
++
++  /// A window that filled the display that went: the fill ended with its display. macOS brings a window back to the frame it last had on a display, and that
++  /// frame is the fill's. Taken for the window's own it would cost it its own size for good. Found to the point where the fill had left it, it
++  /// fills again: the mark is back, its own frame is the one on record, and nothing moves.
++  private func fillsAgain(_ window: WindowID, in sleeping: Workspace) -> Bool {
++    guard !settings.floatingWindowsMakeWay, sleeping.isFilled(window), let filled = sleeping.filled?[window], !parked.contains(window),
++      let current = windows[window], current.isPresent
++    else { return false }
++    return current.frame.approximatelyEquals(filled, tolerance: 0.99)
++  }
++
+   /// Sends windows that changed workspace because of a display change where
+   /// that workspace wants them. Docked windows are left to the next relayout,
+   /// which puts them in their slots or parks them. Floating windows go onto
+@@ -721,7 +765,7 @@ extension Controller {
+       forgetWhatFloatsInView(inTheArrangementRememberedFor: id)
+       // What is let be has its own display back all the same: whatever it visited since has no claim on it either.
+       for window in remembered.subtracting(dormant[id]!.workspace.floating.keys).sorted() { endStays(of: window, begunAfter: since) }
+-      returning += restoreDormantWorkspace(of: id)
++      returning += restoreDormantWorkspace(of: id, atAStart: true)
+     }
+     placeArrivingWindows(returning)
+   }
+diff --git a/Tests/ArborKitTests/AtADisplaysReturnTests.swift b/Tests/ArborKitTests/AtADisplaysReturnTests.swift
+new file mode 100644
+index 00000000..38bdfea5
+--- /dev/null
++++ b/Tests/ArborKitTests/AtADisplaysReturnTests.swift
+@@ -0,0 +1,178 @@
++import ArborCore
++import ArborKit
++import ArborTesting
++import CoreGraphics
++import Foundation
++import Testing
++
++/// At a display's return Arbor fetches no floating window (board 0.23, the third step): where macOS puts it, it is, and where macOS leaves it on the display that
++/// stayed, it stays. That is the Mac alone, and the bar. On hosted Macs the fetching was either a frame that changed nothing, because macOS had
++/// the window there already, or a frame against macOS; and the one time the two differed it made things worse.
++/// `MacOSsAtAChangeOfDisplaysTests` has the ground: what macOS does to a floating window at a change of displays is macOS's.
++@Suite @MainActor struct AtADisplaysReturnTests {
++  static let main = MacOSsAtAChangeOfDisplaysTests.main
++  static let side = MacOSsAtAChangeOfDisplaysTests.side
++  /// The same display at another resolution.
++  static let smaller = DisplaySnapshot(
++    id: side.id, frame: CGRect(x: 1600, y: 0, width: 1280, height: 800), visibleFrame: CGRect(x: 1600, y: 31, width: 1280, height: 769), isMain: false)
++  static let there = CGRect(x: 2056, y: 208, width: 1000, height: 600)
++  static let home = CGRect(x: 300, y: 165, width: 1000, height: 600)
++
++  /// Notes lives on the second display, an editor on the main one. Nothing is docked.
++  func desk() -> (h: Harness, notes: WindowID, editor: WindowID) {
++    let h = Harness(displays: [Self.main, Self.side], settings: Settings())
++    let notes = h.system.open(app: "Notes", pid: 11, frame: Self.there)
++    let editor = h.system.open(app: "TextEdit", pid: 12, frame: CGRect(x: 100, y: 65, width: 500, height: 400))
++    h.start()
++    h.scheduler.advance(by: 40)
++    return (h, notes, editor)
++  }
++
++  /// The displays become `displays`, as a Mac does it. The editor is nudged. Whoever is named first speaks before macOS's list is new.
++  func change(_ h: Harness, to displays: [DisplaySnapshot], _ notes: WindowID, at frame: CGRect?, _ editor: WindowID, notesSpeaksFirst: Bool = false) {
++    let nudge = (editor, h.frame(editor)!.offsetBy(dx: 0, dy: 12))
++    let moving = frame.map { notesSpeaksFirst ? [(notes, $0), nudge] : [nudge, (notes, $0)] } ?? [nudge]
++    h.system.changeDisplaysAsAMacDoes(displays, moving: moving)
++    h.scheduler.advance(by: 5)
++  }
++
++  func place(of window: WindowID, _ h: Harness) -> [DisplayID: CGRect] { h.controller.workspaces.compactMapValues { $0.floating[window] } }
++  func framesSet(to window: WindowID, _ h: Harness) -> [CGRect] { h.system.frameLog.filter { $0.window == window }.map(\.frame) }
++
++  /// As it was recorded. The display goes and macOS takes the window home. It comes back SMALLER, and macOS by itself puts the window wholly on it, with Arbor running and
++  /// without. Arbor then fetched it to the place it remembered, a place on the larger display: 176 points over the right edge, where there is no
++  /// display, 82 % of its width showing where macOS had left all of it.
++  @Test(arguments: [false, true]) func itComesBackSmallerAndMacOSPutsTheWindowWhollyOnIt(notesSpeaksFirst: Bool) {
++    let (h, notes, editor) = desk()
++    change(h, to: [Self.main], notes, at: Self.home, editor)
++    h.scheduler.advance(by: 20)
++    h.system.clearFrameLog()
++    let macOSs = CGRect(x: 1740, y: 115, width: 1000, height: 600)
++    change(h, to: [Self.main, Self.smaller], notes, at: macOSs, editor, notesSpeaksFirst: notesSpeaksFirst)
++    #expect(h.system.frameLog.isEmpty, "\(h.system.frameLog)")
++    #expect(h.frame(notes) == macOSs)
++    #expect(place(of: notes, h) == [Self.side.id: macOSs])
++  }
++
++  /// It comes back as it was, and macOS has the window at its old place already. Arbor used to send a call after it that moved nothing.
++  @Test func whereMacOSHasItThereAlreadyNothingIsAsked() {
++    let (h, notes, editor) = desk()
++    for round in 1...3 {
++      change(h, to: [Self.main], notes, at: Self.home, editor)
++      h.system.clearFrameLog()
++      change(h, to: [Self.main, Self.side], notes, at: Self.there, editor)
++      #expect(h.system.frameLog.isEmpty, "round \(round): \(h.system.frameLog)")
++      #expect(place(of: notes, h) == [Self.side.id: Self.there])
++    }
++  }
++
++  /// macOS leaves it on the display that stayed. It stays.
++  @Test func whereMacOSLeavesItOnTheDisplayThatStayedItStays() {
++    let (h, notes, editor) = desk()
++    change(h, to: [Self.main], notes, at: Self.home, editor)
++    h.scheduler.advance(by: 20)
++    h.system.clearFrameLog()
++    change(h, to: [Self.main, Self.side], notes, at: nil, editor)
++    #expect(h.system.frameLog.isEmpty, "\(h.system.frameLog)")
++    #expect(h.frame(notes) == Self.home)
++    #expect(place(of: notes, h) == [Self.main.id: Self.home])
++    // Nor later, at a change that has nothing to do with it.
++    change(h, to: [Self.main], notes, at: nil, editor)
++    change(h, to: [Self.main, Self.side], notes, at: nil, editor)
++    #expect(framesSet(to: notes, h).isEmpty)
++    #expect(h.frame(notes) == Self.home)
++  }
++
++  // MARK: It filled the display that went
++
++  /// Notes fills the second display. That display goes, macOS brings the window over, and it has its own size on the laptop: the fill ended with its display.
++  func filledAndGone() -> (h: Harness, notes: WindowID, editor: WindowID, fills: CGRect, onTheLaptop: CGRect) {
++    let (h, notes, editor) = desk()
++    h.system.cursor = CGPoint(x: 2300, y: 400)
++    h.system.userFocus(notes)
++    h.scheduler.advance(by: 2)
++    h.run("zoom")
++    h.scheduler.advance(by: 3)
++    #expect(h.controller.isFilled(notes), "the situation")
++    let fills = h.frame(notes)!
++    change(h, to: [Self.main], notes, at: CGRect(x: 0, y: 31, width: 1600, height: 791), editor)
++    h.scheduler.advance(by: 20)
++    #expect(h.frame(notes)?.size == Self.there.size && !h.controller.isFilled(notes), "the situation: \(h.frame(notes)!)")
++    h.system.clearFrameLog()
++    return (h, notes, editor, fills, h.frame(notes)!)
++  }
++
++  /// macOS leaves it on the laptop: it stays, at its own size, and nothing happens.
++  @Test func havingFilledWhatWentItStaysWhereMacOSLeavesIt() {
++    let (h, notes, editor, _, onTheLaptop) = filledAndGone()
++    change(h, to: [Self.main, Self.side], notes, at: nil, editor)
++    #expect(h.system.frameLog.isEmpty, "\(h.system.frameLog)")
++    #expect(h.frame(notes) == onTheLaptop && !h.controller.isFilled(notes))
++    #expect(place(of: notes, h) == [Self.main.id: onTheLaptop])
++  }
++
++  /// macOS brings a window back to the frame it last had on a display, and that frame is the fill's. It fills again: nothing moves, and the key gives it its own frame.
++  /// Taken for its own, the fill's size would have cost it its own for good.
++  @Test(arguments: [false, true]) func broughtBackToWhereTheFillHadLeftItItFillsAgain(notesSpeaksFirst: Bool) {
++    let (h, notes, editor, fills, _) = filledAndGone()
++    change(h, to: [Self.main, Self.side], notes, at: fills, editor, notesSpeaksFirst: notesSpeaksFirst)
++    #expect(h.system.frameLog.isEmpty, "\(h.system.frameLog)")
++    #expect(h.frame(notes) == fills && h.controller.isFilled(notes))
++    #expect(place(of: notes, h) == [Self.side.id: Self.there])
++    h.system.userFocus(notes)
++    h.run("zoom")
++    h.scheduler.advance(by: 3)
++    #expect(h.frame(notes) == Self.there && !h.controller.isFilled(notes))
++  }
++
++  /// Anywhere else it is macOS's, like any other.
++  @Test func broughtBackElsewhereItIsMacOSs() {
++    let (h, notes, editor, _, _) = filledAndGone()
++    let macOSs = CGRect(x: 1900, y: 150, width: 1000, height: 600)
++    change(h, to: [Self.main, Self.side], notes, at: macOSs, editor)
++    #expect(h.system.frameLog.isEmpty, "\(h.system.frameLog)")
++    #expect(h.frame(notes) == macOSs && !h.controller.isFilled(notes))
++    #expect(place(of: notes, h) == [Self.side.id: macOSs])
++  }
++
++  // MARK: What stays Arbor's
++
++  /// A docked window goes back to its slot with its display's arrangement.
++  @Test func aDockedWindowGoesHome() {
++    let (h, notes, editor) = desk()
++    h.system.cursor = CGPoint(x: 2300, y: 400)
++    h.run("dock \(notes.rawValue) left")
++    h.scheduler.advance(by: 3)
++    let slot = h.frame(notes)!
++    change(h, to: [Self.main], notes, at: Self.home, editor)
++    h.scheduler.advance(by: 20)
++    change(h, to: [Self.main, Self.side], notes, at: nil, editor)
++    #expect(h.frame(notes) == slot)
++    #expect(h.controller.workspaces[Self.side.id]?.isDocked(notes) == true)
++  }
++
++  /// A window kept in view goes home as before.
++  @Test func aWindowKeptInViewGoesHome() {
++    let (h, notes, editor) = desk()
++    h.run("pin \(notes.rawValue)")
++    h.scheduler.advance(by: 3)
++    change(h, to: [Self.main], notes, at: Self.home, editor)
++    h.scheduler.advance(by: 20)
++    change(h, to: [Self.main, Self.side], notes, at: nil, editor)
++    #expect(place(of: notes, h).keys.sorted() == [Self.side.id])
++    #expect(h.frame(notes) == Self.there)
++  }
++
++  /// Where floating windows make way the layout places them, as ever.
++  @Test func whereFloatingWindowsMakeWayItGoesHome() {
++    let h = Harness(displays: [Self.main, Self.side], settings: .makingWay)
++    let notes = h.system.open(app: "Notes", pid: 11, frame: Self.there)
++    let editor = h.system.open(app: "TextEdit", pid: 12, frame: CGRect(x: 100, y: 65, width: 500, height: 400))
++    h.start()
++    h.scheduler.advance(by: 40)
++    change(h, to: [Self.main], notes, at: Self.home, editor)
++    h.scheduler.advance(by: 20)
++    change(h, to: [Self.main, Self.side], notes, at: nil, editor)
++    #expect(place(of: notes, h).keys.sorted() == [Self.side.id])
++  }
++}
+diff --git a/Tests/ArborKitTests/BehaviourSwitchScenarioTests.swift b/Tests/ArborKitTests/BehaviourSwitchScenarioTests.swift
+index 49da7cef..87f1be78 100644
+--- a/Tests/ArborKitTests/BehaviourSwitchScenarioTests.swift
++++ b/Tests/ArborKitTests/BehaviourSwitchScenarioTests.swift
+@@ -678,10 +678,12 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
+     #expect(h.frame(b)!.size == before[b]!.size)
+     #expect(h.frame(c)!.size == CGSize(width: 520, height: 420), "the size the user gave it, now that there is room")
+     #expect(h.system.isVisible(b) && h.system.isVisible(c))
++    let waits = h.frame(c)!
+     h.system.setDisplays([main, side])
+     h.system.cursor = CGPoint(x: 2000, y: 400)
+     h.run("show-all")
+-    #expect(frames(h) == before)
++    #expect(frames(h).filter { $0.key != c } == before.filter { $0.key != c }, "what is docked goes home with its arrangement")
++    #expect(h.frame(c) == waits, "a floating window in view is not fetched (board 0.23)")
+   }
+ 
+   @Test func aWindowHiddenWhileItsDisplayComesAndGoesKeepsItsSize() {
+diff --git a/Tests/ArborKitTests/DisplayTests.swift b/Tests/ArborKitTests/DisplayTests.swift
+index ad1acaa2..14e2703e 100644
+--- a/Tests/ArborKitTests/DisplayTests.swift
++++ b/Tests/ArborKitTests/DisplayTests.swift
+@@ -101,7 +101,8 @@ private func reopen(_ old: Harness, in new: Harness) {
+     expectWindowsMatchLayout(h, on: main.id)
+   }
+ 
+-  @Test func floatingWindowsGoBackToWhereTheyFloated() {
++  /// At a display's return no floating window is fetched (board 0.23, the third step; `AtADisplaysReturnTests`). Here macOS leaves it on the display that stayed.
++  @Test func aFloatingWindowStaysWhereItIsWhenItsDisplayComesBack() {
+     let (h, _, _, _) = makeHarness()
+     let spot = CGRect(x: 1900, y: 100, width: 300, height: 200)
+     let d = h.system.open(app: "Terminal", frame: spot)
+@@ -110,11 +111,14 @@ private func reopen(_ old: Harness, in new: Harness) {
+     h.system.setDisplays([main])
+     #expect(h.workspace.isFloating(d))
+     #expect(main.visibleFrame.contains(h.frame(d)!))
++    let meanwhile = h.frame(d)!
+ 
++    h.system.clearFrameLog()
+     h.system.setDisplays([main, side])
+-    #expect(sideWorkspace(h)!.floating[d] == spot)
+-    #expect(h.workspace.floating[d] == nil)
+-    #expect(h.frame(d) == spot)
++    #expect(!h.system.frameLog.contains { $0.window == d })
++    #expect(h.workspace.floating[d] == meanwhile)
++    #expect(sideWorkspace(h)!.floating[d] == nil)
++    #expect(h.frame(d) == meanwhile)
+   }
+ 
+   // MARK: The window being typed in stays in view
+@@ -268,7 +272,7 @@ private func reopen(_ old: Harness, in new: Harness) {
+     }
+   }
+ 
+-  @Test func aFloatingWindowThatMacOSMovedBeforeTheUnplugWasReportedStillGoesBack() {
++  @Test func aFloatingWindowThatMacOSMovedBeforeTheUnplugWasReportedIsNotTakenForItsUsersDoing() {
+     let (h, _, _, _) = makeHarness()
+     let spot = CGRect(x: 1900, y: 100, width: 300, height: 200)
+     let d = h.system.open(app: "Terminal", frame: spot)
+@@ -278,11 +282,13 @@ private func reopen(_ old: Harness, in new: Harness) {
+     h.system.setDisplays([main])
+     #expect(h.workspace.isFloating(d))
+     #expect(main.visibleFrame.contains(h.frame(d)!))
++    let macOSs = h.frame(d)!
+ 
++    // Where macOS leaves it when the display is back, it stays.
+     h.system.setDisplays([main, side])
+-    #expect(sideWorkspace(h)!.floating[d] == spot)
+-    #expect(h.workspace.floating[d] == nil)
+-    #expect(h.frame(d) == spot)
++    #expect(h.workspace.floating[d] == macOSs)
++    #expect(sideWorkspace(h)!.floating[d] == nil)
++    #expect(h.frame(d) == macOSs)
+   }
+ 
+   @Test func dockedWindowsThatMacOSMovedAreNotPutBackOnADisplayThatIsGone() {
+@@ -301,7 +307,7 @@ private func reopen(_ old: Harness, in new: Harness) {
+     for (window, slot) in slots { #expect(h.frame(window) == slot) }
+   }
+ 
+-  @Test func aFloatingWindowThatMacOSMovedBackBeforeTheDisplayWasReportedIsWhereItFloated() {
++  @Test func aFloatingWindowThatMacOSMovedBackBeforeTheDisplayWasReportedIsWhereMacOSPutIt() {
+     let (h, _, _, _) = makeHarness()
+     let spot = CGRect(x: 1900, y: 100, width: 300, height: 200)
+     let d = h.system.open(app: "Terminal", frame: spot)
+@@ -312,10 +318,12 @@ private func reopen(_ old: Harness, in new: Harness) {
+     h.system.displayList = [main, side]
+     h.system.userMove(d, to: spot.offsetBy(dx: -20, dy: 30))
+     #expect(h.workspace.floating[d] == meanwhile)
++    h.system.clearFrameLog()
+     h.system.setDisplays([main, side])
+-    #expect(sideWorkspace(h)!.floating[d] == spot)
++    #expect(!h.system.frameLog.contains { $0.window == d }, "no second move for some points")
++    #expect(sideWorkspace(h)!.floating[d] == spot.offsetBy(dx: -20, dy: 30))
+     #expect(h.workspace.floating[d] == nil)
+-    #expect(h.frame(d) == spot)
++    #expect(h.frame(d) == spot.offsetBy(dx: -20, dy: 30))
+   }
+ 
+   // MARK: A display that only blinked
+@@ -546,7 +554,9 @@ private func reopen(_ old: Harness, in new: Harness) {
+     #expect(sideWorkspace(h)!.floating[d] == chosen)
+   }
+ 
+-  @Test func returningFloatingWindowsStayOutOfViewWhileTheirDesktopIs() {
++  /// It was out of view on the display that went and came into view on the one that stayed. Its person has it before them there: it is not
++  /// fetched, least of all out of view.
++  @Test func whatCameIntoViewOnTheDisplayThatStayedIsNotSentOutOfViewAgain() {
+     let (h, a, _, _) = makeHarness()
+     let spot = CGRect(x: 1900, y: 100, width: 300, height: 200)
+     let d = h.system.open(app: "Terminal", frame: spot)
+@@ -555,12 +565,12 @@ private func reopen(_ old: Harness, in new: Harness) {
+ 
+     h.system.setDisplays([main])
+     #expect(h.system.isVisible(d), "the main display's Desktop is in view")
++    let meanwhile = h.frame(d)!
+ 
+     h.system.setDisplays([main, side])
+-    #expect(!h.system.isVisible(d), "the side display is still zoomed in on a")
+-    #expect(h.controller.parked.contains(d))
+-    h.run("show-all")
+-    #expect(h.frame(d) == spot)
++    #expect(h.system.isVisible(d) && !h.controller.parked.contains(d))
++    #expect(h.frame(d) == meanwhile)
++    #expect(h.workspace.floating[d] == meanwhile)
+   }
+ 
+   @Test(arguments: [false, true]) func evacuatedWindowsStayOutOfViewWhileTheMainDesktopIs(makingWay: Bool) {
+diff --git a/Tests/ArborKitTests/DisplaysComeAndGoTests.swift b/Tests/ArborKitTests/DisplaysComeAndGoTests.swift
+index be8c9343..2af36d4f 100644
+--- a/Tests/ArborKitTests/DisplaysComeAndGoTests.swift
++++ b/Tests/ArborKitTests/DisplaysComeAndGoTests.swift
+@@ -124,11 +124,14 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
+ 
+   private func thereAndBack(by way: String, order: ChaosAction.WindowsFollow, at desk: Desk) {
+     let runner = play(["\(desk.both) windows-never"] + desk.windows + ["launch", "settle"])
++    // The same with no Arbor running: the Mac alone, which is the bar (board 0.23).
++    let alone = play(["\(desk.both) windows-never"] + desk.windows + ["settle"])
+     let began = frames(runner)
+     let home = began.mapValues { display(showing: $0, in: runner)! }
+     for state in way.split(separator: " ").map(String.init) + ["both"] {
+       let mark = runner.system.frameLog.count
+       play(["\(desk.line(state)) windows-\(order.rawValue)"] + moment, in: runner)
++      play(["\(desk.line(state)) windows-\(order.rawValue)"] + moment, in: alone)
+       let connected = Set(runner.system.displayList.map(\.id))
+       // What ARBOR did. While a window's own display is away it has to be somewhere; while it is there, nowhere else.
+       for (window, frame) in runner.system.frameLog[mark...] where connected.contains(home[window]!) {
+@@ -139,16 +142,13 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
+       // Nothing is docked and no view is framed: nothing is out of view, ever.
+       if !connected.isEmpty { #expect(runner.controller.parked.isEmpty, "\(desk.testDescription), at \(state)") }
+     }
+-    // There and back is nothing, to the point. Where the windows speak first, where exactly is another story (macOS fits what it
+-    // moves, and that passes for somebody's doing); which display is not.
++    // At a display's return Arbor fetches no floating window: where macOS puts it, it is, and where macOS leaves it, it stays. (The lab's macOS brings
++    // nothing back to a display that returns. A hosted Mac's does: `whereMacOSPutsWindowsBackItselfArborMovesNothing`.) Whoever speaks first.
++    let macOSs = frames(alone)
+     for (window, frame) in frames(runner).sorted(by: { $0.key < $1.key }) {
+-      if order != .first {
+-        #expect(frame == began[window], "\(desk.testDescription): \(window) began at \(began[window]!)")
+-      } else {
+-        #expect(
+-          display(showing: frame, in: runner) == home[window]!,
+-          "\(desk.testDescription): \(window), which began on \(home[window]!), ends on another display, at \(frame)")
+-      }
++      #expect(
++        frame == macOSs[window],
++        "\(desk.testDescription): \(window), which began at \(began[window]!), ends on another display or place, at \(frame); with no Arbor running at \(macOSs[window]!)")
+     }
+     #expect(runner.controller.dormant.isEmpty, "\(desk.testDescription): both displays are here, so nothing is remembered for later")
+   }
+diff --git a/Tests/ArborKitTests/MovedDisplayTests.swift b/Tests/ArborKitTests/MovedDisplayTests.swift
+index 50458de3..97f661d5 100644
+--- a/Tests/ArborKitTests/MovedDisplayTests.swift
++++ b/Tests/ArborKitTests/MovedDisplayTests.swift
+@@ -200,16 +200,16 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
+     // Where it was left on the display, not in the world. But wholly in view: that it hung over the edge by its user's own hand is
+     // known only until the displays change (`noteWhereItsUserLeftIt`), and where in doubt a window is brought in. The fault
+     // this test is about was a strip of 32 points.
+-    // As Arbor ships it is brought in only if less than half of it would show (Q20), and seven tenths of this one do: exactly
+-    // where it was left on the display.
++    // As Arbor ships no floating window in view is fetched at a return (board 0.23): where macOS has left it, on the laptop, it stays, whole.
+     let back = moved(desk, to: CGPoint(x: 1728, y: -323), isMain: false)
+     let there = left.offsetBy(dx: 1728, dy: -323)
+-    #expect(h.frame(n) == (makingWay ? there.fitted(into: back.visibleFrame) : there))
++    #expect(h.frame(n) == (makingWay ? there.fitted(into: back.visibleFrame) : CGRect(x: 1028, y: 617, width: 700, height: 500)))
+     #expect(there.fractionInside(back.frame) >= 0.5)
+-    #expect(h.frame(n)?.minX == left.minX + 1728)
++    if makingWay { #expect(h.frame(n)?.minX == left.minX + 1728) }
+   }
+ 
+   /// Three windows without any overhang came back shoved against the display's left and bottom edges.
++  /// (Windows kept in view: a plain floating window in view is not fetched at a return, board 0.23; what still goes home lands by the same reckoning.)
+   @Test func windowsInFullViewComeBackWhereTheyWereOnTheDisplayNotInTheWorld() {
+     let desk = moved(studio, to: .zero, isMain: true)
+     let h = Harness(displays: [desk])
+@@ -219,6 +219,8 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
+     ]
+     let windows = spots.map { h.system.open(app: "Notes", frame: $0) }
+     h.start()
++    for window in windows { #expect(h.run("pin \(window.rawValue)").ok) }
++    h.scheduler.advance(by: 3)
+     h.system.setDisplays([laptop])
+     h.scheduler.advance(by: 3)
+     h.system.setDisplays([laptop, moved(studio, to: CGPoint(x: 1440, y: -323), isMain: false)])
+@@ -312,7 +314,9 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
+     #expect(h.controller.dormant[studio.id]?.origin == .zero)
+     h.system.setDisplays([laptop, studio])
+     h.scheduler.advance(by: 1)
+-    #expect(h.frame(n) == Self.spot)
++    // Found in view on the laptop, it is not fetched (board 0.23). `aDisplayThatReturnsElsewhereHasItsWindowsWhereTheyWereOnIt` has the reckoning.
++    #expect(h.frame(n) == CGRect(x: 300, y: 300, width: 700, height: 400))
++    #expect(h.controller.dormant[studio.id] == nil)
+   }
+ 
+   /// A tester's day: the laptop's scaling goes to More Space with the big display attached, whose corner goes from
+@@ -671,10 +675,13 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
+   }
+ 
+   /// Unplugged on one side of the laptop, plugged in again on another (or the same).
++  /// (Windows kept in view: a plain floating window in view is not fetched at a return, board 0.23; what still goes home lands by the same reckoning.)
+   @Test(arguments: pairs) private func aDisplayThatReturnsElsewhereHasItsWindowsWhereTheyWereOnIt(left: Side, returns: Side) {
+     let h = Harness(displays: [laptop, moved(studio, to: Self.corner(left), isMain: false)])
+     let windows = Self.places.map { h.system.open(app: "Notes", frame: $0.offsetBy(dx: Self.corner(left).x, dy: Self.corner(left).y)) }
+     h.start()
++    for window in windows { #expect(h.run("pin \(window.rawValue)").ok) }
++    h.scheduler.advance(by: 3)
+     h.system.setDisplays([laptop])
+     h.scheduler.advance(by: 5)
+     h.system.setDisplays([laptop, moved(studio, to: Self.corner(returns), isMain: false)])
+@@ -760,10 +767,12 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
+   }
+ 
+   /// (B) plain: beside a laptop that stays, unplugged and plugged in again at another scaling.
++  /// (Windows kept in view: a plain floating window in view is not fetched at a return, board 0.23; what still goes home lands by the same reckoning.)
+   @Test func aSecondDisplayPluggedInAgainSmallerHasItsWindowsInView() {
+     let h = Harness(displays: [laptop, studio])
+     let mail = h.system.open(app: "Mail", frame: CGRect(x: 1440 + 1890, y: 1050, width: 500, height: 300))
+     h.start()
++    #expect(h.run("pin \(mail.rawValue)").ok)
+     h.system.setDisplays([laptop])
+     h.scheduler.advance(by: 5)
+     let smaller = display("studio", 1440, 0, 1920, 1080)
+@@ -772,11 +781,13 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
+   }
+ 
+   /// As large as it was, nothing is fitted: a strip left on purpose comes back the same strip, wherever the display returns.
++  /// (Windows kept in view: a plain floating window in view is not fetched at a return, board 0.23; what still goes home lands by the same reckoning.)
+   @Test(arguments: Side.allCases) private func aDisplayThatComesBackAsLargeAsItWasKeepsAnOverhang(returns: Side) {
+     let h = Harness(displays: [laptop, studio])
+     let strip = CGRect(x: 1440 + 2500, y: 1300, width: 600, height: 400)
+     let n = h.system.open(app: "Notes", frame: CGRect(x: 2000, y: 500, width: 600, height: 400))
+     h.start()
++    #expect(h.run("pin \(n.rawValue)").ok)
+     h.system.userMove(n, to: strip)
+     h.scheduler.advance(by: 3)
+     #expect(onStudio(h)?.floating[n] == strip, "put there by hand")
+@@ -793,12 +804,14 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
+   }
+ 
+   /// It grew: every place is still on it, and fitting changes none that was in full view.
++  /// (Windows kept in view: a plain floating window in view is not fetched at a return, board 0.23; what still goes home lands by the same reckoning.)
+   @Test func aDisplayThatComesBackLargerKeepsPlacesInFullView() {
+     let small = display("studio", 1440, 0, 1920, 1080)
+     let h = Harness(displays: [laptop, small])
+     let spot = CGRect(x: 1440 + 1200, y: 600, width: 500, height: 300)
+     let n = h.system.open(app: "Notes", frame: spot)
+     h.start()
++    #expect(h.run("pin \(n.rawValue)").ok)
+     h.system.setDisplays([laptop])
+     h.scheduler.advance(by: 5)
+     h.system.setDisplays([laptop, studio])
+diff --git a/Tests/ArborKitTests/RescuedWindowTests.swift b/Tests/ArborKitTests/RescuedWindowTests.swift
+index 73e68831..5686cf41 100644
+--- a/Tests/ArborKitTests/RescuedWindowTests.swift
++++ b/Tests/ArborKitTests/RescuedWindowTests.swift
+@@ -506,6 +506,7 @@ private func rect(_ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloa
+ 
+   /// A strip left by hand on the big display; the display goes, and the window is moved by hand on the laptop meanwhile. The display is back:
+   /// it goes home to its strip (F52). It counts as out of view then, and is not taken for rescued where it is.
++  /// (A window kept in view: a plain floating window in view is not fetched at a return, board 0.23.)
+   @Test func whatGoesHomeWithItsDisplayIsNotTakenForRescued() {
+     let laptop = FakeWindowSystem.standardDisplay
+     let studio = DisplaySnapshot(id: DisplayID("studio"), frame: rect(1440, 0, 2560, 1440), visibleFrame: rect(1440, 25, 2560, 1415), isMain: false)
+@@ -513,6 +514,7 @@ private func rect(_ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloa
+     let strip = rect(1440 + 2500, 1300, 600, 400)
+     let n = h.system.open(app: "Notes", frame: rect(2000, 500, 600, 400))
+     h.start()
++    #expect(h.run("pin \(n.rawValue)").ok)
+     h.system.userMove(n, to: strip)
+     h.scheduler.advance(by: 3)
+     h.system.setDisplays([laptop])
+diff --git a/Tests/ArborKitTests/UndoTests.swift b/Tests/ArborKitTests/UndoTests.swift
+index b5b492cb..b7617763 100644
+--- a/Tests/ArborKitTests/UndoTests.swift
++++ b/Tests/ArborKitTests/UndoTests.swift
+@@ -1859,6 +1859,7 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
+     expectConsistent(h)
+   }
+ 
++  /// (macOS takes it home: Arbor fetches no floating window at a return, board 0.23.)
+   @Test func floatingWindowsThatWentHomeWithAReconnectedDisplayStayThere() {
+     let (h, a, _, s) = makeTwoDisplays()
+     let home = h.frame(s)!
+@@ -1866,6 +1867,8 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
+     #expect(h.workspace.isFloating(s), "waiting on the main display")
+     h.system.cursor = onMain
+     h.run("dock \(a.rawValue) left")
++    h.system.displayList = [main, side]
++    h.system.userMove(s, to: home)
+     h.system.setDisplays([main, side])
+     #expect(h.controller.workspaces[side.id]!.isFloating(s))
+     #expect(h.run("undo").message == "undid dock \(a) left")
+diff --git a/Tests/ArborKitTests/UndockedFrameTests.swift b/Tests/ArborKitTests/UndockedFrameTests.swift
+index b7986592..11aa0533 100644
+--- a/Tests/ArborKitTests/UndockedFrameTests.swift
++++ b/Tests/ArborKitTests/UndockedFrameTests.swift
+@@ -1403,6 +1403,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
+     #expect(h.frame(notes) == frame)
+   }
+ 
++  /// (A window kept in view: a plain floating window in view is not fetched at a return, board 0.23.)
+   @Test func aDisplayThatReturnsDoesNotTakeANarrowerWindowBeyondItsEdge() throws {
+     let left = DisplaySnapshot(
+       id: DisplayID("left"), frame: CGRect(x: -1280, y: 0, width: 1280, height: 800),
+@@ -1412,6 +1413,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
+     let safari = h.system.open(app: "Safari", pid: 2002, frame: CGRect(x: -900, y: 90, width: 800, height: 600))
+     h.start()
+     h.run("dock \(safari.rawValue) right")
++    #expect(h.run("pin \(wide.rawValue)").ok)
+     h.system.setDisplays([main])
+     h.scheduler.advance(by: 2)
+     h.system.setMaximumSize(wide, CGSize(width: 252, height: 206))
+-- 
+2.43.0
+

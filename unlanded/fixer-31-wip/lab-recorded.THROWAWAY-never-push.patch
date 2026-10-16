@@ -1,0 +1,58 @@
+diff --git a/Sources/ArborTesting/Chaos.swift b/Sources/ArborTesting/Chaos.swift
+index bd65603..2c1ff85 100644
+--- a/Sources/ArborTesting/Chaos.swift
++++ b/Sources/ArborTesting/Chaos.swift
+@@ -209,6 +209,8 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
+     case silent
+     /// The windows stay at their old coordinates, which no Mac does; Arbor must cope anyway.
+     case never
++    /// MEASURING ONLY: as recorded: the list is new at once, the windows speak "by hand", Arbor is told after `DisplayChange`'s wait.
++    case recorded
+   }
+ 
+   // MARK: Text form
+diff --git a/Sources/ArborTesting/ChaosRunner.swift b/Sources/ArborTesting/ChaosRunner.swift
+index e510732..3c75714 100644
+--- a/Sources/ArborTesting/ChaosRunner.swift
++++ b/Sources/ArborTesting/ChaosRunner.swift
+@@ -508,6 +508,7 @@ public final class ChaosRunner {
+   /// that fights back never lets that happen, so the rounds are limited.
+   private func settle() {
+     system.letGo()
++    if harness.scheduler.pendingKeys.contains("lab-displays") { harness.scheduler.advance(by: 2.5) }
+     for _ in 0..<8 {
+       system.appsReact()
+       harness.scheduler.runPending()
+@@ -515,6 +516,8 @@ public final class ChaosRunner {
+     }
+   }
+ 
++  var labToldDisplays: [DisplaySnapshot]?
++
+   /// macOS moves every window along with its display, or onto the main display if its own is gone.
+   private func change(displays: [DisplaySnapshot], follow: ChaosAction.WindowsFollow) {
+     displayIDsSeen.formUnion(displays.map(\.id))
+@@ -562,6 +565,23 @@ public final class ChaosRunner {
+     case .silent:
+       for move in moves { system.moveSilently(move.window, to: move.frame) }
+       system.setDisplays(displays)
++    case .recorded:
++      let told = labToldDisplays ?? old
++      system.displayList = displays
++      harness.scheduler.cancel("lab-displays")
++      if let delay = DisplayChange.settleTime(from: told, to: displays) {
++        labToldDisplays = told
++        harness.scheduler.schedule("lab-displays", after: delay + 0.15) { [unowned self] in
++          self.labToldDisplays = nil
++          self.system.setDisplays(self.system.displayList)
++        }
++      } else {
++        labToldDisplays = nil
++      }
++      for move in moves {
++        system.moveSilently(move.window, to: move.frame)
++        system.report(move.window, userInitiated: true)
++      }
+     case .late:
+       for move in moves { system.moveSilently(move.window, to: move.frame) }
+       let mark = system.frameLog.count

@@ -1,0 +1,164 @@
+diff --git a/Sources/ArborKit/Controller/Controller+OwnFrames.swift b/Sources/ArborKit/Controller/Controller+OwnFrames.swift
+index 77a187f3..3ddf8fca 100644
+--- a/Sources/ArborKit/Controller/Controller+OwnFrames.swift
++++ b/Sources/ArborKit/Controller/Controller+OwnFrames.swift
+@@ -62,7 +62,16 @@ extension Controller {
+   /// Brings `window` back into view at `frame`, for `placeFloatingWindows`.
+   func putBackWhereItWas(_ window: WindowID, at frame: CGRect, on display: DisplaySnapshot) {
+     let own = workspaces[display.id]?.floating[window]
++    let wasLeftThere = frame == own && wasLeftThereByItsUser(frame, of: window, on: display)
+     putBack(window, at: frame, on: display)
++    // A hand can leave a window where nobody else can put it: asked to place one, macOS keeps its title bar above the Dock, and an app
++    // has its own mind about sizes. Where it has come to is as near as it comes, and it is still where its person pushed it. The
++    // hand's note goes with it, or the next way back would take that for a place nobody chose.
++    if wasLeftThere, !parked.contains(window), let actual = windows[window]?.frame, actual != frame {
++      workspaces[display.id]?.floating[window] = actual
++      fittedFrames[window] = nil
++      return noteWhereItsUserLeftIt(window)
++    }
+     // Fitted, it is there for the displays' sake, and what is remembered is still its own: there and back is nothing, for a
+     // lid that closes and opens too (`countAsOutOfViewWhatTheDisplaysDisplaced`).
+     // (Its app may not have answered: then it is still out of view, and is placed when the app does.)
+diff --git a/Tests/ArborKitTests/FloatingFrameTests.swift b/Tests/ArborKitTests/FloatingFrameTests.swift
+index e2061fa6..ef7ba4cd 100644
+--- a/Tests/ArborKitTests/FloatingFrameTests.swift
++++ b/Tests/ArborKitTests/FloatingFrameTests.swift
+@@ -359,6 +359,52 @@ import Testing
+     #expect(h.frame(f) == strip)
+   }
+ 
++  /// A hand can leave a window lower than anybody else can put it: asked to place one, macOS keeps its title bar above the Dock. So the
++  /// first way back ends some points short of where the hand left it. That is as near as it comes, and it is still where its person
++  /// pushed it: the second way back took it for a place nobody chose, under half of it showing, and pulled it wholly in.
++  @Test func stoppedShortOfWhereAHandLeftItItComesBackThereEveryTime() {
++    let h = Harness(displays: [Self.display], settings: Settings())
++    let a = h.system.open(app: "Finder", frame: CGRect(x: 340, y: 120, width: 920, height: 436))
++    let f = h.system.open(app: "Terminal", frame: CGRect(x: 40, y: 51, width: 877, height: 499))
++    h.start()
++    h.run("dock \(a.rawValue) left")
++    h.system.userMove(f, to: CGRect(x: 600, y: 850, width: 877, height: 499))
++    let asNearAsItComes = CGRect(x: 600, y: 822 - FakeWindowSystem.measuredTitleBars["Terminal"]!, width: 877, height: 499)
++    for trip in 1...3 {
++      h.run("zoom \(a.rawValue)")
++      h.scheduler.advance(by: 5)
++      h.system.clearFrameLog()
++      h.run("show-all")
++      h.scheduler.advance(by: 5)
++      #expect(h.frame(f) == asNearAsItComes, "trip \(trip)")
++      #expect(h.system.frameLog.filter { $0.window == f }.count == 1, "trip \(trip): \(h.system.frameLog)")
++    }
++    // Nor do a pause, its end and a quit touch it there.
++    h.system.clearFrameLog()
++    for act in ["pause", "resume", "home"] {
++      #expect(h.run(act).ok)
++      h.scheduler.advance(by: 5)
++    }
++    h.controller.shutdown()
++    #expect(h.frame(f) == asNearAsItComes && !h.system.frameLog.contains { $0.window == f }, "\(h.system.frameLog)")
++  }
++
++  /// The control: at the same place, where no hand is known to have left it (its app took it there from another display), it is pulled in.
++  @Test func whereNoHandLeftItUnderHalfShowingIsNoPlaceToComeBackTo() {
++    let side = ReviewFloatingFrameTests.display("side", CGRect(x: 1600, y: 0, width: 1440, height: 900))
++    let h = Harness(displays: [Self.display, side], settings: Settings())
++    let a = h.system.open(app: "Finder", frame: CGRect(x: 340, y: 120, width: 920, height: 436))
++    let f = h.system.open(app: "Terminal", frame: CGRect(x: 1800, y: 51, width: 877, height: 499))
++    h.start()
++    h.run("dock \(a.rawValue) left")
++    h.system.userMove(f, to: CGRect(x: 600, y: 850, width: 877, height: 499))
++    h.run("zoom \(a.rawValue)")
++    h.scheduler.advance(by: 5)
++    h.run("show-all")
++    h.scheduler.advance(by: 5)
++    #expect(h.frame(f) == CGRect(x: 600, y: 822 - 499, width: 877, height: 499))
++  }
++
+   /// At a pause and at a quit Arbor gives back what Arbor has put out of view, and nothing else. What its person pushed aside stays
+   /// where it was left, however little of it shows, as long as somebody can get hold of it: at a pause, a resume, a quit and a start,
+   /// whether or not floating windows make way.
+@@ -501,10 +547,12 @@ import Testing
+ 
+   // MARK: The rule of the walks
+ 
+-  /// Three finds of the walks, cut down. A window opens over docked ones and stays, and the next unrelated event, a click on
++  /// Six finds of the walks, cut down. A window opens over docked ones and stays, and the next unrelated event, a click on
+   /// another window's title bar, shoved and shrank it. And with nothing docked at all, a window left hanging over an edge before Arbor
+   /// started was pulled in when another window closed. And one that a hand had widened by its left edge, over the left edge of the main
+   /// display and its foot, was pulled in by the next view key: its middle had left the display below, and nobody had noted the hand.
++  /// The last three, from walks of ordinary acts: hung over the foot by a drop or by an edge, out of view and back twice, and the second
++  /// time pulled wholly in (`stoppedShortOfWhereAHandLeftItItComesBackThereEveryTime`); in the last its app rounds to cells as well.
+   @Test(arguments: [
+     """
+     launch
+@@ -533,6 +581,51 @@ import Testing
+     release
+     in
+     """,
++    """
++    displays main:0,0,1440,900:25,0,59,0* windows-never
++    open 102 Music pid 1006 at 114 107 980 642 min 980 600
++    launch
++    focus 102
++    key down dock left
++    open 104 Finder pid 1005 at 3 163 1040 384 min 501 252
++    grab 104
++    carry 556 822
++    release
++    tile main 1
++    focus 104
++    restore 102
++    key down neighbor right
++    """,
++    """
++    displays main:0,0,1440,900:25,0,59,0* windows-never
++    open 101 Mail pid 1002 at 162 299 1221 490 min 871 236
++    open 102 Music pid 1006 at 182 87 1019 600 min 980 600
++    open 104 Settings pid 1007 at 118 196 723 631 min 723 470 max 723 2000
++    launch
++    focus 104
++    edge 102 -328 819 1271 600
++    key down dock top
++    key down in
++    restore 101
++    key down toggle-float
++    key down in
++    key down back
++    """,
++    """
++    displays side:0,0,2560,1440:25,86,0,0* windows-never
++    open 101 Mail pid 1002 at 926 595 1243 623 min 871 236
++    launch
++    open 102 Terminal pid 1003 at 384 111 824 449 min 177 64 cells 7 15 2 4
++    edge 102 1721.5 1413 796 454
++    grab 101
++    carry 1280 1440
++    release
++    focus 101
++    key down zoom
++    key down zoom
++    key down zoom
++    key down zoom
++    """,
+   ]) func whatTheWalksFound(script: String) {
+     #expect(ChaosRunner.replay(script) == nil)
+   }
+diff --git a/collab/parity.json b/collab/parity.json
+index 097b0dc0..97d2526f 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -4347,6 +4347,7 @@
+         "quittingADockedWindowsAppTouchesNoFloatingWindow",
+         "quittingAndFloatAllTouchNoFloatingWindowInView",
+         "quittingWhileTheyAreOutOfViewPutsThemBackWhereTheyWere",
++        "stoppedShortOfWhereAHandLeftItItComesBackThereEveryTime",
+         "theDeskAsArborShips",
+         "theDesktopAsksForNoRoomForAFloatingWindowsSake",
+         "theFitMovesItTheLeast",
+@@ -4361,6 +4362,7 @@
+         "whatWasFittedGoesBackThoughAnotherTabIsInFront",
+         "whatWasFittedGoesBackThoughItsDisplayMovedMeanwhile",
+         "whenTheSettingGoesOffAWindowThatWasPushedAsideGoesBackToTheStripItsPersonLeft",
++        "whereNoHandLeftItUnderHalfShowingIsNoPlaceToComeBackTo",
+         "withTheSettingOnADockShovesAndSqueezesAsItDidOnTheDay",
+         "withTheSettingOnEachOfThoseStepsMovesFloatingWindows"
+       ]

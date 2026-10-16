@@ -1,0 +1,41 @@
+From c3579e1340cbec73c871c20fa8ee727012638fc4 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 00:05:38 +0000
+Subject: [PATCH] docs(ledger): macOS's tiling over Arbor's slot is guarded by
+ the drag script's new checks
+
+---
+ collab/reality.json | 3 ++-
+ docs/REALITY.md     | 2 +-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/collab/reality.json b/collab/reality.json
+index 62546d9..5be02cb 100644
+--- a/collab/reality.json
++++ b/collab/reality.json
+@@ -3177,7 +3177,8 @@
+    "guards": [
+     "test: desktopAndDockSettingsCompeteWithArbor",
+     "test: theSwitchesAreReadFromTheWindowManagersDefaults",
+-    "e2e: the window ends in Arbor's slot"
++    "e2e: Arbor shows no preview beside macOS's",
++    "e2e: macOS gives it its tile"
+    ],
+    "copes": "open",
+    "hurt": 2,
+diff --git a/docs/REALITY.md b/docs/REALITY.md
+index 00a8fe7..70211f7 100644
+--- a/docs/REALITY.md
++++ b/docs/REALITY.md
+@@ -1531,7 +1531,7 @@ A second actor: macOS, an app or another tool moves things too.
+ - **Happened:** macOS 15 and later tile such a window themselves (`EnableTilingByEdgeDrag`, `EnableTopTilingByEdgeDrag`; unset means on). On a 1024×768 display a window let go at x 0, at x 1023 or in the menu bar moved three times: into Arbor's slot (12,43 494×650), from 7 ms later into macOS's tile (-1,31 512×674, reached 0.30 to 0.34 s after the release), and back into the slot after 0.61 to 1.22 s. It happened at all 25 such drops (21 to 26 reports each, against 3 or 4 within 35 ms one point further in); the log said `did not stay where it was put` for only 15. Arbor only advises switching the settings off; a cure that stands aside where macOS tiles is under way.
+ - **Found by:** The first run of the drag script in CI on a hosted Mac (a drag towards the top ended with the window filling the display), then three probes of real title-bar drags on hosted Macs with a watcher of Accessibility notifications beside them.
+ - **Stand-ins play it:** **no**
+-- **Guard:** `test: desktopAndDockSettingsCompeteWithArbor`; `test: theSwitchesAreReadFromTheWindowManagersDefaults`; `e2e: the window ends in Arbor's slot` (by hand)
++- **Guard:** `test: desktopAndDockSettingsCompeteWithArbor`; `test: theSwitchesAreReadFromTheWindowManagersDefaults`; `e2e: Arbor shows no preview beside macOS's` (on CI's Macs); `e2e: macOS gives it its tile` (on CI's Macs)
+ - **Arbor copes:** **not yet**
+ - **Read in:** `scripts/mac-shell/lib.sh`, `docs/GUIDE.md`, `Sources/arbor-fakemac/main.swift`, `Sources/ArborCore/SystemFacts.swift`, `collab/evidence/gestures-latest.txt`
+ 
+-- 
+2.43.0
+

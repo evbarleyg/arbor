@@ -1,0 +1,269 @@
+diff --git a/Sources/ArborCore/Screens.swift b/Sources/ArborCore/Screens.swift
+new file mode 100644
+index 00000000..85633059
+--- /dev/null
++++ b/Sources/ArborCore/Screens.swift
+@@ -0,0 +1,79 @@
++import CoreGraphics
++
++/// Where macOS leaves a window that is asked to go somewhere.
++///
++/// A call that sets a window's position is not always taken as it stands: the title bar stays within reach. Which display sees to that, and how, was asked of one hosted
++/// Mac (macOS 26.6, no Arbor running): 78 position calls through Accessibility, of TextEdit, Notes and a Java app, from the main display to its top corners, to 50
++/// points above them and to its bottom right corner; with that display alone, with a wider one below, one above, a left neighbour that begins lower, that and
++/// one at the right, and a right neighbour that begins higher. And six places on one display with the Dock at the right (`collab/reality.json`:
++/// a-title-bar-never-goes-under-the-menu-bar). Arbor reckons with it, and the stand-ins play it: one rule, so that the two cannot part.
++public struct Screens: Equatable, Sendable {
++  public struct Screen: Equatable, Sendable {
++    public var frame: CGRect
++    public var visibleFrame: CGRect
++  }
++  public var screens: [Screen]
++
++  public init(_ screens: [(frame: CGRect, visibleFrame: CGRect)]) {
++    self.screens = screens.map { Screen(frame: $0.frame, visibleFrame: $0.visibleFrame) }
++  }
++
++  /// The display that judges a window at `frame`: the one that has most of it, as AppKit's `NSWindow.screen` has it; the first of two that have as much. That gave the
++  /// resting place of 76 of the 78, and of all 42 that were asked for the display's own top or bottom; the display the corner is on, or the nearest, of 67
++  /// at best. Where no display has anything of it, the one nearest its corner: a guess, which 4 of the 78 bear out and nothing else was held against.
++  public func judge(of frame: CGRect) -> Int? {
++    func part(_ index: Int) -> CGFloat { screens[index].frame.intersection(frame).area }
++    guard let most = screens.indices.max(by: { part($0) < part($1) }) else { return nil }
++    if part(most) > 0 { return most }
++    return screens.indices.min { screens[$0].frame.distance(to: frame.origin) < screens[$1].frame.distance(to: frame.origin) }
++  }
++
++  /// Where a window comes to rest that is asked to be at `asked`, with a title bar this high. Its size is not touched.
++  ///
++  /// - Up and down, by the display that judges it: the title bar stays above the bottom of the visible frame (TextEdit rested 32 points above it, Notes 52, the Java app
++  ///   28) and below its top (y 31 at both top corners, 36 of 36). So a window asked to the bottom right corner above a wider display goes down, below that
++  ///   display's menu bar: 3 of 3.
++  /// - Again where that put it: pushed below one display's menu bar a window may come to reach another, which has most of it then. Reasoned: none of the 78 tells
++  ///   twice from once.
++  /// - Sideways: one point inside a visible frame is enough to be left as asked (x was kept in all 78); with none inside, the window is pulled in until 40 points show.
++  ///   Six places with the Dock at the right, once each, one of them 20 times of 20 besides: 1023 became 934 where the visible frame ends at 974; and three
++  ///   on another day. All on one display: that ANY display's visible frame will do is a guess.
++  ///
++  /// Not played: TextEdit's window asked to go 50 points above the top left corner beside a left neighbour that begins lower, of which the main display has a strip and the
++  /// neighbour nothing, went to the neighbour, twice of twice (`stages`).
++  public func rest(of asked: CGRect, titleBar: CGFloat) -> CGPoint {
++    var frame = asked
++    for _ in 1...2 {
++      guard let judge = judge(of: frame) else { return asked.origin }
++      frame = stopped(frame, by: judge, titleBar: titleBar)
++    }
++    return pulledIn(frame).origin
++  }
++
++  /// A GUESS, MADE AFTER SEEING THE 78, ON WHICH NOTHING THAT SHIPS IS TO LEAN: the places a window passes through, the last of them where it rests. In 9 of the 78 it came to
++  /// rest in two moves, 20 to 150 ms apart, the second after the last call had returned: what was read back at once was the first. First the display that has most
++  /// of the TITLE BAR as asked stops it (none: the nearest to the corner), then the display that has most of the window where that put it. That gives every
++  /// place of all 78, the two that `rest` misses among them. Some five choices went into it, three other rules fit as well, which differ where the title
++  /// bar lies on no display, and that it is the title bar and not a strip of some other height hangs on two calls and 2 points.
++  public func stages(of asked: CGRect, titleBar: CGFloat) -> [CGPoint] {
++    guard let first = judge(of: CGRect(x: asked.minX, y: asked.minY, width: asked.width, height: titleBar)) else { return [asked.origin] }
++    let one = stopped(asked, by: first, titleBar: titleBar)
++    guard let second = judge(of: one) else { return [one.origin] }
++    let two = pulledIn(stopped(one, by: second, titleBar: titleBar))
++    return one.origin == two.origin ? [two.origin] : [one.origin, two.origin]
++  }
++
++  private func stopped(_ frame: CGRect, by judge: Int, titleBar: CGFloat) -> CGRect {
++    let visible = screens[judge].visibleFrame
++    return CGRect(origin: CGPoint(x: frame.minX, y: max(min(frame.minY, visible.maxY - titleBar), visible.minY)), size: frame.size)
++  }
++
++  private func pulledIn(_ frame: CGRect) -> CGRect {
++    guard let judge = judge(of: frame), !screens.contains(where: { $0.visibleFrame.overlaps(frame) }) else { return frame }
++    let visible = screens[judge].visibleFrame
++    var pulled = frame
++    if frame.minX >= visible.maxX { pulled.origin.x = visible.maxX - 40 }
++    if frame.maxX <= visible.minX { pulled.origin.x = visible.minX + 40 - frame.width }
++    return pulled
++  }
++}
+diff --git a/Sources/ArborTesting/FakeWindowSystem.swift b/Sources/ArborTesting/FakeWindowSystem.swift
+index 1730201e..30a2f0fd 100644
+--- a/Sources/ArborTesting/FakeWindowSystem.swift
++++ b/Sources/ArborTesting/FakeWindowSystem.swift
+@@ -430,11 +430,11 @@ public final class FakeWindowSystem: WindowSystem {
+   ]
+ 
+   /// What macOS makes of a frame an app has agreed to (`echoes.titleBarStaysReachable`, `echoes.wholePoints`), for a window
+-  /// with a title bar this high.
++  /// with a title bar this high: where it comes to rest (`Screens.rest`, which Arbor's own reckoning is to go by as well).
+   public func whereMacOSPuts(_ frame: CGRect, titleBar: CGFloat) -> CGRect {
+     var applied = frame
+-    if echoes.titleBarStaysReachable, let display = display(stopping: applied.origin) {
+-      applied.origin.y = min(applied.minY, display.visibleFrame.maxY - titleBar)
++    if echoes.titleBarStaysReachable {
++      applied.origin = Screens(displayList.map { ($0.frame, $0.visibleFrame) }).rest(of: applied, titleBar: titleBar)
+     }
+     // Half a point of a place is rounded down where AppKit counts, from the bottom left: x goes down and y, counted from the top, goes up.
+     // In the traces x went down ten times out of ten and y up nine out of nine. No size with half a point was ever asked for there.
+diff --git a/Tests/ArborCoreTests/ScreensTests.swift b/Tests/ArborCoreTests/ScreensTests.swift
+new file mode 100644
+index 00000000..6c14173c
+--- /dev/null
++++ b/Tests/ArborCoreTests/ScreensTests.swift
+@@ -0,0 +1,159 @@
++import ArborCore
++import CoreGraphics
++import Testing
++
++/// `Screens` held to what hosted Macs did with position calls through Accessibility, no Arbor running.
++@Suite struct ScreensTests {
++  /// The three windows of the first table, at the sizes they had, with the title bars that their rest above the Dock showed.
++  enum Window {
++    case text, lives, java
++    var size: CGSize {
++      switch self {
++      case .text: CGSize(width: 656, height: 422)
++      case .lives: CGSize(width: 1000, height: 600)
++      case .java: CGSize(width: 900, height: 750)
++      }
++    }
++    var titleBar: CGFloat {
++      switch self {
++      case .text: 32
++      case .lives: 52
++      case .java: 28
++      }
++    }
++  }
++
++  /// The six arrangements, each display with the visible frame it had. t1: the main display alone; t2: a wider one below, to which macOS took the Dock; t3: a left neighbour that
++  /// begins 500 lower; t4: that and one at the right; t5: one above; t6: a right neighbour that begins 700 higher.
++  static func arrangement(_ name: String) -> Screens {
++    let main = (frame: CGRect(x: 0, y: 0, width: 1600, height: 900), visibleFrame: CGRect(x: 0, y: 31, width: 1600, height: name == "t2" ? 869 : 791))
++    let leftAndLower = (frame: CGRect(x: -1280, y: 500, width: 1280, height: 800), visibleFrame: CGRect(x: -1280, y: 531, width: 1280, height: 769))
++    switch name {
++    case "t2": return Screens([main, (CGRect(x: -160, y: 900, width: 1920, height: 1080), CGRect(x: -160, y: 931, width: 1920, height: 971))])
++    case "t3": return Screens([main, leftAndLower])
++    case "t4": return Screens([main, leftAndLower, (CGRect(x: 1600, y: 0, width: 1920, height: 1080), CGRect(x: 1600, y: 31, width: 1920, height: 1049))])
++    case "t5": return Screens([main, (CGRect(x: 0, y: -800, width: 1280, height: 800), CGRect(x: 0, y: -769, width: 1280, height: 769))])
++    case "t6": return Screens([main, (CGRect(x: 1600, y: -700, width: 1920, height: 1080), CGRect(x: 1600, y: -669, width: 1920, height: 1049))])
++    default: return Screens([main])
++    }
++  }
++
++  /// All 78 calls of one run: the arrangement, the window, the x and y it was asked for, the y that was read back at once, the y it lay at a second later. x and the size were kept in all.
++  static let calls: [(String, Window, CGFloat, CGFloat, CGFloat, CGFloat)] = [
++    ("t2", .text, 1599, 0, 31, 31), ("t2", .text, 1599, -50, 31, 31), ("t2", .text, -655, 0, 31, 31), ("t2", .text, -655, -50, 31, 31),
++    ("t2", .text, 1599, 899, 931, 931), ("t2", .lives, 1599, 0, 31, 31), ("t2", .lives, 1599, -50, 31, 31), ("t2", .lives, -999, 0, 31, 31),
++    ("t2", .lives, -999, -50, 31, 31), ("t2", .lives, 1599, 899, 931, 931), ("t2", .java, 1599, 0, 31, 31), ("t2", .java, 1599, -50, 31, 31),
++    ("t2", .java, -899, 0, 31, 31), ("t2", .java, -899, -50, 31, 31), ("t2", .java, 1599, 899, 931, 931), ("t3", .text, 1599, 0, 31, 31),
++    ("t3", .text, 1599, -50, 31, 31), ("t3", .text, -655, 0, 31, 31), ("t3", .text, -655, -50, 531, 531), ("t3", .lives, 1599, 0, 31, 31),
++    ("t3", .lives, 1599, -50, 31, 31), ("t3", .lives, -999, 0, 31, 531), ("t3", .lives, -999, -50, 31, 531), ("t3", .java, 1599, 0, 31, 31),
++    ("t3", .java, 1599, -50, 31, 31), ("t3", .java, -899, 0, 31, 531), ("t3", .java, -899, -50, 531, 531), ("t5", .text, 1599, 0, 31, 31),
++    ("t5", .text, 1599, -50, 31, 31), ("t5", .text, -655, 0, 31, 31), ("t5", .text, -655, -50, -50, 31), ("t5", .lives, 1599, 0, 31, 31),
++    ("t5", .lives, 1599, -50, 31, 31), ("t5", .lives, -999, 0, 31, 31), ("t5", .lives, -999, -50, -52, 31), ("t5", .java, 1599, 0, 31, 31),
++    ("t5", .java, 1599, -50, 31, 31), ("t5", .java, -899, 0, 31, 31), ("t5", .java, -899, -50, -50, 31), ("t4", .text, 1599, 0, 31, 31),
++    ("t4", .text, 1599, -50, 31, 31), ("t4", .text, -655, 0, 31, 31), ("t4", .text, -655, -50, 531, 531), ("t4", .lives, 1599, 0, 31, 31),
++    ("t4", .lives, 1599, -50, 31, 31), ("t4", .lives, -999, 0, 31, 531), ("t4", .lives, -999, -50, 31, 531), ("t4", .java, 1599, 0, 31, 31),
++    ("t4", .java, 1599, -50, 31, 31), ("t4", .java, -899, 0, 31, 531), ("t4", .java, -899, -50, 531, 531), ("t1", .text, 1599, 0, 31, 31),
++    ("t1", .text, 1599, -50, 31, 31), ("t1", .text, -655, 0, 31, 31), ("t1", .text, -655, -50, 31, 31), ("t1", .text, 1599, 899, 790, 790),
++    ("t1", .lives, 1599, 0, 31, 31), ("t1", .lives, 1599, -50, 31, 31), ("t1", .lives, -999, 0, 31, 31), ("t1", .lives, -999, -50, 31, 31),
++    ("t1", .lives, 1599, 899, 770, 770), ("t1", .java, 1599, 0, 31, 31), ("t1", .java, 1599, -50, 31, 31), ("t1", .java, -899, 0, 31, 31),
++    ("t1", .java, -899, -50, 31, 31), ("t1", .java, 1599, 899, 794, 794), ("t6", .text, 1599, 0, 0, 0), ("t6", .text, 1599, -50, -50, -50),
++    ("t6", .text, -655, 0, 31, 31), ("t6", .text, -655, -50, 31, 31), ("t6", .lives, 1599, 0, 0, 0), ("t6", .lives, 1599, -50, -50, -50),
++    ("t6", .lives, -999, 0, 31, 31), ("t6", .lives, -999, -50, 31, 31), ("t6", .java, 1599, 0, 0, 0), ("t6", .java, 1599, -50, -50, -50),
++    ("t6", .java, -899, 0, 31, 31), ("t6", .java, -899, -50, 31, 31),
++  ]
++  /// The two that `rest` does not give.
++  static func isNotPlayed(_ call: (String, Window, CGFloat, CGFloat, CGFloat, CGFloat)) -> Bool {
++    (call.0 == "t3" || call.0 == "t4") && call.1 == .text && call.3 == -50 && call.2 < 0
++  }
++
++  @Test func whereItCameToRest() {
++    #expect(Self.calls.count == 78 && Self.calls.filter(Self.isNotPlayed).count == 2)
++    for call in Self.calls where !Self.isNotPlayed(call) {
++      let (name, window, x, y, _, rested) = call
++      let rest = Self.arrangement(name).rest(of: CGRect(origin: CGPoint(x: x, y: y), size: window.size), titleBar: window.titleBar)
++      #expect(rest == CGPoint(x: x, y: rested), "\(name): \(window) asked for \(x),\(y)")
++    }
++  }
++
++  /// TextEdit's window, asked to go 50 points above the top left corner beside a left neighbour that begins lower, shares a strip of 1 by 372 points with the main display and nothing
++  /// with the neighbour, and went to the neighbour, below its menu bar, wholly in view. `rest` says the main display's top, and this says that it does.
++  @Test func notPlayed() {
++    for call in Self.calls where Self.isNotPlayed(call) {
++      #expect(call.5 == 531)
++      #expect(Self.arrangement(call.0).rest(of: CGRect(origin: CGPoint(x: call.2, y: call.3), size: call.1.size), titleBar: call.1.titleBar).y == 31)
++    }
++  }
++
++  /// The guess gives every place of all 78: what was read back at once, and where the window lay a second later. In nine the two differ.
++  @Test func theGuessGivesTheWholeWay() {
++    #expect(Self.calls.filter { $0.4 != $0.5 }.count == 9)
++    for (name, window, x, y, atOnce, rested) in Self.calls {
++      let stages = Self.arrangement(name).stages(of: CGRect(origin: CGPoint(x: x, y: y), size: window.size), titleBar: window.titleBar)
++      #expect(stages == (atOnce == rested ? [rested] : [atOnce, rested]).map { CGPoint(x: x, y: $0) }, "\(name): \(window) asked for \(x),\(y)")
++    }
++  }
++
++  /// At the places Arbor asks for, a display's own top and its bottom less 1, the guess ends where `rest` does: 42 of 42.
++  @Test func atADisplaysOwnTopAndBottomTheTwoEndAlike() {
++    let own = Self.calls.filter { $0.3 == 0 || $0.3 == 899 }
++    #expect(own.count == 42)
++    for (name, window, x, y, _, _) in own {
++      let asked = CGRect(origin: CGPoint(x: x, y: y), size: window.size)
++      #expect(Self.arrangement(name).stages(of: asked, titleBar: window.titleBar).last == Self.arrangement(name).rest(of: asked, titleBar: window.titleBar))
++    }
++  }
++
++  // MARK: Sideways
++
++  static let small = CGRect(x: 0, y: 0, width: 1024, height: 768)
++  static let size = CGSize(width: 480, height: 348)
++
++  /// Six places on one display of 1024×768 with the Dock at the right, a window of 480×348, once each; the first of them 20 times of 20 besides.
++  @Test(arguments: [
++    (CGPoint(x: 1023, y: 767), CGPoint(x: 934, y: 740)), (CGPoint(x: 973, y: 767), CGPoint(x: 973, y: 740)), (CGPoint(x: -479, y: 767), CGPoint(x: -479, y: 740)),
++    (CGPoint(x: -479, y: 400), CGPoint(x: -479, y: 400)), (CGPoint(x: -600, y: 767), CGPoint(x: -440, y: 740)), (CGPoint(x: 300, y: 767), CGPoint(x: 300, y: 740)),
++  ]) func besideTheDock(asked: CGPoint, rested: CGPoint) {
++    let screens = Screens([(Self.small, CGRect(x: 0, y: 31, width: 974, height: 737))])
++    #expect(screens.rest(of: CGRect(origin: asked, size: Self.size), titleBar: 28) == rested)
++    #expect(screens.stages(of: CGRect(origin: asked, size: Self.size), titleBar: 28).last == rested)
++  }
++
++  /// That first place with the Dock at the bottom, at the left, and on 1920×1080 beside a second display.
++  @Test func theSameCornerWithTheDockElsewhere() {
++    let corner = CGRect(origin: CGPoint(x: 1023, y: 767), size: Self.size)
++    #expect(Screens([(Self.small, CGRect(x: 0, y: 31, width: 1024, height: 674))]).rest(of: corner, titleBar: 28) == CGPoint(x: 1023, y: 677))
++    #expect(Screens([(Self.small, CGRect(x: 50, y: 31, width: 974, height: 737))]).rest(of: corner, titleBar: 28) == CGPoint(x: 1023, y: 740))
++    let two = Screens([
++      (CGRect(x: 0, y: 0, width: 1920, height: 1080), CGRect(x: 0, y: 31, width: 1920, height: 971)),
++      (CGRect(x: 1920, y: 0, width: 1280, height: 720), CGRect(x: 1920, y: 31, width: 1280, height: 689)),
++    ])
++    #expect(two.rest(of: CGRect(origin: CGPoint(x: 1919, y: 1079), size: Self.size), titleBar: 28) == CGPoint(x: 1919, y: 974))
++  }
++
++  /// Wholly off the display, on another day: pulled in until 40 points show; past a Dock at the left, 40 points past the Dock.
++  @Test func whollyOffTheDisplay() {
++    let bottom = Screens([(Self.small, CGRect(x: 0, y: 31, width: 1024, height: 674))])
++    #expect(bottom.rest(of: CGRect(origin: CGPoint(x: 1524, y: 200), size: Self.size), titleBar: 28).x == 984)
++    #expect(bottom.rest(of: CGRect(origin: CGPoint(x: -600, y: 200), size: Self.size), titleBar: 28).x == -440)
++    let left = Screens([(Self.small, CGRect(x: 50, y: 31, width: 974, height: 737))])
++    #expect(left.rest(of: CGRect(origin: CGPoint(x: -600, y: 200), size: Self.size), titleBar: 28).x == -390)
++  }
++
++  // MARK: What is reasoned
++
++  /// Asked of no Mac: pushed below the main display's menu bar, a window 480 high comes to reach the left neighbour that begins 500 lower, which has most of it then.
++  @Test func againWhereThatPutIt() {
++    let screens = Self.arrangement("t3")
++    #expect(screens.rest(of: CGRect(x: -655, y: 0, width: 656, height: 480), titleBar: 32).y == 531)
++    #expect(screens.rest(of: CGRect(x: -655, y: 0, width: 656, height: 460), titleBar: 32).y == 31)
++  }
++
++  @Test func whoJudges() {
++    let screens = Self.arrangement("t6")
++    #expect(screens.judge(of: CGRect(x: 1599, y: 0, width: 656, height: 422)) == 1, "its corner is on the main display, all but a column of it on the neighbour")
++    #expect(screens.judge(of: CGRect(x: 300, y: 200, width: 656, height: 422)) == 0)
++    #expect(screens.judge(of: CGRect(x: -5000, y: 0, width: 10, height: 10)) == 0, "on none: the nearest")
++    #expect(Screens([]).judge(of: .zero) == nil)
++    #expect(Screens([]).rest(of: CGRect(x: 5, y: 6, width: 7, height: 8), titleBar: 28) == CGPoint(x: 5, y: 6))
++  }
++}

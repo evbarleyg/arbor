@@ -1,0 +1,83 @@
+diff --git a/Sources/ArborKit/Controller/Controller+Displays.swift b/Sources/ArborKit/Controller/Controller+Displays.swift
+index 5ee89cbf..f80130d8 100644
+--- a/Sources/ArborKit/Controller/Controller+Displays.swift
++++ b/Sources/ArborKit/Controller/Controller+Displays.swift
+@@ -20,6 +20,7 @@ extension Controller {
+   /// With `lettingGo` only the books are brought up to date and nothing is moved, raised or focused: for `shutdown`, which
+   /// moves every window itself, once (`lookAtTheDisplaysBeforeLettingGo`).
+   func updateDisplays(lettingGo: Bool = false) {
++    takeBackWhatWasBookedAhead()
+     // If windows were moved behind Arbor's back, here is the report after all. What follows looks after every window.
+     movedBehindArborsBack = []
+     scheduler.cancel("displays-blinked")
+@@ -238,6 +239,7 @@ extension Controller {
+   /// negotiates, there never is a report (`DisplayChange`), and nobody else would: the move was not the user's, so nothing
+   /// followed it, and it is not put back at once, because there may be no display to put it back on.
+   func noteMoveBehindArborsBack(of window: WindowID) {
++    takeBackWhatWasBookedAhead()
+     movedBehindArborsBack.insert(window)
+     lookForABlink(triesLeft: Self.blinkTries)
+   }
+diff --git a/Sources/ArborKit/Controller/Controller+Events.swift b/Sources/ArborKit/Controller/Controller+Events.swift
+index 0ac622a2..62fda362 100644
+--- a/Sources/ArborKit/Controller/Controller+Events.swift
++++ b/Sources/ArborKit/Controller/Controller+Events.swift
+@@ -51,6 +51,7 @@ extension Controller: WindowSystemEvents {
+     chosenOnShape[id] = nil
+     appPlacedFrames[id] = nil
+     spokeOfItsPlace[id] = nil
++    bookedAhead[id] = nil
+     shrunk[id] = nil
+     fittedToADisplay[id] = nil
+     hints[id] = nil
+@@ -187,6 +188,7 @@ extension Controller: WindowSystemEvents {
+       // A new title arrives the same way as a move. Taking it for one would replace the frame
+       // the user chose with wherever docked windows have pushed the window to since.
+       guard previous?.frame != window.frame, !isOnlySettlingOnDesktop(window, on: display) else { return }
++      let mayBeTakenBack = keepWhatTheBooksSay(of: window.id, on: display)
+       // Remember where the user put it, following it to another display.
+       let destination = displayID(at: window.frame.center) ?? display
+       let role = workspaces[display]!.role(of: window.id)
+@@ -202,7 +204,8 @@ extension Controller: WindowSystemEvents {
+       if destination != display { workspaces[destination]?.setRole(role, of: window.id) }
+       if destination != display { notify(.windows) }
+       scheduleSave()
+-      floatingWindowMoved(window.id, from: display)
++      // What is laid out for it waits until it is known to stay (Controller+SpokeAhead.swift).
++      if !mayBeTakenBack { floatingWindowMoved(window.id, from: display) }
+       return
+     }
+ 
+diff --git a/Sources/ArborKit/Controller/Controller+Invariants.swift b/Sources/ArborKit/Controller/Controller+Invariants.swift
+index 4861e5fc..ee25d312 100644
+--- a/Sources/ArborKit/Controller/Controller+Invariants.swift
++++ b/Sources/ArborKit/Controller/Controller+Invariants.swift
+@@ -239,6 +239,7 @@ extension Controller {
+     check("titleBars", titleBars.keys)
+     check("appPlacedFrames", appPlacedFrames.keys)
+     check("spokeOfItsPlace", spokeOfItsPlace.keys)
++    check("bookedAhead", bookedAhead.keys)
+     check("returningWindows", returningWindows)
+     check("titleWatches", titleWatches.keys)
+     check("unplaced", unplaced)
+diff --git a/Sources/ArborKit/Controller/Controller.swift b/Sources/ArborKit/Controller/Controller.swift
+index 31b1e405..7c3c0a4b 100644
+--- a/Sources/ArborKit/Controller/Controller.swift
++++ b/Sources/ArborKit/Controller/Controller.swift
+@@ -167,6 +167,8 @@ public final class Controller {
+   /// When each floating window's app last said where it is and that passed for the person's own move
+   /// (Controller+Displays.swift, "A display that moved").
+   var spokeOfItsPlace: [WindowID: Date] = [:]
++  /// What the books said of floating windows before their last reports were booked (Controller+SpokeAhead.swift).
++  var bookedAhead: [WindowID: BookedAhead] = [:]
+   /// Windows reported back (their app shown again) since the layout that will show them was put off (Controller+Spaces.swift).
+   var returningWindows: Set<WindowID> = []
+   /// Displays whose layout was put off until all the reports of a Space switch or a hidden app are in.
+@@ -541,6 +543,7 @@ public final class Controller {
+     owedTheWayBack = owedTheWayBack.filter { windows[$0.key] != nil }
+     appPlacedFrames = appPlacedFrames.filter { windows[$0.key] != nil }
+     spokeOfItsPlace = spokeOfItsPlace.filter { windows[$0.key] != nil }
++    bookedAhead = bookedAhead.filter { windows[$0.key] != nil }
+     landsAt = landsAt.filter { windows[$0.key] != nil }
+     chosenOnShape = chosenOnShape.filter { windows[$0.key] != nil }
+     fittedToADisplay = fittedToADisplay.filter { windows[$0.key] != nil }

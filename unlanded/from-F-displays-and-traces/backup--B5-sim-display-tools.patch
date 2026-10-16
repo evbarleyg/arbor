@@ -1,0 +1,158 @@
+diff --git a/Sources/ArborTesting/FakeWindowSystem+Displays.swift b/Sources/ArborTesting/FakeWindowSystem+Displays.swift
+new file mode 100644
+index 0000000000000000000000000000000000000000..abb03548bb8317b2c1dea5b855a93801a877a391
+--- /dev/null
++++ b/Sources/ArborTesting/FakeWindowSystem+Displays.swift
+@@ -0,0 +1,35 @@
++import ArborCore
++import ArborKit
++import CoreGraphics
++
++// Plugging displays in and out.
++
++extension FakeWindowSystem {
++  /// Plugs a display in, or replaces the one with the same id.
++  public func plug(_ display: DisplaySnapshot) {
++    setDisplays(displayList.filter { $0.id != display.id } + [display])
++  }
++
++  /// Unplugs a display. If it was the main one the first of the others becomes main and, as on macOS, its
++  /// corner becomes the origin: every display and window has new coordinates, and no window reports it.
++  /// Windows stay where they were otherwise; where macOS would put them is not modelled.
++  public func unplug(_ id: DisplayID) {
++    var rest = displayList.filter { $0.id != id }
++    if !rest.isEmpty, !rest.contains(where: \.isMain) {
++      rest[0].isMain = true
++      let shift = rest[0].frame.origin
++      for index in rest.indices {
++        rest[index].frame = rest[index].frame.offsetBy(dx: -shift.x, dy: -shift.y)
++        rest[index].visibleFrame = rest[index].visibleFrame.offsetBy(dx: -shift.x, dy: -shift.y)
++      }
++      shiftEverything(by: CGPoint(x: -shift.x, y: -shift.y))
++    }
++    setDisplays(rest)
++  }
++
++  /// Moves every window and the pointer without a word, as a change of origin does.
++  public func shiftEverything(by offset: CGPoint) {
++    for window in allWindows() { moveSilently(window.id, to: window.frame.offsetBy(dx: offset.x, dy: offset.y)) }
++    cursor = CGPoint(x: cursor.x + offset.x, y: cursor.y + offset.y)
++  }
++}
+diff --git a/Sources/arbor-sim/Displays.swift b/Sources/arbor-sim/Displays.swift
+new file mode 100644
+index 0000000000000000000000000000000000000000..0d78f2cc6e77ac3ef6c8cf2b8d0e733669c578ea
+--- /dev/null
++++ b/Sources/arbor-sim/Displays.swift
+@@ -0,0 +1,99 @@
++import ArborCore
++import ArborKit
++import ArborTesting
++import CoreGraphics
++
++// Plugging displays in and out, one at a time:
++//
++//   plug <name> [right|left|above|below] [WxH]
++//                                plug in a display beside the first one ("studio" is called Studio Display)
++//   unplug <name>                unplug it (the first display is `main`)
++
++/// Runs `plug` and `unplug`. Nil for any other line.
++@MainActor
++func simulateDisplays(_ words: [String], harness: Harness) -> (String, Bool)? {
++  let system = harness.system
++  // quietly plug … | quietly unplug …: macOS has other displays now and Arbor has not been told (`DisplayChange` waits).
++  if words[0] == "quietly" {
++    let listener = system.events
++    system.events = nil
++    defer { system.events = listener }
++    return simulateDisplays(Array(words.dropFirst()), harness: harness)
++  }
++  switch words[0] {
++  case "max":
++    // max <id> <WxH>: from now on the app keeps the window no larger, and resizes it itself if it is (top-left stays).
++    guard words.count == 3, let id = WindowID(word: words[1]), var frame = system.frame(of: id) else { return ("usage: max <id> <WxH>", false) }
++    let parts = words[2].lowercased().split(separator: "x").compactMap { Double($0) }
++    guard parts.count == 2 else { return ("usage: max <id> <WxH>", false) }
++    system.setMaximumSize(id, CGSize(width: parts[0], height: parts[1]))
++    let old = frame
++    frame.size = CGSize(width: min(frame.width, parts[0]), height: min(frame.height, parts[1]))
++    if frame != old { system.userMove(id, to: frame) }
++    return ("\(id) is at most \(words[2])", true)
++  case "where":
++    // where <id>: its real frame.
++    guard words.count == 2, let id = WindowID(word: words[1]), let f = system.frame(of: id) else { return ("usage: where <id>", false) }
++    let shows = system.displayList.map { $0.frame.intersection(f) }.filter { !$0.isNull }.map { Int($0.width * $0.height) }.reduce(0, +)
++    return ("WHERE \(id) \(Int(f.minX)),\(Int(f.minY)) \(Int(f.width))x\(Int(f.height)) showing \(shows * 100 / max(Int(f.width * f.height), 1))%", true)
++  case "make-main":
++    // make-main <name>: that display gets the menu bar; its corner becomes 0,0 and macOS shifts every display and window, silently.
++    guard words.count == 2, let chosen = system.displayList.first(where: { $0.id.rawValue == words[1] }) else { return ("usage: make-main <name>", false) }
++    let shift = CGPoint(x: -chosen.frame.minX, y: -chosen.frame.minY)
++    var list = system.displayList
++    for i in list.indices {
++      list[i].isMain = list[i].id == chosen.id
++      list[i].frame = list[i].frame.offsetBy(dx: shift.x, dy: shift.y)
++      list[i].visibleFrame = list[i].visibleFrame.offsetBy(dx: shift.x, dy: shift.y)
++    }
++    system.shiftEverything(by: shift)
++    system.setDisplays(list.sorted { $0.isMain && !$1.isMain })
++    return ("\(words[1]) is the main display", true)
++  case "move-display":
++    // move-display <name> <x> <y>: rearranged in System Settings; its windows go with it, silently.
++    guard words.count == 4, let x = Double(words[2]), let y = Double(words[3]),
++      let i = system.displayList.firstIndex(where: { $0.id.rawValue == words[1] }) else { return ("usage: move-display <name> <x> <y>", false) }
++    var list = system.displayList
++    let old = list[i].frame
++    let d = CGPoint(x: x - old.minX, y: y - old.minY)
++    for window in system.allWindows() where old.contains(CGPoint(x: window.frame.midX, y: window.frame.midY)) {
++      system.moveSilently(window.id, to: window.frame.offsetBy(dx: d.x, dy: d.y))
++    }
++    list[i].frame = old.offsetBy(dx: d.x, dy: d.y)
++    list[i].visibleFrame = list[i].visibleFrame.offsetBy(dx: d.x, dy: d.y)
++    system.setDisplays(list)
++    return ("moved \(words[1]) to \(words[2]),\(words[3])", true)
++  case "report-displays":
++    system.setDisplays(system.displayList)
++    return ("reported \(system.displayList.count) display(s)", true)
++  case "plug":
++    let alone = system.displayList.isEmpty
++    let nothing = DisplaySnapshot(id: DisplayID("none"), frame: .zero, visibleFrame: .zero, isMain: false)
++    guard words.count > 1, let first = system.displayList.first ?? Optional(nothing) else {
++      return ("usage: plug <name> [right|left|above|below] [WxH]", false)
++    }
++    func size(_ text: String) -> CGSize? {
++      let parts = text.lowercased().split(separator: "x").compactMap { Double($0) }.filter { (1...100_000).contains($0) }
++      return parts.count == 2 ? CGSize(width: parts[0], height: parts[1]) : nil
++    }
++    let extent = words.dropFirst(2).compactMap(size).first ?? CGSize(width: 2560, height: 1440)
++    var origin = CGPoint(x: first.frame.maxX, y: first.frame.minY)
++    if words.contains("left") { origin.x = first.frame.minX - extent.width }
++    if words.contains("above") { origin = CGPoint(x: first.frame.minX, y: first.frame.minY - extent.height) }
++    if words.contains("below") { origin = CGPoint(x: first.frame.minX, y: first.frame.maxY) }
++    let frame = CGRect(origin: origin, size: extent)
++    system.plug(
++      DisplaySnapshot(
++        id: DisplayID(words[1]), frame: frame, visibleFrame: frame, isMain: alone))
++    let place = "\(Int(frame.minX)),\(Int(frame.minY)) \(Int(frame.width))x\(Int(frame.height))"
++    return ("plugged in \(words[1]) at \(place)", true)
++  case "unplug":
++    guard words.count > 1, system.displayList.contains(where: { $0.id.rawValue == words[1] }) else {
++      return ("usage: unplug <name> (one of \(system.displayList.map(\.id.rawValue).joined(separator: ", ")))", false)
++    }
++    system.unplug(DisplayID(words[1]))
++    return ("unplugged \(words[1])", true)
++  default:
++    return nil
++  }
++}
+diff --git a/Sources/arbor-sim/main.swift b/Sources/arbor-sim/main.swift
+index e36c16ad95485711d2a5ea52e78ed7f14a4f8023..f1f9acae640ad66def231f78194d1c729b18c6d2 100644
+--- a/Sources/arbor-sim/main.swift
++++ b/Sources/arbor-sim/main.swift
+@@ -235,6 +235,7 @@ final class SimulatedWatcher {
+ /// Runs one line and returns what to print and whether it succeeded.
+ @MainActor
+ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (String, Bool) {
++  if let done = simulateDisplays(words, harness: harness) { return done }
+   let system = harness.system
+   func window(_ index: Int) -> WindowID? { words.count > index ? WindowID(word: words[index]) : nil }
+   /// Bounded like the numbers in commands: real windows and pointers are never at infinity.

@@ -1,0 +1,142 @@
+diff --git a/Sources/ArborKit/Support/FocusMemory.swift b/Sources/ArborKit/Support/FocusMemory.swift
+new file mode 100644
+index 0000000..177d6ae
+--- /dev/null
++++ b/Sources/ArborKit/Support/FocusMemory.swift
+@@ -0,0 +1,52 @@
++import ArborCore
++import Foundation
++
++/// Which window has the keyboard, remembered between the moments that can change it.
++///
++/// Asking is a round trip to the app in front while the main thread waits, and Arbor asks often: every layout
++/// asks for the focus ring, every camera move asks twice more. The keyboard does not move without
++/// a notification (an app came forward or stepped back, an app's focused or main window changed, a window or an app
++/// went away, Arbor itself gave the focus away), so in between the last answer stands.
++///
++/// macOS does not change everything at once: for a moment after a notification the answer can still be the old one, which
++/// is why the controller looks again, a quarter of a second later and up to a second. An answer from that moment is kept
++/// just long enough for the questions of one command, which come within milliseconds of each other, so those second
++/// looks see what the app says and not what it said.
++///
++/// Nothing here knows about Accessibility, so the tests run everywhere.
++public struct FocusMemory: Sendable {
++  /// How long after a notification an answer may still be the old one, in seconds. Not shorter than the controller
++  /// keeps looking (`Controller.focusCheckRetries` times `focusCheckInterval`).
++  public static let settleTime: TimeInterval = 1
++  /// How long an answer given before that stands. Shorter than the controller waits before it looks again.
++  public static let glance: TimeInterval = 0.1
++
++  private struct Answer: Sendable {
++    var window: WindowID?
++    var app: Int32
++    var until: TimeInterval
++  }
++
++  private var answer: Answer?
++  private var movedAt = -TimeInterval.infinity
++
++  public init() {}
++
++  /// Something was reported, or done, that can move the keyboard.
++  public mutating func mayHaveMoved(at now: TimeInterval) {
++    answer = nil
++    movedAt = now
++  }
++
++  /// `app`, which is in front, was asked at `now` and named `window`, or no window at all.
++  public mutating func note(_ window: WindowID?, saidBy app: Int32, at now: TimeInterval) {
++    answer = Answer(window: window, app: app, until: now - movedAt >= Self.settleTime ? .infinity : now + Self.glance)
++  }
++
++  /// What the app in front last said, if that still stands: `.some(nil)` is "no window". Nil means ask. Which app
++  /// is in front costs nothing to know, so an answer from another app is not believed, whatever was or was not reported.
++  public func remembered(inFront app: Int32, at now: TimeInterval) -> WindowID?? {
++    guard let answer, answer.app == app, now <= answer.until else { return nil }
++    return .some(answer.window)
++  }
++}
+diff --git a/Tests/ArborKitTests/FocusMemoryTests.swift b/Tests/ArborKitTests/FocusMemoryTests.swift
+new file mode 100644
+index 0000000..1cb1454
+--- /dev/null
++++ b/Tests/ArborKitTests/FocusMemoryTests.swift
+@@ -0,0 +1,78 @@
++import ArborCore
++import Testing
++
++@testable import ArborKit
++
++@Suite struct FocusMemoryTests {
++  let safari: Int32 = 100
++  let mail: Int32 = 200
++  let window = WindowID(7)
++
++  @Test func nothingIsKnownAtFirst() {
++    #expect(FocusMemory().remembered(inFront: safari, at: 0) == nil)
++  }
++
++  @Test func anAnswerStandsUntilSomethingCanHaveMovedTheKeyboard() {
++    var memory = FocusMemory()
++    memory.note(window, saidBy: safari, at: 10)
++    #expect(memory.remembered(inFront: safari, at: 10) == .some(window))
++    #expect(memory.remembered(inFront: safari, at: 400) == .some(window), "neither asking nor time uses it up")
++    memory.mayHaveMoved(at: 500)
++    #expect(memory.remembered(inFront: safari, at: 500) == nil)
++  }
++
++  @Test func noWindowIsAnAnswerToo() {
++    var memory = FocusMemory()
++    memory.note(nil, saidBy: safari, at: 10)
++    #expect(memory.remembered(inFront: safari, at: 11) == .some(nil))
++  }
++
++  /// The controller's second looks (0.25 s for the ring, up to a second for the camera) must reach the app.
++  @Test(arguments: [0, 0.01, 0.25, 0.5, 0.75, 0.99])
++  func anAnswerGivenJustAfterANotificationServesOneCommandOnly(after: Double) {
++    var memory = FocusMemory()
++    memory.mayHaveMoved(at: 20)
++    let asked = 20 + after
++    memory.note(window, saidBy: safari, at: asked)
++    #expect(memory.remembered(inFront: safari, at: asked + 0.03) == .some(window), "the same command asks again")
++    #expect(memory.remembered(inFront: safari, at: asked + 0.25) == nil, "a second look")
++  }
++
++  @Test func anAnswerGivenOnceThingsHaveSettledIsKept() {
++    var memory = FocusMemory()
++    memory.mayHaveMoved(at: 20)
++    memory.note(window, saidBy: safari, at: 20 + FocusMemory.settleTime)
++    #expect(memory.remembered(inFront: safari, at: 1000) == .some(window))
++  }
++
++  @Test func everyNotificationStartsTheWaitAfresh() {
++    var memory = FocusMemory()
++    memory.mayHaveMoved(at: 20)
++    memory.mayHaveMoved(at: 20.9)
++    memory.note(window, saidBy: safari, at: 21.5)
++    #expect(memory.remembered(inFront: safari, at: 21.8) == nil)
++    memory.note(window, saidBy: safari, at: 21.9)
++    #expect(memory.remembered(inFront: safari, at: 30) == .some(window))
++  }
++
++  @Test func aNotificationEndsAGlanceToo() {
++    var memory = FocusMemory()
++    memory.mayHaveMoved(at: 20)
++    memory.note(window, saidBy: safari, at: 20.01)
++    memory.mayHaveMoved(at: 20.02)
++    #expect(memory.remembered(inFront: safari, at: 20.03) == nil)
++  }
++
++  /// Should an app ever come forward without a word, its predecessor's answer is not taken for its own.
++  @Test func anotherAppInFrontIsAskedWhateverWasReported() {
++    var memory = FocusMemory()
++    memory.note(window, saidBy: safari, at: 10)
++    #expect(memory.remembered(inFront: mail, at: 11) == nil)
++    #expect(memory.remembered(inFront: safari, at: 12) == .some(window), "and back again, it still stands")
++  }
++
++  @MainActor @Test func theControllersSecondLooksReachTheApp() {
++    #expect(FocusMemory.settleTime >= Double(Controller.focusCheckRetries) * Controller.focusCheckInterval)
++    #expect(FocusMemory.glance < Controller.focusCheckInterval)
++  }
++}

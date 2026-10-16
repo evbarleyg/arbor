@@ -1,0 +1,1190 @@
+From c1876c3f7c0c3ece79881d1e2fec5d0b8592d3ab Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 15:57:54 +0000
+Subject: [PATCH 2/2] wip: from three places to two while one is away; what a
+ third reader played, mended
+
+---
+ Sources/ArborCore/AutoDock.swift              |  28 ++-
+ Sources/ArborCore/Drop.swift                  |   9 +-
+ Sources/ArborCore/Layout.swift                |  26 ++-
+ Sources/ArborCore/LayoutTree+Room.swift       |  23 ++
+ Sources/ArborCore/LayoutTree.swift            |   5 +-
+ Sources/ArborCore/MakeRoom.swift              |   9 +-
+ Sources/ArborCore/Navigation.swift            |   5 +-
+ Sources/ArborCore/Workspace.swift             |  10 +-
+ .../Controller/Controller+AutoDock.swift      |   2 +-
+ .../ArborKit/Controller/Controller+Drag.swift |   3 +-
+ .../Controller/Controller+EdgeResize.swift    |   4 +-
+ .../Controller/Controller+Events.swift        |   3 +-
+ .../Controller/Controller+KeyboardDock.swift  |   4 +-
+ .../ArborKit/Controller/Controller+Pin.swift  |   2 +-
+ .../Controller/Controller+Rules.swift         |   7 +-
+ .../Controller/Controller+Tiling.swift        |   2 +-
+ .../Controller+UndockedFrames.swift           |   4 +-
+ Sources/ArborKit/Controller/Controller.swift  |   2 +-
+ Tests/ArborCoreTests/AutoDockTests.swift      |   5 +-
+ .../DesktopWithoutRoomTests.swift             | 127 +++++++++-
+ Tests/ArborKitTests/HoldRescueTests.swift     |   8 +-
+ .../ArborKitTests/NoDesktopColumnTests.swift  | 217 +++++++++++++++++-
+ collab/scenarios/F68-while-one-is-away.sim    | 173 ++++++++++++++
+ .../F68-the-desktop-is-what-is-left-over.md   |  23 +-
+ 24 files changed, 651 insertions(+), 50 deletions(-)
+ create mode 100644 collab/scenarios/F68-while-one-is-away.sim
+
+diff --git a/Sources/ArborCore/AutoDock.swift b/Sources/ArborCore/AutoDock.swift
+index dd8f96e2..6767191b 100644
+--- a/Sources/ArborCore/AutoDock.swift
++++ b/Sources/ArborCore/AutoDock.swift
+@@ -21,12 +21,17 @@ public enum AutoDock {
+     public var covers: WindowID?
+     /// The Desktop's share next to the window's, counted in windows, if docking changes it.
+     public var desktopWeight: Double?
++    /// `LayoutTree.dock`'s: a share like the others', not half of the target's.
++    public var evenShare: Bool
+ 
+-    public init(target: DropTarget, slot: CGRect = .zero, covers: WindowID? = nil, desktopWeight: Double? = nil) {
++    public init(
++      target: DropTarget, slot: CGRect = .zero, covers: WindowID? = nil, desktopWeight: Double? = nil, evenShare: Bool = false
++    ) {
+       self.target = target
+       self.slot = slot
+       self.covers = covers
+       self.desktopWeight = desktopWeight
++      self.evenShare = evenShare
+     }
+ 
+     /// Docks `window` there.
+@@ -34,7 +39,9 @@ public enum AutoDock {
+     public func apply(
+       to workspace: inout Workspace, docking window: WindowID, shareSpace: Bool = true, desktopColumn: Bool = false
+     ) -> Bool {
+-      guard workspace.dock(window, at: target, shareSpace: shareSpace, desktopColumn: desktopColumn) else { return false }
++      guard workspace.dock(window, at: target, evenShare: evenShare, shareSpace: shareSpace, desktopColumn: desktopColumn) else {
++        return false
++      }
+       let tree = workspace.tree
+       if let desktopWeight, let leaf = tree.leaf(containing: window), let a = tree[tree.desktop]?.weight,
+         let b = tree[leaf]?.weight
+@@ -120,12 +127,22 @@ public enum AutoDock {
+       candidates = [Edge.right, .bottom].map { (view == workspace.camera ? .cameraEdge($0) : .beside(view, $0), nil) }
+     }
+ 
++    var besideWhoIsAway: DropTarget?
+     // What is left over goes first here too: nobody gives half of a slot while there is room that nobody has.
+-    if !options.desktopColumn, before.desktopFrame != nil, tree.root != tree.desktop {
++    let open = TreeView(tree: tree, isPresent: { $0 == window || isPresent($0) }).leftOpen
++    if !options.desktopColumn, before.desktopFrame != nil || open.map({ before.openPlaces[$0] != nil }) == true, tree.root != tree.desktop {
+       // (In its row or column, so that it is all of it: across, the window would get half.)
+       var along = Edge.left
+       if let row = tree.parent(of: tree.desktop), case .split(.vertical, _) = tree[row]?.kind { along = .top }
+-      candidates.insert((.beside(tree.desktop, along), nil), at: 0)
++      // Where the Desktop stands in for a place that is away, its own node can lie anywhere: beside that place, then, with a share like
++      // the others'. To the eye that is the room that is left over.
++      if let open {
++        if let row = tree.parent(of: open), case .split(let axis, _) = tree[row]?.kind { along = axis == .vertical ? .top : .left }
++        besideWhoIsAway = .beside(open, along)
++        candidates.insert((.beside(open, along), nil), at: 0)
++      } else {
++        candidates.insert((.beside(tree.desktop, along), nil), at: 0)
++      }
+     }
+ 
+     // Whoever wants windows to dock by themselves wants them to fill the display. With nothing docked yet and nothing
+@@ -137,7 +154,8 @@ public enum AutoDock {
+     let desktopInView = tree.subtree(view, contains: tree.desktop)
+     for candidate in candidates {
+       var rehearsal = workspace
+-      var placement = Placement(target: candidate.target, covers: candidate.covers, desktopWeight: desktopWeight)
++      var placement = Placement(
++        target: candidate.target, covers: candidate.covers, desktopWeight: desktopWeight, evenShare: candidate.target == besideWhoIsAway)
+       guard placement.apply(to: &rehearsal, docking: window, desktopColumn: options.desktopColumn) else { continue }
+       let after = layout(rehearsal)
+       // Docking at the edge of a view can put the window beside it in the row or column around it, and
+diff --git a/Sources/ArborCore/Drop.swift b/Sources/ArborCore/Drop.swift
+index ff66badd..60ced376 100644
+--- a/Sources/ArborCore/Drop.swift
++++ b/Sources/ArborCore/Drop.swift
+@@ -153,10 +153,12 @@ public struct Drop: Equatable, Sendable {
+   public var shareSpace: Bool
+   /// Whether the Desktop keeps its share when the window is docked in its row (`Settings.desktopColumn`).
+   public var desktopColumn: Bool
++  /// The windows that are there to see, `window` among them, for `LayoutTree.remove`. Nil: not known, and nobody inherits a place.
++  public var present: Set<WindowID>?
+ 
+   public init(
+     window: WindowID, target: DropTarget, display: DisplayID, frame: CGRect, arrivingFrame: CGRect? = nil,
+-    shareSpace: Bool = true, desktopColumn: Bool = false
++    shareSpace: Bool = true, desktopColumn: Bool = false, present: Set<WindowID>? = nil
+   ) {
+     self.window = window
+     self.target = target
+@@ -165,6 +167,7 @@ public struct Drop: Equatable, Sendable {
+     self.arrivingFrame = arrivingFrame
+     self.shareSpace = shareSpace
+     self.desktopColumn = desktopColumn
++    self.present = present
+   }
+ 
+   /// Moves `window` to where the drop puts it, taking it out of wherever it was, on any display.
+@@ -190,7 +193,7 @@ public struct Drop: Equatable, Sendable {
+         // A floating window's leaving can change the arrangement too: it lets go of a group the view has left,
+         // or that only this window, as its guest, kept (F62).
+         let arrangement = workspaces[holder]?.tree
+-        workspaces[holder]?.forget(window, shareSpace: shareSpace)
++        workspaces[holder]?.forget(window, shareSpace: shareSpace, present: present)
+         if workspaces[holder]?.tree != arrangement { changed.append(holder) }
+       }
+       workspaces[display]?.floating[window] = frame
+@@ -204,7 +207,7 @@ public struct Drop: Equatable, Sendable {
+         return instead.apply(to: &workspaces)
+       }
+       for holder in holders where holder != display {
+-        workspaces[holder]?.forget(window, shareSpace: shareSpace)
++        workspaces[holder]?.forget(window, shareSpace: shareSpace, present: present)
+         changed.append(holder)
+       }
+       if let arrivingFrame, !holders.contains(display) { workspaces[display]?.floating[window] = arrivingFrame }
+diff --git a/Sources/ArborCore/Layout.swift b/Sources/ArborCore/Layout.swift
+index 70f7b26b..1a314c0e 100644
+--- a/Sources/ArborCore/Layout.swift
++++ b/Sources/ArborCore/Layout.swift
+@@ -38,10 +38,12 @@ public struct TreeView {
+ 
+   /// Whether a node takes up space: a stack does if any of its windows is present, a split does if any child
+   /// does. The Desktop does if it has room (`LayoutTree.desktopHasRoom`). It is what is left over, so it also does, whatever
+-  /// its share, while no docked window is present anywhere: then everything is left over. So does the place that is left open.
++  /// its share, while no docked window is present anywhere: then everything is left over.
++  ///
++  /// The place that is left open does not: there is nothing of its own to look at, to hold a view on or to go to. Its room is in
++  /// the row all the same (`effectiveChildren`).
+   public func isEffective(_ id: NodeID) -> Bool {
+     guard let node = tree[id] else { return false }
+-    if id == leftOpen { return true }
+     switch node.kind {
+     case .desktop: return node.weight > 0 || !tree.allWindows.contains(where: isPresent)
+     case .stack(let windows, _): return windows.contains(where: isPresent)
+@@ -49,8 +51,9 @@ public struct TreeView {
+     }
+   }
+ 
++  /// The children that have room in a layout of `id`: those that take up space, and the place that is left open.
+   public func effectiveChildren(of id: NodeID) -> [NodeID] {
+-    tree.children(of: id).filter(isEffective)
++    tree.children(of: id).filter { isEffective($0) || $0 == leftOpen }
+   }
+ 
+   /// The stack's window to show: its active window if present, otherwise the
+@@ -71,8 +74,7 @@ public struct TreeView {
+   public func effectiveAncestor(of id: NodeID) -> NodeID {
+     guard id != tree.desktop else { return id }
+     var current = tree.contains(id) ? id : tree.root
+-    // (There is nothing to look at in the place that is left open but the Desktop, which has a node of its own.)
+-    while !isEffective(current) || current == leftOpen, let parent = tree.parent(of: current) {
++    while !isEffective(current), let parent = tree.parent(of: current) {
+       current = parent
+     }
+     return current
+@@ -198,8 +200,8 @@ public struct Layout: Equatable, Sendable {
+   /// Present docked windows that must be moved out of view: outside the
+   /// camera, inactive tabs, or inside tiles.
+   public var hiddenWindows: Set<WindowID> = []
+-  /// Places that have their room and nobody in them (`leavingOpen`), each by the outermost node that holds nothing
+-  /// else. They are not in `nodeFrames`: there is nothing to point at, to frame or to walk to.
++  /// Places that have their room and nobody in them (`leavingOpen`; `TreeView.leftOpen` in a view without the Desktop), each by the outermost
++  /// node that holds nothing else. They are not in `nodeFrames`: there is nothing to point at, to frame or to walk to.
+   public var openPlaces: [NodeID: CGRect] = [:]
+ 
+   public init(camera: NodeID, frame: CGRect) {
+@@ -324,7 +326,15 @@ public enum LayoutEngine {
+     mutating func place(_ id: NodeID, in rect: CGRect, isCamera: Bool) {
+       guard let node = view.tree[id] else { return }
+       // The Desktop stands in for it, and has the rectangle. (The gaps beside it name the place: they go by its weight.)
+-      if id == view.leftOpen { return place(view.tree.desktop, in: rect, isCamera: false) }
++      // Not in a view of the two alone, beside which the Desktop's node lies: that shows no Desktop and nothing that floats on it, held or
++      // not, and goes on doing so. There the room is kept, and empty.
++      if id == view.leftOpen {
++        guard view.tree.subtree(layout.camera, contains: view.tree.desktop) else {
++          layout.openPlaces[id] = rect
++          return
++        }
++        return place(view.tree.desktop, in: rect, isCamera: false)
++      }
+       layout.nodeFrames[id] = rect
+ 
+       if !isCamera, let kind = tileKind(for: node, in: rect) {
+diff --git a/Sources/ArborCore/LayoutTree+Room.swift b/Sources/ArborCore/LayoutTree+Room.swift
+index 58ad4a24..82df3c04 100644
+--- a/Sources/ArborCore/LayoutTree+Room.swift
++++ b/Sources/ArborCore/LayoutTree+Room.swift
+@@ -84,4 +84,27 @@ extension LayoutTree {
+     nodes[visit.host]!.weight = visit.weights[host] + visit.weights[guest]
+     return true
+   }
++
++  /// `id`, which is there to see, is about to leave, and of the three places that everything consists of another is away. To the eye
++  /// these are two, and whoever is left alone stays as it is (F68): what is freed is left over where it was freed, and the one
++  /// that is away takes that room when it comes back. So it inherits the place and the weight of the one that leaves. What it had
++  /// itself, which the two had between them, goes the way of all room that is left, to the same two places as before.
++  ///
++  /// There and back is nothing comes first: a visitor that leaves the row as it found it gives back what it took.
++  mutating func handOnThePlace(of id: NodeID, isPresent: (WindowID) -> Bool) {
++    guard !desktopHasRoom, id != desktop, nodes[id]?.parent == everything else { return }
++    let places = children(of: everything).filter { $0 != desktop }
++    guard places.count == 3 else { return }
++    let away = places.filter { place in place != id && !windows(under: place).contains(where: isPresent) }
++    // (A place kept for a window that is not open is not away, `TreeView.leftOpen`.)
++    guard away.count == 1, let heir = away.first, windows(under: heir).contains(where: { !$0.isStandIn }) else { return }
++    var trial = self
++    trial.repayLoans(of: id)
++    guard !trial.endVisit(of: id, leaving: everything) else { return }
++    repayLoans(of: id)
++    swapSiblings(id, heir)
++    let own = nodes[id]!.weight
++    nodes[id]!.weight = nodes[heir]!.weight
++    nodes[heir]!.weight = own
++  }
+ }
+diff --git a/Sources/ArborCore/LayoutTree.swift b/Sources/ArborCore/LayoutTree.swift
+index 4969144d..83c7e5d0 100644
+--- a/Sources/ArborCore/LayoutTree.swift
++++ b/Sources/ArborCore/LayoutTree.swift
+@@ -323,7 +323,9 @@ public struct LayoutTree: Codable, Sendable, Equatable {
+   /// already, and staying as it is means keeping that. (Not a window that is minimized or hidden: beside one other place
+   /// it has kept its room, `TreeView.leftOpen`, and among more the others have shared it as they share it now.)
+   @discardableResult
+-  public mutating func remove(_ window: WindowID, shareSpace: Bool = true, away: Bool = false) -> Remap {
++  public mutating func remove(
++    _ window: WindowID, shareSpace: Bool = true, away: Bool = false, present: Set<WindowID>? = nil
++  ) -> Remap {
+     var remap = Remap()
+     guard let leaf = leaf(containing: window),
+       case .stack(var windows, var active) = nodes[leaf]!.kind,
+@@ -336,6 +338,7 @@ public struct LayoutTree: Codable, Sendable, Equatable {
+       nodes[leaf]!.kind = .stack(windows: windows, active: active)
+       return remap
+     }
++    if let present, present.contains(window) { handOnThePlace(of: leaf, isPresent: present.contains) }
+     detach(leaf, shareSpace: shareSpace, away: away, remap: &remap)
+     return remap
+   }
+diff --git a/Sources/ArborCore/MakeRoom.swift b/Sources/ArborCore/MakeRoom.swift
+index 5b916071..d4a0fdd0 100644
+--- a/Sources/ArborCore/MakeRoom.swift
++++ b/Sources/ArborCore/MakeRoom.swift
+@@ -215,7 +215,7 @@ public enum MakeRoom {
+         else { continue }
+         let view = TreeView(tree: copy, isPresent: isPresent)
+         let children = view.effectiveChildren(of: row)
+-        let lengths = children.compactMap { now.nodeFrames[view.shown(at: $0)]?.length(along: axis) }
++        let lengths = children.compactMap { (now.nodeFrames[view.shown(at: $0)] ?? now.openPlaces[$0])?.length(along: axis) }
+         guard children.contains(loan.giver), children.contains(loan.receiver), lengths.count == children.count
+         else { continue }
+         let points = lengths.reduce(0) { $0 + $1 + withEach }
+@@ -353,7 +353,10 @@ public enum MakeRoom {
+           view: view, layout: layout, axis: axis, options: options, minimumSize: minimumSize,
+           tilesKeep: options.minimumUsableSize, strangersGive: false)
+         let row = view.effectiveChildren(of: parent)
+-        guard row.contains(loan.giver), row.contains(loan.receiver), let length = giver.length(of: loan.receiver) else { continue }
++        // What was lent to one that is away stands until it is back, where its room is kept for it as everywhere else: it will need it again.
++        guard row.contains(loan.giver), row.contains(loan.receiver), loan.receiver != view.leftOpen,
++          let length = giver.length(of: loan.receiver)
++        else { continue }
+         let points = row.compactMap(giver.length(of:)).reduce(0, +)
+         let weight = row.reduce(0) { $0 + (tree[$1]?.weight ?? 0) }
+         guard points > 0, weight > 0 else { continue }
+@@ -416,7 +419,7 @@ public enum MakeRoom {
+     /// Whether the tile of a group gives like a window's. It has no place to lose either.
+     var tilesOfGroupsGive = false
+ 
+-    func length(of node: NodeID) -> CGFloat? { layout.nodeFrames[view.shown(at: node)]?.length(along: axis) }
++    func length(of node: NodeID) -> CGFloat? { (layout.nodeFrames[view.shown(at: node)] ?? layout.openPlaces[node])?.length(along: axis) }
+ 
+     /// What each would have if the nearest row (or column) along the axis that `leaf` is in were shared out evenly.
+     func evenShare(of leaf: NodeID) -> CGFloat? {
+diff --git a/Sources/ArborCore/Navigation.swift b/Sources/ArborCore/Navigation.swift
+index f1191148..c47282c2 100644
+--- a/Sources/ArborCore/Navigation.swift
++++ b/Sources/ArborCore/Navigation.swift
+@@ -66,14 +66,15 @@ public enum Navigation {
+     -> NodeID?
+   {
+     var current = view.effectiveAncestor(of: camera)
++    // Where the Desktop stands in for a place that is away, that is where it is seen, and where its neighbours are counted from.
++    if current == view.tree.desktop { current = view.whatIsLeftOver }
+     while let parent = view.tree.parent(of: current) {
+       if case .split(let axis, _) = view.tree[parent]?.kind, axis == direction.axis {
+         // Counted among all the children: the view can be on a Desktop without room, which still has its place among them.
+         let siblings = view.tree.children(of: parent)
+         if let index = siblings.firstIndex(of: current) {
+           let beyond = direction.isLeading ? Array(siblings[..<index].reversed()) : Array(siblings[(index + 1)...])
+-          // (From the Desktop, the place it stands in for is no step away.)
+-          if let next = beyond.first(where: { view.isEffective($0) && view.shown(at: $0) != current }) { return view.shown(at: next) }
++          if let next = beyond.first(where: { view.isEffective($0) || $0 == view.leftOpen }) { return view.shown(at: next) }
+         }
+       }
+       current = parent
+diff --git a/Sources/ArborCore/Workspace.swift b/Sources/ArborCore/Workspace.swift
+index 0929991d..c65e3ff4 100644
+--- a/Sources/ArborCore/Workspace.swift
++++ b/Sources/ArborCore/Workspace.swift
+@@ -171,16 +171,18 @@ public struct Workspace: Codable, Sendable, Equatable {
+ 
+   /// Removes `window` from the tree and from floating, fixing up references. Here and below,
+   /// `shareSpace` says who gets a docked window's space, and `away` that it takes up none just now (`LayoutTree.remove`).
+-  public mutating func forget(_ window: WindowID, shareSpace: Bool = true, away: Bool = false) {
++  public mutating func forget(_ window: WindowID, shareSpace: Bool = true, away: Bool = false, present: Set<WindowID>? = nil) {
+     floating[window] = nil
+     endVisit(of: window)
+-    changeStructure { $0.remove(window, shareSpace: shareSpace, away: away) }
++    changeStructure { $0.remove(window, shareSpace: shareSpace, away: away, present: present) }
+     setUndockedFrame(nil, of: window)
+   }
+ 
+   /// Undocks `window` and makes it float at `frame`.
+-  public mutating func undock(_ window: WindowID, floatingAt frame: CGRect, shareSpace: Bool = true, away: Bool = false) {
+-    changeStructure { $0.remove(window, shareSpace: shareSpace, away: away) }
++  public mutating func undock(
++    _ window: WindowID, floatingAt frame: CGRect, shareSpace: Bool = true, away: Bool = false, present: Set<WindowID>? = nil
++  ) {
++    changeStructure { $0.remove(window, shareSpace: shareSpace, away: away, present: present) }
+     floating[window] = frame
+     setUndockedFrame(nil, of: window)
+   }
+diff --git a/Sources/ArborKit/Controller/Controller+AutoDock.swift b/Sources/ArborKit/Controller/Controller+AutoDock.swift
+index bc5cc63f..fc8941f2 100644
+--- a/Sources/ArborKit/Controller/Controller+AutoDock.swift
++++ b/Sources/ArborKit/Controller/Controller+AutoDock.swift
+@@ -65,7 +65,7 @@ extension Controller {
+       guard fits else { continue }
+       // Worked out now: the last layout that was applied can be older than the last report about a window.
+       let before = layout(of: display)
+-      dockNewWindow(id, at: placement.target, on: display, desktopWeight: placement.desktopWeight)
++      dockNewWindow(id, at: placement.target, on: display, desktopWeight: placement.desktopWeight, evenShare: placement.evenShare)
+       if let before, let after = layouts[display],
+         !AutoDock.keepsEverythingShowing(
+           before: before, after: after, adding: id, covering: placement.covers,
+diff --git a/Sources/ArborKit/Controller/Controller+Drag.swift b/Sources/ArborKit/Controller/Controller+Drag.swift
+index 8dbca3be..3c786e9c 100644
+--- a/Sources/ArborKit/Controller/Controller+Drag.swift
++++ b/Sources/ArborKit/Controller/Controller+Drag.swift
+@@ -415,7 +415,8 @@ extension Controller {
+     guard let current = windows[window]?.frame else { return nil }
+     let home = workspaceID(containing: window)
+     var drop = Drop(
+-      window: window, target: target, display: display, frame: current, shareSpace: settings.shareRemovedSpace, desktopColumn: settings.desktopColumn)
++      window: window, target: target, display: display, frame: current, shareSpace: settings.shareRemovedSpace, desktopColumn: settings.desktopColumn,
++      present: presentWindowIDs())
+     switch target {
+     case .float where leftToMacOS: break
+     case .float:
+diff --git a/Sources/ArborKit/Controller/Controller+EdgeResize.swift b/Sources/ArborKit/Controller/Controller+EdgeResize.swift
+index c68823b0..6d97c848 100644
+--- a/Sources/ArborKit/Controller/Controller+EdgeResize.swift
++++ b/Sources/ArborKit/Controller/Controller+EdgeResize.swift
+@@ -136,8 +136,8 @@ extension Controller {
+     while let parent = tree.parent(of: current) {
+       defer { current = parent }
+       guard case .split(let axis, _) = tree[parent]?.kind, axis == edge.axis else { continue }
+-      // Also a place that is kept open for a window that is not there yet (Controller+KeptRoom.swift).
+-      let siblings = tree.children(of: parent).filter { view.isEffective($0) || layout.openPlaces[$0] != nil }
++      // Also a place that is kept open for a window that is not there yet (Controller+KeptRoom.swift), or for one that is away.
++      let siblings = tree.children(of: parent).filter { view.isEffective($0) || layout.openPlaces[$0] != nil || $0 == view.leftOpen }
+       guard let index = siblings.firstIndex(of: current) else { continue }
+       let neighborIndex = edge.isLeading ? index - 1 : index + 1
+       guard siblings.indices.contains(neighborIndex) else { continue }
+diff --git a/Sources/ArborKit/Controller/Controller+Events.swift b/Sources/ArborKit/Controller/Controller+Events.swift
+index 25456c34..6aad78f8 100644
+--- a/Sources/ArborKit/Controller/Controller+Events.swift
++++ b/Sources/ArborKit/Controller/Controller+Events.swift
+@@ -33,6 +33,7 @@ extension Controller: WindowSystemEvents {
+     defer { holdForgets(id) }
+     let app = windows[id]?.pid
+     let appName = windows[id]?.appName
++    let wasThere = presentWindowIDs().contains(id)
+     windows[id] = nil
+     lettingBeEndsIfItNoLongerApplies()
+     parked.remove(id)
+@@ -85,7 +86,7 @@ extension Controller: WindowSystemEvents {
+     defer { endUndoStep(undoScope) }
+     for display in workspaces.keys.sorted() where workspaces[display]!.contains(id) {
+       if !slotWaitsAgain(after: id, on: display) {
+-        workspaces[display]!.forget(id, shareSpace: settings.shareRemovedSpace)
++        workspaces[display]!.forget(id, shareSpace: settings.shareRemovedSpace, present: presentWindowIDs().union(wasThere ? [id] : []))
+       }
+       if wentBack?.display != display { relayout(display, reason: .structure) }
+       if hadKeyboard { keyboardLeft(id, of: app, on: display, wentBack: wentBack) }
+diff --git a/Sources/ArborKit/Controller/Controller+KeyboardDock.swift b/Sources/ArborKit/Controller/Controller+KeyboardDock.swift
+index c54f4ea6..39e18036 100644
+--- a/Sources/ArborKit/Controller/Controller+KeyboardDock.swift
++++ b/Sources/ArborKit/Controller/Controller+KeyboardDock.swift
+@@ -84,7 +84,9 @@ extension Controller {
+     }
+ 
+     // 2. Otherwise step out of its group, next to whatever is beyond that edge.
+-    if let neighbor = Navigation.adjacentLeaf(to: leaf, toward: edge, in: layout, tree: workspace.tree) {
++    if let beyond = Navigation.adjacentLeaf(to: leaf, toward: edge, in: layout, tree: workspace.tree) {
++      // (Where the Desktop stands in for a place that is away, that place is what lies there. Its own node can lie anywhere.)
++      let neighbor = beyond == workspace.tree.desktop ? view.whatIsLeftOver : beyond
+       guard let stepped = stepping(id, outBeside: neighbor, toward: edge, in: workspace, on: display) else {
+         return .refused(Workspace.DockOutcome.tooDeep.refusal(of: id)!)
+       }
+diff --git a/Sources/ArborKit/Controller/Controller+Pin.swift b/Sources/ArborKit/Controller/Controller+Pin.swift
+index 8224990d..5e5f73ab 100644
+--- a/Sources/ArborKit/Controller/Controller+Pin.swift
++++ b/Sources/ArborKit/Controller/Controller+Pin.swift
+@@ -26,7 +26,7 @@ extension Controller {
+       // Where `float` would put it, at its own size however large (F48; QUESTIONS Q20): Arbor picks no size for a floating window.
+       let frame = floatingFrame(for: id, on: display)
+       workspaces[display]!.undock(
+-        id, floatingAt: frame, shareSpace: settings.shareRemovedSpace)
++        id, floatingAt: frame, shareSpace: settings.shareRemovedSpace, present: presentWindowIDs())
+       workspaces[display]!.pin(id)
+       place(id, at: frame, on: display)
+       // What macOS and the app made of it (whole points, a minimum size) is where it is.
+diff --git a/Sources/ArborKit/Controller/Controller+Rules.swift b/Sources/ArborKit/Controller/Controller+Rules.swift
+index 2f2f7534..a1ebeb72 100644
+--- a/Sources/ArborKit/Controller/Controller+Rules.swift
++++ b/Sources/ArborKit/Controller/Controller+Rules.swift
+@@ -81,7 +81,7 @@ extension Controller {
+     case .float, .pin, .ignore:  // `ignore` returned above
+       if let dockedOn {
+         workspaces[dockedOn]!.undock(
+-          id, floatingAt: floatingFrame(for: id, on: dockedOn), shareSpace: settings.shareRemovedSpace)
++          id, floatingAt: floatingFrame(for: id, on: dockedOn), shareSpace: settings.shareRemovedSpace, present: presentWindowIDs())
+         if let frame = returnToOpeningFrame(id) { workspaces[dockedOn]!.floating[id] = frame }
+       }
+       // Before the layout, which moves a floating window onto the Desktop and leaves a pinned one where it is.
+@@ -327,12 +327,13 @@ extension Controller {
+   /// as to any window that has the keyboard: when `windowFocused` says so, or, if
+   /// `theViewMayFollow`, at once (`theViewGoesStraightTo`). `desktopWeight` is `AutoDock.Placement`'s.
+   func dockNewWindow(
+-    _ id: WindowID, at target: DropTarget, on display: DisplayID, desktopWeight: Double? = nil, theViewMayFollow: Bool = false
++    _ id: WindowID, at target: DropTarget, on display: DisplayID, desktopWeight: Double? = nil, evenShare: Bool = false,
++    theViewMayFollow: Bool = false
+   ) {
+     guard var workspace = workspaces[display] else { return }
+     // Undoing it leaves the window floating. Nobody asked for it just now, so redo stays.
+     recordingUndo("dock \(id) as it opened", title: "Dock", keepingRedo: true) {
+-      AutoDock.Placement(target: target, desktopWeight: desktopWeight)
++      AutoDock.Placement(target: target, desktopWeight: desktopWeight, evenShare: evenShare)
+         .apply(to: &workspace, docking: id, shareSpace: settings.shareRemovedSpace, desktopColumn: settings.desktopColumn)
+       workspaces[display] = workspace
+       if !(theViewMayFollow && theViewGoesStraightTo(id, dockedOn: display)) { relayout(display, reason: .structure) }
+diff --git a/Sources/ArborKit/Controller/Controller+Tiling.swift b/Sources/ArborKit/Controller/Controller+Tiling.swift
+index 2433458d..2749fbc4 100644
+--- a/Sources/ArborKit/Controller/Controller+Tiling.swift
++++ b/Sources/ArborKit/Controller/Controller+Tiling.swift
+@@ -477,7 +477,7 @@ extension Controller {
+         return .failure("\(id) stays where it is: its app does not answer")
+       }
+       parked.remove(id)
+-      workspaces[source]!.forget(id, shareSpace: settings.shareRemovedSpace)
++      workspaces[source]!.forget(id, shareSpace: settings.shareRemovedSpace, present: presentWindowIDs())
+       if actual.width > wanted.width + 2 || actual.height > wanted.height + 2 {
+         // Its app will not make it that small. From the Desktop's far corner it would hang off the display.
+         minimumSizes[id] = CGSize(
+diff --git a/Sources/ArborKit/Controller/Controller+UndockedFrames.swift b/Sources/ArborKit/Controller/Controller+UndockedFrames.swift
+index 445eb205..fbdeeb94 100644
+--- a/Sources/ArborKit/Controller/Controller+UndockedFrames.swift
++++ b/Sources/ArborKit/Controller/Controller+UndockedFrames.swift
+@@ -44,7 +44,7 @@ extension Controller {
+     let camera = workspace.camera
+     let wasFramed = workspace.tree.leaf(containing: window) == camera && workspace.tree.windows(under: camera) == [window]
+     workspace.undock(
+-      window, floatingAt: frame, shareSpace: settings.shareRemovedSpace)
++      window, floatingAt: frame, shareSpace: settings.shareRemovedSpace, present: presentWindowIDs())
+     workspaces[displayID] = workspace
+     misfits[window] = nil
+     // The space the view was on is gone. The window lives on the Desktop now, so look there, rather
+@@ -322,7 +322,7 @@ extension Controller {
+   func transfer(_ window: WindowID, from source: DisplayID, to destination: DisplayID) {
+     let frame = frameAfterTransfer(of: window, from: source, to: destination)
+     noteTransfer(of: window, from: source, to: destination, arrivingAt: frame)
+-    workspaces[source]?.forget(window, shareSpace: settings.shareRemovedSpace)
++    workspaces[source]?.forget(window, shareSpace: settings.shareRemovedSpace, present: presentWindowIDs())
+     if let frame { workspaces[destination]?.floating[window] = frame }
+   }
+ 
+diff --git a/Sources/ArborKit/Controller/Controller.swift b/Sources/ArborKit/Controller/Controller.swift
+index 4f83c648..8926ca49 100644
+--- a/Sources/ArborKit/Controller/Controller.swift
++++ b/Sources/ArborKit/Controller/Controller.swift
+@@ -1145,7 +1145,7 @@ public final class Controller {
+             wasParked || wasPushedAside(window, from: $0) ? asItWas($0, on: display) : nil
+           }
+         if wasParked { noteIfInFullScreen(window, belongsAt: frame, on: display) }
+-        workspace.forget(window, shareSpace: settings.shareRemovedSpace)
++        workspace.forget(window, shareSpace: settings.shareRemovedSpace, present: presentWindowIDs())
+         parked.remove(window)
+         var place = frame
+         if let frame {
+diff --git a/Tests/ArborCoreTests/AutoDockTests.swift b/Tests/ArborCoreTests/AutoDockTests.swift
+index 419f3a29..725a552d 100644
+--- a/Tests/ArborCoreTests/AutoDockTests.swift
++++ b/Tests/ArborCoreTests/AutoDockTests.swift
+@@ -133,7 +133,7 @@ private func w(_ raw: UInt32) -> WindowID { WindowID(raw) }
+     #expect(target(plan(both, recent: [w(900), w(7), w(8), w(2), w(1)])) == .beside(leaf(2, both), .bottom))
+     // 2 is minimized. Of two halves it has kept its own, which is left over meanwhile, and what is left over goes first: nobody is
+     // anybody's neighbour (`whileOneOfTwoHalvesIsAwayTheNewWindowTakesTheEmptyHalf`).
+-    #expect(target(plan(both, recent: [w(2), w(1)], absent: [w(2)])) == .beside(both.tree.desktop, .left))
++    #expect(target(plan(both, recent: [w(2), w(1)], absent: [w(2)])) == .beside(leaf(2, both), .left))
+     // In a column beside a third window whoever is away lends its room, and somebody has to share.
+     let column = workspace {
+       $0.dock(w(1), at: .cameraEdge(.left))
+@@ -158,7 +158,8 @@ private func w(_ raw: UInt32) -> WindowID { WindowID(raw) }
+       Issue.record("not docked")
+       return
+     }
+-    #expect(placement.target == .beside(both.tree.desktop, .left))
++    // Beside the place that is away, which is where the room is seen: the Desktop's own node can lie anywhere. With a share like the others'.
++    #expect(placement.target == .beside(leaf(away, both), .left) && placement.evenShare)
+     #expect(placement.slot == halves[away])
+     #expect(placement.covers == nil && placement.desktopWeight == nil)
+     #expect(placement.apply(to: &both, docking: w(900)))
+diff --git a/Tests/ArborCoreTests/DesktopWithoutRoomTests.swift b/Tests/ArborCoreTests/DesktopWithoutRoomTests.swift
+index d8ed41ac..a0ca9761 100644
+--- a/Tests/ArborCoreTests/DesktopWithoutRoomTests.swift
++++ b/Tests/ArborCoreTests/DesktopWithoutRoomTests.swift
+@@ -506,7 +506,9 @@ private func two() -> LayoutTree {
+ 
+     let view = TreeView(tree: tree, isPresent: { $0 == stays })
+     #expect(view.leftOpen == place && view.whatIsLeftOver == place)
+-    #expect(view.isEffective(place) && !view.isEffective(tree.desktop))
++    // It has its room in the row, and is nothing to look at, to go to or to hold a view on.
++    #expect(!view.isEffective(place) && !view.isEffective(tree.desktop))
++    #expect(view.effectiveAncestor(of: place) == tree.root)
+     #expect(view.shown(at: place) == tree.desktop && view.shown(at: other) == other)
+     #expect(Set(view.effectiveChildren(of: tree.root)) == [place, other])
+     #expect(view.passThrough(tree.root) == tree.root, "two places show")
+@@ -699,6 +701,129 @@ private func two() -> LayoutTree {
+     #expect(layout.desktopFrame == nil)
+   }
+ 
++  // MARK: From three places to two while one is away
++
++  /// A row of these three with nothing left over, weighing 2, 1 and 3 whichever way they stand.
++  private func three(_ order: [WindowID], axis: Axis = .horizontal) throws -> LayoutTree {
++    var tree = LayoutTree()
++    for window in order { tree.dock(window, beside: tree.root, edge: axis == .horizontal ? .right : .bottom) }
++    tree.setShares([try #require(tree.leaf(containing: a)): 2, try #require(tree.leaf(containing: b)): 1, try #require(tree.leaf(containing: c)): 3])
++    #expect(!tree.desktopHasRoom && tree.invariantViolations().isEmpty)
++    return tree
++  }
++
++  /// `a` is there, `b` is in the Dock, `c` closes. To the eye these were two, and whoever is left alone stays as it is: what is freed is left
++  /// over where it was freed, and `b` takes that room when it comes back, where it is.
++  @Test(arguments: [[a, b, c], [b, a, c], [a, c, b], [c, a, b], [c, b, a], [b, c, a]], [true, false])
++  func theOneThatIsAwayInheritsThePlaceOfTheOneThatLeaves(order: [WindowID], shareSpace: Bool) throws {
++    var tree = try three(order)
++    let options = LayoutOptions(shareRemovedSpace: shareSpace)
++    let before = layOut(tree, options: options, isPresent: { $0 != b })
++    #expect(before.windowFrames.count == 2 && before.desktopFrame == nil)
++    tree.remove(c, shareSpace: shareSpace, present: [a, c])
++    #expect(!tree.desktopHasRoom && tree.invariantViolations().isEmpty)
++    let after = layOut(tree, options: options, isPresent: { $0 == a })
++    #expect(after.windowFrames == [a: before.windowFrames[a]!], "no frame for the one that was not named")
++    #expect(after.desktopFrame == before.windowFrames[c], "left over where it was freed")
++    let back = layOut(tree, options: options)
++    #expect(back.windowFrames == [a: before.windowFrames[a]!, b: before.windowFrames[c]!])
++  }
++
++  @Test func inAColumnToo() throws {
++    var tree = try three([a, b, c], axis: .vertical)
++    let before = layOut(tree, isPresent: { $0 != b })
++    tree.remove(c, present: [a, c])
++    #expect(layOut(tree, isPresent: { $0 == a }).windowFrames == [a: before.windowFrames[a]!])
++    #expect(layOut(tree).windowFrames == [a: before.windowFrames[a]!, b: before.windowFrames[c]!])
++  }
++
++  /// Nothing is freed on screen when the one that leaves was away itself, and nobody inherits where nobody is away, where two are, or where
++  /// the place only waits for a window that is not open: the others share, as ever.
++  @Test func nobodyInheritsWhereNothingIsFreedOrNobodyIsAway() throws {
++    let tree = try three([a, b, c])
++    var plain = tree
++    plain.remove(c)
++    for present: Set<WindowID> in [[a], [a, b, c], [c]] {
++      var copy = tree
++      copy.remove(c, present: present)
++      #expect(copy == plain, "\(present.sorted())")
++    }
++    var waiting = tree
++    waiting.replaceWindow(b, with: standIn)
++    var shared = waiting
++    shared.remove(c)
++    waiting.remove(c, present: [a, c])
++    #expect(waiting == shared)
++    // Nor among four, where two are left to share.
++    var four = tree
++    four.dock(d, beside: four.root, edge: .right)
++    var fourShared = four
++    fourShared.remove(c)
++    four.remove(c, present: [a, c, d])
++    #expect(four == fourShared)
++  }
++
++  /// There and back is nothing comes first: a window that took half of the one that is there, and leaves the row as it found it, gives that back.
++  @Test func aVisitorGivesBackWhatItTook() throws {
++    let tree = two()
++    var visited = tree
++    visited.dock(c, beside: try #require(tree.leaf(containing: b)), edge: .left)
++    visited.remove(c, present: [b, c])
++    #expect(visited.children(of: visited.root) == tree.children(of: tree.root) && weights(visited) == weights(tree))
++  }
++
++  /// The Desktop's own node can lie anywhere. It is seen where it stands in, and its neighbours are counted from there.
++  @Test func theDesktopIsANeighbourWhereItIsSeen() throws {
++    let tree = LayoutTree.grid(of: [a, b])  // [a | b | Desktop without room]
++    #expect(tree.children(of: tree.root).last == tree.desktop)
++    let view = TreeView(tree: tree, isPresent: { $0 == b })
++    let stays = try #require(tree.leaf(containing: b))
++    #expect(Navigation.neighbor(of: stays, toward: .left, in: view) == tree.desktop)
++    #expect(Navigation.neighbor(of: tree.desktop, toward: .right, in: view) == stays)
++    #expect(Navigation.neighbor(of: tree.desktop, toward: .left, in: view) == nil)
++    #expect(Navigation.neighbor(of: stays, toward: .right, in: view) == nil)
++  }
++
++  /// Where the two are a group beside a Desktop without room, a view of the group shows no Desktop, and nothing that floats on it. It goes on doing so
++  /// while one of the two is away: the room is kept, and empty. The view of the row around them has the Desktop in it.
++  @Test func inAViewOfTheTwoAloneTheRoomIsKeptAndEmpty() throws {
++    var tree = LayoutTree.grid(of: [a])
++    tree.dock(b, beside: try #require(tree.leaf(containing: a)), edge: .bottom)  // [(a / b) | Desktop without room]
++    let first = try #require(tree.leaf(containing: a))
++    let group = try #require(tree.parent(of: first))
++    #expect(group != tree.root && !tree.subtree(group, contains: tree.desktop))
++    #expect(layOut(tree, camera: group).camera == group)
++    let all = layOut(tree)
++    let layout = layOut(tree, camera: group, isPresent: { $0 == b })
++    #expect(layout.camera == group, "the view does not widen")
++    #expect(layout.windowFrames == [b: all.windowFrames[b]!])
++    #expect(layout.desktopFrame == nil && layout.nodeFrames[tree.desktop] == nil && layout.nodeFrames[first] == nil)
++    #expect(layout.openPlaces == [first: all.windowFrames[a]!])
++    #expect(layout.seams == layOut(tree, camera: group).seams, "the gap can be dragged")
++    let whole = layOut(tree, isPresent: { $0 == b })
++    #expect(whole.desktopFrame == all.windowFrames[a] && whole.openPlaces.isEmpty && whole.windowFrames == layout.windowFrames)
++  }
++
++  /// What was lent to the one that is away stands until it is back: it will need it again, and the lender gets no frame meanwhile.
++  @Test func aLoanToTheOneThatIsAwayStands() throws {
++    var tree = two()
++    let needs = [b: CGSize(width: 1100, height: 400)]
++    func serve(_ tree: inout LayoutTree, isPresent: @escaping (WindowID) -> Bool) -> Layout {
++      MakeRoom.serve(
++        &tree, camera: tree.root, in: screen, options: LayoutOptions(), isPresent: isPresent, minimumSize: { needs[$0] },
++        terms: MakeRoom.Terms(desktopIsInUse: false)
++      ).layout
++    }
++    let both = serve(&tree, isPresent: everyone)
++    #expect(both.windowFrames[a]?.width == 304 && both.windowFrames[b]?.width == 1100)
++    let lent = tree
++    let alone = serve(&tree, isPresent: { $0 == a })
++    #expect(alone.windowFrames == [a: both.windowFrames[a]!])
++    #expect(alone.desktopFrame == both.windowFrames[b])
++    #expect(tree == lent, "nothing in the tree changes")
++    #expect(serve(&tree, isPresent: everyone).windowFrames == both.windowFrames)
++  }
++
+   // MARK: What is saved
+ 
+   @Test func itIsSavedAndReadBack() throws {
+diff --git a/Tests/ArborKitTests/HoldRescueTests.swift b/Tests/ArborKitTests/HoldRescueTests.swift
+index b3b794b0..3bba4b74 100644
+--- a/Tests/ArborKitTests/HoldRescueTests.swift
++++ b/Tests/ArborKitTests/HoldRescueTests.swift
+@@ -135,9 +135,11 @@ import Testing
+     #expect(!h.system.isVisible(note), "the end of a hold brings nothing into view")
+     h.run("show-all")
+     #expect(h.system.isVisible(note), "the next move of the view does")
+-    // Where it would have been brought at once without a hold, whatever is docked there: Mail has everything, and no room is the Desktop's
+-    // alone, so that floating windows have nowhere to make way to either.
+-    #expect(h.frame(note)!.center.x == h.visibleFrame.midX)
++    // Where it would have been brought at once without a hold: the middle, whatever is docked there. Keynote is in the Dock, so Mail has kept
++    // its half and the other is left over (F68). Where floating windows make way that is where they go: as near the middle as it reaches.
++    #expect(h.frame(mail) == CGRect(x: 726, y: 37, width: 702, height: 851))
++    #expect(h.layout?.desktopFrame == CGRect(x: 12, y: 37, width: 702, height: 851))
++    #expect(h.frame(note)!.center.x == (makingWay ? 714 - 250 : h.visibleFrame.midX))
+     #expect(h.visibleFrame.contains(h.frame(note)!))
+   }
+ 
+diff --git a/Tests/ArborKitTests/NoDesktopColumnTests.swift b/Tests/ArborKitTests/NoDesktopColumnTests.swift
+index 26b97007..541dc380 100644
+--- a/Tests/ArborKitTests/NoDesktopColumnTests.swift
++++ b/Tests/ArborKitTests/NoDesktopColumnTests.swift
+@@ -326,12 +326,12 @@ import Testing
+ 
+   /// The ways out of the arrangement for good.
+   enum Leaving: String, CaseIterable, CustomTestStringConvertible {
+-    case closed, floated, pinned, excluded, sentToAnotherDisplay
++    case closed, floated, pinned, excluded, sentToAnotherDisplay, draggedOut
+     var testDescription: String { rawValue }
+   }
+ 
+   /// It had kept its room while it was in the Dock, so whoever is there never took it, and stays as it is. The half is left over for good.
+-  @Test(arguments: Leaving.allCases, [0, 1])
++  @Test(arguments: Leaving.allCases.filter { $0 != .draggedOut }, [0, 1])
+   func goneForGoodWhileItWasInTheDockItLeavesTheOtherAsItIsAndItsHalfLeftOver(_ way: Leaving, _ leaver: Int) {
+     let (h, w) = harness(2, displays: [FakeWindowSystem.standardDisplay, Workload.secondDisplay])
+     h.run("dock \(w[0].rawValue) left")
+@@ -348,6 +348,7 @@ import Testing
+     case .pinned: #expect(h.run("pin \(goes.rawValue)").ok)
+     case .excluded: #expect(h.run("exclude \(app)").ok)
+     case .sentToAnotherDisplay: #expect(h.run("move-to-display 2 \(goes.rawValue)").ok)
++    case .draggedOut: break  // No hand reaches a window in the Dock.
+     }
+     h.scheduler.advance(by: 2)
+     #expect(!h.workspace.isDocked(goes))
+@@ -426,6 +427,218 @@ import Testing
+     expectWindowsMatchLayout(h)
+   }
+ 
++  /// Three places, the one in the middle or at either end in the Dock: to the eye two halves. One of the two leaves for good, by whatever way. That names
++  /// it alone: the other gets no frame, what is freed is left over where it was freed, and the one that was away comes back to that room.
++  @Test(arguments: Leaving.allCases, [0, 1, 2])
++  func fromThreePlacesToTwoWhileOneIsAwayTheOneThatIsThereGetsNoFrame(_ way: Leaving, _ awayAt: Int) {
++    let (h, w) = harness(3, displays: [FakeWindowSystem.standardDisplay, Workload.secondDisplay])
++    for window in w { h.run("dock \(window.rawValue) right") }
++    let away = w[awayAt]
++    let there = w.filter { $0 != away }
++    let (stays, goes) = (there[0], there[1])
++    let app = h.controller.windows[goes]?.bundleID ?? ""
++    h.system.setMinimized(away, true)
++    h.scheduler.advance(by: 2)
++    let (half, freed) = (h.frame(stays), h.frame(goes))
++    #expect(half?.width == 702 && freed?.width == 702, "the premise")
++    h.system.clearFrameLog()
++    switch way {
++    case .closed: h.system.close(goes)
++    case .floated: #expect(h.run("float \(goes.rawValue)").ok)
++    case .pinned: #expect(h.run("pin \(goes.rawValue)").ok)
++    case .excluded: #expect(h.run("exclude \(app)").ok)
++    case .sentToAnotherDisplay: #expect(h.run("move-to-display 2 \(goes.rawValue)").ok)
++    case .draggedOut:
++      let other = Workload.secondDisplay.visibleFrame
++      h.system.drag(goes, through: [CGPoint(x: freed!.midX, y: freed!.minY + 10), CGPoint(x: other.midX, y: other.midY)])
++    }
++    h.scheduler.advance(by: 2)
++    #expect(!h.workspace.isDocked(goes))
++    #expect(h.frame(stays) == half)
++    #expect(!h.system.frameLog.contains { $0.window == stays }, "no frame is set for it")
++    #expect(h.layout?.desktopFrame == freed, "left over where it was freed")
++    #expect(h.workspace.tree.invariantViolations() == [])
++    expectWindowsMatchLayout(h)
++    h.system.setMinimized(away, false)
++    h.scheduler.advance(by: 2)
++    #expect(h.frame(away) == freed, "it takes the room that is left over, where it is")
++    #expect(h.frame(stays) == half)
++    #expect(!h.system.frameLog.contains { $0.window == stays })
++    expectNoRoomForTheDesktop(h)
++    expectWindowsMatchLayout(h)
++  }
++
++  /// A held view never widens by itself (F58). The window it is held on goes: the display shows the wallpaper, not the other half.
++  @Test(arguments: Away.allCases) func aHeldViewOnTheOneThatGoesLetsNobodyIn(_ way: Away) {
++    let (h, w) = harness(3)
++    h.run("dock \(w[0].rawValue) left")
++    h.run("dock \(w[1].rawValue) right")
++    h.run("zoom \(w[0].rawValue)")
++    #expect(h.run("hold").ok)
++    #expect(!h.system.isVisible(w[1]) && !h.system.isVisible(w[2]), "the premise")
++    set(w[0], way, true, h)
++    #expect(!h.system.isVisible(w[1]), "the other docked window stays out of view")
++    #expect(!h.system.isVisible(w[2]), "and so does what floats")
++    set(w[0], way, false, h)
++    #expect(!h.system.isVisible(w[1]) && !h.system.isVisible(w[2]))
++    #expect(h.system.isVisible(w[0]))
++  }
++
++  /// A window that docks by itself takes the room that is seen to be empty, wherever the Desktop's own node lies, and there and back is nothing.
++  @Test(arguments: ["arrange", "layout Safari | Mail", "layout Safari / Mail"], [0, 1])
++  func aWindowThatDocksByItselfTakesTheEmptyHalf(_ arranged: String, _ awayAt: Int) {
++    let (h, w) = harness(2)
++    #expect(h.run(arranged).ok)
++    #expect(h.run("set newWindows dock").ok)
++    let (away, stays) = (w[awayAt], w[1 - awayAt])
++    let (freed, half) = (h.frame(away), h.frame(stays))
++    let line = h.run("layout").text
++    h.system.setMinimized(away, true)
++    h.scheduler.advance(by: 2)
++    h.system.clearFrameLog()
++    let third = h.system.open(app: "Notes")
++    h.scheduler.advance(by: 2)
++    #expect(h.workspace.isDocked(third))
++    #expect(h.frame(third) == freed)
++    #expect(h.frame(stays) == half)
++    h.system.close(third)
++    h.scheduler.advance(by: 2)
++    #expect(h.frame(stays) == half)
++    h.system.setMinimized(away, false)
++    h.scheduler.advance(by: 2)
++    #expect(h.frame(away) == freed && h.frame(stays) == half)
++    #expect(!h.system.frameLog.contains { $0.window == stays }, "nobody has named it")
++    #expect(h.run("layout").text == line)
++    expectWindowsMatchLayout(h)
++  }
++
++  /// By key, left is left: out of its column into the room that is seen there, and the one below is not sent across.
++  @Test func byKeyAWindowStepsIntoTheRoomThatIsSeen() {
++    let (h, w) = harness(3)
++    #expect(h.run("layout Safari | (Mail / Notes)").ok)
++    h.system.setMinimized(w[0], true)
++    h.scheduler.advance(by: 2)
++    #expect(h.run("dock \(w[1].rawValue) left").ok)
++    #expect(h.frame(w[1])!.maxX <= h.frame(w[2])!.minX, "Mail is left of Notes")
++    #expect(h.frame(w[2])!.maxX == content(h).maxX, "which has not changed sides")
++    expectWindowsMatchLayout(h)
++  }
++
++  /// Where the Desktop shows, what floats on it shows, and where it does not, it does not. The two are a column beside a Desktop without room, and a
++  /// view of the two alone shows neither. One of them goes and comes back: the room is kept, and empty, and there and back is nothing.
++  @Test(arguments: [false, true]) func aViewOfTheTwoAloneShowsNothingThatFloatsWhileOneIsAway(held: Bool) {
++    let (h, w) = harness(3)
++    #expect(h.run("layout Safari / Mail").ok)
++    h.run("zoom \(w[0].rawValue)")
++    h.run("out")
++    #expect(!h.system.isVisible(w[2]) && h.system.isVisible(w[0]) && h.system.isVisible(w[1]), "the premise")
++    if held { #expect(h.run("hold").ok) }
++    let (above, below) = (h.frame(w[0]), h.frame(w[1]))
++    h.system.clearFrameLog()
++    h.system.setMinimized(w[0], true)
++    h.scheduler.advance(by: 2)
++    #expect(h.frame(w[1]) == below)
++    #expect(h.layout?.desktopFrame == nil && h.layout?.openPlaces.values.map { $0 } == [above!])
++    #expect(!h.system.isVisible(w[2]))
++    #expect(h.controller.invariantViolations() == [])
++    expectWindowsMatchLayout(h)
++    h.system.setMinimized(w[0], false)
++    h.scheduler.advance(by: 2)
++    #expect(h.frame(w[0]) == above && h.frame(w[1]) == below)
++    #expect(!h.system.isVisible(w[2]))
++    #expect(!h.system.frameLog.contains { $0.window != w[0] }, "nobody else has been named")
++    expectWindowsMatchLayout(h)
++    // The view of everything has the Desktop in it, and what floats.
++    if held { h.run("release") }
++    h.system.setMinimized(w[0], true)
++    h.run("home")
++    #expect(h.layout?.desktopFrame == above && h.frame(w[1]) == below)
++    #expect(h.system.isVisible(w[2]))
++    #expect(h.controller.invariantViolations() == [])
++    expectWindowsMatchLayout(h)
++  }
++
++  /// What the one that stays had lent the other (F61) stands while that is away: no frame at the going, none at the return. A close gives it back.
++  @Test(arguments: Away.allCases) func aLoanToTheOneThatGoesStandsUntilItIsBack(_ way: Away) {
++    let h = Harness(settings: Settings())
++    let safari = h.system.open(app: "Safari")
++    let mail = h.system.open(app: "Mail", minimumSize: CGSize(width: 1100, height: 400))
++    h.start()
++    h.run("dock \(safari.rawValue) left")
++    h.run("dock \(mail.rawValue) right")
++    h.scheduler.advance(by: 2)
++    let (narrow, wide) = (h.frame(safari), h.frame(mail))
++    #expect(narrow?.width == 304 && wide?.width == 1100, "the premise")
++    let tree = h.workspace.tree
++    h.system.clearFrameLog()
++    set(mail, way, true, h)
++    #expect(h.frame(safari) == narrow)
++    #expect(h.workspace.tree == tree)
++    set(mail, way, false, h)
++    #expect(h.frame(safari) == narrow && h.frame(mail) == wide)
++    #expect(!h.system.frameLog.contains { $0.window == safari })
++    expectWindowsMatchLayout(h)
++    h.system.close(mail)
++    h.scheduler.advance(by: 2)
++    #expect(h.frame(safari)?.width == 702, "its own again")
++  }
++
++  /// What happens today, known and left (F68, "Known, and left, while one of two is away"): with a third place the rule ends, and whoever is away lends by
++  /// weight. Whoever changes any of it changes these numbers.
++  @Test func withAThirdPlaceTheRuleEnds() {
++    // A dock across the row: the one that is there widens into the room that was kept.
++    var (h, w) = harness(3)
++    h.run("dock \(w[0].rawValue) left")
++    h.run("dock \(w[1].rawValue) right")
++    h.system.setMinimized(w[0], true)
++    h.run("dock \(w[2].rawValue) top")
++    #expect(h.frame(w[2]) == CGRect(x: 12, y: 37, width: 1416, height: 420))
++    #expect(h.frame(w[1]) == CGRect(x: 12, y: 469, width: 1416, height: 419))
++    h.system.setMinimized(w[0], false)
++    h.scheduler.advance(by: 2)
++    #expect(h.frame(w[0]) == CGRect(x: 12, y: 469, width: 702, height: 419))
++    #expect(h.frame(w[1]) == CGRect(x: 726, y: 469, width: 702, height: 419))
++    expectWindowsMatchLayout(h)
++
++    // With `shareRemovedSpace` off the room of one that is away goes to the one before it, which is the one that was to stay as it is.
++    var apart = Settings()
++    apart.shareRemovedSpace = false
++    (h, w) = harness(3, settings: apart)
++    h.run("dock \(w[0].rawValue) left")
++    h.run("dock \(w[1].rawValue) right")
++    h.system.setMinimized(w[1], true)
++    #expect(h.frame(w[0]) == CGRect(x: 12, y: 37, width: 702, height: 851))
++    h.run("dock \(w[2].rawValue) right")
++    #expect(h.frame(w[0]) == CGRect(x: 12, y: 37, width: 940, height: 851))
++    #expect(h.frame(w[2]) == CGRect(x: 964, y: 37, width: 464, height: 851))
++    expectWindowsMatchLayout(h)
++
++    // Of three, two are in the Dock, and one of those closes. Nothing is freed on screen. The one that had everything goes to its share, beside
++    // the open place of the other.
++    (h, w) = harness(3)
++    for window in w { h.run("dock \(window.rawValue) right") }
++    h.system.setMinimized(w[1], true)
++    h.system.setMinimized(w[2], true)
++    #expect(h.frame(w[0]) == content(h))
++    h.system.close(w[2])
++    h.scheduler.advance(by: 2)
++    #expect(h.frame(w[0]) == CGRect(x: 12, y: 37, width: 702, height: 851))
++    #expect(h.layout?.desktopFrame == CGRect(x: 726, y: 37, width: 702, height: 851))
++    expectWindowsMatchLayout(h)
++
++    // Docked on the Desktop's own view a window goes by where the Desktop's node lies (here at the far end), not by where it was seen.
++    (h, w) = harness(3)
++    h.run("layout Safari | Mail")
++    h.system.setMinimized(w[0], true)
++    #expect(h.frame(w[1]) == CGRect(x: 726, y: 37, width: 702, height: 851))
++    h.run("desktop")
++    h.run("dock \(w[2].rawValue) left")
++    h.run("home")
++    #expect(h.frame(w[1]) == CGRect(x: 12, y: 37, width: 702, height: 851))
++    #expect(h.frame(w[2]) == CGRect(x: 726, y: 37, width: 702, height: 851))
++    expectWindowsMatchLayout(h)
++  }
++
+   /// With a column for the Desktop something is left over already, and whoever is away lends its room to who is there, as in the first build.
+   @Test(arguments: Away.allCases) func withAColumnForTheDesktopWhoeverIsAwayLendsItsRoom(_ way: Away) {
+     let (h, w) = harness(2, settings: .withDesktopColumn)
+diff --git a/collab/scenarios/F68-while-one-is-away.sim b/collab/scenarios/F68-while-one-is-away.sim
+new file mode 100644
+index 00000000..6e065dde
+--- /dev/null
++++ b/collab/scenarios/F68-while-one-is-away.sim
+@@ -0,0 +1,173 @@
++# Proposed by the executor of F68 (2026-10-15), from what an adversarial reader played and the product owner's ruling of that day; the documenter may
++# edit or drop it.
++# Story: one docked window is in the Dock, and life goes on: another closes, a view is held, a window is moved by key, one opens and docks by itself.
++# Whoever is there and was not named does not move, and the Desktop is where it is seen.
++# Reference: F68, F58, F61; rules 2 and 3 of issue #3.
++quiet
++
++# From three places to two while one is away. To the eye these are two halves, and ⌘W in Mail names Mail: Safari gets no frame. What is freed is left
++# over where it was freed, and Notes, when it comes back, takes that room, where it is.
++open Safari 900x600
++open Notes 900x600
++open Mail 900x600
++layout Safari | Notes | Mail
++minimize 102
++expect at 101 12 37 702x851
++expect at 103 726 37 702x851
++close 103
++expect still 101
++restore 102
++expect still 101
++expect at 102 726 37 702x851
++close 101
++close 102
++
++# Wherever the one that is away had its place, and however the other leaves.
++open Safari 900x600
++open Notes 900x600
++open Mail 900x600
++layout Notes | Safari | Mail
++minimize 105
++expect at 104 12 37 702x851
++float 106
++expect still 104
++restore 105
++expect still 104
++expect at 105 726 37 702x851
++close 104
++close 105
++close 106
++
++# With the widths a hand has made: 562 stays 562, and Notes comes back as wide as Mail was.
++open Safari 900x600
++open Notes 900x600
++open Mail 900x600
++layout Safari:2 | Notes | Mail:3
++minimize 108
++expect at 107 12 37 562x851
++expect at 109 586 37 842x851
++close 109
++expect still 107
++restore 108
++expect still 107
++expect at 108 586 37 842x851
++close 107
++close 108
++
++# A held view never widens by itself (F58): ⌘M in the window it is held on shows the wallpaper, not the other half.
++open Safari 900x600
++open Mail 900x600
++dock 110 left
++dock 111 right
++zoom 110
++hold
++minimize 110
++expect hidden 111
++restore 110
++expect hidden 111
++release
++home
++close 110
++close 111
++
++# By key, left is left: Mail steps out of its column into the room that is seen there, and Notes is not sent across.
++open Safari 900x600
++open Mail 900x600
++open Notes 900x600
++layout Safari | (Mail / Notes)
++minimize 112
++dock 113 left
++expect left-of 113 114
++close 112
++close 113
++close 114
++
++# A window that docks by itself takes the empty half, wherever the Desktop's own node lies (after Arrange Windows: at the far end). There and back is
++# nothing.
++open Safari 900x600
++open Mail 900x600
++arrange
++set newWindows dock
++minimize 115
++open Notes 500x400
++expect still 116
++expect at 117 12 37 702x851
++close 117
++expect still 116
++restore 115
++expect still 116
++expect at 115 12 37 702x851
++close 115
++close 116
++# In a column too, which is a group beside a Desktop without room.
++set newWindows float
++open Safari 900x600
++open Mail 900x600
++layout Safari / Mail
++set newWindows dock
++minimize 118
++open Notes 500x400
++expect still 119
++close 120
++expect still 119
++restore 118
++expect at 119 12 469 1416x419
++expect at 118 12 37 1416x420
++set newWindows float
++close 118
++close 119
++
++# The Desktop is a neighbour where it is seen, there and back.
++open Safari 900x600
++open Mail 900x600
++arrange
++minimize 121
++zoom 122
++neighbor left
++expect camera desktop
++neighbor right
++expect camera 122
++home
++close 121
++close 122
++
++# Where the Desktop shows, what floats on it shows; where it does not, it does not. A view of the two alone shows neither, and goes on doing so, held or
++# not: the room is kept, and empty. The view of everything has the Desktop in it.
++open Safari 900x600
++open Mail 900x600
++open Notes 400x300 at 100 100
++layout Safari / Mail
++zoom 123
++out
++expect hidden 125
++hold
++minimize 123
++expect still 124
++expect hidden 125
++health
++restore 123
++expect still 124
++expect hidden 125
++release
++minimize 123
++home
++expect still 124
++expect visible 125
++health
++close 123
++close 124
++close 125
++
++# What Safari had lent Mail, which needs 1100 points (F61), stands while Mail is in the Dock: it will need it again. No frame at the going, none at the
++# return.
++open Safari 900x600
++open Mail 900x600 min 1100x400
++dock 126 left
++dock 127 right
++minimize 127
++expect still 126
++restore 127
++expect still 126
++# A close gives it back: that is Safari's own.
++close 127
++expect size 126 702x851
+diff --git a/docs/features/F68-the-desktop-is-what-is-left-over.md b/docs/features/F68-the-desktop-is-what-is-left-over.md
+index f577b88b..84094003 100644
+--- a/docs/features/F68-the-desktop-is-what-is-left-over.md
++++ b/docs/features/F68-the-desktop-is-what-is-left-over.md
+@@ -41,9 +41,13 @@ As Arbor ships (`desktopColumn` off):
+   screen. ⌘M and ⌘H name one window; the other is not named, and gets no frame, at the going or at the return. What is freed is left over: the Desktop stands there, a
+   place to go, to drop a window on, to click the wallpaper in. The one that comes back takes its half again. A gap dragged meanwhile is the hand's word: it comes back to what
+   the hand left it. Whoever stays and is short of its smallest size takes from what is left over first (F61), which is written down as lent by the one that is away and
+-  goes back at its return. A window docked meanwhile takes the empty half on screen, and nobody who is there moves; when the third comes back all three share.
++  goes back at its return. What it had lent the one that goes stands meanwhile: that will need it again. A window docked meanwhile, by hand or by itself, takes the empty
++  half on screen, and nobody who is there moves; when the third comes back all three share. A view held on the one that goes shows the wallpaper and lets nobody in (F58).
+ - If it leaves for good while it is away (closed, floated, pinned, by a rule, to another display, its app taken out of Arbor's hands), the one that stays never took the
+   room: it stays as it is, and the half is left over for good.
++- **From three places to two while one is away.** Safari, Notes in the Dock, Mail: to the eye two halves. ⌘W in Mail names Mail, and Safari gets no frame: what is freed is
++  left over where it was freed, and Notes, when it comes back, takes that room, where it is and as wide as it is. So at Mail's going the one that is away inherits the place
++  and the width of the one that leaves, however it leaves. (A visitor that leaves the row as it found it gives back what it took: there and back is nothing comes first.)
+ - From three places down, and inside a group, who is away lends its room to who is there, as before, and there and back is nothing: no hole among docked windows. With
+   every docked window away, everything is left over. A place kept, without room, for a window that is not open (Q16) is not away: whoever is there has its room, and keeps it
+   when the place is given up.
+@@ -74,7 +78,13 @@ somebody's wish to be rid of the column.
+ - The tree keeps its one Desktop leaf, so every word that means it keeps its meaning. **No room is weight 0** (`LayoutTree.desktopHasRoom`), allowed for the Desktop
+   alone and only beside others. Amounts add up: the newcomer gets the Desktop's weight, and what leaves gives its weight to the Desktop.
+ - `TreeView.leftOpen`: the one of two places that is away keeps its room, and the Desktop stands in for it there. A rule of the layout: nothing in the tree changes, so that there
+-  and back is nothing by construction. The gaps beside it name the place, and go by its weight.
++  and back is nothing by construction. The gaps beside it name the place, and go by its weight. The place has its room in the row (`effectiveChildren`) and is otherwise
++  what it always was while away, nothing to look at (`isEffective`): no view goes to it or is held on it. The Desktop's own node stays where it lay, which can be anywhere, so
++  whoever takes the Desktop from the picture asks `whatIsLeftOver` for its place in the tree (`neighbor`, a step by key, a window that docks by itself). In a view of the two
++  alone, beside which the Desktop's node lies (`(Safari / Mail) | Desktop:0`, stepped out of Safari), no Desktop shows and nothing that floats: there the room is kept and empty
++  (`Layout.openPlaces`), so that no view widens by itself, held or not.
++- `LayoutTree.handOnThePlace`: the one step in the tree. Before the ordinary removal the one that is away and the one that leaves change places and weights, so that the room
++  the two in view had of the third goes to the same two places as before, with `shareRemovedSpace` off as well. `remove`, `forget`, `undock` and `Drop` are told who is there to see.
+ - `TreeView.isEffective`: the Desktop takes up space if it has room, or if no docked window is present anywhere. `effectiveAncestor` lets the Desktop stand for itself, so a
+   view can be on it.
+ - `LayoutTree.dock(…, desktopColumn:)` takes what is left first; `detach` sees to whoever is left alone (a Desktop without room can lie anywhere and nobody
+@@ -95,6 +105,7 @@ somebody's wish to be rid of the column.
+ | What the others lent for the keyboard's sake goes back to the gap the hand left | `NoDesktopColumnTests.whatTheOtherLentForTheKeyboardsSakeGoesBackToTheGapTheHandLeft`, `atAStartNobodyPaysWithTheirPlace` |
+ | Too little left over is nothing; no hole among docked windows; what floats over two halves | scenarios `F68-too-little-left-over.sim`, `F68-no-hole-among-docked-windows.sim`, `F68-what-floats-over-two-halves.sim` (what two adversarial readers played) |
+ | A minimize and a hide are goings like any other | scenario `F68-away-is-a-going-like-any-other.sim`; `DesktopWithoutRoomTests` ("Away is a going like any other"), `NoDesktopColumnTests`; on a hosted Mac `scripts/mac-shell/check-away-is-a-going.sh` |
++| From three places to two while one is away; a held view, a step by key, a window that docks by itself, a loan, while one is away | scenario `F68-while-one-is-away.sim` (what a third adversarial reader played); `DesktopWithoutRoomTests` ("From three places to two while one is away"), `NoDesktopColumnTests.fromThreePlacesToTwoWhileOneIsAwayTheOneThatIsThereGetsNoFrame` and the five after it |
+ | What a hand has made stays; the pointer means what it is seen on | scenario `F68-what-a-hand-has-made-stays.sim`, `NoDesktopColumnTests.placesThatWaitSideBySideAndAreGivenUpLeaveTheOtherAsItIs`, `DesktopWithoutRoomTests` ("What a second reading found") |
+ | What `layout` prints, read back, costs nothing | `LayoutCommandTests.whatIsPrintedAndReadBackCostsNothing`, `LayoutNotationTreeTests.anyTreeComesBackFromItsLine` |
+ 
+@@ -115,3 +126,11 @@ Where the Desktop lay without room inside a group (`(Safari | Desktop:0 | Mail)
+ no longer shows what floats, which "everything" does. With `makeRoom` off a drop's preview shows the sliver that is left over, where the drop then gives a share like
+ the others'. Three mends of F61 that this change brought to light hold with `desktopColumn` on as well, so that "as in the first build" is not true of them: whoever is served when an
+ app has grown its own window gets what it is owed in the same move; a lender that leaves calls its loans in first; a guest of the Desktop passes its claims on.
++
++Known, and left, while one of two is away. With a third place the rule ends, and the one that is away lends by weight, so "nobody who is there moves" is true of even halves
++only: after a gap dragged by 100 points a dock at the empty side takes 655 where 602 were empty and the other goes from 802 to 749
++(`DesktopWithoutRoomTests.withUnevenHalvesADockWhileOneIsAwayMovesTheOneThatIsThere`); a dock across the row (`dock top`) widens the one that is there into the room that was kept;
++with `shareRemovedSpace` off it goes from 702 to 940. A window docked on the Desktop's own view goes by where the Desktop's node lies, not by where it was last seen. Where the
++one that leaves was away itself (of three, two in the Dock, and one of those closes) nothing is freed on screen, and the one that had everything goes to its share beside the
++other's open place. With `reflowWhileDragging` on, what shows during the drag of one of three is still the old sharing; the drop is right. With `floatingWindowsMakeWay` on, a floating
++window makes way into the open half at a ⌘M as at a close.
+-- 
+2.43.0
+

@@ -1,0 +1,157 @@
+From 296ae339ff71e61d10b61b22cfa39e7b91db64b9 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 15:44:29 +0000
+Subject: [PATCH 1/2] fix: what a floating window answered to grow is known:
+ docked, it goes straight to the middle of its slot
+
+That a window will not grow is on record once it has stopped short of what it was offered, and then it goes straight to the middle of
+its slot (`request(for:in:)`). The record was written by one hand only, `place`, for a window that is docked or fills the view. A
+floating window that is asked to `grow` says the same thing, and nobody wrote it down: System Settings, 723 points wide whatever it is
+offered, floats, is asked to grow, stays as it is; docked a moment later it went to the corner of its slot and then to the middle.
+
+At a `grow`, what the window took is noted.
+- Only where it stopped growing, never how small it goes. A terminal comes in whole cells and rounds up: asked for 599 points it takes
+  604, which looks like a refusal to whoever has not talked it down, as `place` does.
+- Not a side the screen kept short: where it stands, macOS lets a window grow no further than the edge of its display, and an app may carry
+  a move out late.
+
+The first time, when nothing is known, two moves are borne, once.
+---
+ .../Controller/Controller+Tiling.swift        | 13 ++-
+ .../OneEventOneLayoutTests.swift              | 79 +++++++++++++++++++
+ collab/parity.json                            |  6 +-
+ 3 files changed, 96 insertions(+), 2 deletions(-)
+
+diff --git a/Sources/ArborKit/Controller/Controller+Tiling.swift b/Sources/ArborKit/Controller/Controller+Tiling.swift
+index a2286ec1..56dbd24d 100644
+--- a/Sources/ArborKit/Controller/Controller+Tiling.swift
++++ b/Sources/ArborKit/Controller/Controller+Tiling.swift
+@@ -398,7 +398,18 @@ extension Controller {
+     }
+     // No layout follows, so no motion either. A stage still up from an earlier change would lift on a window that is elsewhere.
+     overlays.finishAnimations()
+-    guard var actual = system.setFrame(centred(size), of: id) else { return .failure("\(id) cannot \(verb) any further") }
++    let asked = centred(size)
++    guard var actual = system.setFrame(asked, of: id) else { return .failure("\(id) cannot \(verb) any further") }
++    // Where it stopped growing is known from now on, as of a docked window (Controller+AskFirst.swift): docked, it goes straight to the
++    // middle of its slot and not by way of the corner. Not a side the screen kept short, which says nothing of the window. And nothing
++    // about how small it goes: a terminal rounds up to whole cells, which looks like a refusal to whoever has not talked it down.
++    if amount > 0 {
++      var seen = seenSizes[id] ?? SeenSizes(current.size)
++      seen.see(current.size)
++      seen.note(
++        took: sidesTheScreenKept(of: actual.size, shortOf: asked.size, at: [current.origin, actual.origin]).own, offered: asked.size)
++      seenSizes[id] = seen
++    }
+     // An app that took another size than asked (or kept its own) is now off centre.
+     let settledFrame = centred(actual.size)
+     if !settledFrame.approximatelyEquals(actual) { actual = system.setFrame(settledFrame, of: id) ?? actual }
+diff --git a/Tests/ArborKitTests/OneEventOneLayoutTests.swift b/Tests/ArborKitTests/OneEventOneLayoutTests.swift
+index 064cfa22..2c9dbb6c 100644
+--- a/Tests/ArborKitTests/OneEventOneLayoutTests.swift
++++ b/Tests/ArborKitTests/OneEventOneLayoutTests.swift
+@@ -1130,3 +1130,82 @@ private let oneLayout: Set<String> = [
+     expectSound(h)
+   }
+ }
++
++/// What is known is used. That a window will not grow is on record once it has stopped short of what it was offered, and then it goes straight
++/// to the middle of its slot (`request(for:in:)`). It was put on record only for a docked window. One that floats and is asked to `grow` says
++/// the same thing, and nobody wrote it down: docked a moment later, it went to the corner of its slot and then to the middle.
++@Suite @MainActor struct WhatAFloatingWindowAnsweredIsKnownTests {
++  /// System Settings: 723 points wide, whatever it is offered.
++  private func settings(at frame: CGRect = CGRect(x: 400, y: 200, width: 723, height: 585)) -> (Harness, WindowID) {
++    let wide = DisplaySnapshot(
++      id: FakeWindowSystem.standardDisplay.id, frame: CGRect(x: 0, y: 0, width: 2560, height: 1440),
++      visibleFrame: CGRect(x: 0, y: 25, width: 2560, height: 1415), isMain: true)
++    let h = Harness(displays: [wide])
++    h.start()
++    let window = h.system.open(app: "Settings", pid: 1007, frame: frame, minimumSize: CGSize(width: 723, height: 470))
++    h.system.setMaximumSize(window, CGSize(width: 723, height: 2000))
++    h.scheduler.advance(by: 1)
++    return (h, window)
++  }
++
++  @Test(arguments: ["dock right", "dock top", "toggle-float"]) func dockedItGoesStraightToTheMiddle(_ docking: String) {
++    let (h, window) = settings()
++    runOK(h, "grow")
++    #expect(h.frame(window)!.width == 723, "the story needs a window that would not grow: \(h.frame(window)!.brief)")
++    h.scheduler.advance(by: 1)
++    let roads = Roads(h) { runOK(h, docking) }
++    roads.expectOneRoadEach()
++    #expect(roads.roads[window].map(FakeWindowSystem.changesOfPlace) == 1, "\(roads.roads[window]?.map(\.brief) ?? [])")
++    let slot = h.layout!.windowFrames[window]!
++    #expect(slot.width > 760, "the story needs a slot that is wider: \(slot.brief)")
++    #expect(abs(h.frame(window)!.midX - slot.midX) <= 1, "in the middle: \(h.frame(window)!.brief) in \(slot.brief)")
++    #expect(h.controller.invariantViolations().isEmpty, "\(h.controller.invariantViolations())")
++  }
++
++  /// The first time nobody knows, and two moves are borne, once: the control that the story above is about what was learnt.
++  @Test func unknownItGoesByWayOfTheCornerOnce() {
++    let (h, window) = settings()
++    let roads = Roads(h) { runOK(h, "dock right") }
++    #expect(roads.roads[window].map(FakeWindowSystem.changesOfPlace) == 2, "\(roads.roads[window]?.map(\.brief) ?? [])")
++  }
++
++  /// Only where it stopped growing. A terminal comes in whole cells and rounds up: asked for 599 points it takes 604, which looks like a
++  /// refusal to be that small to whoever has not talked it down, as `place` does. Taken for its smallest size, it was 604 high in a
++  /// slot of 364.
++  @Test func aTerminalThatRoundsUpHasNotSaidHowSmallItGoes() {
++    let h = Harness()
++    h.start()
++    let terminal = h.system.open(app: "Terminal", pid: 1003, frame: CGRect(x: 215, y: 96, width: 912, height: 559), minimumSize: CGSize(width: 177, height: 64))
++    h.system.setSizeStep(terminal, CGSize(width: 7, height: 15), margin: CGSize(width: 2, height: 4))
++    h.scheduler.advance(by: 1)
++    runOK(h, "grow")
++    h.scheduler.advance(by: 1)
++    let grown = h.frame(terminal)!.height
++    runOK(h, "dock top")
++    h.scheduler.advance(by: 1)
++    let slot = h.layout!.windowFrames[terminal]
++    #expect(slot.map { $0.height < grown - 100 } == true, "the story needs a slot that is much lower: \(String(describing: slot?.brief))")
++    #expect(slot.map { h.frame(terminal)!.height <= $0.height + 1 } == true, "\(h.frame(terminal)!.brief) in \(String(describing: slot?.brief))")
++    #expect(h.controller.invariantViolations().isEmpty, "\(h.controller.invariantViolations())")
++  }
++
++  /// Nor what the screen kept short. At the display's right edge macOS lets a window grow no further where it stands. Arbor asks for a frame
++  /// that lies on the screen, but an app may carry the move out late, and is then still at the edge when it is asked for the size. That
++  /// says nothing of the window, which fills its slot in one move when it is docked.
++  @Test func whatTheScreenKeptShortIsNoLimit() {
++    let h = Harness()
++    h.start()
++    let window = h.system.open(app: "Notes", pid: 1001, frame: CGRect(x: 1000, y: 300, width: 436, height: 400))
++    h.scheduler.advance(by: 1)
++    h.system.movesLate.insert(window)
++    _ = h.run("grow 200")
++    #expect(h.frame(window)!.width < 500, "the story needs an answer that the screen cut: \(h.frame(window)!.brief)")
++    h.system.movesLate.remove(window)
++    h.scheduler.advance(by: 1)
++    let roads = Roads(h) { runOK(h, "dock left") }
++    roads.expectOneRoadEach()
++    #expect(roads.roads[window].map(FakeWindowSystem.changesOfPlace) == 1, "\(roads.roads[window]?.map(\.brief) ?? [])")
++    #expect(h.frame(window) == h.layout!.windowFrames[window], "\(h.frame(window)!.brief)")
++    expectSound(h)
++  }
++}
+diff --git a/collab/parity.json b/collab/parity.json
+index 5858ea55..468421d3 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -2778,9 +2778,13 @@
+       "spec": "F01",
+       "priority": 3,
+       "tests": [
++        "aTerminalThatRoundsUpHasNotSaidHowSmallItGoes",
+         "aWindowThatCannotGrowSitsInTheMiddleOfItsSlot",
++        "dockedItGoesStraightToTheMiddle",
+         "itIsNotMovedAgainWhenNothingAboutItsSlotChanged",
+-        "movedByHandItIsPutBackInTheMiddle"
++        "movedByHandItIsPutBackInTheMiddle",
++        "unknownItGoesByWayOfTheCornerOnce",
++        "whatTheScreenKeptShortIsNoLimit"
+       ],
+       "e2e": [
+         "a docked window that cannot grow sits in the middle of its slot"
+-- 
+2.43.0
+

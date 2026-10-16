@@ -1,0 +1,1571 @@
+From 3975afbea5aa94c583b38c3089541973f6f02293 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 14:40:10 +0000
+Subject: [PATCH 1/4] wip: a kept place is its owner's (second version, after
+ the review)
+
+---
+ .../Controller/Controller+Invariants.swift    |   3 +
+ .../Controller/Controller+PendingSlots.swift  | 113 +++-
+ Sources/ArborKit/Controller/Controller.swift  |   4 +
+ .../AKeptPlaceIsItsOwnersTests.swift          | 604 ++++++++++++++++++
+ Tests/ArborKitTests/KeptPlacesTests.swift     |  13 +-
+ collab/parity.json                            |  33 +-
+ docs/ARCHITECTURE.md                          |   8 +-
+ 7 files changed, 760 insertions(+), 18 deletions(-)
+ create mode 100644 Tests/ArborKitTests/AKeptPlaceIsItsOwnersTests.swift
+
+diff --git a/Sources/ArborKit/Controller/Controller+Invariants.swift b/Sources/ArborKit/Controller/Controller+Invariants.swift
+index bbba4e0e..36a56d78 100644
+--- a/Sources/ArborKit/Controller/Controller+Invariants.swift
++++ b/Sources/ArborKit/Controller/Controller+Invariants.swift
+@@ -286,6 +286,9 @@ extension Controller {
+     if pendingSlots.isEmpty, provisionalSlots.isEmpty, !windowsTheFileKnew.isEmpty {
+       problems.append(.init("leak", "\(windowsTheFileKnew.count) windows are remembered as the file knew them, and no slot waits"))
+     }
++    if pendingSlots.isEmpty, provisionalSlots.isEmpty, somebodyElse != SomebodyElse() {
++      problems.append(.init("leak", "it is remembered who floated in the file, and no slot waits"))
++    }
+     if pendingSlots.isEmpty, provisionalSlots.isEmpty, !keptRoom.isEmpty {
+       problems.append(.init("leak", "room is kept on \(keptRoom.keys.sorted()), and no slot waits"))
+     }
+diff --git a/Sources/ArborKit/Controller/Controller+PendingSlots.swift b/Sources/ArborKit/Controller/Controller+PendingSlots.swift
+index d04b8810..8807f5ae 100644
+--- a/Sources/ArborKit/Controller/Controller+PendingSlots.swift
++++ b/Sources/ArborKit/Controller/Controller+PendingSlots.swift
+@@ -14,6 +14,8 @@ import CoreGraphics
+ ///   with another title, if the app has one slot waiting and one window to fill it; but what an app shows
+ ///   first is often a welcome or sign-in window, so until the wait is over that window holds the slot
+ ///   provisionally: a window with the saved title takes it over, and if the holder closes the slot waits again.
++///   A window that says a title the file has for a FLOATING window of that app is known to be somebody else, and is not let in that
++///   way (`isKnownToBeSomebodyElse`); if it says so only after it was let in, it gives the slot back (`giveBackTheSlot`).
+ /// - **It is on a Space that is not showing**, where the Accessibility API does not list it. If the
+ ///   window system says the number still exists (`existingWindowIDs()`), the slot waits under its own
+ ///   number for as long as it does, and the window takes it back when its Space shows.
+@@ -83,7 +85,7 @@ extension Controller {
+     for id in managedWindowIDs where !pendingSlots.isEmpty {
+       if let window = windows[id] { _ = claimPendingSlot(for: window) }
+     }
+-    guard !isWaitOver else { return windowsTheFileKnew.removeAll() }
++    guard !isWaitOver else { return forgetWhatTheFileKnew() }
+     Log.info("keeping \(pendingSlots.count) saved slot(s) for windows that are not in sight yet")
+     scheduleCheckOfPendingSlots()
+   }
+@@ -188,7 +190,9 @@ extension Controller {
+   /// Gives `window`, which just appeared or changed its title, the saved slot that waits for it.
+   /// Returns false if there is none, and the window is then an ordinary new window.
+   func claimPendingSlot(for window: WindowSnapshot) -> Bool {
+-    guard !isWaitOver, drag?.window != window.id else { return false }
++    guard !isWaitOver else { return false }
++    if isKnownToBeSomebodyElse(window) { somebodyElse.recognised.insert(window.id) }
++    guard drag?.window != window.id else { return false }
+     if pendingSlots.contains(window.id) {
+       // A slot waits under this very number.
+       let connected = workspaceID(containing: window.id)
+@@ -222,6 +226,7 @@ extension Controller {
+       provisionalSlots[window.id] = nil
+       endWaitIfOver()
+     }
++    if provisionalSlots[window.id] != nil, isKnownToBeSomebodyElse(window) { return giveBackTheSlot(heldForNowBy: window) }
+     guard !hasSlot(window.id), !isItselfAsTheFileKnewIt(window),
+       AppRule.firstMatch(in: settings.rules, bundleID: window.bundleID, title: window.title)?.action != .ignore
+     else { return false }
+@@ -232,7 +237,7 @@ extension Controller {
+     let openedAt = workspaces.values.lazy.compactMap { $0.floating[window.id] }.first ?? window.frame
+     func holdProvisionally(in tree: LayoutTree) {
+       guard exact == nil, let hint = hints[slot], let leaf = tree.leaf(containing: window.id) else { return }
+-      provisionalSlots[window.id] = ProvisionalSlot(hint: hint, leaf: leaf, openedAt: openedAt)
++      provisionalSlots[window.id] = ProvisionalSlot(hint: hint, leaf: leaf, place: tree.place(of: window.id), openedAt: openedAt)
+     }
+     guard let display = workspaces.keys.sorted().first(where: { workspaces[$0]!.isDocked(slot) }) else {
+       // The slot is on a display that is not connected: the window takes it over there, to return
+@@ -268,6 +273,31 @@ extension Controller {
+     windowsTheFileKnew = hints.filter { !Self.isStandIn($0.key) && $0.value.bundleID != nil && existing.contains($0.key) }
+   }
+ 
++  struct SomebodyElse: Equatable {
++    /// What the file had floating, by app and title, on whatever display.
++    var floatedInTheFile: [WindowHint] = []
++    /// Who has said such a name since the start. A title changes with every command and every page; who it is does not.
++    var recognised: Set<WindowID> = []
++  }
++
++  /// Called by `start()` with the file as it was loaded.
++  func noteWhoFloatedInTheFile(_ saved: PersistedState?) {
++    somebodyElse = SomebodyElse()
++    guard let saved else { return }
++    // Of every display the file has, connected now or not. (What floated on one that had gone before floats on another in the file.)
++    somebodyElse.floatedInTheFile = saved.workspaces.values.flatMap(\.floating.keys).sorted().compactMap { saved.hints[$0] }
++  }
++
++  /// A kept place is its owner's. After a restart of the Mac nobody has yesterday's number, and a title is all there is to go by: one
++  /// that the file has for a floating window of this app says that this is that window, come back. Nobody docked it. Once said is
++  /// known, whatever it is called a moment later. A title the file does not know may be the owner's of today (`onlySlot`); one
++  /// that it has for the place itself is the owner's (`slot(withTitleOf:)`), also where a floating window had the same: nobody can
++  /// know, and the first to come gets the place.
++  private func isKnownToBeSomebodyElse(_ window: WindowSnapshot) -> Bool {
++    somebodyElse.recognised.contains(window.id)
++      || somebodyElse.floatedInTheFile.contains(WindowHint(bundleID: window.bundleID, title: window.title))
++  }
++
+   /// Like `reconcile()`: a window that was there all along, floating, does not stand in for one of the same app that has closed
+   /// since. Nobody docked it. Wherever it was at the start: on another macOS Space, on a display that has gone, excluded.
+   ///
+@@ -295,15 +325,24 @@ extension Controller {
+   }
+ 
+   /// Titles being what they are (Mail counts messages in its, a chat app marks what is unread): the app's
+-  /// slot if it has only one waiting and `window` is its only window that is not docked.
++  /// slot if it has only one waiting and `window` is its only window that is not docked and may be the owner.
+   private func onlySlot(ofAppOf window: WindowSnapshot) -> WindowID? {
+     let ofApp = slots(ofAppOf: window)
+     // A slot that waits under its own number waits for that very window.
+-    guard ofApp.count == 1, Self.isStandIn(ofApp[0]) else { return nil }
++    guard ofApp.count == 1, Self.isStandIn(ofApp[0]), !isKnownToBeSomebodyElse(window) else { return nil }
+     let loose = windows.values.filter { other in
+       other.bundleID == window.bundleID && filter.manages(other) && !hasSlot(other.id)
+     }
+-    return loose.count == 1 ? ofApp[0] : nil
++    if loose.count == 1 { return ofApp[0] }
++    // The others are no rivals if each is known to be somebody else, or who is quicker would decide. Not one that was there all along: it
++    // is a witness that the app never quit, so the docked window was closed on purpose, and a new document has nothing to do with it.
++    // And only with every floating window of the file accounted for: else this may be the one that is missing, under another name.
++    let others = loose.filter { $0.id != window.id }
++    let floated = somebodyElse.floatedInTheFile.filter { $0.bundleID == window.bundleID }.count
++    guard others.count == loose.count - 1, others.count >= floated,
++      others.allSatisfy({ isKnownToBeSomebodyElse($0) && !isItselfAsTheFileKnewIt($0) })
++    else { return nil }
++    return ofApp[0]
+   }
+ 
+   /// Whether `window` is docked already, be it on a display that is not connected.
+@@ -373,6 +412,8 @@ extension Controller {
+     var hint: WindowHint
+     /// Where in the tree. If the window is anywhere else by now, the user has decided about it.
+     var leaf: NodeID
++    /// And where among its neighbours. The leaf goes along when a hand docks the window elsewhere or swaps it; this does not.
++    var place: LayoutTree.Place?
+     var openedAt: CGRect
+   }
+ 
+@@ -382,7 +423,12 @@ extension Controller {
+     guard isWaitOver else { return }
+     scheduler.cancel("pending-slots")
+     giveUpAllRoom()
++    forgetWhatTheFileKnew()
++  }
++
++  private func forgetWhatTheFileKnew() {
+     windowsTheFileKnew.removeAll()
++    somebodyElse = SomebodyElse()
+   }
+ 
+   /// Gives `window`, which has the title a slot was waiting for, that slot in place of the window that
+@@ -399,13 +445,7 @@ extension Controller {
+       for id in workspaces.keys.sorted() { workspaces[id]!.floating[window.id] = nil }
+       workspaces[display]!.replaceWindow(holder, with: window.id)
+       renumber(holder, as: window.id)
+-      // The one that came first is a new window after all. It floats where its app had put it.
+-      let home = displayID(at: held.openedAt.center).flatMap { workspaces[$0] == nil ? nil : $0 } ?? display
+-      workspaces[home]!.floating[holder] = held.openedAt
+-      if let actual = give(held.openedAt, to: holder)?.frame { windows[holder]?.frame = actual }
+-      parked.remove(holder)
+-      settled[holder] = nil
+-      misfits[holder] = nil
++      floatWhereItOpened(holder, held, orOn: display)
+       Log.info("\(window.id) takes the saved slot over from \(holder)")
+       settle(window, on: display)
+       return true
+@@ -420,6 +460,53 @@ extension Controller {
+     return nil
+   }
+ 
++  /// The one that came first is a new window after all. It floats where its app had put it.
++  /// - Parameter given: what came of sending it there, if it has been sent already.
++  private func floatWhereItOpened(_ holder: WindowID, _ held: ProvisionalSlot, orOn display: DisplayID, given: Given? = nil) {
++    let home = displayID(at: held.openedAt.center).flatMap { workspaces[$0] == nil ? nil : $0 } ?? display
++    workspaces[home]!.floating[holder] = held.openedAt
++    if let actual = (given ?? give(held.openedAt, to: holder))?.frame { windows[holder]?.frame = actual }
++    parked.remove(holder)
++    settled[holder] = nil
++    misfits[holder] = nil
++  }
++
++  /// `window` was let in as a stranger and has only now said its name, as many apps do a moment after showing a restored window: one
++  /// that the file has for a floating window. It never gets the place, from the moment that is known: back to where it opened,
++  /// and the slot waits again. The other end would be a window nobody docked, docked for good.
++  ///
++  /// Only where that is one move of one window that somebody can see, and nobody has had a hand in the arrangement since. Else
++  /// nothing happens, as before there was this: it holds the place for now, and the owner takes it over when it comes. As
++  /// `claimPendingSlot(for:)`: true if a display has been laid out for it.
++  private func giveBackTheSlot(heldForNowBy window: WindowSnapshot) -> Bool {
++    guard let held = provisionalSlots[window.id] else { return false }
++    if let display = workspaceID(containing: window.id), var workspace = workspaces[display], workspace.isDocked(window.id) {
++      // In the Dock, hidden, on another Space or in full screen no frame is set for a title nobody saw. Where it opened may be on a
++      // display that has gone since. And the window goes first: of an app that does not answer nothing is written down.
++      guard window.isPresent, workspace.tree.place(of: window.id) == held.place, !showsLessThanHalf(held.openedAt),
++        let given = give(held.openedAt, to: window.id)
++      else { return false }
++      provisionalSlots[window.id] = nil
++      moveToStandIn(window.id, hint: held.hint, in: &workspace)
++      workspaces[display] = workspace
++      floatWhereItOpened(window.id, held, orOn: display, given: given)
++      Log.info("\(window.id) is not the window its saved slot waited for, and gives it back")
++      relayout(display, reason: .structure)
++      scheduleSave()
++      return true
++    }
++    // On a display that is not connected it only had the place on paper, and floats here already.
++    for id in dormant.keys.sorted() where dormant[id]!.workspace.tree.place(of: window.id) == held.place && held.place != nil {
++      provisionalSlots[window.id] = nil
++      var workspace = dormant[id]!.workspace
++      moveToStandIn(window.id, hint: held.hint, in: &workspace)
++      dormant[id]!.workspace = workspace
++      scheduleSave()
++      break
++    }
++    return false
++  }
++
+   /// `window`, docked on `display`, has closed. If it held its slot provisionally, the slot waits again (a
+   /// welcome window often closes just before the real one opens) and this returns true.
+   func slotWaitsAgain(after window: WindowID, on display: DisplayID) -> Bool {
+diff --git a/Sources/ArborKit/Controller/Controller.swift b/Sources/ArborKit/Controller/Controller.swift
+index 10da3789..bb68490a 100644
+--- a/Sources/ArborKit/Controller/Controller.swift
++++ b/Sources/ArborKit/Controller/Controller.swift
+@@ -393,6 +393,8 @@ public final class Controller {
+   /// again under its own number, with its own app, is itself, and not the window that a slot waits for, unless its title
+   /// says otherwise (`isItselfAsTheFileKnewIt`). Kept while slots wait.
+   var windowsTheFileKnew: [WindowID: WindowHint] = [:]
++  /// Who is known not to be the window a slot waits for (`isKnownToBeSomebodyElse`). Kept while slots wait.
++  var somebodyElse = SomebodyElse()
+   /// Waiting places that are laid out as if their windows were there (Controller+KeptRoom.swift).
+   var keptRoom: [DisplayID: KeptRoom] = [:]
+   /// Whether at the last start some saved window still existed under its own number: the Mac has not been restarted
+@@ -591,6 +593,7 @@ public final class Controller {
+     self.leftAt = nil
+     hints = saved?.hints ?? [:]
+     noteTheWindowsTheFileKnew()
++    noteWhoFloatedInTheFile(saved)
+     // Or just now, before this start: a launch without the permission begins with the welcome window.
+     // Or in an earlier run whose file could not be used: whoever had a state file has been here before.
+     hasWelcomed = hasWelcomed || saved?.welcomed == true || (stateNews != nil && stateNews?.problem != .repaired)
+@@ -804,6 +807,7 @@ public final class Controller {
+     // Saved with their hints; the next start finds them again.
+     keptRoom.removeAll()
+     windowsTheFileKnew.removeAll()
++    somebodyElse = SomebodyElse()
+     pendingSlots.removeAll()
+     overdueSlots.removeAll()
+     provisionalSlots.removeAll()
+diff --git a/Tests/ArborKitTests/AKeptPlaceIsItsOwnersTests.swift b/Tests/ArborKitTests/AKeptPlaceIsItsOwnersTests.swift
+new file mode 100644
+index 00000000..acb5a161
+--- /dev/null
++++ b/Tests/ArborKitTests/AKeptPlaceIsItsOwnersTests.swift
+@@ -0,0 +1,604 @@
++import ArborCore
++import ArborKit
++import ArborTesting
++import CoreGraphics
++import Foundation
++import Testing
++
++/// After a login a place is kept for a docked window that is to come back (`Controller+PendingSlots.swift`). Titles being what they
++/// are, the app's only loose window is let in under another name, for now. But one whose title the saved file knows as a floating
++/// window's of that app is known to be somebody else: it took the place first and was thrown out when the owner came, and where
++/// the owner never came it stayed docked for good, a window nobody docked (found by the walks, once they restarted the Mac).
++@Suite @MainActor struct AKeptPlaceIsItsOwnersTests {
++  // MARK: The evening before, and the next morning
++
++  struct Evening {
++    var saved: PersistedState
++    /// Docked at the right, beside the Desktop.
++    var owner: WindowSnapshot
++    /// The same app's, never docked.
++    var sibling: WindowSnapshot
++    /// Where the owner was while it was docked.
++    var place: CGRect
++  }
++
++  /// One app with two windows: one docked, one floating. Then the Mac is shut down.
++  /// - Parameter another: the title of one more floating window of the app.
++  func evening(ownersTitle: String = "Letter", siblingsTitle: String = "Notes for the letter", another: String? = nil) throws -> Evening {
++    let h = Harness()
++    h.start()
++    let owner = h.system.open(app: "Pages", title: ownersTitle, pid: 1003, frame: CGRect(x: 618, y: 457, width: 710, height: 400))
++    let sibling = h.system.open(app: "Pages", title: siblingsTitle, pid: 1003, frame: CGRect(x: 71, y: 160, width: 516, height: 409))
++    if let another { h.system.open(app: "Pages", title: another, pid: 1003, frame: Self.whereTheThirdStands) }
++    h.scheduler.advance(by: 2)
++    h.system.userFocus(owner)
++    h.scheduler.advance(by: 2)
++    try #require(h.run("dock right", from: .shortcut).ok)
++    h.scheduler.advance(by: 5)
++    try #require(h.workspace.isDocked(owner) && h.workspace.isFloating(sibling) && h.layout?.tiles.isEmpty == true, "\(h.ascii())")
++    let place = try #require(h.frame(owner))
++    h.controller.shutdown()
++    func now(_ id: WindowID) throws -> WindowSnapshot { try #require(h.system.allWindows().first { $0.id == id }) }
++    return Evening(saved: try #require(h.store.saved), owner: try now(owner), sibling: try now(sibling), place: place)
++  }
++
++  static let whereTheThirdStands = CGRect(x: 120, y: 420, width: 420, height: 300)
++
++  /// Arbor is up before the apps. Numbers restart after a reboot: unrelated windows have the old ones.
++  func morning(_ evening: Evening) -> Harness {
++    let h = Harness(saved: evening.saved)
++    for _ in 0..<7 { h.system.open(app: "Filler", pid: 700, frame: CGRect(x: 100, y: 600, width: 300, height: 200)) }
++    h.start()
++    h.scheduler.advance(by: 2)
++    return h
++  }
++
++  func reopen(_ window: WindowSnapshot, in h: Harness, title: String? = nil) -> WindowID {
++    let id = h.system.open(app: window.appName, bundleID: window.bundleID, title: title ?? window.title, pid: window.pid, frame: window.frame)
++    h.scheduler.advance(by: 2)
++    return id
++  }
++
++  /// Everything Arbor asked of `window`, questions included.
++  func asked(of window: WindowID, in h: Harness) -> [CGRect] { h.system.moveLog.filter { $0.window == window }.map(\.after) }
++
++  func expectSound(_ h: Harness, sourceLocation: SourceLocation = #_sourceLocation) {
++    #expect(h.controller.invariantViolations().isEmpty, "\(h.controller.invariantViolations())", sourceLocation: sourceLocation)
++    expectWindowsMatchLayout(h, sourceLocation: sourceLocation)
++  }
++
++  // MARK: Known to be somebody else
++
++  /// It floats where it opened, no frame is set on it, and the place goes on waiting.
++  @Test func whoFloatedInTheFileFloatsWhereItOpensAndThePlaceGoesOnWaiting() throws {
++    let evening = try evening()
++    let h = morning(evening)
++    let sibling = reopen(evening.sibling, in: h)
++    #expect(h.workspace.isFloating(sibling), "\(h.ascii())")
++    #expect(h.frame(sibling) == evening.sibling.frame && asked(of: sibling, in: h).isEmpty, "\(asked(of: sibling, in: h))")
++    #expect(h.controller.snapshot().waiting.count == 1 && h.run("status").message.contains("1 place kept"))
++    expectSound(h)
++  }
++
++  /// The owner comes and goes straight to its place, and nobody is thrown out of it.
++  @Test func theOwnerThenTakesItsPlaceAndNobodyElseIsMoved() throws {
++    let evening = try evening()
++    let h = morning(evening)
++    let sibling = reopen(evening.sibling, in: h)
++    let owner = reopen(evening.owner, in: h)
++    #expect(h.workspace.isDocked(owner) && h.frame(owner) == evening.place, "\(h.ascii())")
++    #expect(h.workspace.isFloating(sibling) && asked(of: sibling, in: h).isEmpty, "\(asked(of: sibling, in: h))")
++    #expect(h.controller.snapshot().waiting.isEmpty)
++    expectSound(h)
++  }
++
++  /// The worse face: the owner never comes. Nobody docked the other one, and it is not docked when the wait is over either.
++  @Test func whereTheOwnerNeverComesNobodyIsDockedInItsStead() throws {
++    let evening = try evening()
++    let h = morning(evening)
++    let sibling = reopen(evening.sibling, in: h)
++    h.scheduler.advance(by: Controller.pendingSlotLifetime + 20)
++    #expect(h.run("relayout").ok)
++    h.scheduler.advance(by: 5)
++    #expect(h.workspace.isFloating(sibling) && asked(of: sibling, in: h).isEmpty, "\(h.ascii())")
++    #expect(h.frame(sibling) == evening.sibling.frame)
++    #expect(h.controller.snapshot().waiting.isEmpty, "its time is up")
++    expectSound(h)
++  }
++
++  /// Back before Arbor is up, it is matched no otherwise.
++  @Test func backBeforeArborItIsNotDockedEither() throws {
++    let evening = try evening()
++    let h = Harness(saved: evening.saved)
++    for _ in 0..<7 { h.system.open(app: "Filler", pid: 700, frame: CGRect(x: 100, y: 600, width: 300, height: 200)) }
++    let sibling = h.system.open(
++      app: evening.sibling.appName, bundleID: evening.sibling.bundleID, title: evening.sibling.title, pid: evening.sibling.pid,
++      frame: evening.sibling.frame)
++    h.start()
++    h.scheduler.advance(by: 2)
++    #expect(h.workspace.isFloating(sibling) && asked(of: sibling, in: h).isEmpty, "\(h.ascii())")
++    #expect(h.controller.snapshot().waiting.count == 1)
++    let owner = reopen(evening.owner, in: h)
++    #expect(h.workspace.isDocked(owner) && h.frame(owner) == evening.place && asked(of: sibling, in: h).isEmpty)
++    expectSound(h)
++  }
++
++  /// A terminal is called otherwise with every command, a browser with every page. Who it is does not change: once it has said the name
++  /// it is known, and is no stranger a moment later.
++  @Test func onceKnownItIsKnownWhateverItIsCalledLater() throws {
++    let evening = try evening()
++    let h = morning(evening)
++    let sibling = reopen(evening.sibling, in: h)
++    h.system.setTitle(sibling, "Notes for the letter (edited)")
++    h.scheduler.advance(by: 20)
++    #expect(h.workspace.isFloating(sibling) && asked(of: sibling, in: h).isEmpty, "\(h.ascii())")
++    #expect(h.controller.snapshot().waiting.count == 1)
++    h.scheduler.advance(by: Controller.pendingSlotLifetime + 20)
++    #expect(h.workspace.isFloating(sibling) && asked(of: sibling, in: h).isEmpty, "\(h.ascii())")
++    expectSound(h)
++  }
++
++  // MARK: May be the owner under another name: as before
++
++  /// The control. A stranger to the file (a count in the title, "Untitled", a welcome window) is let in, holds the place for now,
++  /// and gives it back when the owner comes.
++  @Test func aStrangerToTheFileIsLetInForNowAsBefore() throws {
++    let evening = try evening()
++    let h = morning(evening)
++    let stranger = reopen(evening.sibling, in: h, title: "Untitled")
++    #expect(h.workspace.isDocked(stranger) && h.frame(stranger) == evening.place, "\(h.ascii())")
++    let owner = reopen(evening.owner, in: h)
++    #expect(h.workspace.isDocked(owner) && h.frame(owner) == evening.place, "\(h.ascii())")
++    #expect(h.workspace.isFloating(stranger) && h.frame(stranger) == evening.sibling.frame, "back where it opened")
++    expectSound(h)
++  }
++
++  /// And where nobody else comes it was the owner, under another name.
++  @Test func aStrangerThatNobodyFollowsKeepsThePlace() throws {
++    let evening = try evening()
++    let h = morning(evening)
++    let renamed = reopen(evening.owner, in: h, title: "Letter (edited)")
++    h.scheduler.advance(by: Controller.pendingSlotLifetime + 20)
++    #expect(h.workspace.isDocked(renamed) && h.frame(renamed) == evening.place, "\(h.ascii())")
++    expectSound(h)
++  }
++
++  /// A docked and a floating window with the same title: nobody can know, and the first to come gets the place.
++  @Test func withOneTitleForBothTheFirstToComeGetsThePlace() throws {
++    let evening = try evening(ownersTitle: "Untitled", siblingsTitle: "Untitled")
++    let h = morning(evening)
++    let first = reopen(evening.sibling, in: h)
++    #expect(h.workspace.isDocked(first) && h.frame(first) == evening.place, "\(h.ascii())")
++    let second = reopen(evening.owner, in: h)
++    #expect(h.workspace.isFloating(second) && h.workspace.isDocked(first), "\(h.ascii())")
++    expectSound(h)
++  }
++
++  /// The title is another app's floating window's: that says nothing about this app's.
++  @Test func anotherAppsFloatingWindowOfThatTitleSaysNothing() throws {
++    let before = Harness()
++    before.start()
++    let owner = before.system.open(app: "Pages", title: "Letter", pid: 1003, frame: CGRect(x: 618, y: 457, width: 710, height: 400))
++    before.system.open(app: "Preview", title: "Scan", pid: 1004, frame: CGRect(x: 71, y: 160, width: 516, height: 409))
++    before.scheduler.advance(by: 2)
++    before.system.userFocus(owner)
++    before.scheduler.advance(by: 2)
++    try #require(before.run("dock right", from: .shortcut).ok)
++    before.scheduler.advance(by: 5)
++    let place = try #require(before.frame(owner))
++    before.controller.shutdown()
++    let h = Harness(saved: try #require(before.store.saved))
++    for _ in 0..<7 { h.system.open(app: "Filler", pid: 700, frame: CGRect(x: 100, y: 600, width: 300, height: 200)) }
++    h.start()
++    h.scheduler.advance(by: 2)
++    let scan = h.system.open(app: "Pages", title: "Scan", pid: 1003, frame: CGRect(x: 618, y: 457, width: 710, height: 400))
++    h.scheduler.advance(by: 2)
++    #expect(h.workspace.isDocked(scan) && h.frame(scan) == place, "\(h.ascii())")
++    expectSound(h)
++  }
++
++  // MARK: A title said late
++
++  /// Many apps name a restored window a moment after showing it. Until then it is a stranger, and is let in.
++  func morningWithAHolderForNow(_ evening: Evening) throws -> (Harness, holder: WindowID) {
++    let h = morning(evening)
++    let holder = reopen(evening.sibling, in: h, title: "Untitled")
++    try #require(h.workspace.isDocked(holder) && h.frame(holder) == evening.place, "the situation: \(h.ascii())")
++    return (h, holder)
++  }
++
++  /// "Never gets it" holds from the moment it is known: one move, back to where it opened, and the place waits again.
++  @Test func aHolderThatTurnsOutToBeSomebodyElseGivesThePlaceBackAtOnce() throws {
++    let evening = try evening()
++    let (h, holder) = try morningWithAHolderForNow(evening)
++    let mark = h.system.moveLog.count
++    h.system.setTitle(holder, evening.sibling.title)
++    h.scheduler.advance(by: 2)
++    #expect(h.workspace.isFloating(holder) && h.frame(holder) == evening.sibling.frame, "\(h.ascii())")
++    #expect(h.system.moveLog[mark...].filter { $0.window == holder }.map(\.after) == [evening.sibling.frame], "one move")
++    #expect(h.controller.snapshot().waiting.count == 1 && h.run("status").message.contains("1 place kept"))
++    expectSound(h)
++    // The owner comes, and nobody is in its way.
++    let later = h.system.moveLog.count
++    let owner = reopen(evening.owner, in: h)
++    #expect(h.workspace.isDocked(owner) && h.frame(owner) == evening.place, "\(h.ascii())")
++    #expect(h.system.moveLog[later...].filter { $0.window == holder }.isEmpty && h.workspace.isFloating(holder))
++    expectSound(h)
++  }
++
++  @Test func andWhereTheOwnerNeverComesItIsNotDockedForGood() throws {
++    let evening = try evening()
++    let (h, holder) = try morningWithAHolderForNow(evening)
++    h.system.setTitle(holder, evening.sibling.title)
++    h.scheduler.advance(by: Controller.pendingSlotLifetime + 20)
++    #expect(h.run("relayout").ok)
++    h.scheduler.advance(by: 5)
++    #expect(h.workspace.isFloating(holder) && h.frame(holder) == evening.sibling.frame, "\(h.ascii())")
++    #expect(h.controller.snapshot().waiting.isEmpty)
++    expectSound(h)
++  }
++
++  /// The other order: the owner is in its place already, and the late name changes nothing.
++  @Test func withTheOwnerBackFirstALateNameMovesNobody() throws {
++    let evening = try evening()
++    let h = morning(evening)
++    let owner = reopen(evening.owner, in: h)
++    let sibling = reopen(evening.sibling, in: h, title: "Untitled")
++    h.system.setTitle(sibling, evening.sibling.title)
++    h.scheduler.advance(by: 2)
++    #expect(h.workspace.isDocked(owner) && h.frame(owner) == evening.place && h.workspace.isFloating(sibling), "\(h.ascii())")
++    #expect(asked(of: sibling, in: h).isEmpty)
++    expectSound(h)
++  }
++
++  /// The controls: a name the file does not know, and the owner's own, leave the holder where it is.
++  @Test(arguments: ["Letter (edited)", "Letter"]) func aHolderThatSaysAnyOtherNameKeepsThePlace(name: String) throws {
++    let evening = try evening()
++    let (h, holder) = try morningWithAHolderForNow(evening)
++    let mark = h.system.moveLog.count
++    h.system.setTitle(holder, name)
++    h.scheduler.advance(by: Controller.pendingSlotLifetime + 20)
++    #expect(h.workspace.isDocked(holder) && h.frame(holder) == evening.place, "\(h.ascii())")
++    #expect(h.system.moveLog[mark...].filter { $0.window == holder }.isEmpty)
++    expectSound(h)
++  }
++
++  /// It holds the place "for now" while the wait lasts. Minutes later a title moves nobody.
++  @Test func onceTheWaitIsOverATitleMovesNobody() throws {
++    let evening = try evening()
++    let (h, holder) = try morningWithAHolderForNow(evening)
++    h.scheduler.advance(by: Controller.pendingSlotLifetime + 20)
++    let mark = h.system.moveLog.count
++    h.system.setTitle(holder, evening.sibling.title)
++    h.scheduler.advance(by: 5)
++    #expect(h.workspace.isDocked(holder) && h.system.moveLog.count == mark, "\(h.ascii())")
++    expectSound(h)
++  }
++
++  /// In once, out once. Whatever it is called after that, it stays out.
++  @Test func givenBackOnceThePlaceIsNotTakenAgain() throws {
++    let evening = try evening()
++    let (h, holder) = try morningWithAHolderForNow(evening)
++    h.system.setTitle(holder, evening.sibling.title)
++    h.scheduler.advance(by: 2)
++    let mark = h.system.moveLog.count
++    for name in ["Something else", evening.sibling.title, "Untitled"] {
++      h.system.setTitle(holder, name)
++      h.scheduler.advance(by: 2)
++      #expect(h.workspace.isFloating(holder) && h.system.moveLog.count == mark, "\(name): \(h.ascii())")
++    }
++    #expect(h.controller.snapshot().waiting.count == 1)
++    expectSound(h)
++  }
++
++  /// Its person has put it somewhere else meanwhile, and has decided about it: a title does not take it from there.
++  @Test(arguments: ["dock left", "dock top"]) func aHolderAHandHasPutElsewhereIsLeftThereByATitle(command: String) throws {
++    let evening = try evening()
++    let (h, holder) = try morningWithAHolderForNow(evening)
++    h.system.userFocus(holder)
++    h.scheduler.advance(by: 1)
++    try #require(h.run(command, from: .shortcut).ok)
++    h.scheduler.advance(by: 2)
++    let (place, mark) = (h.frame(holder), h.system.moveLog.count)
++    try #require(place != evening.place, "\(h.ascii())")
++    h.system.setTitle(holder, evening.sibling.title)
++    h.scheduler.advance(by: 2)
++    #expect(h.workspace.isDocked(holder) && h.frame(holder) == place && h.system.moveLog.count == mark, "\(h.ascii())")
++    expectSound(h)
++  }
++
++  /// No frame is set, and no neighbour moved, for a title nobody saw. It holds the place for now, as before.
++  @Test(arguments: ["minimized", "hidden", "on another Space", "in full screen"]) func whileNobodySeesItATitleMovesNothing(how: String) throws {
++    let evening = try evening()
++    let (h, holder) = try morningWithAHolderForNow(evening)
++    switch how {
++    case "minimized": h.system.setMinimized(holder, true)
++    case "hidden": h.system.setHidden(pid: evening.sibling.pid, true)
++    case "on another Space": h.system.setOnActiveSpace(holder, false)
++    default: h.system.setFullScreen(holder, true)
++    }
++    h.scheduler.advance(by: 3)
++    let mark = h.system.moveLog.count
++    h.system.setTitle(holder, evening.sibling.title)
++    h.scheduler.advance(by: 3)
++    #expect(h.workspace.isDocked(holder) && h.system.moveLog.count == mark, "\(how): \(h.system.moveLog[mark...].map(\.after))")
++    #expect(h.controller.invariantViolations().isEmpty, "\(h.controller.invariantViolations())")
++  }
++
++  /// Where it opened is out of view (a display that has gone since): it is not sent there, to be fetched again.
++  @Test func whereItOpenedIsOutOfViewItIsNotSentThere() throws {
++    let evening = try evening()
++    let h = morning(evening)
++    let holder = h.system.open(
++      app: evening.sibling.appName, bundleID: evening.sibling.bundleID, title: "Untitled", pid: evening.sibling.pid,
++      frame: CGRect(x: 1900, y: 200, width: 440, height: 440))
++    h.scheduler.advance(by: 2)
++    try #require(h.workspace.isDocked(holder) && h.frame(holder) == evening.place, "the situation: \(h.ascii())")
++    let mark = h.system.moveLog.count
++    h.system.setTitle(holder, evening.sibling.title)
++    h.scheduler.advance(by: 2)
++    #expect(h.workspace.isDocked(holder) && h.system.moveLog.count == mark, "\(h.ascii())")
++    expectSound(h)
++  }
++
++  // MARK: The rival
++
++  /// Whoever is known to be somebody else does not count, as a claimant or as a rival: the owner under another name is let in
++  /// whoever is quicker, and the other floats where it opened.
++  @Test(arguments: [true, false]) func theOwnerUnderAnotherNameIsLetInWhoeverIsQuicker(siblingFirst: Bool) throws {
++    let evening = try evening()
++    let h = morning(evening)
++    var (owner, sibling): (WindowID?, WindowID?)
++    for isSibling in [siblingFirst, !siblingFirst] {
++      if isSibling { sibling = reopen(evening.sibling, in: h) } else { owner = reopen(evening.owner, in: h, title: "Letter (edited)") }
++    }
++    let (theOwner, theSibling) = (try #require(owner), try #require(sibling))
++    #expect(h.workspace.isDocked(theOwner) && h.frame(theOwner) == evening.place, "\(h.ascii())")
++    #expect(h.workspace.isFloating(theSibling) && asked(of: theSibling, in: h).isEmpty, "\(asked(of: theSibling, in: h))")
++    expectSound(h)
++  }
++
++  /// Both back before Arbor is up.
++  @Test func withBothBackBeforeArborTheOwnerUnderAnotherNameIsLetIn() throws {
++    let evening = try evening()
++    let h = Harness(saved: evening.saved)
++    for _ in 0..<7 { h.system.open(app: "Filler", pid: 700, frame: CGRect(x: 100, y: 600, width: 300, height: 200)) }
++    let sibling = reopen(evening.sibling, in: h)
++    let owner = reopen(evening.owner, in: h, title: "Letter (edited)")
++    h.start()
++    h.scheduler.advance(by: 2)
++    #expect(h.workspace.isDocked(owner) && h.frame(owner) == evening.place, "\(h.ascii())")
++    #expect(h.workspace.isFloating(sibling) && asked(of: sibling, in: h).isEmpty)
++    expectSound(h)
++  }
++
++  /// Two floated in the file, one is back under its name, and there is a stranger: it may be the other one under another name. Nobody is
++  /// docked, as before; and the owner, when it comes, goes straight to its place.
++  @Test func withAFloatingWindowOfTheFileStillMissingAStrangerIsNotLetIn() throws {
++    let evening = try evening(another: "Sketch")
++    let h = Harness(saved: evening.saved)
++    for _ in 0..<7 { h.system.open(app: "Filler", pid: 700, frame: CGRect(x: 100, y: 600, width: 300, height: 200)) }
++    let sibling = reopen(evening.sibling, in: h)
++    let stranger = h.system.open(
++      app: evening.sibling.appName, bundleID: evening.sibling.bundleID, title: "Sketch 2", pid: evening.sibling.pid, frame: Self.whereTheThirdStands)
++    h.start()
++    h.scheduler.advance(by: 2)
++    #expect(h.workspace.isFloating(sibling) && h.workspace.isFloating(stranger), "\(h.ascii())")
++    #expect(asked(of: sibling, in: h).isEmpty && asked(of: stranger, in: h).isEmpty && h.controller.snapshot().waiting.count == 1)
++    let owner = reopen(evening.owner, in: h)
++    #expect(h.workspace.isDocked(owner) && h.frame(owner) == evening.place, "\(h.ascii())")
++    #expect(asked(of: sibling, in: h).isEmpty && asked(of: stranger, in: h).isEmpty)
++    expectSound(h)
++  }
++
++  /// With both back under their names, the stranger is neither.
++  @Test func withEveryFloatingWindowOfTheFileBackAStrangerIsLetIn() throws {
++    let evening = try evening(another: "Sketch")
++    let h = morning(evening)
++    let sibling = reopen(evening.sibling, in: h)
++    let third = h.system.open(
++      app: evening.sibling.appName, bundleID: evening.sibling.bundleID, title: "Sketch", pid: evening.sibling.pid, frame: Self.whereTheThirdStands)
++    h.scheduler.advance(by: 2)
++    let owner = reopen(evening.owner, in: h, title: "Letter (edited)")
++    #expect(h.workspace.isDocked(owner) && h.frame(owner) == evening.place, "\(h.ascii())")
++    #expect(h.workspace.isFloating(sibling) && h.workspace.isFloating(third) && asked(of: sibling, in: h).isEmpty && asked(of: third, in: h).isEmpty)
++    expectSound(h)
++  }
++
++  /// The control: two strangers to the file. Nobody can tell which is the owner, and neither is let in, as before.
++  @Test func twoStrangersAreRivalsAsBefore() throws {
++    let evening = try evening()
++    let h = Harness(saved: evening.saved)
++    for _ in 0..<7 { h.system.open(app: "Filler", pid: 700, frame: CGRect(x: 100, y: 600, width: 300, height: 200)) }
++    let one = reopen(evening.sibling, in: h, title: "Untitled")
++    let other = reopen(evening.owner, in: h, title: "Letter (edited)")
++    h.start()
++    h.scheduler.advance(by: 2)
++    #expect(h.workspace.isFloating(one) && h.workspace.isFloating(other), "\(h.ascii())")
++    #expect(h.controller.snapshot().waiting.count == 1)
++    expectSound(h)
++  }
++
++  // MARK: The walks
++
++  static let terminal = "pid 1003 at 471 360 716 409 min 177 64"
++
++  /// The product owner's thirteen lines: the owner never comes.
++  @Test func theWalkWhereTheOwnerNeverComes() throws {
++    let runner = ChaosRunner()
++    let walk = """
++      launch
++      open 101 Terminal pid 1003 at 618 457 710 489 min 177 64 title Terminal-101 cells 7 15 2 4
++      open 106 Terminal \(Self.terminal) title Terminal-106 cells 7 15 2 4
++      focus 101
++      key down dock right
++      key up dock right
++      quit
++      close 101
++      close 106
++      launch
++      open 110 Terminal \(Self.terminal) title Terminal-106 cells 7 15 2 4
++      advance 120
++      settle
++      """
++    for action in ChaosAction.script(walk) {
++      // Or the walk no longer gets to a place that is kept, and proves nothing.
++      if action.text.hasPrefix("open 110") { try #require(runner.controller.snapshot().waiting.count == 1) }
++      let broken = runner.step(action).map(\.rule).filter { !ChaosRunner.knownRules.contains($0) }
++      #expect(broken.isEmpty, "\(action.text): \(broken)")
++    }
++    let sibling = WindowID(110)
++    #expect(runner.controller.workspaces.values.contains { $0.isFloating(sibling) }, "nobody docked it")
++    #expect(runner.system.moveLog.filter { $0.window == sibling }.isEmpty, "and no frame is set on it")
++  }
++
++  static let two = "displays main:0,0,1440,900:25,0,0,0* side:1440,0,1440,900:25,0,0,0 windows-first"
++  static let one = "displays main:0,0,1440,900:25,0,0,0* windows-first"
++
++  func play(_ walk: String) -> ChaosRunner {
++    let runner = ChaosRunner()
++    for action in ChaosAction.script(walk) {
++      let broken = runner.step(action).map(\.rule).filter { !ChaosRunner.knownRules.contains($0) }
++      #expect(broken.isEmpty, "\(action.text): \(broken)")
++    }
++    return runner
++  }
++
++  /// It floated on a display that is not there this morning, unplugged before the Mac was shut down or overnight. The file knows it all the same.
++  @Test(arguments: [true, false]) func whoFloatedOnADisplayThatIsAwayIsKnownToo(unpluggedBeforeTheQuit: Bool) {
++    let unplug = "\(Self.one)\nsettle"
++    let runner = play(
++      """
++      \(Self.two)
++      launch
++      open 101 Terminal pid 1003 at 200 300 405 386 min 177 64 title T-101
++      open 106 Terminal pid 1003 at 1750 429 484 308 min 177 64 title T-106
++      dock 101 left
++      settle
++      \(unpluggedBeforeTheQuit ? unplug : "")
++      quit
++      close 101
++      close 106
++      \(unpluggedBeforeTheQuit ? "" : Self.one)
++      launch
++      advance 1
++      open 110 Terminal pid 1003 at 300 300 405 386 min 177 64 title T-106
++      advance 1
++      """)
++    #expect(runner.controller.workspaces.values.contains { $0.isFloating(WindowID(110)) })
++    #expect(runner.system.moveLog.filter { $0.window == WindowID(110) }.isEmpty && runner.controller.snapshot().waiting.count == 1)
++  }
++
++  /// The place is on a display that is not connected: the holder has it on paper only, and floats here. It gives that back too, so that
++  /// the display does not carry it off when it comes.
++  @Test func aPlaceHeldOnADisplayThatIsAwayIsGivenBackToo() {
++    let runner = play(
++      """
++      \(Self.two)
++      launch
++      open 101 Terminal pid 1003 at 1750 429 484 308 min 177 64 title T-101
++      open 106 Terminal pid 1003 at 200 300 405 386 min 177 64 title T-106
++      dock 101 left
++      settle
++      quit
++      close 101
++      close 106
++      \(Self.one)
++      launch
++      advance 1
++      open 110 Terminal pid 1003 at 200 300 405 386 min 177 64 title Terminal
++      advance 1
++      title 110 T-106
++      advance 1
++      \(Self.two)
++      advance 3
++      """)
++    #expect(runner.controller.workspaces.values.contains { $0.isFloating(WindowID(110)) }, "it stays where it floats")
++    #expect(runner.system.moveLog.filter { $0.window == WindowID(110) }.isEmpty)
++    #expect(runner.controller.snapshot().waiting.count == 1, "and the place waits again, on its display")
++  }
++
++  /// An evening with a neighbour: Notes at the left, a terminal beside it, another terminal floating. In the morning Notes is back, and
++  /// the floating one comes first, without its name.
++  static let aHolderBesideANeighbour = """
++    launch
++    open 120 Notes pid 1001 at 100 100 600 400 min 177 64 title Todo
++    open 101 Terminal pid 1003 at 618 457 710 489 min 177 64 title T-101
++    open 106 Terminal pid 1003 at 471 360 716 409 min 177 64 title T-106
++    dock 120 left
++    dock 101 beside 120 right
++    settle
++    quit
++    close 101
++    close 106
++    close 120
++    launch
++    advance 1
++    open 220 Notes pid 1001 at 100 100 600 400 min 177 64 title Todo
++    advance 1
++    open 110 Terminal pid 1003 at 471 360 716 409 min 177 64 title Terminal
++    advance 1
++    """
++
++  func isDocked(_ window: UInt32, in runner: ChaosRunner) -> Bool { runner.controller.workspaces.values.contains { $0.isDocked(WindowID(window)) } }
++
++  /// One move of one window: the neighbour stands still, at the give-back and when the owner comes.
++  @Test func atTheGiveBackTheNeighbourStandsStill() throws {
++    let runner = play(Self.aHolderBesideANeighbour)
++    try #require(isDocked(110, in: runner) && isDocked(220, in: runner), "the situation")
++    let mark = runner.system.moveLog.count
++    for line in ["title 110 T-106", "advance 1"] { _ = runner.step(ChaosAction(text: line)) }
++    #expect(runner.system.moveLog[mark...].map(\.window) == [WindowID(110)], "\(runner.system.moveLog[mark...].map(\.window))")
++    #expect(!isDocked(110, in: runner) && runner.controller.snapshot().waiting.count == 1)
++    let later = runner.system.moveLog.count
++    for line in ["open 107 Terminal pid 1003 at 618 457 710 489 min 177 64 title T-101", "advance 1"] { _ = runner.step(ChaosAction(text: line)) }
++    #expect(isDocked(107, in: runner) && Set(runner.system.moveLog[later...].map(\.window)) == [WindowID(107)])
++  }
++
++  /// Its app does not answer at that moment: the window cannot be sent anywhere, so nothing is written down either.
++  @Test func ofAnAppThatDoesNotAnswerNothingIsWrittenDown() throws {
++    let runner = play(Self.aHolderBesideANeighbour + "\nhang 1003\ntitle 110 T-106\nadvance 1\nwake 1003\nadvance 1")
++    #expect(isDocked(110, in: runner), "it holds the place for now, as before")
++    #expect(runner.controller.invariantViolations().isEmpty, "\(runner.controller.invariantViolations())")
++  }
++
++  /// What was given back is in the file: Arbor is started again during the wait, and the owner still finds its place.
++  @Test func afterAGiveBackASecondStartStillKeepsThePlaceForTheOwner() throws {
++    let runner = play(
++      Self.aHolderBesideANeighbour
++        + "\ntitle 110 T-106\nadvance 1\nquit\nlaunch\nadvance 1\nopen 107 Terminal pid 1003 at 618 457 710 489 min 177 64 title T-101\nadvance 1")
++    #expect(isDocked(107, in: runner) && isDocked(220, in: runner) && !isDocked(110, in: runner))
++  }
++
++  /// And it is in the file at once, not only at a quit: Arbor dies a moment later.
++  @Test func afterAGiveBackAndACrashThePlaceIsStillTheOwners() throws {
++    let runner = play(
++      Self.aHolderBesideANeighbour
++        + "\ntitle 110 T-106\nadvance 1\ncrash\nlaunch\nadvance 1\nopen 107 Terminal pid 1003 at 618 457 710 489 min 177 64 title T-101\nadvance 1")
++    #expect(isDocked(107, in: runner) && isDocked(220, in: runner) && !isDocked(110, in: runner))
++  }
++
++  /// The control: the nine lines the lab shrank its find to. There the one that comes first is a stranger to the file, so they stay as
++  /// they are: it is let in, and thrown out when the owner comes.
++  @Test func theNineLinesStayAsTheyAre() throws {
++    let runner = ChaosRunner()
++    let walk = """
++      launch
++      open 101 Terminal pid 1003 at 618 457 710 489 min 177 64 title Terminal-101 cells 7 15 2 4
++      key down dock right
++      key up dock right
++      quit
++      close 101
++      launch
++      open 110 Terminal \(Self.terminal) title Terminal-106 cells 7 15 2 4
++      open 107 Terminal pid 1003 at 618 457 710 489 min 177 64 title Terminal-101 cells 7 15 2 4
++      """
++    for action in ChaosAction.script(walk) {
++      if action.text.hasPrefix("open 107") { try #require(runner.controller.workspaces.values.contains { $0.isDocked(WindowID(110)) }) }
++      let broken = runner.step(action).map(\.rule).filter { !ChaosRunner.knownRules.contains($0) }
++      #expect(broken.isEmpty, "\(action.text): \(broken)")
++    }
++    #expect(runner.controller.workspaces.values.contains { $0.isDocked(WindowID(107)) })
++    #expect(runner.controller.workspaces.values.contains { $0.isFloating(WindowID(110)) })
++  }
++}
+diff --git a/Tests/ArborKitTests/KeptPlacesTests.swift b/Tests/ArborKitTests/KeptPlacesTests.swift
+index cc7fe3df..fef51ebf 100644
+--- a/Tests/ArborKitTests/KeptPlacesTests.swift
++++ b/Tests/ArborKitTests/KeptPlacesTests.swift
+@@ -434,7 +434,7 @@ import Testing
+ 
+   /// After a restart of the Mac Arbor is up first, and numbers come round again: the document that was docked comes under the number its
+   /// floating sibling had. It was not there all along.
+-  @Test(arguments: ["titled", "another title", "untitled at first", "after its sibling"])
++  @Test(arguments: ["titled", "another title", "untitled at first", "after its sibling", "after a stranger"])
+   func aLateWindowUnderAnOldNumberStillGetsItsPlace(how: String) {
+     let first = Harness()
+     let report = first.system.open(app: "Preview", title: "Report", pid: 1007, frame: CGRect(x: 750, y: 429, width: 484, height: 308))
+@@ -459,9 +459,16 @@ import Testing
+     case "untitled at first":
+       open(photo, "Untitled")
+       h.system.setTitle(photo, "Report")
+-    default:
+-      // The sibling first, under the number the document had: it holds the place for now, and gives it up.
++    case "after its sibling":
++      // The sibling first, under the number the document had. The file knows its title as a floating window's: it is somebody else, and
++      // never gets the place (`AKeptPlaceIsItsOwnersTests`).
+       open(report, "Photo")
++      #expect(h.workspace.isFloating(report), "the situation")
++      open(photo, "Report")
++      #expect(h.workspace.isFloating(report))
++    default:
++      // A window the file does not know first, under the number the document had: it holds the place for now, and gives it up.
++      open(report, "Welcome")
+       #expect(h.workspace.isDocked(report), "the situation")
+       open(photo, "Report")
+       #expect(h.workspace.isFloating(report))
+diff --git a/collab/parity.json b/collab/parity.json
+index 3e1d6822..b42e1fda 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -1037,22 +1037,38 @@
+         "aDamagedTreeIsRepairedAndItsWindowsAreAllStillManaged",
+         "aDisplayThatIsBackDoesNotFetchWhatFloatsOnAnother",
+         "aFloatingWindowPlacedWhileArborWasAwayStaysThereThoughItsDisplayRemembersAnotherPlace",
++        "aHolderAHandHasPutElsewhereIsLeftThereByATitle",
++        "aHolderThatSaysAnyOtherNameKeepsThePlace",
++        "aHolderThatTurnsOutToBeSomebodyElseGivesThePlaceBackAtOnce",
++        "aPlaceHeldOnADisplayThatIsAwayIsGivenBackToo",
+         "aPlaceThatExpiresMovesNothing",
+         "aPlaceWhoseGoingWouldMoveAWindowGoesWithTheNextLayoutSomebodyCauses",
+         "aRestoredWindowThatGetsItsTitleLateStillReturnsToItsSlot",
+         "aRestoredWindowWithAnotherTitleTakesItsAppsOnlySlot",
++        "aStrangerThatNobodyFollowsKeepsThePlace",
++        "aStrangerToTheFileIsLetInForNowAsBefore",
+         "aSurvivingWindowIsNotPulledToAnotherDisplayBecauseItsTwinClosed",
+         "aWindowOnAnotherSpaceAtLaunchKeepsItsSlotForAsLongAsItExists",
+         "aWindowThatWasClosedWhileArborWasNotRunningKeepsNoRoom",
+         "aWindowThatWasSentAwayIsAnOrdinaryWindowAfterALaunch",
++        "afterAGiveBackASecondStartStillKeepsThePlaceForTheOwner",
++        "afterAGiveBackAndACrashThePlaceIsStillTheOwners",
+         "anAppThatNeverComesGivesItsRoomBackAtTheNextLayoutSomebodyCauses",
+         "anArrangementWhoseDisplayIsBackAtLaunchComesBackShowingEverything",
+         "anArrangementWhoseDisplayIsGoneAtLaunchComesBackShowingEverything",
++        "andWhereTheOwnerNeverComesItIsNotDockedForGood",
++        "anotherAppsFloatingWindowOfThatTitleSaysNothing",
++        "atTheGiveBackTheNeighbourStandsStill",
++        "backBeforeArborItIsNotDockedEither",
++        "givenBackOnceThePlaceIsNotTakenAgain",
+         "inEveryOrderEachWindowIsSetOneFrameItsLast",
+         "movedWhileArborWasNotRunningItComesBackToWhereItWasMovedTo",
+         "nothingIsDrawnInTheHole",
+         "nothingMovesAndNothingChangesWhenNothingChanged",
++        "ofAnAppThatDoesNotAnswerNothingIsWrittenDown",
+         "onTheWayEveryWindowThatIsThereIsInItsFinalPlace",
++        "onceKnownItIsKnownWhateverItIsCalledLater",
++        "onceTheWaitIsOverATitleMovesNobody",
+         "oneDisplayThatCannotBeReadDoesNotCostTheOthers",
+         "quitAtTheDeskStartedOnTheLap",
+         "quitDuringAPauseAndLaunchedAgainEverythingShows",
+@@ -1063,12 +1079,27 @@
+         "statusAndStateSayWhichPlacesAreKept",
+         "takenToAnotherDisplayWhileArborWasAwayItFloatsThere",
+         "theArrangementSurvivesARestart",
++        "theNineLinesStayAsTheyAre",
++        "theOwnerThenTakesItsPlaceAndNobodyElseIsMoved",
++        "theOwnerUnderAnotherNameIsLetInWhoeverIsQuicker",
+         "thePlaceWaitsAgainIfTheWindowThatCameFirstCloses",
+         "theViewOfLastTimeIsOneStepBackAndWhatWasKeptIsKept",
++        "theWalkWhereTheOwnerNeverComes",
+         "theWindowWithTheSavedTitleTakesThePlaceOverFromTheOneThatCameFirst",
++        "twoStrangersAreRivalsAsBefore",
+         "whatWasDockedOnADisplayThatIsMissingFloatsWhereItIsFoundAndGoesBackWithItsDisplay",
++        "whereItOpenedIsOutOfViewItIsNotSentThere",
++        "whereTheOwnerNeverComesNobodyIsDockedInItsStead",
++        "whileNobodySeesItATitleMovesNothing",
++        "whoFloatedInTheFileFloatsWhereItOpensAndThePlaceGoesOnWaiting",
++        "whoFloatedOnADisplayThatIsAwayIsKnownToo",
+         "windowsRestoredAfterArborStartsReturnToTheirSlots",
+-        "windowsThatTheirAppsRestoreLateComeIntoViewToo"
++        "windowsThatTheirAppsRestoreLateComeIntoViewToo",
++        "withAFloatingWindowOfTheFileStillMissingAStrangerIsNotLetIn",
++        "withBothBackBeforeArborTheOwnerUnderAnotherNameIsLetIn",
++        "withEveryFloatingWindowOfTheFileBackAStrangerIsLetIn",
++        "withOneTitleForBothTheFirstToComeGetsThePlace",
++        "withTheOwnerBackFirstALateNameMovesNobody"
+       ],
+       "e2e": [
+         "quit Arbor while zoomed in and start it again: it shows everything, takes no window out of view, and Back returns to the old view",
+diff --git a/docs/ARCHITECTURE.md b/docs/ARCHITECTURE.md
+index dc42e7b6..e42725ff 100644
+--- a/docs/ARCHITECTURE.md
++++ b/docs/ARCHITECTURE.md
+@@ -1164,7 +1164,13 @@ arrangement sees no hole. `treeView` and `presentWindowIDs()` go by who is there
+ placed (`seam(on:of:in:layout:)`). Which leaves kept their room is saved (`roomKept` in `state.json`), for a start in the same login.
+ A window that got a slot by its app alone holds it
+ provisionally until the wait is over (`provisionalSlots`): what an app shows first is often a welcome window, so a window
+-with the saved title takes the slot over, and if the holder closes the slot waits again. After `resume` only windows
++with the saved title takes the slot over, and if the holder closes the slot waits again. **A kept place is its owner's**: a window that
++says a title the file has for a floating window of that app is known to be somebody else, from then on and whatever it is called later
++(`SomebodyElse`, `isKnownToBeSomebodyElse`). By its app alone it is not let in. Let in as a stranger, because many apps name a restored window a moment
++after showing it, it gives the slot back when it says that name (`giveBackTheSlot`): only where that is one move of one window that can be seen, with
++the arrangement as it was when it was let in (`LayoutTree.Place`); else nothing happens, and the owner takes the slot over when it comes. Nor is it a rival to
++a stranger who may be the owner, once every floating window of the file is back. One that was there all along is no rival but a witness: the app never
++quit, so the docked window was closed on purpose, and a new document has nothing to do with it. After `resume` only windows
+ that still exist keep a slot: what is missing was closed by the user, not by a reboot. Slots wait in the
+ remembered arrangements of disconnected displays too: the window floats where it appears and returns to its slot
+ with the display. Whatever is found with no more than a sliver showing (parked by a run
+-- 
+2.43.0
+
+
+From 646a6a9efaad7851ec7790af462d35a6a7eadda8 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 15:35:45 +0000
+Subject: [PATCH 2/4] wip: version three: the rival rider is out, the give-back
+ is tried first
+
+---
+ .../Controller/Controller+Events.swift        |   1 +
+ .../Controller/Controller+PendingSlots.swift  |  56 +++---
+ .../AKeptPlaceIsItsOwnersTests.swift          | 173 ++++++++++++++----
+ 3 files changed, 171 insertions(+), 59 deletions(-)
+
+diff --git a/Sources/ArborKit/Controller/Controller+Events.swift b/Sources/ArborKit/Controller/Controller+Events.swift
+index 9944be7e..2badead3 100644
+--- a/Sources/ArborKit/Controller/Controller+Events.swift
++++ b/Sources/ArborKit/Controller/Controller+Events.swift
+@@ -61,6 +61,7 @@ extension Controller: WindowSystemEvents {
+     fills.inHand.remove(id)
+     fills.saidToGoNoLarger.remove(id)
+     hints[id] = nil
++    somebodyElse.recognised.remove(id)
+     let hadKeyboard = hadKeyboard(id)
+     keyboardHandOver.newcomers[id] = nil
+     unplaced.remove(id)
+diff --git a/Sources/ArborKit/Controller/Controller+PendingSlots.swift b/Sources/ArborKit/Controller/Controller+PendingSlots.swift
+index 8807f5ae..52623ad3 100644
+--- a/Sources/ArborKit/Controller/Controller+PendingSlots.swift
++++ b/Sources/ArborKit/Controller/Controller+PendingSlots.swift
+@@ -236,8 +236,8 @@ extension Controller {
+     // Where it goes back to if the slot turns out to be another window's.
+     let openedAt = workspaces.values.lazy.compactMap { $0.floating[window.id] }.first ?? window.frame
+     func holdProvisionally(in tree: LayoutTree) {
+-      guard exact == nil, let hint = hints[slot], let leaf = tree.leaf(containing: window.id) else { return }
+-      provisionalSlots[window.id] = ProvisionalSlot(hint: hint, leaf: leaf, place: tree.place(of: window.id), openedAt: openedAt)
++      guard exact == nil, let hint = hints[slot], let place = tree.place(of: window.id) else { return }
++      provisionalSlots[window.id] = ProvisionalSlot(hint: hint, leaf: place.leaf, place: place, openedAt: openedAt)
+     }
+     guard let display = workspaces.keys.sorted().first(where: { workspaces[$0]!.isDocked(slot) }) else {
+       // The slot is on a display that is not connected: the window takes it over there, to return
+@@ -285,7 +285,9 @@ extension Controller {
+     somebodyElse = SomebodyElse()
+     guard let saved else { return }
+     // Of every display the file has, connected now or not. (What floated on one that had gone before floats on another in the file.)
++    // A window without a title has said nothing: many are shown so, and named a moment later.
+     somebodyElse.floatedInTheFile = saved.workspaces.values.flatMap(\.floating.keys).sorted().compactMap { saved.hints[$0] }
++      .filter { !$0.title.isEmpty }
+   }
+ 
+   /// A kept place is its owner's. After a restart of the Mac nobody has yesterday's number, and a title is all there is to go by: one
+@@ -325,7 +327,7 @@ extension Controller {
+   }
+ 
+   /// Titles being what they are (Mail counts messages in its, a chat app marks what is unread): the app's
+-  /// slot if it has only one waiting and `window` is its only window that is not docked and may be the owner.
++  /// slot if it has only one waiting and `window` is its only window that is not docked. Unless it is known to be somebody else.
+   private func onlySlot(ofAppOf window: WindowSnapshot) -> WindowID? {
+     let ofApp = slots(ofAppOf: window)
+     // A slot that waits under its own number waits for that very window.
+@@ -333,16 +335,7 @@ extension Controller {
+     let loose = windows.values.filter { other in
+       other.bundleID == window.bundleID && filter.manages(other) && !hasSlot(other.id)
+     }
+-    if loose.count == 1 { return ofApp[0] }
+-    // The others are no rivals if each is known to be somebody else, or who is quicker would decide. Not one that was there all along: it
+-    // is a witness that the app never quit, so the docked window was closed on purpose, and a new document has nothing to do with it.
+-    // And only with every floating window of the file accounted for: else this may be the one that is missing, under another name.
+-    let others = loose.filter { $0.id != window.id }
+-    let floated = somebodyElse.floatedInTheFile.filter { $0.bundleID == window.bundleID }.count
+-    guard others.count == loose.count - 1, others.count >= floated,
+-      others.allSatisfy({ isKnownToBeSomebodyElse($0) && !isItselfAsTheFileKnewIt($0) })
+-    else { return nil }
+-    return ofApp[0]
++    return loose.count == 1 ? ofApp[0] : nil
+   }
+ 
+   /// Whether `window` is docked already, be it on a display that is not connected.
+@@ -413,7 +406,7 @@ extension Controller {
+     /// Where in the tree. If the window is anywhere else by now, the user has decided about it.
+     var leaf: NodeID
+     /// And where among its neighbours. The leaf goes along when a hand docks the window elsewhere or swaps it; this does not.
+-    var place: LayoutTree.Place?
++    var place: LayoutTree.Place
+     var openedAt: CGRect
+   }
+ 
+@@ -475,20 +468,37 @@ extension Controller {
+   /// that the file has for a floating window. It never gets the place, from the moment that is known: back to where it opened,
+   /// and the slot waits again. The other end would be a window nobody docked, docked for good.
+   ///
+-  /// Only where that is one move of one window that somebody can see, and nobody has had a hand in the arrangement since. Else
+-  /// nothing happens, as before there was this: it holds the place for now, and the owner takes it over when it comes. As
+-  /// `claimPendingSlot(for:)`: true if a display has been laid out for it.
++  /// **Only where that is one move of one window that somebody sees.** It is tried first: if the view, or anybody else, would have to
++  /// move (the place no longer keeps its room, the view is on the holder, somebody has rearranged things since), everything
++  /// is put back and nothing happens, as before there was this: it holds the place for now, and the owner takes it over when
++  /// it comes. As `claimPendingSlot(for:)`: true if a display has been laid out for it.
+   private func giveBackTheSlot(heldForNowBy window: WindowSnapshot) -> Bool {
+     guard let held = provisionalSlots[window.id] else { return false }
+     if let display = workspaceID(containing: window.id), var workspace = workspaces[display], workspace.isDocked(window.id) {
+-      // In the Dock, hidden, on another Space or in full screen no frame is set for a title nobody saw. Where it opened may be on a
+-      // display that has gone since. And the window goes first: of an app that does not answer nothing is written down.
+-      guard window.isPresent, workspace.tree.place(of: window.id) == held.place, !showsLessThanHalf(held.openedAt),
+-        let given = give(held.openedAt, to: window.id)
++      // In the Dock, hidden, on another Space, in full screen or out of view no frame is set for a title nobody saw. A hand that has put
++      // it elsewhere has decided about it. Where it opened may be on a display that has gone since.
++      guard window.isPresent, let shown = layouts[display], shown.windowFrames[window.id] != nil,
++        workspace.tree.place(of: window.id) == held.place, !showsLessThanHalf(held.openedAt)
+       else { return false }
+-      provisionalSlots[window.id] = nil
++      let before = (workspaces[display], pendingSlots, hints, undoHistory, windowsTheFileKnew, keptRoom)
++      func putBack() -> Bool {
++        (workspaces[display], pendingSlots, hints, undoHistory, windowsTheFileKnew, keptRoom) = before
++        return false
++      }
+       moveToStandIn(window.id, hint: held.hint, in: &workspace)
+       workspaces[display] = workspace
++      var others = shown.windowFrames
++      others[window.id] = nil
++      // (Beside the Desktop alone the room goes to the Desktop, which moves no window.)
++      guard let fresh = layout(of: display), fresh.camera == shown.camera, fresh.windowFrames == others, fresh.tiles == shown.tiles,
++        fresh.hiddenWindows == shown.hiddenWindows,
++        // A held view is narrowed round a place nobody stands in, which only the layout itself finds out (`holdFences`).
++        holdLetsShow(workspace, on: display),
++        // The window goes before anything is final: of an app that does not answer nothing is written down.
++        let given = give(held.openedAt, to: window.id)
++      else { return putBack() }
++      provisionalSlots[window.id] = nil
++      hints[window.id] = WindowHint(bundleID: window.bundleID, title: window.title)
+       floatWhereItOpened(window.id, held, orOn: display, given: given)
+       Log.info("\(window.id) is not the window its saved slot waited for, and gives it back")
+       relayout(display, reason: .structure)
+@@ -496,7 +506,7 @@ extension Controller {
+       return true
+     }
+     // On a display that is not connected it only had the place on paper, and floats here already.
+-    for id in dormant.keys.sorted() where dormant[id]!.workspace.tree.place(of: window.id) == held.place && held.place != nil {
++    for id in dormant.keys.sorted() where dormant[id]!.workspace.tree.place(of: window.id) == held.place {
+       provisionalSlots[window.id] = nil
+       var workspace = dormant[id]!.workspace
+       moveToStandIn(window.id, hint: held.hint, in: &workspace)
+diff --git a/Tests/ArborKitTests/AKeptPlaceIsItsOwnersTests.swift b/Tests/ArborKitTests/AKeptPlaceIsItsOwnersTests.swift
+index acb5a161..3ad997e3 100644
+--- a/Tests/ArborKitTests/AKeptPlaceIsItsOwnersTests.swift
++++ b/Tests/ArborKitTests/AKeptPlaceIsItsOwnersTests.swift
+@@ -138,6 +138,51 @@ import Testing
+     expectSound(h)
+   }
+ 
++  /// A window without a title has said nothing. Many are shown so and named a moment later, the owner among them.
++  @Test func anEmptyTitleSaysNothing() throws {
++    let evening = try evening(siblingsTitle: "")
++    let h = morning(evening)
++    let owner = reopen(evening.owner, in: h, title: "")
++    #expect(h.workspace.isDocked(owner) && h.frame(owner) == evening.place, "let in as a stranger: \(h.ascii())")
++    h.system.setTitle(owner, "Letter (edited)")
++    h.scheduler.advance(by: Controller.pendingSlotLifetime + 20)
++    #expect(h.workspace.isDocked(owner) && h.frame(owner) == evening.place, "\(h.ascii())")
++    expectSound(h)
++  }
++
++  /// It is the window that is known, while there is one. Its number, used again, is another window's.
++  @Test func aNumberUsedAgainIsAnotherWindows() throws {
++    let runner = play(
++      """
++      launch
++      open 101 Terminal pid 1003 at 618 157 710 489 min 177 64 title vim
++      open 106 Terminal pid 1003 at 171 260 516 409 min 177 64 title zsh
++      dock 101 right
++      settle
++      quit
++      close 101
++      close 106
++      launch
++      advance 1
++      open 210 Terminal pid 1003 at 171 260 516 409 min 177 64 title zsh
++      advance 1
++      close 210
++      advance 1
++      open 210 Terminal pid 1003 at 300 200 500 400 min 177 64 title vim-2
++      advance 1
++      """)
++    #expect(isDocked(210, in: runner), "a stranger, and its app's only loose window")
++  }
++
++  /// Nothing of it is left when Arbor stops, be it for a pause.
++  @Test func nothingIsRememberedThroughAPause() throws {
++    let evening = try evening()
++    let h = morning(evening)
++    _ = reopen(evening.sibling, in: h)
++    try #require(h.run("toggle-pause").ok)
++    #expect(h.controller.invariantViolations().isEmpty, "\(h.controller.invariantViolations())")
++  }
++
+   // MARK: May be the owner under another name: as before
+ 
+   /// The control. A stranger to the file (a count in the title, "Untitled", a welcome window) is let in, holds the place for now,
+@@ -307,7 +352,7 @@ import Testing
+     expectSound(h)
+   }
+ 
+-  /// No frame is set, and no neighbour moved, for a title nobody saw. It holds the place for now, as before.
++  /// No frame is set for a title nobody saw. It holds the place for now, as before.
+   @Test(arguments: ["minimized", "hidden", "on another Space", "in full screen"]) func whileNobodySeesItATitleMovesNothing(how: String) throws {
+     let evening = try evening()
+     let (h, holder) = try morningWithAHolderForNow(evening)
+@@ -341,11 +386,12 @@ import Testing
+     expectSound(h)
+   }
+ 
+-  // MARK: The rival
++  // MARK: Who else is let in: nobody that was not before
+ 
+-  /// Whoever is known to be somebody else does not count, as a claimant or as a rival: the owner under another name is let in
+-  /// whoever is quicker, and the other floats where it opened.
+-  @Test(arguments: [true, false]) func theOwnerUnderAnotherNameIsLetInWhoeverIsQuicker(siblingFirst: Bool) throws {
++  /// The old rule stands untouched: a stranger is let in if it is its app's only loose window. Every stranger let in besides might not be
++  /// the owner, and would be docked unasked, or cost the owner its place. So beside the sibling, which floats, the owner under
++  /// another name floats too, as it did before (when the sibling was docked in its stead).
++  @Test(arguments: [true, false]) func besideTheSiblingAStrangerIsLetInNoMoreThanBefore(siblingFirst: Bool) throws {
+     let evening = try evening()
+     let h = morning(evening)
+     var (owner, sibling): (WindowID?, WindowID?)
+@@ -353,28 +399,45 @@ import Testing
+       if isSibling { sibling = reopen(evening.sibling, in: h) } else { owner = reopen(evening.owner, in: h, title: "Letter (edited)") }
+     }
+     let (theOwner, theSibling) = (try #require(owner), try #require(sibling))
+-    #expect(h.workspace.isDocked(theOwner) && h.frame(theOwner) == evening.place, "\(h.ascii())")
+     #expect(h.workspace.isFloating(theSibling) && asked(of: theSibling, in: h).isEmpty, "\(asked(of: theSibling, in: h))")
++    if siblingFirst {
++      #expect(h.workspace.isFloating(theOwner) && asked(of: theOwner, in: h).isEmpty && h.controller.snapshot().waiting.count == 1, "\(h.ascii())")
++    } else {
++      #expect(h.workspace.isDocked(theOwner) && h.frame(theOwner) == evening.place, "alone when it came: \(h.ascii())")
++    }
+     expectSound(h)
+   }
+ 
+-  /// Both back before Arbor is up.
+-  @Test func withBothBackBeforeArborTheOwnerUnderAnotherNameIsLetIn() throws {
+-    let evening = try evening()
+-    let h = Harness(saved: evening.saved)
+-    for _ in 0..<7 { h.system.open(app: "Filler", pid: 700, frame: CGRect(x: 100, y: 600, width: 300, height: 200)) }
+-    let sibling = reopen(evening.sibling, in: h)
+-    let owner = reopen(evening.owner, in: h, title: "Letter (edited)")
+-    h.start()
+-    h.scheduler.advance(by: 2)
+-    #expect(h.workspace.isDocked(owner) && h.frame(owner) == evening.place, "\(h.ascii())")
+-    #expect(h.workspace.isFloating(sibling) && asked(of: sibling, in: h).isEmpty)
+-    expectSound(h)
++  /// The sibling and a stranger are there before Arbor, Arbor is started a second time during the wait, and then the owner comes: it
++  /// finds its place. (A stranger let in past the sibling would have had it for good: holding for now does not outlive a stop.)
++  @Test func aStrangerBesideTheSiblingDoesNotCostTheOwnerItsPlace() throws {
++    let runner = play(
++      """
++      launch
++      open 101 Terminal pid 1003 at 618 157 710 489 min 177 64 title vim
++      open 106 Terminal pid 1003 at 171 260 516 409 min 177 64 title zsh
++      dock 101 right
++      settle
++      quit
++      close 101
++      close 106
++      open 210 Terminal pid 1003 at 171 260 516 409 min 177 64 title zsh
++      open 212 Terminal pid 1003 at 300 300 500 400 min 177 64 title man
++      launch
++      advance 1
++      quit
++      launch
++      advance 1
++      open 211 Terminal pid 1003 at 618 157 710 489 min 177 64 title vim
++      advance 1
++      """)
++    #expect(isDocked(211, in: runner) && !isDocked(210, in: runner) && !isDocked(212, in: runner))
++    #expect(runner.system.moveLog.filter { $0.window == WindowID(210) || $0.window == WindowID(212) }.isEmpty)
+   }
+ 
+-  /// Two floated in the file, one is back under its name, and there is a stranger: it may be the other one under another name. Nobody is
+-  /// docked, as before; and the owner, when it comes, goes straight to its place.
+-  @Test func withAFloatingWindowOfTheFileStillMissingAStrangerIsNotLetIn() throws {
++  /// Two floated in the file, one is back under its name, and there is a stranger. Nobody is docked, as before; and the owner, when it
++  /// comes, goes straight to its place.
++  @Test func withTheSiblingAndAStrangerBackBeforeArborNobodyIsDocked() throws {
+     let evening = try evening(another: "Sketch")
+     let h = Harness(saved: evening.saved)
+     for _ in 0..<7 { h.system.open(app: "Filler", pid: 700, frame: CGRect(x: 100, y: 600, width: 300, height: 200)) }
+@@ -391,20 +454,6 @@ import Testing
+     expectSound(h)
+   }
+ 
+-  /// With both back under their names, the stranger is neither.
+-  @Test func withEveryFloatingWindowOfTheFileBackAStrangerIsLetIn() throws {
+-    let evening = try evening(another: "Sketch")
+-    let h = morning(evening)
+-    let sibling = reopen(evening.sibling, in: h)
+-    let third = h.system.open(
+-      app: evening.sibling.appName, bundleID: evening.sibling.bundleID, title: "Sketch", pid: evening.sibling.pid, frame: Self.whereTheThirdStands)
+-    h.scheduler.advance(by: 2)
+-    let owner = reopen(evening.owner, in: h, title: "Letter (edited)")
+-    #expect(h.workspace.isDocked(owner) && h.frame(owner) == evening.place, "\(h.ascii())")
+-    #expect(h.workspace.isFloating(sibling) && h.workspace.isFloating(third) && asked(of: sibling, in: h).isEmpty && asked(of: third, in: h).isEmpty)
+-    expectSound(h)
+-  }
+-
+   /// The control: two strangers to the file. Nobody can tell which is the owner, and neither is let in, as before.
+   @Test func twoStrangersAreRivalsAsBefore() throws {
+     let evening = try evening()
+@@ -491,7 +540,7 @@ import Testing
+ 
+   /// The place is on a display that is not connected: the holder has it on paper only, and floats here. It gives that back too, so that
+   /// the display does not carry it off when it comes.
+-  @Test func aPlaceHeldOnADisplayThatIsAwayIsGivenBackToo() {
++  @Test(arguments: ["", "crash\nlaunch\nadvance 1"]) func aPlaceHeldOnADisplayThatIsAwayIsGivenBackToo(meanwhile: String) {
+     let runner = play(
+       """
+       \(Self.two)
+@@ -510,6 +559,7 @@ import Testing
+       advance 1
+       title 110 T-106
+       advance 1
++      \(meanwhile)
+       \(Self.two)
+       advance 3
+       """)
+@@ -555,6 +605,57 @@ import Testing
+     #expect(isDocked(107, in: runner) && Set(runner.system.moveLog[later...].map(\.window)) == [WindowID(107)])
+   }
+ 
++  /// Where anybody else, or the view, would have to move for it, nothing happens: it holds the place for now, as before.
++  @Test(arguments: [
++    "zoom 110",  // the view is on the holder, which its person has just made fill it
++    "zoom 220",  // the holder is out of view
++    "hold",
++    "open 230 Safari pid 1000 at 200 100 600 500 min 177 64 title news\ndock 230 right",  // the place no longer keeps its room
++    "rotate",
++    "swap left",
++  ]) func whereSomebodyElseOrTheViewWouldHaveToMoveNothingHappens(act: String) throws {
++    let runner = play(Self.aHolderBesideANeighbour + "\nfocus 110\n" + act + "\nadvance 0.5")
++    try #require(isDocked(110, in: runner), "the situation")
++    let (mark, view) = (runner.system.moveLog.count, runner.controller.workspaces.values.map(\.camera))
++    for line in ["title 110 T-106", "advance 1"] { _ = runner.step(ChaosAction(text: line)) }
++    #expect(runner.system.moveLog.count == mark, "\(act): \(runner.system.moveLog[mark...].map(\.window))")
++    #expect(isDocked(110, in: runner) && runner.controller.workspaces.values.map(\.camera) == view, "\(act)")
++    #expect(runner.controller.invariantViolations().isEmpty, "what was tried is put back whole: \(runner.controller.invariantViolations())")
++  }
++
++  /// The Mac was not restarted, only Arbor and the app: no room is kept for a place then, so the neighbour would have to move.
++  @Test func inTheSameLoginWhereNoRoomIsKeptNothingHappens() throws {
++    let runner = play(
++      """
++      launch
++      open 120 Notes pid 1001 at 100 100 600 400 min 177 64 title Todo
++      open 101 Terminal pid 1003 at 618 457 710 489 min 177 64 title T-101
++      open 106 Terminal pid 1003 at 471 360 716 409 min 177 64 title T-106
++      dock 120 left
++      dock 101 beside 120 right
++      settle
++      quit
++      close 101
++      close 106
++      launch
++      advance 1
++      open 110 Terminal pid 1003 at 471 360 716 409 min 177 64 title Terminal
++      advance 1
++      """)
++    try #require(isDocked(110, in: runner), "the situation")
++    let mark = runner.system.moveLog.count
++    for line in ["title 110 T-106", "advance 1"] { _ = runner.step(ChaosAction(text: line)) }
++    #expect(runner.system.moveLog.count == mark && isDocked(110, in: runner), "\(runner.system.moveLog[mark...].map(\.window))")
++  }
++
++  /// It says the name while it is in the hand, when nothing is done about it. It is known all the same, and goes at its next word.
++  @Test func whatItSaysInTheHandIsHeard() throws {
++    let runner = play(Self.aHolderBesideANeighbour + "\ngrab 110\ntitle 110 T-106\nrelease\nadvance 1")
++    try #require(isDocked(110, in: runner), "the situation")
++    for line in ["title 110 make", "advance 1"] { _ = runner.step(ChaosAction(text: line)) }
++    #expect(!isDocked(110, in: runner) && runner.controller.snapshot().waiting.count == 1)
++  }
++
+   /// Its app does not answer at that moment: the window cannot be sent anywhere, so nothing is written down either.
+   @Test func ofAnAppThatDoesNotAnswerNothingIsWrittenDown() throws {
+     let runner = play(Self.aHolderBesideANeighbour + "\nhang 1003\ntitle 110 T-106\nadvance 1\nwake 1003\nadvance 1")
+-- 
+2.43.0
+
+
+From ab971680ffdc38c77f04a94cff8084e745f53219 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 15:39:56 +0000
+Subject: [PATCH 3/4] wip: version three: the hold is asked, the place's own
+ title, parity and the page in step
+
+---
+ .../Controller/Controller+PendingSlots.swift     |  4 ++--
+ .../AKeptPlaceIsItsOwnersTests.swift             | 12 ++++++++++++
+ collab/parity.json                               | 16 +++++++++++-----
+ docs/ARCHITECTURE.md                             |  7 +++----
+ 4 files changed, 28 insertions(+), 11 deletions(-)
+
+diff --git a/Sources/ArborKit/Controller/Controller+PendingSlots.swift b/Sources/ArborKit/Controller/Controller+PendingSlots.swift
+index 52623ad3..b244f1f9 100644
+--- a/Sources/ArborKit/Controller/Controller+PendingSlots.swift
++++ b/Sources/ArborKit/Controller/Controller+PendingSlots.swift
+@@ -293,8 +293,8 @@ extension Controller {
+   /// A kept place is its owner's. After a restart of the Mac nobody has yesterday's number, and a title is all there is to go by: one
+   /// that the file has for a floating window of this app says that this is that window, come back. Nobody docked it. Once said is
+   /// known, whatever it is called a moment later. A title the file does not know may be the owner's of today (`onlySlot`); one
+-  /// that it has for the place itself is the owner's (`slot(withTitleOf:)`), also where a floating window had the same: nobody can
+-  /// know, and the first to come gets the place.
++  /// that it has for the place itself is the owner's (`slot(withTitleOf:)`), whatever that window was called before (a shell is "zsh"
++  /// until its session is back), and also where a floating window had the same: nobody can know, and the first to come gets the place.
+   private func isKnownToBeSomebodyElse(_ window: WindowSnapshot) -> Bool {
+     somebodyElse.recognised.contains(window.id)
+       || somebodyElse.floatedInTheFile.contains(WindowHint(bundleID: window.bundleID, title: window.title))
+diff --git a/Tests/ArborKitTests/AKeptPlaceIsItsOwnersTests.swift b/Tests/ArborKitTests/AKeptPlaceIsItsOwnersTests.swift
+index 3ad997e3..1efc3be9 100644
+--- a/Tests/ArborKitTests/AKeptPlaceIsItsOwnersTests.swift
++++ b/Tests/ArborKitTests/AKeptPlaceIsItsOwnersTests.swift
+@@ -138,6 +138,18 @@ import Testing
+     expectSound(h)
+   }
+ 
++  /// The place's own title is the last word. A shell is called as every shell is until its session is back, the owner's too.
++  @Test func whoeverSaysThePlacesOwnTitleGetsIt() throws {
++    let evening = try evening()
++    let h = morning(evening)
++    let owner = reopen(evening.owner, in: h, title: evening.sibling.title)
++    try #require(h.workspace.isFloating(owner) && asked(of: owner, in: h).isEmpty, "the situation: taken for the sibling")
++    h.system.setTitle(owner, evening.owner.title)
++    #expect(h.workspace.isDocked(owner) && h.frame(owner) == evening.place, "\(h.ascii())")
++    #expect(h.controller.snapshot().waiting.isEmpty)
++    expectSound(h)
++  }
++
+   /// A window without a title has said nothing. Many are shown so and named a moment later, the owner among them.
+   @Test func anEmptyTitleSaysNothing() throws {
+     let evening = try evening(siblingsTitle: "")
+diff --git a/collab/parity.json b/collab/parity.json
+index b42e1fda..5db547ce 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -1040,11 +1040,13 @@
+         "aHolderAHandHasPutElsewhereIsLeftThereByATitle",
+         "aHolderThatSaysAnyOtherNameKeepsThePlace",
+         "aHolderThatTurnsOutToBeSomebodyElseGivesThePlaceBackAtOnce",
++        "aNumberUsedAgainIsAnotherWindows",
+         "aPlaceHeldOnADisplayThatIsAwayIsGivenBackToo",
+         "aPlaceThatExpiresMovesNothing",
+         "aPlaceWhoseGoingWouldMoveAWindowGoesWithTheNextLayoutSomebodyCauses",
+         "aRestoredWindowThatGetsItsTitleLateStillReturnsToItsSlot",
+         "aRestoredWindowWithAnotherTitleTakesItsAppsOnlySlot",
++        "aStrangerBesideTheSiblingDoesNotCostTheOwnerItsPlace",
+         "aStrangerThatNobodyFollowsKeepsThePlace",
+         "aStrangerToTheFileIsLetInForNowAsBefore",
+         "aSurvivingWindowIsNotPulledToAnotherDisplayBecauseItsTwinClosed",
+@@ -1056,14 +1058,18 @@
+         "anAppThatNeverComesGivesItsRoomBackAtTheNextLayoutSomebodyCauses",
+         "anArrangementWhoseDisplayIsBackAtLaunchComesBackShowingEverything",
+         "anArrangementWhoseDisplayIsGoneAtLaunchComesBackShowingEverything",
++        "anEmptyTitleSaysNothing",
+         "andWhereTheOwnerNeverComesItIsNotDockedForGood",
+         "anotherAppsFloatingWindowOfThatTitleSaysNothing",
+         "atTheGiveBackTheNeighbourStandsStill",
+         "backBeforeArborItIsNotDockedEither",
++        "besideTheSiblingAStrangerIsLetInNoMoreThanBefore",
+         "givenBackOnceThePlaceIsNotTakenAgain",
+         "inEveryOrderEachWindowIsSetOneFrameItsLast",
++        "inTheSameLoginWhereNoRoomIsKeptNothingHappens",
+         "movedWhileArborWasNotRunningItComesBackToWhereItWasMovedTo",
+         "nothingIsDrawnInTheHole",
++        "nothingIsRememberedThroughAPause",
+         "nothingMovesAndNothingChangesWhenNothingChanged",
+         "ofAnAppThatDoesNotAnswerNothingIsWrittenDown",
+         "onTheWayEveryWindowThatIsThereIsInItsFinalPlace",
+@@ -1081,25 +1087,25 @@
+         "theArrangementSurvivesARestart",
+         "theNineLinesStayAsTheyAre",
+         "theOwnerThenTakesItsPlaceAndNobodyElseIsMoved",
+-        "theOwnerUnderAnotherNameIsLetInWhoeverIsQuicker",
+         "thePlaceWaitsAgainIfTheWindowThatCameFirstCloses",
+         "theViewOfLastTimeIsOneStepBackAndWhatWasKeptIsKept",
+         "theWalkWhereTheOwnerNeverComes",
+         "theWindowWithTheSavedTitleTakesThePlaceOverFromTheOneThatCameFirst",
+         "twoStrangersAreRivalsAsBefore",
++        "whatItSaysInTheHandIsHeard",
+         "whatWasDockedOnADisplayThatIsMissingFloatsWhereItIsFoundAndGoesBackWithItsDisplay",
+         "whereItOpenedIsOutOfViewItIsNotSentThere",
++        "whereSomebodyElseOrTheViewWouldHaveToMoveNothingHappens",
+         "whereTheOwnerNeverComesNobodyIsDockedInItsStead",
+         "whileNobodySeesItATitleMovesNothing",
+         "whoFloatedInTheFileFloatsWhereItOpensAndThePlaceGoesOnWaiting",
+         "whoFloatedOnADisplayThatIsAwayIsKnownToo",
++        "whoeverSaysThePlacesOwnTitleGetsIt",
+         "windowsRestoredAfterArborStartsReturnToTheirSlots",
+         "windowsThatTheirAppsRestoreLateComeIntoViewToo",
+-        "withAFloatingWindowOfTheFileStillMissingAStrangerIsNotLetIn",
+-        "withBothBackBeforeArborTheOwnerUnderAnotherNameIsLetIn",
+-        "withEveryFloatingWindowOfTheFileBackAStrangerIsLetIn",
+         "withOneTitleForBothTheFirstToComeGetsThePlace",
+-        "withTheOwnerBackFirstALateNameMovesNobody"
++        "withTheOwnerBackFirstALateNameMovesNobody",
++        "withTheSiblingAndAStrangerBackBeforeArborNobodyIsDocked"
+       ],
+       "e2e": [
+         "quit Arbor while zoomed in and start it again: it shows everything, takes no window out of view, and Back returns to the old view",
+diff --git a/docs/ARCHITECTURE.md b/docs/ARCHITECTURE.md
+index e42725ff..d8cc7dde 100644
+--- a/docs/ARCHITECTURE.md
++++ b/docs/ARCHITECTURE.md
+@@ -1167,10 +1167,9 @@ provisionally until the wait is over (`provisionalSlots`): what an app shows fir
+ with the saved title takes the slot over, and if the holder closes the slot waits again. **A kept place is its owner's**: a window that
+ says a title the file has for a floating window of that app is known to be somebody else, from then on and whatever it is called later
+ (`SomebodyElse`, `isKnownToBeSomebodyElse`). By its app alone it is not let in. Let in as a stranger, because many apps name a restored window a moment
+-after showing it, it gives the slot back when it says that name (`giveBackTheSlot`): only where that is one move of one window that can be seen, with
+-the arrangement as it was when it was let in (`LayoutTree.Place`); else nothing happens, and the owner takes the slot over when it comes. Nor is it a rival to
+-a stranger who may be the owner, once every floating window of the file is back. One that was there all along is no rival but a witness: the app never
+-quit, so the docked window was closed on purpose, and a new document has nothing to do with it. After `resume` only windows
++after showing it, it gives the slot back when it says that name (`giveBackTheSlot`): only where that is one move of one window that can be seen. It is
++tried first, and if the view or anybody else would have to move everything is put back and nothing happens: the owner takes the slot over when it
++comes. Nobody is let in who was not before, and whoever says the slot's own title gets it, as before. After `resume` only windows
+ that still exist keep a slot: what is missing was closed by the user, not by a reboot. Slots wait in the
+ remembered arrangements of disconnected displays too: the window floats where it appears and returns to its slot
+ with the display. Whatever is found with no more than a sliver showing (parked by a run
+-- 
+2.43.0
+
+
+From d864b1ef2c4b35fa89fe3d4e1e73f673ddd2b0a8 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 15:49:26 +0000
+Subject: [PATCH 4/4] wip: one report that brings both the name and the news
+ that it has gone
+
+---
+ Tests/ArborKitTests/AKeptPlaceIsItsOwnersTests.swift | 11 +++++++++++
+ collab/parity.json                                   |  1 +
+ 2 files changed, 12 insertions(+)
+
+diff --git a/Tests/ArborKitTests/AKeptPlaceIsItsOwnersTests.swift b/Tests/ArborKitTests/AKeptPlaceIsItsOwnersTests.swift
+index 1efc3be9..d439fad3 100644
+--- a/Tests/ArborKitTests/AKeptPlaceIsItsOwnersTests.swift
++++ b/Tests/ArborKitTests/AKeptPlaceIsItsOwnersTests.swift
+@@ -382,6 +382,17 @@ import Testing
+     #expect(h.controller.invariantViolations().isEmpty, "\(h.controller.invariantViolations())")
+   }
+ 
++  /// One report can bring both: it has gone to the Dock, and it is called otherwise. The layout on screen still has it at that moment.
++  @Test func aTitleThatComesWithTheNewsThatItHasGoneMovesNothing() throws {
++    let evening = try evening()
++    let (h, holder) = try morningWithAHolderForNow(evening)
++    let mark = h.system.moveLog.count
++    var report = try #require(h.controller.windows[holder])
++    (report.isMinimized, report.title) = (true, evening.sibling.title)
++    h.controller.windowChanged(report, userInitiated: false)
++    #expect(h.workspace.isDocked(holder) && h.system.moveLog[mark...].filter { $0.window == holder }.isEmpty, "\(h.system.moveLog[mark...].map(\.after))")
++  }
++
+   /// Where it opened is out of view (a display that has gone since): it is not sent there, to be fetched again.
+   @Test func whereItOpenedIsOutOfViewItIsNotSentThere() throws {
+     let evening = try evening()
+diff --git a/collab/parity.json b/collab/parity.json
+index 5db547ce..7d2c893d 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -1050,6 +1050,7 @@
+         "aStrangerThatNobodyFollowsKeepsThePlace",
+         "aStrangerToTheFileIsLetInForNowAsBefore",
+         "aSurvivingWindowIsNotPulledToAnotherDisplayBecauseItsTwinClosed",
++        "aTitleThatComesWithTheNewsThatItHasGoneMovesNothing",
+         "aWindowOnAnotherSpaceAtLaunchKeepsItsSlotForAsLongAsItExists",
+         "aWindowThatWasClosedWhileArborWasNotRunningKeepsNoRoom",
+         "aWindowThatWasSentAwayIsAnOrdinaryWindowAfterALaunch",
+-- 
+2.43.0
+

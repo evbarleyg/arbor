@@ -1,0 +1,1732 @@
+From 02992ba41d9cc13dd1a7abf442dac8daba9b81dc Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 12:29:35 +0000
+Subject: [PATCH] fix: one step of Undo gives a window that was fetched from
+ the edge its place back
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+A floating window that hangs over an edge and is asked for by name (a row of Windows in the menu, Go to…, find, reveal)
+comes in whole. Arbor moved a window at a person's word, and ⌃⌥Z said "nothing to undo": where a window floats is no part
+of an arrangement, and only a change to the arrangement was a step.
+
+A step can now say whose place it is about (UndoStep.places; empty for every other step). Taking it back is the mirror of
+the fetch: it moves that one window to what is remembered as its own place, and lays nothing out. The place at the edge
+counts as left there by its person, so the layouts that follow leave it. In the Dock or hidden with its app it is moved where
+nobody sees it; out of view since, the view steps out far enough to show it; moved by hand since, it stays where the hand put
+it. While its app does not answer the step stays, and the reply says so. The menu says Undo Move, whichever way the window
+was asked for, also when Arbor made room for a docked window on the way.
+
+Nothing is offered that cannot be done. From where no hand could reach its title bar the window was fetched for good; one
+that is kept in view, summoned or a guest has its place by that; where macOS or its app had moved it since its person last
+did, the screen and what is remembered know no common place; and with floatingWindowsMakeWay on every layout places it anew.
+After such a fetch ⌃⌥Z says once that the move cannot be undone and what the next press takes back, and moves nothing:
+whoever has just seen a window move means that window, not the dock before it. The menu's row names what is older, as after
+a close: a row names nothing that it will not do. With nothing older there is nothing to undo.
+
+One refusal is for all that cannot be taken back: what lies under the one that is said and cannot be taken back either, or
+has nothing left to show, goes with it. Two closes with such a step between them refused twice, and the first refusal promised
+a press that was then refused; F19 says that the press after a refusal goes on with the older step.
+
+A window whose app does not answer when it is asked for no longer comes in when the app wakes, when nobody is asking any
+more, by a move no Undo knows of. Nothing comes of it, nothing is owed, nothing else is tried, and it is said: "Mail is not
+answering: try again in a moment", in the reply and on screen. So that it is said in Go to… too, a row chosen there runs as a
+command from one of Arbor's own windows, as side by side chosen there already does.
+
+A window that fills the screen is whole by that and is no longer fetched, which moved it twice. That an undo has come to
+nothing because an app does not answer is asked of the windows themselves: that the arrangement is as it was is also true of a
+step that is about a place.
+
+check-window-list.sh: a claim for this; and its check that no title is in the trace no longer trips over its own words, which
+the harness notes in every recording since it records every session.
+---
+ Sources/ArborCore/UndoHistory.swift           |  23 +-
+ .../Controller/Controller+Finder.swift        |   7 +-
+ .../Controller/Controller+HeadsUp.swift       |   5 +
+ .../Controller/Controller+OpenWindows.swift   |  25 +-
+ .../ArborKit/Controller/Controller+Undo.swift | 158 +++-
+ Sources/ArborKit/Controller/Controller.swift  |   6 +
+ Tests/ArborCoreTests/UndoHistoryTests.swift   |  32 +
+ Tests/ArborKitTests/MenuChaosTests.swift      |   5 +-
+ .../ArborKitTests/UndoAfterAFetchTests.swift  | 869 ++++++++++++++++++
+ collab/parity.json                            |  25 +-
+ ...-gives-a-fetched-window-its-place-back.sim |  77 ++
+ docs/MENU.md                                  |   4 +-
+ docs/features/F19-undo.md                     |  14 +-
+ scripts/mac-shell/check-window-list.sh        |  18 +-
+ 14 files changed, 1226 insertions(+), 42 deletions(-)
+ create mode 100644 Tests/ArborKitTests/UndoAfterAFetchTests.swift
+ create mode 100644 collab/scenarios/71-undo-gives-a-fetched-window-its-place-back.sim
+
+diff --git a/Sources/ArborCore/UndoHistory.swift b/Sources/ArborCore/UndoHistory.swift
+index b3476890..3a67473a 100644
+--- a/Sources/ArborCore/UndoHistory.swift
++++ b/Sources/ArborCore/UndoHistory.swift
+@@ -29,10 +29,14 @@ public struct UndoStep: Equatable, Sendable {
+   /// Who had the keyboard before the change, for a change that said who gets it (`side-by-side`): going back gives it back. Nil for
+   /// all others, after which the keyboard stays where it is.
+   public var keyboard: WindowID?
++  /// Floating windows whose place the change is about: Arbor moved them at their person's word (a window that hung over an edge
++  /// was asked for by name). Where a window floats is otherwise no part of an arrangement, and no step.
++  public var places: Set<WindowID>
+ 
+   public init(
+     id: Int, label: String, title: String? = nil, workspace: Workspace, frames: [WindowID: CGRect] = [:],
+-    changedTo: Workspace, continuation: String? = nil, isIrreversible: Bool = false, keyboard: WindowID? = nil
++    changedTo: Workspace, continuation: String? = nil, isIrreversible: Bool = false, keyboard: WindowID? = nil,
++    places: Set<WindowID> = []
+   ) {
+     self.id = id
+     self.label = label
+@@ -43,6 +47,7 @@ public struct UndoStep: Equatable, Sendable {
+     self.continuation = continuation
+     self.isIrreversible = isIrreversible
+     self.keyboard = keyboard
++    self.places = places
+   }
+ }
+ 
+@@ -69,11 +74,14 @@ public struct UndoHistory: Equatable, Sendable {
+     /// See `UndoStep.frames`.
+     public var framesBefore: [WindowID: CGRect]
+     public var after: Workspace
++    /// See `UndoStep.places`.
++    public var places: Set<WindowID>
+ 
+-    public init(before: Workspace, framesBefore: [WindowID: CGRect] = [:], after: Workspace) {
++    public init(before: Workspace, framesBefore: [WindowID: CGRect] = [:], after: Workspace, places: Set<WindowID> = []) {
+       self.before = before
+       self.framesBefore = framesBefore
+       self.after = after
++      self.places = places
+     }
+   }
+ 
+@@ -117,6 +125,7 @@ public struct UndoHistory: Equatable, Sendable {
+     if let key, changes.keys.allSatisfy({ undoSteps[$0]?.last?.continuation == key }) {
+       for (display, change) in changes {
+         undoSteps[display]![undoSteps[display]!.count - 1].changedTo = change.after
++        undoSteps[display]![undoSteps[display]!.count - 1].places.formUnion(change.places)
+       }
+       return
+     }
+@@ -126,7 +135,7 @@ public struct UndoHistory: Equatable, Sendable {
+       push(
+         UndoStep(
+           id: id, label: label, title: title, workspace: change.before, frames: change.framesBefore,
+-          changedTo: change.after, continuation: key, keyboard: keyboard),
++          changedTo: change.after, continuation: key, keyboard: keyboard, places: change.places),
+         to: .undo, on: display)
+       if !keepingRedo { redoSteps[display] = nil }
+     }
+@@ -135,14 +144,17 @@ public struct UndoHistory: Equatable, Sendable {
+   /// Notes a change that cannot be taken back, given the workspace it left on every display it changed.
+   /// Several in a row (an app quitting closes all its windows) count as one, the last. Redo is
+   /// left alone: what it would put back is fitted to the windows that exist, like any step.
+-  public mutating func recordIrreversible(_ label: String, leaving workspaces: [DisplayID: Workspace]) {
++  public mutating func recordIrreversible(
++    _ label: String, title: String? = nil, leaving workspaces: [DisplayID: Workspace], places: Set<WindowID> = []
++  ) {
+     guard !workspaces.isEmpty else { return }
+     let id = nextID
+     nextID += 1
+     for (display, workspace) in workspaces {
+       if undoSteps[display]?.last?.isIrreversible == true { undoSteps[display]!.removeLast() }
+       push(
+-        UndoStep(id: id, label: label, workspace: workspace, changedTo: workspace, isIrreversible: true),
++        UndoStep(
++          id: id, label: label, title: title, workspace: workspace, changedTo: workspace, isIrreversible: true, places: places),
+         to: .undo, on: display)
+     }
+   }
+@@ -190,6 +202,7 @@ public struct UndoHistory: Equatable, Sendable {
+         step.changedTo.renumber(old, as: new)
+         if let frame = step.frames.removeValue(forKey: old) { step.frames[new] = frame }
+         if step.keyboard == old { step.keyboard = new }
++        if step.places.remove(old) != nil { step.places.insert(new) }
+         return step
+       }
+     }
+diff --git a/Sources/ArborKit/Controller/Controller+Finder.swift b/Sources/ArborKit/Controller/Controller+Finder.swift
+index cb048889..3e5dd184 100644
+--- a/Sources/ArborKit/Controller/Controller+Finder.swift
++++ b/Sources/ArborKit/Controller/Controller+Finder.swift
+@@ -218,7 +218,9 @@ extension Controller {
+     let result: CommandResult
+     switch destination {
+     case .window(let window):
+-      result = revealAndFocus(window)
++      // A row chosen in the palette: as a command from one of Arbor's own windows, so that it is one step to take back and a refusal is
++      // said on screen, as for a row of the menu's list. Inside `find <text>` it is part of that command.
++      result = headsUp.source == nil ? from(.menu) { executeAndSay(.reveal(window), from: .menu) } : revealAndFocus(window)
+     case .view(let display, let slot):
+       if let node = workspaces[display]?.savedView(slot: slot) {
+         moveCamera(on: display, to: node)
+@@ -275,7 +277,8 @@ extension Controller {
+     // `bringIntoView` leaves the camera alone during a drag.
+     guard drag == nil else { return .failure("a window is being dragged; drop it first") }
+     guard let snapshot = windows[id] else { return .failure("\(id) has closed") }
+-    fetchWhole(id)
++    // Said, and nothing else is tried: whoever clicks a row and sees nothing happen takes Arbor for broken.
++    guard fetchWhole(id) else { return .failure("\(id) is not answering: try again in a moment") }
+ 
+     // macOS reports that these happened a moment later, in no particular order with the focus change. The view waits for that.
+     let isAskedBack = !snapshot.isPresent && snapshot.isOnActiveSpace && !snapshot.isFullScreen
+diff --git a/Sources/ArborKit/Controller/Controller+HeadsUp.swift b/Sources/ArborKit/Controller/Controller+HeadsUp.swift
+index 4f95788b..fef43323 100644
+--- a/Sources/ArborKit/Controller/Controller+HeadsUp.swift
++++ b/Sources/ArborKit/Controller/Controller+HeadsUp.swift
+@@ -187,6 +187,11 @@ extension Controller {
+         kind: .change, text: "Arbor is paused\(length): its keys are the apps’ again",
+         hint: keys.map { "\($0) resumes" } ?? "Resume from Arbor’s menu")
+     }
++    // The reply names the window by its number. (Controller+Undo.swift)
++    if !ok, command == .undo, let next = whatTheNextUndoTakesBack {
++      let again = shortcutLabel(for: .undo).map { "\($0) again" } ?? "Undo again"
++      return HeadsUpModel(kind: .problem, text: "That move cannot be undone", hint: "\(again) undoes \(next)")
++    }
+     guard isRunning, command.actsOnTheFocusedWindow, let id = system.focusedWindow(), let window = windows[id] else {
+       return nil
+     }
+diff --git a/Sources/ArborKit/Controller/Controller+OpenWindows.swift b/Sources/ArborKit/Controller/Controller+OpenWindows.swift
+index e9963753..b59ee097 100644
+--- a/Sources/ArborKit/Controller/Controller+OpenWindows.swift
++++ b/Sources/ArborKit/Controller/Controller+OpenWindows.swift
+@@ -67,17 +67,22 @@ extension Controller {
+   ///
+   /// Called by `reveal` before anything else happens, so that it is the one move. A window out of view comes back to where it is remembered,
+   /// and that is changed; one in the Dock, or hidden with its app, is moved where nobody sees it, and comes back there.
+-  func fetchWhole(_ id: WindowID) {
++  ///
++  /// False if it was to come in and its app does not answer.
++  func fetchWhole(_ id: WindowID) -> Bool {
++    // One that fills the screen is whole by that, wherever its own frame hangs (Controller+Fill.swift).
+     guard let home = workspaceID(containing: id), let workspace = workspaces[home], workspace.isFloating(id), !workspace.isStashed(id),
++      !workspace.isFilled(id),
+       let window = windows[id], window.isOnActiveSpace, !window.isFullScreen, let display = display(home)
+-    else { return }
++    else { return true }
+     let isAway = parked.contains(id)
+     let own = workspace.floating[id] ?? window.frame
+     let frame = isAway ? own : window.frame
+-    guard displays.map({ frame.intersection($0.visibleFrame).area }).reduce(0, +) < frame.area - 1 else { return }
++    guard displays.map({ frame.intersection($0.visibleFrame).area }).reduce(0, +) < frame.area - 1 else { return true }
+     func slid(_ frame: CGRect) -> CGRect { CGRect(origin: frame.fitted(into: display.visibleFrame).origin, size: frame.size) }
+     let whole = slid(frame)
+-    guard whole != frame else { return }
++    guard whole != frame else { return true }
++    let (noteAsItWas, fitAsItWas, wasOwedAMove) = (chosenOnShape[id], fittedFrames[id], unplaced.contains(id))
+     // What is remembered is the window's own frame, which is another while docked windows squeeze it: it goes the same way, and keeps
+     // its size to come back to.
+     workspaces[home]!.floating[id] = slid(own.offsetBy(dx: whole.minX - frame.minX, dy: whole.minY - frame.minY))
+@@ -87,7 +92,19 @@ extension Controller {
+     // Its person asked for it: where it comes to is its own place now, with nothing to go back to when the displays change again.
+     fittedFrames[id] = nil
+     if !isAway { putBack(id, at: whole, on: display) }
++    // Its app does not answer. Nothing has come of it, and nothing is owed: it would come in when nobody is asking any more, by a move
++    // that no Undo knows of. Whoever still wants it asks again.
++    if !isAway, unplaced.contains(id) {
++      if !wasOwedAMove { unplaced.remove(id) }
++      workspaces[home]!.floating[id] = workspace.floating[id]
++      (chosenOnShape[id], fittedFrames[id]) = (noteAsItWas, fitAsItWas)
++      return false
++    }
++    // Arbor has moved a window at a person's word: one step of Undo gives it its place back (Controller+Undo.swift). If it has one that
++    // both the screen and the books know: where macOS or its app had moved it since its person last did, no layout would leave it.
++    fetchedDuringUndoStep[home, default: [:]][id] = frame.approximatelyEquals(own, tolerance: 1)
+     scheduleSave()
+     Log.debug("\(id) was asked for and hung over an edge: it is at \(whole.brief) now")
++    return true
+   }
+ }
+diff --git a/Sources/ArborKit/Controller/Controller+Undo.swift b/Sources/ArborKit/Controller/Controller+Undo.swift
+index affe404b..9816e7f6 100644
+--- a/Sources/ArborKit/Controller/Controller+Undo.swift
++++ b/Sources/ArborKit/Controller/Controller+Undo.swift
+@@ -57,6 +57,7 @@ extension Controller {
+     guard undoScopeDepth == 1 else { return nil }
+     treesBeforeRoomWasMade = [:]
+     slotsDroppedDuringUndoStep = []
++    fetchedDuringUndoStep = [:]
+     undoHistory.forgetRenumberings()
+     return UndoScope(
+       label: label(), title: title, before: workspaces, framesBefore: floatingFramesOnScreen(),
+@@ -104,7 +105,7 @@ extension Controller {
+   /// Records a step on every display whose arrangement differs from what it was at `beginUndoStep`.
+   func endUndoStep(_ scope: UndoScope?) {
+     undoScopeDepth -= 1
+-    guard let scope else { return }
++    guard var scope else { return }
+     var changes: [DisplayID: UndoHistory.Change] = [:]
+     for (display, var before) in scope.before {
+       // A window that changed its number meanwhile (its slot waits again under a stand-in's) is still the same window.
+@@ -113,28 +114,46 @@ extension Controller {
+       // waiting, not a change anybody made: a move of the view would otherwise be a step, and one that cannot be
+       // taken back.
+       for (slot, away) in slotsDroppedDuringUndoStep { before.forget(slot, shareSpace: settings.shareRemovedSpace, away: away) }
+-      guard let after = workspaces[display], !before.hasSameArrangement(as: after) else { continue }
++      // Where a window floats is no part of an arrangement. But one that Arbor brought in from an edge because it was asked for has a
++      // place to go back to.
++      let fetched = fetchedDuringUndoStep[display] ?? [:]
++      guard let after = workspaces[display], !before.hasSameArrangement(as: after) || !fetched.isEmpty else { continue }
+       // Nothing happened but that Arbor moved the gaps to make room for a window (F61): the view moved, say. That is
+       // not a change anybody made, and taking it back would only make Arbor do it again.
+-      if let found = treesBeforeRoomWasMade[display], before.tree.hasSameArrangement(as: found),
++      if fetched.isEmpty, let found = treesBeforeRoomWasMade[display], before.tree.hasSameArrangement(as: found),
+         before.tree.preorder() == after.tree.preorder(), Set(before.floating.keys) == Set(after.floating.keys)
+       {
+         continue
+       }
+       changes[display] = UndoHistory.Change(
+-        before: before, framesBefore: scope.framesBefore[display] ?? [:], after: after)
++        before: before, framesBefore: scope.framesBefore[display] ?? [:], after: after,
++        places: Set(fetched.filter(\.value).keys))
+     }
+     guard !changes.isEmpty else { return }
+-    let steps = changes.mapValues { UndoStep(id: 0, label: scope.label, workspace: $0.before, changedTo: $0.after) }
+-    // Tried out against what the change itself left: the room Arbor then made (F61) it would only make again.
++    // What the change itself left: the room Arbor then made (F61) it would only make again.
+     var left = workspaces
+     for (display, tree) in treesBeforeRoomWasMade { left[display]?.tree = tree }
+-    guard restorations(from: steps).contains(where: { left[$0.key]?.hasSameArrangement(as: $0.value.workspace) != true }) else {
++    // Whichever way it was asked for (a row of the menu, Go to…, `find`, `reveal`), it is one thing to take back, under one name.
++    let allFetched = changes.keys.flatMap { fetchedDuringUndoStep[$0]?.keys.map { $0 } ?? [] }.sorted()
++    if !allFetched.isEmpty, changes.allSatisfy({ display, change in left[display].map(change.before.hasSameArrangement(as:)) == true }) {
++      scope.label = "reveal " + allFetched.map { "\($0)" }.joined(separator: " ")
++      scope.title = "Move"
++    }
++    let steps = changes.mapValues {
++      UndoStep(
++        id: 0, label: scope.label, workspace: $0.before, frames: $0.framesBefore, changedTo: $0.after, places: $0.places)
++    }
++    guard changesAnything(restorations(from: steps), in: left) else {
+       // It cannot be taken back: a window that closed stays closed, and `exclude` removes windows an undo
+       // would not bring back. If it changed what is docked, the user saw it happen, and `undo` says
+       // so once instead of silently taking back something older.
+-      let seen = changes.filter { !$0.value.before.tree.hasSameArrangement(as: $0.value.after.tree) }
+-      undoHistory.recordIrreversible(scope.label, leaving: seen.mapValues(\.after))
++      // So did they see a window come in from an edge that has no place to go back to (`canGoBack`): whoever then presses the key means
++      // that window, and must not find something older taken back instead.
++      let seen = changes.filter {
++        !$0.value.before.tree.hasSameArrangement(as: $0.value.after.tree) || fetchedDuringUndoStep[$0.key]?.isEmpty == false
++      }
++      undoHistory.recordIrreversible(
++        scope.label, title: scope.title, leaving: seen.mapValues(\.after), places: Set(allFetched))
+       return
+     }
+     undoHistory.record(
+@@ -282,13 +301,14 @@ extension Controller {
+     while true {
+       let steps = history.take(direction, on: display)
+       guard let step = steps[display] else { return nil }
+-      if !step.isIrreversible, changesAnArrangement(restorations(from: steps)) { return step }
++      if !step.isIrreversible, changesAnything(restorations(from: steps), in: workspaces) { return step }
+     }
+   }
+ 
+   private func stepThroughHistory(_ direction: UndoHistory.Direction) -> CommandResult {
+     let (verb, done) = direction == .undo ? ("undo", "undid") : ("redo", "redid")
+     titleOfTheStepJustTaken = nil
++    whatTheNextUndoTakesBack = nil
+     // The display every command without a window of its own acts on (F56 decides which that is).
+     guard let (display, _) = cameraDisplay() else { return .failure("no display") }
+     // Its arrangement is on another of the macOS Spaces: a shortcut pressed here would rearrange what cannot be seen.
+@@ -305,12 +325,19 @@ extension Controller {
+       let steps = undoHistory.take(direction, on: display)
+       guard let step = steps[display] else { return .failure("nothing to \(verb)" + onPointerDisplay) }
+       if step.isIrreversible {
+-        let next = nextStepLabel(direction, on: display).map { "; \(verb) again to take back \($0)" } ?? ""
+-        return .failure("cannot \(verb) \(step.label)\(next)")
++        // One refusal is for all that cannot be taken back, so that what it promises of the next press is what that does.
++        passOverWhatCannotBeTakenBack(direction, on: display)
++        let next = nextStep(direction, on: display, from: .script)
++        if !step.places.isEmpty {
++          // With nothing older nothing could be taken by surprise: there is nothing to undo, and that is all there is to say.
++          guard let next else { continue }
++          whatTheNextUndoTakesBack = next.title
++        }
++        return .failure("cannot \(verb) \(step.label)" + (next.map { "; \(verb) again to take back \($0.label)" } ?? ""))
+       }
+       var plan = restorations(from: steps)
+       // Every window the step was about has closed since. Go on to one that still shows.
+-      guard changesAnArrangement(plan) else { continue }
++      guard changesAnything(plan, in: workspaces) else { continue }
+       for id in steps.keys { plan[id] = plan[id].map { steppingOutToShowTheChange($0, on: id) } }
+       let frames = floatingFramesOnScreen()
+       for (id, restoration) in plan {
+@@ -318,13 +345,17 @@ extension Controller {
+         undoHistory.push(
+           UndoStep(
+             id: step.id, label: step.label, title: step.title, workspace: current, frames: frames[id] ?? [:],
+-            changedTo: restoration.workspace, keyboard: step.keyboard == nil ? nil : keyboardFocus()),
++            changedTo: restoration.workspace, keyboard: step.keyboard == nil ? nil : keyboardFocus(),
++            places: Set(restoration.places.keys)),
+           to: direction.opposite, on: id)
+       }
+-      install(plan)
+-      // Nothing has come of it: it was to take a window out of the view it fills, and the window's app does not answer
+-      // (Controller+Fill.swift). The step stays where it was.
+-      if plan.keys.allSatisfy({ id in arrangedAsItWas[id].map { workspaces[id]?.hasSameArrangement(as: $0) == true } == true }) {
++      let stuck = install(plan)
++      // Nothing has come of it: it was to take a window out of the view it fills (Controller+Fill.swift), or back to its place at an
++      // edge, and the window's app does not answer. The step stays where it was. Asked of the windows themselves: that the arrangement is
++      // as it was is also true of a step that is about a window's place and has moved it.
++      if !stuck.isEmpty,
++        plan.keys.allSatisfy({ id in arrangedAsItWas[id].map { workspaces[id]?.hasSameArrangement(as: $0) == true } == true })
++      {
+         undoHistory = historyAsItWas
+         return .failure("cannot \(verb) \(step.label) now: the window's app does not answer")
+       }
+@@ -337,6 +368,16 @@ extension Controller {
+     }
+   }
+ 
++  /// Drops the steps on top of `display`'s history that cannot be taken back or have nothing left to show.
++  private func passOverWhatCannotBeTakenBack(_ direction: UndoHistory.Direction, on display: DisplayID) {
++    while true {
++      var rest = undoHistory
++      let steps = rest.take(direction, on: display)
++      guard let step = steps[display], step.isIrreversible || !changesAnything(restorations(from: steps), in: workspaces) else { return }
++      undoHistory = rest
++    }
++  }
++
+   // MARK: Restoring
+ 
+   /// A workspace from the past fitted to the present.
+@@ -346,10 +387,32 @@ extension Controller {
+     var frames: [WindowID: CGRect] = [:]
+     /// The camera ends up where it was when the step was saved, so what was in view then is again.
+     var showsTheViewOfTheStep = false
++    /// See `UndoStep.places`: those of them that can go back (`canGoBack`), and where to: what `workspace` remembers as their own.
++    var places: [WindowID: CGRect] = [:]
++  }
++
++  /// Whether a step can be about taking floating `window` to `place`. Not where no hand could get hold of it: Arbor puts no window there,
++  /// whoever did before, and would fit it in instead, which can cost it its size. Not one that is kept in view, summoned, sent away or
++  /// the guest of a view: it has its place by that, and the next layout would take it back. And none at all where floating windows
++  /// make way: there every layout places them anew, by the view. What cannot be done is not offered.
++  private func canGoBack(_ window: WindowID, to place: CGRect?, in workspace: Workspace) -> Bool {
++    guard !settings.floatingWindowsMakeWay, let place, workspace.isFloating(window), workspace.role(of: window) == nil,
++      workspace.guests?[window] == nil, let snapshot = windows[window], snapshot.isOnActiveSpace, !snapshot.isFullScreen
++    else { return false }
++    return titleBarIsWithinReach(place)
+   }
+ 
+-  private func changesAnArrangement(_ restorations: [DisplayID: Restoration]) -> Bool {
+-    restorations.contains { workspaces[$0.key]?.hasSameArrangement(as: $0.value.workspace) != true }
++  /// Whether `restorations` would change an arrangement among `workspaces`, or the place of a window whose place the step is about. One
++  /// that its person has moved since stays where they put it (`Workspace.restored(over:since:)`), so for that one there is nothing to do.
++  /// **What is offered goes by what would be done** (`moveBack`): a window in view is asked where it is, not what is remembered of it.
++  private func changesAnything(_ restorations: [DisplayID: Restoration], in workspaces: [DisplayID: Workspace]) -> Bool {
++    restorations.contains { display, restoration in
++      guard let current = workspaces[display], current.hasSameArrangement(as: restoration.workspace) else { return true }
++      return restoration.places.contains { window, place in
++        guard restoration.workspace.floating[window] != current.floating[window] else { return false }
++        return windows[window]?.frame.approximatelyEquals(place, tolerance: 0.5) != true
++      }
++    }
+   }
+ 
+   /// What to install to go back to `steps` (one per display), fitted to what has happened since
+@@ -396,7 +459,12 @@ extension Controller {
+       // A floating window the user has moved since stays where it is now.
+       let frames = step.frames.filter { workspace.floating[$0.key] != nil && workspace.floating[$0.key] == old.floating[$0.key] }
+       result[display] = Restoration(
+-        workspace: workspace, frames: frames, showsTheViewOfTheStep: workspace.camera == old.camera)
++        workspace: workspace, frames: frames, showsTheViewOfTheStep: workspace.camera == old.camera,
++        places: Dictionary(
++          uniqueKeysWithValues: step.places.sorted().compactMap { window in
++            let place = workspace.floating[window]
++            return canGoBack(window, to: place, in: workspace) ? place.map { (window, $0) } : nil
++          }))
+     }
+     for (display, workspace) in workspaces where steps[display] == nil {
+       let leaving = workspace.floating.keys.filter { claimed.contains($0) }
+@@ -421,10 +489,13 @@ extension Controller {
+     // Where the windows that change places end up: in their slots, or on the Desktop.
+     let destinations = restored.allWindows
+       .filter { windows[$0]?.isPresent == true && !restored.staysInView($0) && !restored.isStashed($0) }
+-      .filter { restored.tree.place(of: $0) != current.tree.place(of: $0) }
++      .filter {
++        restored.tree.place(of: $0) != current.tree.place(of: $0) || (restoration.places[$0] != nil && parked.contains($0))
++      }
+       .map { restored.tree.leaf(containing: $0) ?? restored.tree.desktop }
+     var node = restored.camera
+-    while looksTheSame(current, restored, from: node, on: display)
++    // Where a window floats is in no layout, so a step about that looks the same from everywhere: there it is enough that the Desktop shows.
++    while (restoration.places.isEmpty && looksTheSame(current, restored, from: node, on: display))
+       || !destinations.allSatisfy({ restored.tree.subtree(node, contains: $0) })
+     {
+       // Nothing to see from anywhere: every window the change is about is minimized, say.
+@@ -456,10 +527,26 @@ extension Controller {
+     return layout(of: display, camera: camera)
+   }
+ 
+-  private func install(_ restorations: [DisplayID: Restoration]) {
++  /// Returns the windows of which nothing has come because their apps do not answer: they were to leave the view they fill and go on
++  /// filling it, or to go back to a place and are where they were.
++  private func install(_ restorations: [DisplayID: Restoration]) -> Set<WindowID> {
+     let previous = workspaces
++    var stuck = Set<WindowID>()
+     for (display, restoration) in restorations { workspaces[display] = restoration.workspace }
++    // Its person has asked it back there, as good as put it there: otherwise a place of which less than half shows is nobody's choice, and
++    // the window would be fitted in again (`whereItWas`).
++    for window in restorations.values.flatMap(\.places.keys).sorted() { noteWhereItsUserLeftIt(window) }
+     for (display, restoration) in restorations.sorted(by: { $0.key < $1.key }) {
++      // The fetch moved one window and laid nothing out. So does taking it back, if that is all there is to take back: a layout would
++      // also correct what nobody asked about.
++      if !restoration.places.isEmpty, var old = previous[display], let screen = self.display(display) {
++        let before = old
++        for window in restoration.places.keys { old.floating[window] = restoration.workspace.floating[window] }
++        if old == restoration.workspace {
++          stuck.formUnion(moveBack(restoration.places, on: screen, from: before))
++          continue
++        }
++      }
+       let plan = floatingPlan(for: restoration, replacing: previous[display], on: display)
+       // What the person squeezed into a tile is remembered by node (Controller+MakeRoom.swift), and a number can mean another place now.
+       if let old = previous[display]?.tree {
+@@ -482,9 +569,13 @@ extension Controller {
+           puttingBack: moving.sorted { $0.key < $1.key }.map { (window: $0.key, frame: $0.value) })
+       }
+       workspaces[display]?.desktopIsOwedRoom = restoration.workspace.desktopIsOwedRoom
++      // One in the Dock, or hidden with its app, is in no layout. (The step has moved the view, so something has come of it anyhow.)
++      if let old = previous[display], let screen = self.display(display) {
++        _ = moveBack(restoration.places.filter { windows[$0.key]?.isPresent != true }, on: screen, from: old)
++      }
+       // One that filled the view and whose app does not answer is as large as it was, and the key goes on knowing why.
+       for (window, fillsAt) in previous[display]?.filled ?? [:] where unplaced.contains(window) {
+-        workspaces[display]?.fill(window, at: fillsAt)
++        if workspaces[display]?.fill(window, at: fillsAt) == true { stuck.insert(window) }
+       }
+       placedOnPurpose = []
+       leavingView = []
+@@ -497,6 +588,23 @@ extension Controller {
+     }
+     forgetPendingSlotsWithoutAPlace()
+     scheduleSave()
++    return stuck
++  }
++
++  /// Takes the windows a step is about to their places, and touches nothing else: the mirror of `fetchWhole`. One in the Dock or hidden
++  /// with its app is moved where nobody sees it; one that is out of view comes back there when the view does.
++  /// Returns those whose apps do not answer, with what is remembered of them as it was.
++  private func moveBack(_ places: [WindowID: CGRect], on display: DisplaySnapshot, from previous: Workspace) -> Set<WindowID> {
++    var stuck = Set<WindowID>()
++    for (window, place) in places.sorted(by: { $0.key < $1.key }) where !parked.contains(window) {
++      putBack(window, at: place, on: display)
++      // Nothing is owed: when the app answers again nobody is asking any more.
++      guard unplaced.remove(window) != nil else { continue }
++      workspaces[display.id]?.floating[window] = previous.floating[window]
++      noteWhereItsUserLeftIt(window)
++      stuck.insert(window)
++    }
++    return stuck
+   }
+ 
+   /// What becomes of the floating windows of a restored workspace that a layout would leave alone or treat otherwise.
+diff --git a/Sources/ArborKit/Controller/Controller.swift b/Sources/ArborKit/Controller/Controller.swift
+index 10da3789..33dd089b 100644
+--- a/Sources/ArborKit/Controller/Controller.swift
++++ b/Sources/ArborKit/Controller/Controller.swift
+@@ -358,6 +358,9 @@ public final class Controller {
+   var standingGaps: [DisplayID: StandingGaps] = [:]
+   /// What the menu called the step the last `undo` or `redo` took; nil if it took none.
+   var titleOfTheStepJustTaken: String?
++  /// Set by an `undo` that was refused because the last thing seen was a move that cannot be taken back: the title of the step the next
++  /// one takes, for the line on screen.
++  var whatTheNextUndoTakesBack: String?
+   /// The palette of "Go to…"; nil while it is closed (Controller+Finder.swift).
+   var finder: OpenFinder?
+ 
+@@ -389,6 +392,9 @@ public final class Controller {
+   var overdueSlots: Set<WindowID> = []
+   /// Those that a layout dropped since `beginUndoStep`.
+   var slotsDroppedDuringUndoStep: [(slot: WindowID, away: Bool)] = []
++  /// Floating windows that were asked for by name since `beginUndoStep` and came in from an edge (`fetchWhole`), by display; and whether
++  /// each came from a place that it can go back to.
++  var fetchedDuringUndoStep: [DisplayID: [WindowID: Bool]] = [:]
+   /// What the file said of the windows it knew under real numbers, docked or floating, on whatever display. One that is met
+   /// again under its own number, with its own app, is itself, and not the window that a slot waits for, unless its title
+   /// says otherwise (`isItselfAsTheFileKnewIt`). Kept while slots wait.
+diff --git a/Tests/ArborCoreTests/UndoHistoryTests.swift b/Tests/ArborCoreTests/UndoHistoryTests.swift
+index 0aff5abc..3c54ad4d 100644
+--- a/Tests/ArborCoreTests/UndoHistoryTests.swift
++++ b/Tests/ArborCoreTests/UndoHistoryTests.swift
+@@ -250,6 +250,38 @@ private func change(_ before: UInt32, _ after: UInt32) -> UndoHistory.Change {
+     #expect(steps[1].workspace.tree.allWindows == [new])
+     #expect(steps[1].changedTo.tree.allWindows == [new, WindowID(101)], "in the same place")
+   }
++
++  /// Where a window floats is no part of an arrangement. A step can be about it all the same, and says of which windows.
++  @Test func aStepKeepsTheWindowsWhosePlaceItIsAbout() throws {
++    var history = UndoHistory()
++    history.record("dock", changes: [main: change(0, 1)])
++    #expect(history.steps(.undo, on: main).last?.places == [], "an ordinary step is about nobody's")
++    history.record("reveal", changes: [main: UndoHistory.Change(before: row(1), after: row(1), places: [a])])
++    #expect(history.steps(.undo, on: main).last?.places == [a])
++    // Taken and pushed as its opposite, as an undo does.
++    history.push(try #require(history.take(.undo, on: main)[main]), to: .redo, on: main)
++    #expect(history.steps(.redo, on: main).last?.places == [a])
++    // The same window under another number.
++    history.renumber(a, as: b)
++    #expect(history.steps(.redo, on: main).last?.places == [b])
++  }
++
++  @Test func whatCannotBeTakenBackCanBeAboutAPlaceAndHaveATitle() {
++    var history = UndoHistory()
++    history.recordIrreversible("close", leaving: [main: row(1)])
++    #expect(history.steps(.undo, on: main).last?.places == [] && history.steps(.undo, on: main).last?.title == "Close")
++    history.recordIrreversible("reveal w1", title: "Move", leaving: [main: row(1)], places: [a])
++    let step = history.steps(.undo, on: main).last
++    #expect(step?.isIrreversible == true && step?.places == [a] && step?.title == "Move")
++    #expect(history.steps(.undo, on: main).count == 1, "several in a row count as one, the last")
++  }
++
++  @Test func moreOfTheSameChangeAddsItsWindows() {
++    var history = UndoHistory()
++    history.record("x", changes: [main: UndoHistory.Change(before: row(1), after: row(1), places: [a])], continuing: "key")
++    history.record("x", changes: [main: UndoHistory.Change(before: row(1), after: row(1), places: [b])], continuing: "key")
++    #expect(history.steps(.undo, on: main).map(\.places) == [[a, b]])
++  }
+ }
+ 
+ @Suite struct TreeComparisonTests {
+diff --git a/Tests/ArborKitTests/MenuChaosTests.swift b/Tests/ArborKitTests/MenuChaosTests.swift
+index e5f2c94d..b1dc6593 100644
+--- a/Tests/ArborKitTests/MenuChaosTests.swift
++++ b/Tests/ArborKitTests/MenuChaosTests.swift
+@@ -74,10 +74,13 @@ private let seeds: [UInt64] = {
+           // A walk can stop with the button down. Nobody opens a menu then.
+           let midDrag = result.message.contains("is being dragged")
+           let findsOutLate = Self.findOutLate.contains { $0.command == command }
++          // A row of Windows ▸ whose window hangs over an edge and was to come in: that its app hangs is found out by asking it, and is said.
++          let itsAppHangs = result.message.hasSuffix("is not answering: try again in a moment")
+           // A command that changes a setting reads settings.json first. Edited a moment ago behind Arbor's back, it can say so already.
+           let theFileWasAhead = result.message.hasSuffix(" already")
+           #expect(
+-            result.ok || Self.alwaysOffered.contains(command) || refusedByTheHold || midDrag || findsOutLate || theFileWasAhead,
++            result.ok || Self.alwaysOffered.contains(command) || refusedByTheHold || midDrag || findsOutLate || itsAppHangs
++              || theFileWasAhead,
+             "offered, and failed. \(told)")
+         } else {
+           // The row says float. On a window that floats the command behind it, which the shortcut shares, would dock it.
+diff --git a/Tests/ArborKitTests/UndoAfterAFetchTests.swift b/Tests/ArborKitTests/UndoAfterAFetchTests.swift
+new file mode 100644
+index 00000000..16480177
+--- /dev/null
++++ b/Tests/ArborKitTests/UndoAfterAFetchTests.swift
+@@ -0,0 +1,869 @@
++import ArborCore
++@testable import ArborKit
++import ArborTesting
++import CoreGraphics
++import Foundation
++import Testing
++
++/// A floating window that hangs over an edge and is asked for by name comes in whole (`fetchWhole`, Controller+OpenWindows.swift). Arbor moved
++/// a window at a person's word, and Undo is the way out everywhere else: one step gives it its place at the edge back (board 1.91).
++@MainActor @Suite struct UndoAfterAFetchTests {
++  /// Where its person parked it: 140 of its 400 points show.
++  static let parked = CGRect(x: 1300, y: 500, width: 400, height: 300)
++  /// The shortest way in from there.
++  static let fetched = CGRect(x: 1040, y: 500, width: 400, height: 300)
++
++  /// Safari and Notes float in view, Mail is parked over the right edge by hand, and Safari is being typed in.
++  func desk(settings: Settings = Settings()) -> (Harness, safari: WindowID, notes: WindowID, mail: WindowID) {
++    let h = Harness(settings: settings)
++    let safari = h.system.open(app: "Safari", title: "Arbor docs", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
++    let notes = h.system.open(app: "Notes", title: "Shopping", pid: 12, frame: CGRect(x: 300, y: 200, width: 500, height: 400))
++    let mail = h.system.open(app: "Mail", title: "Inbox", pid: 13, frame: CGRect(x: 500, y: 300, width: 400, height: 300))
++    h.start()
++    h.system.userMove(mail, to: Self.parked)
++    h.system.userFocus(safari)
++    h.scheduler.advance(by: 2)
++    return (h, safari, notes, mail)
++  }
++
++  /// A click on its row in Windows ▸, in the order a Mac reports in.
++  @discardableResult func ask(_ h: Harness, for window: WindowID) -> CommandResult {
++    h.system.restoresLate = true
++    let result = h.controller.perform(.reveal(window), from: .menu)
++    settle(h)
++    return result
++  }
++
++  func settle(_ h: Harness) {
++    h.system.deliverEchoes()
++    h.system.reportFocus()
++    h.system.finishRestoring()
++    h.system.restoresLate = false
++    h.scheduler.advance(by: 2)
++  }
++
++  /// ⌃⌥Z.
++  @discardableResult func undo(_ h: Harness) -> CommandResult {
++    let result = h.controller.perform(.undo, from: .shortcut)
++    settle(h)
++    return result
++  }
++
++  @discardableResult func redo(_ h: Harness) -> CommandResult {
++    let result = h.controller.perform(.redo, from: .shortcut)
++    settle(h)
++    return result
++  }
++
++  func title(_ h: Harness, beginning: String) -> MenuModel.Item? {
++    h.controller.menuModel().allItems.first { $0.title.hasPrefix(beginning) }
++  }
++
++  // MARK: One step, there and back
++
++  @Test func oneStepGivesItItsPlaceAtTheEdgeBack() {
++    let (h, _, _, mail) = desk()
++    #expect(ask(h, for: mail).ok)
++    #expect(h.frame(mail) == Self.fetched, "it was fetched, or this proves nothing")
++    #expect(undo(h).ok)
++    #expect(h.frame(mail) == Self.parked)
++    expectWindowsMatchLayout(h)
++  }
++
++  /// A layout fits what nobody chose. This its person chose twice.
++  @Test func andItStaysThereThroughTheLayoutsThatFollow() {
++    let (h, safari, _, mail) = desk()
++    ask(h, for: mail)
++    undo(h)
++    for line in ["relayout", "dock \(safari.rawValue) left", "zoom \(safari.rawValue)", "show-all", "float \(safari.rawValue)", "relayout"] {
++      h.run(line)
++      h.scheduler.advance(by: 2)
++    }
++    #expect(h.frame(mail) == Self.parked)
++  }
++
++  @Test func itGoesBackInOneMoveAndNothingElseMoves() {
++    let (h, safari, notes, mail) = desk()
++    ask(h, for: mail)
++    let others = [h.frame(safari), h.frame(notes)]
++    let mark = h.system.moveLog.count
++    undo(h)
++    #expect(h.system.moveLog[mark...].filter { $0.before != $0.after }.map(\.window) == [mail])
++    #expect(h.system.jolts(since: mark) == [])
++    #expect([h.frame(safari), h.frame(notes)] == others)
++  }
++
++  @Test func redoBringsItInAgainAndUndoTakesItOutAgain() {
++    let (h, _, _, mail) = desk()
++    ask(h, for: mail)
++    undo(h)
++    #expect(redo(h).ok)
++    #expect(h.frame(mail) == Self.fetched)
++    #expect(undo(h).ok)
++    #expect(h.frame(mail) == Self.parked)
++    #expect(!undo(h).ok, "it was one step")
++  }
++
++  // MARK: What a person reads
++
++  @Test func theMenuAndTheLineOnScreenCallItAMove() throws {
++    let (h, _, _, mail) = desk()
++    #expect(title(h, beginning: "Undo")?.isEnabled == false, "nothing to undo yet, or this proves nothing")
++    ask(h, for: mail)
++    let row = try #require(title(h, beginning: "Undo"))
++    #expect(row.title == "Undo Move" && row.isEnabled)
++    undo(h)
++    #expect(h.controller.wordsOnScreen(after: .undo) == "Undid Move")
++    #expect(title(h, beginning: "Redo")?.title == "Redo Move")
++  }
++
++  /// Replies quote labels, and replies are logged.
++  @Test func theStepIsCalledByTheWindowsNumber() {
++    let (h, _, _, mail) = desk()
++    ask(h, for: mail)
++    let label = h.controller.nextStepLabel(.undo)
++    #expect(label?.contains("\(mail)") == true)
++    #expect(label?.contains("Inbox") == false && label?.contains("Mail") == false)
++    #expect(undo(h).message.contains("Inbox") == false)
++  }
++
++  // MARK: Whichever way it was asked for
++
++  @Test func askedForInGoTo() {
++    let (h, _, _, mail) = desk()
++    h.run("find")
++    h.overlays.typeInFinder("Inbox")
++    #expect(h.overlays.chooseInFinder())
++    settle(h)
++    #expect(h.frame(mail) == Self.fetched, "it was fetched, or this proves nothing")
++    #expect(h.controller.nextStepLabel(.undo) == "reveal \(mail)" && h.controller.nextStepTitle(.undo) == "Move", "one name, by every road")
++    #expect(undo(h).ok)
++    #expect(h.frame(mail) == Self.parked)
++  }
++
++  @Test(arguments: ["find Inbox", "reveal 103"]) func askedForByACommand(line: String) {
++    let (h, _, _, mail) = desk()
++    #expect(mail == WindowID(103))
++    #expect(h.run(line).ok)
++    settle(h)
++    #expect(h.frame(mail) == Self.fetched, "it was fetched, or this proves nothing")
++    #expect(h.controller.nextStepLabel(.undo) == "reveal \(mail)" && h.controller.nextStepTitle(.undo) == "Move", "one name, by every road")
++    #expect(undo(h).ok)
++    #expect(h.frame(mail) == Self.parked)
++  }
++
++  // MARK: What is no step
++
++  /// Going to a window is no change to anything. Only the move is.
++  @Test func aWindowThatWasWholeLeavesNothingToUndo() {
++    let (h, _, notes, _) = desk()
++    #expect(ask(h, for: notes).ok)
++    #expect(!undo(h).ok)
++    #expect(title(h, beginning: "Undo")?.isEnabled == false)
++  }
++
++  /// Undo takes back what Arbor did, not what its person has done since.
++  @Test func movedByHandSinceItStaysWhereTheHandPutIt() {
++    let (h, _, _, mail) = desk()
++    ask(h, for: mail)
++    let since = CGRect(x: 200, y: 400, width: 400, height: 300)
++    h.system.userMove(mail, to: since)
++    h.scheduler.advance(by: 2)
++    #expect(title(h, beginning: "Undo")?.isEnabled == false, "and the menu offers nothing that would do nothing")
++    #expect(!undo(h).ok)
++    #expect(h.frame(mail) == since)
++  }
++
++  @Test func closedSinceThereIsNothingToUndo() {
++    let (h, _, _, mail) = desk()
++    ask(h, for: mail)
++    h.system.close(mail)
++    h.scheduler.advance(by: 2)
++    #expect(!undo(h).ok)
++  }
++
++  /// Arbor puts no window where no hand could get hold of it, whoever did before. So from there it was fetched for good, and an undo that
++  /// said "undid" and moved nothing would be worse than none.
++  @Test(arguments: [CGPoint(x: 1417, y: 500), CGPoint(x: 2000, y: 500), CGPoint(x: -377, y: 500), CGPoint(x: 500, y: 889)])
++  func aPlaceNoHandCouldReachIsNoPlaceToGoBackTo(origin: CGPoint) {
++    let (h, safari, _, mail) = desk()
++    h.system.userMove(mail, to: CGRect(origin: origin, size: Self.parked.size))
++    h.system.userFocus(safari)
++    h.scheduler.advance(by: 2)
++    ask(h, for: mail)
++    let fetched = h.frame(mail)
++    #expect(fetched.map { FakeWindowSystem.standardDisplay.visibleFrame.contains($0) } == true, "it was fetched, or this proves nothing")
++    #expect(title(h, beginning: "Undo")?.isEnabled == false)
++    #expect(!undo(h).ok)
++    #expect(h.frame(mail) == fetched)
++  }
++
++  /// Moved, never sized: there and back.
++  @Test(arguments: [1300, 1416, 1417] as [CGFloat]) func aWindowLargerThanTheDisplayKeepsItsSize(x: CGFloat) {
++    let (h, safari, _, mail) = desk()
++    let large = CGRect(x: x, y: 100, width: 1600, height: 500)
++    h.system.userMove(mail, to: large)
++    h.system.userFocus(safari)
++    h.scheduler.advance(by: 2)
++    ask(h, for: mail)
++    #expect(h.frame(mail) == CGRect(x: 0, y: 100, width: 1600, height: 500), "it was fetched, or this proves nothing")
++    // 24 points of its title bar are what a hand needs.
++    #expect(undo(h).ok == (x <= 1416))
++    #expect(h.frame(mail) == (x <= 1416 ? large : CGRect(x: 0, y: 100, width: 1600, height: 500)))
++    redo(h)
++    for line in ["relayout", "pause", "resume"] { h.run(line); h.scheduler.advance(by: 2) }
++    #expect(h.frame(mail)?.size == large.size)
++  }
++
++  /// One that is kept in view, summoned, or the guest of a view has its place by that, and layouts see to it. Nothing is offered that
++  /// the next layout would take back.
++  @Test(arguments: ["pinned", "summoned", "guest"]) func aWindowWithAPlaceOfAnotherKindIsNoStep(kind: String) {
++    let (h, safari, _, mail) = desk()
++    h.system.userMove(mail, to: CGRect(x: 500, y: 300, width: 400, height: 300))
++    switch kind {
++    case "pinned": #expect(h.run("pin \(mail.rawValue)").ok)
++    case "summoned": #expect(h.run("summon Mail").ok)
++    default:
++      h.system.close(mail)
++      h.run("dock \(safari.rawValue) left")
++      h.run("zoom \(safari.rawValue)")
++    }
++    let window = kind == "guest" ? h.system.open(app: "Mail", title: "Inbox", pid: 13, frame: CGRect(x: 500, y: 300, width: 400, height: 300)) : mail
++    h.scheduler.advance(by: 2)
++    h.system.userMove(window, to: Self.parked)
++    h.system.userFocus(safari)
++    h.scheduler.advance(by: 2)
++    ask(h, for: window)
++    #expect(h.frame(window) == Self.fetched, "it was fetched, or this proves nothing")
++    let mark = h.system.moveLog.count
++    #expect(!undo(h).ok, "nothing to undo, or, with something older in the history, that this cannot be")
++    #expect(h.system.moveLog[mark...].allSatisfy { $0.before == $0.after })
++    #expect(h.frame(window) == Self.fetched)
++  }
++
++  // MARK: A move that cannot be taken back is said once
++
++  /// Whoever has just seen Mail move and presses ⌃⌥Z means Mail. That Safari floats instead would be a window nobody meant, moved by one of
++  /// the nine keys. So it says once that the move cannot be undone and what the next press would undo, and moves nothing. The key is blind;
++  /// whoever reads the menu's row is told what is older, as after a close: a row names nothing that it will not do (the product owner,
++  /// 2026-10-15).
++  @Test(arguments: ["out of reach", "pinned", "guest"]) func aMoveThatCannotBeTakenBackIsSaidOnce(kind: String) throws {
++    let (h, safari, notes, mail) = desk()
++    #expect(h.run("dock \(notes.rawValue) left").ok)
++    var window = mail
++    switch kind {
++    case "pinned": #expect(h.run("pin \(mail.rawValue)").ok)
++    case "guest":
++      h.system.close(mail)
++      h.run("zoom \(notes.rawValue)")
++      window = h.system.open(app: "Mail", title: "Inbox", pid: 13, frame: CGRect(x: 500, y: 300, width: 400, height: 300))
++    default: break
++    }
++    h.scheduler.advance(by: 2)
++    h.system.userMove(window, to: kind == "out of reach" ? CGRect(x: 1430, y: 500, width: 400, height: 300) : Self.parked)
++    h.system.userFocus(kind == "guest" ? notes : safari)
++    h.scheduler.advance(by: 2)
++    ask(h, for: window)
++    #expect(h.frame(window) == Self.fetched, "it was fetched, or this proves nothing")
++    let row = try #require(title(h, beginning: "Undo"))
++    #expect(row.title == "Undo Dock" && row.isEnabled, "\(row.title)")
++
++    let mark = h.system.moveLog.count
++    let refused = undo(h)
++    #expect(!refused.ok && refused.message == "cannot undo reveal \(window); undo again to take back dock \(notes) left", "\(refused.message)")
++    #expect(h.system.moveLog[mark...].allSatisfy { $0.before == $0.after }, "nothing moves")
++    #expect(h.workspace.isDocked(notes))
++    // In words a person reads: no window's number on screen.
++    #expect(h.overlays.headsUp.values.map(\.line) == ["That move cannot be undone · ⌃⌥Z again undoes Dock"])
++
++    // Once.
++    #expect(title(h, beginning: "Undo")?.title == "Undo Dock")
++    #expect(undo(h).ok)
++    #expect(h.workspace.isFloating(notes))
++    #expect(h.frame(window) == Self.fetched)
++  }
++
++  /// Chosen from the menu it is as after a close: it refuses once, in the same words, and the next choice takes what the row names.
++  @Test func chosenFromTheMenuItIsAsTheKey() {
++    let (h, safari, _, mail) = desk()
++    h.run("dock \(safari.rawValue) left")
++    h.system.userMove(mail, to: CGRect(x: 1430, y: 500, width: 400, height: 300))
++    h.system.userFocus(safari)
++    h.scheduler.advance(by: 2)
++    ask(h, for: mail)
++    #expect(!h.controller.perform(.undo, from: .menu).ok)
++    #expect(h.overlays.headsUp.values.map(\.line) == ["That move cannot be undone · ⌃⌥Z again undoes Dock"])
++    #expect(h.workspace.isDocked(safari))
++    #expect(title(h, beginning: "Undo")?.title == "Undo Dock")
++    #expect(h.controller.perform(.undo, from: .menu).ok)
++    #expect(h.workspace.isFloating(safari))
++  }
++
++  /// With nothing older there is nothing that could be taken by surprise, and nothing to say but that.
++  @Test func withNothingOlderThereIsNothingToUndo() {
++    let (h, safari, _, mail) = desk()
++    h.system.userMove(mail, to: CGRect(x: 1430, y: 500, width: 400, height: 300))
++    h.system.userFocus(safari)
++    h.scheduler.advance(by: 2)
++    ask(h, for: mail)
++    #expect(title(h, beginning: "Undo")?.title == "Undo" && title(h, beginning: "Undo")?.isEnabled == false)
++    #expect(undo(h).message.hasPrefix("nothing to undo"))
++  }
++
++  /// Only where the fetch moved something.
++  @Test func aLookUpThatMovedNothingStandsInNobodysWay() {
++    let (h, safari, notes, _) = desk()
++    h.run("dock \(safari.rawValue) left")
++    ask(h, for: notes)
++    #expect(title(h, beginning: "Undo")?.title == "Undo Dock")
++    #expect(undo(h).ok)
++    #expect(h.workspace.isFloating(safari))
++  }
++
++  /// A step made after it is the one a person has seen last.
++  @Test func aStepMadeSinceIsTakenFirstAndThenItIsSaid() {
++    let (h, safari, notes, mail) = desk()
++    h.run("dock \(safari.rawValue) left")
++    h.system.userMove(mail, to: CGRect(x: 1430, y: 500, width: 400, height: 300))
++    h.system.userFocus(safari)
++    h.scheduler.advance(by: 2)
++    ask(h, for: mail)
++    h.run("dock \(notes.rawValue) right")
++    #expect(title(h, beginning: "Undo")?.title == "Undo Dock")
++    #expect(undo(h).ok)
++    #expect(h.workspace.isFloating(notes))
++    #expect(title(h, beginning: "Undo")?.title == "Undo Dock")
++    #expect(!undo(h).ok)
++    #expect(h.workspace.isDocked(safari))
++    #expect(undo(h).ok)
++    #expect(h.workspace.isFloating(safari))
++  }
++
++  /// What is promised of the next press is what it does. A window that closed cannot be brought back either: one refusal is for all that
++  /// cannot be taken back, whichever of them was seen last.
++  @Test func aCloseSeenAfterTheMoveIsSaidAndTheMoveGoesWithIt() {
++    let (h, safari, notes, mail) = desk()
++    h.run("dock \(safari.rawValue) left")
++    h.system.userMove(mail, to: CGRect(x: 1430, y: 500, width: 400, height: 300))
++    h.system.userFocus(safari)
++    h.scheduler.advance(by: 2)
++    ask(h, for: mail)
++    h.run("dock \(notes.rawValue) right")
++    h.system.close(notes)
++    h.scheduler.advance(by: 2)
++    #expect(title(h, beginning: "Undo")?.title == "Undo Dock")
++    let refused = undo(h)
++    #expect(!refused.ok && refused.message.hasPrefix("cannot undo the closing"), "\(refused.message)")
++    #expect(refused.message.hasSuffix("undo again to take back dock \(safari) left"), "\(refused.message)")
++    #expect(h.overlays.headsUp.values.allSatisfy { !$0.line.contains("That move") })
++    #expect(undo(h).ok)
++    #expect(h.workspace.isFloating(safari))
++  }
++
++  @Test func closesOlderThanTheMoveGoWithIt() {
++    let (h, safari, notes, mail) = desk()
++    let music = h.system.open(app: "Music", title: "Library", pid: 14, frame: CGRect(x: 700, y: 100, width: 300, height: 200))
++    h.scheduler.advance(by: 2)
++    h.run("dock \(safari.rawValue) left")
++    for window in [notes, music] {
++      h.run("dock \(window.rawValue) right")
++      h.system.close(window)
++      h.scheduler.advance(by: 2)
++    }
++    h.system.userMove(mail, to: CGRect(x: 1430, y: 500, width: 400, height: 300))
++    h.system.userFocus(safari)
++    h.scheduler.advance(by: 2)
++    ask(h, for: mail)
++    #expect(title(h, beginning: "Undo")?.title == "Undo Dock")
++    let refused = undo(h)
++    #expect(!refused.ok && refused.message == "cannot undo reveal \(mail); undo again to take back dock \(safari) left", "\(refused.message)")
++    #expect(h.overlays.headsUp.values.map(\.line) == ["That move cannot be undone · ⌃⌥Z again undoes Dock"])
++    #expect(undo(h).ok, "as promised")
++    #expect(h.workspace.isFloating(safari))
++  }
++
++  /// The line is about that one press.
++  @Test func theLineIsNotSaidAgainWhenThereIsNothingLeft() {
++    let (h, safari, _, mail) = desk()
++    h.run("dock \(safari.rawValue) left")
++    h.system.userMove(mail, to: CGRect(x: 1430, y: 500, width: 400, height: 300))
++    h.system.userFocus(safari)
++    h.scheduler.advance(by: 2)
++    ask(h, for: mail)
++    #expect(!undo(h).ok)
++    #expect(undo(h).ok)
++    h.scheduler.advance(by: 10)
++    #expect(undo(h).message.hasPrefix("nothing to undo"))
++    #expect(h.overlays.headsUp.values.allSatisfy { !$0.line.contains("That move") }, "\(h.overlays.headsUp.values.map(\.line))")
++  }
++
++  // MARK: What has happened to it since
++
++  /// The fetch moves a window in the Dock, or hidden with its app, where nobody sees it. So does its undo.
++  @Test(arguments: ["minimized", "hidden"]) func goneFromSightSinceItIsMovedWhereNobodySeesIt(how: String) {
++    let (h, _, _, mail) = desk()
++    ask(h, for: mail)
++    if how == "minimized" { h.system.setMinimized(mail, true) } else { h.system.setHidden(pid: 13, true) }
++    h.scheduler.advance(by: 2)
++    #expect(undo(h).ok)
++    #expect(h.frame(mail) == Self.parked, "while nobody sees it, not in a jump when it is back")
++    let mark = h.system.moveLog.count
++    if how == "minimized" { h.system.setMinimized(mail, false) } else { h.system.setHidden(pid: 13, false) }
++    settle(h)
++    #expect(h.system.moveLog[mark...].allSatisfy { $0.before == $0.after })
++    #expect(h.frame(mail) == Self.parked)
++    h.run("relayout")
++    #expect(h.frame(mail) == Self.parked)
++  }
++
++  /// macOS lets nobody move a window in full screen, and Accessibility does not reach one on another Space. Nothing is offered there.
++  @Test(arguments: ["full screen", "another Space"]) func whereArborCannotReachItNothingIsOffered(place: String) {
++    let (h, safari, _, mail) = desk()
++    ask(h, for: mail)
++    if place == "full screen" { h.system.setFullScreen(mail, true) } else { h.system.setOnActiveSpace(mail, false) }
++    h.system.userFocus(safari)
++    h.scheduler.advance(by: 2)
++    let mark = h.system.moveLog.count
++    #expect(title(h, beginning: "Undo")?.isEnabled == false)
++    #expect(!undo(h).ok)
++    #expect(h.system.moveLog.count == mark)
++  }
++
++  /// Nothing has come of it, and it says so. The step is still there when the app answers again.
++  @Test func whileItsAppDoesNotAnswerTheStepStays() {
++    let (h, _, _, mail) = desk()
++    ask(h, for: mail)
++    h.system.setUnresponsive(pid: 13, true)
++    let refused = undo(h)
++    #expect(!refused.ok && refused.message.contains("does not answer"), "\(refused.message)")
++    #expect(h.frame(mail) == Self.fetched)
++    #expect(h.controller.windowsOwedAMove == [], "nothing is owed")
++    #expect(!redo(h).ok, "nothing was undone")
++    h.system.setUnresponsive(pid: 13, false)
++    settle(h)
++    h.scheduler.advance(by: 10)
++    #expect(h.frame(mail) == Self.fetched, "and nothing moves late, when nobody is asking any more")
++    #expect(h.workspace.floating[mail] == Self.fetched)
++    #expect(undo(h).ok)
++    #expect(h.frame(mail) == Self.parked)
++  }
++
++  /// With another window framed since, taking it back would show nothing, and the next press would take back something older. The view steps
++  /// out as far as it must, as for every other step, and `back` returns.
++  @Test func outOfViewSinceTheViewStepsOutToShowIt() {
++    let (h, safari, notes, mail) = desk()
++    h.run("dock \(safari.rawValue) left")
++    h.run("dock \(notes.rawValue) beside \(safari.rawValue) bottom")
++    ask(h, for: mail)
++    h.run("zoom \(notes.rawValue)")
++    h.scheduler.advance(by: 2)
++    #expect(ScenarioExpectation.check(["hidden", "\(mail.rawValue)"], harness: h, lastCommandOK: true) == nil, "or this proves nothing")
++    #expect(undo(h).ok)
++    #expect(!h.controller.parked.contains(mail) && h.frame(mail) == Self.parked)
++    #expect(h.workspace.isDocked(notes), "the dock is an older step, and stays")
++    #expect(h.run("back").ok)
++    #expect(ScenarioExpectation.check(["camera", "\(notes.rawValue)"], harness: h, lastCommandOK: true) == nil)
++  }
++
++  /// In view over a framed window, it needs no other view to be seen going.
++  @Test func inViewOverAFramedWindowTheViewStays() {
++    let (h, safari, notes, mail) = desk()
++    h.system.close(notes)
++    h.run("dock \(safari.rawValue) left")
++    ask(h, for: mail)
++    // It fills the screen, Safari is framed behind it, and the fill is taken back twice over: it floats over the framed Safari.
++    for line in ["zoom \(mail.rawValue)", "zoom \(safari.rawValue)"] { h.run(line); h.scheduler.advance(by: 2) }
++    h.system.userFocus(mail)
++    h.press("zoom")
++    undo(h)
++    undo(h)
++    #expect(ScenarioExpectation.check(["camera", "\(safari.rawValue)"], harness: h, lastCommandOK: true) == nil, "or this proves nothing")
++    #expect(h.frame(mail) == Self.fetched && !h.controller.parked.contains(mail), "or this proves nothing")
++    #expect(undo(h).ok)
++    #expect(ScenarioExpectation.check(["camera", "\(safari.rawValue)"], harness: h, lastCommandOK: true) == nil)
++    #expect(h.frame(mail) == Self.parked)
++  }
++
++  /// What else the step puts back is laid out with it: the short road is for a step that is about the place and nothing else. (With
++  /// reports that come inside the command, asking for Mail sends the summoned Safari away within the step.)
++  @Test func whatElseTheStepPutsBackIsLaidOut() {
++    let (h, safari, _, mail) = desk()
++    h.system.setMinimized(mail, true)
++    h.scheduler.advance(by: 2)
++    #expect(h.run("summon Safari").ok)
++    h.scheduler.advance(by: 2)
++    #expect(h.run("reveal \(mail.rawValue)").ok)
++    h.scheduler.advance(by: 2)
++    #expect(h.run("undo").ok)
++    h.scheduler.advance(by: 2)
++    let mark = h.system.moveLog.count
++    h.run("relayout")
++    h.scheduler.advance(by: 2)
++    #expect(h.system.moveLog[mark...].filter { $0.before != $0.after }.map(\.window) == [], "a layout has nothing to add: \(safari)")
++  }
++
++  /// In the Dock and out of view at once: nothing brings it over a view it does not belong to.
++  @Test func inTheDockAndOutOfViewItComesBackAtItsEdgeWithItsView() {
++    let (h, safari, _, mail) = desk()
++    h.run("dock \(safari.rawValue) left")
++    ask(h, for: mail)
++    h.run("zoom \(safari.rawValue)")
++    h.scheduler.advance(by: 2)
++    h.system.setMinimized(mail, true)
++    h.scheduler.advance(by: 2)
++    #expect(h.controller.parked.contains(mail), "or this proves nothing")
++    #expect(undo(h).ok)
++    #expect(h.controller.parked.contains(mail))
++    h.system.setMinimized(mail, false)
++    settle(h)
++    h.run("show-all")
++    h.scheduler.advance(by: 2)
++    #expect(h.frame(mail) == Self.parked)
++  }
++
++  /// A role gained since: its place is by that now.
++  @Test(arguments: ["pin", "summon"]) func keptInViewOrSummonedSinceNothingIsOffered(how: String) {
++    let (h, _, _, mail) = desk()
++    ask(h, for: mail)
++    #expect(h.run(how == "pin" ? "pin \(mail.rawValue)" : "summon Mail").ok)
++    h.scheduler.advance(by: 2)
++    let there = h.frame(mail)
++    #expect(h.controller.nextStepTitle(.undo) != "Move")
++    undo(h)
++    #expect(h.frame(mail) == there)
++  }
++
++  /// What is offered and what is done go by one measure. macOS, or its app, has taken it back to the edge already: there is nothing to do.
++  @Test func whereItIsThereAlreadyNothingIsOffered() {
++    let (h, _, _, mail) = desk()
++    ask(h, for: mail)
++    h.system.moveSilently(mail, to: Self.parked)
++    h.system.report(mail, userInitiated: false)
++    h.scheduler.advance(by: 2)
++    #expect(title(h, beginning: "Undo")?.isEnabled == false)
++    #expect(!undo(h).ok)
++    #expect(title(h, beginning: "Redo")?.isEnabled == false)
++  }
++
++  /// Its app did not answer when it was asked for. Nothing comes of it, then or later: it would come in when nobody is asking any more, by a
++  /// move no Undo knows of, and ⌃⌥Z would take back something older instead. And it is said: whoever clicks a row and sees nothing happen
++  /// takes Arbor for broken.
++  @Test func ofAFetchThatItsAppDidNotAnswerNothingComesAndNothingIsOwed() {
++    let (h, safari, _, mail) = desk()
++    h.run("dock \(safari.rawValue) left")
++    h.system.setUnresponsive(pid: 13, true)
++    let refused = ask(h, for: mail)
++    #expect(h.frame(mail) == Self.parked, "it did not come, or this proves nothing")
++    #expect(!refused.ok && refused.message == "\(mail) is not answering: try again in a moment", "\(refused.message)")
++    #expect(h.overlays.headsUp.values.map(\.line) == ["Mail is not answering: try again in a moment"])
++    #expect(h.system.focusedWindow() == safari, "nothing else is tried")
++    #expect(h.controller.windowsOwedAMove == [], "nothing is owed")
++    #expect(title(h, beginning: "Undo")?.title == "Undo Dock", "nothing was seen to move, so nothing stands before the dock")
++    h.system.setUnresponsive(pid: 13, false)
++    settle(h)
++    h.scheduler.advance(by: 10)
++    #expect(h.frame(mail) == Self.parked, "and nothing moves late")
++    #expect(h.workspace.floating[mail] == Self.parked)
++    #expect(h.controller.windowsOwedAMove == [])
++    for line in ["relayout", "zoom \(safari.rawValue)", "show-all"] { h.run(line); h.scheduler.advance(by: 2) }
++    #expect(h.frame(mail) == Self.parked, "it still counts as left there by its person")
++    #expect(undo(h).ok)
++    #expect(h.workspace.isFloating(safari))
++    // Asked for again, it comes.
++    ask(h, for: mail)
++    #expect(h.frame(mail) == Self.fetched)
++    #expect(undo(h).ok)
++    #expect(h.frame(mail) == Self.parked)
++  }
++
++  /// What it was owed before, by something else that its app did not answer, is not this fetch's to forgive.
++  @Test func aMoveItWasOwedBeforeIsStillOwed() {
++    let (h, _, _, mail) = desk()
++    h.system.setUnresponsive(pid: 13, true)
++    h.controller.unplaced.insert(mail)
++    #expect(!ask(h, for: mail).ok)
++    #expect(h.controller.windowsOwedAMove == [mail])
++  }
++
++  /// A row chosen in Go to… is no command, and nobody reads its reply.
++  @Test func inGoToItIsSaidOnScreenToo() {
++    let (h, _, _, mail) = desk()
++    h.system.setUnresponsive(pid: 13, true)
++    h.run("find")
++    h.overlays.typeInFinder("Inbox")
++    #expect(h.overlays.chooseInFinder())
++    settle(h)
++    #expect(h.frame(mail) == Self.parked, "it did not come, or this proves nothing")
++    #expect(h.overlays.headsUp.values.map(\.line) == ["Mail is not answering: try again in a moment"])
++  }
++
++  /// Only one that was to be moved: a window that is whole is gone to as ever, whatever its app is doing.
++  @Test func aWholeWindowOfAnAppThatDoesNotAnswerIsGoneToAsEver() {
++    let (h, _, notes, _) = desk()
++    h.system.setUnresponsive(pid: 12, true)
++    #expect(ask(h, for: notes).ok)
++  }
++
++  /// At the redo too; and the place at the edge goes on counting as left there.
++  @Test func whileItsAppDoesNotAnswerARedoIsRefusedToo() {
++    let (h, safari, _, mail) = desk()
++    ask(h, for: mail)
++    undo(h)
++    h.system.setUnresponsive(pid: 13, true)
++    let refused = redo(h)
++    #expect(!refused.ok && refused.message.contains("does not answer"), "\(refused.message)")
++    h.system.setUnresponsive(pid: 13, false)
++    settle(h)
++    for line in ["dock \(safari.rawValue) left", "zoom \(safari.rawValue)", "show-all"] { h.run(line); h.scheduler.advance(by: 2) }
++    #expect(h.frame(mail) == Self.parked)
++  }
++
++  // MARK: A window that fills the screen
++
++  /// It is whole by that, wherever its own frame hangs: it is not fetched, and there is no Move to take back (Controller+Fill.swift).
++  @Test(arguments: ["minimized", "hidden"]) func oneThatFillsTheScreenIsNotFetched(how: String) {
++    let (h, _, _, mail) = desk()
++    if how == "minimized" { h.system.setMinimized(mail, true) } else { h.system.setHidden(pid: 13, true) }
++    h.scheduler.advance(by: 2)
++    #expect(h.run("zoom \(mail.rawValue)").ok)
++    h.scheduler.advance(by: 2)
++    #expect(h.controller.isFilled(mail), "or this proves nothing")
++    let mark = h.system.moveLog.count
++    ask(h, for: mail)
++    #expect(h.system.jolts(since: mark) == [])
++    #expect(h.controller.nextStepTitle(.undo) == "Fill the Screen")
++    #expect(h.workspace.floating[mail] == Self.parked, "its own frame is as it was")
++  }
++
++  // MARK: It moves that window and no other
++
++  /// A layout would fetch this one. Nobody asked for a layout.
++  @Test func whatALayoutWouldCorrectIsLeftAlone() {
++    let (h, safari, notes, mail) = desk()
++    #expect(h.run("pin \(notes.rawValue)").ok)
++    let low = CGRect(x: 500, y: 800, width: 500, height: 400)
++    h.system.userMove(notes, to: low)
++    h.system.userFocus(safari)
++    h.scheduler.advance(by: 2)
++    ask(h, for: mail)
++    #expect(h.frame(notes) == low, "the fetch left it alone, or this proves nothing")
++    #expect(undo(h).ok)
++    #expect(h.frame(notes) == low)
++    #expect(redo(h).ok)
++    #expect(h.frame(notes) == low)
++  }
++
++  // MARK: One measure: what is remembered
++
++  /// macOS or its app had moved it to the edge, and what Arbor remembers as its own is another frame. There is no place that both the
++  /// screen and the books know: where it was seen no layout would leave it, and where it is remembered it did not come from. Nothing is promised.
++  @Test(arguments: [CGPoint(x: 300, y: 200), CGPoint(x: 1430, y: 500)]) func whereTheScreenAndTheBooksDisagreeNothingIsPromised(own: CGPoint) {
++    let (h, safari, _, mail) = desk()
++    h.system.userMove(mail, to: CGRect(origin: own, size: Self.parked.size))
++    h.system.userFocus(safari)
++    h.scheduler.advance(by: 2)
++    h.system.moveSilently(mail, to: Self.parked)
++    h.system.report(mail, userInitiated: false)
++    h.scheduler.advance(by: 2)
++    #expect(h.workspace.floating[mail]?.origin == own, "they disagree, or this proves nothing")
++    ask(h, for: mail)
++    #expect(h.frame(mail) == Self.fetched, "it was fetched, or this proves nothing")
++    #expect(title(h, beginning: "Undo")?.isEnabled == false)
++    #expect(!undo(h).ok)
++    #expect(h.frame(mail) == Self.fetched)
++  }
++
++  /// The same with something older in the history and the window out of view since: said once, and nothing moves.
++  @Test func whereTheyDisagreeItIsAMoveThatCannotBeTakenBack() {
++    let (h, safari, _, mail) = desk()
++    h.run("dock \(safari.rawValue) left")
++    h.system.userMove(mail, to: CGRect(x: 1430, y: 500, width: 400, height: 300))
++    h.system.userFocus(safari)
++    h.scheduler.advance(by: 2)
++    h.system.moveSilently(mail, to: Self.parked)
++    h.system.report(mail, userInitiated: false)
++    h.scheduler.advance(by: 2)
++    ask(h, for: mail)
++    #expect(h.frame(mail) == Self.fetched, "it was fetched, or this proves nothing")
++    h.run("zoom \(safari.rawValue)")
++    h.scheduler.advance(by: 2)
++    let refused = undo(h)
++    #expect(!refused.ok && refused.message == "cannot undo reveal \(mail); undo again to take back dock \(safari) left", "\(refused.message)")
++    #expect(ScenarioExpectation.check(["camera", "\(safari.rawValue)"], harness: h, lastCommandOK: true) == nil, "the view stays")
++  }
++
++  /// However short the way was.
++  @Test func aFetchOfOnePointGoesBackOnePoint() {
++    let (h, safari, _, mail) = desk()
++    h.run("dock \(safari.rawValue) left")
++    let near = CGRect(x: 1041, y: 500, width: 400, height: 300)
++    h.system.userMove(mail, to: near)
++    h.system.userFocus(safari)
++    h.scheduler.advance(by: 2)
++    ask(h, for: mail)
++    #expect(h.frame(mail) == Self.fetched, "it was fetched, or this proves nothing")
++    #expect(undo(h).ok)
++    #expect(h.frame(mail) == near)
++    #expect(h.workspace.isDocked(safari))
++  }
++
++  /// Moved by hand since and out of view now: where it is cannot be asked of the screen, and what is remembered says that there is nothing to do.
++  @Test func movedByHandSinceAndOutOfViewNowNothingIsOffered() {
++    let (h, safari, _, mail) = desk()
++    h.run("dock \(safari.rawValue) left")
++    ask(h, for: mail)
++    h.system.userMove(mail, to: CGRect(x: 800, y: 400, width: 400, height: 300))
++    h.scheduler.advance(by: 2)
++    h.run("zoom \(safari.rawValue)")
++    h.scheduler.advance(by: 2)
++    #expect(h.controller.parked.contains(mail), "or this proves nothing")
++    #expect(title(h, beginning: "Undo")?.title == "Undo Dock")
++  }
++
++  // MARK: Among other steps
++
++  @Test func stepsAreTakenBackInTheirOrder() {
++    let (h, safari, _, mail) = desk()
++    h.run("dock \(safari.rawValue) left")
++    ask(h, for: mail)
++    #expect(undo(h).ok)
++    #expect(h.frame(mail) == Self.parked)
++    #expect(h.workspace.isDocked(safari), "the dock is an older step")
++    #expect(undo(h).ok)
++    #expect(h.workspace.isFloating(safari))
++    #expect(h.frame(mail) == Self.parked)
++  }
++
++  /// A step made after the fetch is taken back first, and leaves the window where it was fetched to.
++  @Test func aLaterStepLeavesItWhereItWasFetchedTo() {
++    let (h, safari, _, mail) = desk()
++    ask(h, for: mail)
++    h.run("dock \(safari.rawValue) left")
++    #expect(undo(h).ok)
++    #expect(h.workspace.isFloating(safari))
++    #expect(h.frame(mail) == Self.fetched)
++    #expect(undo(h).ok)
++    #expect(h.frame(mail) == Self.parked)
++  }
++
++  // MARK: Fetched where nobody saw it
++
++  /// Framed on Safari, Mail is out of view. Asked for, the view goes to it; taken back, the view is on Safari again, and when everything shows
++  /// Mail is at its edge.
++  @Test func askedForWhileItWasOutOfView() {
++    let (h, safari, _, mail) = desk()
++    h.run("dock \(safari.rawValue) left")
++    h.run("zoom \(safari.rawValue)")
++    h.scheduler.advance(by: 2)
++    #expect(ScenarioExpectation.check(["hidden", "\(mail.rawValue)"], harness: h, lastCommandOK: true) == nil, "or this proves nothing")
++    ask(h, for: mail)
++    #expect(h.frame(mail) == Self.fetched, "it was fetched, or this proves nothing")
++    #expect(undo(h).ok)
++    #expect(ScenarioExpectation.check(["camera", "\(safari.rawValue)"], harness: h, lastCommandOK: true) == nil, "the view is on Safari again")
++    #expect(ScenarioExpectation.check(["hidden", "\(mail.rawValue)"], harness: h, lastCommandOK: true) == nil)
++    h.run("show-all")
++    h.scheduler.advance(by: 2)
++    #expect(h.frame(mail) == Self.parked)
++  }
++
++  /// The same, and in the Dock since: no layout places it there, so it is moved where nobody sees it, as the fetch does.
++  @Test func askedForWhileItWasOutOfViewAndInTheDockSince() {
++    let (h, safari, _, mail) = desk()
++    h.run("dock \(safari.rawValue) left")
++    h.run("zoom \(safari.rawValue)")
++    h.scheduler.advance(by: 2)
++    ask(h, for: mail)
++    #expect(h.frame(mail) == Self.fetched, "it was fetched, or this proves nothing")
++    h.system.setMinimized(mail, true)
++    h.scheduler.advance(by: 2)
++    #expect(undo(h).ok)
++    #expect(ScenarioExpectation.check(["camera", "\(safari.rawValue)"], harness: h, lastCommandOK: true) == nil, "the view is on Safari again")
++    #expect(title(h, beginning: "Redo")?.title == "Redo Move")
++    h.system.setMinimized(mail, false)
++    settle(h)
++    h.run("show-all")
++    h.scheduler.advance(by: 2)
++    #expect(h.frame(mail) == Self.parked)
++  }
++
++  /// Asking for it moves the view, and from further out Arbor moves the gaps to make room for a docked window (F61). That alone is no step:
++  /// nobody rearranged anything. The fetch is one all the same.
++  @Test func roomThatArborMakesOnTheWayHidesNoStep() {
++    let (h, safari, notes, mail) = desk()
++    let big = h.system.open(
++      app: "Xcode", title: "Project", pid: 14, frame: CGRect(x: 400, y: 200, width: 900, height: 500),
++      minimumSize: CGSize(width: 900, height: 300))
++    for line in ["dock \(safari.rawValue) left", "dock \(notes.rawValue) right", "zoom \(notes.rawValue)", "dock \(big.rawValue) bottom"] {
++      #expect(h.run(line).ok)
++      h.scheduler.advance(by: 2)
++    }
++    #expect(h.controller.parked.contains(mail), "or this proves nothing")
++    let gaps = h.workspace.tree
++    ask(h, for: mail)
++    #expect(!h.workspace.tree.hasSameArrangement(as: gaps), "room was made, or this proves nothing")
++    #expect(h.frame(mail) == Self.fetched, "it was fetched, or this proves nothing")
++    #expect(h.controller.nextStepTitle(.undo) == "Move" && h.controller.nextStepLabel(.undo) == "reveal \(mail)")
++    #expect(undo(h).ok)
++    #expect(h.workspace.isDocked(big), "the dock is an older step, and stays")
++    h.run("show-all")
++    h.scheduler.advance(by: 2)
++    #expect(h.frame(mail) == Self.parked)
++  }
++
++  @Test func askedForOutOfTheDock() {
++    let (h, _, _, mail) = desk()
++    h.system.setMinimized(mail, true)
++    h.scheduler.advance(by: 2)
++    ask(h, for: mail)
++    #expect(h.frame(mail) == Self.fetched, "it was fetched, or this proves nothing")
++    #expect(undo(h).ok)
++    #expect(h.frame(mail) == Self.parked)
++    #expect(h.controller.windows[mail]?.isMinimized == false, "that it came out of the Dock is macOS's, and no step of Arbor's")
++  }
++
++  // MARK: Where floating windows make way
++
++  /// With that setting on, where a floating window is follows from the view: docked windows push it aside and squeeze it, and every layout
++  /// places it anew. There is no place to promise, so none is: it is a move that cannot be taken back.
++  @Test func whereFloatingWindowsMakeWayThereIsNoPlaceToPromise() {
++    let (h, safari, notes, mail) = desk(settings: .makingWay)
++    h.run("dock \(safari.rawValue) bottom")
++    h.run("dock \(notes.rawValue) bottom")
++    h.system.userMove(mail, to: CGRect(x: 1416, y: 400, width: 400, height: 300))
++    h.system.userFocus(safari)
++    h.scheduler.advance(by: 2)
++    ask(h, for: mail)
++    let fetched = h.frame(mail)
++    #expect(fetched?.maxX == 1440, "it was fetched, or this proves nothing")
++    #expect(title(h, beginning: "Undo")?.title == "Undo Dock")
++    let mark = h.system.moveLog.count
++    let refused = undo(h)
++    #expect(!refused.ok && refused.message == "cannot undo reveal \(mail); undo again to take back dock \(notes) bottom", "\(refused.message)")
++    #expect(h.system.moveLog[mark...].allSatisfy { $0.before == $0.after }, "nothing moves, and nothing is sized")
++    #expect(h.frame(mail) == fetched)
++    #expect(title(h, beginning: "Undo")?.title == "Undo Dock")
++  }
++
++  @Test(arguments: ["in view", "hidden", "minimized"]) func whereTheyMakeWayAndNothingIsOlderThereIsNothingToUndo(how: String) {
++    let (h, _, _, mail) = desk(settings: .makingWay)
++    ask(h, for: mail)
++    #expect(h.frame(mail) == Self.fetched, "it was fetched, or this proves nothing")
++    if how == "hidden" { h.system.setHidden(pid: 13, true) }
++    if how == "minimized" { h.system.setMinimized(mail, true) }
++    h.scheduler.advance(by: 2)
++    #expect(title(h, beginning: "Undo")?.isEnabled == false)
++    #expect(undo(h).message.hasPrefix("nothing to undo"))
++    #expect(h.frame(mail) == Self.fetched)
++  }
++
++  // MARK: It is saved
++
++  @Test func whereItIsAfterTheUndoIsSaved() throws {
++    let (h, _, _, mail) = desk()
++    ask(h, for: mail)
++    undo(h)
++    h.scheduler.advance(by: 5)
++    let saved = try #require(h.store.saved?.workspaces[h.display])
++    #expect(saved.floating[mail] == Self.parked)
++  }
++}
+diff --git a/collab/parity.json b/collab/parity.json
+index 3e1d6822..917a6a18 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -4280,29 +4280,52 @@
+       "area": "Arbor only",
+       "title": "The menu lists every open window",
+       "trellis": "",
+-      "arbor": "Windows ▸, the menu's second row: every open window on every display by app and title, in the order of use, the one with the keyboard ticked, with a mark in words for what cannot be seen (out of view, minimized, hidden, full screen, another Space). A click runs `reveal`: in front, with the keyboard, whole. Titles reach no log, no trace and not `state`",
++      "arbor": "Windows ▸, the menu's second row: every open window on every display by app and title, in the order of use, the one with the keyboard ticked, with a mark in words for what cannot be seen (out of view, minimized, hidden, full screen, another Space). A click runs `reveal`: in front, with the keyboard, whole. Titles reach no log, no trace and not `state`. Undo Move gives a window that came in from an edge its place back",
+       "status": "shipped",
+       "spec": "F27",
+       "priority": 1,
+       "tests": [
+         "aClickEndsWithTheWindowInFrontAndWhole",
++        "aCloseSeenAfterTheMoveIsSaidAndTheMoveGoesWithIt",
++        "aFetchOfOnePointGoesBackOnePoint",
+         "aFloatingWindowKeepsItsSize",
+         "aLongTitleIsCutWithAnEllipsis",
++        "aMoveThatCannotBeTakenBackIsSaidOnce",
++        "aPlaceNoHandCouldReachIsNoPlaceToGoBackTo",
+         "aRowReadsAppAndTitle",
++        "aStepKeepsTheWindowsWhosePlaceItIsAbout",
+         "aTileIsOutOfView",
+         "aTitleInTheListReachesNeitherTheTraceNorTheLogNorState",
+         "aWindowHangingOverTheEdgeComesInByTheShortestWay",
++        "aWindowLargerThanTheDisplayKeepsItsSize",
+         "aWindowLeftAloneIsNeverMoved",
+         "aWindowThatIsWholeInViewIsNotMoved",
++        "aWindowThatWasWholeLeavesNothingToUndo",
++        "andItStaysThereThroughTheLayoutsThatFollow",
++        "askedForInGoTo",
++        "askedForWhileItWasOutOfViewAndInTheDockSince",
++        "closesOlderThanTheMoveGoWithIt",
++        "goneFromSightSinceItIsMovedWhereNobodySeesIt",
++        "itGoesBackInOneMoveAndNothingElseMoves",
++        "movedByHandSinceItStaysWhereTheHandPutIt",
+         "nothingIsSeenToMoveTwice",
++        "ofAFetchThatItsAppDidNotAnswerNothingComesAndNothingIsOwed",
++        "oneStepGivesItItsPlaceAtTheEdgeBack",
++        "oneThatFillsTheScreenIsNotFetched",
+         "overAnOrdinaryDayFewRowsSayOutOfView",
++        "redoBringsItInAgainAndUndoTakesItOutAgain",
+         "theListIsWhatIsOpen",
+         "theMarkSaysWhatCannotBeSeen",
++        "theMenuAndTheLineOnScreenCallItAMove",
+         "theOrderIsTheOrderOfUseTheLatestFirst",
+         "theWindowWithTheKeyboardIsTickedAndNoOther",
+         "thereIsNoListWhileArborIsPausedOrWaits",
++        "whatALayoutWouldCorrectIsLeftAlone",
+         "whatArborKeepsOutOfSightIsOutOfView",
+         "whatCannotBeSeenIsListedAllTheSame",
++        "whereFloatingWindowsMakeWayThereIsNoPlaceToPromise",
++        "whereTheScreenAndTheBooksDisagreeNothingIsPromised",
++        "whileItsAppDoesNotAnswerTheStepStays",
+         "whileTheViewIsHeldTheRowsAreGrey",
+         "windowsArborLeavesAloneComeAfterTheOthers",
+         "windowsOfEveryDisplayAreListed",
+diff --git a/collab/scenarios/71-undo-gives-a-fetched-window-its-place-back.sim b/collab/scenarios/71-undo-gives-a-fetched-window-its-place-back.sim
+new file mode 100644
+index 00000000..cb8aaa06
+--- /dev/null
++++ b/collab/scenarios/71-undo-gives-a-fetched-window-its-place-back.sim
+@@ -0,0 +1,77 @@
++# Story: somebody keeps Mail parked at the right edge of the screen, a third of it showing, out of the way. They look something up in
++# it: Arbor's menu, Windows, Mail. It comes in whole, as asked. Done with it, they want it where it was, and press the key that takes
++# things back everywhere else. (BOARD 1.91. Window ids start at 101; the display is 1440 by 900.)
++quiet
++open Safari
++open Notes
++open Mail 400x300
++move 103 1300 500 400 300
++focus 101
++# Nothing has been done yet that could be taken back.
++undo
++expect fail
++# Of Mail 140 points show, and the list says so. A click, and it is in by the shortest way, at its own size.
++menu
++expect replied Mail: Mail 103  [out of view]
++menu-choose Mail
++expect ok
++expect at 103 1040 500 400x300
++expect focused 103
++# The menu names the step in a word a person knows.
++menu
++expect replied Undo Move
++# One step, one move, and it is at its edge again.
++undo
++expect ok
++expect moved-once
++expect at 103 1300 500 400x300
++# And it stays there, whatever is laid out next.
++dock 101 left
++zoom 101
++show-all
++expect at 103 1300 500 400x300
++# Those were steps of their own. Taken back, Mail is still where its person wants it.
++undo
++expect ok
++expect floating 101
++expect at 103 1300 500 400x300
++# Redo brings nothing of Mail's: the dock replaced what could be put back.
++# Asked for again, in Go to… this time, it comes in again, and goes back again.
++find Mail
++expect ok
++expect at 103 1040 500 400x300
++undo
++expect ok
++expect at 103 1300 500 400x300
++redo
++expect ok
++expect at 103 1040 500 400x300
++# Moved by hand since, it stays where the hand put it: Undo takes back what Arbor did, not what its person has done.
++move 103 200 400 400 300
++undo
++expect fail
++expect at 103 200 400 400x300
++# Going to a window that is whole is no change to anything.
++menu-choose Notes
++expect ok
++menu
++expect replied Undo ⌃⌥Z (gray)
++# Parked so far out that no hand could get hold of it (10 points show), it is fetched for good: Arbor puts no window there. Whoever
++# has just seen Mail move and presses the key means Mail: it says so once, moves nothing, and names what the next press takes back.
++# The menu's row names nothing that it will not do: it says what is older, as after a window has closed.
++dock 101 left
++move 103 1430 500 400 300
++focus 101
++menu-choose Mail
++expect ok
++expect at 103 1040 500 400x300
++menu
++expect replied Undo Dock
++press undo
++expect fail
++expect said That move cannot be undone · ⌃⌥Z again undoes Dock
++expect docked 101
++expect at 103 1040 500 400x300
++press undo
++expect ok
++expect floating 101
+diff --git a/docs/MENU.md b/docs/MENU.md
+index b0c3c264..374646a6 100644
+--- a/docs/MENU.md
++++ b/docs/MENU.md
+@@ -106,7 +106,9 @@ A separator is written `|`. Rows show their shortcuts here as at the top level.
+   in, which is what is seen. No display's name.
+ - **A click** runs `reveal` for that window, the road Go to… takes: it ends in front, with the keyboard, and whole. A floating window that hangs over an edge of the
+   screen is moved the least that brings all of it in, on the display it belongs to. Moved, never sized: of one larger than its display the corner with the
+-  title bar comes in. One that lies across two displays, which show all of it between them, is let be.
++  title bar comes in. One that lies across two displays, which show all of it between them, is let be. Undo Move (⌃⌥Z) gives it its place at the
++  edge back, if a hand could get hold of it there.
++  If its app does not answer just then, nothing comes of it and nothing is owed: it does not come in later, when nobody is asking any more.
+   (So it is for `reveal`, `find` and Go to… too.) One that Arbor does not arrange is shown where it is.
+ - No limit: thirty windows are 730 points, and macOS scrolls a submenu by itself. With nothing open: `No Open Windows`, grey.
+ - Only while Arbor runs. While the view is held every row is grey, as all that would move it.
+diff --git a/docs/features/F19-undo.md b/docs/features/F19-undo.md
+index 5bbf2eee..fccfbe53 100644
+--- a/docs/features/F19-undo.md
++++ b/docs/features/F19-undo.md
+@@ -26,6 +26,15 @@ through the changes to the **arrangement**, so every such slip costs one shortcu
+   - dropping a dragged window (on an edge, beside a window, as a tab, on the Desktop);
+   - dragging a gap: everything between pressing the button and releasing it is one step;
+   - resizing a docked window by its own edges (one step, on release);
++  - a floating window that hung over an edge of the screen, was asked for by name (a row of Windows ▸ in the menu, Go to…, `find`,
++    `reveal`) and came in whole: "Undo Move" gives it its place at the edge back, and there it stays (2026-10-15, board 1.91). Arbor moved
++    it at a person's word. It moves that window and lays nothing out. Going to a window that is whole is no step, and one moved by hand
++    since stays where the hand put it. Nothing is offered that cannot be done: from where no hand could reach its title bar it was fetched
++    for good; one that is kept in view, summoned or a guest has its place by that; where macOS or its app had moved it since its person
++    last did, the screen and what Arbor remembers know no common place; and with `floatingWindowsMakeWay` on every layout places it
++    anew. After such a fetch `undo` says once that the move cannot be undone and what the next one takes back ("That move cannot be
++    undone · ⌃⌥Z again undoes Dock"), and moves nothing: whoever has just seen a window move means that window. With nothing older
++    there is nothing to undo;
+   - a rule docking a new window (undoing it leaves the window floating on the Desktop). Nobody asked for that
+     change just then, so unlike every other step it leaves `redo` alone.
+ - **Quick repeats of one small adjustment are one step.** `resize` of the same edge of the same window again within a
+@@ -66,7 +75,8 @@ through the changes to the **arrangement**, so every such slip costs one shortcu
+ - **What cannot be taken back is said once.** When a docked window closes, or `exclude` takes docked windows away, the
+   arrangement changes before the user's eyes and undo cannot bring it back. The next `undo` fails and says so:
+   `cannot undo the closing of a window of Notes; undo again to take back dock w101 left`. The press after that goes on with the
+-  older step. Several in a row (an app that quits) count as one; a floating window that closes is no obstacle;
++  older step. Several in a row (an app that quits) count as one, also with steps between them that have nothing left to show: what is
++  promised of the next press is what it does. A floating window that closes is no obstacle;
+   `redo` is not held up.
+ - **Each display has its own history.** A change that touches several displays (`float-all`, `arrange all`, a
+   window dragged or docked across) is one step on each of them. Undoing it on any of them takes it back
+@@ -122,7 +132,7 @@ through the changes to the **arrangement**, so every such slip costs one shortcu
+ 1. Each of `dock`, moving with `dock`, `dock … beside`, `float`, `toggle-float`, `arrange`, `float-all` and `resize` is
+    one step; `undo` restores the workspace and every frame exactly, `redo` the state after the command.
+ 2. Drops, gap drags (one step per press of the button), edge resizes, tab drops and rule docks are steps.
+-3. View moves, saved views, tab switches, moves of floating windows, failed commands and commands that change nothing are not.
++3. View moves, saved views, tab switches, moves of floating windows by hand, failed commands and commands that change nothing are not.
+ 4. The view is not undone, except when the change moved it or its space no longer exists.
+ 5. Undoing `arrange` and `float-all` brings back the view, history, saved views and floating frames.
+ 6. Windows closed since are removed with the usual remap; opened since float; minimized or on another
+diff --git a/scripts/mac-shell/check-window-list.sh b/scripts/mac-shell/check-window-list.sh
+index 7675c6ce..a31b0881 100755
+--- a/scripts/mac-shell/check-window-list.sh
++++ b/scripts/mac-shell/check-window-list.sh
+@@ -36,6 +36,7 @@ below_the_room() {
+   read -r _x sy _w sh <<< "$(screen_of 1)"
+   echo $((${wy%.*} + ${wh%.*} - ${sy%.*} - ${sh%.*}))
+ }
++is_at() { [ "$(real_frame_of "$1")" = "$2" ] || { echo "it is at $(real_frame_of "$1"), not at $2"; return 1; }; }
+ row_of() { "$ARBOR_BIN/arborctl" menu | grep -F -e "$1"; }
+ # As the menu has it: without the tick before it and the mark after it.
+ title_of() { row_of "$1" | head -n 1 | sed 's/^[ ✓]*//; s/  \[.*//'; }
+@@ -83,8 +84,9 @@ click_window "$W1"
+ 
+ claim "the menu's second row opens a list of every open window, by app and title"
+ proves A240
++# Without the letters that are looked for at the end: the harness notes every check in the trace, in the check's own words.
+ for title in zqxalpha zqxbravo zqxcharlie zqxdelta zqxecho zqxfoxtrot zqxgolf; do
+-  check "$title is in the list" eventually row_of "$title"
++  check "${title#zqx} is in the list" eventually row_of "$title"
+ done
+ check "the window with the keyboard is ticked" eventually row_is_ticked zqxalpha
+ check "and first" first_row_is zqxalpha
+@@ -183,6 +185,20 @@ check "it is as wide as it was" width_is "$W5" 300
+ check "and as high" height_is "$W5" 200
+ shot 41-whole
+ 
++claim "⌃⌥Z gives it its place over the corner back, and Redo brings it in again"
++proves A240
++fetched_to=$(real_frame_of "$W5")
++check "the menu offers Undo Move" says "Undo Move" "$ARBOR_BIN/arborctl" menu
++key ctrl+opt+z
++check "it hangs over the corner again, where it was" eventually is_at "$W5" "$((x + w - 60)) $((y + h - 60)) 300 200"
++shot 43-back-over-the-corner
++ctl relayout
++sleep 1
++check "and the next layout leaves it there" is_at "$W5" "$((x + w - 60)) $((y + h - 60)) 300 200"
++# Redo has no key among the nine.
++ctl redo
++check "redone, it is in again" eventually is_at "$W5" "$fetched_to"
++
+ claim "the same out of the Dock: it comes back whole"
+ proves A240
+ tw move "$W5" "$((x + w - 60))" "$((y + h - 60))" 300 200
+-- 
+2.43.0
+

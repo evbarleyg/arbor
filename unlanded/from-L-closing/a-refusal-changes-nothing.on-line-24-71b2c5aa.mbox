@@ -1,0 +1,180 @@
+From e7f166628534242d4c056b98044ad0a45fbfdc7e Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 14:14:48 +0000
+Subject: [PATCH] test: a command that is refused has changed nothing; a gap
+ takes nobody out of view; forgetting right before a key that depends on sizes
+
+refused-and-changed-something, a number that is not yet a gate, looks at the end and not at the road: a command that Arbor refuses has changed neither the arrangement,
+its gaps or the view, nor who is out of view, nor a window's frame, nor who has the keyboard, nor what Undo would take back.
+
+gap-took-out-of-view, likewise: a gap that a hand drags takes no docked window out of view. The net for docks asked that of commands only.
+
+In walks of seeds beyond the frozen versions six in a hundred of the keys that depend on sizes are pressed right after Arbor has forgotten what it had learnt of the apps'
+smallest sizes: a quit and a start, or Lay Out Again.
+---
+ .../ChaosGenerator+Ordinary.swift             | 11 ++++++
+ .../ChaosInvariants+SevenRules.swift          | 39 +++++++++++++++++--
+ Sources/ArborTesting/ChaosKnownFailures.swift |  2 +-
+ .../ArborKitTests/ChaosSevenRulesTests.swift  | 17 ++++++++
+ 4 files changed, 64 insertions(+), 5 deletions(-)
+
+diff --git a/Sources/ArborTesting/ChaosGenerator+Ordinary.swift b/Sources/ArborTesting/ChaosGenerator+Ordinary.swift
+index 431f25ad..a62d4ec6 100644
+--- a/Sources/ArborTesting/ChaosGenerator+Ordinary.swift
++++ b/Sources/ArborTesting/ChaosGenerator+Ordinary.swift
+@@ -336,6 +336,17 @@ extension ChaosGenerator {
+         ["zoom", "out", "in", "home", "desktop", "neighbor left", "neighbor right"].contains(line) && random.chance(30)
+         ? [.react, .advance(1), .react, .key("back", .pressed), .key("back", .released)] : []
+       thenAMoment([.key(line, .released)] + andBack)
++      // What Arbor has learnt of the apps' smallest sizes is forgotten right before a key that depends on them: a quit and a start, or Lay Out Again. Walks did
++      // both seldom, and never just then.
++      if drawsFromEverything, random.chance(6), ["dock", "arrange", "rotate", "balance", "shrink", "grow", "toggle-float", "swap"].contains(where: line.hasPrefix) {
++        planned.insert(.key(line, .pressed), at: 0)
++        if random.chance(50) {
++          planned.insert(contentsOf: [.launch, .react, .advance(1), .react], at: 0)
++          return .command("quit")
++        }
++        planned.insert(contentsOf: [.react], at: 0)
++        return .via(.menu, "relayout")
++      }
+       return .key(line, .pressed)
+     case .hold:
+       // Show Everything kept down is a look around.
+diff --git a/Sources/ArborTesting/ChaosInvariants+SevenRules.swift b/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
+index 853eab4a..83d140df 100644
+--- a/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
++++ b/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
+@@ -102,6 +102,9 @@ extension ChaosRunner {
+     var draggedWasFloating = false
+     var frameAtTheGrab: CGRect?
+     var undoStepsAtTheGrab = 0
++    /// How many steps Undo could take back, and how often Arbor had asked for the keyboard, when the step began.
++    var undoStepsBefore = 0
++    var focusCallsWhenTheStepBegan = 0
+     /// Windows whose app has refused to go below a size, or above one, in an earlier step: Arbor has had its chance to learn.
+     var refusedLess: Set<WindowID> = []
+     var refusedMore: Set<WindowID> = []
+@@ -124,7 +127,7 @@ extension ChaosRunner {
+   public nonisolated static func detector(for rule: String) -> String? {
+     let table: [(prefix: String, detector: String)] = [
+       ("moved-twice", "jolt"), ("moved-again", "jolt"), ("sized-there-and-back", "jolt"), ("set-right-", "jolt"), ("strayed-between", "jolt"), ("eye-", "jolt"), ("flashed-", "flash"), ("flipped", "jolt"), ("moved-over-and-over", "stuck"), ("moved-", "moved-unasked"), ("fetched-", "moved-unasked"), ("there-and-back", "moved-unasked"), ("dragged-gap", "moved-unasked"), ("same-windows", "moved-unasked"), ("displays-out-and-back", "moved-unasked"), ("taken-", "moved-unasked"), ("floating-taken", "lost"), ("parked-before", "lost"), ("arrival-moved", "moved-unasked"), ("arrival-took", "lost"), ("dock-took", "lost"), ("keyboard-taken", "focus"), ("plain-drag", "moved-unasked"), ("nothing-in-view", "lost"), ("docked-at-a-start", "moved-unasked"),
+-      ("pause-and-resume", "moved-unasked"), ("left-its-place", "moved-unasked"), ("start-took", "lost"), ("quit-left", "lost"), ("displays-left", "lost"), ("displays-fetched", "moved-unasked"), ("switched-to-behind", "behind"),
++      ("pause-and-resume", "moved-unasked"), ("left-its-place", "moved-unasked"), ("start-took", "lost"), ("quit-left", "lost"), ("displays-left", "lost"), ("displays-fetched", "moved-unasked"), ("refused-and", "moved-unasked"), ("gap-took", "lost"), ("switched-to-behind", "behind"),
+       ("switched-to", "focus"), ("app-switch", "focus"), ("keyboard-", "focus"), ("size-", "size-lost"), ("home-", "lost"), ("lost", "lost"), ("out-of-reach", "lost"),
+       ("placed-", "lost"), ("vanished", "lost"), ("parked-on-the-desktop", "lost"), ("restless", "stuck"), ("given-up", "stuck"),
+     ]
+@@ -158,6 +161,7 @@ extension ChaosRunner {
+     seven.focusCallsBefore = system.focusLog.count
+     seven.nobodyBefore = system.focused == nil
+     seven.pausedBefore = isPaused
++    (seven.undoStepsBefore, seven.focusCallsWhenTheStepBegan) = (undoSteps, system.focusLog.count)
+     seven.fullScreenBefore = Set(system.windows.values.lazy.filter(\.snapshot.isFullScreen).map(\.snapshot.id))
+     // Asked now: `settle` lets go of the mouse, and afterwards nothing shows that somebody held it.
+     seven.timeOnly = isOnlyTimePassing(action)
+@@ -444,6 +448,7 @@ extension ChaosRunner {
+     dockViolations(after: action, &problems)
+     untouchedByTheChangeViolations(after: action, &problems)
+     fetchedAtAChangeViolations(after: action, &problems)
++    refusalViolations(after: action, &problems)
+     keyboardViolations(after: action, &problems)
+     plainDragViolations(&problems)
+     handedOnViolations(after: action, &problems)
+@@ -1103,6 +1108,26 @@ extension ChaosRunner {
+     }
+   }
+ 
++  /// A command that Arbor refuses has changed nothing: not the arrangement, its gaps or the view, not who is out of view, no window's frame, not who has the
++  /// keyboard, and not what Undo would take back. The nets for the road a window takes do not see it: this one looks at the end.
++  func refusalViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
++    guard !refusals.isEmpty, action.isACommand, action.parsedCommand != nil, isRunning, wasRunningBefore, !seven.pausedBefore else { return }
++    asked("refused")
++    var changed: [String] = []
++    for (display, before) in workspacesBefore.sorted(by: { $0.key < $1.key }) where controller.workspaces[display] != before {
++      let now = controller.workspaces[display]
++      changed.append(now?.tree != before.tree ? "the arrangement on \(display)" : now?.floating != before.floating ? "what it remembers of floating windows on \(display)" : "the view on \(display)")
++    }
++    if controller.parked != parkedBefore { changed.append("who is out of view") }
++    changed += Set(movesSeenInThisStep.map(\.window)).sorted().map { "the frame of \($0)" }
++    if system.focusLog.count != seven.focusCallsWhenTheStepBegan { changed.append("who has the keyboard") }
++    // An Undo that cannot take a step back (the closing of a window, say) lets go of that step, so that the next one reaches further.
++    if undoSteps != seven.undoStepsBefore, action.parsedCommand != .undo, action.parsedCommand != .redo { changed.append("what Undo takes back") }
++    if !changed.isEmpty {
++      problems.append(.init("refused-and-changed-something", "Arbor refused `\(action.text)` (\(refusals[0])) and changed \(changed.joined(separator: ", "))"))
++    }
++  }
++
+   /// At a change of displays Arbor fits only what the change took out of reach (decided 2026-10-15): a floating window that nobody named, whose title bar is
+   /// within reach where macOS left it, is not set by Arbor at all, however little of it shows. Whoever misses it has a key.
+   func fetchedAtAChangeViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
+@@ -1143,18 +1168,24 @@ extension ChaosRunner {
+   /// A key that docks takes no window out of view that was in view (Q29, 8): not the one it names, which would have the keyboard, and not one that was docked
+   /// before, which becomes a tile for want of room.
+   func dockViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
++    // Nor does a gap that a hand drags: the window that cannot be made smaller stops the gap, it does not leave.
++    var isAGap = false
++    if case .seam = action { isAGap = true }
+     switch action.parsedCommand {
+     case .dock, .dockBeside, .toggleFloat, .arrange, .arrangeAll: break
+-    default: return
++    default: if !isAGap { return }
+     }
+     if case .key(_, .released) = action { return }
+     guard isRunning, wasRunningBefore, controller.holdLevel == nil else { return }
+-    asked("dock")
++    asked(isAGap ? "gap" : "dock")
+     for window in Set(movesSeenInThisStep.map(\.window)).sorted() {
+       guard let fake = isFairGame(window), presentBefore.contains(window), let before = framesBefore[window], isInView(before), !parkedBefore.contains(window),
+         !isInView(fake.snapshot.frame), controller.workspaces.values.contains(where: { $0.isDocked(window) })
+       else { continue }
+-      problems.append(.init("dock-took-out-of-view", "`\(action.text)` took \(window), which is docked, out of view: from \(before.brief) to \(fake.snapshot.frame.brief)"))
++      problems.append(
++        .init(
++          isAGap ? "gap-took-out-of-view" : "dock-took-out-of-view",
++          "`\(action.text)` took \(window), which is docked, out of view: from \(before.brief) to \(fake.snapshot.frame.brief)"))
+     }
+   }
+ 
+diff --git a/Sources/ArborTesting/ChaosKnownFailures.swift b/Sources/ArborTesting/ChaosKnownFailures.swift
+index f196e974..cd554c77 100644
+--- a/Sources/ArborTesting/ChaosKnownFailures.swift
++++ b/Sources/ArborTesting/ChaosKnownFailures.swift
+@@ -1319,7 +1319,7 @@ extension ChaosRunner {
+     "eye-moved-twice", "eye-moved-twice-sizing", "eye-moved-again", "eye-moved-again-sizing",
+     "floating-taken-out-of-view", "strayed-between", "dock-took-out-of-view", "displays-moved-the-untouched", "plain-drag-left-an-undo-step",
+     "parked-before-any-dock", "arrival-moved-a-neighbour", "arrival-took-a-neighbour-out-of-view",
+-    "displays-fetched-what-was-in-reach",
++    "displays-fetched-what-was-in-reach", "refused-and-changed-something", "gap-took-out-of-view",
+   ]
+ 
+   /// The same without those that `ARBOR_CHAOS_GATES=rule,rule` makes gates for one run: they end walks there and are shrunk, which is how to read what is behind
+diff --git a/Tests/ArborKitTests/ChaosSevenRulesTests.swift b/Tests/ArborKitTests/ChaosSevenRulesTests.swift
+index 66bb70fe..e02afd81 100644
+--- a/Tests/ArborKitTests/ChaosSevenRulesTests.swift
++++ b/Tests/ArborKitTests/ChaosSevenRulesTests.swift
+@@ -784,6 +784,23 @@ private let b = WindowID(102)
+     #expect(!numbers(after: oneDocked + ["dock 102 right", "settle"], then: "zoom 101").contains("dock-took-out-of-view"))
+   }
+ 
++  /// Two docked windows and the gap between them, dragged by ten points.
++  @Test func aGapThatIsDraggedTakesNoWindowOutOfView() {
++    let arranged = oneDocked + ["dock 102 right", "react", "settle"]
++    #expect(!numbers(after: arranged, then: "seam main 0 -10").contains("gap-took-out-of-view"))
++    #expect(numbers(after: arranged, then: "seam main 0 -10") { _ = $0.setFrame(self.rect(1439, 868, 500, 400), of: b) }.contains("gap-took-out-of-view"))
++  }
++
++  /// `dock 999 left` names a window that is not there.
++  @Test func aCommandThatIsRefusedHasChangedNothing() {
++    let rule = "refused-and-changed-something"
++    #expect(!numbers(after: oneDocked, then: "dock 999 left").contains(rule))
++    #expect(numbers(after: oneDocked, then: "dock 999 left") { _ = $0.setFrame(self.rect(820, 300, 500, 400), of: b) }.contains(rule))
++    #expect(numbers(after: oneDocked, then: "dock 999 left") { $0.focus(b) }.contains(rule))
++    // One that is carried out may change what it likes.
++    #expect(!numbers(after: oneDocked, then: "dock 102 right").contains(rule))
++  }
++
+   /// A floating window on the display that stays, half over its right edge, its title bar in reach. The other display goes.
+   @Test func atAChangeOfDisplaysWhatIsWithinReachIsNotSet() {
+     let desk = [
+-- 
+2.43.0
+

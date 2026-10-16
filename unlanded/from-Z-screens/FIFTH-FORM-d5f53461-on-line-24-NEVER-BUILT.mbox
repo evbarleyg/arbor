@@ -1,0 +1,1037 @@
+From d5f534616c2d94e8c7b10a074b73d9a7bc058f47 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 14:44:03 +0000
+Subject: [PATCH] wip: where macOS leaves a window
+
+---
+ Sources/ArborCore/Screens.swift               | 151 ++++++++
+ Sources/ArborTesting/FakeWindowSystem.swift   |  22 +-
+ Tests/ArborCoreTests/ScreensTests.swift       | 328 ++++++++++++++++++
+ Tests/ArborKitTests/FaithfulFakeTests.swift   |   6 +-
+ .../WhereAMacLeavesAWindowTests.swift         | 121 +++++++
+ collab/evidence/top-corners.txt               | 320 +++++++++++++++++
+ 6 files changed, 941 insertions(+), 7 deletions(-)
+ create mode 100644 Sources/ArborCore/Screens.swift
+ create mode 100644 Tests/ArborCoreTests/ScreensTests.swift
+ create mode 100644 Tests/ArborKitTests/WhereAMacLeavesAWindowTests.swift
+ create mode 100644 collab/evidence/top-corners.txt
+
+diff --git a/Sources/ArborCore/Screens.swift b/Sources/ArborCore/Screens.swift
+new file mode 100644
+index 00000000..afebbaa8
+--- /dev/null
++++ b/Sources/ArborCore/Screens.swift
+@@ -0,0 +1,151 @@
++import CoreGraphics
++
++/// Where macOS leaves a window that is asked to go somewhere.
++///
++/// A call that sets a window's position is not always taken as it stands: the title bar stays within reach. Which display sees to that, and how, was
++/// asked of one hosted Mac (macOS 26.6, no Arbor running; `collab/evidence/top-corners.txt`): 78 position calls through Accessibility, of
++/// TextEdit, Notes and a Java app, from the main display to its top corners, to 50 points above them and to its bottom right corner; with
++/// that display alone, with a wider one below, one above, a left neighbour that begins lower, that and one at the right, and a right
++/// neighbour that begins higher. Other runs asked for places in the middle of one display and beside its Dock.
++///
++/// IT SAYS WHAT WAS SEEN, AND WHERE NOTHING WAS SEEN WHAT THE STAND-INS SAID BEFORE: the display the window's corner is on, or the nearest, keeps the
++/// title bar above its bottom. What goes further is a switch here, off, and owed a Mac.
++///
++/// One rule, for the fake window system to play (`echoes.restsWhereAMacLeavesIt`) and for Arbor to reckon by, so that the two cannot part. The model
++/// of macOS behind `make mac-on-linux` has a rule of its own still.
++public struct Screens: Equatable, Sendable {
++  public struct Screen: Equatable, Sendable {
++    public var frame: CGRect
++    public var visibleFrame: CGRect
++  }
++  public var screens: [Screen]
++
++  /// A GUESS, OFF UNTIL A MAC HAS BEEN ASKED: the display that has most of a window judges it wherever its corner is (`judge(of:)`). So a window across
++  /// a laptop and a monitor below it, its title bar well in view above and most of it below, would be pushed down below the monitor's
++  /// menu bar. AppKit's own words on the call behind this speak for it (`constrainFrameRect(_:to:)`: "so that its top edge lies on a
++  /// specific screen"): that is support and no measurement.
++  public var mostOfItJudgesWhereverTheCornerIs = false
++  /// A GUESS, OFF UNTIL A MAC HAS BEEN ASKED: the display that judges a window also keeps its title bar above ITS bottom. In the 78 calls no display but
++  /// the corner's ever stopped a window at a bottom: it stopped it at its top or left it as asked. At a bottom corner beside a neighbour
++  /// that reaches lower this would leave the window as asked, and beside one with a lower Dock let it go lower.
++  public var judgeStopsItAtTheBottomToo = false
++  /// A GUESS, OFF UNTIL A MAC HAS BEEN ASKED: a window is judged a second time where the first stop has put it. Nine of the 78 did come to rest in two
++  /// moves (`stages`), but none of them tells `rest` with this from `rest` without. With the switch above, at a bottom corner beside a
++  /// neighbour that ends higher, it would push the window up a second time, into view.
++  public var judgesAgain = false
++  /// FOUR GUESSES, OFF UNTIL A MAC HAS BEEN ASKED: what the rule makes of cases that lie beside ones that were seen. Each answer takes its clause out from
++  /// behind this switch, by name.
++  /// - The stop at the top and the pull sideways together: a top corner behind a Dock at a side, or a place above a display's top and wholly off it.
++  ///   Every pull that was seen was at a display's bottom or half way up.
++  /// - A column of the window under a Dock at the LEFT counts as out of reach, as one under a Dock at the right was seen to.
++  /// - Where the window's corner is ON a display, another display judges it with fewer columns of it than were seen to do (`fewestColumnsSeenToJudge`).
++  /// - With several displays, a window of which none has anything is stopped at the top and pulled in by the nearest. It was asked for on one display
++  ///   alone.
++  public var playsTheGuessesBesideWhatWasSeen = false
++
++  /// Of a window whose corner was on the main display, the display that judged it had 161 columns at least. (With the corner on no display, one.)
++  public static let fewestColumnsSeenToJudge: CGFloat = 161
++
++  public init(_ screens: [(frame: CGRect, visibleFrame: CGRect)]) {
++    self.screens = screens.map { Screen(frame: $0.frame, visibleFrame: $0.visibleFrame) }
++  }
++
++  /// The display a window's corner is on, or the nearest to it: what the stand-ins and Arbor went by before any of this was measured. A point on a shared
++  /// edge belongs to the display it is inside; of two that are as near, the first in the list.
++  public func cornersDisplay(of frame: CGRect) -> Int? {
++    screens.indices.first { screens[$0].frame.contains(frame.origin) }
++      ?? screens.indices.min { screens[$0].frame.distance(to: frame.origin) < screens[$1].frame.distance(to: frame.origin) }
++  }
++
++  /// The display below whose menu bar a window at `frame` is kept.
++  ///
++  /// The one that has most of it. That gave the resting place of 76 of the 78, and of all 42 that were asked for the display's own top or bottom; the
++  /// corner's display, with the same stop at the top, of 67. BUT ONLY WHERE A MAC WAS ASKED: in every call in which the two part, the
++  /// corner's display had one column of the window at most. Where it has more than a column nobody has looked, and it judges, as it did.
++  /// So it does where the corner is on it and the other display has few columns (`playsTheGuessesBesideWhatWasSeen`).
++  public func judge(of frame: CGRect) -> Int? {
++    guard let corners = cornersDisplay(of: frame), let most = most(of: frame) else { return nil }
++    if !mostOfItJudgesWhereverTheCornerIs, columns(of: frame, on: corners) > 1 { return corners }
++    let few = screens[corners].frame.contains(frame.origin) && columns(of: frame, on: most) < Self.fewestColumnsSeenToJudge
++    return few && !playsTheGuessesBesideWhatWasSeen ? corners : most
++  }
++
++  /// Where a window comes to rest that is asked to be at `asked`, with a title bar this high.
++  ///
++  /// - Down: the title bar stays above the bottom of the visible frame of the corner's display. TextEdit rested 32 points above it, Notes 52, the Java
++  ///   app 28.
++  /// - Up: it stays below the top of the visible frame of the display that judges it (`judge(of:)`). With the main display alone, with a wider one below
++  ///   and with one above, both top corners and 50 points above them: y 31, 36 of 36; and 8 of 8 in the middle of a display, in another
++  ///   run. That wins over the bottom: a window asked to the bottom right corner above a wider display went down, below that display's
++  ///   menu bar, 3 of 3.
++  /// - Sideways: one point inside a visible frame is enough to be left as asked (x was kept in all 78); with none inside, the window is pulled in until 40
++  ///   points show. Six places with the Dock at the right, once each, one of them 20 times of 20 besides: 1023 became 934 where the visible
++  ///   frame ends at 974; and places wholly off a display, in another run. All on one display, at its bottom or half way up. Two small
++  ///   guesses are played: that a point inside ANY display's visible frame will do, and that all of a window narrower than 40 shows.
++  ///
++  /// NOT PLAYED. TextEdit's window asked to go 50 points above the top left corner beside a left neighbour that begins lower, of which the main display has a
++  /// strip and the neighbour nothing, went to the neighbour, twice of twice. In 9 of the 78 the window lay elsewhere first, for a tenth of a
++  /// second, and that is what was read back at once (`stages`): this is where it rests. And this gives a place only: a window higher than
++  /// the visible frame of the display it is sent to was seen to be cut by the position call and put at that frame's top (`FramePlan`).
++  /// Asked to go where this has put it, a window may be put elsewhere: it is judged once, by where it was asked to be.
++  public func rest(of asked: CGRect, titleBar: CGFloat) -> CGPoint {
++    guard let corners = cornersDisplay(of: asked), var judge = judge(of: asked) else { return asked.origin }
++    let guesses = playsTheGuessesBesideWhatWasSeen
++    if !guesses, screens.count > 1, !screens.contains(where: { $0.frame.overlaps(asked) }) {
++      return stopped(asked, top: nil, bottom: corners, titleBar: titleBar).origin
++    }
++    var frame = stopped(asked, top: judge, bottom: judgeStopsItAtTheBottomToo ? judge : corners, titleBar: titleBar)
++    if judgesAgain, let corners = cornersDisplay(of: frame), let second = self.judge(of: frame) {
++      (judge, frame) = (second, stopped(frame, top: second, bottom: judgeStopsItAtTheBottomToo ? second : corners, titleBar: titleBar))
++    }
++    if !guesses, frame.minY > asked.minY { return frame.origin }
++    return pulledIn(frame, by: judge, pastADockAtTheLeft: guesses).origin
++  }
++
++  /// A GUESS, MADE AFTER SEEING THE 78, ON WHICH NOTHING THAT SHIPS IS TO LEAN: the places a window passes through, the last of them where it rests. In 9 of the 78
++  /// it came to rest in two moves, the second 19 to 118 ms after the first by the apps' own reports and after the last call had returned:
++  /// what was read back at once was the first. Six lay below the main display's menu bar first and then below the neighbour's; three as
++  /// asked, or a title bar above the upper display's bottom, and then below the main display's.
++  /// First the display that has most of the TITLE BAR as asked stops it, at its top and its bottom (none has any of it: the nearest to the corner); then the
++  /// display that has most of the window where that put it. That gives every place of all 78, the two that `rest` misses among them. Some
++  /// five choices went into it; three other rules fit as well, which differ where the title bar lies on no display; and that it is the
++  /// title bar and not a strip of some other height hangs on two calls and 2 points. No switch touches it, and it pulls as with all of them on.
++  public func stages(of asked: CGRect, titleBar: CGFloat) -> [CGPoint] {
++    guard let first = most(of: CGRect(x: asked.minX, y: asked.minY, width: asked.width, height: titleBar)) else { return [asked.origin] }
++    let one = stopped(asked, top: first, bottom: first, titleBar: titleBar)
++    let second = most(of: one) ?? first
++    let two = pulledIn(stopped(one, top: second, bottom: second, titleBar: titleBar), by: second, pastADockAtTheLeft: true)
++    return one.origin == two.origin ? [two.origin] : [one.origin, two.origin]
++  }
++
++  /// The display that has most of `frame`, as AppKit's `NSWindow.screen` has it; the first of two that have as much, which is a guess. None has anything of
++  /// it: the corner's.
++  private func most(of frame: CGRect) -> Int? {
++    func part(_ index: Int) -> CGFloat { screens[index].frame.intersection(frame).area }
++    guard let most = screens.indices.max(by: { part($0) < part($1) }) else { return nil }
++    return part(most) > 0 ? most : cornersDisplay(of: frame)
++  }
++
++  /// How many columns of `frame` lie on that display. None, where the two only touch: what `intersection` makes of that is not the same everywhere.
++  private func columns(of frame: CGRect, on index: Int) -> CGFloat {
++    let part = screens[index].frame.intersection(frame)
++    return part.area > 0 ? part.width : 0
++  }
++
++  /// The title bar above the one display's visible bottom and, which wins, below the other's visible top.
++  private func stopped(_ frame: CGRect, top: Int?, bottom: Int, titleBar: CGFloat) -> CGRect {
++    var y = min(frame.minY, screens[bottom].visibleFrame.maxY - titleBar)
++    if let top { y = max(y, screens[top].visibleFrame.minY) }
++    return CGRect(origin: CGPoint(x: frame.minX, y: y), size: frame.size)
++  }
++
++  /// `pastADockAtTheLeft`: also a window that has a column on the display, under its Dock. Without: only one that is wholly off the display at that side.
++  private func pulledIn(_ frame: CGRect, by judge: Int, pastADockAtTheLeft: Bool) -> CGRect {
++    guard !screens.contains(where: { $0.visibleFrame.overlaps(frame) }) else { return frame }
++    let (visible, shows) = (screens[judge].visibleFrame, min(40, frame.width))
++    var pulled = frame
++    if frame.minX >= visible.maxX { pulled.origin.x = visible.maxX - shows }
++    if frame.maxX <= (pastADockAtTheLeft ? visible.minX : screens[judge].frame.minX) { pulled.origin.x = visible.minX + shows - frame.width }
++    return pulled
++  }
++}
+diff --git a/Sources/ArborTesting/FakeWindowSystem.swift b/Sources/ArborTesting/FakeWindowSystem.swift
+index a55a23c1..5d007584 100644
+--- a/Sources/ArborTesting/FakeWindowSystem.swift
++++ b/Sources/ArborTesting/FakeWindowSystem.swift
+@@ -432,11 +432,16 @@ public final class FakeWindowSystem: WindowSystem {
+   ]
+ 
+   /// What macOS makes of a frame an app has agreed to (`echoes.titleBarStaysReachable`, `echoes.wholePoints`), for a window
+-  /// with a title bar this high.
++  /// with a title bar this high: where it comes to rest. With `echoes.restsWhereAMacLeavesIt` that is `Screens.rest`, which Arbor's own reckoning is to go by
++  /// as well. Without, as of old: the display the corner is on, or the nearest, keeps the title bar above its bottom, and nothing else holds a window back.
+   public func whereMacOSPuts(_ frame: CGRect, titleBar: CGFloat) -> CGRect {
+     var applied = frame
+-    if echoes.titleBarStaysReachable, let display = display(stopping: applied.origin) {
+-      applied.origin.y = min(applied.minY, display.visibleFrame.maxY - titleBar)
++    if echoes.titleBarStaysReachable {
++      if echoes.restsWhereAMacLeavesIt {
++        applied.origin = Screens(displayList.map { ($0.frame, $0.visibleFrame) }).rest(of: applied, titleBar: titleBar)
++      } else if let display = display(stopping: applied.origin) {
++        applied.origin.y = min(applied.minY, display.visibleFrame.maxY - titleBar)
++      }
+     }
+     // Half a point of a place is rounded down where AppKit counts, from the bottom left: x goes down and y, counted from the top, goes up.
+     // In the traces x went down ten times out of ten and y up nine out of nine. No size with half a point was ever asked for there.
+@@ -971,7 +976,7 @@ extension FakeWindowSystem {
+ 
+ extension FakeWindowSystem {
+   /// What macOS does without being asked, in the order it was recorded on macOS 26 (`collab/evidence/ax-events.txt`).
+-  /// Everything is on by default, so that every scenario meets it. What answers a call of Arbor's is queued and
++  /// Every switch but `restsWhereAMacLeavesIt` is on by default, so that every scenario meets it. What answers a call of Arbor's is queued and
+   /// delivered after the call has returned, as from the run loop: `Harness.run` delivers after every
+   /// command, the scheduler after each piece of work, the simulation helpers at their end. After a bare
+   /// `controller.perform` or `overlays.clickTile`, call `deliverEchoes()` yourself.
+@@ -1008,6 +1013,15 @@ extension FakeWindowSystem {
+     /// Measured without Arbor: read right after Accessibility's answer, the list was behind in 143 results of 170; after 62 to 146 ms it
+     /// had caught up in 165, after 200 ms in all.
+     public var listIsBehind = 0.15
++    /// A window that is asked to go somewhere comes to rest where a hosted Mac left it (`Screens.rest`): below the menu bar as well as above the bottom, the menu
++    /// bar being that of the display that has most of it where its corner's display has a column of it at most; and pulled in sideways where no
++    /// point of it would be within reach, unless it was stopped at the top as well. OFF, AS NO OTHER SWITCH HERE IS: Arbor still reckons by the corner and knows no stop at the top, so that it
++    /// sends windows out of view to places from which a Mac fetches them into view (`WhereAMacLeavesAWindowTests`). It goes on with the change
++    /// that makes Arbor reckon by the same rule. Only a place goes by it: how far a window grows (`lines(at:)`), where one opens and how high a
++    /// hand takes one go by the corner or the pointer as before. NOT PLAYED, with it or without: in 9 of 78 calls a Mac's window lay elsewhere for a
++    /// tenth of a second first, and that is what was read back at once (board 1.109); here the answer is where it rests. A GUESS: a request is judged once, by the
++    /// place that was asked for and the size the window ends with, whatever the calls it is made of passed through.
++    public var restsWhereAMacLeavesIt = false
+ 
+     public init() {}
+     /// Nothing happens that a test did not ask for.
+diff --git a/Tests/ArborCoreTests/ScreensTests.swift b/Tests/ArborCoreTests/ScreensTests.swift
+new file mode 100644
+index 00000000..01fcf55c
+--- /dev/null
++++ b/Tests/ArborCoreTests/ScreensTests.swift
+@@ -0,0 +1,328 @@
++import ArborCore
++import CoreGraphics
++import Testing
++
++/// `Screens` held to what hosted Macs did with position calls through Accessibility, no Arbor running (`collab/evidence/top-corners.txt` has the first table's run).
++@Suite struct ScreensTests {
++  /// The three windows of the first table, at the sizes they had, with the title bars that their rest above the Dock showed.
++  enum Window {
++    case text, notes, java
++    var size: CGSize {
++      switch self {
++      case .text: CGSize(width: 656, height: 422)
++      case .notes: CGSize(width: 1000, height: 600)
++      case .java: CGSize(width: 900, height: 750)
++      }
++    }
++    var titleBar: CGFloat {
++      switch self {
++      case .text: 32
++      case .notes: 52
++      case .java: 28
++      }
++    }
++  }
++  typealias Call = (arrangement: String, window: Window, x: CGFloat, y: CGFloat, atOnce: CGFloat, rested: CGFloat)
++
++  /// The six arrangements, each display with the visible frame it had. t1: the main display alone; t2: a wider one below, to which macOS took the Dock;
++  /// t3: a left neighbour that begins 500 lower; t4: that and one at the right; t5: one above; t6: a right neighbour that begins 700 higher.
++  static func arrangement(_ name: String) -> Screens {
++    let main = (frame: CGRect(x: 0, y: 0, width: 1600, height: 900), visibleFrame: CGRect(x: 0, y: 31, width: 1600, height: name == "t2" ? 869 : 791))
++    let leftAndLower = (frame: CGRect(x: -1280, y: 500, width: 1280, height: 800), visibleFrame: CGRect(x: -1280, y: 531, width: 1280, height: 769))
++    switch name {
++    case "t2": return Screens([main, (CGRect(x: -160, y: 900, width: 1920, height: 1080), CGRect(x: -160, y: 931, width: 1920, height: 971))])
++    case "t3": return Screens([main, leftAndLower])
++    case "t4": return Screens([main, leftAndLower, (CGRect(x: 1600, y: 0, width: 1920, height: 1080), CGRect(x: 1600, y: 31, width: 1920, height: 1049))])
++    case "t5": return Screens([main, (CGRect(x: 0, y: -800, width: 1280, height: 800), CGRect(x: 0, y: -769, width: 1280, height: 769))])
++    case "t6": return Screens([main, (CGRect(x: 1600, y: -700, width: 1920, height: 1080), CGRect(x: 1600, y: -669, width: 1920, height: 1049))])
++    default: return Screens([main])
++    }
++  }
++
++  /// All 78 calls of one run: the arrangement, the window, the x and y it was asked for, the y that was read back at once, the y it lay at a second later.
++  /// x and the size were kept in all.
++  static let calls: [Call] = [
++    ("t2", .text, 1599, 0, 31, 31), ("t2", .text, 1599, -50, 31, 31), ("t2", .text, -655, 0, 31, 31), ("t2", .text, -655, -50, 31, 31),
++    ("t2", .text, 1599, 899, 931, 931), ("t2", .notes, 1599, 0, 31, 31), ("t2", .notes, 1599, -50, 31, 31), ("t2", .notes, -999, 0, 31, 31),
++    ("t2", .notes, -999, -50, 31, 31), ("t2", .notes, 1599, 899, 931, 931), ("t2", .java, 1599, 0, 31, 31), ("t2", .java, 1599, -50, 31, 31),
++    ("t2", .java, -899, 0, 31, 31), ("t2", .java, -899, -50, 31, 31), ("t2", .java, 1599, 899, 931, 931), ("t3", .text, 1599, 0, 31, 31),
++    ("t3", .text, 1599, -50, 31, 31), ("t3", .text, -655, 0, 31, 31), ("t3", .text, -655, -50, 531, 531), ("t3", .notes, 1599, 0, 31, 31),
++    ("t3", .notes, 1599, -50, 31, 31), ("t3", .notes, -999, 0, 31, 531), ("t3", .notes, -999, -50, 31, 531), ("t3", .java, 1599, 0, 31, 31),
++    ("t3", .java, 1599, -50, 31, 31), ("t3", .java, -899, 0, 31, 531), ("t3", .java, -899, -50, 531, 531), ("t5", .text, 1599, 0, 31, 31),
++    ("t5", .text, 1599, -50, 31, 31), ("t5", .text, -655, 0, 31, 31), ("t5", .text, -655, -50, -50, 31), ("t5", .notes, 1599, 0, 31, 31),
++    ("t5", .notes, 1599, -50, 31, 31), ("t5", .notes, -999, 0, 31, 31), ("t5", .notes, -999, -50, -52, 31), ("t5", .java, 1599, 0, 31, 31),
++    ("t5", .java, 1599, -50, 31, 31), ("t5", .java, -899, 0, 31, 31), ("t5", .java, -899, -50, -50, 31), ("t4", .text, 1599, 0, 31, 31),
++    ("t4", .text, 1599, -50, 31, 31), ("t4", .text, -655, 0, 31, 31), ("t4", .text, -655, -50, 531, 531), ("t4", .notes, 1599, 0, 31, 31),
++    ("t4", .notes, 1599, -50, 31, 31), ("t4", .notes, -999, 0, 31, 531), ("t4", .notes, -999, -50, 31, 531), ("t4", .java, 1599, 0, 31, 31),
++    ("t4", .java, 1599, -50, 31, 31), ("t4", .java, -899, 0, 31, 531), ("t4", .java, -899, -50, 531, 531), ("t1", .text, 1599, 0, 31, 31),
++    ("t1", .text, 1599, -50, 31, 31), ("t1", .text, -655, 0, 31, 31), ("t1", .text, -655, -50, 31, 31), ("t1", .text, 1599, 899, 790, 790),
++    ("t1", .notes, 1599, 0, 31, 31), ("t1", .notes, 1599, -50, 31, 31), ("t1", .notes, -999, 0, 31, 31), ("t1", .notes, -999, -50, 31, 31),
++    ("t1", .notes, 1599, 899, 770, 770), ("t1", .java, 1599, 0, 31, 31), ("t1", .java, 1599, -50, 31, 31), ("t1", .java, -899, 0, 31, 31),
++    ("t1", .java, -899, -50, 31, 31), ("t1", .java, 1599, 899, 794, 794), ("t6", .text, 1599, 0, 0, 0), ("t6", .text, 1599, -50, -50, -50),
++    ("t6", .text, -655, 0, 31, 31), ("t6", .text, -655, -50, 31, 31), ("t6", .notes, 1599, 0, 0, 0), ("t6", .notes, 1599, -50, -50, -50),
++    ("t6", .notes, -999, 0, 31, 31), ("t6", .notes, -999, -50, 31, 31), ("t6", .java, 1599, 0, 0, 0), ("t6", .java, 1599, -50, -50, -50),
++    ("t6", .java, -899, 0, 31, 31), ("t6", .java, -899, -50, 31, 31),
++  ]
++  static func asked(_ call: Call) -> CGRect { CGRect(origin: CGPoint(x: call.x, y: call.y), size: call.window.size) }
++  /// The two that `rest` does not give.
++  static func isNotPlayed(_ call: Call) -> Bool {
++    (call.arrangement == "t3" || call.arrangement == "t4") && call.window == .text && call.y == -50 && call.x < 0
++  }
++
++  @Test func whereItCameToRest() {
++    #expect(Self.calls.count == 78 && Self.calls.filter(Self.isNotPlayed).count == 2)
++    for call in Self.calls where !Self.isNotPlayed(call) {
++      let rest = Self.arrangement(call.arrangement).rest(of: Self.asked(call), titleBar: call.window.titleBar)
++      #expect(rest == CGPoint(x: call.x, y: call.rested), "\(call.arrangement): \(call.window) asked for \(call.x),\(call.y)")
++    }
++  }
++
++  /// TextEdit's window, asked to go 50 points above the top left corner beside a left neighbour that begins lower, shares a strip of 1 by 372 points with the
++  /// main display and nothing with the neighbour, and went to the neighbour, below its menu bar, wholly in view. `rest` says the main display's
++  /// top, and this says that it does.
++  @Test func notPlayed() {
++    for call in Self.calls where Self.isNotPlayed(call) {
++      #expect(Self.arrangement(call.arrangement).rest(of: Self.asked(call), titleBar: call.window.titleBar).y == 31, "a Mac: \(call.rested)")
++    }
++  }
++
++  /// The guess gives every place of all 78: what was read back at once, and where the window lay a second later. In nine the two differ.
++  @Test func theGuessGivesTheWholeWay() {
++    #expect(Self.calls.filter { $0.atOnce != $0.rested }.count == 9)
++    for call in Self.calls {
++      let stages = Self.arrangement(call.arrangement).stages(of: Self.asked(call), titleBar: call.window.titleBar)
++      var way = [CGPoint(x: call.x, y: call.rested)]
++      if call.atOnce != call.rested { way.insert(CGPoint(x: call.x, y: call.atOnce), at: 0) }
++      #expect(stages == way, "\(call.arrangement): \(call.window) asked for \(call.x),\(call.y)")
++    }
++  }
++
++  /// Where the display that has most of a window is not the one its corner is on, or nearest to, the corner's had one column of it at most, in every call: that
++  /// is as far as a Mac was looked at, and as far as `judge(of:)` goes by most of it.
++  @Test func asFarAsAMacWasLookedAt() {
++    var parted = 0
++    for call in Self.calls {
++      var screens = Self.arrangement(call.arrangement)
++      let corners = screens.cornersDisplay(of: Self.asked(call))!
++      screens.mostOfItJudgesWhereverTheCornerIs = true
++      guard screens.judge(of: Self.asked(call)) != corners else { continue }
++      parted += 1
++      #expect(screens.screens[corners].frame.intersection(Self.asked(call)).width <= 1, "\(call.arrangement): \(call.window) asked for \(call.x),\(call.y)")
++    }
++    #expect(parted == 19)
++  }
++
++  // MARK: One display
++
++  static let small = CGRect(x: 0, y: 0, width: 1024, height: 768)
++  static let size = CGSize(width: 480, height: 348)
++  static let dockBelow = Screens([(small, CGRect(x: 0, y: 31, width: 1024, height: 674))])
++  static let dockAtTheRight = Screens([(small, CGRect(x: 0, y: 31, width: 974, height: 737))])
++  static let dockAtTheLeft = Screens([(small, CGRect(x: 50, y: 31, width: 974, height: 737))])
++  func rests(_ screens: Screens, _ x: CGFloat, _ y: CGFloat, size: CGSize = Self.size, titleBar: CGFloat = 28) -> CGPoint {
++    screens.rest(of: CGRect(origin: CGPoint(x: x, y: y), size: size), titleBar: titleBar)
++  }
++
++  /// In the middle of a display, asked for y 0 and for y -50: y 31, with x and the size kept. 8 of 8 in another run, at x 170 and 220.
++  @Test func inTheMiddleOfADisplayItStopsBelowTheMenuBarToo() {
++    for x: CGFloat in [170, 220] {
++      #expect(rests(Self.dockBelow, x, 0) == CGPoint(x: x, y: 31))
++      #expect(rests(Self.dockBelow, x, -50) == CGPoint(x: x, y: 31))
++    }
++  }
++
++  /// Six places with the Dock at the right, a window of 480×348, once each; the first of them 20 times of 20 besides.
++  @Test(arguments: [
++    (CGPoint(x: 1023, y: 767), CGPoint(x: 934, y: 740)), (CGPoint(x: 973, y: 767), CGPoint(x: 973, y: 740)),
++    (CGPoint(x: -479, y: 767), CGPoint(x: -479, y: 740)), (CGPoint(x: -479, y: 400), CGPoint(x: -479, y: 400)),
++    (CGPoint(x: -600, y: 767), CGPoint(x: -440, y: 740)), (CGPoint(x: 300, y: 767), CGPoint(x: 300, y: 740)),
++  ]) func besideTheDock(asked: CGPoint, rested: CGPoint) {
++    #expect(rests(Self.dockAtTheRight, asked.x, asked.y) == rested)
++    #expect(Self.dockAtTheRight.stages(of: CGRect(origin: asked, size: Self.size), titleBar: 28).last == rested)
++  }
++
++  /// That first place with the Dock at the bottom, at the left, and on 1920×1080 beside a second display.
++  @Test func theSameCornerWithTheDockElsewhere() {
++    #expect(rests(Self.dockBelow, 1023, 767) == CGPoint(x: 1023, y: 677))
++    #expect(rests(Self.dockAtTheLeft, 1023, 767) == CGPoint(x: 1023, y: 740))
++    let two = Screens([
++      (CGRect(x: 0, y: 0, width: 1920, height: 1080), CGRect(x: 0, y: 31, width: 1920, height: 971)),
++      (CGRect(x: 1920, y: 0, width: 1280, height: 720), CGRect(x: 1920, y: 31, width: 1280, height: 689)),
++    ])
++    #expect(rests(two, 1919, 1079) == CGPoint(x: 1919, y: 974))
++  }
++
++  /// Wholly off the display, in another run: pulled in until 40 points show; past a Dock at the left, 40 points past the Dock.
++  @Test func whollyOffTheDisplay() {
++    #expect(rests(Self.dockBelow, 1524, 200).x == 984)
++    #expect(rests(Self.dockBelow, -600, 200).x == -440)
++    #expect(rests(Self.dockAtTheLeft, -600, 200).x == -390)
++    #expect(rests(Self.dockBelow, 1024, 200).x == 984, "its left edge on the display's right edge: nothing of it is on the display")
++    #expect(rests(Self.dockBelow, -480, 200).x == -440)
++  }
++
++  // MARK: Guesses
++
++  /// Two small ones that are played, and what is no guess but a choice.
++  @Test func smallGuessesThatArePlayed() {
++    // Narrower than 40 points, all of it shows.
++    #expect(rests(Self.dockBelow, -600, 200, size: CGSize(width: 20, height: 300)).x == 0)
++    #expect(rests(Self.dockBelow, 1524, 200, size: CGSize(width: 20, height: 300)).x == 1004)
++    // A point inside ANY display's visible frame will do: behind the main display's Dock at the right, the rest of it on a neighbour.
++    // The main display judges, with 24 columns of it, and by its own visible frame alone would pull it in to 934.
++    #expect(rests(Screens([(Self.small, CGRect(x: 0, y: 31, width: 974, height: 737)), Self.neighbour]), 1000, 400).x == 1000)
++    // Of two displays that have as much of it, the first.
++    let twins = Screens([
++      (CGRect(x: 500, y: 0, width: 500, height: 500), CGRect(x: 500, y: 31, width: 500, height: 469)),
++      (CGRect(x: 0, y: 0, width: 500, height: 500), CGRect(x: 0, y: 31, width: 500, height: 469)),
++    ])
++    let astride = CGRect(x: 499, y: -50, width: 2, height: 70)
++    #expect(twins.cornersDisplay(of: astride) == 1, "its corner lies above the second")
++    #expect(twins.judge(of: astride) == 0, "a column of 20 rows on each")
++    // A title bar higher than the visible frame: the top wins.
++    #expect(rests(Screens([(Self.small, CGRect(x: 0, y: 31, width: 1024, height: 20))]), 100, 400).y == 31)
++  }
++
++  static let neighbour = (frame: CGRect(x: 1024, y: 0, width: 1024, height: 768), visibleFrame: CGRect(x: 1024, y: 31, width: 1024, height: 737))
++
++  /// The four behind one switch, which is off: each lies beside a case that was seen, none was asked of a Mac. Without the switch a window rests as by the old rule, but for the stop at the
++  /// top, which was seen; with it, where the rule would put it.
++  @Test func theFourGuessesBesideWhatWasSeen() {
++    func both(_ screens: Screens, _ x: CGFloat, _ y: CGFloat, size: CGSize = Self.size) -> [CGPoint] {
++      var guessing = screens
++      guessing.playsTheGuessesBesideWhatWasSeen = true
++      return [rests(screens, x, y, size: size), rests(guessing, x, y, size: size)]
++    }
++    // The stop at the top and the pull sideways together: behind a Dock at the right; and wholly off the display, above its top.
++    #expect(both(Self.dockAtTheRight, 1023, 0) == [CGPoint(x: 1023, y: 31), CGPoint(x: 934, y: 31)])
++    #expect(both(Self.dockBelow, -600, 0) == [CGPoint(x: -600, y: 31), CGPoint(x: -440, y: 31)])
++    // One column under a Dock at the left: the mirror of 1023 beside a Dock at the right.
++    #expect(both(Self.dockAtTheLeft, -479, 767) == [CGPoint(x: -479, y: 740), CGPoint(x: -390, y: 740)])
++    // Its corner on the display; the display below has most of it, with one column, with 160, and with the 161 that were seen to do.
++    func above(aDisplayThisWide width: CGFloat) -> Screens {
++      Screens([
++        (Self.small, CGRect(x: 0, y: 31, width: 1024, height: 737)),
++        (CGRect(x: 0, y: 768, width: width, height: 768), CGRect(x: 0, y: 799, width: width, height: 737)),
++      ])
++    }
++    #expect(both(above(aDisplayThisWide: 1024), 1023, 767) == [CGPoint(x: 1023, y: 740), CGPoint(x: 1023, y: 799)])
++    #expect(both(above(aDisplayThisWide: 1183), 1023, 767) == [CGPoint(x: 1023, y: 740), CGPoint(x: 1023, y: 799)])
++    #expect(both(above(aDisplayThisWide: 1184), 1023, 767) == [CGPoint(x: 1023, y: 799), CGPoint(x: 1023, y: 799)])
++    // Wholly off two displays.
++    let two = Screens([(Self.small, CGRect(x: 0, y: 31, width: 1024, height: 674)), Self.neighbour])
++    #expect(both(two, 2600, -50) == [CGPoint(x: 2600, y: -50), CGPoint(x: 2008, y: 31)])
++    #expect(both(two, -600, 767) == [CGPoint(x: -600, y: 677), CGPoint(x: -440, y: 677)])
++  }
++
++  /// `stages` pulls as with every switch on, whatever the switches say.
++  @Test func theGuessMadeAfterwardsPullsAsWithEverySwitchOn() {
++    #expect(Self.dockAtTheLeft.stages(of: CGRect(origin: CGPoint(x: -479, y: 767), size: Self.size), titleBar: 28) == [CGPoint(x: -390, y: 740)])
++    #expect(Self.dockAtTheRight.stages(of: CGRect(origin: CGPoint(x: 1023, y: 0), size: Self.size), titleBar: 28) == [CGPoint(x: 934, y: 31)])
++  }
++
++  /// A display that a window only touches has nothing of it, in whichever order the displays are listed. Here the corner, off the main display's left edge at its very top, is as near
++  /// to the display above as to the main one.
++  @Test func aDisplayThatIsOnlyTouchedHasNothingOfIt() {
++    let main = (frame: CGRect(x: 0, y: 0, width: 1600, height: 900), visibleFrame: CGRect(x: 0, y: 31, width: 1600, height: 791))
++    let above = (frame: CGRect(x: 0, y: -800, width: 1280, height: 800), visibleFrame: CGRect(x: 0, y: -769, width: 1280, height: 769))
++    for screens in [Screens([above, main]), Screens([main, above])] {
++      #expect(screens.rest(of: CGRect(x: -300, y: 0, width: 656, height: 422), titleBar: 32) == CGPoint(x: -300, y: 31))
++    }
++  }
++
++  /// Judged again, it is the second display that pulls. A window 60 points wide, pushed below the main display's menu bar, comes to reach a left neighbour that begins lower, and lies
++  /// between that one's Dock at its right and the main display's at its left.
++  @Test func judgedAgainItIsPulledInByTheSecond() {
++    var screens = Screens([
++      (CGRect(x: 0, y: 0, width: 1440, height: 900), CGRect(x: 80, y: 25, width: 1360, height: 875)),
++      (CGRect(x: -1024, y: 400, width: 1024, height: 768), CGRect(x: -1024, y: 425, width: 964, height: 743)),
++    ])
++    (screens.judgesAgain, screens.playsTheGuessesBesideWhatWasSeen) = (true, true)
++    #expect(screens.rest(of: CGRect(x: -59, y: -50, width: 60, height: 400), titleBar: 28) == CGPoint(x: -100, y: 425))
++  }
++
++  // MARK: Where nobody has looked
++
++  /// What goes further than a Mac was asked is switched off, and there a window comes to rest as by the old rule: the corner's display keeps the title bar above its
++  /// bottom. With the switch: what the rule would make of it. Each is owed a Mac.
++  @Test func whereNobodyHasLooked() {
++    func rests(_ screens: Screens, _ asked: CGRect, _ titleBar: CGFloat, wherever: Bool = false, bottom: Bool = false, again: Bool = false) -> CGFloat {
++      var screens = screens
++      (screens.mostOfItJudgesWhereverTheCornerIs, screens.judgeStopsItAtTheBottomToo, screens.judgesAgain) = (wherever, bottom, again)
++      return screens.rest(of: asked, titleBar: titleBar).y
++    }
++    let usual = (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), visibleFrame: CGRect(x: 0, y: 25, width: 1440, height: 875))
++
++    // A desk people have: across a laptop and the monitor below it, the title bar well in view above, most of the window below.
++    let desk = Screens([
++      (CGRect(x: 0, y: 0, width: 1512, height: 982), CGRect(x: 0, y: 37, width: 1512, height: 945)),
++      (CGRect(x: -500, y: 982, width: 2560, height: 1440), CGRect(x: -500, y: 1007, width: 2560, height: 1415)),
++    ])
++    for x: CGFloat in [1000, -100] {  // its corner on the laptop; and off its left edge, on no display
++      let across = CGRect(x: x, y: 680, width: 800, height: 600)
++      #expect(rests(desk, across, 28) == 680)
++      #expect(rests(desk, across, 28, wherever: true) == 1007)
++    }
++
++    // Under the bottom edge, above a display below: all of its width and one row of it on the display its corner is on.
++    let below = (frame: CGRect(x: 0, y: 900, width: 1440, height: 900), visibleFrame: CGRect(x: 0, y: 925, width: 1440, height: 875))
++    let under = CGRect(x: 0, y: 899, width: 640, height: 420)
++    #expect(rests(Screens([usual, below]), under, 28) == 872)
++    #expect(rests(Screens([usual, below]), under, 28, wherever: true) == 925)
++
++    // The bottom right corner beside a neighbour that reaches lower, which has most of the window.
++    #expect(rests(Self.arrangement("t4"), CGRect(x: 1599, y: 899, width: 1000, height: 600), 52) == 770)
++    #expect(rests(Self.arrangement("t4"), CGRect(x: 1599, y: 899, width: 1000, height: 600), 52, bottom: true) == 899)
++
++    // Two displays side by side that end alike, the Dock on the first: one row of the window on the second.
++    let sideBySide = Screens([
++      (CGRect(x: 0, y: 0, width: 1600, height: 900), CGRect(x: 0, y: 31, width: 1600, height: 799)),
++      (CGRect(x: 1600, y: 0, width: 1600, height: 900), CGRect(x: 1600, y: 31, width: 1600, height: 869)),
++    ])
++    #expect(rests(sideBySide, CGRect(x: 1599, y: 899, width: 656, height: 422), 28) == 802)
++    #expect(rests(sideBySide, CGRect(x: 1599, y: 899, width: 656, height: 422), 28, bottom: true) == 872)
++
++    // A bottom corner beside a neighbour that ends 60 points higher: stopped by the main display, the window reaches the neighbour, which has most of it then.
++    let endsHigher = CGRect(x: 1440, y: 0, width: 1280, height: 840)
++    let corner = CGRect(x: 1439, y: 899, width: 640, height: 420)
++    #expect(rests(Screens([usual, (endsHigher, endsHigher)]), corner, 80) == 820)
++    #expect(rests(Screens([usual, (endsHigher, endsHigher)]), corner, 80, again: true) == 820, "the bottom is the corner's display's still")
++    #expect(rests(Screens([usual, (endsHigher, endsHigher)]), corner, 80, bottom: true, again: true) == 760)
++  }
++
++  /// Here the old rule is not kept, for the stop at the top was seen: pushed below the main display's menu bar, a window 480 high comes to reach the left neighbour
++  /// that begins 500 lower. Whether that neighbour then has its say nobody has asked.
++  @Test func pushedDownItReachesANeighbour() {
++    var screens = Self.arrangement("t3")
++    let high = CGRect(x: -655, y: 0, width: 656, height: 480)
++    #expect(screens.rest(of: high, titleBar: 32).y == 31)
++    screens.judgesAgain = true
++    #expect(screens.rest(of: high, titleBar: 32).y == 531)
++  }
++
++  /// No switch changes where any of the 78 came to rest: no call that was made tells them apart, which is why they are guesses. Nor does any touch `stages`.
++  @Test(arguments: [(true, false, false, false), (false, true, false, false), (false, false, true, false), (false, false, false, true), (true, true, true, true)])
++  func noCallThatWasMadeTellsTheSwitchesApart(wherever: Bool, bottom: Bool, again: Bool, guesses: Bool) {
++    for call in Self.calls {
++      var screens = Self.arrangement(call.arrangement)
++      let (plain, way) = (screens.rest(of: Self.asked(call), titleBar: call.window.titleBar), screens.stages(of: Self.asked(call), titleBar: call.window.titleBar))
++      (screens.mostOfItJudgesWhereverTheCornerIs, screens.judgeStopsItAtTheBottomToo, screens.judgesAgain) = (wherever, bottom, again)
++      screens.playsTheGuessesBesideWhatWasSeen = guesses
++      #expect(screens.rest(of: Self.asked(call), titleBar: call.window.titleBar) == plain, "\(call.arrangement): \(call.window) asked for \(call.x),\(call.y)")
++      #expect(screens.stages(of: Self.asked(call), titleBar: call.window.titleBar) == way)
++    }
++  }
++
++  @Test func whoJudges() {
++    let screens = Self.arrangement("t6")
++    #expect(screens.judge(of: CGRect(x: 1599, y: 0, width: 656, height: 422)) == 1, "its corner is on the main display, all but a column of it on the neighbour")
++    #expect(screens.cornersDisplay(of: CGRect(x: 1599, y: 0, width: 656, height: 422)) == 0)
++    #expect(screens.cornersDisplay(of: CGRect(x: 1600, y: 0, width: 656, height: 422)) == 1, "a point on a shared edge belongs to the display it is inside")
++    #expect(screens.judge(of: CGRect(x: 300, y: 200, width: 656, height: 422)) == 0)
++    #expect(screens.judge(of: CGRect(x: 1598, y: 0, width: 656, height: 422)) == 0, "two columns of it on the display its corner is on: nobody has looked")
++    #expect(screens.judge(of: CGRect(x: -5000, y: 0, width: 10, height: 10)) == 0, "on none: the nearest")
++    #expect(Screens([]).judge(of: .zero) == nil)
++    #expect(Screens([]).rest(of: CGRect(x: 5, y: 6, width: 7, height: 8), titleBar: 28) == CGPoint(x: 5, y: 6))
++    #expect(Screens([]).stages(of: CGRect(x: 5, y: 6, width: 7, height: 8), titleBar: 28) == [CGPoint(x: 5, y: 6)])
++  }
++}
+diff --git a/Tests/ArborKitTests/FaithfulFakeTests.swift b/Tests/ArborKitTests/FaithfulFakeTests.swift
+index e4487d78..ba7cbbe8 100644
+--- a/Tests/ArborKitTests/FaithfulFakeTests.swift
++++ b/Tests/ArborKitTests/FaithfulFakeTests.swift
+@@ -197,15 +197,15 @@ private final class Recorder: WindowSystemEvents {
+   @Test func arborsOwnCallsAreAnsweredAfterTheyReturn() {
+     let (system, recorder, _, b, _) = make()
+     system.focus(b)
+-    system.setFrame(CGRect(x: 10.5, y: 20, width: 300.7, height: 200), of: b)
++    system.setFrame(CGRect(x: 10.5, y: 40, width: 300.7, height: 200), of: b)
+     #expect(recorder.log.isEmpty, "nothing is reported from inside the call")
+-    #expect(system.frame(of: b) == CGRect(x: 10, y: 20, width: 300, height: 200), "whole points")
++    #expect(system.frame(of: b) == CGRect(x: 10, y: 40, width: 300, height: 200), "whole points")
+     recorder.log.removeAll()
+     #expect(system.deliverEchoes() == 1)
+     #expect(recorder.log == ["focused \(b)", "changed \(b) echo", "changed \(b) echo"], "resized, and moved")
+     recorder.log.removeAll()
+     system.focus(b)
+-    system.setFrame(CGRect(x: 10, y: 20, width: 300, height: 200), of: b)
++    system.setFrame(CGRect(x: 10, y: 40, width: 300, height: 200), of: b)
+     system.deliverEchoes()
+     #expect(recorder.log.isEmpty, "a window that has the keyboard and the frame already answers with nothing")
+   }
+diff --git a/Tests/ArborKitTests/WhereAMacLeavesAWindowTests.swift b/Tests/ArborKitTests/WhereAMacLeavesAWindowTests.swift
+new file mode 100644
+index 00000000..7cf09464
+--- /dev/null
++++ b/Tests/ArborKitTests/WhereAMacLeavesAWindowTests.swift
+@@ -0,0 +1,121 @@
++import ArborCore
++import ArborKit
++import ArborTesting
++import CoreGraphics
++import Testing
++
++/// The stand-in can leave a window where a hosted Mac left it (`echoes.restsWhereAMacLeavesIt`, `Screens.rest`; the Mac's own numbers are in `ScreensTests`). It is off so far, because of what
++/// shows as soon as it is on: Arbor reckons where a window out of view will rest by another rule than macOS has.
++@Suite @MainActor struct WhereAMacLeavesAWindowTests {
++  static func display(_ name: String, _ frame: CGRect, visible: CGRect, isMain: Bool = false) -> DisplaySnapshot {
++    DisplaySnapshot(id: DisplayID(name), frame: frame, visibleFrame: visible, isMain: isMain)
++  }
++  /// The probe's main display, and three of the displays it stood beside. (Beside the wider one below, macOS took the Dock there; here the main display keeps its own.)
++  static let main = display("main", CGRect(x: 0, y: 0, width: 1600, height: 900), visible: CGRect(x: 0, y: 31, width: 1600, height: 791), isMain: true)
++  static let leftAndLower = display("B", CGRect(x: -1280, y: 500, width: 1280, height: 800), visible: CGRect(x: -1280, y: 531, width: 1280, height: 769))
++  static let right = display("A", CGRect(x: 1600, y: 0, width: 1920, height: 1080), visible: CGRect(x: 1600, y: 31, width: 1920, height: 1049))
++  static let widerBelow = display("below", CGRect(x: -160, y: 900, width: 1920, height: 1080), visible: CGRect(x: -160, y: 931, width: 1920, height: 971))
++
++  // MARK: The switch
++
++  @Test func offAWindowRestsAsOfOld() {
++    let system = FakeWindowSystem(displays: [Self.main, Self.leftAndLower])
++    #expect(!system.echoes.restsWhereAMacLeavesIt)
++    let window = system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 1000, height: 600))
++    #expect(system.setFrame(CGRect(x: -999, y: 0, width: 1000, height: 600), of: window)?.origin == CGPoint(x: -999, y: 0))
++    #expect(system.setFrame(CGRect(x: 1599, y: 899, width: 1000, height: 600), of: window)?.origin == CGPoint(x: 1599, y: 794), "the bottom alone")
++  }
++
++  /// Three calls of the probe, through the road Arbor's own calls take: where the window came to rest. At the first of them a Mac's answer at once was -999,31, and the window went on to 531 a
++  /// tenth of a second later by itself: that is not played (board 1.109).
++  @Test func onItRestsWhereAMacLeftIt() {
++    func rests(_ displays: [DisplaySnapshot], _ x: CGFloat, _ y: CGFloat) -> CGPoint? {
++      let system = FakeWindowSystem(displays: displays)
++      system.echoes.restsWhereAMacLeavesIt = true
++      let window = system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 1000, height: 600))
++      system.setTitleBar(window, 52)
++      return system.setFrame(CGRect(x: x, y: y, width: 1000, height: 600), of: window)?.origin
++    }
++    #expect(rests([Self.main, Self.leftAndLower], -999, 0) == CGPoint(x: -999, y: 531))
++    #expect(rests([Self.main, Self.leftAndLower], 1599, -50) == CGPoint(x: 1599, y: 31))
++    #expect(rests([Self.main], 1599, 899) == CGPoint(x: 1599, y: 770))
++  }
++
++  @Test func theSilentStandInPutsAWindowWhereItIsAsked() {
++    let system = FakeWindowSystem(displays: [Self.main, Self.leftAndLower])
++    system.echoes = .none
++    system.echoes.restsWhereAMacLeavesIt = true
++    let asked = CGRect(x: -999, y: -50, width: 1000, height: 600)
++    #expect(system.whereMacOSPuts(asked, titleBar: 52) == asked, "it hangs on the switch that keeps a title bar within reach")
++  }
++
++  /// Sent to the left corner that was reckoned for its old width and made narrower in the same request, a window would lie wholly off the display, and is pulled in until 40 points show. Like
++  /// two places that were asked of a Mac (-600 became -440); this very request was not. On one display: with several it is a guess that is switched off (`Screens`), and with it what board 1.118 says.
++  @Test func narrowerThanTheCornerWasReckonedForItIsPulledIn() {
++    let system = FakeWindowSystem(displays: [Self.main])
++    system.echoes.restsWhereAMacLeavesIt = true
++    let window = system.open(app: "Editor", frame: CGRect(x: -899, y: 794, width: 900, height: 700))
++    #expect(system.setFrame(CGRect(x: -899, y: 899, width: 464, height: 419), of: window) == CGRect(x: -424, y: 794, width: 464, height: 419))
++  }
++
++  // MARK: What shows of Arbor as soon as it is on
++
++  /// `[a | Desktop]` framed, so that `f`, which floats, is sent out of view.
++  func withAWindowOutOfView(_ displays: [DisplaySnapshot], size: CGSize, titleBar: CGFloat) -> (Harness, f: WindowID) {
++    let h = Harness(displays: displays)
++    h.system.echoes.restsWhereAMacLeavesIt = true
++    let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
++    let f = h.system.open(app: "Editor", pid: 12, frame: CGRect(origin: CGPoint(x: 300, y: 200), size: size))
++    h.system.setTitleBar(f, titleBar)
++    h.start()
++    h.run("dock \(a.rawValue) left")
++    h.run("zoom \(a.rawValue)")
++    return (h, f)
++  }
++  func whatShows(_ h: Harness, of frame: CGRect) -> CGFloat { frame.areaShowing(on: h.system.displayList.map(\.frame)) }
++  /// The least that can show of a window of this size at the five places Arbor knows around the main display, by where the stand-in would leave it at each.
++  func leastThatShows(_ h: Harness, size: CGSize, titleBar: CGFloat) -> CGFloat {
++    let home = h.system.displayList[0].frame
++    let (right, left, bottom): (CGFloat, CGFloat, CGFloat) = (home.maxX - 1, home.minX - size.width + 1, home.maxY - 1)
++    let places: [CGPoint] = [
++      CGPoint(x: right, y: bottom), CGPoint(x: left, y: bottom), CGPoint(x: home.minX, y: bottom), CGPoint(x: right, y: home.minY), CGPoint(x: left, y: home.minY),
++    ]
++    let shown: [CGFloat] = places.map { whatShows(h, of: h.system.whereMacOSPuts(CGRect(origin: $0, size: size), titleBar: titleBar)) }
++    return shown.min()!
++  }
++
++  /// A left neighbour that begins 500 points lower and a display at the right. For a window of 1000×600 Arbor chooses the top left corner, reckoning that a strip will show. A hosted Mac, asked for
++  /// just that place, put Notes' window of that size at -999,531: all of it in view on the neighbour. (The least that is held against it lies under the bottom edge, a place no Mac was asked for.)
++  @Test func sentOutOfViewItLandsWhollyInView() {
++    let size = CGSize(width: 1000, height: 600)
++    let (h, f) = withAWindowOutOfView([Self.main, Self.leftAndLower, Self.right], size: size, titleBar: 52)
++    #expect(h.controller.parked.contains(f), "or this proves nothing")
++    withKnownIssue("board 0.22, its third face: where Arbor parks: a window sent out of view lies wholly in view") {
++      #expect(whatShows(h, of: h.frame(f)!) == leastThatShows(h, size: size, titleBar: 52), "\(h.frame(f)!)")
++    }
++  }
++
++  /// Above a wider display Arbor chooses the top right corner, and rightly: one column shows. The window rests below the menu bar there, at y 31 and not at 0, as a hosted Mac was seen to leave it.
++  /// Arbor takes that for a window that has left its corner, and sends it there again at every report of the displays.
++  @Test func atATopCornerItIsAskedAgain() {
++    let size = CGSize(width: 656, height: 422)
++    let (h, f) = withAWindowOutOfView([Self.main, Self.widerBelow], size: size, titleBar: 32)
++    #expect(h.frame(f)?.origin == CGPoint(x: 1599, y: 31))
++    #expect(whatShows(h, of: h.frame(f)!) == leastThatShows(h, size: size, titleBar: 32))
++    withKnownIssue("board 0.22, its third face: a window that rests below the menu bar is asked again") {
++      #expect(h.measure { h.system.setDisplays(h.system.displayList) }.moves == 0)
++    }
++  }
++
++  /// With the Dock at the right the bottom right corner lies behind the Dock, where no point of a window is within reach: a hosted Mac pulled it in until 40 points showed, 20 times of 20. At the bottom
++  /// left one column would show.
++  @Test func besideADockAtTheRightItIsPulledIn() {
++    let small = Self.display("small", CGRect(x: 0, y: 0, width: 1024, height: 768), visible: CGRect(x: 0, y: 31, width: 974, height: 737), isMain: true)
++    let size = CGSize(width: 480, height: 348)
++    let (h, f) = withAWindowOutOfView([small], size: size, titleBar: 28)
++    #expect(h.controller.parked.contains(f), "or this proves nothing")
++    withKnownIssue("board 1.95: beside a Dock at the right a window out of view shows 40 points of its width") {
++      #expect(whatShows(h, of: h.frame(f)!) == leastThatShows(h, size: size, titleBar: 28), "\(h.frame(f)!)")
++    }
++  }
++}
+diff --git a/collab/evidence/top-corners.txt b/collab/evidence/top-corners.txt
+new file mode 100644
+index 00000000..dedd01f7
+--- /dev/null
++++ b/collab/evidence/top-corners.txt
+@@ -0,0 +1,320 @@
++# The top corners: 78 position calls on one hosted Mac, with no Arbor running. What `Screens` (Sources/ArborCore) and `ScreensTests` rest on.
++#
++# An extract of the output of scripts/mac-shell/probe-the-top-corners.sh, played once on 2026-10-15: every line that says what was asked and what came of it. The pictures, the samples
++# of the window server and the apps' own reports came home on a branch that is not kept.
++#   > plug …      a virtual display is plugged in and moved to its place
++#   displays, visible   the arrangement: every display's frame, and its visible frame as NSScreen has it
++#   put           the window is put back to 300,200 on the main display, and seen to lie there, before every ask
++#   answer        what the call read back at once (size, position, size, as Arbor sets a frame)
++#   top           the same window a second later, by Accessibility and by the window server; how much of it shows, and on which display
++# t1: the main display alone; t2: a wider one below; t3: a left neighbour that begins 500 lower; t4: that and one at the right; t5: one above; t6: a right neighbour that begins 700 higher.
++# TEXT is TextEdit's window, LIVES Notes', JAVA a Java app's. Asks: a the top right corner, b 50 points above it, c the top left corner, d 50 points above it, e the bottom right corner.
++macOS 26.6.2 (25G83) on arm64, commit 1b9615b
++this is probe-the-top-corners: THE CONTROL, without Arbor; playing 1 of 1 on this dispatch
++parts: T
++displays before id 1 serial 305419896 frame 0 0 1600 900 main
++> plug B: display 2, serial 2, 1280 x 800: it came at -1280 0 and is moved to 1600 0: now at 1600 0 1280 800
++displays t0a id 1 serial 305419896 frame 0 0 1600 900 main ; id 2 serial 2 frame 1600 0 1280 800 -
++displays t0b id 1 serial 305419896 frame 0 0 1600 900 main
++the main display from here on (id x y w h): 1 0 0 1600 900
++window LIVES 47 pid 5008: 47 AXWindow AXStandardWindow 300 105 1000 660 main,focused,toolbar
++window TEXT 56 pid 5404: 56 AXWindow AXStandardWindow 165 65 673 439 main
++window JAVA 62 pid 5473: 62 AXWindow AXStandardWindow 350 51 900 750 main
++no Arbor runs: `pgrep -x Arbor` finds no process; none is built or started by this script, and the question is asked again after the last step
++displays arbor id 1 serial 305419896 frame 0 0 1600 900 main
++no Arbor runs at T: `pgrep -x Arbor` finds no process
++put T TEXT 56 asked 300 200 640 420 took 300 200 640 420
++put T LIVES 47 asked 300 200 1000 660 took 300 200 1000 660
++dock: orientation not set, which is the bottom, autohide not set, which is off; the main display 0 0 1600 900, visible 0 31 1600 791
++> plug below: display 3, serial 3, 1920 x 1080: it came at 1600 0 and is moved to -160 900: now at -160 900 1920 1080
++displays t2 id 1 serial 305419896 frame 0 0 1600 900 main ; id 3 serial 3 frame -160 900 1920 1080 -
++visible t2 main 0 31 1600 869
++visible t2 below -160 931 1920 971
++put t2 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t2 TEXT 56 asked 1599 0 656 422 took 1599 31 656 422
++top t2 TEXT 56 asked 1599 0 656 422 | accessibility 1599 31 656 422 | server 1599 31 656 422 | shown 0.00 on main
++put t2 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t2 TEXT 56 asked 1599 -50 656 422 took 1599 31 656 422
++top t2 TEXT 56 asked 1599 -50 656 422 | accessibility 1599 31 656 422 | server 1599 31 656 422 | shown 0.00 on main
++put t2 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t2 TEXT 56 asked -655 0 656 422 took -655 31 656 422
++top t2 TEXT 56 asked -655 0 656 422 | accessibility -655 31 656 422 | server -655 31 656 422 | shown 0.00 on main
++put t2 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t2 TEXT 56 asked -655 -50 656 422 took -655 31 656 422
++top t2 TEXT 56 asked -655 -50 656 422 | accessibility -655 31 656 422 | server -655 31 656 422 | shown 0.00 on main
++put t2 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t2 TEXT 56 asked 1599 899 656 422 took 1599 931 656 422
++top t2 TEXT 56 asked 1599 899 656 422 | accessibility 1599 931 656 422 | server 1599 931 656 422 | shown 0.25 on below
++SKIPPED: top t2 TEXT f: the same place as e: nothing is taken off the main display's right
++put t2 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++put t2 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t2 LIVES 47 asked 1599 0 1000 600 took 1599 31 1000 600
++top t2 LIVES 47 asked 1599 0 1000 600 | accessibility 1599 31 1000 600 | server 1599 31 1000 600 | shown 0.00 on main
++put t2 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t2 LIVES 47 asked 1599 -50 1000 600 took 1599 31 1000 600
++top t2 LIVES 47 asked 1599 -50 1000 600 | accessibility 1599 31 1000 600 | server 1599 31 1000 600 | shown 0.00 on main
++put t2 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t2 LIVES 47 asked -999 0 1000 600 took -999 31 1000 600
++top t2 LIVES 47 asked -999 0 1000 600 | accessibility -999 31 1000 600 | server -999 31 1000 600 | shown 0.00 on main
++put t2 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t2 LIVES 47 asked -999 -50 1000 600 took -999 31 1000 600
++top t2 LIVES 47 asked -999 -50 1000 600 | accessibility -999 31 1000 600 | server -999 31 1000 600 | shown 0.00 on main
++put t2 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t2 LIVES 47 asked 1599 899 1000 600 took 1599 931 1000 600
++top t2 LIVES 47 asked 1599 899 1000 600 | accessibility 1599 931 1000 600 | server 1599 931 1000 600 | shown 0.16 on below
++SKIPPED: top t2 LIVES f: the same place as e: nothing is taken off the main display's right
++put t2 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++put t2 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t2 JAVA 62 asked 1599 0 900 750 took 1599 31 900 750
++top t2 JAVA 62 asked 1599 0 900 750 | accessibility 1599 31 900 750 | server 1599 31 900 750 | shown 0.00 on main
++put t2 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t2 JAVA 62 asked 1599 -50 900 750 took 1599 31 900 750
++top t2 JAVA 62 asked 1599 -50 900 750 | accessibility 1599 31 900 750 | server 1599 31 900 750 | shown 0.00 on main
++put t2 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t2 JAVA 62 asked -899 0 900 750 took -899 31 900 750
++top t2 JAVA 62 asked -899 0 900 750 | accessibility -899 31 900 750 | server -899 31 900 750 | shown 0.00 on main
++put t2 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t2 JAVA 62 asked -899 -50 900 750 took -899 31 900 750
++top t2 JAVA 62 asked -899 -50 900 750 | accessibility -899 31 900 750 | server -899 31 900 750 | shown 0.00 on main
++put t2 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t2 JAVA 62 asked 1599 899 900 750 took 1599 931 900 750
++top t2 JAVA 62 asked 1599 899 900 750 | accessibility 1599 931 900 750 | server 1599 931 900 750 | shown 0.18 on below
++SKIPPED: top t2 JAVA f: the same place as e: nothing is taken off the main display's right
++put t2 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++displays t2z id 1 serial 305419896 frame 0 0 1600 900 main
++> plug B: display 4, serial 2, 1280 x 800: it came at 1600 0 and is moved to -1280 500: now at -1280 500 1280 800
++displays t3 id 1 serial 305419896 frame 0 0 1600 900 main ; id 4 serial 2 frame -1280 500 1280 800 -
++visible t3 main 0 31 1600 791
++visible t3 B -1280 531 1280 769
++put t3 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t3 TEXT 56 asked 1599 0 656 422 took 1599 31 656 422
++top t3 TEXT 56 asked 1599 0 656 422 | accessibility 1599 31 656 422 | server 1599 31 656 422 | shown 0.00 on main
++put t3 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t3 TEXT 56 asked 1599 -50 656 422 took 1599 31 656 422
++top t3 TEXT 56 asked 1599 -50 656 422 | accessibility 1599 31 656 422 | server 1599 31 656 422 | shown 0.00 on main
++put t3 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t3 TEXT 56 asked -655 0 656 422 took -655 31 656 422
++top t3 TEXT 56 asked -655 0 656 422 | accessibility -655 31 656 422 | server -655 31 656 422 | shown 0.00 on main
++put t3 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t3 TEXT 56 asked -655 -50 656 422 took -655 531 656 422
++top t3 TEXT 56 asked -655 -50 656 422 | accessibility -655 531 656 422 | server -655 531 656 422 | shown 1.00 on B
++put t3 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++put t3 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t3 LIVES 47 asked 1599 0 1000 600 took 1599 31 1000 600
++top t3 LIVES 47 asked 1599 0 1000 600 | accessibility 1599 31 1000 600 | server 1599 31 1000 600 | shown 0.00 on main
++put t3 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t3 LIVES 47 asked 1599 -50 1000 600 took 1599 31 1000 600
++top t3 LIVES 47 asked 1599 -50 1000 600 | accessibility 1599 31 1000 600 | server 1599 31 1000 600 | shown 0.00 on main
++put t3 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t3 LIVES 47 asked -999 0 1000 600 took -999 31 1000 600
++top t3 LIVES 47 asked -999 0 1000 600 | accessibility -999 531 1000 600 | server -999 531 1000 600 | shown 1.00 on B
++put t3 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t3 LIVES 47 asked -999 -50 1000 600 took -999 31 1000 600
++top t3 LIVES 47 asked -999 -50 1000 600 | accessibility -999 531 1000 600 | server -999 531 1000 600 | shown 1.00 on B
++put t3 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++put t3 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t3 JAVA 62 asked 1599 0 900 750 took 1599 31 900 750
++top t3 JAVA 62 asked 1599 0 900 750 | accessibility 1599 31 900 750 | server 1599 31 900 750 | shown 0.00 on main
++put t3 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t3 JAVA 62 asked 1599 -50 900 750 took 1599 31 900 750
++top t3 JAVA 62 asked 1599 -50 900 750 | accessibility 1599 31 900 750 | server 1599 31 900 750 | shown 0.00 on main
++put t3 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t3 JAVA 62 asked -899 0 900 750 took -899 31 900 750
++top t3 JAVA 62 asked -899 0 900 750 | accessibility -899 531 900 750 | server -899 531 900 750 | shown 1.00 on B
++put t3 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t3 JAVA 62 asked -899 -50 900 750 took -899 531 900 750
++top t3 JAVA 62 asked -899 -50 900 750 | accessibility -899 531 900 750 | server -899 531 900 750 | shown 1.00 on B
++put t3 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++displays t3z id 1 serial 305419896 frame 0 0 1600 900 main
++> plug B: display 5, serial 2, 1280 x 800: it came at -1280 500 and is moved to 0 -800: now at 0 -800 1280 800
++displays t5 id 1 serial 305419896 frame 0 0 1600 900 main ; id 5 serial 2 frame 0 -800 1280 800 -
++visible t5 main 0 31 1600 791
++visible t5 B 0 -769 1280 769
++put t5 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t5 TEXT 56 asked 1599 0 656 422 took 1599 31 656 422
++top t5 TEXT 56 asked 1599 0 656 422 | accessibility 1599 31 656 422 | server 1599 31 656 422 | shown 0.00 on main
++put t5 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t5 TEXT 56 asked 1599 -50 656 422 took 1599 31 656 422
++top t5 TEXT 56 asked 1599 -50 656 422 | accessibility 1599 31 656 422 | server 1599 31 656 422 | shown 0.00 on main
++put t5 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t5 TEXT 56 asked -655 0 656 422 took -655 31 656 422
++top t5 TEXT 56 asked -655 0 656 422 | accessibility -655 31 656 422 | server -655 31 656 422 | shown 0.00 on main
++put t5 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t5 TEXT 56 asked -655 -50 656 422 took -655 -50 656 422
++top t5 TEXT 56 asked -655 -50 656 422 | accessibility -655 31 656 422 | server -655 31 656 422 | shown 0.00 on main
++put t5 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++put t5 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t5 LIVES 47 asked 1599 0 1000 600 took 1599 31 1000 600
++top t5 LIVES 47 asked 1599 0 1000 600 | accessibility 1599 31 1000 600 | server 1599 31 1000 600 | shown 0.00 on main
++put t5 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t5 LIVES 47 asked 1599 -50 1000 600 took 1599 31 1000 600
++top t5 LIVES 47 asked 1599 -50 1000 600 | accessibility 1599 31 1000 600 | server 1599 31 1000 600 | shown 0.00 on main
++put t5 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t5 LIVES 47 asked -999 0 1000 600 took -999 31 1000 600
++top t5 LIVES 47 asked -999 0 1000 600 | accessibility -999 31 1000 600 | server -999 31 1000 600 | shown 0.00 on main
++put t5 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t5 LIVES 47 asked -999 -50 1000 600 took -999 -52 1000 600
++top t5 LIVES 47 asked -999 -50 1000 600 | accessibility -999 31 1000 600 | server -999 31 1000 600 | shown 0.00 on main
++put t5 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++put t5 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t5 JAVA 62 asked 1599 0 900 750 took 1599 31 900 750
++top t5 JAVA 62 asked 1599 0 900 750 | accessibility 1599 31 900 750 | server 1599 31 900 750 | shown 0.00 on main
++put t5 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t5 JAVA 62 asked 1599 -50 900 750 took 1599 31 900 750
++top t5 JAVA 62 asked 1599 -50 900 750 | accessibility 1599 31 900 750 | server 1599 31 900 750 | shown 0.00 on main
++put t5 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t5 JAVA 62 asked -899 0 900 750 took -899 31 900 750
++top t5 JAVA 62 asked -899 0 900 750 | accessibility -899 31 900 750 | server -899 31 900 750 | shown 0.00 on main
++put t5 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t5 JAVA 62 asked -899 -50 900 750 took -899 -50 900 750
++top t5 JAVA 62 asked -899 -50 900 750 | accessibility -899 31 900 750 | server -899 31 900 750 | shown 0.00 on main
++put t5 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++displays t5z id 1 serial 305419896 frame 0 0 1600 900 main
++> plug B: display 6, serial 2, 1280 x 800: it came at 0 -800 and is moved to -1280 500: now at -1280 500 1280 800
++displays t4b id 1 serial 305419896 frame 0 0 1600 900 main ; id 6 serial 2 frame -1280 500 1280 800 -
++> plug A: display 7, serial 1, 1920 x 1080: it came at 1600 0, where it belongs, and is not moved
++displays t4 id 1 serial 305419896 frame 0 0 1600 900 main ; id 6 serial 2 frame -1280 500 1280 800 - ; id 7 serial 1 frame 1600 0 1920 1080 -
++visible t4 main 0 31 1600 791
++visible t4 B -1280 531 1280 769
++visible t4 A 1600 31 1920 1049
++put t4 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t4 TEXT 56 asked 1599 0 656 422 took 1599 31 656 422
++top t4 TEXT 56 asked 1599 0 656 422 | accessibility 1599 31 656 422 | server 1599 31 656 422 | shown 1.00 on A
++put t4 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t4 TEXT 56 asked 1599 -50 656 422 took 1599 31 656 422
++top t4 TEXT 56 asked 1599 -50 656 422 | accessibility 1599 31 656 422 | server 1599 31 656 422 | shown 1.00 on A
++put t4 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t4 TEXT 56 asked -655 0 656 422 took -655 31 656 422
++top t4 TEXT 56 asked -655 0 656 422 | accessibility -655 31 656 422 | server -655 31 656 422 | shown 0.00 on main
++put t4 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t4 TEXT 56 asked -655 -50 656 422 took -655 531 656 422
++top t4 TEXT 56 asked -655 -50 656 422 | accessibility -655 531 656 422 | server -655 531 656 422 | shown 1.00 on B
++put t4 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++put t4 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t4 LIVES 47 asked 1599 0 1000 600 took 1599 31 1000 600
++top t4 LIVES 47 asked 1599 0 1000 600 | accessibility 1599 31 1000 600 | server 1599 31 1000 600 | shown 1.00 on A
++put t4 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t4 LIVES 47 asked 1599 -50 1000 600 took 1599 31 1000 600
++top t4 LIVES 47 asked 1599 -50 1000 600 | accessibility 1599 31 1000 600 | server 1599 31 1000 600 | shown 1.00 on A
++put t4 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t4 LIVES 47 asked -999 0 1000 600 took -999 31 1000 600
++top t4 LIVES 47 asked -999 0 1000 600 | accessibility -999 531 1000 600 | server -999 531 1000 600 | shown 1.00 on B
++put t4 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t4 LIVES 47 asked -999 -50 1000 600 took -999 31 1000 600
++top t4 LIVES 47 asked -999 -50 1000 600 | accessibility -999 531 1000 600 | server -999 531 1000 600 | shown 1.00 on B
++put t4 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++put t4 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t4 JAVA 62 asked 1599 0 900 750 took 1599 31 900 750
++top t4 JAVA 62 asked 1599 0 900 750 | accessibility 1599 31 900 750 | server 1599 31 900 750 | shown 1.00 on A
++put t4 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t4 JAVA 62 asked 1599 -50 900 750 took 1599 31 900 750
++top t4 JAVA 62 asked 1599 -50 900 750 | accessibility 1599 31 900 750 | server 1599 31 900 750 | shown 1.00 on A
++put t4 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t4 JAVA 62 asked -899 0 900 750 took -899 31 900 750
++top t4 JAVA 62 asked -899 0 900 750 | accessibility -899 531 900 750 | server -899 531 900 750 | shown 1.00 on B
++put t4 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t4 JAVA 62 asked -899 -50 900 750 took -899 531 900 750
++top t4 JAVA 62 asked -899 -50 900 750 | accessibility -899 531 900 750 | server -899 531 900 750 | shown 1.00 on B
++put t4 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++displays t4y id 1 serial 305419896 frame 0 0 1600 900 main ; id 6 serial 2 frame -1280 500 1280 800 -
++displays t4z id 1 serial 305419896 frame 0 0 1600 900 main
++visible t1 main 0 31 1600 791
++put t1 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t1 TEXT 56 asked 1599 0 656 422 took 1599 31 656 422
++top t1 TEXT 56 asked 1599 0 656 422 | accessibility 1599 31 656 422 | server 1599 31 656 422 | shown 0.00 on main
++put t1 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t1 TEXT 56 asked 1599 -50 656 422 took 1599 31 656 422
++top t1 TEXT 56 asked 1599 -50 656 422 | accessibility 1599 31 656 422 | server 1599 31 656 422 | shown 0.00 on main
++put t1 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t1 TEXT 56 asked -655 0 656 422 took -655 31 656 422
++top t1 TEXT 56 asked -655 0 656 422 | accessibility -655 31 656 422 | server -655 31 656 422 | shown 0.00 on main
++put t1 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t1 TEXT 56 asked -655 -50 656 422 took -655 31 656 422
++top t1 TEXT 56 asked -655 -50 656 422 | accessibility -655 31 656 422 | server -655 31 656 422 | shown 0.00 on main
++put t1 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t1 TEXT 56 asked 1599 899 656 422 took 1599 790 656 422
++top t1 TEXT 56 asked 1599 899 656 422 | accessibility 1599 790 656 422 | server 1599 790 656 422 | shown 0.00 on main
++SKIPPED: top t1 TEXT f: the same place as e: nothing is taken off the main display's right
++put t1 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++put t1 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t1 LIVES 47 asked 1599 0 1000 600 took 1599 31 1000 600
++top t1 LIVES 47 asked 1599 0 1000 600 | accessibility 1599 31 1000 600 | server 1599 31 1000 600 | shown 0.00 on main
++put t1 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t1 LIVES 47 asked 1599 -50 1000 600 took 1599 31 1000 600
++top t1 LIVES 47 asked 1599 -50 1000 600 | accessibility 1599 31 1000 600 | server 1599 31 1000 600 | shown 0.00 on main
++put t1 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t1 LIVES 47 asked -999 0 1000 600 took -999 31 1000 600
++top t1 LIVES 47 asked -999 0 1000 600 | accessibility -999 31 1000 600 | server -999 31 1000 600 | shown 0.00 on main
++put t1 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t1 LIVES 47 asked -999 -50 1000 600 took -999 31 1000 600
++top t1 LIVES 47 asked -999 -50 1000 600 | accessibility -999 31 1000 600 | server -999 31 1000 600 | shown 0.00 on main
++put t1 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t1 LIVES 47 asked 1599 899 1000 600 took 1599 770 1000 600
++top t1 LIVES 47 asked 1599 899 1000 600 | accessibility 1599 770 1000 600 | server 1599 770 1000 600 | shown 0.00 on main
++SKIPPED: top t1 LIVES f: the same place as e: nothing is taken off the main display's right
++put t1 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++put t1 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t1 JAVA 62 asked 1599 0 900 750 took 1599 31 900 750
++top t1 JAVA 62 asked 1599 0 900 750 | accessibility 1599 31 900 750 | server 1599 31 900 750 | shown 0.00 on main
++put t1 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t1 JAVA 62 asked 1599 -50 900 750 took 1599 31 900 750
++top t1 JAVA 62 asked 1599 -50 900 750 | accessibility 1599 31 900 750 | server 1599 31 900 750 | shown 0.00 on main
++put t1 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t1 JAVA 62 asked -899 0 900 750 took -899 31 900 750
++top t1 JAVA 62 asked -899 0 900 750 | accessibility -899 31 900 750 | server -899 31 900 750 | shown 0.00 on main
++put t1 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t1 JAVA 62 asked -899 -50 900 750 took -899 31 900 750
++top t1 JAVA 62 asked -899 -50 900 750 | accessibility -899 31 900 750 | server -899 31 900 750 | shown 0.00 on main
++put t1 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t1 JAVA 62 asked 1599 899 900 750 took 1599 794 900 750
++top t1 JAVA 62 asked 1599 899 900 750 | accessibility 1599 794 900 750 | server 1599 794 900 750 | shown 0.00 on main
++SKIPPED: top t1 JAVA f: the same place as e: nothing is taken off the main display's right
++put t1 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++> plug A: display 8, serial 1, 1920 x 1080: it came at 1600 0 and is moved to 1600 -700: now at 1600 -700 1920 1080
++displays t6 id 1 serial 305419896 frame 0 0 1600 900 main ; id 8 serial 1 frame 1600 -700 1920 1080 -
++visible t6 main 0 31 1600 791
++visible t6 A 1600 -669 1920 1049
++put t6 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t6 TEXT 56 asked 1599 0 656 422 took 1599 0 656 422
++top t6 TEXT 56 asked 1599 0 656 422 | accessibility 1599 0 656 422 | server 1599 0 656 422 | shown 0.90 on A
++put t6 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t6 TEXT 56 asked 1599 -50 656 422 took 1599 -50 656 422
++top t6 TEXT 56 asked 1599 -50 656 422 | accessibility 1599 -50 656 422 | server 1599 -50 656 422 | shown 1.00 on A
++put t6 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t6 TEXT 56 asked -655 0 656 422 took -655 31 656 422
++top t6 TEXT 56 asked -655 0 656 422 | accessibility -655 31 656 422 | server -655 31 656 422 | shown 0.00 on main
++put t6 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++answer t6 TEXT 56 asked -655 -50 656 422 took -655 31 656 422
++top t6 TEXT 56 asked -655 -50 656 422 | accessibility -655 31 656 422 | server -655 31 656 422 | shown 0.00 on main
++put t6 TEXT 56 asked 300 200 656 422 took 300 200 656 422
++put t6 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t6 LIVES 47 asked 1599 0 1000 600 took 1599 0 1000 600
++top t6 LIVES 47 asked 1599 0 1000 600 | accessibility 1599 0 1000 600 | server 1599 0 1000 600 | shown 0.63 on A
++put t6 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t6 LIVES 47 asked 1599 -50 1000 600 took 1599 -50 1000 600
++top t6 LIVES 47 asked 1599 -50 1000 600 | accessibility 1599 -50 1000 600 | server 1599 -50 1000 600 | shown 0.72 on A
++put t6 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t6 LIVES 47 asked -999 0 1000 600 took -999 31 1000 600
++top t6 LIVES 47 asked -999 0 1000 600 | accessibility -999 31 1000 600 | server -999 31 1000 600 | shown 0.00 on main
++put t6 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++answer t6 LIVES 47 asked -999 -50 1000 600 took -999 31 1000 600
++top t6 LIVES 47 asked -999 -50 1000 600 | accessibility -999 31 1000 600 | server -999 31 1000 600 | shown 0.00 on main
++put t6 LIVES 47 asked 300 200 1000 600 took 300 200 1000 600
++put t6 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t6 JAVA 62 asked 1599 0 900 750 took 1599 0 900 750
++top t6 JAVA 62 asked 1599 0 900 750 | accessibility 1599 0 900 750 | server 1599 0 900 750 | shown 0.51 on A
++put t6 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t6 JAVA 62 asked 1599 -50 900 750 took 1599 -50 900 750
++top t6 JAVA 62 asked 1599 -50 900 750 | accessibility 1599 -50 900 750 | server 1599 -50 900 750 | shown 0.57 on A
++put t6 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t6 JAVA 62 asked -899 0 900 750 took -899 31 900 750
++top t6 JAVA 62 asked -899 0 900 750 | accessibility -899 31 900 750 | server -899 31 900 750 | shown 0.00 on main
++put t6 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++answer t6 JAVA 62 asked -899 -50 900 750 took -899 31 900 750
++top t6 JAVA 62 asked -899 -50 900 750 | accessibility -899 31 900 750 | server -899 31 900 750 | shown 0.00 on main
++put t6 JAVA 62 asked 300 200 900 750 took 300 200 900 750
++displays t6z id 1 serial 305419896 frame 0 0 1600 900 main
++displays quit id 1 serial 305419896 frame 0 0 1600 900 main
++displays end id 1 serial 305419896 frame 0 0 1600 900 main
++no Arbor runs now: `pgrep -x Arbor` finds no process
++clock: all done 282s after the script began, at 13:13:48Z
+-- 
+2.43.0
+

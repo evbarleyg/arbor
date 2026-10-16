@@ -1,0 +1,1480 @@
+From 43fad7fb50314a8c4d0a605b63b57254c717c7aa Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Wed, 14 Oct 2026 23:29:39 +0000
+Subject: [PATCH] wip k192
+
+---
+ Sources/ArborCore/LayoutTree.swift            |  19 +
+ Sources/ArborCore/Workspace.swift             |  57 ++
+ Sources/ArborKit/AX/AXWindowSystem.swift      |   7 +-
+ .../Controller/Controller+EventSummary.swift  |   5 +-
+ .../Controller/Controller+Events.swift        |   8 +-
+ .../Controller/Controller+PendingSlots.swift  |   4 +-
+ .../Controller+RelaunchedApps.swift           | 138 +++++
+ Sources/ArborKit/Controller/Controller.swift  |   7 +
+ Sources/ArborKit/Platform/WindowSystem.swift  |   5 +
+ .../Trace/RecordingWindowSystem.swift         |   4 +
+ Sources/ArborTesting/ChaosInvariants.swift    |   1 +
+ Sources/ArborTesting/FakeWindowSystem.swift   |   8 +-
+ Sources/ArborTesting/ReplayInvariants.swift   |   6 +-
+ Sources/ArborTesting/TraceReplayer.swift      |   5 +
+ Sources/arbor-sim/main.swift                  |   5 +
+ .../RestoreStructureTests.swift               | 165 ++++++
+ Tests/ArborKitTests/FaithfulFakeTests.swift   |   1 +
+ Tests/ArborKitTests/KeptPlacesTests.swift     |  22 +
+ .../ArborKitTests/PendingSlotChaosTests.swift |  17 +-
+ Tests/ArborKitTests/RelaunchedAppTests.swift  | 538 ++++++++++++++++++
+ Tests/ArborKitTests/TraceRecorderTests.swift  |   5 +-
+ collab/QUESTIONS.md                           |   1 +
+ collab/parity.json                            |   2 +-
+ .../66-quit-an-app-and-open-it-again.sim      |  43 ++
+ docs/ARCHITECTURE.md                          |   7 +-
+ 25 files changed, 1063 insertions(+), 17 deletions(-)
+ create mode 100644 Sources/ArborKit/Controller/Controller+RelaunchedApps.swift
+ create mode 100644 Tests/ArborCoreTests/RestoreStructureTests.swift
+ create mode 100644 Tests/ArborKitTests/RelaunchedAppTests.swift
+ create mode 100644 collab/scenarios/66-quit-an-app-and-open-it-again.sim
+
+diff --git a/Sources/ArborCore/LayoutTree.swift b/Sources/ArborCore/LayoutTree.swift
+index fcdfcae..4b06ef4 100644
+--- a/Sources/ArborCore/LayoutTree.swift
++++ b/Sources/ArborCore/LayoutTree.swift
+@@ -585,6 +585,25 @@ public struct LayoutTree: Codable, Sendable, Equatable {
+   }
+ }
+ 
++extension LayoutTree {
++  /// Whether `other` is this arrangement with at most its gaps moved and other tabs in front: the same nodes in the same
++  /// places holding the same windows, and no node made since. Gaps move without anybody rearranging anything
++  /// (room before tiles), and so do the marks that keep groups.
++  public func isSameArrangement(as other: LayoutTree) -> Bool {
++    guard root == other.root, nextRawID == other.nextRawID, nodes.count == other.nodes.count else { return false }
++    return nodes.allSatisfy { id, node in
++      guard let twin = other.nodes[id], node.parent == twin.parent else { return false }
++      switch (node.kind, twin.kind) {
++      case (.desktop, .desktop): return true
++      case (.split(let axis, let children), .split(let otherAxis, let otherChildren)):
++        return axis == otherAxis && children == otherChildren
++      case (.stack(let windows, _), .stack(let otherWindows, _)): return windows == otherWindows
++      default: return false
++      }
++    }
++  }
++}
++
+ /// Where references to deleted nodes should point after a tree change.
+ public struct Remap: Sendable, Equatable {
+   public private(set) var moved: [NodeID: NodeID] = [:]
+diff --git a/Sources/ArborCore/Workspace.swift b/Sources/ArborCore/Workspace.swift
+index 57f989e..b11df51 100644
+--- a/Sources/ArborCore/Workspace.swift
++++ b/Sources/ArborCore/Workspace.swift
+@@ -780,3 +780,60 @@ extension Workspace {
+     }
+   }
+ }
++
++/// Putting an arrangement back as it was before windows closed.
++extension Workspace {
++  /// Takes the tree of `earlier`: this workspace as it was before some docked windows left it. `left` is how their
++  /// going left it, and the arrangement is still that one (`isSameArrangement`), so every node there is now is in the
++  /// earlier tree too. What was remembered about the windows that are docked again comes back with them, and so do
++  /// the saved views and names that their going moved or took away and nobody has given anew since. A view
++  /// of everything stays a view of everything. Otherwise the view, its history, floating windows, pins and guests
++  /// stay as they are now.
++  public mutating func restoreStructure(from earlier: Workspace, left: Workspace) {
++    let showedEverything = camera == tree.root
++    tree = earlier.tree
++    // When the last docked window went, the Desktop became the root.
++    if showedEverything { camera = tree.root }
++    takeBackViewsAndNames(from: earlier, left: left)
++    // Only now, and not around the swap: these let go of every group that no view is on and that has no name, and a
++    // saved view or a name may be all that keeps one.
++    keepWhatIsNamed()
++    changeStructure { _ in Remap() }
++    for window in tree.allWindows {
++      floating[window] = nil
++      if undockedFrames?[window] == nil { setUndockedFrame(earlier.undockedFrames?[window], of: window) }
++    }
++    dropGuestsThatLeft()
++  }
++
++  /// Saved views and names as they are in `earlier`, where they are still as `left` has them.
++  private mutating func takeBackViewsAndNames(from earlier: Workspace, left: Workspace) {
++    for (slot, node) in earlier.savedViews where savedViews[slot] == left.savedViews[slot] && tree.contains(node) {
++      savedViews[slot] = node
++    }
++    for (name, node) in earlier.names.sorted(by: { $0.key < $1.key })
++    where names[name] == left.names[name] && tree.contains(node) {
++      // No two names alike, no space with two.
++      let alike = SpaceName.exact(name, among: names.keys)
++      guard alike == nil || alike == name, self.name(of: node) == nil || self.name(of: node) == name else { continue }
++      names[name] = node
++    }
++  }
++
++  /// For a note of how things were (`earlier` above) that is kept while more windows go: `self` is that note, `left` how
++  /// the last going left things, `now` how they are. Views saved and names given since then are the person's latest
++  /// word, and go into the note, so that putting it back does not take them away.
++  public mutating func follow(viewsAndNamesOf now: Workspace, since left: Workspace) {
++    for slot in Set(now.savedViews.keys).union(left.savedViews.keys) where now.savedViews[slot] != left.savedViews[slot] {
++      savedViews[slot] = now.savedViews[slot]
++    }
++    for name in Set(now.names.keys).union(left.names.keys) where now.names[name] != left.names[name] {
++      if let node = now.names[name] {
++        for other in names.keys where names[other] == node || SpaceName.exact(name, among: [other]) != nil { names[other] = nil }
++        names[name] = node
++      } else {
++        names[name] = nil
++      }
++    }
++  }
++}
+diff --git a/Sources/ArborKit/AX/AXWindowSystem.swift b/Sources/ArborKit/AX/AXWindowSystem.swift
+index d73520b..dca3406 100644
+--- a/Sources/ArborKit/AX/AXWindowSystem.swift
++++ b/Sources/ArborKit/AX/AXWindowSystem.swift
+@@ -123,7 +123,11 @@ public final class AXWindowSystem: WindowSystem {
+         [weak self] note in
+         guard let pid = (note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication)?.processIdentifier
+         else { return }
+-        MainActor.assumeIsolated { self?.forget(pid: pid) }
++        MainActor.assumeIsolated {
++          // First: what `forget` reports gone is then known to have gone with its app.
++          self?.events?.applicationTerminated(pid)
++          self?.forget(pid: pid)
++        }
+       })
+     tokens.append(
+       workspaceCenter.addObserver(forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main) {
+@@ -498,6 +502,7 @@ public final class AXWindowSystem: WindowSystem {
+         Task { @MainActor [weak self] in
+           guard let self, self.apps[pid] != nil else { return }
+           Log.info("pid \(pid) is gone without a word; forgetting its windows")
++          self.events?.applicationTerminated(pid)
+           self.forget(pid: pid)
+         }
+       }
+diff --git a/Sources/ArborKit/Controller/Controller+EventSummary.swift b/Sources/ArborKit/Controller/Controller+EventSummary.swift
+index 33bf4c3..9901024 100644
+--- a/Sources/ArborKit/Controller/Controller+EventSummary.swift
++++ b/Sources/ArborKit/Controller/Controller+EventSummary.swift
+@@ -19,9 +19,12 @@ extension Controller {
+         ArborEvent.Display(
+           display: display.id, main: display.isMain, frame: display.frame,
+           name: display.name.flatMap { $0.isEmpty ? nil : $0 }, builtIn: display.isBuiltIn))
++      // Windows that exist, as listed below. A slot that waits for its window (Controller+PendingSlots.swift) is a number
++      // in the tree and no window: whoever counts the `window` lines must come to the same number.
++      let docked = tree.allWindows.filter { windows[$0] != nil }.count
+       summary.layouts.append(
+         ArborEvent.Arrangement(
+-          display: display.id, docked: tree.allWindows.count, floating: workspace.floating.count,
++          display: display.id, docked: docked, floating: workspace.floating.count,
+           tiles: layout?.tiles.count ?? 0, frames: layout?.windowFrames ?? [:]))
+ 
+       var outOfView = 0
+diff --git a/Sources/ArborKit/Controller/Controller+Events.swift b/Sources/ArborKit/Controller/Controller+Events.swift
+index 779d567..8b22e1a 100644
+--- a/Sources/ArborKit/Controller/Controller+Events.swift
++++ b/Sources/ArborKit/Controller/Controller+Events.swift
+@@ -12,6 +12,7 @@ extension Controller: WindowSystemEvents {
+       giveUpPendingSlot(of: window.id)
+       return
+     }
++    putBackClosedPlaces(for: window)
+     if claimPendingSlot(for: window) { return }
+     if let display = workspaceID(containing: window.id) {
+       relayout(display, reason: .structure)
+@@ -28,8 +29,9 @@ extension Controller: WindowSystemEvents {
+ 
+   public func windowDestroyed(_ id: WindowID) {
+     defer { holdForgets(id) }
+-    let app = windows[id]?.pid
+-    let appName = windows[id]?.appName
++    let closed = windows[id]
++    let app = closed?.pid
++    let appName = closed?.appName
+     windows[id] = nil
+     parked.remove(id)
+     settled[id] = nil
+@@ -60,7 +62,9 @@ extension Controller: WindowSystemEvents {
+     defer { endUndoStep(undoScope) }
+     for display in workspaces.keys.sorted() where workspaces[display]!.contains(id) {
+       if !slotWaitsAgain(after: id, on: display) {
++        let before = workspaces[display]!
+         workspaces[display]!.forget(id, shareSpace: settings.shareRemovedSpace)
++        rememberPlace(of: closed, in: before, on: display)
+       }
+       relayout(display, reason: .structure)
+       if hadKeyboard { keyboardLeft(id, of: app, on: display) }
+diff --git a/Sources/ArborKit/Controller/Controller+PendingSlots.swift b/Sources/ArborKit/Controller/Controller+PendingSlots.swift
+index 55b66ba..e465ed3 100644
+--- a/Sources/ArborKit/Controller/Controller+PendingSlots.swift
++++ b/Sources/ArborKit/Controller/Controller+PendingSlots.swift
+@@ -55,7 +55,7 @@ extension Controller {
+ 
+   /// Window numbers restart after a reboot, so a saved number may soon belong, or already belongs,
+   /// to an unrelated window. The slot moves to a number no real window has.
+-  private func moveToStandIn(_ window: WindowID, hint: WindowHint, in workspace: inout Workspace) {
++  func moveToStandIn(_ window: WindowID, hint: WindowHint, in workspace: inout Workspace) {
+     var candidate = UInt32.max
+     func isTaken(_ id: WindowID) -> Bool {
+       pendingSlots.contains(id) || windows[id] != nil || hints[id] != nil || workspace.contains(id)
+@@ -87,7 +87,7 @@ extension Controller {
+     scheduleCheckOfPendingSlots()
+   }
+ 
+-  private func scheduleCheckOfPendingSlots() {
++  func scheduleCheckOfPendingSlots() {
+     scheduler.schedule("pending-slots", after: Self.pendingSlotLifetime) { [weak self] in
+       guard let self else { return }
+       let existing = self.system.existingWindowIDs()
+diff --git a/Sources/ArborKit/Controller/Controller+RelaunchedApps.swift b/Sources/ArborKit/Controller/Controller+RelaunchedApps.swift
+new file mode 100644
+index 0000000..cff9f08
+--- /dev/null
++++ b/Sources/ArborKit/Controller/Controller+RelaunchedApps.swift
+@@ -0,0 +1,138 @@
++import ArborCore
++
++/// An app that is quit and opened again while Arbor runs goes back to its place.
++///
++/// Someone who quits Mail and opens it again, or whose browser restarts for an update, expects it where it was;
++/// someone who closes a window expects its neighbours to close over the gap for good. Both arrive as "this
++/// window is gone". What tells them apart is that the app ended, and that news comes after the windows of
++/// an app that closes them as it quits, and before those of one that is killed or simply exits.
++///
++/// People quit apps all day and mostly do not open them again, so quitting must cost nothing: a window that goes is
++/// forgotten there and then, exactly as a closed one, and nothing moves later on its account. Arbor only
++/// keeps a note beside the tree: how the display was arranged before, and which windows have gone since. If the
++/// app of one of them ended (within `closedPlaceGrace` of the window's going), and a window of that app
++/// appears within `pendingSlotLifetime`, and **the arrangement has not been changed meanwhile** (gaps aside: Arbor
++/// moves them by itself, and a person's `resize` fitted the arrangement without the app), the earlier
++/// arrangement is put back with waiting slots where the windows were, and from there on it is a login: the
++/// window claims its slot by title, or by app alone if there is nothing to confuse (Controller+PendingSlots.swift).
++/// Someone who has rearranged things meanwhile has decided otherwise, and the window is a new window.
++extension Controller {
++  /// How long after a window went its app can end and still count as having quit, in seconds. Apps that ask
++  /// about unsaved changes do so before they close anything; what takes time afterwards is saving state.
++  public static let closedPlaceGrace: Double = 5
++
++  struct ClosedPlaces {
++    struct Closed {
++      var pid: Int32
++      var hint: WindowHint
++      var appEnded: Bool
++      /// Other processes of the same app that were running when it went (`open -n`). A window of theirs is not the app
++      /// coming back.
++      var otherCopies: Set<Int32>
++    }
++
++    /// The display's workspace before the first of `windows` went.
++    var before: Workspace
++    /// The same after the last of them went. While the display's arrangement is still this one's, nothing else has
++    /// changed in it.
++    var after: Workspace
++    /// Docked in `before`, and gone.
++    var windows: [WindowID: Closed]
++  }
++
++  /// `window` has gone and has just been forgotten on `display`, whose workspace was `before` until then.
++  func rememberPlace(of window: WindowSnapshot?, in before: Workspace, on display: DisplayID) {
++    guard let window, window.bundleID != nil, filter.manages(window), before.isDocked(window.id),
++      let after = workspaces[display]
++    else { return }
++    // One note per display, for as long as windows going is all that happens to its tree.
++    var places = closedPlaces[display].flatMap { $0.after.tree.isSameArrangement(as: before.tree) ? $0 : nil }
++      ?? ClosedPlaces(before: before, after: before, windows: [:])
++    // What the person saved or named since the last going is theirs.
++    places.before.follow(viewsAndNamesOf: before, since: places.after)
++    let appEnded = endedApps.contains(window.pid)
++    let otherCopies = Set(windows.values.filter { $0.bundleID == window.bundleID && $0.pid != window.pid }.map(\.pid))
++    places.windows[window.id] = ClosedPlaces.Closed(
++      pid: window.pid, hint: WindowHint(bundleID: window.bundleID, title: window.title), appEnded: appEnded,
++      otherCopies: otherCopies)
++    places.after = after
++    closedPlaces[display] = places
++    if appEnded {
++      scheduleEndOfClosedPlaces()
++    } else {
++      scheduler.schedule("closed-places-grace", after: Self.closedPlaceGrace) { [weak self] in
++        self?.forgetPlacesOfClosedWindows()
++      }
++    }
++  }
++
++  public func applicationTerminated(_ pid: Int32) {
++    guard isRunning else { return }
++    // Its windows may be reported next, in this turn of the run loop. Not for long: numbers are used again.
++    endedApps.insert(pid)
++    scheduler.schedule("ended-apps", after: 1) { [weak self] in self?.endedApps.removeAll() }
++    var count = 0
++    for display in closedPlaces.keys.sorted() {
++      for window in closedPlaces[display]!.windows.keys where closedPlaces[display]!.windows[window]!.pid == pid {
++        closedPlaces[display]!.windows[window]!.appEnded = true
++        count += 1
++      }
++    }
++    guard count > 0 else { return }
++    Log.info("an app with \(count) docked window(s) ended; they go back to their places if it is opened again soon")
++    scheduleEndOfClosedPlaces()
++  }
++
++  private func scheduleEndOfClosedPlaces() {
++    scheduler.schedule("closed-places", after: Self.pendingSlotLifetime) { [weak self] in self?.forgetClosedPlaces() }
++  }
++
++  /// Their apps live on: the windows were closed, and the note is as if they had never been there.
++  private func forgetPlacesOfClosedWindows() {
++    for display in closedPlaces.keys.sorted() {
++      var places = closedPlaces[display]!
++      for window in places.windows.keys.sorted() where !places.windows[window]!.appEnded {
++        places.windows[window] = nil
++        places.before.forget(window, shareSpace: settings.shareRemovedSpace)
++      }
++      closedPlaces[display] = places.windows.isEmpty ? nil : places
++    }
++  }
++
++  func forgetClosedPlaces() {
++    closedPlaces.removeAll()
++    endedApps.removeAll()
++    for key in ["closed-places", "closed-places-grace", "ended-apps"] { scheduler.cancel(key) }
++  }
++
++  /// `window` has appeared. If its app ended lately with docked windows, their places are made to wait for them.
++  func putBackClosedPlaces(for window: WindowSnapshot) {
++    guard !closedPlaces.isEmpty, let bundleID = window.bundleID else { return }
++    for display in closedPlaces.keys.sorted() {
++      let places = closedPlaces[display]!
++      guard
++        places.windows.values.contains(where: {
++          $0.appEnded && $0.hint.bundleID == bundleID && !$0.otherCopies.contains(window.pid)
++        })
++      else { continue }
++      // Either way the note has served: the tree is about to change, or it has.
++      closedPlaces[display] = nil
++      guard var workspace = workspaces[display], workspace.tree.isSameArrangement(as: places.after.tree) else { continue }
++      var earlier = places.before
++      for (gone, closed) in places.windows.sorted(by: { $0.key < $1.key }) {
++        if closed.appEnded {
++          // Those of other apps that ended too: once the tree changes there is no other way to keep them.
++          moveToStandIn(gone, hint: closed.hint, in: &earlier)
++        } else {
++          earlier.forget(gone, shareSpace: settings.shareRemovedSpace)
++        }
++      }
++      workspace.restoreStructure(from: earlier, left: places.after)
++      workspaces[display] = workspace
++      scheduleCheckOfPendingSlots()
++      relayout(display, reason: .structure)
++      scheduleSave()
++    }
++    if closedPlaces.isEmpty { forgetClosedPlaces() }
++  }
++}
+diff --git a/Sources/ArborKit/Controller/Controller.swift b/Sources/ArborKit/Controller/Controller.swift
+index d7e2a41..42f159e 100644
+--- a/Sources/ArborKit/Controller/Controller.swift
++++ b/Sources/ArborKit/Controller/Controller.swift
+@@ -317,6 +317,11 @@ public final class Controller {
+   var overdueSlots: Set<WindowID> = []
+   /// Windows that took a waiting slot on the strength of their app alone, until the wait is over.
+   var provisionalSlots: [WindowID: ProvisionalSlot] = [:]
++  /// Where docked windows that closed lately were, in case their app ended and is opened again
++  /// (Controller+RelaunchedApps.swift).
++  var closedPlaces: [DisplayID: ClosedPlaces] = [:]
++  /// Processes that ended a moment ago.
++  var endedApps: Set<Int32> = []
+   // Controller+Economy.swift
+   /// Where commands and layouts are counted and timed (the `stats` command).
+   public var stats = CallStats.shared
+@@ -439,6 +444,7 @@ public final class Controller {
+     pendingSlots.removeAll()
+     overdueSlots.removeAll()
+     provisionalSlots.removeAll()
++    forgetClosedPlaces()
+     drag = nil
+     soleFloats.dragged = nil
+     edgeResize = nil
+@@ -532,6 +538,7 @@ public final class Controller {
+     returningWindows.removeAll()
+     keyboardHandOver = KeyboardHandOver()
+     scheduler.cancel("pending-slots")
++    forgetClosedPlaces()
+     forgetHold()
+     scheduler.cancel(Self.afterLaunchKey)
+     soleFloats.isWaitingAfterLaunch = false
+diff --git a/Sources/ArborKit/Platform/WindowSystem.swift b/Sources/ArborKit/Platform/WindowSystem.swift
+index aa5b97c..c19e2ed 100644
+--- a/Sources/ArborKit/Platform/WindowSystem.swift
++++ b/Sources/ArborKit/Platform/WindowSystem.swift
+@@ -239,9 +239,14 @@ public protocol WindowSystemEvents: AnyObject {
+   /// A window that was open all along has come to notice: its macOS Space is showing for the first time
+   /// since `start()`. Nobody just opened it, which is what `windowAppeared` says.
+   func windowFound(_ window: WindowSnapshot)
++  /// The process `pid` has ended: quit, killed or crashed. Its windows are reported with `windowDestroyed` as ever,
++  /// before this (an app that closes them as it quits) or right after (one that is simply gone).
++  func applicationTerminated(_ pid: Int32)
+ }
+ 
+ extension WindowSystemEvents {
+   /// To a listener that makes no difference between the two, a window that was found is one more window.
+   public func windowFound(_ window: WindowSnapshot) { windowAppeared(window) }
++  /// A listener that keeps nothing for apps that come back has nothing to do: their windows are reported gone one by one.
++  public func applicationTerminated(_ pid: Int32) {}
+ }
+diff --git a/Sources/ArborKit/Trace/RecordingWindowSystem.swift b/Sources/ArborKit/Trace/RecordingWindowSystem.swift
+index 18dae91..5c75685 100644
+--- a/Sources/ArborKit/Trace/RecordingWindowSystem.swift
++++ b/Sources/ArborKit/Trace/RecordingWindowSystem.swift
+@@ -275,6 +275,10 @@ extension RecordingWindowSystem: WindowSystemEvents {
+     recorder.event("windowFound", [recorder.window(window)]) { events?.windowFound(window) }
+   }
+ 
++  public func applicationTerminated(_ pid: Int32) {
++    recorder.event("applicationTerminated", [pid]) { events?.applicationTerminated(pid) }
++  }
++
+   private func beginGesture(_ id: WindowID) {
+     gesture = inner.allWindows().first { $0.id == id }
+   }
+diff --git a/Sources/ArborTesting/ChaosInvariants.swift b/Sources/ArborTesting/ChaosInvariants.swift
+index 59e4e43..91d20de 100644
+--- a/Sources/ArborTesting/ChaosInvariants.swift
++++ b/Sources/ArborTesting/ChaosInvariants.swift
+@@ -14,6 +14,7 @@ extension ChaosRunner {
+   /// Timers the controller may have pending, by prefix. A key that matches none has leaked.
+   static let knownTimers = ["save", "undo-continuation", "enforce-", "space-", "resume", "focus", "rule-title-", "pending-slots", "peek", "raise-pins",
+     "settings-file", "update-check", "summon-wait", "accessibility",
++    "closed-places", "ended-apps",
+     "landed-", "drag-dwell", "sole-float-after-launch", "layout-open ", "release", "call-over",
+     "events", "control-connection-",
+     "heads-up", "minimap-",
+diff --git a/Sources/ArborTesting/FakeWindowSystem.swift b/Sources/ArborTesting/FakeWindowSystem.swift
+index affc128..4de063d 100644
+--- a/Sources/ArborTesting/FakeWindowSystem.swift
++++ b/Sources/ArborTesting/FakeWindowSystem.swift
+@@ -882,9 +882,13 @@ extension FakeWindowSystem {
+ // MARK: Apps
+ 
+ extension FakeWindowSystem {
+-  /// The app quits: like the Accessibility layer, this reports each of its windows destroyed, in order.
+-  public func quit(pid: Int32) {
++  /// The app quits: like the Accessibility layer, this reports each of its windows destroyed, in order, and that
++  /// the process ended: afterwards for an app that closes its windows as it quits, first for one that is
++  /// killed, crashes or simply exits.
++  public func quit(pid: Int32, windowsFirst: Bool = true) {
++    if !windowsFirst, started { events?.applicationTerminated(pid) }
+     for id in windows.keys.sorted() where windows[id]?.snapshot.pid == pid { close(id) }
++    if windowsFirst, started { events?.applicationTerminated(pid) }
+   }
+ }
+ 
+diff --git a/Sources/ArborTesting/ReplayInvariants.swift b/Sources/ArborTesting/ReplayInvariants.swift
+index 09b5dce..1f36746 100644
+--- a/Sources/ArborTesting/ReplayInvariants.swift
++++ b/Sources/ArborTesting/ReplayInvariants.swift
+@@ -25,9 +25,13 @@ public enum ReplayInvariants {
+       for window in workspace.tree.allWindows { homes[window, default: 0] += 1 }
+       for window in workspace.floating.keys { homes[window, default: 0] += 1 }
+     }
++    // A place kept for a window that is expected back has a number in the tree and no window; `state` lists those.
++    let waiting = Set(controller.snapshot().waiting.map(\.id))
+     for (window, count) in homes.sorted(by: { $0.key < $1.key }) {
+       if count > 1 { problems.append("\(window) is in \(count) places at once") }
+-      if controller.windows[window] == nil { problems.append("\(window) is arranged but no longer exists") }
++      if controller.windows[window] == nil, !waiting.contains(window) {
++        problems.append("\(window) is arranged but no longer exists")
++      }
+     }
+ 
+     // Nothing lost: Arbor knows every window there is, and every one it arranges has a place.
+diff --git a/Sources/ArborTesting/TraceReplayer.swift b/Sources/ArborTesting/TraceReplayer.swift
+index 3ad2c3c..17dfa86 100644
+--- a/Sources/ArborTesting/TraceReplayer.swift
++++ b/Sources/ArborTesting/TraceReplayer.swift
+@@ -245,6 +245,11 @@ public final class TraceReplayer {
+         bridge.events?.windowFound(snapshot)
+       },
+       "pointerPressed": { [bridge] _ in bridge.events?.pointerPressed() },
++      // Its windows go with lines of their own, before or after.
++      "applicationTerminated": { [bridge] arguments in
++        guard let pid: Int32 = arguments.first?.decoded() else { return }
++        bridge.events?.applicationTerminated(pid)
++      },
+       // What follows depends on what macOS then said, which is in the trace as a read.
+       "accessibilityWasRefused": { [bridge] _ in bridge.events?.accessibilityWasRefused() },
+       "applicationActivated": { [unowned self] arguments in
+diff --git a/Sources/arbor-sim/main.swift b/Sources/arbor-sim/main.swift
+index e36c16a..e404dd9 100644
+--- a/Sources/arbor-sim/main.swift
++++ b/Sources/arbor-sim/main.swift
+@@ -16,6 +16,7 @@ import Foundation
+ //                                open a window (ids start at 101); `fixed`: its size cannot be changed
+ //   close <id> | minimize <id> | restore <id>
+ //   focus <id>                   click a window (`focus left`, `focus next`… are Arbor's own commands)
++//   quit-app <App> | kill-app <App>   the app ends: its windows close and then the process goes, or the other way round
+ //   cursor <x> <y>               move the pointer (camera commands use it)
+ //   press <command>              press and release a shortcut bound to that command
+ //   from <source> <command>      run it as a shortcut, menu, gesture, script or url would (plain commands: script)
+@@ -274,6 +275,10 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
+     guard let id = window(1) else { return usage("close <id>") }
+     system.close(id)
+     return ("closed \(id.rawValue)", true)
++  case "quit-app", "kill-app":
++    guard words.count == 2 else { return usage("\(words[0]) <App>") }
++    system.quit(pid: pid(ofApp: words[1]), windowsFirst: words[0] == "quit-app")
++    return ("\(words[1]) has ended", true)
+   case "minimize", "restore":
+     guard let id = window(1) else { return usage("\(words[0]) <id>") }
+     system.setMinimized(id, words[0] == "minimize")
+diff --git a/Tests/ArborCoreTests/RestoreStructureTests.swift b/Tests/ArborCoreTests/RestoreStructureTests.swift
+new file mode 100644
+index 0000000..89f6867
+--- /dev/null
++++ b/Tests/ArborCoreTests/RestoreStructureTests.swift
+@@ -0,0 +1,165 @@
++import ArborCore
++import CoreGraphics
++import Testing
++
++@Suite struct RestoreStructureTests {
++  let a = WindowID(1)
++  let b = WindowID(2)
++  let c = WindowID(3)
++
++  /// `a`, `b` and `c` docked around the Desktop.
++  func desk() -> Workspace {
++    var workspace = Workspace()
++    workspace.floating[a] = CGRect(x: 10, y: 10, width: 300, height: 200)
++    workspace.dock(a, at: .cameraEdge(.left))
++    workspace.dock(b, at: .cameraEdge(.right))
++    workspace.dock(c, at: .beside(workspace.tree.leaf(containing: b)!, .bottom))
++    return workspace
++  }
++
++  @Test func theArrangementIsAsItWasBeforeTheWindowsWent() {
++    let earlier = desk()
++    var workspace = earlier
++    workspace.forget(a)
++    workspace.forget(c)
++    let left = workspace
++    workspace.restoreStructure(from: earlier, left: left)
++    #expect(workspace.tree == earlier.tree)
++    #expect(workspace.tree.invariantViolations().isEmpty)
++    #expect(workspace.undockedFrame(of: a) == earlier.undockedFrame(of: a), "what was remembered about it comes back")
++    #expect(earlier.undockedFrame(of: a) != nil)
++  }
++
++  @Test func theViewAndItsHistoryStayAsTheyAreNow() {
++    let earlier = desk()
++    var workspace = earlier
++    workspace.forget(a)
++    let left = workspace
++    workspace.moveCamera(to: workspace.tree.leaf(containing: b)!)
++    workspace.moveCamera(to: workspace.tree.desktop)
++    let (camera, back) = (workspace.camera, workspace.back)
++    workspace.restoreStructure(from: earlier, left: left)
++    #expect(workspace.camera == camera)
++    #expect(workspace.back == back)
++    #expect(workspace.tree.contains(workspace.camera))
++  }
++
++  @Test func floatingWindowsStayAsTheyAreNow() {
++    let earlier = desk()
++    var workspace = earlier
++    workspace.forget(a)
++    let left = workspace
++    let new = WindowID(9)
++    workspace.floating[new] = CGRect(x: 1, y: 2, width: 3, height: 4)
++    workspace.restoreStructure(from: earlier, left: left)
++    #expect(workspace.isFloating(new))
++    #expect(workspace.isDocked(a) && !workspace.isFloating(a))
++  }
++
++  @Test func aSavedViewThatTheGoingMovedComesBackUnlessItWasSavedOver() {
++    var earlier = desk()
++    earlier.moveCamera(to: earlier.tree.leaf(containing: a)!)
++    earlier.saveView(slot: 1)
++    earlier.saveView(slot: 2)
++    earlier.moveCamera(to: earlier.tree.root)
++    var workspace = earlier
++    workspace.forget(a)
++    let left = workspace
++    #expect(workspace.savedViews["1"] != earlier.savedViews["1"])
++    workspace.moveCamera(to: workspace.tree.leaf(containing: b)!)
++    workspace.saveView(slot: 2)
++    workspace.restoreStructure(from: earlier, left: left)
++    #expect(workspace.savedViews["1"] == earlier.tree.leaf(containing: a))
++    #expect(workspace.savedViews["2"] == workspace.tree.leaf(containing: b), "saved over meanwhile")
++  }
++
++  /// `[a | Desktop | (c | d)]`: the pair lies in a row on its own axis and exists only because a saved view is on it.
++  @Test func aGroupThatOnlyASavedViewKeepsComesBackWithTheView() {
++    let d = WindowID(4)
++    var earlier = Workspace()
++    earlier.dock(a, at: .cameraEdge(.left))
++    earlier.dock(c, at: .cameraEdge(.right))
++    earlier.moveCamera(to: earlier.tree.leaf(containing: c)!)
++    earlier.dock(d, at: .cameraEdge(.right))
++    let pair = earlier.camera
++    #expect(Set(earlier.tree.windows(under: pair)) == [c, d])
++    earlier.saveView(slot: 1)
++    earlier.moveCamera(to: earlier.tree.root)
++
++    var workspace = earlier
++    workspace.forget(c)
++    workspace.forget(d)
++    let left = workspace
++    workspace.restoreStructure(from: earlier, left: left)
++    #expect(workspace.tree == earlier.tree)
++    #expect(workspace.savedViews["1"] == pair)
++    #expect(Set(workspace.tree.windows(under: workspace.savedViews["1"]!)) == [c, d])
++    #expect(workspace.tree.invariantViolations().isEmpty)
++  }
++
++  @Test func aViewOfEverythingStaysAViewOfEverything() {
++    var earlier = Workspace()
++    earlier.dock(a, at: .cameraEdge(.left))
++    #expect(earlier.camera == earlier.tree.root)
++    var workspace = earlier
++    workspace.forget(a)
++    #expect(workspace.tree.root == workspace.tree.desktop, "the Desktop is all there is")
++    let left = workspace
++    workspace.restoreStructure(from: earlier, left: left)
++    #expect(workspace.camera == earlier.tree.root)
++  }
++
++  @Test func namesComeBackLikeSavedViews() throws {
++    var earlier = desk()
++    _ = try earlier.setName("Web", of: earlier.tree.leaf(containing: a)!)
++    _ = try earlier.setName("Mail", of: earlier.tree.leaf(containing: c)!)
++    var workspace = earlier
++    workspace.forget(a)
++    workspace.forget(c)
++    let left = workspace
++    #expect(workspace.names.isEmpty)
++    // Given to something else meanwhile, in other capitals.
++    _ = try workspace.setName("mail", of: workspace.tree.leaf(containing: b)!)
++    workspace.restoreStructure(from: earlier, left: left)
++    #expect(workspace.names == ["Web": earlier.tree.leaf(containing: a)!, "mail": earlier.tree.leaf(containing: b)!])
++  }
++
++  @Test func whatWasSavedOrNamedBetweenTwoGoingsGoesIntoTheNote() throws {
++    var note = desk()
++    note.moveCamera(to: note.tree.leaf(containing: a)!)
++    note.saveView(slot: 1)
++    _ = try note.setName("Web", of: note.tree.leaf(containing: a)!)
++    note.moveCamera(to: note.tree.root)
++    var workspace = note
++    workspace.forget(a)
++    let left = workspace
++    let notes = workspace.tree.leaf(containing: b)!
++    workspace.moveCamera(to: notes)
++    workspace.saveView(slot: 1)
++    workspace.saveView(slot: 2)
++    _ = try workspace.setName("Web", of: notes)
++    note.follow(viewsAndNamesOf: workspace, since: left)
++    #expect(note.savedViews == ["1": notes, "2": notes])
++    #expect(note.names == ["Web": notes])
++  }
++
++  @Test func movedGapsAndOtherTabsInFrontAreTheSameArrangement() {
++    let workspace = desk()
++    var moved = workspace
++    let (left, right) = (moved.tree.leaf(containing: a)!, moved.tree.desktop)
++    moved.tree.moveBoundary(leading: left, trailing: right, by: 40, pointsPerWeight: 500)
++    #expect(moved.tree != workspace.tree)
++    #expect(moved.tree.isSameArrangement(as: workspace.tree))
++
++    var docked = workspace
++    docked.dock(WindowID(9), at: .cameraEdge(.top))
++    #expect(!docked.tree.isSameArrangement(as: workspace.tree))
++    // There and back again: it looks the same, but node numbers have been handed out since.
++    docked.forget(WindowID(9))
++    #expect(!docked.tree.isSameArrangement(as: workspace.tree))
++
++    var without = workspace
++    without.forget(c)
++    #expect(!without.tree.isSameArrangement(as: workspace.tree))
++  }
++}
+diff --git a/Tests/ArborKitTests/FaithfulFakeTests.swift b/Tests/ArborKitTests/FaithfulFakeTests.swift
+index 28c71b0..9d0cba6 100644
+--- a/Tests/ArborKitTests/FaithfulFakeTests.swift
++++ b/Tests/ArborKitTests/FaithfulFakeTests.swift
+@@ -25,6 +25,7 @@ private final class Recorder: WindowSystemEvents {
+   func resizeEnded(_ id: WindowID) {}
+   func keyboardFocusMoved() { log.append("keyboard moved") }
+   func dragCancelled(_ id: WindowID) {}
++  func applicationTerminated(_ pid: Int32) { log.append("terminated \(pid)") }
+   func windowReplaced(_ old: WindowID, by window: WindowSnapshot) { log.append("replaced \(old) by \(window.id)") }
+   func pointerPressed() {}
+ }
+diff --git a/Tests/ArborKitTests/KeptPlacesTests.swift b/Tests/ArborKitTests/KeptPlacesTests.swift
+index cca3ece..f273ba1 100644
+--- a/Tests/ArborKitTests/KeptPlacesTests.swift
++++ b/Tests/ArborKitTests/KeptPlacesTests.swift
+@@ -285,6 +285,28 @@ import Testing
+     #expect(h.workspace.isFloating(welcome))
+   }
+ 
++  @Test(arguments: [false, true])
++  func aWindowThatWasAGuestOrPinnedWhileItWaitedForItsTitleIsNeitherOnceItIsDocked(pinned: Bool) {
++    let (saved, _, right) = lifecycle.savedPairOfOneApp()
++    let h = Harness(saved: saved)
++    let filler = h.system.open(app: "Filler")
++    for _ in 0..<3 { h.system.open(app: "Filler") }  // so that nobody gets a saved number
++    h.start()
++    h.run("dock \(filler.rawValue) top")
++    h.run("zoom \(filler.rawValue)")
++    // It opens over a framed window, without its title: a guest (F57).
++    let window = lifecycle.reopen(right, in: h, title: "")
++    #expect(h.workspace.isFloating(window))
++    #expect(h.workspace.guests?[window] != nil)
++    if pinned { h.run("pin \(window.rawValue)") }
++    h.system.setTitle(window, right.title)
++    #expect(h.workspace.isDocked(window))
++    #expect(h.workspace.guests?[window] == nil)
++    #expect(!h.workspace.isPinned(window))
++    #expect(h.workspace.pinnedWindows.isEmpty)
++    #expect(h.workspace.pinned == nil, "not even a pin that does not count")
++  }
++
+   @Test func theFirstWindowKeepsThePlaceOnceItHasTheSavedTitleOrTheWaitIsOver() {
+     var (h, safari, _) = waitingForSafari()
+     var first = lifecycle.reopen(safari, in: h, title: "Loading")
+diff --git a/Tests/ArborKitTests/PendingSlotChaosTests.swift b/Tests/ArborKitTests/PendingSlotChaosTests.swift
+index 9c6eb83..735e7f3 100644
+--- a/Tests/ArborKitTests/PendingSlotChaosTests.swift
++++ b/Tests/ArborKitTests/PendingSlotChaosTests.swift
+@@ -21,6 +21,8 @@ import Testing
+     visibleFrame: CGRect(x: 1440, y: 25, width: 1920, height: 1055), isMain: false)
+   static let apps = ["Safari", "Mail", "Terminal"]
+   static let titles = ["one", "two", ""]
++  /// Each app is a process of its own.
++  static func pid(of app: String) -> Int32 { Int32(2000 + (apps.firstIndex(of: app) ?? 9)) }
+ 
+   func check(_ h: Harness, _ context: String) {
+     var seen = Set<WindowID>()
+@@ -44,8 +46,9 @@ import Testing
+       // A first life: some windows, docked here and there, on one or two displays.
+       let first = Harness(displays: random.next(2) == 0 ? both : [both[0]])
+       for _ in 0..<(2 + random.next(5)) {
++        let app = Self.apps[random.next(3)]
+         first.system.open(
+-          app: Self.apps[random.next(3)], title: Self.titles[random.next(3)],
++          app: app, title: Self.titles[random.next(3)], pid: Self.pid(of: app),
+           frame: CGRect(x: 100 + random.next(2500), y: 60 + random.next(500), width: 500, height: 300))
+       }
+       first.start()
+@@ -60,8 +63,9 @@ import Testing
+       let h = Harness(displays: random.next(2) == 0 ? both : [both[0]], saved: first.store.saved)
+       let rebooted = random.next(2) == 0
+       for window in first.system.allWindows() {
++        let app = rebooted ? Self.apps[random.next(3)] : window.appName
+         let id = h.system.open(
+-          app: rebooted ? Self.apps[random.next(3)] : window.appName, title: rebooted ? Self.titles[random.next(3)] : window.title,
++          app: app, title: rebooted ? Self.titles[random.next(3)] : window.title, pid: Self.pid(of: app),
+           frame: window.frame)
+         switch random.next(4) {
+         case 0: h.system.setListed(id, false)
+@@ -77,19 +81,20 @@ import Testing
+       for step in 0..<40 {
+         let known = h.system.allWindows().map(\.id)
+         let pick = known.isEmpty ? nil : known[random.next(known.count)]
+-        switch random.next(14) {
++        switch random.next(16) {
+         case 0, 1:
+           // Apps open windows on a display that is there.
+           let width = h.system.displayList.count == 2 ? 2500 : 800
++          let app = Self.apps[random.next(3)]
+           h.system.open(
+-            app: Self.apps[random.next(3)], title: Self.titles[random.next(3)],
++            app: app, title: Self.titles[random.next(3)], pid: Self.pid(of: app),
+             frame: CGRect(x: 100 + random.next(width), y: 60 + random.next(500), width: 500, height: 300))
+         case 2: if let pick { h.system.setTitle(pick, Self.titles[random.next(3)]) }
+         case 3: if let pick { h.system.close(pick) }
+         case 4: if let hidden = h.system.unlisted.keys.sorted().first { h.system.setListed(hidden, true) }
+         case 5: if let hidden = h.system.unlisted.keys.sorted().last { h.system.close(hidden) }
+         case 6: h.system.setDisplays(h.system.displayList.count == 2 ? [both[0]] : both)
+-        case 7: h.scheduler.advance(by: [0.6, 30, Controller.pendingSlotLifetime][random.next(3)])
++        case 7: h.scheduler.advance(by: [0.6, Controller.closedPlaceGrace, 30, Controller.pendingSlotLifetime][random.next(4)])
+         case 8: h.run(["arrange", "float-all", "arrange all", "show-all", "desktop", "back"][random.next(6)])
+         case 9:
+           h.run("pause")
+@@ -98,6 +103,8 @@ import Testing
+         case 10: if let pick { h.run("dock \(pick.rawValue) \(["left", "right", "up", "down"][random.next(4)])") }
+         case 11: if let pick { h.run(["zoom", "float", "toggle-float"][random.next(3)] + " \(pick.rawValue)") }
+         case 12: if let pick { h.system.setMinimized(pick, random.next(2) == 0) }
++        // An app ends, one way or the other; it is "opened again" whenever a window of it next opens.
++        case 13, 14: h.system.quit(pid: Self.pid(of: Self.apps[random.next(3)]), windowsFirst: random.next(2) == 0)
+         default: h.run("exclude com.example.\(Self.apps[random.next(3)].lowercased())")
+         }
+         check(h, "seed \(seed) step \(step)")
+diff --git a/Tests/ArborKitTests/RelaunchedAppTests.swift b/Tests/ArborKitTests/RelaunchedAppTests.swift
+new file mode 100644
+index 0000000..2799f9b
+--- /dev/null
++++ b/Tests/ArborKitTests/RelaunchedAppTests.swift
+@@ -0,0 +1,538 @@
++import ArborCore
++import ArborKit
++import ArborTesting
++import CoreGraphics
++import Foundation
++import Testing
++
++/// An app that is quit and opened again while Arbor runs goes back to its place (backlog K192). A window that
++/// is closed does not keep one. Both arrive as "this window is gone"; what tells them apart is that the app ended.
++@Suite @MainActor struct RelaunchedAppTests {
++  static let safariPID: Int32 = 2001
++  static let notesPID: Int32 = 2002
++
++  /// How an app's end is reported.
++  enum Ending: CaseIterable {
++    /// ⌘Q: the windows close one by one, then the process ends.
++    case windowsFirst
++    /// A crash, `kill`, or an app that just exits: the process is gone, and its windows with it.
++    case processFirst
++  }
++
++  func end(_ pid: Int32, _ ending: Ending, in h: Harness) {
++    h.system.quit(pid: pid, windowsFirst: ending == .windowsFirst)
++  }
++
++  /// Safari docked on the left and Notes on the right, each app a process of its own, Mail floating.
++  func pair() -> (h: Harness, safari: WindowSnapshot, notes: WindowID) {
++    let h = Harness()
++    let a = h.system.open(app: "Safari", title: "News", pid: Self.safariPID)
++    let b = h.system.open(app: "Notes", pid: Self.notesPID)
++    h.system.open(app: "Mail", pid: 2003)
++    h.start()
++    h.run("dock \(a.rawValue) left")
++    h.run("dock \(b.rawValue) right")
++    return (h, h.controller.windows[a]!, b)
++  }
++
++  /// The app again, as another process.
++  func relaunch(_ window: WindowSnapshot, in h: Harness, title: String? = nil, pid: Int32 = 3001) -> WindowID {
++    h.system.open(
++      app: window.appName, bundleID: window.bundleID, title: title ?? window.title, pid: pid,
++      frame: CGRect(x: 200, y: 150, width: 500, height: 300))
++  }
++
++  @Test(arguments: Ending.allCases) func anAppThatIsQuitAndOpenedAgainGoesBackToItsPlace(ending: Ending) {
++    let (h, safari, notes) = pair()
++    let place = h.frame(safari.id)!
++    let notesBefore = h.frame(notes)!
++    end(Self.safariPID, ending, in: h)
++    h.scheduler.advance(by: 20)
++    let again = relaunch(safari, in: h)
++    #expect(h.workspace.isDocked(again))
++    #expect(h.frame(again) == place)
++    #expect(h.frame(notes) == notesBefore)
++    #expect(h.workspace.tree.invariantViolations().isEmpty)
++    #expect(Set(h.workspace.tree.allWindows) == [again, notes])
++    #expect(!h.run("status").message.contains("kept"))
++  }
++
++  @Test(arguments: Ending.allCases) func meanwhileTheNeighboursCloseOverThePlaceAsForAClosedWindow(ending: Ending) {
++    let (h, _, notes) = pair()
++    let (twin, closed, twinNotes) = pair()
++    end(Self.safariPID, ending, in: h)
++    twin.system.close(closed.id)
++    for harness in [h, twin] { harness.scheduler.advance(by: 1) }
++    #expect(h.frame(notes) == twin.frame(twinNotes))
++    #expect(h.layout?.windowFrames.keys.sorted() == [notes])
++    #expect(h.workspace == twin.workspace, "to the arrangement, a window that goes is a window that goes")
++    #expect(!h.run("status").message.contains("kept"))
++    #expect(h.controller.snapshot().waiting.isEmpty)
++  }
++
++  @Test(arguments: Ending.allCases) func anAppThatIsQuitAndStaysAwayCostsNothing(ending: Ending) {
++    // The common case by far.
++    let (h, _, _) = pair()
++    end(Self.safariPID, ending, in: h)
++    h.scheduler.advance(by: 1)
++    let (moves, tree) = (h.system.moveLog.count, h.workspace.tree)
++    h.scheduler.advance(by: Controller.pendingSlotLifetime * 2)
++    #expect(h.system.moveLog.count == moves, "nothing moves later on its account")
++    #expect(h.workspace.tree == tree)
++    #expect(h.scheduler.pendingKeys.filter { $0.hasPrefix("closed-") || $0.hasPrefix("ended-") || $0 == "pending-slots" }.isEmpty)
++  }
++
++  @Test func aWindowThatIsClosedKeepsNoPlace() {
++    let (h, safari, notes) = pair()
++    // Safari has another window, so closing this one ends nothing.
++    h.system.open(app: "Safari", title: "Weather", pid: Self.safariPID)
++    h.system.close(safari.id)
++    #expect(h.workspace.tree.allWindows == [notes], "gone at once")
++    // ⌘W, ⌘N: a new window, even with the same title, even at once.
++    let new = relaunch(safari, in: h, pid: Self.safariPID)
++    #expect(h.workspace.isFloating(new))
++    h.scheduler.advance(by: Controller.closedPlaceGrace + 0.1)
++    #expect(h.workspace.tree.allWindows == [notes])
++    #expect(!h.scheduler.pendingKeys.contains("closed-places-grace"))
++    #expect(!h.scheduler.pendingKeys.contains("pending-slots"))
++    let later = relaunch(safari, in: h, pid: Self.safariPID)
++    #expect(h.workspace.isFloating(later))
++  }
++
++  @Test func closingAnAppsLastWindowKeepsNoPlaceEitherWhileTheAppLivesOn() {
++    let (h, safari, notes) = pair()
++    h.system.close(safari.id)
++    h.scheduler.advance(by: Controller.closedPlaceGrace + 0.1)
++    #expect(h.workspace.tree.allWindows == [notes])
++    // Quit minutes later: there is no place left to keep.
++    h.system.quit(pid: Self.safariPID, windowsFirst: true)
++    #expect(!h.run("status").message.contains("kept"))
++  }
++
++  @Test func anAppThatTakesItsTimeToQuitStillKeepsItsPlace() {
++    let (h, safari, _) = pair()
++    h.system.close(safari.id)
++    h.scheduler.advance(by: Controller.closedPlaceGrace - 0.5)
++    h.system.quit(pid: Self.safariPID, windowsFirst: true)
++    h.scheduler.advance(by: 30)
++    let again = relaunch(safari, in: h)
++    #expect(h.workspace.isDocked(again))
++  }
++
++  @Test func thePlaceIsGivenUpWhenTheAppStaysAway() {
++    let (h, safari, notes) = pair()
++    end(Self.safariPID, .windowsFirst, in: h)
++    h.scheduler.advance(by: Controller.pendingSlotLifetime + 1)
++    #expect(h.workspace.tree.allWindows == [notes])
++    #expect(!h.run("status").message.contains("kept"))
++    let again = relaunch(safari, in: h)
++    #expect(h.workspace.isFloating(again))
++  }
++
++  @Test func afterAnUpdateTheWindowMayHaveAnotherTitle() {
++    let (h, safari, notes) = pair()
++    end(Self.safariPID, .processFirst, in: h)
++    let welcome = relaunch(safari, in: h, title: "What's New")
++    #expect(h.workspace.isDocked(welcome), "the app's only window takes its only place, for now")
++    let real = relaunch(safari, in: h)
++    #expect(h.workspace.isDocked(real))
++    #expect(h.workspace.isFloating(welcome))
++    #expect(Set(h.workspace.tree.allWindows) == [real, notes])
++  }
++
++  @Test(arguments: Ending.allCases) func everyWindowOfTheAppGoesBackToItsOwnPlace(ending: Ending) {
++    let h = Harness()
++    let a = h.system.open(app: "Safari", title: "News", pid: Self.safariPID)
++    let b = h.system.open(app: "Safari", title: "Weather", pid: Self.safariPID)
++    let c = h.system.open(app: "Notes", pid: Self.notesPID)
++    h.start()
++    h.run("dock \(a.rawValue) left")
++    h.run("dock \(b.rawValue) right")
++    h.run("dock \(c.rawValue) beside \(a.rawValue) bottom")
++    let (news, weather) = (h.controller.windows[a]!, h.controller.windows[b]!)
++    let (newsPlace, weatherPlace) = (h.frame(a)!, h.frame(b)!)
++    end(Self.safariPID, ending, in: h)
++    // In the other order.
++    let newWeather = relaunch(weather, in: h)
++    #expect(h.run("status").message.contains("1 place kept"), "from here on it is as after a login")
++    let newNews = relaunch(news, in: h)
++    #expect(h.frame(newNews) == newsPlace)
++    #expect(h.frame(newWeather) == weatherPlace)
++    #expect(h.workspace.tree.invariantViolations().isEmpty)
++  }
++
++  @Test(arguments: Ending.allCases) func quittingTheAppThatIsFramedDoesNotLeaveAnEmptyView(ending: Ending) {
++    let (h, safari, notes) = pair()
++    let (twin, closed, _) = pair()
++    h.run("zoom \(safari.id.rawValue)")
++    twin.run("zoom \(closed.id.rawValue)")
++    end(Self.safariPID, ending, in: h)
++    twin.system.close(closed.id)
++    for harness in [h, twin] { harness.scheduler.advance(by: 1) }
++    #expect(h.layout?.windowFrames.keys.sorted() == twin.layout?.windowFrames.keys.sorted(), "as after closing it")
++    #expect(h.layout?.windowFrames[notes] != nil)
++    #expect(h.system.isVisible(notes))
++    // And it still comes back to its place.
++    let again = relaunch(safari, in: h)
++    #expect(h.workspace.isDocked(again))
++    #expect(h.workspace.tree.invariantViolations().isEmpty)
++    #expect(h.workspace.tree.contains(h.workspace.camera))
++  }
++
++  @Test func floatingWindowsKeepNothing() {
++    let (h, _, _) = pair()
++    h.system.quit(pid: 2003, windowsFirst: true)
++    #expect(!h.run("status").message.contains("kept"))
++    #expect(!h.scheduler.pendingKeys.contains("closed-places-grace"))
++  }
++
++  @Test func rearrangingGivesThePlaceUp() {
++    let (h, safari, _) = pair()
++    end(Self.safariPID, .windowsFirst, in: h)
++    #expect(h.run("arrange").ok)
++    let again = relaunch(safari, in: h)
++    #expect(h.workspace.isFloating(again))
++    #expect(h.workspace.tree.invariantViolations().isEmpty)
++  }
++
++  @Test func anAppThatIsNoLongerArrangedKeepsNoPlace() {
++    let (h, safari, notes) = pair()
++    h.run("exclude \(safari.bundleID!)")
++    end(Self.safariPID, .windowsFirst, in: h)
++    #expect(h.workspace.tree.allWindows == [notes])
++    #expect(!h.run("status").message.contains("kept"))
++  }
++
++  @Test func aWindowClosedJustBeforeArborQuitsLeavesNoPlaceInTheFile() {
++    let (h, safari, notes) = pair()
++    h.system.close(safari.id)
++    h.controller.shutdown()
++    #expect(h.store.saved?.workspaces[h.display]?.tree.allWindows == [notes])
++  }
++
++  @Test func newsOfAnAppThatEndedIsHarmlessWhenArborIsNotRunningOrKnowsNothingOfIt() {
++    let (h, _, notes) = pair()
++    h.controller.applicationTerminated(4242)
++    h.run("pause")
++    h.controller.applicationTerminated(Self.safariPID)
++    h.run("resume")
++    #expect(h.workspace.isDocked(notes))
++    #expect(h.workspace.tree.invariantViolations().isEmpty)
++    h.controller.shutdown()
++    h.controller.applicationTerminated(Self.notesPID)
++  }
++
++  @Test func aProcessNumberUsedAgainIsNotTakenForTheAppThatEnded() {
++    let (h, _, _) = pair()
++    end(Self.safariPID, .processFirst, in: h)
++    h.scheduler.advance(by: 10)
++    // Another app gets the number, docks a window, and the window is closed and opened again.
++    let other = h.system.open(app: "Terminal", title: "zsh", pid: Self.safariPID)
++    h.run("dock \(other.rawValue) top")
++    h.system.close(other)
++    let again = h.system.open(app: "Terminal", title: "zsh", pid: Self.safariPID)
++    #expect(h.workspace.isFloating(again))
++  }
++
++  @Test(arguments: ["dock 103 top", "float 102", "arrange"])
++  func whoeverHasRearrangedMeanwhileHasDecidedOtherwise(command: String) {
++    let (h, safari, _) = pair()
++    end(Self.safariPID, .windowsFirst, in: h)
++    #expect(h.run(command).ok)
++    let tree = h.workspace.tree
++    let again = relaunch(safari, in: h)
++    #expect(h.workspace.isFloating(again))
++    #expect(h.workspace.tree == tree)
++  }
++
++  @Test func movingTheViewIsNotRearranging() {
++    let (h, safari, notes) = pair()
++    let place = h.frame(safari.id)!
++    end(Self.safariPID, .windowsFirst, in: h)
++    h.run("zoom \(notes.rawValue)")
++    h.run("desktop")
++    h.run("show-all")
++    let again = relaunch(safari, in: h)
++    #expect(h.frame(again) == place)
++  }
++
++  /// How the view moves is the rule for any window that takes the keyboard, and not pinned here.
++  @Test func theAppThatWasJustOpenedComesIntoViewLikeAnyWindowThatGetsTheKeyboard() {
++    let (h, safari, notes) = pair()
++    end(Self.safariPID, .windowsFirst, in: h)
++    h.run("zoom \(notes.rawValue)")
++    let again = relaunch(safari, in: h)
++    #expect(h.workspace.isDocked(again))
++    #expect(h.system.focusedWindow() == again)
++    #expect(h.system.isVisible(again))
++    // Back is where the user was.
++    h.run("back")
++    #expect(h.layout?.windowFrames.keys.sorted() == [notes])
++  }
++
++  @Test func anAppThatRestartsItselfInTheBackgroundMovesNoView() {
++    let (h, safari, notes) = pair()
++    end(Self.safariPID, .processFirst, in: h)
++    h.run("zoom \(notes.rawValue)")
++    let (camera, back) = (h.workspace.camera, h.workspace.back)
++    // An update: nobody asked for it, and the keyboard stays where it is.
++    h.system.echoes.keyboard = false
++    let again = relaunch(safari, in: h)
++    #expect(h.workspace.isDocked(again), "in its place")
++    #expect(h.system.focusedWindow() == notes)
++    #expect(h.workspace.camera == camera)
++    #expect(h.workspace.back == back)
++    #expect(h.layout?.windowFrames.keys.sorted() == [notes])
++    #expect(!h.system.isVisible(again), "out of view, like everything else beside what is framed")
++    h.run("show-all")
++    #expect(h.frame(again)!.maxX < h.frame(notes)!.minX)
++  }
++
++  @Test func aWindowClosedMeanwhileStaysClosed() {
++    let (h, safari, notes) = pair()
++    let mail = WindowID(103)
++    h.run("dock 103 beside \(notes.rawValue) bottom")
++    end(Self.safariPID, .windowsFirst, in: h)
++    h.scheduler.advance(by: 30)
++    h.system.close(mail)
++    h.scheduler.advance(by: 30)
++    let again = relaunch(safari, in: h)
++    #expect(h.workspace.isDocked(again))
++    #expect(Set(h.workspace.tree.allWindows) == [again, notes])
++    #expect(h.frame(again)!.maxX < h.frame(notes)!.minX)
++    #expect(h.workspace.tree.invariantViolations().isEmpty)
++  }
++
++  @Test func twoAppsThatQuitBothGoBack() {
++    let (h, safari, notesID) = pair()
++    let notes = h.controller.windows[notesID]!
++    let (safariPlace, notesPlace) = (h.frame(safari.id)!, h.frame(notesID)!)
++    end(Self.safariPID, .windowsFirst, in: h)
++    end(Self.notesPID, .processFirst, in: h)
++    #expect(h.workspace.tree.allWindows.isEmpty)
++    let newNotes = relaunch(notes, in: h, pid: 3002)
++    #expect(h.workspace.isDocked(newNotes))
++    h.scheduler.advance(by: 30)
++    let newSafari = relaunch(safari, in: h)
++    #expect(h.workspace.isDocked(newSafari))
++    #expect(h.frame(newSafari) == safariPlace)
++    #expect(h.frame(newNotes) == notesPlace)
++    #expect(h.workspace.tree.invariantViolations().isEmpty)
++  }
++
++  /// `[ a | visitor | b | Desktop ]`: whoever gave the visitor room gets it back, and gives it again.
++  @Test func roomThatWasGivenBackIsTakenAgainFromWhereItCame() {
++    // Wide enough for four columns.
++    let wide = DisplaySnapshot(
++      id: FakeWindowSystem.standardDisplay.id, frame: CGRect(x: 0, y: 0, width: 2560, height: 1440),
++      visibleFrame: CGRect(x: 0, y: 25, width: 2560, height: 1415), isMain: true)
++    let h = Harness(displays: [wide])
++    let (a, b) = (h.system.open(app: "A", pid: 2001), h.system.open(app: "B", pid: 2002))
++    let v = h.system.open(app: "Visitor", pid: 2003)
++    h.start()
++    h.run("dock \(a.rawValue) left")
++    h.run("dock \(b.rawValue) beside \(a.rawValue) right")
++    let without = [h.frame(a), h.frame(b)]
++    h.run("dock \(v.rawValue) beside \(a.rawValue) right")
++    let visitor = h.controller.windows[v]!
++    let with = [h.frame(a), h.frame(b), h.frame(v)]
++    #expect(h.layout!.tiles.isEmpty)
++    h.system.quit(pid: 2003)
++    #expect([h.frame(a), h.frame(b)] == without)
++    let again = relaunch(visitor, in: h)
++    #expect([h.frame(a), h.frame(b), h.frame(again)] == with)
++    // And once more, for good this time.
++    h.system.close(again)
++    #expect([h.frame(a), h.frame(b)] == without)
++  }
++}
++
++extension RelaunchedAppTests {
++  @Test func historyDoesNotLeadToAViewOfNothing() {
++    let (h, safari, notes) = pair()
++    h.run("zoom \(safari.id.rawValue)")
++    h.run("show-all")
++    end(Self.safariPID, .windowsFirst, in: h)
++    let result = h.run("back")
++    #expect(h.layout?.windowFrames[notes] != nil, "\(result.message): \(h.ascii())")
++    #expect(h.system.isVisible(notes))
++  }
++
++  @Test func aSavedViewOfTheAppThatQuitComesBackWithIt() {
++    let (h, safari, notes) = pair()
++    h.run("zoom \(safari.id.rawValue)")
++    h.run("save-view 1")
++    h.run("show-all")
++    end(Self.safariPID, .windowsFirst, in: h)
++    let meanwhile = h.run("view 1")
++    #expect(h.system.isVisible(notes), "\(meanwhile.message): \(h.ascii())")
++    let again = relaunch(safari, in: h)
++    #expect(h.run("view 1").ok)
++    #expect(h.layout?.windowFrames.keys.sorted() == [again], "the saved view frames Safari again")
++  }
++}
++
++/// Corners: the view, names and saved views, gaps, and a second copy of the app.
++extension RelaunchedAppTests {
++  @Test func whenTheLastDockedWindowHadGoneTheViewIsStillOnEverything() {
++    let h = Harness()
++    let a = h.system.open(app: "Safari", title: "News", pid: Self.safariPID)
++    h.start()
++    h.run("dock \(a.rawValue) left")
++    let (safari, place) = (h.controller.windows[a]!, h.frame(a)!)
++    #expect(h.workspace.camera == h.workspace.tree.root)
++    end(Self.safariPID, .windowsFirst, in: h)
++    #expect(h.workspace.camera == h.workspace.tree.root, "which is the Desktop now")
++    // In the background, so that no rule about the keyboard comes to the rescue.
++    h.system.echoes.keyboard = false
++    let again = relaunch(safari, in: h)
++    #expect(h.workspace.camera == h.workspace.tree.root, "everything, as before")
++    #expect(h.frame(again) == place)
++    #expect(h.system.isVisible(again))
++  }
++
++  @Test func theNameOfItsSpaceComesBackWithTheApp() {
++    let (h, safari, notes) = pair()
++    h.run("zoom \(safari.id.rawValue)")
++    #expect(h.run("name Web").ok)
++    h.run("show-all")
++    end(Self.safariPID, .windowsFirst, in: h)
++    #expect(h.workspace.names.isEmpty)
++    let again = relaunch(safari, in: h)
++    #expect(h.workspace.names["Web"] == h.workspace.tree.leaf(containing: again))
++    #expect(h.run("go Web").ok)
++    #expect(h.layout?.windowFrames.keys.sorted() == [again])
++    #expect(h.workspace.isDocked(notes))
++  }
++
++  @Test func aNameGivenToSomethingElseMeanwhileStaysThere() {
++    let (h, safari, notes) = pair()
++    h.run("zoom \(safari.id.rawValue)")
++    h.run("name Web")
++    h.run("show-all")
++    end(Self.safariPID, .windowsFirst, in: h)
++    h.run("zoom \(notes.rawValue)")
++    #expect(h.run("name web").ok)
++    _ = relaunch(safari, in: h)
++    #expect(h.workspace.names == ["web": h.workspace.tree.leaf(containing: notes)!])
++  }
++
++  @Test func aViewSavedOverBetweenTwoGoingsIsNotOverwritten() {
++    let (h, safari, notes) = pair()
++    h.run("dock 103 beside \(notes.rawValue) bottom")
++    h.run("zoom \(safari.id.rawValue)")
++    h.run("save-view 1")
++    h.run("show-all")
++    end(Self.safariPID, .windowsFirst, in: h)
++    h.run("zoom \(notes.rawValue)")
++    h.run("save-view 1")
++    h.run("show-all")
++    h.system.quit(pid: 2003)  // Mail
++    _ = relaunch(safari, in: h)
++    #expect(h.workspace.savedViews["1"] == h.workspace.tree.leaf(containing: notes), "the person's, not the old one")
++  }
++
++  /// Arbor moves gaps by itself (room before tiles), and a person's `resize` fits the arrangement without the app.
++  @Test(arguments: [400, 450, 500, 560]) func gapsThatMovedMeanwhileAreNotARearrangement(minimum: Int) {
++    let h = Harness()
++    let size = CGSize(width: minimum, height: 100)
++    let a = h.system.open(app: "Safari", title: "News", pid: Self.safariPID, minimumSize: size)
++    let b = h.system.open(app: "Notes", pid: Self.notesPID, minimumSize: size)
++    let c = h.system.open(app: "Mail", pid: 2003, minimumSize: size)
++    h.start()
++    h.run("dock \(a.rawValue) left")
++    h.run("dock \(b.rawValue) right")
++    h.run("dock \(c.rawValue) beside \(b.rawValue) left")
++    h.scheduler.advance(by: 2)
++    let safari = h.controller.windows[a]!
++    let before = h.workspace.tree
++    end(Self.safariPID, .windowsFirst, in: h)
++    h.scheduler.advance(by: 2)
++    h.run("zoom \(b.rawValue)")
++    h.run("show-all")
++    let again = h.system.open(
++      app: "Safari", title: "News", pid: 3001, frame: CGRect(x: 200, y: 150, width: 600, height: 300), minimumSize: size)
++    #expect(h.workspace.isDocked(again), "\(safari.id)")
++    #expect(h.workspace.tree.preorder() == before.preorder())
++    #expect(h.workspace.tree.invariantViolations().isEmpty)
++  }
++
++  @Test func aGapMovedByHandMeanwhileIsNotARearrangementEither() {
++    let (h, safari, _) = pair()
++    end(Self.safariPID, .windowsFirst, in: h)
++    #expect(h.run("resize 102 left 60").ok)
++    let again = relaunch(safari, in: h)
++    #expect(h.workspace.isDocked(again))
++  }
++
++  @Test func anotherCopyOfTheAppThatWasRunningAllAlongIsNotTheAppComingBack() {
++    let (h, safari, _) = pair()
++    // `open -n`: the same bundle id, another process, alive before and after.
++    h.system.open(app: "Safari", title: "Other", pid: 2900)
++    end(Self.safariPID, .windowsFirst, in: h)
++    let tree = h.workspace.tree
++    let new = relaunch(safari, in: h, pid: 2900)
++    #expect(h.workspace.isFloating(new))
++    #expect(h.workspace.tree == tree)
++    // The app itself still finds its place.
++    let again = relaunch(safari, in: h, pid: 3001)
++    #expect(h.workspace.isDocked(again))
++  }
++}
++
++/// Where it meets undo (F19).
++extension RelaunchedAppTests {
++  @Test(arguments: Ending.allCases) func undoAfterTheAppIsBackActsOnTheWindowItHasNow(ending: Ending) {
++    let (h, safari, notes) = pair()
++    end(Self.safariPID, ending, in: h)
++    let again = relaunch(safari, in: h)
++    #expect(h.workspace.isDocked(again))
++    // The last thing the person did was to dock Notes on the right.
++    for _ in 0..<4 {
++      h.run("undo")
++      #expect(h.workspace.tree.invariantViolations().isEmpty)
++      #expect(h.controller.invariantViolations().isEmpty, "\(h.controller.invariantViolations())")
++      #expect(!h.workspace.tree.allWindows.contains(safari.id), "no number of a window that is gone")
++    }
++    for _ in 0..<4 { h.run("redo") }
++    #expect(h.controller.invariantViolations().isEmpty, "\(h.controller.invariantViolations())")
++    h.controller.shutdown()
++    for window in [again, notes] { #expect(h.system.isVisible(window)) }
++  }
++
++  @Test func undoWhileTheAppIsAwayIsARearrangement() {
++    let (h, safari, _) = pair()
++    end(Self.safariPID, .windowsFirst, in: h)
++    guard h.run("undo").ok else { return }
++    let again = relaunch(safari, in: h)
++    #expect(h.workspace.tree.invariantViolations().isEmpty)
++    #expect(h.controller.invariantViolations().isEmpty, "\(h.controller.invariantViolations())")
++    #expect(h.workspace.contains(again))
++  }
++}
++
++/// Where it meets the events of `arborctl watch` (F24).
++extension RelaunchedAppTests {
++  /// A script counts the `window` lines it was sent, and `dockedCount` must come to the same number.
++  @Test(arguments: Ending.allCases) func aPlaceThatStillWaitsIsNotCountedAsADockedWindow(ending: Ending) throws {
++    let h = Harness()
++    let a = h.system.open(app: "Safari", title: "News", pid: Self.safariPID)
++    let b = h.system.open(app: "Safari", title: "Weather", pid: Self.safariPID)
++    let c = h.system.open(app: "Notes", pid: Self.notesPID)
++    h.start()
++    h.run("dock \(a.rawValue) left")
++    h.run("dock \(b.rawValue) right")
++    h.run("dock \(c.rawValue) beside \(a.rawValue) bottom")
++    let weather = h.controller.windows[b]!
++    end(Self.safariPID, ending, in: h)
++    let again = relaunch(weather, in: h)
++    // News is not open yet: its place is in the tree under a number that no window has.
++    #expect(h.controller.snapshot().waiting.count == 1)
++    #expect(h.workspace.tree.allWindows.count == 3)
++    let summary = h.controller.eventSummary(focused: nil)
++    let layout = try #require(summary.layouts.first { $0.display == h.display })
++    let docked = summary.windows.filter { $0.display == h.display && $0.docked }.map(\.id)
++    #expect(docked == [c, again])
++    #expect(layout.docked == docked.count)
++  }
++}
+diff --git a/Tests/ArborKitTests/TraceRecorderTests.swift b/Tests/ArborKitTests/TraceRecorderTests.swift
+index d814786..b0e30b4 100644
+--- a/Tests/ArborKitTests/TraceRecorderTests.swift
++++ b/Tests/ArborKitTests/TraceRecorderTests.swift
+@@ -751,12 +751,14 @@ private func endReason(_ entries: [TraceEntry]) -> String? {
+     events.windowFound(snapshot)
+     events.applicationActivated(FrontmostApp(bundleID: nil, name: "a.out"))
+     events.applicationActivated(nil)
++    events.applicationTerminated(4242)
+     events.windowDestroyed(id)
+     #expect(
+       listener.heard == [
+         "appeared w5", "changed w5 true", "changed w5 false", "focused w5", "dragBegan w5 9,10", "dragMoved w5 9,10",
+         "dragEnded w5 9,10", "resizeBegan w5", "resizeEnded w5", "displaysChanged", "keyboardFocusMoved", "dragCancelled w5",
+-        "windowReplaced w4 w5", "found w5", "activated a.out", "activated nobody", "destroyed w5",
++        "windowReplaced w4 w5", "found w5", "activated a.out", "activated nobody", "terminated 4242",
++        "destroyed w5",
+       ])
+     system.stop()
+     #expect(spy.calls.last == "stop")
+@@ -1017,4 +1019,5 @@ final class SpyEvents: WindowSystemEvents {
+   func windowFound(_ window: WindowSnapshot) { heard.append("found \(window.id)") }
+   func applicationActivated(_ app: FrontmostApp?) { heard.append("activated \(app?.name ?? "nobody")") }
+   func pointerPressed() { heard.append("pointerPressed") }
++  func applicationTerminated(_ pid: Int32) { heard.append("terminated \(pid)") }
+ }
+diff --git a/collab/QUESTIONS.md b/collab/QUESTIONS.md
+index 56b39ea..e3a2eda 100644
+--- a/collab/QUESTIONS.md
++++ b/collab/QUESTIONS.md
+@@ -1238,6 +1238,7 @@ One line per product decision made while building, newest last.
+ - F53 (**product owner, 13:27 UTC**, from the second pair of fresh eyes: the guide's own example key did not toggle): `summon` of a DOCKED window toggles too. The first press goes to it as ⌘Tab would, the second goes back where you were: the view, if it moved, and the keyboard. Decided by the executor: "back" lasts only until the view moves or the keyboard goes elsewhere by any other means; after that the press goes to the window like a first one, because an old place is a surprise. With the keyboard in the window already nobody came from anywhere, and the press says that it is docked, as before. If the window the keyboard was in has closed, what is in view there gets it; if the place itself is gone, the press stays.
+ - F53: the summoned window carried by hand (dragged, or moved by a menu or a tool) to a display that has a summoned window of its own takes its place, and that one is sent away, as when another app is summoned. It used to be the newcomer that was sent away, which is right for a window that arrives because its display went, but in its user's hand it vanished at the next layout from where they had just put it.
+ - App shell, the product owner's rule of 13:27 (2026-10-14): nothing moves by a timer. A waiting place whose three minutes are over goes without a layout if no window has to move for it, which is the rule, since it takes no space; where its going would move something, it stays, still waiting, and goes with the next layout that a person or an app causes.
++- App shell, backlog K192: an app that is quit (or killed, or restarts for an update) and opened again within three minutes while Arbor runs goes back to its places: by title, or by app alone if it has one place and one window (provisionally, as after a login: a window with the saved title takes the place over). What tells a quit from a closed window is the end of the process within five seconds of the window's going; ⌘W, ⌘N still gives a new window, and so does another copy of the app that was running all along. Quitting an app costs nothing: its windows are forgotten at once exactly as closed ones, nothing is said in `status`, and nothing moves later if the app stays away. The price: whoever docks, floats or arranges meanwhile has decided otherwise, and the returning window floats. Moving the view is not a change, and neither is a gap that moved: Arbor moves gaps by itself (F61), and a person's `resize` fitted the arrangement without the app; the gaps come back as they were with it. Saved views and names that went with the app come back with it, unless they were given anew meanwhile. The memory does not outlive Arbor.
+ - F45 (the bug bash): nothing is learned about the minimum of a floating window from an answer a step over; it is asked for less first, like a docked one.
+ - F48 (the bug bash): a move is not a resize. What is remembered of a floating window that Arbor squeezed and its user only moved is its own size at the new place, slid onto the display if the window was wholly on it. A window stretched over the Desktop (F18) is not covered: taken in hand it stays as it is.
+ - Product owner, 2026-10-14 (holds, reversing "the camera true" of the morning): out of the box Arbor holds the view only when asked, from the menu or by command. `holdStillWhileCameraIsOn` and `holdStillWhileMicrophoneIsOn` ship false and `holdStillFor` ships empty, each until it has been seen at work on a Mac. With the camera on, a launcher, `open <url>` and a link clicked in chat were turned away in silence, in every call, though a camera that is on is not a screen that is shared. Whatever Hold Still turns away is said on screen, once per app and hold. What counts as asking may grow later (an app that comes forward right after a launcher was in front; macOS's idle clock), measured on a Mac first and without reading keys.
+diff --git a/collab/parity.json b/collab/parity.json
+index aa0b287..3a64410 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -49,7 +49,7 @@
+     {"id": "T53", "area": "Out of view", "title": "Pictures of windows while they move", "trellis": "Screen Recording, optional; never recorded", "arbor": "Still pictures (ScreenCaptureKit) with Screen Recording permission, stretched as they move; otherwise the app's colour and icon, which is what has been seen on a real Mac and what everybody gets: the pictures need the hidden `windowPictures`, off. The pictures crashed on their first run, were fixed, and have not run since. Kept in memory only", "status": "partial", "spec": "F02", "priority": 2, "tests": ["clickingATileUnfoldsIt", "zoomingInOnAGroupsTileUnfoldsItsMiniature", "windowsInTilesAreCoversWhereTheTileDrawsThem", "itemsSayWhoseWindowTheyStandFor", "standInsAreStackedLikeTheWindows", "windowsArborDoesNotArrangeAreDrawnWhereTheyAre"]},
+     {"id": "T54", "area": "Out of view", "title": "Dim, blur and tint behind arranged windows", "trellis": "dimDocked, blurRadius, tintOpacity", "arbor": "Darkens (`dimBehindArranged`, 0.25), can blur (`blurBehindArranged`) and tint (`tintBehindArranged`) the wallpaper behind docked windows and tiles, one rounded surface per display that keeps off the Desktop; a hairline round the Desktop (`desktopEdge`). Blur and tint are off until asked for. The panel has been found in its place on a Mac; nobody has looked at it on a screen, and tint and hairline have not been built on one. Nobody knows what TrellisWM's \"frame\" is", "status": "shipped", "spec": "F15", "priority": 3, "tests": ["dockingPutsTheSurfaceBehindTheSlot", "neighboursShareOneSurfaceAndTheDesktopStaysClear", "zoomingMovesTheSurfaceWithTheCamera", "floatingAWindowTakesItOffTheSurface", "closingAWindowShrinksTheSurfaceAndTheLastOneRemovesIt", "minimizedHiddenAndOtherSpaceWindowsLeaveTheSurface", "tilesLieOnTheSurfaceToo", "eachDisplayHasItsOwnSurface", "withoutDimOrBlurThereIsNoBackdrop", "blurAloneIsEnoughForABackdrop", "reloadSettingsChangesTheBackdropAtOnce", "pausingTakesTheBackdropAwayAndResumingBringsItBack", "windowsGoToTheSamePlacesWhateverTheAppearance", "windowsAllAroundTheDesktopLeaveAHole", "theDesktopIsNeverCoveredHoweverFarSlotsGrow", "oldSettingsFilesGetTheAppearanceDefaults", "tintAloneIsEnoughForABackdrop", "theTintLiesOverTheBlack", "theDesktopBetweenDockedWindowsHasALineAroundIt", "whereTheDesktopIsNotInViewThereIsNoLine", "theLeftoversAreClampedAndReportedLikeTheRest"], "e2e": ["look behind the docked windows", "look behind the Desktop"]},
+ 
+-    {"id": "T60", "area": "Persistence and safety", "title": "Arrangement restored after restarting", "trellis": "Saved per display", "arbor": "`state.json`; windows re-matched by app and title; slots wait for windows restored after Arbor starts or on another Space", "status": "shipped", "spec": "F01", "priority": 1, "tests": ["theArrangementSurvivesARestart", "restartedAppsAreMatchedByTitleAndReusedNumbersAreIgnored", "nothingMovesAndNothingChangesWhenNothingChanged", "aSurvivingWindowIsNotPulledToAnotherDisplayBecauseItsTwinClosed", "windowsRestoredAfterArborStartsReturnToTheirSlots", "theWindowWithTheSavedTitleTakesThePlaceOverFromTheOneThatCameFirst", "thePlaceWaitsAgainIfTheWindowThatCameFirstCloses", "statusAndStateSayWhichPlacesAreKept", "aPlaceThatExpiresMovesNothing", "aPlaceWhoseGoingWouldMoveAWindowGoesWithTheNextLayoutSomebodyCauses", "aRestoredWindowThatGetsItsTitleLateStillReturnsToItsSlot", "slotsNobodyComesBackToAreDroppedAfterAWhile", "aWindowOnAnotherSpaceAtLaunchKeepsItsSlotForAsLongAsItExists", "aRestoredWindowWithAnotherTitleTakesItsAppsOnlySlot", "aCrashWhileZoomedInKeepsTheArrangement", "aDamagedTreeIsRepairedAndItsWindowsAreAllStillManaged", "oneDisplayThatCannotBeReadDoesNotCostTheOthers"], "e2e": ["the arrangement survives a restart", "start again", "start with a minimized window"]},
++    {"id": "T60", "area": "Persistence and safety", "title": "Arrangement restored after restarting", "trellis": "Saved per display", "arbor": "`state.json`; windows re-matched by app and title; slots wait for windows restored after Arbor starts or on another Space", "status": "shipped", "spec": "F01", "priority": 1, "tests": ["theArrangementSurvivesARestart", "restartedAppsAreMatchedByTitleAndReusedNumbersAreIgnored", "nothingMovesAndNothingChangesWhenNothingChanged", "aSurvivingWindowIsNotPulledToAnotherDisplayBecauseItsTwinClosed", "windowsRestoredAfterArborStartsReturnToTheirSlots", "theWindowWithTheSavedTitleTakesThePlaceOverFromTheOneThatCameFirst", "thePlaceWaitsAgainIfTheWindowThatCameFirstCloses", "statusAndStateSayWhichPlacesAreKept", "anAppThatIsQuitAndOpenedAgainGoesBackToItsPlace", "aWindowThatIsClosedKeepsNoPlace", "everyWindowOfTheAppGoesBackToItsOwnPlace", "quittingTheAppThatIsFramedDoesNotLeaveAnEmptyView", "aPlaceThatExpiresMovesNothing", "aPlaceWhoseGoingWouldMoveAWindowGoesWithTheNextLayoutSomebodyCauses", "aRestoredWindowThatGetsItsTitleLateStillReturnsToItsSlot", "slotsNobodyComesBackToAreDroppedAfterAWhile", "aWindowOnAnotherSpaceAtLaunchKeepsItsSlotForAsLongAsItExists", "aRestoredWindowWithAnotherTitleTakesItsAppsOnlySlot", "aCrashWhileZoomedInKeepsTheArrangement", "aDamagedTreeIsRepairedAndItsWindowsAreAllStillManaged", "oneDisplayThatCannotBeReadDoesNotCostTheOthers"], "e2e": ["the arrangement survives a restart", "start again", "start with a minimized window"]},
+     {"id": "T61", "area": "Persistence and safety", "title": "Quitting puts every window in view", "trellis": "0 windows lost", "arbor": "Also on SIGTERM / SIGINT / SIGHUP, logout and shutdown", "status": "shipped", "spec": "F01", "priority": 1, "tests": ["shutdownLeavesEveryWindowVisible", "quittingBringsBackParkedWindowsOfHiddenApps", "quittingBringsBackParkedWindowsOnAnotherSpace", "aFloatingWindowLeftParkedByACrashComesBack", "quittingBringsBackParkedWindowsThatAreMinimized", "quittingBringsBackParkedWindowsOnOtherSpaces", "logoutBringsEveryWindowIntoViewAndACancelledLogoutBringsArborBack", "anAppExcludedInTheDarkGetsItsWindowBack", "whatWasOutOfViewOnASecondDisplayComesToWhereTheMainOneWas", "aDockedWindowLetGoOfInTheDarkHasItsOwnSizeAndPlaceAgain"], "e2e": ["quit Arbor", "quitting puts every window back in view", "quit while zoomed in", "hide the app whose windows are out of view, then quit"]},
+     {"id": "T62", "area": "Persistence and safety", "title": "Built-in undo: back to a normal Mac", "trellis": "Float All Windows", "arbor": "`float-all`, on every display", "status": "shipped", "spec": "F01", "priority": 1, "tests": ["arrangeDocksEverythingAndFloatAllUndocksIt", "floatAllReturnsEveryDisplayToANormalMac", "floatAllHereLeavesTheOtherDisplayAsItWas", "floatAllBringsBackWindowsThatWereOutOfView"], "e2e": ["float everything"]},
+     {"id": "T63", "area": "Persistence and safety", "title": "Full-screen apps and other Spaces left to macOS", "trellis": "Yes", "arbor": "Windows on other Spaces keep their slots and take no space. A docked window that goes full screen keeps its slot, takes no space, is not moved, parked or turned into a tile, and goes back to its slot afterwards; commands on it are refused; one that is full screen when first seen is skipped. Partial only because the run on record on a real Mac is older than the fix (F30): it needs proof.sh or `arbor-e2e --full-screen` run again", "status": "partial", "spec": "F30", "priority": 2, "tests": ["aWindowOnAnotherSpaceKeepsItsSlotAndTakesNoSpace", "switchingSpacesMovesOnlyTheWindowsOnTheSpaceInView", "aFloatingWindowOnAnotherSpaceIsLeftAlone", "onlyClosingRemovesAWindowOnAnotherSpace", "aDockedWindowThatGoesFullScreenIsLeftAlone", "aFloatingWindowThatGoesFullScreenKeepsTheFrameTheUserGaveIt", "theNeighboursOfAFullScreenWindowTakeItsSpaceOnTheirOwnSpace", "commandsOnAFullScreenWindowAreRefused", "quittingLeavesAFullScreenWindowAlone"], "e2e": ["make a docked window full screen", "leave full screen"]},
+diff --git a/collab/scenarios/66-quit-an-app-and-open-it-again.sim b/collab/scenarios/66-quit-an-app-and-open-it-again.sim
+new file mode 100644
+index 0000000..6fbb631
+--- /dev/null
++++ b/collab/scenarios/66-quit-an-app-and-open-it-again.sim
+@@ -0,0 +1,43 @@
++# Backlog K192. Mail is docked beside Safari. Quitting Mail and opening it again puts it back where it was;
++# closing a window does not keep its place.
++quiet
++open Safari
++open Mail
++open Notes
++dock 101 left
++dock 102 right
++expect left-of 101 102
++
++# ⌘Q. The neighbours close over the place at once, as for a closed window.
++quit-app Mail
++expect visible 101
++expect count docked 1
++wait 20
++
++# Mail again: another process, another window number, the same title.
++open Mail
++title 104 Mail 102
++expect docked 104
++expect left-of 101 104
++
++# An update restarts the browser: the process is simply gone, and comes back under another title.
++kill-app Safari
++wait 5
++open Safari
++expect docked 105
++expect left-of 105 104
++
++# ⌘W is not ⌘Q: Mail lives on, so the place goes, and the next window is a new window.
++open Mail
++close 104
++open Mail
++title 107 Mail 102
++expect floating 107
++wait 10
++expect count docked 1
++
++# An app that stays away gets no place for ever.
++quit-app Safari
++wait 200
++open Safari
++expect floating 108
+diff --git a/docs/ARCHITECTURE.md b/docs/ARCHITECTURE.md
+index 92d8d09..745ce78 100644
+--- a/docs/ARCHITECTURE.md
++++ b/docs/ARCHITECTURE.md
+@@ -908,7 +908,12 @@ takes no space, and whatever draws or lists a tree's windows must skip it; `stat
+ `status` counts the ones whose window is not open yet. A window that got a slot by its app alone holds it
+ provisionally until the wait is over (`provisionalSlots`): what an app shows first is often a welcome window, so a window
+ with the saved title takes the slot over, and if the holder closes the slot waits again. After `resume` only windows
+-that still exist keep a slot: what is missing was closed by the user, not by a reboot. Slots wait in the
++that still exist keep a slot: what is missing was closed by the user, not by a reboot. **An app that is quit and opened
++again while Arbor runs** goes back to its slots too (`Controller+RelaunchedApps.swift`). A docked window that goes is forgotten at once,
++whatever the reason, so quitting an app costs nothing and nothing moves later on its account; Arbor keeps a note beside the tree
++(`closedPlaces`: the workspace before, and which windows went). If `applicationTerminated` says within five seconds that the app
++ended, a window of that app appears within three minutes, and the arrangement has not changed otherwise (`isSameArrangement`: gaps aside), the earlier tree is put back
++(`Workspace.restoreStructure`) with waiting slots where the windows were, and the window claims its own. Slots wait in the
+ remembered arrangements of disconnected displays too: the window floats where it appears and returns to its slot
+ with the display. Whatever is found mostly off-screen (parked by a run
+ that did not quit cleanly) counts as parked, so the first layout brings back everything the
+-- 
+2.43.0
+

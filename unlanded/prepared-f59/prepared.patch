@@ -1,0 +1,2906 @@
+diff --git a/README.md b/README.md
+index 6416586..1f78016 100644
+--- a/README.md
++++ b/README.md
+@@ -29,7 +29,8 @@ independent implementation and is not affiliated with it.
+   window; a preview shows where it will land. Drop it on the Desktop to float it
+   again, at the size it had before. Let go anywhere else, where no preview shows,
+   and a docked window goes back to its place. Hold ⌘ while dragging and nothing
+-  docks: the window floats. The keyboard docks too: ⌃⌥⌘ + arrow.
++  docks: the window floats. The keyboard docks too: ⌃⌥⌘ + arrow for the edges of the
++  view, and ⌃⌥⌘Space to carry the window anywhere a drag could put it.
+ - **The Desktop stays**: windows you have not docked float on the Desktop, between
+   the docked ones. They make way when a window docks and go back to where you
+   put them when there is room again.
+@@ -219,6 +220,8 @@ when a window closes and when Arbor pauses or quits.
+ | ⌃⌥G | Go to…: find a window, a named space or a saved view by typing |
+ | ⌃⌥M | Minimap: click a window in it to frame it; again to put it away. Held: let go over a window to frame it, ⎋ to give up |
+ | ⌃⌥⌘ + arrow | Dock the focused window at that edge, or move it one place |
++| ⌃⌥⌘Space | Carry the focused window: arrows choose a place, ↩ or Space puts it down, ⎋ puts it back |
++| ⌃⌥⌘[ / ⌃⌥⌘] | Carry it to the previous / next display |
+ | ⌃⌥F / ⌃⌥⇧F | Float or dock the focused window / float all windows |
+ | ⌃⌥A | Arrange every window in a grid |
+ | ⌃⌥⌘= / ⌃⌥⌘- | Grow / shrink the focused window |
+diff --git a/Sources/ArborCore/Carry.swift b/Sources/ArborCore/Carry.swift
+new file mode 100644
+index 0000000..d74eb4f
+--- /dev/null
++++ b/Sources/ArborCore/Carry.swift
+@@ -0,0 +1,367 @@
++import CoreGraphics
++
++/// Carrying a window with the keyboard (docs/features/F59-carry-with-the-keyboard.md).
++///
++/// A drag chooses among targets by pointing. A carry chooses among the same targets with the arrow
++/// keys. Everything here is pure: which places there are to put the window down, and which of them
++/// an arrow key goes to next. `Controller+Carry.swift` holds the window and does the drop.
++
++/// The steps of a carry, as commands: `carry`, `carry left`, `carry drop`, `carry cancel`,
++/// `carry next-display`.
++public enum CarryStep: Equatable, Sendable, Codable {
++  /// Pick a window up (the focused one if nil). With a window already in hand and no other named,
++  /// put it down: the key that picks up also lets go.
++  case pickUp(WindowID?)
++  /// Go to the next place in that direction.
++  case move(Edge)
++  /// Put the window down where the preview is.
++  case drop
++  /// Put everything back as it was, the view included.
++  case cancel
++  /// Choose among the places on the next display, or the previous one.
++  case display(next: Bool)
++}
++
++extension Command {
++  /// Whether a carry goes on when this command runs. Looking somewhere else is part of carrying: that is how
++  /// a window gets to a space that was out of view. Any other command puts everything back first.
++  public var keepsCarrying: Bool {
++    switch self {
++    case .carry: true
++    case .showAll, .home, .stepOut, .stepIn, .neighbor, .back, .forward, .goToView, .saveView: true
++    case .zoomNode, .desktop, .frameRect, .goToSpace: true
++    // Recording is about Arbor, not about the arrangement: a carry can be recorded from the middle.
++    case .trace: true
++    default: isQuery
++    }
++  }
++}
++
++extension Layout {
++  /// Where `window` is: its frame, or the tile it is inside.
++  public func place(of window: WindowID) -> CGRect? {
++    windowFrames[window] ?? tiles.first(where: { $0.windows.contains(window) })?.frame
++  }
++
++  /// What a layout looks like, whatever its spaces are numbered and however a tile is arranged inside:
++  /// to choose a place in there, look closer first.
++  public struct Look: Equatable, Sendable {
++    var windows: [WindowID: CGRect]
++    /// In reading order. Not a dictionary by frame: a `CGRect` can be hashed only from macOS 15 on.
++    var tiles: [TileLook]
++    var desktop: CGRect?
++  }
++
++  struct TileLook: Equatable, Sendable {
++    var frame: CGRect
++    var windows: Set<WindowID>
++  }
++
++  public var look: Look {
++    Look(
++      windows: windowFrames,
++      tiles: tiles.map { TileLook(frame: $0.frame, windows: Set($0.windows)) }
++        .sorted { ($0.frame.minY, $0.frame.minX) < ($1.frame.minY, $1.frame.minX) },
++      desktop: desktopFrame)
++  }
++}
++
++/// One place a carried window can be put down.
++public struct CarryChoice: Equatable, Sendable {
++  public var target: DropTarget
++  /// Where the window would land: what the drop preview shows.
++  public var frame: CGRect
++  /// A point where a pointer would choose this target in a drag. The arrow keys start from here.
++  public var anchor: CGPoint
++
++  public init(target: DropTarget, frame: CGRect, anchor: CGPoint) {
++    self.target = target
++    self.frame = frame
++    self.anchor = anchor
++  }
++}
++
++/// The places a carried window can be put down in one view, and the way from one to the next.
++///
++/// The arrow keys move an imaginary pointer. It starts in the middle of the current choice's part of
++/// the screen and travels straight in the arrow's direction until `DropResolver` would choose something
++/// else, so a key pressed toward a window crosses it as a pointer would: its near edge, its
++/// middle, its far edge. What an arrow reaches is therefore what a drag that way would reach.
++public struct CarryMap: Sendable {
++  /// Its own place first, if that is in view; then windows and tiles in reading order, the edges
++  /// of the view, and the Desktop.
++  public private(set) var choices: [CarryChoice] = []
++  /// Which choice stands for each target. Two targets that lead to the same arrangement count as one;
++  /// the first stays.
++  private var standIns: [(target: DropTarget, choice: Int)] = []
++  /// For each choice, the choice each arrow key leads to, in the order of `Edge.allCases`.
++  private var links: [[Int?]] = []
++
++  private let window: WindowID
++  private let tree: LayoutTree
++  private let layout: Layout
++  private let gap: CGFloat
++  private let dropOptions: DropOptions
++  /// The window's leaf, if other tabs share it: the window can be put beside the rest of its group.
++  private let sharedLeaf: NodeID?
++
++  /// - Parameters:
++  ///   - workspace: the display's workspace. The window may be docked in it, float on it, or come
++  ///     from another display.
++  ///   - layout: what the display shows now.
++  ///   - floatingFrame: where the window would float if it were dropped on the Desktop.
++  ///   - terms: on what terms the drop will make room (F61), so that the previews do; nil if it will not.
++  public init(
++    carrying window: WindowID, in workspace: Workspace, layout: Layout, layoutOptions: LayoutOptions,
++    dropOptions: DropOptions = .init(), floatingFrame: CGRect?, isPresent: @escaping (WindowID) -> Bool,
++    minimumSize: @escaping (WindowID) -> CGSize? = { _ in nil }, makingRoom terms: MakeRoom.Terms? = nil
++  ) {
++    self.window = window
++    self.layout = layout
++    self.dropOptions = dropOptions
++    let tree = workspace.tree
++    self.tree = tree
++    gap = max(layoutOptions.gap, 0)
++    let ownLeaf = tree.leaf(containing: window)
++    let sharedLeaf = ownLeaf.flatMap { tree.windows(under: $0) == [window] ? nil : $0 }
++    self.sharedLeaf = sharedLeaf
++
++    // What is in view, in reading order, so that the result does not depend on dictionary order.
++    var places: [(node: NodeID, frame: CGRect)] = []
++    for (shown, frame) in layout.windowFrames {
++      if let leaf = tree.leaf(containing: shown) { places.append((leaf, frame)) }
++    }
++    for tile in layout.tiles where tile.node != tree.desktop { places.append((tile.node, tile.frame)) }
++    places.sort { ($0.frame.minY, $0.frame.minX, $0.node.rawValue) < ($1.frame.minY, $1.frame.minX, $1.node.rawValue) }
++
++    var found: [CarryChoice] = []
++    var stands: [(target: DropTarget, choice: Int)] = []
++    /// What each choice leads to, as far as anyone can see. Nil for floating, which is like nothing else.
++    var outcomes: [Layout.Look?] = []
++    func add(_ target: DropTarget, at anchor: CGPoint, outcome: Layout? = nil, landing: CGRect? = nil) {
++      let outcome =
++        outcome
++        ?? workspace.previewLayout(
++          for: window, at: target, in: layout.frame, options: layoutOptions, isPresent: isPresent,
++          minimumSize: minimumSize, makingRoom: terms)
++      guard let frame = landing ?? outcome?.place(of: window), frame.width > 0, frame.height > 0 else { return }
++      if let look = outcome?.look, let same = outcomes.firstIndex(of: look) {
++        stands.append((target, same))
++      } else {
++        stands.append((target, found.count))
++        found.append(CarryChoice(target: target, frame: frame, anchor: anchor))
++        outcomes.append(outcome?.look)
++      }
++    }
++
++    if let ownLeaf,
++      let own = layout.windowFrames[window] ?? layout.tiles.first(where: { $0.windows.contains(window) })?.frame
++        ?? (layout.hiddenWindows.contains(window) ? layout.nodeFrames[ownLeaf] : nil)
++    {
++      add(.none, at: own.center, outcome: layout, landing: own)
++    }
++    for place in places where place.node != ownLeaf || sharedLeaf != nil {
++      for edge in Edge.allCases {
++        add(.beside(place.node, edge), at: Self.anchor(beside: place.frame, edge, dropOptions))
++      }
++      if dropOptions.tabsEnabled, tree.isStack(place.node), place.node != ownLeaf {
++        add(.stack(place.node), at: place.frame.center)
++      }
++    }
++    let view = layout.frame
++    let band = max(dropOptions.screenEdgeBand, 0) / 2
++    add(.cameraEdge(.left), at: CGPoint(x: view.minX + band, y: view.midY))
++    add(.cameraEdge(.right), at: CGPoint(x: view.maxX - band, y: view.midY))
++    add(.cameraEdge(.top), at: CGPoint(x: view.midX, y: view.minY + band))
++    add(.cameraEdge(.bottom), at: CGPoint(x: view.midX, y: view.maxY - band))
++    if let desktop = layout.desktopFrame, let floatingFrame {
++      add(.float, at: desktop.center, landing: floatingFrame)
++    }
++    // A pointer cannot tell the Desktop's edges from the Desktop. The keyboard can.
++    if let desktop = layout.nodeFrames[tree.desktop] {
++      for edge in Edge.allCases {
++        add(.beside(tree.desktop, edge), at: Self.anchor(beside: desktop, edge, dropOptions))
++      }
++    }
++    choices = found
++    standIns = stands
++    links = found.map { choice in
++      Edge.allCases.map { edge in travel(from: choice, toward: edge).flatMap { found.firstIndex(of: $0) } }
++    }
++    connect()
++  }
++
++  /// The middle of the band along `edge` of `frame` in which a pointer docks beside it.
++  private static func anchor(beside frame: CGRect, _ edge: Edge, _ options: DropOptions) -> CGPoint {
++    let inset = min(max(options.windowEdgeFraction, 0.02), 0.5) / 2
++    switch edge {
++    case .left: return CGPoint(x: frame.minX + frame.width * inset, y: frame.midY)
++    case .right: return CGPoint(x: frame.maxX - frame.width * inset, y: frame.midY)
++    case .top: return CGPoint(x: frame.midX, y: frame.minY + frame.height * inset)
++    case .bottom: return CGPoint(x: frame.midX, y: frame.maxY - frame.height * inset)
++    }
++  }
++
++  /// The choice that stands for `target`, if it can be chosen in this view.
++  public func choice(for target: DropTarget) -> CarryChoice? {
++    standIns.first { $0.target == target }.map { choices[$0.choice] }
++  }
++
++  /// What a pointer at `point` chooses. Nil where there is nothing to choose: in a gap, in the
++  /// middle of a window that takes no tabs, outside the view.
++  public func choice(at point: CGPoint) -> CarryChoice? { target(at: point).flatMap(choice(for:)) }
++
++  /// The same, but nil where another part of the screen already stands for what a pointer would choose
++  /// here: the imaginary pointer passes over it instead of jumping there.
++  private func ownChoice(at point: CGPoint) -> CarryChoice? {
++    guard let target = target(at: point), let choice = choice(for: target), choice.target == target else {
++      return nil
++    }
++    return choice
++  }
++
++  private func target(at point: CGPoint) -> DropTarget? {
++    guard layout.frame.contains(point) else { return nil }
++    let target = DropResolver.resolve(
++      point: point, window: window, layout: layout, tree: tree, visibleFrame: layout.frame, options: dropOptions)
++    /// The edge of `frame` whose band `point` is in, or with `always` simply the nearest.
++    func edge(of frame: CGRect, always: Bool = false) -> Edge? {
++      guard frame.width > 0, frame.height > 0 else { return nil }
++      let fractions: [(Edge, CGFloat)] = [
++        (.left, (point.x - frame.minX) / frame.width), (.right, (frame.maxX - point.x) / frame.width),
++        (.top, (point.y - frame.minY) / frame.height), (.bottom, (frame.maxY - point.y) / frame.height),
++      ]
++      guard let nearest = fractions.min(by: { $0.1 < $1.1 }),
++        always || nearest.1 <= dropOptions.windowEdgeFraction
++      else { return nil }
++      return nearest.0
++    }
++    switch target {
++    case .float:
++      // A drag floats a window wherever it is let go. A carried one floats on the Desktop.
++      guard let desktop = layout.nodeFrames[tree.desktop], desktop.contains(point) else { return nil }
++      // Nothing can float on a Desktop that is only a tile.
++      let isTile = layout.desktopFrame == nil
++      return edge(of: desktop, always: isTile).map { .beside(tree.desktop, $0) } ?? .float
++    case .none:
++      guard let sharedLeaf, let frame = layout.nodeFrames[sharedLeaf] else { return DropTarget.none }
++      return edge(of: frame).map { .beside(sharedLeaf, $0) } ?? DropTarget.none
++    case .cameraEdge, .beside, .stack:
++      return target
++    }
++  }
++
++  /// The choice an arrow key goes to from `current`. Nil if nothing else lies that way.
++  public func next(from current: CarryChoice, toward direction: Edge) -> CarryChoice? {
++    guard let index = choices.firstIndex(of: current), let edge = Edge.allCases.firstIndex(of: direction) else {
++      return nil
++    }
++    return links[index][edge].map { choices[$0] }
++  }
++
++  /// What the imaginary pointer meets first on its way from `current`.
++  private func travel(from current: CarryChoice, toward direction: Edge) -> CarryChoice? {
++    let step: CGFloat = 4
++    let (dx, dy): (CGFloat, CGFloat)
++    switch direction {
++    case .left: (dx, dy) = (-step, 0)
++    case .right: (dx, dy) = (step, 0)
++    case .top: (dx, dy) = (0, -step)
++    case .bottom: (dx, dy) = (0, step)
++    }
++    // A pointer that travels along a gap (below the middle of a window that sits above two halves,
++    // say) meets nothing. It looks to both sides of the gap, the left or upper side first.
++    let aside = gap + 1
++    var point = current.anchor
++    while layout.frame.contains(point) {
++      point.x += dx
++      point.y += dy
++      if let hit = ownChoice(at: point) {
++        if hit != current { return hit }
++        continue
++      }
++      guard layout.leafOrTile(at: point, in: tree) == nil else { continue }
++      for offset in [-aside, aside] {
++        let beside = CGPoint(x: point.x + (dy != 0 ? offset : 0), y: point.y + (dx != 0 ? offset : 0))
++        if let hit = ownChoice(at: beside), hit != current { return hit }
++      }
++    }
++    return nil
++  }
++
++  /// Makes sure the arrow keys lead from every choice to every other. The pointer's travels nearly
++  /// always do. What they miss has no part of the screen to itself (the place of a window inside a
++  /// tile) or lies behind something that has none. Each such choice is put on the way out of the
++  /// nearest choice that is connected, in the direction it lies in: one more stop on that line.
++  private mutating func connect() {
++    guard choices.count > 1 else { return }
++    func reach(from start: Int) -> Set<Int> {
++      var seen: Set<Int> = [start]
++      var pending = [start]
++      while let index = pending.popLast() {
++        for case let next? in links[index] where seen.insert(next).inserted { pending.append(next) }
++      }
++      return seen
++    }
++    // The largest set of choices that all lead to each other.
++    let reaches = choices.indices.map(reach)
++    var connected: Set<Int> = []
++    for index in choices.indices where !connected.contains(index) {
++      let mutual = reaches[index].filter { reaches[$0].contains(index) }
++      if mutual.count > connected.count { connected = mutual }
++    }
++    for index in choices.indices where !connected.contains(index) {
++      let anchor = choices[index].anchor
++      func distance(_ other: Int) -> CGFloat {
++        let (x, y) = (choices[other].anchor.x - anchor.x, choices[other].anchor.y - anchor.y)
++        return x * x + y * y
++      }
++      guard let near = connected.min(by: { (distance($0), $0) < (distance($1), $1) }) else { return }
++      let (x, y) = (anchor.x - choices[near].anchor.x, anchor.y - choices[near].anchor.y)
++      let direction: Edge = abs(x) >= abs(y) ? (x >= 0 ? .right : .left) : (y >= 0 ? .bottom : .top)
++      guard let out = Edge.allCases.firstIndex(of: direction),
++        let back = Edge.allCases.firstIndex(of: direction.opposite)
++      else { return }
++      let beyond = links[near][out]
++      links[near][out] = index
++      links[index][out] = beyond
++      links[index][back] = near
++      if let beyond, links[beyond][back] == near { links[beyond][back] = index }
++      // Its other two keys may lead to choices that are not connected yet; those get their turn.
++      connected.insert(index)
++    }
++  }
++
++  /// The choice whose anchor is nearest to `point`.
++  public func nearest(to point: CGPoint) -> CarryChoice? { Self.nearest(to: point, among: choices) }
++
++  /// Where to go on when the view has changed and what was chosen is not in it any more: the edge of the new
++  /// view nearest to `point`, where the choice was on screen. An edge of the view puts the window into the
++  /// space being looked at, which is what someone who carries a window to a space means; the edge of a
++  /// window in it can mean the row that window belongs to, beyond the view.
++  public func arrival(from point: CGPoint) -> CarryChoice? {
++    let view = layout.frame
++    let middles: [(Edge, CGPoint)] = [
++      (.left, CGPoint(x: view.minX, y: view.midY)), (.right, CGPoint(x: view.maxX, y: view.midY)),
++      (.top, CGPoint(x: view.midX, y: view.minY)), (.bottom, CGPoint(x: view.midX, y: view.maxY)),
++    ]
++    func distance(_ middle: CGPoint) -> CGFloat {
++      (middle.x - point.x) * (middle.x - point.x) + (middle.y - point.y) * (middle.y - point.y)
++    }
++    for (edge, _) in middles.sorted(by: { distance($0.1) < distance($1.1) }) {
++      // Another target may stand for it, if it leads to the same arrangement.
++      if let choice = choice(for: .cameraEdge(edge)) { return choice }
++    }
++    return nearest(to: point)
++  }
++
++  private static func nearest(to point: CGPoint, among choices: [CarryChoice]) -> CarryChoice? {
++    func distance(_ choice: CarryChoice) -> CGFloat {
++      let (x, y) = (choice.anchor.x - point.x, choice.anchor.y - point.y)
++      return x * x + y * y
++    }
++    var best: CarryChoice?
++    for choice in choices where best == nil || distance(choice) < distance(best!) - 0.01 { best = choice }
++    return best
++  }
++}
+diff --git a/Sources/ArborCore/Command.swift b/Sources/ArborCore/Command.swift
+index a3e185a..4dc29e9 100644
+--- a/Sources/ArborCore/Command.swift
++++ b/Sources/ArborCore/Command.swift
+@@ -133,6 +133,8 @@ public enum Command: Equatable, Sendable, Codable {
+   /// Controller+Undo.swift). Camera moves are `back` and `forward`.
+   case undo
+   case redo
++  /// Carries a window with the keyboard: pick it up, choose a place with the arrows, put it down (Carry.swift).
++  case carry(CarryStep)
+ 
+   // Keyboard tiling tools (docs/features/F22-keyboard-tiling-tools.md; TilingCommands.swift has the argument types).
+   case focus(FocusTarget)
+@@ -526,6 +528,20 @@ public enum Command: Equatable, Sendable, Codable {
+     case "minimap": return try noArgs(.minimap)
+     case "undo": return try noArgs(.undo)
+     case "redo": return try noArgs(.redo)
++    case "carry":
++      guard args.count <= 1 else {
++        throw ParseError("usage: carry [window] | carry <edge> | carry drop | carry cancel | carry next-display")
++      }
++      switch args.first {
++      case nil: return .carry(.pickUp(nil))
++      case "drop": return .carry(.drop)
++      case "cancel": return .carry(.cancel)
++      case "next-display": return .carry(.display(next: true))
++      case "previous-display": return .carry(.display(next: false))
++      case let word?:
++        if let edge = Edge(word: word) { return .carry(.move(edge)) }
++        return .carry(.pickUp(try window(word)))
++      }
+     default:
+       throw ParseError("unknown command `\(verb)`; try `help`")
+     }
+@@ -627,6 +643,11 @@ public enum Command: Equatable, Sendable, Codable {
+     case .minimap: return "minimap"
+     case .undo: return "undo"
+     case .redo: return "redo"
++    case .carry(.pickUp(let window)): return "carry" + w(window)
++    case .carry(.move(let edge)): return "carry \(edge.rawValue)"
++    case .carry(.drop): return "carry drop"
++    case .carry(.cancel): return "carry cancel"
++    case .carry(.display(let next)): return next ? "carry next-display" : "carry previous-display"
+     }
+   }
+ 
+@@ -688,6 +709,9 @@ public enum Command: Equatable, Sendable, Codable {
+       swap <window> <window>                   trade the places of two docked windows
+       rotate | mirror                          turn the focused window's group from a row into a column, and back | reverse its order
+       move-to-display <next|previous|n> [window]  send a window to another display, docked or floating as it was
++      carry [window]                           pick a window up, to put it anywhere a drag could; again to put it down
++      carry <edge> | drop | cancel             go to the next place that way | put it down there | put it back
++      carry next-display | previous-display    choose among the places on another display
+ 
+     Arbor itself
+       pause [minutes] | resume | toggle-pause    bring every window into view and leave windows, shortcuts and
+diff --git a/Sources/ArborCore/CommandTitle.swift b/Sources/ArborCore/CommandTitle.swift
+index bedd649..2ae37c8 100644
+--- a/Sources/ArborCore/CommandTitle.swift
++++ b/Sources/ArborCore/CommandTitle.swift
+@@ -37,6 +37,11 @@ extension Command {
+     case .goToView(let slot): return "View \(slot)"
+     case .dock(_, let edge): return "Dock \(Self.upperFirst(edge.rawValue))"
+     case .dockBeside: return "Dock Beside a Window"
++    case .carry(.pickUp): return "Carry"
++    case .carry(.move(let edge)): return "Carry \(Self.upperFirst(edge.rawValue))"
++    case .carry(.drop): return "Put Down"
++    case .carry(.cancel): return "Put Back"
++    case .carry(.display(let next)): return "Carry to \(next ? "Next" : "Previous") Display"
+     case .float: return "Float Focused Window"
+     case .toggleFloat: return "Float or Dock Focused Window"
+     case .arrange: return "Arrange Windows"
+diff --git a/Sources/ArborCore/Workspace.swift b/Sources/ArborCore/Workspace.swift
+index 57f989e..c980312 100644
+--- a/Sources/ArborCore/Workspace.swift
++++ b/Sources/ArborCore/Workspace.swift
+@@ -108,6 +108,16 @@ public struct Workspace: Codable, Sendable, Equatable {
+     return false
+   }
+ 
++  /// Puts the view and its history back as they were in `earlier`, an older copy of this workspace, as far
++  /// as those spaces still exist.
++  public mutating func restoreView(from earlier: Workspace) {
++    if tree.contains(earlier.camera) { camera = earlier.camera }
++    back = earlier.back.filter(tree.contains)
++    forward = earlier.forward.filter(tree.contains)
++    // Where its space is gone the view stays where it is, which may be the last place in the old history.
++    tidyHistory()
++  }
++
+   /// Takes the last recorded move back as if it had never been made: unlike `goBack`, it leaves nothing to
+   /// go forward to. Returns false if there is none.
+   public mutating func retractLastMove() -> Bool {
+@@ -507,6 +517,18 @@ public struct Workspace: Codable, Sendable, Equatable {
+     isPresent: @escaping (WindowID) -> Bool, minimumSize: @escaping (WindowID) -> CGSize? = { _ in nil },
+     makingRoom terms: MakeRoom.Terms? = nil
+   ) -> CGRect? {
++    previewLayout(
++      for: window, at: target, in: frame, options: options, isPresent: isPresent, minimumSize: minimumSize,
++      makingRoom: terms
++    )?.place(of: window)
++  }
++
++  /// The whole arrangement as it would be if `window` were dropped on `target`. Nil for targets that do not dock.
++  public func previewLayout(
++    for window: WindowID, at target: DropTarget, in frame: CGRect, options: LayoutOptions,
++    isPresent: @escaping (WindowID) -> Bool, minimumSize: @escaping (WindowID) -> CGSize? = { _ in nil },
++    makingRoom terms: MakeRoom.Terms? = nil
++  ) -> Layout? {
+     var copy = self
+     guard copy.dock(window, at: target, shareSpace: options.shareRemovedSpace) else { return nil }
+     var layout = LayoutEngine.layout(
+@@ -520,8 +542,7 @@ public struct Workspace: Codable, Sendable, Equatable {
+           isPresent: { $0 == window || isPresent($0) }, minimumSize: minimumSize, terms: terms
+         ).layout
+     }
+-    if let placed = layout.windowFrames[window] { return placed }
+-    return layout.tiles.first(where: { $0.windows.contains(window) })?.frame
++    return layout
+   }
+ }
+ 
+diff --git a/Sources/ArborKit/Controller/Controller+Carry.swift b/Sources/ArborKit/Controller/Controller+Carry.swift
+new file mode 100644
+index 0000000..38d8db5
+--- /dev/null
++++ b/Sources/ArborKit/Controller/Controller+Carry.swift
+@@ -0,0 +1,342 @@
++import ArborCore
++import CoreGraphics
++
++/// Carrying a window with the keyboard (docs/features/F59-carry-with-the-keyboard.md).
++///
++/// A carry is a drag without a pointer. `CarryMap` (ArborCore) knows the places a drag could put the
++/// window and which of them an arrow key leads to; this file holds the window, shows the drop preview
++/// at the place chosen, and lets go. Until then nothing is rearranged: the window stays where it is and
++/// only the preview and, with the view commands, the view move. Letting go ends in `finishDrop(_:on:)`, as a drag
++/// does, so a carried drop and a dragged one cannot differ.
++///
++/// While a window is carried Arbor holds plain keys (arrows, ↩, Space, ⎋) that belong to whatever app has the
++/// keyboard. So every way out gives them back, and there are many: a drop, a cancel, any command that is not
++/// part of carrying, the keyboard going to another window, the window closing or leaving, a mouse drag, a change of
++/// settings or displays, a pause, quitting, and half a minute without a key.
++extension Controller {
++  struct CarrySession {
++    var window: WindowID
++    /// The display whose places are offered.
++    var display: DisplayID
++    var map: CarryMap
++    var choice: CarryChoice
++    /// Every display's workspace as it was when the window was picked up, for the views.
++    var before: [DisplayID: Workspace]
++  }
++
++  /// One stored property of the controller.
++  struct Carrying {
++    var session: CarrySession?
++    /// The window that is just being picked up: the view may have to step out before there is a session.
++    var pickingUp: WindowID?
++    /// Set once the observer below is in place.
++    var isWatching = false
++
++    /// The window in hand. It keeps the keyboard, in view or not, and having the keyboard does not
++    /// bring it into view: the view is looking for a place for it.
++    var window: WindowID? { session?.window ?? pickingUp }
++  }
++
++  /// How long a carry waits for the next key, in seconds, before everything goes back.
++  static let carryPatience = 30.0
++  static let carryTimer = "carry"
++
++  /// The window being carried, if any.
++  public var carriedWindow: WindowID? { carrying.session?.window }
++  /// Where it would land now.
++  public var carryChoice: CarryChoice? { carrying.session?.choice }
++  /// Every place it could land in the view it is choosing in.
++  public var carryChoices: CarryMap? { carrying.session?.map }
++  /// The plain keys a carry needs, for `temporaryShortcuts`.
++  /// None with shortcuts switched off: a script can still carry, with commands.
++  var carryShortcuts: [KeyBinding] {
++    carrying.session != nil && settings.hotkeysEnabled ? KeyBindings.whileCarrying : []
++  }
++
++  // MARK: The command
++
++  func carry(_ step: CarryStep) -> CommandResult {
++    switch step {
++    case .pickUp(let window):
++      guard let session = carrying.session else { return pickUp(window) }
++      // The key that picks up also puts down.
++      if window == nil || window == session.window { return dropCarried() }
++      cancelCarry()
++      return pickUp(window)
++    case .move(let edge):
++      return moveCarried(edge)
++    case .drop:
++      return dropCarried()
++    case .cancel:
++      guard carrying.session != nil else { return .failure(Self.notCarrying) }
++      cancelCarry()
++      return .success("put back; nothing has changed")
++    case .display(let next):
++      if carrying.session == nil {
++        let picked = pickUp(nil)
++        guard picked.ok else { return picked }
++      }
++      return carryToDisplay(next: next)
++    }
++  }
++
++  private static let notCarrying = "no window is being carried; `carry` picks up the focused one"
++
++  private func pickUp(_ window: WindowID?) -> CommandResult {
++    let (id, display): (WindowID, DisplayID)
++    switch target(window) {
++    case .failure(let result): return result
++    case .window(let w, let d): (id, display) = (w, d)
++    }
++    guard drag == nil, edgeResize == nil else { return .failure("the mouse is holding a window; let go first") }
++    guard windows[id]?.isPresent == true else { return .failure("\(id) is minimized, hidden or on another of the macOS Spaces") }
++    guard !isPinned(id) else { return .failure("\(id) is kept in view wherever you look; `unpin` it to dock it") }
++    watchForCarry()
++
++    let before = workspaces
++    carrying.pickingUp = id
++    defer { carrying.pickingUp = nil }
++    showMoreThan(id, on: display)
++    guard let map = carryMap(for: id, on: display),
++      let choice = map.choice(for: workspaces[display]?.isDocked(id) == true ? DropTarget.none : .float)
++        ?? windows[id].flatMap({ map.nearest(to: $0.frame.center) })
++    else {
++      restoreViews(from: before)
++      return .failure("there is nowhere to put \(id)")
++    }
++    carrying.session = CarrySession(window: id, display: display, map: map, choice: choice, before: before)
++    // The keys that follow mean this window, and the keyboard going elsewhere ends the carry.
++    if system.focusedWindow() != id { system.focus(id) }
++    showCarry()
++    onTemporaryShortcuts?(temporaryShortcuts)
++    return .success("carrying \(appName(of: id)): arrows choose a place, ↩ puts it down, ⎋ puts it back")
++  }
++
++  /// Steps the view out until it shows the window and something besides it.
++  private func showMoreThan(_ window: WindowID, on display: DisplayID) {
++    guard let workspace = workspaces[display], let leaf = workspace.tree.leaf(containing: window),
++      let view = treeView(display)
++    else { return }
++    var camera = Navigation.commonAncestor(workspace.camera, leaf, in: workspace.tree)
++    if view.passThrough(view.effectiveAncestor(of: camera)) == leaf {
++      camera = Navigation.stepOut(from: camera, in: view) ?? camera
++    }
++    if camera != workspace.camera { moveCamera(on: display, to: camera) }
++  }
++
++  private func moveCarried(_ edge: Edge) -> CommandResult {
++    guard let session = carrying.session else { return .failure(Self.notCarrying) }
++    guard let next = session.map.next(from: session.choice, toward: edge) else {
++      waitForCarry()
++      return .failure("nothing further that way")
++    }
++    carrying.session?.choice = next
++    showCarry()
++    return .success(words(for: next.target, on: session.display))
++  }
++
++  private func carryToDisplay(next: Bool) -> CommandResult {
++    guard let session = carrying.session else { return .failure(Self.notCarrying) }
++    let order = displays.sorted { ($0.frame.minX, $0.frame.minY) < ($1.frame.minX, $1.frame.minY) }.map(\.id)
++    guard order.count > 1, let index = order.firstIndex(of: session.display) else {
++      waitForCarry()
++      return .failure("there is only this display")
++    }
++    let display = order[(index + (next ? 1 : order.count - 1)) % order.count]
++    guard let map = carryMap(for: session.window, on: display),
++      let choice = map.choice(for: DropTarget.none) ?? map.choice(for: .float) ?? map.choices.first
++    else {
++      waitForCarry()
++      return .failure("there is nowhere to put it on that display")
++    }
++    carrying.session?.display = display
++    carrying.session?.map = map
++    carrying.session?.choice = choice
++    showCarry()
++    return .success("on the \(next ? "next" : "previous") display: " + words(for: choice.target, on: display))
++  }
++
++  // MARK: The places
++
++  /// The places `window` can be put down in what `displayID` shows now.
++  private func carryMap(for window: WindowID, on displayID: DisplayID) -> CarryMap? {
++    guard let workspace = workspaces[displayID], let layout = layouts[displayID] else { return nil }
++    let present = presentWindowIDs()
++    let minimums = minimumSizes
++    return CarryMap(
++      carrying: window, in: workspace, layout: layout, layoutOptions: options(for: displayID).layoutOptions,
++      dropOptions: options(for: displayID).dropOptions, floatingFrame: floatingFrame(ofCarried: window, on: displayID),
++      isPresent: { present.contains($0) }, minimumSize: { minimums[$0] },
++      makingRoom: settings.makeRoom ? roomTerms(on: displayID, docking: window) : nil)
++  }
++
++  /// Where the window would float on `displayID`'s Desktop. One that floats there already stays where it is.
++  /// Any other takes the size it floats at, in the middle of the Desktop as it will be without the window.
++  private func floatingFrame(ofCarried window: WindowID, on displayID: DisplayID) -> CGRect? {
++    guard var workspace = workspaces[displayID], let display = display(displayID), let current = windows[window] else {
++      return nil
++    }
++    if workspace.isFloating(window), !parked.contains(window) { return current.frame }
++    let home = workspaceID(containing: window).flatMap { workspaces[$0] }
++    let size = home?.undockedFrame(of: window)?.size ?? home?.floating[window]?.size ?? current.frame.size
++    workspace.forget(window, shareSpace: settings.shareRemovedSpace)
++    let present = presentWindowIDs()
++    let minimums = minimumSizes
++    let without = LayoutEngine.layout(
++      workspace.tree, camera: workspace.camera, in: display.visibleFrame,
++      options: options(for: displayID).layoutOptions,
++      isPresent: { present.contains($0) }, minimumSize: { minimums[$0] })
++    guard let desktop = without.desktopFrame else { return nil }
++    let middle = CGRect(
++      x: (desktop.midX - size.width / 2).rounded(), y: (desktop.midY - size.height / 2).rounded(),
++      width: size.width, height: size.height)
++    return floatingFrame(middle, on: floatingRegion(desktop, on: display), of: display, minimum: size)
++  }
++
++  /// Shows the preview at the place chosen and starts waiting for the next key.
++  private func showCarry() {
++    guard let session = carrying.session else { return }
++    // Also with drop previews switched off for drags: a carry has nothing else to show where it is.
++    overlays.showDropPreview(session.choice.frame)
++    waitForCarry()
++  }
++
++  private func waitForCarry() {
++    scheduler.schedule(Self.carryTimer, after: Self.carryPatience) { [weak self] in
++      guard let self, self.carrying.session != nil else { return }
++      Log.info("carry: no key for \(Int(Self.carryPatience)) s; put back")
++      self.cancelCarry()
++    }
++  }
++
++  // MARK: The ends
++
++  private func dropCarried() -> CommandResult {
++    guard let session = carrying.session else { return .failure(Self.notCarrying) }
++    let (window, display, choice) = (session.window, session.display, session.choice)
++    letGoOfCarry()
++    // Said before the drop: it can merge or delete the space the words name.
++    let place = words(for: choice.target, on: display)
++    let source = workspaceID(containing: window)
++    if choice.target == .float, let snapshot = self.display(display), windows[window]?.frame != choice.frame {
++      // A drag has brought the window to where it is dropped. So does this.
++      putBack(window, at: choice.frame, on: snapshot)
++    }
++    finishDrop(window, on: Hover(display: display, target: choice.target))
++    soleFloatDropped(window, from: source)
++    system.focus(window)
++    return .success("\(appName(of: window)) is \(place)")
++  }
++
++  /// Puts everything back as it was when the window was picked up, the views included. Does nothing if no
++  /// window is being carried. The keyboard goes to a window in view if the one that has it is not, unless it
++  /// is `leavingTheKeyboard` where it is.
++  func cancelCarry(leavingTheKeyboard: Bool = false) {
++    guard let session = carrying.session else { return }
++    letGoOfCarry()
++    restoreViews(from: session.before, leavingTheKeyboard: leavingTheKeyboard)
++  }
++
++  /// The mouse has taken hold of a window. The carry is over, and the view stays as it is: putting it back could take
++  /// the very window out from under the pointer.
++  func carryYieldsToTheMouse() { letGoOfCarry() }
++
++  /// The view is held from now on (F58). Every step of a carry would be refused, ⎋ among them, so it is over now, and the
++  /// view stays as it is, which is what holding it means. (`hold` as a command has ended the carry before it ran, like
++  /// any command that is not part of carrying. This is for whatever else may come to hold the view.)
++  func carryYieldsToTheHold() { letGoOfCarry() }
++
++  /// Ends the carry without touching windows or views: the preview, the timer and the keys go.
++  private func letGoOfCarry() {
++    guard carrying.session != nil else { return }
++    carrying.session = nil
++    scheduler.cancel(Self.carryTimer)
++    overlays.showDropPreview(nil)
++    onTemporaryShortcuts?(temporaryShortcuts)
++  }
++
++  private func restoreViews(from before: [DisplayID: Workspace], leavingTheKeyboard: Bool = false) {
++    guard isRunning else { return }
++    for id in workspaces.keys.sorted() {
++      guard let earlier = before[id], var workspace = workspaces[id] else { continue }
++      let camera = workspace.camera
++      workspace.restoreView(from: earlier)
++      guard workspace != workspaces[id] else { continue }
++      workspaces[id] = workspace
++      if workspace.camera != camera {
++        relayout(id, reason: .camera)
++        if !leavingTheKeyboard { ensureFocusIsVisible(on: id) }
++      }
++      notify(.camera(id))
++      scheduleSave()
++    }
++  }
++
++  // MARK: What happens meanwhile
++
++  /// Follows what happens to the arrangement and the keyboard during a carry. In place from the first carry on.
++  private func watchForCarry() {
++    guard !carrying.isWatching else { return }
++    carrying.isWatching = true
++    observe { [weak self] change in self?.carrySees(change) }
++  }
++
++  private func carrySees(_ change: Change) {
++    guard let session = carrying.session else { return }
++    switch change {
++    case .layout(let display):
++      guard isRunning, isManaged(session.window), windows[session.window]?.isPresent == true,
++        workspaces[session.display] != nil, drag == nil, edgeResize == nil
++      else { return cancelCarry() }
++      if display == session.display { refreshCarry() }
++    case .settings, .input:
++      cancelCarry()
++    case .lifecycle:
++      // `shutdown` and `pause` have cancelled it before they began. This is for whatever else stops Arbor.
++      if !isRunning { letGoOfCarry() }
++    default:
++      break
++    }
++  }
++
++  /// The keyboard went to `window`. If that is not the window in hand, the plain keys belong to whoever has
++  /// it now. Called before the view follows the keyboard, so that it follows from where it was.
++  func carryYields(toFocusOn window: WindowID) {
++    if let session = carrying.session, session.window != window { cancelCarry(leavingTheKeyboard: true) }
++  }
++
++  /// The view or the arrangement changed under the carry: the places are looked up again. The same target
++  /// stays chosen if it is still there; otherwise the carry arrives at an edge of the new view.
++  private func refreshCarry() {
++    guard let session = carrying.session else { return }
++    guard let map = carryMap(for: session.window, on: session.display),
++      let choice = map.choice(for: session.choice.target) ?? map.arrival(from: session.choice.anchor)
++    else { return cancelCarry() }
++    carrying.session?.map = map
++    carrying.session?.choice = choice
++    showCarry()
++  }
++
++  // MARK: Words
++
++  private func appName(of window: WindowID) -> String { windows[window]?.appName ?? "\(window)" }
++
++  /// "left of Mail (n3)", "at the top edge of the view", "floating on the Desktop".
++  private func words(for target: DropTarget, on display: DisplayID) -> String {
++    switch target {
++    case .none: return "back where it was"
++    case .float: return "floating on the Desktop"
++    case .cameraEdge(let edge): return "at the \(edge.rawValue) edge of the view"
++    case .stack(let node): return "in a tab group with \(name(of: node, on: display))"
++    case .beside(let node, let edge):
++      let side: String
++      switch edge {
++      case .left: side = "left of"
++      case .right: side = "right of"
++      case .top: side = "above"
++      case .bottom: side = "below"
++      }
++      return "\(side) \(name(of: node, on: display))"
++    }
++  }
++}
+diff --git a/Sources/ArborKit/Controller/Controller+Commands.swift b/Sources/ArborKit/Controller/Controller+Commands.swift
+index 811001b..fe97ea8 100644
+--- a/Sources/ArborKit/Controller/Controller+Commands.swift
++++ b/Sources/ArborKit/Controller/Controller+Commands.swift
+@@ -7,6 +7,7 @@ extension Controller {
+   /// Runs a command. Every entry point (hotkeys, menu, socket, URLs, tests)
+   /// ends up here, by way of `perform(_:from:)` (Controller+Lead.swift).
+   func execute(_ command: Command) -> CommandResult {
++    if !command.keepsCarrying { cancelCarry() }
+     // Before it changes anything: a peek ends on the arrangement it began with. Here, so that no way in goes round it.
+     // The one exception is no command but a click (Controller+FrameRect.swift).
+     if let landed = landPeek(insteadOf: command) { return landed }
+@@ -182,6 +183,7 @@ extension Controller {
+     case .minimap: result = toggleMinimap()
+     case .undo: result = undo()
+     case .redo: result = redo()
++    case .carry(let step): result = carry(step)
+     }
+     // Replies call a named space by its name; the log, which people paste into bug reports, does not (F20).
+     let message = Self.withoutNames(forTheLog(result.message), namesBefore.union(everyName()).union(command.namesInText))
+diff --git a/Sources/ArborKit/Controller/Controller+Doctor.swift b/Sources/ArborKit/Controller/Controller+Doctor.swift
+index dace722..84597a0 100644
+--- a/Sources/ArborKit/Controller/Controller+Doctor.swift
++++ b/Sources/ArborKit/Controller/Controller+Doctor.swift
+@@ -247,12 +247,15 @@ extension Controller {
+     let layout = layoutInEffect
+     // Signs this keyboard cannot type alone stay where a US keyboard has them, under whatever is printed there.
+     let moved = effectiveBindings.bindings.filter { !$0.chord.isPositional && layout.fallsBack($0.chord.key) }
++    // Each sign once: two shortcuts can be on one key (⌃⌥[ and ⌃⌥⌘[).
++    var signs: [String] = []
++    for sign in moved.map(\.chord.key.label) where !signs.contains(sign) { signs.append(sign) }
+     report.add(
+       .ok, "Keyboard layout",
+       layout.name
+         + (moved.isEmpty
+           ? ""
+-          : "; it does not type \(OnboardingModel.sentenceList(moved.map { $0.chord.key.label })) alone, so "
++          : "; it does not type \(OnboardingModel.sentenceList(signs)) alone, so "
+             + moved.map { "`\($0.command.text)` is \($0.label)" }.joined(separator: ", ")))
+ 
+     let apps = passThroughSuggestions.map(\.name)
+diff --git a/Sources/ArborKit/Controller/Controller+Drag.swift b/Sources/ArborKit/Controller/Controller+Drag.swift
+index bd31101..b7fd3af 100644
+--- a/Sources/ArborKit/Controller/Controller+Drag.swift
++++ b/Sources/ArborKit/Controller/Controller+Drag.swift
+@@ -56,6 +56,7 @@ extension Controller {
+   // MARK: Events
+ 
+   public func dragBegan(_ id: WindowID, at point: CGPoint) {
++    carryYieldsToTheMouse()
+     stopWatchingTitle(of: id)
+     // The end of the last drag can be lost (a missed mouse-up). What it left must go first.
+     cancelDrag()
+diff --git a/Sources/ArborKit/Controller/Controller+EdgeResize.swift b/Sources/ArborKit/Controller/Controller+EdgeResize.swift
+index fd76686..c380346 100644
+--- a/Sources/ArborKit/Controller/Controller+EdgeResize.swift
++++ b/Sources/ArborKit/Controller/Controller+EdgeResize.swift
+@@ -19,6 +19,7 @@ extension Controller {
+   }
+ 
+   public func resizeBegan(_ id: WindowID) {
++    carryYieldsToTheMouse()
+     edgeResize = nil
+     stopWatchingTitle(of: id)
+     guard isRunning, isManaged(id), let display = workspaceID(containing: id),
+diff --git a/Sources/ArborKit/Controller/Controller+Events.swift b/Sources/ArborKit/Controller/Controller+Events.swift
+index 779d567..4ed5fbc 100644
+--- a/Sources/ArborKit/Controller/Controller+Events.swift
++++ b/Sources/ArborKit/Controller/Controller+Events.swift
+@@ -77,6 +77,8 @@ extension Controller: WindowSystemEvents {
+     if previous != window { windows[window.id] = window }
+     if owedTheWayBack[window.id] != nil { payTheWayBack(to: window.id) }
+     noteWhetherItCameBack(window, was: previous)
++    // At once: the layout that follows a Space switch or an app being hidden waits until all the reports are in.
++    if carrying.session?.window == window.id, !window.isPresent { cancelCarry() }
+     putBackIfItLeftFullScreen(window, was: previous)
+     defer { focusRingFollows(window) }
+     if previous?.title != window.title { refreshHoldCaller() }
+@@ -189,13 +191,14 @@ extension Controller: WindowSystemEvents {
+     namePromptNoticesFocus(on: id)
+     holdNotesFocus(of: id)
+     defer { notify(.focus(id)) }
++    carryYields(toFocusOn: id)
+     bringIntoViewIfFocused(id)
+   }
+ 
+   /// Moves the camera, or switches tabs, so that `id` shows. Does nothing if it already does.
+   /// `onItsWayBack`: see `reveal(_:leaf:on:onItsWayBack:)`.
+   func bringIntoView(_ id: WindowID, onItsWayBack: Bool = false) {
+-    guard isRunning, drag == nil, isManaged(id), let display = workspaceID(containing: id) else {
++    guard isRunning, drag == nil, carrying.window != id, isManaged(id), let display = workspaceID(containing: id) else {
+       return
+     }
+     guard !holdTurnsAway(id) else { return }
+diff --git a/Sources/ArborKit/Controller/Controller+Hold.swift b/Sources/ArborKit/Controller/Controller+Hold.swift
+index ca47d0a..8a62f74 100644
+--- a/Sources/ArborKit/Controller/Controller+Hold.swift
++++ b/Sources/ArborKit/Controller/Controller+Hold.swift
+@@ -284,6 +284,7 @@ extension Controller {
+       settingsFileMayHaveChanged()
+     }
+     hold.fences.removeAll()
++    if level == .view { carryYieldsToTheHold() }
+     if level == .view {
+       // What is seen is what is held. That is not where the view is if the window it is on was hidden, minimized or on another macOS
+       // Space already: then the nearest space around it that has something in it shows.
+diff --git a/Sources/ArborKit/Controller/Controller+Layout.swift b/Sources/ArborKit/Controller/Controller+Layout.swift
+index 056ed89..17a8914 100644
+--- a/Sources/ArborKit/Controller/Controller+Layout.swift
++++ b/Sources/ArborKit/Controller/Controller+Layout.swift
+@@ -634,6 +634,8 @@ extension Controller {
+   func ensureFocusIsVisible(
+     on displayID: DisplayID, alsoFromAPinnedWindow: Bool = false, alsoFromNothing: Bool = true
+   ) -> Bool {
++    // A carried window keeps the keyboard while the view looks for a place for it, out of view or not.
++    guard carrying.window == nil else { return false }
+     // A command that moves the view says where the attention goes, so the keyboard goes along, also out of a
+     // pinned window, which is still in view: keys meant for the window that arrived must not end up in a call.
+     // An app can go on naming a window in the Dock as its focused one.
+diff --git a/Sources/ArborKit/Controller/Controller+Lead.swift b/Sources/ArborKit/Controller/Controller+Lead.swift
+index 355d90f..4ccf38e 100644
+--- a/Sources/ArborKit/Controller/Controller+Lead.swift
++++ b/Sources/ArborKit/Controller/Controller+Lead.swift
+@@ -109,6 +109,8 @@ extension Controller {
+   /// call in an app set to Don't Arrange): whoever types there is looking at that display. With no
+   /// focused window the pointer decides.
+   func commandDisplayID() -> DisplayID? {
++    // The view commands of a carry look for a place on the display it is choosing on.
++    if let carry = carrying.session { return carry.display }
+     if currentLead() == .keyboard, let display = focusedDisplayID { return display }
+     return pointerDisplayID
+   }
+diff --git a/Sources/ArborKit/Controller/Controller+Menu.swift b/Sources/ArborKit/Controller/Controller+Menu.swift
+index 94536cc..ff6cb2f 100644
+--- a/Sources/ArborKit/Controller/Controller+Menu.swift
++++ b/Sources/ArborKit/Controller/Controller+Menu.swift
+@@ -219,6 +219,12 @@ extension Controller {
+                 .enabled(focused.map { !isAsFarAsItGoes($0, toward: edge) } ?? false)
+             }
+           },
++          // What `carry` itself goes by. A window kept in view never docks, by a drag or by a carry; an app can go on naming a
++          // window in the Dock as its focused one; and nothing is picked up while the mouse holds a window.
++          Section {
++            Item.command("Carry…", .carry(.pickUp(nil)))
++              .enabled(drag == nil && edgeResize == nil && (focused.map { $0.window.isPresent && !isPinned($0.window.id) } ?? false))
++          },
+           Section {
+             if displays.count > 1 { Item.command("Move to Next Display", .moveToDisplay(.next, nil)).enabled(focused != nil) }
+           },
+diff --git a/Sources/ArborKit/Controller/Controller+Pause.swift b/Sources/ArborKit/Controller/Controller+Pause.swift
+index 196afc2..e2dff5c 100644
+--- a/Sources/ArborKit/Controller/Controller+Pause.swift
++++ b/Sources/ArborKit/Controller/Controller+Pause.swift
+@@ -24,7 +24,8 @@ extension Controller {
+     // Both before `shutdown` saves, so that one write says it all.
+     pauseEnd = minutes.map { now().addingTimeInterval($0 * 60) }
+     if !isPaused {
+-      // Whatever the mouse was doing is over as far as Arbor is concerned.
++      // Whatever the mouse was doing is over as far as Arbor is concerned. So is a carry.
++      cancelCarry()
+       cancelDrag()
+       edgeResize = nil
+       // Set first: observers of the `.lifecycle` change that `shutdown` sends read it.
+diff --git a/Sources/ArborKit/Controller/Controller+Peek.swift b/Sources/ArborKit/Controller/Controller+Peek.swift
+index f1e9caf..023e8a1 100644
+--- a/Sources/ArborKit/Controller/Controller+Peek.swift
++++ b/Sources/ArborKit/Controller/Controller+Peek.swift
+@@ -29,7 +29,7 @@ extension Controller {
+   static let peekInterval = 1.0 / 30
+ 
+   /// The shortcuts a peek has asked for on top of the registered ones.
+-  public var temporaryShortcuts: [KeyBinding] { peeking?.temporary ?? [] }
++  public var temporaryShortcuts: [KeyBinding] { (peeking?.temporary ?? []) + carryShortcuts }
+   /// Whether a shortcut is being held to look.
+   public var isPeeking: Bool { peeking?.peek.phase == .holding }
+ 
+@@ -84,7 +84,7 @@ extension Controller {
+   private func beginPeek(holding chord: KeyChord) -> Bool {
+     // As before a command: a peek must not pretend either (Controller+Permission.swift).
+     askAboutAccessibility(beyondDoubt: true, inPassing: true)
+-    guard settings.peek, isRunning, holdLevel != .view, drag == nil, edgeResize == nil,
++    guard settings.peek, isRunning, holdLevel != .view, drag == nil, edgeResize == nil, carrying.session == nil,
+       let (display, workspace) = deciding(true, { from(.shortcut) { cameraDisplay() } })
+     else { return false }
+     watchLifecycleForPeek()
+diff --git a/Sources/ArborKit/Controller/Controller.swift b/Sources/ArborKit/Controller/Controller.swift
+index d7e2a41..3578488 100644
+--- a/Sources/ArborKit/Controller/Controller.swift
++++ b/Sources/ArborKit/Controller/Controller.swift
+@@ -216,6 +216,8 @@ public final class Controller {
+   var autoDockTrail: AutoDockTrail?
+   /// True while `windowFound` runs: the window at hand was open all along.
+   var isTakingInAFoundWindow = false
++  /// The window being carried with the keyboard, if any (Controller+Carry.swift).
++  var carrying = Carrying()
+ 
+   /// Windows that did not take the size of their slot: the slot they were asked to fill and the
+   /// frame they ended at. While both still hold there is no point in asking again.
+@@ -522,6 +524,7 @@ public final class Controller {
+     }
+     isStoppingWithoutMoving = !movingWindows
+     defer { isStoppingWithoutMoving = false }
++    cancelCarry()
+     cancelDrag()
+     scheduler.cancel("save")
+     overlays.finishAnimations()
+diff --git a/Sources/ArborKit/Controller/KeyBindings.swift b/Sources/ArborKit/Controller/KeyBindings.swift
+index 80b2ec6..37737d3 100644
+--- a/Sources/ArborKit/Controller/KeyBindings.swift
++++ b/Sources/ArborKit/Controller/KeyBindings.swift
+@@ -84,6 +84,10 @@ public enum KeyBindings {
+       // ⌃⌥?, as ⇧⌘/ is Help in every app.
+       KeyBinding(shifted, .slash, .showShortcuts),
+       KeyBinding(base, .m, .minimap),
++      // ⌃⌥Space looks at everything; add ⌘ and the window can go anywhere (F59).
++      KeyBinding(move, .space, .carry(.pickUp(nil))),
++      KeyBinding(move, .leftBracket, .carry(.display(next: false))),
++      KeyBinding(move, .rightBracket, .carry(.display(next: true))),
+     ]
+     // Keyboard tiling tools (F22). ⌃⌥⇧ + arrow moves focus in all four directions and, with no window that way
+     // in view, does what `neighbor` does, which is what these keys ran before (↑ and ↓ are further up).
+@@ -105,6 +109,18 @@ public enum KeyBindings {
+     bindings.filter(\.command.endsPause)
+   }
+ 
++  /// The plain keys to register on top of the others while a window is carried, and only then: they are
++  /// keys people type with (Controller+Carry.swift).
++  public static let whileCarrying: [KeyBinding] = [
++    KeyBinding([], .left, .carry(.move(.left))),
++    KeyBinding([], .right, .carry(.move(.right))),
++    KeyBinding([], .up, .carry(.move(.top))),
++    KeyBinding([], .down, .carry(.move(.bottom))),
++    KeyBinding([], .returnKey, .carry(.drop)),
++    KeyBinding([], .space, .carry(.drop)),
++    KeyBinding([], .escape, .carry(.cancel)),
++  ]
++
+   /// The shortcuts to register on top of `bindings` while a peek started with `chord` is held. The arrow keys
+   /// and ⎋ arrive with the modifiers that are being held, and a peek takes those chords whatever they are bound
+   /// to (by default all five are bound). These are the ones that are bound to nothing, so that they
+diff --git a/Sources/ArborTesting/ChaosGenerator.swift b/Sources/ArborTesting/ChaosGenerator.swift
+index d01a97f..dd579ea 100644
+--- a/Sources/ArborTesting/ChaosGenerator.swift
++++ b/Sources/ArborTesting/ChaosGenerator.swift
+@@ -61,6 +61,7 @@ public struct ChaosGenerator {
+     case watch, find, reveal, displays
+     case showShortcuts
+     case minimap
++    case carry
+   }
+ 
+   /// No `default`, on purpose: a new `Command` case does not compile until it is listed here.
+@@ -148,6 +149,7 @@ public struct ChaosGenerator {
+     case .displays: .displays
+     case .showShortcuts: .showShortcuts
+     case .minimap: .minimap
++    case .carry: .carry
+     }
+   }
+ 
+@@ -265,6 +267,15 @@ public struct ChaosGenerator {
+     case .displays: return .displays
+     case .showShortcuts: return .showShortcuts
+     case .minimap: return .minimap
++    case .carry:
++      // Mostly steps, so that a carry that has begun gets somewhere before something else ends it.
++      switch random.int(0...9) {
++      case 0, 1: return .carry(.pickUp(optionalWindow(in: world)))
++      case 2...6: return .carry(.move(edge()))
++      case 7: return .carry(.drop)
++      case 8: return .carry(.cancel)
++      default: return .carry(.display(next: random.chance(50)))
++      }
+     }
+   }
+ 
+@@ -366,6 +377,7 @@ public struct ChaosGenerator {
+     case .find, .reveal: 8
+     case .showShortcuts: 2
+     case .minimap: 3
++    case .carry: 20
+     }
+   }
+ 
+diff --git a/Sources/ArborTesting/ChaosInvariants.swift b/Sources/ArborTesting/ChaosInvariants.swift
+index 59e4e43..6a91215 100644
+--- a/Sources/ArborTesting/ChaosInvariants.swift
++++ b/Sources/ArborTesting/ChaosInvariants.swift
+@@ -19,7 +19,7 @@ extension ChaosRunner {
+     "heads-up", "minimap-",
+     "displays-blinked", "menu-bar",
+     "back-from-full-screen",
+-    "desktop-guard-zones",
++    "desktop-guard-zones", "carry",
+   ]
+ 
+   /// How far a docked window may sit from its slot: 4 points of the app rounding its size
+@@ -69,6 +69,7 @@ extension ChaosRunner {
+     undoViolations(after: action, &problems)
+     holdViolations(&problems)
+     guardZoneViolations(&problems)
++    carryViolations(&problems)
+     timerViolations(settled: action == .settle, &problems)
+     untouchedViolations(&problems)
+     // Encoding is slow next to everything else, so a random run checks it now and then. A replay checks it at every step:
+@@ -262,8 +263,32 @@ extension ChaosRunner {
+         problems.append(.init("overlays", "something is still drawn on \(id), which is gone"))
+       }
+     }
+-    if controller.draggedWindow == nil, let preview = harness.overlays.preview {
+-      problems.append(.init("preview", "a drop preview is showing at \(preview.brief) and nothing is being dragged"))
++    if controller.draggedWindow == nil, controller.carriedWindow == nil, let preview = harness.overlays.preview {
++      problems.append(.init("preview", "a drop preview is showing at \(preview.brief) and nothing is being dragged or carried"))
++    }
++  }
++
++  /// A carry (F59) holds plain keys that belong to whatever app has the keyboard. They, its preview and its timer are
++  /// there while a window is in hand and gone the moment it is not, whichever way that came about.
++  func carryViolations(_ problems: inout [InvariantViolation]) {
++    let plain = controller.temporaryShortcuts.filter { $0.chord.modifiers.isEmpty }
++    let waits = harness.scheduler.pendingKeys.contains("carry")
++    guard let window = controller.carriedWindow else {
++      if !plain.isEmpty { problems.append(.init("carry", "\(plain.count) plain keys are held and nothing is being carried")) }
++      if waits { problems.append(.init("carry", "the timer of a carry is pending and nothing is being carried")) }
++      return
++    }
++    if !controller.isRunning { problems.append(.init("carry", "\(window) is being carried and Arbor is not running")) }
++    if controller.windows[window]?.isPresent != true {
++      problems.append(.init("carry", "\(window) is being carried and is closed, minimized, hidden or on another Space"))
++    }
++    if controller.draggedWindow != nil { problems.append(.init("carry", "\(window) is being carried during a drag")) }
++    if plain.isEmpty, controller.settings.hotkeysEnabled {
++      problems.append(.init("carry", "\(window) is being carried and the plain keys are not held"))
++    }
++    if !waits { problems.append(.init("carry", "\(window) is being carried and nothing will end that if no key comes")) }
++    if harness.overlays.preview != controller.carryChoice?.frame {
++      problems.append(.init("carry", "the preview is not where \(window) would land"))
+     }
+   }
+ 
+diff --git a/Sources/ArborTesting/Expectations.swift b/Sources/ArborTesting/Expectations.swift
+index b4d2abf..3d2be7a 100644
+--- a/Sources/ArborTesting/Expectations.swift
++++ b/Sources/ArborTesting/Expectations.swift
+@@ -126,7 +126,7 @@ public enum ScenarioExpectation {
+       guard let chord = try? KeyChord(text: words[1]), ["on", "off"].contains(words[2].lowercased()) else {
+         return usage(words)
+       }
+-      let held = controller.activeBindings.contains { $0.chord == chord }
++      let held = (controller.activeBindings + controller.temporaryShortcuts).contains { $0.chord == chord }
+       if held == (words[2].lowercased() == "on") { return nil }
+       return held ? "Arbor holds \(chord.text)" : "Arbor does not hold \(chord.text): the app in front gets it"
+ 
+diff --git a/Sources/arbor-fakemac/World+Input.swift b/Sources/arbor-fakemac/World+Input.swift
+index c952336..d565e13 100644
+--- a/Sources/arbor-fakemac/World+Input.swift
++++ b/Sources/arbor-fakemac/World+Input.swift
+@@ -372,8 +372,9 @@ extension World {
+       if chord.key == .escape { closeMenu() }
+       return
+     }
+-    // A registered hot key never reaches an app.
+-    if let arbor, let binding = arbor.activeBindings.first(where: { $0.chord == chord }) {
++    // A registered hot key never reaches an app. `HotKeyCenter.setTemporary` holds the keys of a peek or a carry too.
++    let temporary = arbor.map { $0.noHotkeys ? [] : $0.controller.temporaryShortcuts } ?? []
++    if let arbor, let binding = (temporary + arbor.activeBindings).first(where: { $0.chord == chord }) {
+       // `HotKeyCenter` reports the key going down and coming up; the pointer tool lets go at once.
+       system.hold(chord)
+       arbor.controller.shortcut(binding, .pressed, run: { [self] in handle($0, from: .shortcut) })
+diff --git a/Tests/ArborCoreTests/CarryTests.swift b/Tests/ArborCoreTests/CarryTests.swift
+new file mode 100644
+index 0000000..53aa735
+--- /dev/null
++++ b/Tests/ArborCoreTests/CarryTests.swift
+@@ -0,0 +1,370 @@
++import ArborCore
++import CoreGraphics
++import Testing
++
++private let screen = CGRect(x: 0, y: 25, width: 1440, height: 875)
++private let a = WindowID(1)
++private let b = WindowID(2)
++private let c = WindowID(3)
++private let d = WindowID(4)
++
++/// A small repeatable random number generator, so that a failure can be run again.
++private struct Dice {
++  var state: UInt64
++  mutating func roll(_ sides: Int) -> Int {
++    state = state &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
++    return Int((state >> 33) % UInt64(sides))
++  }
++}
++
++private func layout(_ workspace: Workspace, in frame: CGRect = screen, without gone: WindowID? = nil) -> Layout {
++  LayoutEngine.layout(workspace.tree, camera: workspace.camera, in: frame, isPresent: { $0 != gone })
++}
++
++private func map(
++  carrying window: WindowID, in workspace: Workspace, frame: CGRect = screen, tabs: Bool = false,
++  without gone: WindowID? = nil
++) -> CarryMap {
++  let shown = layout(workspace, in: frame, without: gone)
++  return CarryMap(
++    carrying: window, in: workspace, layout: shown, layoutOptions: LayoutOptions(),
++    dropOptions: DropOptions(tabsEnabled: tabs),
++    floatingFrame: shown.desktopFrame.map { CGRect(x: 0, y: 0, width: 500, height: 400).fitted(into: $0) },
++    isPresent: { $0 != gone })
++}
++
++/// [a | Desktop | b].
++private func desk() -> Workspace {
++  var workspace = Workspace()
++  workspace.dock(a, at: .cameraEdge(.left))
++  workspace.dock(b, at: .cameraEdge(.right))
++  return workspace
++}
++
++/// A random arrangement of up to nine windows, a random view of it, and a window to carry, which may
++/// be docked in it or not.
++private func randomCase(_ seed: Int) -> (workspace: Workspace, carried: WindowID, frame: CGRect, tabs: Bool, gone: WindowID) {
++  var dice = Dice(state: UInt64(seed))
++  let frame = [
++    screen, CGRect(x: 1440, y: 0, width: 1024, height: 768), CGRect(x: -2560, y: -200, width: 2560, height: 1440),
++    CGRect(x: 0, y: 0, width: 1080, height: 1920),
++  ][dice.roll(4)]
++  var workspace = Workspace()
++  let count = 1 + dice.roll(9)
++  for number in 1...count {
++    let nodes = workspace.tree.preorder()
++    let edge = Edge.allCases[dice.roll(4)]
++    workspace.dock(
++      WindowID(UInt32(number)), at: dice.roll(4) == 0 ? .cameraEdge(edge) : .beside(nodes[dice.roll(nodes.count)], edge))
++  }
++  let nodes = workspace.tree.preorder()
++  workspace.moveCamera(to: dice.roll(3) == 0 ? nodes[dice.roll(nodes.count)] : workspace.tree.root)
++  let carried = WindowID(UInt32(1 + dice.roll(count + 1)))
++  // Picking a window up steps the view out until it shows more than that window.
++  if workspace.camera == workspace.tree.leaf(containing: carried) { workspace.moveCamera(to: workspace.tree.root) }
++  let tabs = dice.roll(2) == 0
++  // One window may be minimized, but not the one in hand.
++  let gone = WindowID(UInt32(dice.roll(12)))
++  return (workspace, carried, frame, tabs, gone == carried ? WindowID(0) : gone)
++}
++
++@Suite struct CarryMapTests {
++  @Test func aFloatingWindowCanGoWhereverADragCouldPutIt() {
++    let workspace = desk()
++    let targets = map(carrying: c, in: workspace).choices.map(\.target)
++    let (leafA, leafB) = (workspace.tree.leaf(containing: a)!, workspace.tree.leaf(containing: b)!)
++    for edge in Edge.allCases {
++      #expect(targets.contains(.beside(leafA, edge)))
++      #expect(targets.contains(.beside(leafB, edge)))
++      #expect(targets.contains(.cameraEdge(edge)))
++      #expect(targets.contains(.beside(workspace.tree.desktop, edge)), "the keyboard can tell the Desktop's edges")
++    }
++    #expect(targets.contains(.float))
++    #expect(!targets.contains(DropTarget.none), "it has no slot to go back to")
++    #expect(!targets.contains(.stack(leafA)), "no tabs unless they are on")
++    #expect(map(carrying: c, in: workspace, tabs: true).choices.map(\.target).contains(.stack(leafA)))
++  }
++
++  @Test func aDockedWindowsOwnPlaceComesFirstAndItsOwnEdgesAreNotOffered() {
++    let workspace = desk()
++    let found = map(carrying: a, in: workspace)
++    #expect(found.choices.first?.target == DropTarget.none)
++    #expect(found.choices.first?.frame == layout(workspace).windowFrames[a])
++    let own = workspace.tree.leaf(containing: a)!
++    #expect(!found.choices.contains { $0.target == .beside(own, .left) || $0.target == .stack(own) })
++  }
++
++  @Test func everyChoiceShowsTheFrameTheDropWouldGive() {
++    for seed in 1...40 {
++      let (workspace, carried, frame, tabs, gone) = randomCase(seed)
++      for choice in map(carrying: carried, in: workspace, frame: frame, tabs: tabs, without: gone).choices {
++        var dropped = workspace
++        guard dropped.dock(carried, at: choice.target) else { continue }
++        let result = LayoutEngine.layout(
++          dropped.tree, camera: dropped.camera, in: frame, isPresent: { $0 == carried || $0 != gone })
++        let landed = result.windowFrames[carried] ?? result.tiles.first { $0.windows.contains(carried) }?.frame
++        #expect(landed == choice.frame, "seed \(seed): \(choice.target)")
++      }
++    }
++  }
++
++  @Test func noTwoChoicesLeadToTheSameArrangement() {
++    for seed in 1...40 {
++      let (workspace, carried, frame, tabs, gone) = randomCase(seed)
++      let choices = map(carrying: carried, in: workspace, frame: frame, tabs: tabs, without: gone).choices
++      let outcomes = choices.map { choice -> Layout? in
++        workspace.previewLayout(
++          for: carried, at: choice.target, in: frame, options: LayoutOptions(), isPresent: { $0 != gone })
++      }
++      for (index, outcome) in outcomes.enumerated() {
++        guard let outcome else { continue }
++        for case let other? in outcomes.dropFirst(index + 1) {
++          #expect(outcome.look != other.look, "seed \(seed): \(choices[index].target)")
++        }
++      }
++    }
++  }
++
++  @Test func aPointerAtAChoicesAnchorWouldChooseIt() {
++    for seed in 1...40 {
++      let (workspace, carried, frame, tabs, gone) = randomCase(seed)
++      let found = map(carrying: carried, in: workspace, frame: frame, tabs: tabs, without: gone)
++      let shown = layout(workspace, in: frame, without: gone)
++      for choice in found.choices {
++        // A window inside a group's tile has no part of the screen to itself.
++        if choice.target == DropTarget.none, shown.windowFrames[carried] == nil { continue }
++        #expect(found.choice(at: choice.anchor) == choice, "seed \(seed): \(choice.target)")
++        if case .beside(workspace.tree.desktop, _) = choice.target { continue }
++        let dragged = DropResolver.resolve(
++          point: choice.anchor, window: carried, layout: shown, tree: workspace.tree, visibleFrame: frame,
++          options: DropOptions(tabsEnabled: tabs))
++        #expect(dragged == choice.target, "seed \(seed)")
++      }
++    }
++  }
++
++  // MARK: The arrow keys
++
++  @Test func anArrowCrossesAWindowAsAPointerWould() {
++    let workspace = desk()
++    let found = map(carrying: c, in: workspace, tabs: true)
++    let leaf = workspace.tree.leaf(containing: b)!
++    var choice = found.choice(for: .float)!
++    var passed: [DropTarget] = []
++    while let next = found.next(from: choice, toward: .right) {
++      passed.append(next.target)
++      choice = next
++    }
++    #expect(
++      passed == [
++        .beside(workspace.tree.desktop, .right), .beside(leaf, .left), .stack(leaf), .beside(leaf, .right),
++        .cameraEdge(.right),
++      ])
++  }
++
++  @Test func withoutTabsTheMiddleOfAWindowIsPassedOver() {
++    let workspace = desk()
++    let found = map(carrying: c, in: workspace)
++    let leaf = workspace.tree.leaf(containing: b)!
++    #expect(found.next(from: found.choice(for: .beside(leaf, .left))!, toward: .right)?.target == .beside(leaf, .right))
++  }
++
++  @Test func upAndDownReachAWindowsTopAndBottom() {
++    let workspace = desk()
++    let found = map(carrying: c, in: workspace)
++    let leaf = workspace.tree.leaf(containing: b)!
++    let left = found.choice(for: .beside(leaf, .left))!
++    #expect(found.next(from: left, toward: .top)?.target == .beside(leaf, .top))
++    #expect(found.next(from: left, toward: .bottom)?.target == .beside(leaf, .bottom))
++    #expect(found.next(from: found.choice(for: .beside(leaf, .top))!, toward: .top)?.target == .cameraEdge(.top))
++  }
++
++  @Test func nothingLiesBeyondTheEdgeOfTheView() {
++    let found = map(carrying: c, in: desk())
++    #expect(found.next(from: found.choice(for: .cameraEdge(.left))!, toward: .left) == nil)
++    #expect(found.next(from: found.choice(for: .cameraEdge(.bottom))!, toward: .bottom) == nil)
++  }
++
++  @Test func aPointerTravellingAlongAGapLooksToItsSides() {
++    // a over [b | c]: straight down from the middle of a runs the gap between b and c.
++    var workspace = Workspace()
++    workspace.dock(b, at: .cameraEdge(.left))
++    let leafB = workspace.tree.leaf(containing: b)!
++    workspace.dock(a, at: .beside(leafB, .top))
++    workspace.dock(c, at: .beside(leafB, .right))
++    workspace.moveCamera(to: workspace.tree.parent(of: workspace.tree.leaf(containing: a)!)!)
++    let found = map(carrying: d, in: workspace)
++    let under = found.choice(for: .beside(workspace.tree.leaf(containing: a)!, .bottom))!
++    #expect(found.next(from: under, toward: .bottom)?.target == .beside(leafB, .top), "the left one first")
++  }
++
++  @Test func aDesktopThatIsOnlyATileStillHasEdgesAndLetsThePointerBy() {
++    var workspace = Workspace()
++    for window in [a, b, c] { workspace.dock(window, at: .cameraEdge(.left)) }
++    let seamed = layout(workspace)
++    let last = seamed.seams.last!
++    workspace.tree.moveBoundary(
++      leading: last.leading, trailing: last.trailing, by: 250, pointsPerWeight: Double(last.pointsPerWeight))
++    #expect(layout(workspace).desktopFrame == nil)
++    let found = map(carrying: d, in: workspace)
++    #expect(found.choice(for: .float) == nil, "nothing can float on it")
++    #expect(found.choice(for: .beside(workspace.tree.desktop, .left)) != nil)
++  }
++
++  @Test func aTabCanBePutBesideTheRestOfItsGroup() {
++    var workspace = desk()
++    let leaf = workspace.tree.leaf(containing: a)!
++    workspace.dock(c, at: .stack(leaf))
++    let found = map(carrying: c, in: workspace, tabs: true)
++    #expect(found.choices.first?.target == DropTarget.none)
++    let right = found.next(from: found.choices[0], toward: .right)
++    #expect(right?.target == .beside(leaf, .right))
++    var dropped = workspace
++    dropped.dock(c, at: right!.target)
++    #expect(dropped.tree.windows(under: leaf) == [a])
++    #expect(layout(dropped).place(of: c) == right?.frame)
++  }
++
++  /// Criterion 2, the first half: the arrows lead from every choice to every other.
++  @Test func theArrowsLeadFromEveryChoiceToEveryOther() {
++    for seed in 1...100 {
++      let (workspace, carried, frame, tabs, gone) = randomCase(seed)
++      let found = map(carrying: carried, in: workspace, frame: frame, tabs: tabs, without: gone)
++      let links = found.choices.map { choice in
++        Edge.allCases.compactMap { found.next(from: choice, toward: $0).flatMap(found.choices.firstIndex(of:)) }
++      }
++      func reach(from start: Int) -> Set<Int> {
++        var seen: Set<Int> = [start]
++        var pending = [start]
++        while let index = pending.popLast() {
++          for next in links[index] where seen.insert(next).inserted { pending.append(next) }
++        }
++        return seen
++      }
++      for index in found.choices.indices {
++        #expect(reach(from: index).count == found.choices.count, "seed \(seed), from \(found.choices[index].target)")
++      }
++    }
++  }
++
++  /// Criterion 2, the second half: whatever a drag can choose, some choice gives the same arrangement.
++  @Test func whateverADragCanReachSomeChoiceGivesTheSameArrangement() {
++    for seed in 1...60 {
++      let (workspace, carried, frame, tabs, gone) = randomCase(seed)
++      let found = map(carrying: carried, in: workspace, frame: frame, tabs: tabs, without: gone)
++      let shown = layout(workspace, in: frame, without: gone)
++      var reached: [DropTarget] = []
++      for x in stride(from: frame.minX + 3, to: frame.maxX, by: 23) {
++        for y in stride(from: frame.minY + 3, to: frame.maxY, by: 23) {
++          let target = DropResolver.resolve(
++            point: CGPoint(x: x, y: y), window: carried, layout: shown, tree: workspace.tree, visibleFrame: frame,
++            options: DropOptions(tabsEnabled: tabs))
++          if target != .float, !reached.contains(target) { reached.append(target) }
++        }
++      }
++      func arrangement(after target: DropTarget) -> Layout {
++        var dropped = workspace
++        dropped.dock(carried, at: target)
++        return LayoutEngine.layout(dropped.tree, camera: dropped.camera, in: frame, isPresent: { $0 == carried || $0 != gone })
++      }
++      for target in reached {
++        guard let choice = found.choice(for: target) else {
++          Issue.record("seed \(seed): no choice for \(target)")
++          continue
++        }
++        let (dragged, carriedThere) = (arrangement(after: target), arrangement(after: choice.target))
++        #expect(dragged.look == carriedThere.look, "seed \(seed): \(target) and \(choice.target)")
++      }
++    }
++  }
++
++  @Test func theNearestChoiceGoesByWhereAPointerWouldBe() {
++    let workspace = desk()
++    let found = map(carrying: c, in: workspace)
++    let leaf = workspace.tree.leaf(containing: b)!
++    #expect(found.nearest(to: CGPoint(x: 1340, y: 460))?.target == .beside(leaf, .right))
++    #expect(found.nearest(to: CGPoint(x: 720, y: 460))?.target == .float)
++  }
++
++  @Test func aCarryArrivesInANewViewAtItsNearestEdge() {
++    // Beside the one window in view can mean its row, beyond the view. The edge of the view means this space.
++    var workspace = desk()
++    workspace.moveCamera(to: workspace.tree.leaf(containing: a)!)
++    let found = map(carrying: b, in: workspace)
++    #expect(found.arrival(from: CGPoint(x: 1200, y: 460))?.target == .cameraEdge(.right))
++    #expect(found.arrival(from: CGPoint(x: 700, y: 100)) == found.choice(for: .cameraEdge(.top)))
++  }
++}
++
++@Suite struct CarryCommandTests {
++  @Test func theWordsOfACarry() throws {
++    #expect(try Command.parse("carry") == .carry(.pickUp(nil)))
++    #expect(try Command.parse("carry 412") == .carry(.pickUp(WindowID(412))))
++    #expect(try Command.parse("carry left") == .carry(.move(.left)))
++    #expect(try Command.parse("carry up") == .carry(.move(.top)))
++    #expect(try Command.parse("carry drop") == .carry(.drop))
++    #expect(try Command.parse("carry cancel") == .carry(.cancel))
++    #expect(try Command.parse("carry next-display") == .carry(.display(next: true)))
++    #expect(try Command.parse("carry previous-display") == .carry(.display(next: false)))
++    #expect(throws: Command.ParseError.self) { try Command.parse("carry sideways") }
++    #expect(throws: Command.ParseError.self) { try Command.parse("carry left right") }
++  }
++
++  @Test func theTextFormRoundTrips() throws {
++    let steps: [CarryStep] = [
++      .pickUp(nil), .pickUp(WindowID(7)), .move(.left), .move(.bottom), .drop, .cancel, .display(next: true),
++      .display(next: false),
++    ]
++    for step in steps { #expect(try Command.parse(Command.carry(step).text) == .carry(step)) }
++  }
++
++  @Test func lookingElsewhereIsPartOfCarryingAndNothingElseIs() {
++    for command in [Command.showAll, .home, .stepOut, .stepIn, .neighbor(.left), .back, .forward, .goToView(2), .desktop, .goToSpace("Writing")] {
++      #expect(command.keepsCarrying, "\(command.text)")
++    }
++    #expect(Command.carry(.drop).keepsCarrying && Command.state.keepsCarrying)
++    #expect(Command.trace(.note("here")).keepsCarrying && !Command.summon(app: "Notes").keepsCarrying)
++    for command in [Command.dock(nil, .left), .float(nil), .zoom(nil), .arrange, .pause(minutes: nil), .quit, .relayout] {
++      #expect(!command.keepsCarrying, "\(command.text)")
++    }
++  }
++
++  @Test func aWebPageCannotPickAWindowUp() {
++    // A carry takes the arrow keys, ↩, Space and ⎋ away from whatever is being typed in.
++    #expect(!Command.carry(.pickUp(nil)).isAllowedFromURL)
++    #expect(!Command.carry(.drop).isAllowedFromURL)
++  }
++
++  @Test func theViewAndItsHistoryCanBePutBack() {
++    var workspace = desk()
++    let (leafA, leafB) = (workspace.tree.leaf(containing: a)!, workspace.tree.leaf(containing: b)!)
++    workspace.moveCamera(to: leafA)
++    let earlier = workspace
++    workspace.moveCamera(to: workspace.tree.root)
++    workspace.moveCamera(to: leafB)
++    workspace.restoreView(from: earlier)
++    #expect(workspace == earlier)
++
++    workspace.moveCamera(to: workspace.tree.root)
++    workspace.forget(a)
++    workspace.restoreView(from: earlier)
++    #expect(workspace.tree.contains(workspace.camera), "the space it was on is gone")
++    #expect(workspace.back.allSatisfy(workspace.tree.contains))
++  }
++
++  /// Found by the chaos lab: the space the view was on is gone, and the view is where the old history ends.
++  @Test func puttingTheViewBackNeverListsWhereTheViewIs() {
++    var workspace = desk()
++    let (leafA, leafB) = (workspace.tree.leaf(containing: a)!, workspace.tree.leaf(containing: b)!)
++    workspace.moveCamera(to: leafB)
++    workspace.moveCamera(to: leafA)
++    let earlier = workspace
++    #expect(earlier.back.last == leafB)
++    workspace.moveCamera(to: leafB)
++    workspace.forget(a)
++    #expect(workspace.camera == leafB)
++    workspace.restoreView(from: earlier)
++    #expect(workspace.camera == leafB)
++    #expect(workspace.back.last != leafB && workspace.forward.last != leafB)
++  }
++}
+diff --git a/Tests/ArborKitTests/CarryScenarioTests.swift b/Tests/ArborKitTests/CarryScenarioTests.swift
+new file mode 100644
+index 0000000..242038e
+--- /dev/null
++++ b/Tests/ArborKitTests/CarryScenarioTests.swift
+@@ -0,0 +1,790 @@
++import ArborCore
++import ArborKit
++import ArborTesting
++import CoreGraphics
++import Testing
++
++/// A 1280×800 display to the right of the standard one.
++private let side = DisplaySnapshot(
++  id: DisplayID("side"), frame: CGRect(x: 1440, y: 0, width: 1280, height: 800),
++  visibleFrame: CGRect(x: 1440, y: 0, width: 1280, height: 800), isMain: false)
++@MainActor private let main = FakeWindowSystem.standardDisplay
++
++/// A small repeatable random number generator, so that a failure can be run again.
++private struct Dice {
++  var state: UInt64
++  mutating func roll(_ sides: Int) -> Int {
++    state = state &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
++    return Int((state >> 33) % UInt64(sides))
++  }
++}
++
++/// Carrying a window with the keyboard (docs/features/F59-carry-with-the-keyboard.md).
++@Suite @MainActor struct CarryScenarioTests {
++  /// The spec's example: [Safari | Desktop | Slack | Terminal], Slack focused.
++  func makeHarness(
++    _ settings: Settings = Settings(), displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay]
++  ) -> (Harness, safari: WindowID, slack: WindowID, terminal: WindowID) {
++    let h = Harness(displays: displays, settings: settings)
++    let safari = h.system.open(app: "Safari", pid: 1001, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
++    let slack = h.system.open(app: "Slack", pid: 1002, frame: CGRect(x: 300, y: 200, width: 610, height: 410))
++    let terminal = h.system.open(app: "Terminal", pid: 1003, frame: CGRect(x: 500, y: 300, width: 620, height: 420))
++    h.start()
++    h.run("dock \(safari.rawValue) left")
++    h.run("dock \(slack.rawValue) right")
++    h.run("dock \(terminal.rawValue) right")
++    h.system.userFocus(slack)
++    h.scheduler.runPending()
++    return (h, safari, slack, terminal)
++  }
++
++  func frames(_ h: Harness) -> [WindowID: CGRect] {
++    Dictionary(uniqueKeysWithValues: h.system.allWindows().map { ($0.id, $0.frame) })
++  }
++
++  var plainKeys: [String] { ["left", "right", "up", "down", "return", "space", "escape"] }
++
++  func holdsPlainKeys(_ h: Harness) -> Bool {
++    let held = h.registeredShortcuts.filter { $0.chord.modifiers.isEmpty }
++    return held.count == plainKeys.count
++  }
++
++  func expectNothingIsCarried(_ h: Harness, sourceLocation: SourceLocation = #_sourceLocation) {
++    #expect(h.controller.carriedWindow == nil, sourceLocation: sourceLocation)
++    #expect(h.overlays.preview == nil, sourceLocation: sourceLocation)
++    #expect(h.registeredShortcuts.allSatisfy { !$0.chord.modifiers.isEmpty }, "a plain key is still held", sourceLocation: sourceLocation)
++    #expect(!h.scheduler.pendingKeys.contains("carry"), sourceLocation: sourceLocation)
++  }
++
++  // MARK: Criterion 1
++
++  @Test func aWindowCanBePutUnderOneOtherWindow() {
++    let (h, safari, slack, terminal) = makeHarness()
++    #expect(h.run("carry").ok)
++    #expect(h.run("carry right").message.hasPrefix("left of Terminal"))
++    #expect(h.run("carry down").message.hasPrefix("below Terminal"))
++    let preview = h.overlays.preview
++    #expect(h.run("carry drop").ok)
++    #expect(h.frame(slack) == preview)
++    #expect(h.frame(slack)!.minY > h.frame(terminal)!.maxY)
++    #expect(h.frame(slack)!.minX == h.frame(terminal)!.minX && h.frame(slack)!.width == h.frame(terminal)!.width)
++    #expect(h.frame(safari)!.height > h.frame(terminal)!.height, "Safari keeps the whole height")
++    let tree = h.workspace.tree
++    #expect(tree.parent(of: tree.leaf(containing: slack)!) == tree.parent(of: tree.leaf(containing: terminal)!))
++    #expect(h.system.focusedWindow() == slack)
++    expectNothingIsCarried(h)
++  }
++
++  @Test func theSameWithTheKeys() {
++    let (h, _, slack, terminal) = makeHarness()
++    #expect(h.key("left") == nil, "an arrow key is nobody's business before")
++    #expect(h.key("ctrl+opt+cmd+space")?.ok == true)
++    #expect(holdsPlainKeys(h))
++    h.key("right")
++    h.key("down")
++    #expect(h.key("return")?.ok == true)
++    #expect(h.frame(slack)!.minY > h.frame(terminal)!.maxY)
++    expectNothingIsCarried(h)
++    #expect(h.key("return") == nil)
++  }
++
++  // MARK: Picking up
++
++  @Test func untilItIsPutDownNothingMovesButThePreview() {
++    let (h, _, slack, _) = makeHarness()
++    let (before, workspace) = (frames(h), h.workspace)
++    h.run("carry")
++    #expect(h.overlays.preview == before[slack], "it starts at its own place")
++    for step in ["right", "right", "down", "left", "up", "up"] { h.run("carry \(step)") }
++    #expect(h.overlays.preview != before[slack])
++    #expect(frames(h) == before)
++    #expect(h.workspace == workspace)
++  }
++
++  @Test func thePreviewIsWhereTheChoiceWouldLand() {
++    let (h, _, _, _) = makeHarness()
++    h.run("carry")
++    for step in ["left", "left", "up", "right", "down", "down"] {
++      h.run("carry \(step)")
++      #expect(h.overlays.preview == h.controller.carryChoice?.frame)
++    }
++  }
++
++  @Test func aFramedWindowIsShownWithItsSurroundings() {
++    let (h, _, slack, _) = makeHarness()
++    h.run("zoom \(slack.rawValue)")
++    let framed = h.workspace
++    #expect(h.run("carry").ok)
++    #expect(h.workspace.camera != framed.camera)
++    #expect(h.layout!.windowFrames.count > 1)
++    #expect(h.overlays.preview == h.layout!.windowFrames[slack])
++    h.run("carry cancel")
++    #expect(h.workspace == framed, "the view and its history are as they were")
++    #expect(h.frame(slack) == h.visibleFrame.insetBy(dx: 12, dy: 12))
++  }
++
++  @Test func aWindowOutOfViewIsBroughtIntoView() {
++    let (h, safari, slack, _) = makeHarness()
++    h.run("zoom \(safari.rawValue)")
++    #expect(h.run("carry \(slack.rawValue)").ok)
++    #expect(h.layout!.windowFrames[slack] != nil)
++    #expect(h.system.focusedWindow() == slack, "the keys that follow mean this window")
++  }
++
++  @Test func aWindowThatIsOnlyATileInTheWiderViewCanStillBeCarried() {
++    // Having the keyboard would frame it again at once, and losing it would end the carry.
++    let (h, _, slack, _) = makeHarness(settings { $0.minimumUsableWidth = 400 })
++    h.run("zoom \(slack.rawValue)")
++    #expect(h.run("carry").ok)
++    h.scheduler.advance(by: 2)
++    #expect(h.controller.carriedWindow == slack)
++    #expect(h.layout!.tiles.contains { $0.windows.contains(slack) })
++    #expect(h.system.focusedWindow() == slack)
++    #expect(h.run("carry up").ok || h.run("carry left").ok)
++  }
++
++  @Test func whatCannotBeCarriedSaysWhy() {
++    let (h, _, slack, terminal) = makeHarness()
++    h.system.setMinimized(terminal, true)
++    #expect(h.run("carry \(terminal.rawValue)").message.contains("minimized"))
++    h.run("pin \(slack.rawValue)")
++    #expect(h.run("carry \(slack.rawValue)").message.contains("unpin"))
++    #expect(!h.run("carry 999").ok)
++    for step in ["left", "drop", "cancel"] { #expect(!h.run("carry \(step)").ok, "nothing is being carried") }
++    expectNothingIsCarried(h)
++  }
++
++  @Test func theEndOfTheWaySaysSoAndTheCarryGoesOn() {
++    let (h, _, slack, _) = makeHarness()
++    h.run("carry")
++    var steps = 0
++    while h.run("carry right").ok, steps < 20 { steps += 1 }
++    #expect(steps > 2 && steps < 20)
++    #expect(h.controller.carryChoice?.target == .cameraEdge(.right))
++    #expect(h.controller.carriedWindow == slack)
++  }
++
++  // MARK: Criterion 2
++
++  /// A random arrangement of `count` windows, made with commands, the same for the same seed.
++  func randomHarness(seed: Int, tabs: Bool) -> (Harness, [WindowID]) {
++    var dice = Dice(state: UInt64(seed))
++    let h = Harness(settings: settings { $0.tabsEnabled = tabs })
++    let windows = (0..<(3 + dice.roll(4))).map { number in
++      h.system.open(app: "App\(number)", frame: CGRect(x: 200 + 30 * number, y: 150 + 20 * number, width: 500, height: 380))
++    }
++    h.start()
++    let edges = ["left", "right", "top", "bottom"]
++    for (index, window) in windows.enumerated() where index == 0 || dice.roll(5) > 0 {
++      if index > 0, dice.roll(2) == 0, let other = h.workspace.tree.allWindows.randomElement(using: &dice) {
++        h.run("dock \(window.rawValue) beside \(other.rawValue) \(edges[dice.roll(4)])")
++      } else {
++        h.run("dock \(window.rawValue) \(edges[dice.roll(4)])")
++      }
++    }
++    h.run("show-all")
++    h.scheduler.runPending()
++    return (h, windows)
++  }
++
++  /// The arrow keys that lead from where a carry starts to each of its choices.
++  func ways(_ h: Harness) -> [(choice: CarryChoice, keys: [String])] {
++    guard let start = h.controller.carryChoice, let map = h.controller.carryChoices else { return [] }
++    var found: [(choice: CarryChoice, keys: [String])] = [(start, [])]
++    var next = 0
++    while next < found.count {
++      let (choice, keys) = found[next]
++      next += 1
++      for (key, edge) in [("left", Edge.left), ("right", .right), ("up", .top), ("down", .bottom)] {
++        guard let reached = map.next(from: choice, toward: edge), !found.contains(where: { $0.choice == reached })
++        else { continue }
++        found.append((reached, keys + [key]))
++      }
++    }
++    #expect(found.count == map.choices.count)
++    return found
++  }
++
++  @Test(arguments: 1...6) func carriedThereOrDraggedThereIsTheSame(seed: Int) {
++    let tabs = seed % 2 == 0
++    let (scout, windows) = randomHarness(seed: seed, tabs: tabs)
++    let carried = windows[seed % windows.count]
++    scout.system.userFocus(carried)
++    scout.scheduler.runPending()
++    guard scout.run("carry").ok else {
++      Issue.record("seed \(seed): could not pick \(carried) up")
++      return
++    }
++    // Picking up can step the view out. The drag starts from the same view.
++    let view = scout.workspace.camera
++    for (choice, keys) in ways(scout) {
++      // A pointer cannot choose the Desktop's edges, and floats a window where it lets go.
++      if case .beside(scout.workspace.tree.desktop, _) = choice.target { continue }
++      if choice.target == .float { continue }
++
++      let (byKeys, _) = randomHarness(seed: seed, tabs: tabs)
++      byKeys.system.userFocus(carried)
++      byKeys.scheduler.runPending()
++      byKeys.run("carry")
++      for key in keys { byKeys.run("carry \(key)") }
++      #expect(byKeys.overlays.preview == choice.frame)
++      #expect(byKeys.run("carry drop").ok)
++
++      let (byMouse, _) = randomHarness(seed: seed, tabs: tabs)
++      byMouse.system.userFocus(carried)
++      byMouse.scheduler.runPending()
++      byMouse.run("zoom-node \(view.rawValue)")
++      let start = byMouse.frame(carried)!
++      byMouse.system.drag(carried, through: [CGPoint(x: start.midX, y: start.minY + 10), choice.anchor])
++      byKeys.scheduler.runPending()
++      byMouse.scheduler.runPending()
++
++      #expect(byKeys.workspace.tree == byMouse.workspace.tree, "seed \(seed): \(choice.target)")
++      #expect(byKeys.layout?.windowFrames == byMouse.layout?.windowFrames, "seed \(seed): \(choice.target)")
++      #expect(byKeys.frame(carried) == byMouse.frame(carried), "seed \(seed): \(choice.target)")
++      if byKeys.layout?.windowFrames[carried] != nil { #expect(byKeys.frame(carried) == choice.frame, "seed \(seed): \(choice.target)") }
++    }
++  }
++
++  /// Arbor makes room for a window that will not go as narrow as its place (F61). The preview counts on that.
++  @Test func thePreviewCountsOnTheRoomTheDropWillMake() {
++    func desk() -> (Harness, WindowID) {
++      let (h, _, slack, _) = makeHarness()
++      // Arbor learns a minimum when a window refuses its place.
++      h.system.setMinimumSize(slack, CGSize(width: 520, height: 300))
++      h.run("float \(slack.rawValue)")
++      h.run("dock \(slack.rawValue) right")
++      h.scheduler.runPending()
++      #expect(h.frame(slack)!.width >= 520)
++      h.run("carry")
++      return (h, slack)
++    }
++    let (scout, _) = desk()
++    var roomWasMade = 0
++    for (choice, keys) in ways(scout) where choice.target != .float {
++      let (h, slack) = desk()
++      for key in keys { h.run("carry \(key)") }
++      #expect(h.overlays.preview == choice.frame)
++      #expect(h.run("carry drop").ok)
++      h.scheduler.runPending()
++      guard h.layout?.windowFrames[slack] != nil else { continue }
++      #expect(h.frame(slack) == choice.frame, "\(choice.target)")
++      if choice.frame.width < 530 { roomWasMade += 1 }
++    }
++    #expect(roomWasMade > 0, "no place was narrow enough to need room")
++  }
++
++  // MARK: Criterion 3
++
++  @Test func cancellingPutsTheTreeAndTheViewBackAndGivesTheKeysBack() {
++    let (h, safari, _, _) = makeHarness()
++    h.run("zoom \(safari.rawValue)")
++    h.run("show-all")
++    let (before, workspace) = (frames(h), h.workspace)
++    h.run("carry")
++    h.run("carry left")
++    h.run("in")
++    h.run("out")
++    h.run("desktop")
++    #expect(h.workspace.camera != workspace.camera)
++    #expect(h.key("escape")?.ok == true)
++    #expect(h.workspace == workspace)
++    #expect(frames(h) == before)
++    expectNothingIsCarried(h)
++  }
++
++  @Test func withShortcutsOffNoPlainKeyIsHeldAndCommandsStillCarry() {
++    var settings = Settings()
++    settings.hotkeysEnabled = false
++    let (h, _, slack, terminal) = makeHarness(settings)
++    h.run("carry")
++    #expect(h.controller.carriedWindow == slack)
++    #expect(h.controller.temporaryShortcuts.isEmpty)
++    h.run("carry right")
++    h.run("carry down")
++    #expect(h.run("carry drop").ok)
++    #expect(frames(h)[slack]!.minY > frames(h)[terminal]!.maxY)
++    #expect(frames(h)[slack]!.minX == frames(h)[terminal]!.minX)
++  }
++
++  @Test func theWindowClosingEndsTheCarry() {
++    let (h, _, slack, _) = makeHarness()
++    h.run("carry")
++    h.run("carry right")
++    h.system.close(slack)
++    h.scheduler.runPending()
++    expectNothingIsCarried(h)
++    #expect(!h.workspace.contains(slack))
++    #expect(h.workspace.camera == h.workspace.tree.root)
++  }
++
++  @Test func theWindowBeingMinimizedEndsTheCarry() {
++    let (h, _, slack, _) = makeHarness()
++    h.run("carry")
++    h.system.setMinimized(slack, true)
++    h.scheduler.runPending()
++    expectNothingIsCarried(h)
++  }
++
++  /// Found by the chaos lab. The layout after a Space switch, or an app being hidden, waits for all the reports.
++  /// The plain keys do not.
++  @Test func theWindowGoingToAnotherSpaceOrItsAppBeingHiddenEndsTheCarryAtOnce() {
++    for leave: (Harness, WindowID) -> Void in [
++      { $0.system.setOnActiveSpace($1, false) }, { $0.system.setHidden(pid: 1002, true); _ = $1 },
++    ] {
++      let (h, _, slack, _) = makeHarness()
++      h.run("carry")
++      #expect(h.controller.carriedWindow == slack)
++      leave(h, slack)
++      expectNothingIsCarried(h)
++    }
++  }
++
++  @Test func pausingEndsTheCarryWithTheViewAsItWas() {
++    let (h, _, _, _) = makeHarness()
++    let workspace = h.workspace
++    h.run("carry")
++    h.run("desktop")
++    #expect(h.run("pause").ok)
++    expectNothingIsCarried(h)
++    h.run("resume")
++    #expect(h.workspace.camera == workspace.camera)
++    #expect(h.workspace.tree == workspace.tree)
++  }
++
++  @Test func quittingEndsTheCarryAndSavesTheViewAsItWas() {
++    let (h, _, _, _) = makeHarness()
++    let workspace = h.workspace
++    h.run("carry")
++    h.run("desktop")
++    h.controller.shutdown()
++    expectNothingIsCarried(h)
++    #expect(h.store.saved?.workspaces[h.display]?.camera == workspace.camera)
++  }
++
++  // MARK: Other ways out
++
++  @Test func anyOtherCommandPutsEverythingBackFirstAndThenRuns() {
++    let (h, _, slack, _) = makeHarness()
++    h.run("carry")
++    h.run("carry left")
++    h.run("desktop")
++    #expect(h.run("float \(slack.rawValue)").ok)
++    expectNothingIsCarried(h)
++    #expect(h.workspace.isFloating(slack))
++  }
++
++  @Test func askingAQuestionDoesNotEndIt() {
++    let (h, _, slack, _) = makeHarness()
++    h.run("carry")
++    for query in ["status", "state", "ascii", "bindings", "help"] { h.run(query) }
++    #expect(h.controller.carriedWindow == slack)
++  }
++
++  @Test func theKeyboardGoingToAnotherWindowEndsIt() {
++    let (h, safari, _, _) = makeHarness()
++    let workspace = h.workspace
++    h.run("carry")
++    h.run("carry right")
++    h.system.userFocus(safari)
++    h.scheduler.runPending()
++    expectNothingIsCarried(h)
++    #expect(h.workspace.tree == workspace.tree)
++  }
++
++  @Test func theViewFollowsTheKeyboardFromWhereItWas() {
++    // Terminal, out of view by then, is clicked in the Dock: the view goes to it, not back and then nowhere.
++    let (h, safari, slack, terminal) = makeHarness()
++    h.run("zoom \(safari.rawValue)")
++    h.run("carry \(slack.rawValue)")
++    h.run("desktop")
++    h.system.userFocus(terminal)
++    h.scheduler.runPending()
++    expectNothingIsCarried(h)
++    #expect(h.layout!.windowFrames[terminal] != nil)
++  }
++
++  @Test func theMouseTakingAWindowEndsIt() {
++    let (h, safari, _, _) = makeHarness()
++    h.run("carry")
++    h.controller.dragBegan(safari, at: CGPoint(x: 100, y: 50))
++    expectNothingIsCarried(h)
++    h.controller.dragEnded(safari, at: CGPoint(x: 100, y: 50))
++    h.run("carry")
++    h.controller.resizeBegan(safari)
++    expectNothingIsCarried(h)
++  }
++
++  /// Found by the chaos lab. Picking up has widened the view, and the mouse takes a window that only the wider view
++  /// shows. Putting the view back would take it out from under the pointer, and the drop would leave it in the corner.
++  @Test func theMouseTakingAWindowLeavesTheViewAsItIs() {
++    let (h, safari, slack, _) = makeHarness()
++    h.run("zoom \(slack.rawValue)")
++    h.scheduler.runPending()
++    #expect(h.controller.parked.contains(safari))
++    h.run("carry")
++    let wider = h.workspace.camera
++    let place = h.frame(safari)!
++    #expect(!h.controller.parked.contains(safari))
++    h.controller.dragBegan(safari, at: CGPoint(x: place.midX, y: place.minY + 10))
++    expectNothingIsCarried(h)
++    #expect(h.workspace.camera == wider)
++    #expect(h.frame(safari) == place)
++    h.controller.dragEnded(safari, at: CGPoint(x: place.midX, y: place.minY + 10))
++    h.scheduler.runPending()
++    #expect(h.frame(safari) == place)
++    h.run("back")
++    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: slack), "the way back is one key")
++  }
++
++  // MARK: Options per display (F25)
++
++  @Test func thePreviewGoesByTheGapOfTheDisplayItIsOn() {
++    var settings = Settings()
++    settings.displays = [DisplayOptions(match: .width(.atLeast, 100), gap: 40)]
++    let (h, _, slack, _) = makeHarness(settings)
++    h.run("carry")
++    h.run("carry right")
++    h.run("carry down")
++    let preview = h.overlays.preview
++    h.run("carry drop")
++    h.scheduler.runPending()
++    #expect(h.frame(slack) == preview)
++  }
++
++  // MARK: Undo (F19)
++
++  @Test func aCarryIsOneStepToUndo() {
++    let (h, _, _, _) = makeHarness()
++    let before = h.workspace.tree
++    h.run("carry")
++    h.run("carry right")
++    h.run("carry down")
++    h.run("carry drop")
++    let after = h.workspace.tree
++    #expect(after != before)
++    #expect(h.controller.nextStepTitle(.undo) == "Carry")
++    #expect(h.run("undo").ok)
++    #expect(h.workspace.tree == before)
++    #expect(h.run("redo").ok)
++    #expect(h.workspace.tree == after)
++  }
++
++  @Test func aCarryThatIsCancelledOrPutDownWhereItWasLeavesNothingToUndo() {
++    let (h, _, _, _) = makeHarness()
++    let label = h.controller.nextStepLabel(.undo)
++    h.run("carry")
++    h.run("carry left")
++    h.run("carry cancel")
++    #expect(h.controller.nextStepLabel(.undo) == label)
++    h.run("carry")
++    h.run("carry drop")
++    #expect(h.controller.nextStepLabel(.undo) == label)
++  }
++
++  // MARK: With the view held (F58)
++
++  @Test func onAHeldViewNothingIsPickedUp() {
++    let (h, _, _, _) = makeHarness()
++    h.run("hold")
++    let reply = h.run("carry")
++    #expect(!reply.ok && reply.message.contains("held"), "\(reply.message)")
++    expectNothingIsCarried(h)
++  }
++
++  @Test func holdingTheViewEndsACarryAndHoldsTheViewItBeganWith() {
++    let (h, _, slack, _) = makeHarness()
++    h.run("zoom \(slack.rawValue)")
++    let framed = h.workspace.camera
++    h.run("carry")
++    #expect(h.workspace.camera != framed)
++    #expect(h.run("hold").ok)
++    expectNothingIsCarried(h)
++    #expect(h.workspace.camera == framed)
++    #expect(h.controller.holdLevel == .view)
++  }
++
++  /// Holding still, as during a call, Arbor moves nothing by itself. A carry is asked for.
++  @Test func holdingStillAWindowCanBeCarried() {
++    let (h, _, slack, terminal) = makeHarness()
++    h.run("hold still")
++    #expect(h.controller.holdLevel == .still)
++    h.run("carry")
++    h.run("carry right")
++    h.run("carry down")
++    #expect(h.run("carry drop").ok)
++    #expect(frames(h)[slack]!.minY > frames(h)[terminal]!.maxY)
++  }
++
++  @Test func whileTheMouseHoldsAWindowNothingIsPickedUp() {
++    let (h, safari, _, _) = makeHarness()
++    h.controller.dragBegan(safari, at: CGPoint(x: 100, y: 50))
++    #expect(!h.run("carry").ok)
++    expectNothingIsCarried(h)
++  }
++
++  @Test func halfAMinuteWithoutAKeyEndsIt() {
++    let (h, _, slack, _) = makeHarness()
++    h.run("carry")
++    h.scheduler.advance(by: 20)
++    h.run("carry right")
++    h.scheduler.advance(by: 20)
++    #expect(h.controller.carriedWindow == slack, "every key starts the wait again")
++    h.scheduler.advance(by: 11)
++    expectNothingIsCarried(h)
++  }
++
++  @Test func changedSettingsEndIt() {
++    let (h, _, _, _) = makeHarness()
++    h.run("carry")
++    h.controller.apply(settings: settings { $0.gap = 20 })
++    expectNothingIsCarried(h)
++  }
++
++  @Test func theDisplayItIsChoosingOnGoingAwayEndsIt() {
++    let (h, _, _, _) = makeHarness(displays: [main, side])
++    h.run("carry")
++    #expect(h.run("carry next-display").ok)
++    h.system.setDisplays([main])
++    h.scheduler.runPending()
++    expectNothingIsCarried(h)
++  }
++
++  @Test func theKeyThatPicksUpAlsoPutsDown() {
++    let (h, _, slack, terminal) = makeHarness()
++    h.key("ctrl+opt+cmd+space")
++    h.key("right")
++    h.key("down")
++    #expect(h.key("ctrl+opt+cmd+space")?.ok == true)
++    #expect(h.frame(slack)!.minY > h.frame(terminal)!.maxY)
++    expectNothingIsCarried(h)
++  }
++
++  @Test func pickingUpAnotherWindowPutsTheFirstBack() {
++    let (h, safari, _, _) = makeHarness()
++    let workspace = h.workspace
++    h.run("carry")
++    h.run("carry right")
++    #expect(h.run("carry \(safari.rawValue)").ok)
++    #expect(h.controller.carriedWindow == safari)
++    #expect(h.workspace.tree == workspace.tree)
++  }
++
++  @Test func puttingItDownWhereItWasChangesNothing() {
++    let (h, _, _, _) = makeHarness()
++    let (before, tree) = (frames(h), h.workspace.tree)
++    h.run("carry")
++    #expect(h.run("carry drop").message.contains("back where it was"))
++    #expect(frames(h) == before && h.workspace.tree == tree)
++    expectNothingIsCarried(h)
++  }
++
++  // MARK: Criterion 4
++
++  @Test func aWindowCanBeCarriedToASpaceThatWasOutOfView() {
++    // View 2 is the group [Slack / Terminal]; Safari is carried into it.
++    let (h, safari, slack, terminal) = makeHarness()
++    h.run("dock \(slack.rawValue) beside \(terminal.rawValue) top")
++    let group = h.workspace.tree.parent(of: h.workspace.tree.leaf(containing: slack)!)!
++    h.run("zoom-node \(group.rawValue)")
++    h.run("save-view 2")
++    h.run("show-all")
++    h.system.userFocus(safari)
++    h.scheduler.runPending()
++
++    #expect(h.run("carry").ok)
++    #expect(h.run("view 2").ok)
++    #expect(h.controller.carriedWindow == safari)
++    #expect(h.system.focusedWindow() == safari, "it keeps the keyboard although it is out of view")
++    let preview = h.overlays.preview
++    #expect(preview != nil && h.controller.carryChoice?.target != DropTarget.none)
++    #expect(h.run("carry drop").ok)
++    #expect(h.frame(safari) == preview)
++    #expect(h.workspace.tree.subtree(h.workspace.camera, contains: h.workspace.tree.leaf(containing: safari)!))
++    #expect(h.layout!.windowFrames.keys.sorted() == [safari, slack, terminal])
++    #expect(h.layout!.desktopFrame == nil, "still looking at that space, now with Safari in it")
++  }
++
++  @Test func theViewCommandsWorkWhileCarrying() {
++    let (h, _, slack, _) = makeHarness()
++    h.run("carry")
++    for command in ["desktop", "show-all", "in", "out", "back", "forward", "neighbor left"] {
++      h.run(command)
++      #expect(h.controller.carriedWindow == slack, "\(command)")
++      #expect(h.overlays.preview == h.controller.carryChoice?.frame, "\(command)")
++    }
++  }
++
++  @Test func holdingShowEverythingDoesNotPeekWhileCarrying() {
++    let (h, _, slack, _) = makeHarness()
++    h.run("carry")
++    h.keyDown("ctrl+opt+space")
++    h.scheduler.advance(by: 1)
++    #expect(!h.controller.isPeeking)
++    #expect(holdsPlainKeys(h))
++    h.keyUp("ctrl+opt+space")
++    #expect(h.controller.carriedWindow == slack)
++  }
++
++  // MARK: Criterion 5
++
++  @Test func aFloatingWindowCanBeCarriedAndDocked() {
++    let (h, _, slack, _) = makeHarness()
++    let notes = h.system.open(app: "Notes", frame: CGRect(x: 420, y: 300, width: 300, height: 300))
++    h.system.userFocus(notes)
++    h.scheduler.runPending()
++    let place = h.frame(notes)
++    #expect(h.run("carry").ok)
++    #expect(h.overlays.preview == place, "it starts where it floats")
++    #expect(h.controller.carryChoice?.target == .float)
++    h.run("carry right")
++    h.run("carry right")
++    #expect(h.controller.carryChoice?.target == .beside(h.workspace.tree.leaf(containing: slack)!, .left))
++    let preview = h.overlays.preview
++    h.run("carry drop")
++    #expect(h.workspace.isDocked(notes))
++    #expect(h.layout!.place(of: notes) == preview)
++  }
++
++  @Test func aFloatingWindowPutDownWhereItWasStaysThere() {
++    let (h, _, _, _) = makeHarness()
++    let notes = h.system.open(app: "Notes", frame: CGRect(x: 420, y: 300, width: 300, height: 300))
++    h.system.userFocus(notes)
++    h.scheduler.runPending()
++    let place = h.frame(notes)
++    h.run("carry")
++    h.run("carry drop")
++    #expect(h.workspace.isFloating(notes) && h.frame(notes) == place)
++  }
++
++  @Test func droppingOnTheDesktopFloatsADockedWindow() {
++    let (h, _, slack, _) = makeHarness()
++    h.run("carry")
++    h.run("carry left")
++    h.run("carry left")
++    #expect(h.controller.carryChoice?.target == .float)
++    let preview = h.overlays.preview!
++    #expect(preview.size == CGSize(width: 610, height: 410), "the size it floated at")
++    #expect(h.run("carry drop").message.contains("floating on the Desktop"))
++    #expect(h.workspace.isFloating(slack))
++    #expect(h.frame(slack) == preview)
++    h.scheduler.runPending()
++    #expect(h.frame(slack) == preview, "and it stays there")
++  }
++
++  // MARK: Displays
++
++  @Test func aWindowCanBeCarriedToAnotherDisplay() {
++    let (h, _, slack, _) = makeHarness(displays: [main, side])
++    let other = h.system.open(app: "Mail", frame: CGRect(x: 1600, y: 100, width: 500, height: 400))
++    h.run("dock \(other.rawValue) left")
++    h.system.userFocus(slack)
++    h.scheduler.runPending()
++    #expect(h.controller.workspaces[side.id]!.isDocked(other))
++
++    h.run("carry")
++    #expect(h.key("ctrl+opt+cmd+]")?.ok == true)
++    #expect(side.frame.contains(h.overlays.preview!))
++    h.run("carry left")
++    h.run("carry left")
++    #expect(side.frame.contains(h.overlays.preview!))
++    let preview = h.overlays.preview
++    #expect(h.run("carry drop").ok)
++    #expect(h.controller.workspaces[side.id]!.isDocked(slack))
++    #expect(!h.workspace.contains(slack))
++    #expect(h.frame(slack) == preview)
++  }
++
++  @Test func itCanFloatOnAnotherDisplaysDesktop() {
++    let (h, _, slack, _) = makeHarness(displays: [main, side])
++    h.run("carry")
++    h.run("carry next-display")
++    #expect(h.controller.carryChoice?.target == .float)
++    let preview = h.overlays.preview!
++    #expect(side.frame.contains(preview))
++    h.run("carry drop")
++    #expect(h.controller.workspaces[side.id]!.isFloating(slack))
++    #expect(h.frame(slack) == preview)
++  }
++
++  @Test func theDisplaysGoRoundAndComeBackToItsOwnPlace() {
++    let (h, _, slack, _) = makeHarness(displays: [main, side])
++    let place = h.frame(slack)
++    h.run("carry")
++    h.run("carry next-display")
++    h.run("carry next-display")
++    #expect(h.overlays.preview == place)
++    h.run("carry previous-display")
++    #expect(side.frame.contains(h.overlays.preview!))
++  }
++
++  @Test func theViewCommandsActOnTheDisplayItIsChoosingOn() {
++    let (h, _, _, _) = makeHarness(displays: [main, side])
++    let other = h.system.open(app: "Mail", frame: CGRect(x: 1600, y: 100, width: 500, height: 400))
++    h.run("dock \(other.rawValue) left")
++    let mainCamera = h.workspace.camera
++    h.system.userFocus(h.workspace.tree.allWindows[0])
++    h.scheduler.runPending()
++    h.run("carry")
++    h.run("carry next-display")
++    h.run("desktop")
++    #expect(h.controller.workspaces[side.id]!.camera == h.controller.workspaces[side.id]!.tree.desktop)
++    #expect(h.workspace.camera == mainCamera)
++    h.run("carry cancel")
++    #expect(h.controller.workspaces[side.id]!.camera == h.controller.workspaces[side.id]!.tree.root)
++  }
++
++  @Test func theDisplayKeyAlsoPicksUp() {
++    let (h, _, slack, _) = makeHarness(displays: [main, side])
++    #expect(h.run("carry next-display").ok)
++    #expect(h.controller.carriedWindow == slack)
++    #expect(side.frame.contains(h.overlays.preview!))
++  }
++
++  @Test func withOneDisplayThereIsNoOther() {
++    let (h, _, slack, _) = makeHarness()
++    h.run("carry")
++    #expect(!h.run("carry next-display").ok)
++    #expect(h.controller.carriedWindow == slack)
++  }
++
++  // MARK: What changes meanwhile
++
++  @Test func anotherWindowClosingLeavesTheCarryOnWhatIsLeft() {
++    let (h, _, slack, terminal) = makeHarness()
++    h.run("carry")
++    h.run("carry right")
++    h.run("carry down")
++    h.system.close(terminal)
++    h.scheduler.advance(by: 2)
++    #expect(h.controller.carriedWindow == slack)
++    #expect(h.overlays.preview == h.controller.carryChoice?.frame)
++    let preview = h.overlays.preview
++    #expect(h.run("carry drop").ok)
++    #expect(h.workspace.tree.invariantViolations().isEmpty)
++    #expect(h.frame(slack) == preview || h.workspace.isFloating(slack))
++  }
++
++  @Test func tabsAreATargetWhenTheyAreOn() {
++    let (h, _, slack, terminal) = makeHarness(settings { $0.tabsEnabled = true })
++    h.run("carry")
++    h.run("carry right")
++    #expect(h.run("carry right").message.hasPrefix("in a tab group with Terminal"))
++    h.run("carry drop")
++    let tree = h.workspace.tree
++    #expect(tree.leaf(containing: slack) == tree.leaf(containing: terminal))
++  }
++}
++
++private func settings(_ change: (inout Settings) -> Void) -> Settings {
++  var settings = Settings()
++  change(&settings)
++  return settings
++}
++
++extension Dice: RandomNumberGenerator {
++  mutating func next() -> UInt64 {
++    state = state &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
++    return state
++  }
++}
+diff --git a/Tests/ArborKitTests/ChaosRegressionTests.swift b/Tests/ArborKitTests/ChaosRegressionTests.swift
+index 52b9b31..99e6307 100644
+--- a/Tests/ArborKitTests/ChaosRegressionTests.swift
++++ b/Tests/ArborKitTests/ChaosRegressionTests.swift
+@@ -38,6 +38,51 @@ private let c = WindowID(103)
+     dock 102 right
+     """
+ 
++  // MARK: A window in hand (F59)
++
++  /// A window that opens and docks by itself ends a carry. The space the view was on before it is gone by then.
++  @Test func aCarryEndedByAnArrangementThatChangedLeavesATidyHistory() {
++    expectEveryInvariantHolds(
++      """
++      open 102 Xcode pid 1004 at 551 31 689 627 max 767 940
++      launch
++      displays main:0,0,2560,1440:25,0,0,0* windows-first
++      open 109 Notes pid 1001 at 2376 1292 857 520 min 825 325
++      space 109 off
++      arrange
++      toggle-auto-dock
++      in
++      dock 109 right
++      carry 102
++      open 111 Notes pid 1001 at 1820 999 1618 1187 min 1618 1187 max 1618 1187
++      """)
++  }
++
++  @Test func theMouseTakingAWindowThatOnlyTheCarrysWiderViewShowsDoesNotLoseIt() {
++    expectEveryInvariantHolds(
++      """
++      open 107 Mail pid 1002 at 1262 334 764 278 no-bundle
++      open 108 Music pid 1006 at 1233 930 584 318 title ~
++      launch
++      toggle-float 108
++      in
++      carry next-display
++      grab 107
++      release
++      """)
++  }
++
++  @Test func aCarriedWindowThatGoesToAnotherSpaceLetsGoOfTheKeysAtOnce() {
++    expectEveryInvariantHolds(
++      """
++      open 103 Music pid 1006 at -228 374 764 599 min 764 599 grid
++      launch
++      arrange all
++      carry previous-display
++      space 103 off
++      """)
++  }
++
+   // MARK: A floating window whose app answers with less than it was asked for
+ 
+   @Test(arguments: [
+diff --git a/Tests/ArborKitTests/DisplayCommandTests.swift b/Tests/ArborKitTests/DisplayCommandTests.swift
+index 769fae0..ded4d12 100644
+--- a/Tests/ArborKitTests/DisplayCommandTests.swift
++++ b/Tests/ArborKitTests/DisplayCommandTests.swift
+@@ -325,7 +325,7 @@ private let above = DisplaySnapshot(
+   @Test func theMenuOffersTheOtherDisplayOnlyWhereThereIsOne() {
+     let (h, a, _, _, _) = makeHarness()
+     h.system.userFocus(a)
+-    #expect(h.run("menu").text?.contains("Bottom  ⌃⌥⌘↓\n    -----\n        Move to Next Display\n") == true)
++    #expect(h.run("menu").text?.contains("Carry…  ⌃⌥⌘Space\n    -----\n        Move to Next Display\n") == true)
+     let (single, w) = tilingScenario(["A"], ["dock $0 left"])
+     single.system.userFocus(w[0])
+     #expect(single.run("menu").text?.contains("Move to Next Display") == false)
+diff --git a/Tests/ArborKitTests/DoctorTests.swift b/Tests/ArborKitTests/DoctorTests.swift
+index 1e75974..4f6bf40 100644
+--- a/Tests/ArborKitTests/DoctorTests.swift
++++ b/Tests/ArborKitTests/DoctorTests.swift
+@@ -84,7 +84,8 @@ import Testing
+       check(h, "Keyboard layout")
+         == .init(
+           mark: .ok, title: "Keyboard layout",
+-          detail: "German; it does not type [, ], / and = alone, so `back` is ⌃⌥Ü, `forward` is ⌃⌥+, `show-shortcuts` is ⌃⌥⇧ß, `grow` is ⌃⌥⌘´"))
++          detail: "German; it does not type [, ], / and = alone, so `back` is ⌃⌥Ü, `forward` is ⌃⌥+, `show-shortcuts` is ⌃⌥⇧ß, "
++            + "`carry previous-display` is ⌃⌥⌘Ü, `carry next-display` is ⌃⌥⌘+, `grow` is ⌃⌥⌘´"))
+     // With shortcuts that do not follow it, it is the US layout that counts.
+     var settings = Settings()
+     settings.shortcutsFollowLayout = false
+diff --git a/Tests/ArborKitTests/LayoutShortcutTests.swift b/Tests/ArborKitTests/LayoutShortcutTests.swift
+index 3feaf56..aa27ce2 100644
+--- a/Tests/ArborKitTests/LayoutShortcutTests.swift
++++ b/Tests/ArborKitTests/LayoutShortcutTests.swift
+@@ -198,7 +198,8 @@ import Testing
+     #expect(replaced.bindings.count == KeyBindings.defaults.count)
+     let freed = KeyBindings.effective(settings: settings(["ctrl+opt+ü": nil]), layout: german)
+     #expect(freed.problems.isEmpty)
+-    #expect(!freed.bindings.contains { $0.keyCode == 33 })
++    // ⌃⌥⌘ with the same key is another shortcut (F59).
++    #expect(!freed.bindings.contains { $0.keyCode == 33 && $0.modifiers == .hyperless })
+     #expect(freed.bindings.count == KeyBindings.defaults.count - 1)
+ 
+     // On another layout the entry cannot be read, is reported, and Back is back.
+diff --git a/Tests/ArborKitTests/MenuTests.swift b/Tests/ArborKitTests/MenuTests.swift
+index 25dc805..702e81c 100644
+--- a/Tests/ArborKitTests/MenuTests.swift
++++ b/Tests/ArborKitTests/MenuTests.swift
+@@ -62,6 +62,8 @@ import Testing
+                 Right  ⌃⌥⌘→
+                 Top  ⌃⌥⌘↑
+                 Bottom  ⌃⌥⌘↓
++            -----
++                Carry…  ⌃⌥⌘Space
+             Float Focused Window  ⌃⌥F
+             Keep This Window in View
+             Don’t Arrange “Safari”
+diff --git a/Tests/ArborKitTests/SettingsPanelModelTests.swift b/Tests/ArborKitTests/SettingsPanelModelTests.swift
+index 3d7711c..4f0925f 100644
+--- a/Tests/ArborKitTests/SettingsPanelModelTests.swift
++++ b/Tests/ArborKitTests/SettingsPanelModelTests.swift
+@@ -314,7 +314,10 @@ private final class Panel {
+     #expect(p.model.found.shortcuts.map(\.command.text) == ["desktop"])
+     p.model.search = "ctrl+opt+cmd"
+     #expect(
+-      p.model.found.shortcuts.map(\.command.text) == ["dock left", "dock right", "dock top", "dock bottom", "grow", "shrink", "balance"])
++      p.model.found.shortcuts.map(\.command.text) == [
++        "dock left", "dock right", "dock top", "dock bottom", "carry", "carry previous-display", "carry next-display", "grow",
++        "shrink", "balance",
++      ])
+     p.model.search = "dock left"
+     #expect(p.model.found.shortcuts.map(\.command.text) == ["dock left"])
+     // A line found works like the line in its pane.
+diff --git a/collab/QUESTIONS.md b/collab/QUESTIONS.md
+index 2435ff6..d06b47f 100644
+--- a/collab/QUESTIONS.md
++++ b/collab/QUESTIONS.md
+@@ -1177,3 +1177,12 @@ One line per product decision made while building, newest last.
+ - Product owner, 2026-10-14 (links): the floor is that a link may not cost what ⌃⌥Z cannot bring back. Above it, `arrange`, its styled forms on a whole display, `cycle-layout` and `layout` stay refused where they would cost a saved view or a name, although undo restores them. What takes several links and has a way back each time is not guarded. `arbor://save-view/N` is refused where N is taken.
+ - Product owner, 2026-10-14 (`arborctl … > /dev/full`): by design: the exit code says whether Arbor did it, not whether the shell could print it.
+ - Product owner, 2026-10-14 (how a claim is run, third lesson): ask for the RIGHT place, not only a whole window; let time pass between two reports a simulator delivers at once; press the keys a person presses, not the commands behind them; after every release add a step that must move something. The replays are under `scripts/replays` on the branch `tools/decision-replays`.
++- F59: the arrow keys move an imaginary pointer through the targets a drag has, from a fixed point in each; they do not go by the previews' middles, as the spec first says, because that leaves the edges of the view unreachable.
++- F59: two targets are one choice only if the whole arrangement would look the same afterwards. How a tile is arranged inside does not count: to choose a place in there, look closer first.
++- F59: `carry` with a window in hand puts it down (the key that picks up also lets go); `carry <another window>` puts the first back and picks that one up; ⌃⌥⌘[ and ⌃⌥⌘] pick the focused window up if none is in hand.
++- F59: the carried window keeps the keyboard, in view or not. The keyboard going to any other window cancels, as do a mouse drag or resize, a change of settings, displays or held shortcuts, the window closing or being minimized, and 30 seconds without a key. The plain keys are keys people type with.
++- F59: a mouse drag or resize ends a carry but leaves the view as it is (⌃⌥[ goes back): picking up may have widened the view, and putting it back could take the window the mouse has just taken out from under the pointer. Found by the chaos lab.
++- F59: when the view changes and what was chosen is not in it any more, the carry arrives at the nearest edge of the new view, which puts the window into the space being looked at. Beside the one window in view can mean its row, beyond the view.
++- F59: dropped on the Desktop, a docked window floats in the middle of it at the size it floated at. The Desktop's four edges are places too, which a pointer cannot choose, also while the Desktop is only a tile.
++- F59: the preview shows during a carry even with `previewDrags` off: a carry has nothing else to show where it is.
++- F59: a pinned window is not carried (it never docks by a drag either; the reply says to unpin it). `arbor://carry` is refused: a web page must not take the arrow keys, ↩, Space and ⎋.
+diff --git a/collab/parity.json b/collab/parity.json
+index d61b5cf..85c3d41 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -133,6 +133,7 @@
+     {"id": "A26", "area": "Arbor only", "title": "Events for scripts and status bars", "trellis": "", "arbor": "`arborctl watch` streams the view (in words too), layout, focus, windows and their state, displays, settings, pause and resume as lines of JSON; titles only on request; `docs/SCRIPTING.md`", "status": "shipped", "spec": "F24", "priority": 2, "tests": ["helloComesFirstAndCarriesTheWholeState", "aMoveOfTheViewSaysWhereItIsAndWhatIsInView", "aSavedViewShowsItsNumberWhileTheViewIsThere", "draggingAGapReportsTheNewFrames", "windowsOpenDockFloatAndClose", "aRelayoutThatChangesNothingSendsNothing", "aBurstIsReportedAsTheDifferenceItMade", "nothingIsSentUntilTheMainLoopComesRound", "aFilterLetsThroughOnlyWhatWasAskedFor", "titlesReachOnlyThoseWhoAskedForThem", "aListenerFromBeforeArborStartsHearsStartedAndThenTheState", "quittingComesFromTheAppOnceAndIsTheLastWord", "atMostSixteenCanWatch", "theSeventeenthWatcherIsRefusedAndAPlaceGivenUpCanBeTaken", "aWatcherThatStopsReadingIsDroppedAndNeverWaitedFor", "aWatcherThatLeavesIsNoticedWithoutAnythingBeingSent", "watchPrintsEventsAsTheyHappenAndExitsWithZeroWhenArborQuits", "aLostConnectionExitsWithThree", "anUnknownEventExitsWithOneAndSaysWhy", "withoutArborWatchExitsWithTwo", "everyEventKeepsItsFieldNames", "theSamplesInTheScriptingGuideAreExactlyWhatArborSends", "linesComeOutWhateverPiecesTheBytesArriveIn", "aReaderThatFallsTooFarBehindIsRefusedTheNextLine", "aPauseSaysPausedAtOnceAndResumingBringsTheStateBack", "aPauseDoesNotEndTheWatch", "aWindowsStateSaysWhereItIs", "aSwitchOfSpacesIsReportedOnceItHasBeenLaidOut", "aSpaceOfWhichNothingCanBeSeenIsStillNamedInWords", "anAppThatIsNoLongerArrangedIsReleasedNotClosedAndLaterAdoptedNotOpened", "settingsAreNewsOnlyWhenTheyChangeAndSayWhichKeysDid", "focusIsWhoHasTheKeyboardNotWhoReportedLast", "aSpaceOfSeveralWindowsIsAGroupNamedInWords", "theWordsAreTheGlossarys"], "e2e": ["start watching events", "what the watcher heard", "the watcher is told that Arbor quit"]},
+     {"id": "A18", "area": "Arbor only", "title": "Shortcuts that macOS uses as well are pointed out", "trellis": "", "arbor": "`bindings` and the log list each shortcut macOS has ticked for itself (⌃⌥Space with several input sources), by key, on any layout, and say where to change either", "status": "shipped", "spec": "F42", "priority": 3, "tests": ["aTickedShortcutOnTheSameKeyAndModifiersIsAUse", "anUntickedOneIsNot", "nextInputSourceCountsOnlyWithTwoOrMoreToSwitchBetween", "aShortcutWithTheGlobeKeyOnALetterIsNobodysBusiness", "withTwoKeyboardsShowEverythingIsAlsoNextInputSource", "bindingsListsThemAndCountsThemAlsoBeforeArborStarts", "whereNobodyCanTellNothingIsSaid", "onAnotherKeyboardLayoutItIsTheKeyThatCounts", "macOSIsAskedEachTimeSoAChangeInSystemSettingsShowsWithoutARestart", "macOSListsItsOwnShortcuts"]},
+     {"id": "A30", "area": "Arbor only", "title": "Says on screen what happened", "trellis": "", "arbor": "A line low on the display after a shortcut, gesture or menu item: why nothing happened, what changed unseen, three hints for newcomers three times each; `messages`: helpful, all, off", "status": "shipped", "spec": "F43", "priority": 1, "tests": ["aFailingShortcutIsExplainedOnTheDisplayItActedOn", "theSameCommandFromAScriptIsAnsweredOnlyInItsReply", "gesturesAndTheMenuAreAnsweredLikeShortcuts", "aCommandOnAWindowIsAnsweredOnTheWindowsDisplay", "routineSuccessesStaySilent", "whatChangedUnseenIsSaid", "offSaysNothing", "allSaysEveryReply", "theLineGoesWhenItsTimeIsUp", "theNextLineReplacesTheLastAtOnceAndStaysItsFullTime", "thereIsOneLineAtATimeAcrossDisplays", "pausingClearsTheScreenAndThenSaysSo", "quittingTakesBothPanelsAway", "theFirstDockTheFirstWindowsOutOfViewAndTheFirstTileAreExplained", "eachHintIsShownThreeTimesAndNeverAgain", "theCountSurvivesARestart", "aDropAndAClickOnATileTeachToo", "whatAScriptDoesTeachesNobodyAndIsNotBlamedOnTheNextEvent", "whatArborRestoresAtLaunchIsNotAMoment", "aReboundShortcutIsNamedByTheUsersKeys", "aRemovedShortcutIsLeftOutOfTheSentence", "windowTitlesNeverAppear", "quotedCommandsBecomeTheKeysInEffect", "adviceForATerminalIsLeftOut", "theLineSitsDirectlyAboveAnotherPanelAtTheBottom", "messagesIsHelpfulUnlessTheFileSaysOtherwise", "aSuccessThatLeftEverythingAsItWasIsSaidBecauseItLooksLikeADeadKey", "theFrameShortcutOnAFloatingWindowSaysWhatToDoFirst", "anAppArborDoesNotArrangeIsCalledThatAndByItsName", "landingInSuchAnAppByArborsOwnCommandSaysThatItsKeysEndHere", "resumedIsSaidWherePausedWas", "appsAreCalledByTheirNamesNotTheirBundleIds", "namingASpaceAndTakingTheNameOffAreConfirmed", "theNameFieldIsItsOwnAnswer", "aWindowSentAwayBySummonIsNotTakenForOneThatSeemsToHaveGone", "theLogGetsTheLineWithoutTheNamesOfSpaces", "theLogGetsNoWordOfTheReplyToACommandThatChangesSettings", "lettingGoOfAPeekTeachesNothingAndUsesNoHintUp", "aDisplayThatIsUnpluggedTakesTheLineAndThePanelAlong", "aNameThatReadsLikeArborsShorthandIsSaidAsItWasWritten", "aHoldTakesAwayWhatWasSaidBeforeItBegan", "aKeyThatAHeldViewRefusesIsExplainedInFewWords", "lettingGoOfAHoldIsConfirmedAndItsBeginningIsNot", "goToIsItsOwnAnswerAndGoingSomewhereIsNot", "whatWasLostComesBeforeAnyHintAndIsSaidToAnOldHandToo", "aPinLostByDockingIsSaidAndUndoBringsItBack", "theDesktopWithNothingOnItIsNotTheFirstTile", "aPlaceThatAutomaticDockingTriesAndTakesBackTeachesNothing", "whatHoldingStillTurnsAwayIsSaidOncePerAppAndHold", "aHeldViewTurnsAwayInSilenceAndSoDoesWhoeverSwitchedTheLineOff", "theLogGetsNoWordOfWhatGoToWasAskedForInVain"]},
+-    {"id": "A66", "area": "Arbor only", "title": "The shortcuts on screen", "trellis": "", "arbor": "⌃⌥⇧/; `show-shortcuts`; Keyboard Shortcuts… in the menu: the shortcuts in effect by name, grouped as the help is; any key, click or command puts them away", "status": "shipped", "spec": "F43", "priority": 2, "tests": ["theDefaultShortcutIsTheOneTheKeyboardMapSetsAside", "itShowsTheShortcutsInEffectOnTheDisplayUnderThePointer", "everyDefaultShortcutIsInThePanelUnderAHeadingOfTheHelp", "theUsersOwnShortcutsStandInPlaceOfTheDefaults", "theSameKeysPutItAway", "anyKeyOrClickPutsItAway", "anyCommandPutsItAwayButAQuestionDoesNot", "withShortcutsSwitchedOffOrAllRemovedItSaysSoInstead", "sectionsAreTheHelpsGroupsInTheHelpsOrder", "nineViewsAreOneRow", "aFamilyWithAMemberMissingOrMovedIsListedSingly", "aLongerListIsTwoColumnsOfAboutTheSameHeight", "gesturesThatAreSwitchedOffAreNotListed", "thePointersPartFollowsTheSettings", "titlesUseTheGlossarysWords", "soDoTheTitlesOfNamesSummonAndLayout", "anArrangementsTitleLeavesOutThePartsOfWindowTitles", "groupsAreTheHelps", "thePanelAndTheNameFieldNeverHaveTheKeyboardTogether", "anEndlessTitleIsCutSoThatThePanelNeedNotShrinkForIt"], "e2e": ["show the shortcuts on screen", "put the shortcuts away"]}
++    {"id": "A66", "area": "Arbor only", "title": "The shortcuts on screen", "trellis": "", "arbor": "⌃⌥⇧/; `show-shortcuts`; Keyboard Shortcuts… in the menu: the shortcuts in effect by name, grouped as the help is; any key, click or command puts them away", "status": "shipped", "spec": "F43", "priority": 2, "tests": ["theDefaultShortcutIsTheOneTheKeyboardMapSetsAside", "itShowsTheShortcutsInEffectOnTheDisplayUnderThePointer", "everyDefaultShortcutIsInThePanelUnderAHeadingOfTheHelp", "theUsersOwnShortcutsStandInPlaceOfTheDefaults", "theSameKeysPutItAway", "anyKeyOrClickPutsItAway", "anyCommandPutsItAwayButAQuestionDoesNot", "withShortcutsSwitchedOffOrAllRemovedItSaysSoInstead", "sectionsAreTheHelpsGroupsInTheHelpsOrder", "nineViewsAreOneRow", "aFamilyWithAMemberMissingOrMovedIsListedSingly", "aLongerListIsTwoColumnsOfAboutTheSameHeight", "gesturesThatAreSwitchedOffAreNotListed", "thePointersPartFollowsTheSettings", "titlesUseTheGlossarysWords", "soDoTheTitlesOfNamesSummonAndLayout", "anArrangementsTitleLeavesOutThePartsOfWindowTitles", "groupsAreTheHelps", "thePanelAndTheNameFieldNeverHaveTheKeyboardTogether", "anEndlessTitleIsCutSoThatThePanelNeedNotShrinkForIt"], "e2e": ["show the shortcuts on screen", "put the shortcuts away"]},
++    {"id": "A158", "area": "Arbor only", "title": "Carry a window with the keyboard", "trellis": "", "arbor": "⌃⌥⌘Space picks the focused window up, the arrows walk a preview through every place a drag could choose, ↩ puts it down, ⎋ puts it back; the view shortcuts and ⌃⌥⌘[ ] work meanwhile", "status": "shipped", "spec": "F59", "priority": 1, "tests": ["aWindowCanBePutUnderOneOtherWindow", "theSameWithTheKeys", "carriedThereOrDraggedThereIsTheSame", "theArrowsLeadFromEveryChoiceToEveryOther", "whateverADragCanReachSomeChoiceGivesTheSameArrangement", "cancellingPutsTheTreeAndTheViewBackAndGivesTheKeysBack", "theWindowClosingEndsTheCarry", "pausingEndsTheCarryWithTheViewAsItWas", "aWindowCanBeCarriedToASpaceThatWasOutOfView", "aFloatingWindowCanBeCarriedAndDocked", "droppingOnTheDesktopFloatsADockedWindow", "aWindowCanBeCarriedToAnotherDisplay", "theKeyboardGoingToAnotherWindowEndsIt", "halfAMinuteWithoutAKeyEndsIt"]}
+   ]
+ }
+diff --git a/collab/scenarios/59-carry-with-the-keyboard.sim b/collab/scenarios/59-carry-with-the-keyboard.sim
+new file mode 100644
+index 0000000..5a6f63f
+--- /dev/null
++++ b/collab/scenarios/59-carry-with-the-keyboard.sim
+@@ -0,0 +1,69 @@
++# Story: hands on the keyboard, someone puts Slack under Terminal, which no shortcut could do, changes
++# their mind half-way through another move, and carries a window into a space that was out of view.
++# Reference: F59.
++open Safari
++open Slack
++open Terminal
++dock 101 left
++dock 102 right
++dock 103 right
++focus 102
++expect left-of 102 103
++
++# ⌃⌥⌘Space picks Slack up. Only now do the plain keys belong to Arbor.
++expect shortcut left off
++carry
++expect ok
++expect shortcut left on
++expect shortcut return on
++expect shortcut escape on
++
++# → to Terminal's near edge, ↓ to its bottom, ↩ to put it down.
++carry right
++carry down
++expect left-of 102 103
++carry drop
++expect ok
++expect above 103 102
++expect left-of 101 103
++expect count docked 3
++expect shortcut left off
++
++# ⎋ puts everything back, the view included.
++carry
++carry up
++carry left
++desktop
++expect camera desktop
++carry cancel
++expect camera root
++expect above 103 102
++expect shortcut escape off
++
++# Any other command does the same first.
++carry
++carry left
++float 102
++expect floating 102
++expect shortcut left off
++dock 102 beside 103 bottom
++
++# Carried to a space that was out of view: look there, then let go.
++zoom 101
++save-view 1
++show-all
++focus 102
++carry
++view 1
++expect camera 101
++carry drop
++expect ok
++expect visible 101
++expect visible 102
++expect hidden 103
++
++# Nothing in hand.
++carry left
++expect fail
++carry drop
++expect fail
+diff --git a/docs/ARCHITECTURE.md b/docs/ARCHITECTURE.md
+index 92d8d09..a5793e4 100644
+--- a/docs/ARCHITECTURE.md
++++ b/docs/ARCHITECTURE.md
+@@ -402,6 +402,25 @@ the Desktop leave with it. At the end `settle` lays the displays out
+ from their real trees and puts those windows where a drag without reflow
+ would have left them, so the setting never changes where anything ends up.
+ 
++## Carrying a window with the keyboard
++
++A carry (`carry`, ⌃⌥⌘Space; `Controller+Carry.swift`) is a drag without a pointer. `CarryMap` (ArborCore, `Carry.swift`) lists the places a
++drag could put the window in the view on screen: for each `DropTarget`, the arrangement `Workspace.previewLayout` says it leads to and a
++point, its anchor, where a pointer would choose it. Targets that lead to arrangements that look the same count as one choice. An arrow key moves an
++**imaginary pointer** from the current choice's anchor straight that way until `DropResolver.resolve` chooses something else, so what an
++arrow reaches is what a drag that way would reach, in the same order. (Going by the previews' own middles does not work: the preview for an
++edge of the view is a large rectangle whose middle lies among the others, and is never the nearest.) The links are worked out when
++the map is made, and `connect()` then hangs the few choices no travel reaches onto the nearest line, so the arrows lead from every choice
++to every other.
++
++Nothing is rearranged until the drop, which is `finishDrop`, as for a drag. Only the preview moves, and the view: commands with
++`Command.keepsCarrying` (the view commands, queries) run during a carry, on the display it is choosing on, and the map is made again
++after every layout of that display. Any other command cancels first. The carried window keeps the keyboard, in view or not
++(`ensureFocusIsVisible` and `bringIntoView` leave it alone).
++
++While it lasts Arbor holds plain keys (`KeyBindings.whileCarrying`, through `temporaryShortcuts` like a peek's). They are keys people
++type with, so every way out gives them back: see the list at the top of `Controller+Carry.swift`.
++
+ ## Leaving the arrangement
+ 
+ Docking stretches a window to its slot. `Workspace.undockedFrames` remembers the frame it floated at (the one
+diff --git a/docs/GUIDE.md b/docs/GUIDE.md
+index 9559a05..a4b1b47 100644
+--- a/docs/GUIDE.md
++++ b/docs/GUIDE.md
+@@ -162,6 +162,13 @@ included. Names are kept when you quit, and a display that is unplugged brings i
+ **Hold ⌃⌥Space.** Everything shows for as long as the keys are down. Point at the window you want, or walk the outline to it with the arrow keys, and let go: it fills the view and has the keyboard. ⌃⌥[ takes you back.
+ Changed your mind? Press ⎋, or let go without choosing: you are where you were. (A tap of ⌃⌥Space still shows everything and stays, and so does a slow one: under a second with nothing chosen is a tap.)
+ 
++### Put a window exactly there, without the mouse
++
++**⌃⌥⌘Space** picks up the window you are typing in. A preview shows where it would land, starting where it is. The **arrow keys** walk the preview through every place a drag could choose: toward a window they offer its near edge, then its far edge, then
++what lies beyond, and ↑ and ↓ its top and bottom. **↩** or Space puts the window down; **⎋** puts everything back. So "Slack under Terminal" is ⌃⌥⌘Space → ↓ ↩.
++The view shortcuts still work while you carry: ⌃⌥2, then ↩, takes the window into the space you saved as view 2. ⌃⌥⌘] carries it to the next display. The Desktop is a place like any other: put a docked window down there and it floats.
++Nothing moves until you put the window down, and if you do anything else (another shortcut, a click in another window, nothing at all for half a minute) it is as if you had pressed ⎋.
++
+ ### Without reaching for the mouse
+ 
+ **⌃⌥⇧ + an arrow** moves the keyboard to the nearest window that way, docked or floating; the line round the focused window shows where it went. A tile in the way is zoomed into. With no window that way in view, the view moves to the neighbouring
+@@ -366,6 +373,5 @@ Being built or waiting to be merged as this is written. When one lands, its sect
+ | Motion with the windows' own contents | With Screen Recording permission windows will keep their contents while they move. Not yet: wait for the release notes to say it has been seen on a Mac |
+ | Tab groups | Drop a window on the middle of another: they share a place under a strip of tabs; ⌃⌥⇥ switches |
+ | Presets | Set the table with one command |
+-| Carry a window with the keyboard (⌃⌥⌘Space) | Everything a drag can do, from the keys: put a window under one other window, make a tab group |
+ | Clicks on the Desktop guarded | Built, and off until someone has tried it on a Mac (`guardDesktopClicks`). Then the first of the four switches in section 2 will no longer be needed |
+ | Double-click a title bar or the Desktop | More of what TrellisWM users' hands expect |
+diff --git a/docs/KEYBOARD.md b/docs/KEYBOARD.md
+index df3d277..4a5c01a 100644
+--- a/docs/KEYBOARD.md
++++ b/docs/KEYBOARD.md
+@@ -48,8 +48,8 @@ use exactly this key. **reserved**: keep free for that purpose, bound to nothing
+ | ⌃⌥⌘ + arrow | `dock <edge>`: dock, or move one place | shipped |
+ | ⌃⌥⌘= / ⌃⌥⌘- | `grow` / `shrink` the focused window | shipped (F22) |
+ | ⌃⌥⌘0 | `balance`: equal sizes again | shipped (F22) |
+-| ⌃⌥⌘Space | `carry`: pick the focused window up and choose among the targets a drag has, with the arrows (⌃⌥Space looks at everything; add ⌘ and it moves anywhere) | reserved (F59) |
+-| ⌃⌥⌘[ / ⌃⌥⌘] | previous / next display, for a window | reserved (F59) |
++| ⌃⌥⌘Space | `carry`: pick the focused window up and choose among the targets a drag has, with the arrows (⌃⌥Space looks at everything; add ⌘ and it moves anywhere). While carrying only: arrows, ↩ or Space to put it down, ⎋ to put it back | shipped |
++| ⌃⌥⌘[ / ⌃⌥⌘] | `carry previous-display` / `carry next-display`: choose among the places on another display (picks the focused window up if none is in hand) | shipped |
+ | ⌃⌥F / ⌃⌥⇧F | `toggle-float` / `float-all` | shipped |
+ | ⌃⌥A | `arrange` | shipped |
+ | ⌃⌥⇧A | `toggle-auto-dock`: auto-docking on and off; a tick in the menu is enough for a switch flipped once a week | reserved (F23 ships the command and the menu item, unbound) |
+diff --git a/docs/RELEASE-NOTES.md b/docs/RELEASE-NOTES.md
+index b1fb95c..5c4c1f6 100644
+--- a/docs/RELEASE-NOTES.md
++++ b/docs/RELEASE-NOTES.md
+@@ -167,6 +167,7 @@ TrellisWM does, adds a keyboard and a command line for all of it, and is careful
+ | **Undo** | ⌃⌥Z takes back a change to the arrangement, ⌃⌥⇧Z brings it again: a dock, a float, a drag, Arrange and Float All, with the view, the history and the saved views they cost. What cannot be taken back (a closed window) is said once | ◐; ○ whether a held key repeats, and whether a window put back flickers | F19 |
+ | **It notices when its permission is taken away** | Within three seconds it stops, says how many windows are out of view and of which apps, and brings everything into view the moment the permission is back | ◐; ○ by hand on a Mac | F63 |
+ | **The keyboard tiles** | ⌃⌥⇧ + arrow goes to the window that way; ⌃⌥⌘= and ⌃⌥⌘- grow and shrink, ⌃⌥⌘0 balances; ⌃⌥R turns a pair from side by side to stacked and back, ⌃⌥⇧R mirrors it; `swap`, and windows to the next display | ◐; ○ with real keys | F22 |
++| **Carry a window with the keyboard** | ⌃⌥⌘Space picks up the window you are typing in, the arrows walk a preview through every place a drag could choose, ↩ puts it down, ⎋ puts everything back. Slack under Terminal is ⌃⌥⌘Space → ↓ ↩ | ◐; **○ that plain arrows, ↩ and ⎋ reach Arbor during a carry and the app afterwards**: `check-F59.sh` has not run | F59 |
+ | **A tile is not for ever** | A window that once refused its place is asked again, out of view, and gets the place when it fits | ◐ | A16, F45 |
+ | **Resize by a window's own edge** | Not only by the gap | ◐; the drag itself ● | A11; `shots-demo` |
+ | **Summon an app** | One shortcut brings a terminal, a note or a password manager over any view with the keyboard in it; again, or turning away, sends it out of view. It remembers its place | ◐; **○ on real windows**: `check-F53.sh` has not run | A53 |
+@@ -229,7 +230,6 @@ The gravest, those that can cost sight of a window or stop Arbor, are [at the he
+ | If you **rebound a letter** by writing the US letter of the key you wanted, as the guide used to say, that shortcut has moved to the key that types the letter. Write `ctrl+opt+us:z` for a place | F44 | |
+ | If you learnt **⇧⌘-drag** for the rectangle: it is **⌃⌥-drag** now, and ⇧⌘-drag belongs to the design tools again. `arborctl set frameRectangleModifier shift+cmd` brings the old keys back | #207 | |
+ | **VoiceOver**, Rectangle, Magnet, Stage Manager, macOS tiling and "click wallpaper to reveal desktop" clash with Arbor. It says so now, in the welcome window and `arborctl doctor`; it changes none of them for you | always | |
+-| Nothing by keyboard puts a window **under one other window**; ⌃⌥⌘↓ puts it under everything | always | F59 |
+ 
+ ## What a person still has to try before anyone else is invited
+ 
+diff --git a/docs/TESTING.md b/docs/TESTING.md
+index bf70f69..20b4e75 100644
+--- a/docs/TESTING.md
++++ b/docs/TESTING.md
+@@ -569,7 +569,7 @@ holds for the commit named (second reading, 10:45 UTC) and says what the script
+ | `desktop-facts.sh` | #197 `e75d37f8` | safe | none | It reads the window list, four preferences and three answers of Finder's, and names only Apple's own processes |
+ | `shots-F15-apps.sh` | trunk | **never**: ends with 77 | | Ten real apps opened for their icons, and killed |
+ | `check-F52.sh`, `check-F63.sh` | #59, #66 | **never**: end with 77 | | Virtual displays, Accessibility taken from every app |
+-| `check-F59.sh` | #158 `6907ce87` | safe | 30 s | During a carry nobody's app gets arrows, ↩ or ⎋ |
++| `check-F59.sh` | trunk | safe | 30 s | During a carry nobody's app gets arrows, ↩ or ⎋ |
+ | `shots-F04.sh`, `shots-F34.sh` | #79 `32612c35`, #187 `acf72c67` | safe | 3 min, 60 s | Test windows go to the Dock and come back; one is closed by its tab's button |
+ | `shots-F22.sh`, `shots-F19.sh` | #71 `f5bc5d3c`, #160 `ac4f3120` | safe | 90 s, 45 s | |
+ | `check-F14.sh` | #204 `62e1fae1` | safe, steps skip themselves | 3 min | The double-click on the wallpaper, Safari, the survey of stock apps. A witness that only listens writes down every press of the button meanwhile, with its place. macOS zooms a floating test window to the full display |
+diff --git a/docs/features/F59-carry-with-the-keyboard.md b/docs/features/F59-carry-with-the-keyboard.md
+index a10c795..70baad7 100644
+--- a/docs/features/F59-carry-with-the-keyboard.md
++++ b/docs/features/F59-carry-with-the-keyboard.md
+@@ -2,7 +2,7 @@
+ 
+ Written by the executor swarm, 2026-10-14; for the documenter to review.
+ 
+-Status: ready
++Status: done (headless; never run on real windows, see "Not shipped")
+ Depends on: F01, F09 (targets and preview); F04 for the "middle" target
+ Size: medium, nearly all headless
+ 
+@@ -38,3 +38,32 @@ particular place on another display. A drag can do all of these, because a drag
+ 3. `carry cancel`, the window closing and `pause` each restore the tree and the view and release the temporary shortcuts.
+ 4. Carrying across a view change: `carry`, `view 2`, `carry drop` docks the window in the space of view 2.
+ 5. A floating window can be carried; dropping on the Desktop floats a docked one.
++
++## Shipped (2026-10-14, `feat/F59-carry`)
++
++Everything above, against simulated windows. A carry is one step to undo ("Undo Carry"); one that is cancelled, or put down where it was, leaves none.
++
++- **The arrows go by an imaginary pointer, not by the previews' middles.** The order the spec gives first ("the nearest target whose preview lies that way")
++  leaves the edges of the view unreachable: their previews are large and their middles lie among the others (201 of 3000 random
++  arrangements had a choice no key reached). The order it gives second ("as a pointer crossing it would") is now the rule itself: the pointer
++  travels through `DropResolver.resolve`.
++- Two targets count as one only if the whole arrangement would look the same, not just the carried window's frame.
++- `DropResolver.targets(…)` became `CarryMap`, which also holds the previews and the links between choices.
++- It ends in F09's `finishDrop(_:on:)`, and so in `Drop.apply(to:)`, the one place where a drop changes workspaces.
++- Also: `carry` again puts down; ⌃⌥⌘[ and ⌃⌥⌘] pick up as well; a tab can be put beside the rest of its group; `Carry…` in the Dock
++  Focused Window menu; half a minute without a key cancels.
++
++## Not shipped
++
++- **Real windows: never tried, with real keys or without.** `scripts/mac-shell/check-F59.sh` is written and has never run on a Mac (M1545). Above all nobody has seen
++  that plain keys (arrows, ↩, Space, ⎋) can be held for the length of a carry and reach Arbor, and that they go back to the app after
++  **every** ending. A peek's temporary keys all come with ⌃⌥; these come with nothing. The script tries a drop, ⎋ and a click in another window, not the other endings.
++- Not known either (M1546, M1547): whether `Carry…` chosen from the menu outlives the menu closing, how the preview looks on a second display, what a held arrow's
++  repeat does, and how long making the map takes on a Mac.
++- How a tile is arranged inside cannot be chosen from outside: look closer first; ⌃⌥↓ works while carrying (K1481).
++- The other windows do not make way while the preview walks, as they do in a drag with live reflow: only the preview moves (K1482).
++- While a window is carried the menu's other rows go by the view the carry has widened. Choosing one ends the carry first, the view goes back, and the command can then
++  refuse: Dock Focused Window ▸ Left on a window that was framed answers "fills the view; step out first". Nothing is lost. `MenuChaosTests` meets it in about one walk in 300
++  (`ARBOR_CHAOS_FIRST=200 ARBOR_CHAOS_SEEDS=1`), none of them among the walks `make check` runs.
++- A line of its own on the display (K1480). Pressed with keys, each step's words do show there ("Below Terminal"), but only by F43's rule for a key that
++  changed nothing anyone can see; no test of F59's pins that.
+diff --git a/scripts/lint-imports.py b/scripts/lint-imports.py
+index a5adaca..c133f5a 100755
+--- a/scripts/lint-imports.py
++++ b/scripts/lint-imports.py
+@@ -7,6 +7,9 @@ other way round, `CGRect` is Foundation's on Linux, while on macOS Foundation al
+ without its members, so a file that uses geometry writes `import CoreGraphics` (collab/README.md). This
+ check catches both mistakes on either platform, before a macOS CI run meets them.
+ 
++A third mistake of the kind: on Linux `CGRect`, `CGPoint` and `CGSize` can be hashed, on macOS only from 15 on, and Arbor runs
++on 14. So none of them is the key of a dictionary or the element of a set.
++
+ It looks for the names below outside comments and string literals, so it is a net, not a proof:
+ add a name when one slips through. Part of `make check`.
+ """
+@@ -31,6 +34,7 @@ USES = re.compile(r"(?<![\w.`])(" + "|".join(TYPES) + r")\b(?!\s*:)|\.(" + "|".j
+ # These bring the geometry types along on macOS, members included.
+ GEOMETRY_IMPORTS = re.compile(r"^\s*(@\w+(\(.*?\))?\s+)*import\s+(CoreGraphics|AppKit|Cocoa|SwiftUI|QuartzCore|ApplicationServices)\b", re.M)
+ GEOMETRY = re.compile(r"(?<![\w.`])(CGRect|CGPoint|CGSize|CGFloat)\b|\.(minX|midX|maxX|minY|midY|maxY)\b|\.insetBy\(dx:")
++HASHED = re.compile(r"\[\s*CG(Rect|Point|Size)\s*:|\bSet<\s*CG(Rect|Point|Size)\s*>|\bDictionary<\s*CG(Rect|Point|Size)\s*,")
+ NOISE = re.compile(r'//.*?$|/\*.*?\*/|#*""".*?"""#*|#"(.*?)"#|"(\\.|[^"\\\n])*"', re.M | re.S)
+ 
+ 
+@@ -48,6 +52,9 @@ def problems_in(text, name):
+                 used = match.group(0).lstrip(".").rstrip("(:")
+                 problems.append(f"{name}:{number}: error: uses `{used}` without `import {module}`")
+                 break
++    for number, line in enumerate(code.split("\n"), 1):
++        if HASHED.search(line):
++            problems.append(f"{name}:{number}: error: hashes a CGRect, CGPoint or CGSize, which macOS 14 cannot")
+     return problems
+ 
+ 
+diff --git a/scripts/mac-shell/check-F59.sh b/scripts/mac-shell/check-F59.sh
+new file mode 100755
+index 0000000..fb0d6c8
+--- /dev/null
++++ b/scripts/mac-shell/check-F59.sh
+@@ -0,0 +1,81 @@
++#!/bin/bash
++# F59 on real windows, with real keys: carry a window with the keyboard.
++#
++#   scripts/mac-shell/run.sh scripts/mac-shell/check-F59.sh
++#
++# What only a Mac can say: whether plain keys (arrows, ↩, ⎋) can be registered as global shortcuts for the length of a
++# carry and reach Arbor; whether they are the app's again afterwards; whether the carried window keeps the keyboard
++# while the view moves; and what the preview looks like as it walks.
++#
++# Touches nothing but its own test windows, the pointer and the keyboard. It presses arrow keys, ↩ and ⎋, which go to Arbor
++# or to a test window.
++source "$(dirname "$0")/lib.sh"
++
++arbor_build
++arbor_start 3 ARBOR_NO_HOTKEYS=0
++
++below() { # whether window $1 sits under window $2, in the same column
++  local a b
++  a=($(frame_of "$1")) b=($(frame_of "$2"))
++  [ ${#a[@]} -eq 4 ] && [ ${#b[@]} -eq 4 ] || return 1
++  [ "${a[0]}" -eq "${b[0]}" ] && [ "${a[1]}" -gt "${b[1]}" ]
++}
++same_frame() { [ "$(frame_of "$1")" = "$2" ]; }
++preview() { has_overlay 3; }
++no_preview() { ! has_overlay 3; }
++
++step "[w1 | Desktop | w2 | w3], w2 has the keyboard"
++ctl dock "$W1" left
++ctl dock "$W2" right
++ctl dock "$W3" right
++# shellcheck disable=SC2046
++click $(center_of "$W2")
++check "the clicked window has the keyboard" eventually is focused "$W2"
++before=$(frame_of "$W2")
++
++step "⌃⌥⌘Space → ↓ ↩ puts w2 under w3"
++key ctrl+opt+cmd+space
++check "a preview shows" eventually preview
++shot 01-picked-up
++key right
++shot 02-left-of-w3
++key down
++shot 03-below-w3
++check "nothing has moved yet" same_frame "$W2" "$before"
++key return
++check "w2 sits under w3" eventually below "$W2" "$W3"
++check "the preview is gone" eventually no_preview
++check "w2 still has the keyboard" eventually is focused "$W2"
++shot 04-put-down
++summary
++
++step "The plain keys are the app's again"
++after=$(frame_of "$W2")
++key right && key down && key return || check "the keys could be pressed" false
++sleep 0.5
++check "arrows and ↩ do nothing to the arrangement" same_frame "$W2" "$after"
++check "and bring up no preview" no_preview
++
++step "⎋ puts everything back, the view included"
++key ctrl+opt+cmd+space
++check "a preview shows" eventually preview
++key up
++key left
++key ctrl+opt+d
++check "the view went to the Desktop" eventually is parked "$W1"
++check "the carried window keeps the keyboard out of view" is focused "$W2"
++shot 05-looking-elsewhere
++key escape
++check "the view is back" eventually is in_slot "$W1"
++check "w2 is where it was" eventually same_frame "$W2" "$after"
++check "the preview is gone" eventually no_preview
++
++step "A click in another window ends it"
++key ctrl+opt+cmd+space
++check "a preview shows" eventually preview
++# shellcheck disable=SC2046
++click $(center_of "$W1")
++check "the preview is gone" eventually no_preview
++check "w2 is where it was" same_frame "$W2" "$after"
++
++arbor_stop 06-quit

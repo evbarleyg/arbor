@@ -1,0 +1,139 @@
+diff --git a/Sources/ArborKit/Controller/Controller+Appearance.swift b/Sources/ArborKit/Controller/Controller+Appearance.swift
+index 66eb1e5b..67d7fe08 100644
+--- a/Sources/ArborKit/Controller/Controller+Appearance.swift
++++ b/Sources/ArborKit/Controller/Controller+Appearance.swift
+@@ -15,7 +15,8 @@ extension Controller {
+     // Without seams in the scene there is nothing to drag.
+     if options.gapHandles == .off { scene.seams = [] }
+     scene.showsSeamHandles = options.gapHandles == .shown
+-    scene.tileFade = options.tileFade
++    // Without motion a tile comes at once, like the windows: while it faded in, with no stage in front, the desk was empty (Controller+InOnePiece.swift).
++    scene.tileFade = settings.motionDuration > 0 ? options.tileFade : 0
+     scene.backdrop = backdrop(for: layout, on: displayID, options: options)
+   }
+ 
+diff --git a/Sources/ArborKit/Controller/Controller+Rehearsal.swift b/Sources/ArborKit/Controller/Controller+Rehearsal.swift
+index c1fe9575..fc6b21e1 100644
+--- a/Sources/ArborKit/Controller/Controller+Rehearsal.swift
++++ b/Sources/ArborKit/Controller/Controller+Rehearsal.swift
+@@ -29,11 +29,15 @@ extension Controller {
+   public static let pauseBetweenPieces = 0.01
+ 
+   func rehearseNextMotion() {
+-    // Without motion there is nothing to be ready for, and it is not paid for.
+-    guard isRunning, settings.motionDuration > 0 else { return }
+-    let displays = Set(displays.map(\.id))
+-    // Also of windows that are minimized or hidden: coming back is a motion, and they are in it.
+-    let apps = Set(windows.values.map { Rehearsal.App(pid: $0.pid, bundleID: $0.bundleID) })
++    guard isRunning else { return }
++    let moves = settings.motionDuration > 0
++    // Without motion there is no stage to be ready.
++    let displays = moves ? Set(displays.map(\.id)) : []
++    // Also of windows that are minimized or hidden: coming back is a motion, and they are in it. Without motion there are still tiles, which
++    // are drawn from the app's icon and come at once or leave the desk empty (Controller+InOnePiece.swift). Only a docked window can
++    // become one, so nothing is paid for before the person docks something.
++    let docked = moves ? [] : Set(workspaces.values.flatMap(\.tree.allWindows))
++    let apps = Set(windows.values.filter { moves || docked.contains($0.id) }.map { Rehearsal.App(pid: $0.pid, bundleID: $0.bundleID) })
+     guard displays != rehearsed.displays || apps != rehearsed.apps else { return }
+     let news =
+       displays.subtracting(rehearsed.displays).sorted().map { Rehearsal(displays: [$0], apps: []) }
+diff --git a/Sources/ArborKit/Controller/Controller.swift b/Sources/ArborKit/Controller/Controller.swift
+index 07b102f5..cc666dc2 100644
+--- a/Sources/ArborKit/Controller/Controller.swift
++++ b/Sources/ArborKit/Controller/Controller.swift
+@@ -237,6 +237,8 @@ public final class Controller {
+   var seenSizes: [WindowID: SeenSizes] = [:]
+   /// The windows asked for a size during the layout under way that have yet to go to their place: what each was offered.
+   var justAnswered: [WindowID: CGSize] = [:]
++  /// The tiles the presenter has been given for each display in the layout under way (Controller+InOnePiece.swift).
++  var tilesPutUp: [DisplayID: [Tile]] = [:]
+   /// The windows whose size Accessibility said cannot be changed, once that has been written down.
+   var fixedSizesNoted: Set<WindowID> = []
+   /// Making room before making tiles (Controller+MakeRoom.swift): true while the layout follows the person's own hand on a
+diff --git a/Sources/ArborKit/UI/AppKitOverlays.swift b/Sources/ArborKit/UI/AppKitOverlays.swift
+index 8f6fff3f..fb7545de 100644
+--- a/Sources/ArborKit/UI/AppKitOverlays.swift
++++ b/Sources/ArborKit/UI/AppKitOverlays.swift
+@@ -460,10 +460,17 @@ private final class SeamView: NSView {
+ enum AppAppearance {
+   private static var colours: [String: RGBA] = [:]
+ 
++  private static var icons: [Int32: NSImage] = [:]
++
++  /// The one that was fetched ahead of time, if it was. macOS takes long to hand out an icon nobody has asked for yet, and whoever asks here is being
++  /// drawn: a tile's first drawing waited for it on the main thread, with nothing on the display meanwhile.
+   static func icon(pid: Int32) -> NSImage? {
+-    NSRunningApplication(processIdentifier: pid)?.icon
++    icons[pid] ?? NSRunningApplication(processIdentifier: pid)?.icon
+   }
+ 
++  /// An icon that was fetched elsewhere (`Wardrobe`), as a picture that needs nothing more of macOS. A number that gets a new owner gets a new one.
++  static func remember(icon: CGImage, pid: Int32) { icons[pid] = NSImage(cgImage: icon, size: NSSize(width: icon.width, height: icon.height)) }
++
+   /// The colour of the app's icon as a plain fill, darkened a little so white captions stay readable.
+   static func colour(pid: Int32, bundleID: String?) -> NSColor {
+     rgba(pid: pid, bundleID: bundleID).map(fill) ?? .systemGray
+diff --git a/Sources/ArborKit/UI/StageDirector.swift b/Sources/ArborKit/UI/StageDirector.swift
+index 5c6040af..dc4f3441 100644
+--- a/Sources/ArborKit/UI/StageDirector.swift
++++ b/Sources/ArborKit/UI/StageDirector.swift
+@@ -156,8 +156,9 @@ final class StageDirector {
+   /// the picture behind it. An app's colour and icon are ordered (`Wardrobe`). All of it is kept, and what is there already is
+   /// skipped. The controller hands out one display or one app at a time (Controller+Rehearsal.swift).
+   func rehearse(_ rehearsal: Rehearsal) {
+-    guard !Self.rehearsalIsSwitchedOff, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
+-    for display in rehearsal.displays {
++    guard !Self.rehearsalIsSwitchedOff else { return }
++    // With Reduce Motion there is no stage to get ready. There are tiles, which are drawn from what the wardrobe fetches.
++    for display in rehearsal.displays where !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+       guard let screen = ScreenGeometry.screen(for: display) else { continue }
+       var marks = [uptime]
+       // Kept once read, and let go of when Arbor stops and when pictures are switched off. With pictures a sweep brings the
+diff --git a/Sources/ArborKit/UI/Wardrobe.swift b/Sources/ArborKit/UI/Wardrobe.swift
+index 7dc50f3c..25f24d19 100644
+--- a/Sources/ArborKit/UI/Wardrobe.swift
++++ b/Sources/ArborKit/UI/Wardrobe.swift
+@@ -39,6 +39,8 @@ final class Wardrobe {
+   /// A process without a bundle identifier goes by its number, and numbers get new owners: `again` makes its cover anew.
+   func order(_ app: Rehearsal.App, again: Bool = false) {
+     let key = AppAppearance.key(pid: app.pid, bundleID: app.bundleID)
++    // The app has been started again: the same cover, under a new number.
++    if !again, let icon = covers[key]?.icon { AppAppearance.remember(icon: icon, pid: app.pid) }
+     guard again || covers[key] == nil, ordered.insert(key).inserted else { return }
+     Self.workshop.async {
+       let began = ProcessInfo.processInfo.systemUptime
+@@ -55,6 +57,7 @@ final class Wardrobe {
+           self.covers[key] = cover
+           // Tiles and the minimap are tinted with it, and ask while they wait to be drawn.
+           if let colour = made.colour { AppAppearance.remember(colour, pid: app.pid, bundleID: app.bundleID) }
++          if let icon = made.icon { AppAppearance.remember(icon: icon, pid: app.pid) }
+           Log.debug("got ready the costume of \(app.bundleID ?? "pid \(app.pid)") in \(took) ms")
+           self.onCover?(app, cover)
+         }
+diff --git a/Tests/ArborKitTests/RehearsalTests.swift b/Tests/ArborKitTests/RehearsalTests.swift
+index 1c41a46e..95ba5596 100644
+--- a/Tests/ArborKitTests/RehearsalTests.swift
++++ b/Tests/ArborKitTests/RehearsalTests.swift
+@@ -179,13 +179,19 @@ import Testing
+     #expect(h.overlays.madeInTheMotion == [])
+   }
+ 
+-  /// What is not shown is not paid for.
+-  @Test func withoutMotionNothingIsGotReady() {
++  /// What is not shown is not paid for: no stage, and no app's cover but that of a docked window, which can become a tile and is then
++  /// drawn from it at once (InOnePieceTests.swift).
++  @Test func withoutMotionNothingIsGotReadyButWhatATileIsDrawnFrom() {
+     var settings = Settings()
+     settings.animationDuration = 0
+     let (h, windows) = desk(settings: settings)
+-    h.run("dock \(windows[0].rawValue) left")
++    h.scheduler.advance(by: 1)
+     #expect(h.overlays.rehearsals.isEmpty && !h.scheduler.pendingKeys.contains("rehearsal"))
++    h.run("dock \(windows[0].rawValue) left")
++    h.scheduler.advance(by: 1)
++    let docked = h.controller.windows[windows[0]]!
++    #expect(h.overlays.rehearsals == [Rehearsal(displays: [], apps: [.init(pid: docked.pid, bundleID: docked.bundleID)])])
++    #expect(!h.scheduler.pendingKeys.contains("rehearsal"))
+ 
+     settings.animationDuration = 0.3
+     h.controller.apply(settings: settings)

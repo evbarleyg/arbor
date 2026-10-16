@@ -1,0 +1,1521 @@
+From 57227621d20ca3d6a1fe36945ddbbc2094e20f3f Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 05:20:12 +0000
+Subject: [PATCH] feat: Arbor ships knowing how small the stock apps go, as a
+ hosted Mac measured them
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The store cures the second day; from an empty home every app is still a stranger. Now what a hosted Mac measured of 32 apps that come
+with macOS 26 ships with Arbor, so that a first minute meets no stranger among them.
+
+- collab/evidence/app-sizes/macos-26.tsv is the run's file as it came back (scripts/mac-shell/app-sizes.sh); scripts/app-sizes.py makes
+  AppSizes+Shipped.swift of the lines whose verdict is `clean`, less those during which Accessibility reported an error and windows of one
+  size (35 clean, 32 ship). Lint fails if the two disagree.
+- It holds for the major version of macOS it was measured on: measured, not guessed. It is foresight like the rest, asked about in the
+  same places and gone by exactly as if it had been learned. What was learned on this Mac outranks it, also where that says that
+  nothing is known: what a window disproves of the table is kept, or the next window would be foreseen by the table again.
+- `relayout` forgets what is kept, and of an app that is open and in the table it leaves the word that nothing is known.
+- Nothing is written because something ships. A trace tells what shipped like what was learned, a day old, and a replay goes by its
+  trace whatever the Arbor that replays it ships with. Tests know nothing unless they say so.
+- arbor-sim: `ships <macOS>|nothing`, and `open <App> … as <bundle id>`: a window that goes as small as the Mac measured.
+
+Board 1.32, the second step. Spec: "how small apps go" under docs/features.
+---
+ CLAUDE.md                                     |   1 +
+ Makefile                                      |   2 +
+ Sources/ArborCore/AppSizes+Shipped.swift      |  42 ++
+ Sources/ArborCore/AppSizes.swift              |  65 ++-
+ .../Controller/Controller+KnownSizes.swift    |  61 ++-
+ .../Controller/Controller+Trace.swift         |   1 +
+ Sources/ArborKit/Controller/Controller.swift  |   2 +
+ Sources/ArborTesting/Harness.swift            |   2 +
+ Sources/arbor-sim/main.swift                  |  19 +-
+ Tests/ArborCoreTests/AppSizesTests.swift      |  75 ++-
+ Tests/ArborKitTests/ShippedSizesTests.swift   | 441 ++++++++++++++++++
+ collab/evidence/app-sizes/macos-26.tsv        |  44 ++
+ collab/parity.json                            |  14 +-
+ docs/features/F68-how-small-apps-go.md        |  28 +-
+ scripts/app-sizes.py                          | 181 +++++++
+ scripts/mac-shell/app-sizes.sh                | 126 +++++
+ scripts/test-tooling.py                       |  10 +
+ 17 files changed, 1083 insertions(+), 31 deletions(-)
+ create mode 100644 Sources/ArborCore/AppSizes+Shipped.swift
+ create mode 100644 Tests/ArborKitTests/ShippedSizesTests.swift
+ create mode 100644 collab/evidence/app-sizes/macos-26.tsv
+ create mode 100755 scripts/app-sizes.py
+ create mode 100755 scripts/mac-shell/app-sizes.sh
+
+diff --git a/CLAUDE.md b/CLAUDE.md
+index 74975d46..09face60 100644
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -90,6 +90,7 @@ new. See "Executors without a Mac" in `collab/README.md`.
+ | `docs/CENSUS.md` | What each test touches, which premises of the fakes a recording bears out, which real code nothing runs, which features no Mac has tried | Generated: `scripts/census.py --write`, words in `scripts/census-template.md`. By hand, not part of `make check` |
+ | `collab/` | Board, questions, ideas, scenarios, parity data, evidence | See `collab/README.md` |
+ | `collab/parity.json`, `collab/reality.json`, `scripts/mergeable.py`, `.gitattributes` | The files nearly every pull request adds to, and what makes that merge: a key and a name to a line, sorted (the ledger: its cases by id), and after `make hooks` a merge by meaning (items by id, lists as sets) in every rebase | Edited one by hand: `scripts/mergeable.py --tidy`. `make lint` holds them to the shape. The generated `docs/FEATURES.md` and `docs/REALITY.md` stay as they are in a rebase: make them again. |
++| `collab/evidence/app-sizes/`, generated `Sources/ArborCore/AppSizes+Shipped.swift` | How small the apps that come with macOS go, as hosted Macs measured it, and the table Arbor ships with (F68) | Measured, never written by hand: `scripts/mac-shell/app-sizes.sh` on a hosted Mac, then `scripts/app-sizes.py`. `make lint` fails if the two disagree. |
+ | `collab/reality.json`, generated `docs/REALITY.md` | Every known case where real macOS differed from the stand-ins or from what a test expected, and what guards it | A real Mac surprised you: add an entry and run `scripts/reality-ledger.py`. `make lint` fails on a name that is gone or a stale page: you renamed a test or reworded a step that a case names, and the line under each ✘ says what to put where. |
+ 
+ ## How to verify your work without permissions
+diff --git a/Makefile b/Makefile
+index b2228a41..b92d3365 100644
+--- a/Makefile
++++ b/Makefile
+@@ -18,6 +18,8 @@ lint:
+ 	@python3 scripts/public-check.py --tree || [ $$? = 2 ]  # 2: it cannot tell (no git here, say) and has said so; CI can
+ 	@python3 scripts/gh-state.py --self-test
+ 	@python3 scripts/make-way.py --self-test
++	@python3 scripts/app-sizes.py --self-test > /dev/null || python3 scripts/app-sizes.py --self-test
++	@python3 scripts/app-sizes.py --check
+ 	@python3 scripts/lint-workflows.py --self-test && python3 scripts/lint-workflows.py
+ 	@python3 scripts/mergeable.py --self-test && python3 scripts/mergeable.py --check
+ 	@python3 scripts/reality-ledger.py --self-test && python3 scripts/reality-ledger.py --check
+diff --git a/Sources/ArborCore/AppSizes+Shipped.swift b/Sources/ArborCore/AppSizes+Shipped.swift
+new file mode 100644
+index 00000000..efec20aa
+--- /dev/null
++++ b/Sources/ArborCore/AppSizes+Shipped.swift
+@@ -0,0 +1,42 @@
++// Generated by scripts/app-sizes.py from collab/evidence/app-sizes/. Not to be edited: measure again instead.
++
++extension AppSizes {
++  /// How small the first ordinary window of each app went on a hosted Mac, asked through Accessibility for 40×40, by the major version of macOS
++  /// and the bundle id: width, height. Measured, not guessed (scripts/mac-shell/app-sizes.sh).
++  static let measured: [Int: [String: (width: Double, height: Double)]] = [
++    26: [
++      "com.apple.ActivityMonitor": (740, 384),
++      "com.apple.AddressBook": (644, 360),
++      "com.apple.AppStore": (1000, 110),
++      "com.apple.clock": (600, 640),
++      "com.apple.ColorSyncUtility": (500, 388),
++      "com.apple.DiskUtility": (780, 485),
++      "com.apple.finder": (501, 252),
++      "com.apple.findmy": (500, 310),
++      "com.apple.FontBook": (508, 532),
++      "com.apple.freeform": (660, 496),
++      "com.apple.Home": (515, 319),
++      "com.apple.iBooksX": (1001, 530),
++      "com.apple.iCal": (680, 503),
++      "com.apple.Maps": (660, 360),
++      "com.apple.news": (860, 670),
++      "com.apple.Notes": (709, 300),
++      "com.apple.Passwords": (320, 360),
++      "com.apple.Photos": (715, 615),
++      "com.apple.podcasts": (1024, 512),
++      "com.apple.Preview": (708, 224),
++      "com.apple.reminders": (768, 692),
++      "com.apple.Safari": (574, 240),
++      "com.apple.ScriptEditor2": (334, 413),
++      "com.apple.shortcuts": (750, 400),
++      "com.apple.stocks": (860, 670),
++      "com.apple.systempreferences": (723, 470),
++      "com.apple.SystemProfiler": (761, 440),
++      "com.apple.Terminal": (177, 124),
++      "com.apple.TextEdit": (115, 46),
++      "com.apple.TV": (980, 580),
++      "com.apple.VoiceMemos": (976, 500),
++      "com.apple.weather": (1048, 640),
++    ],
++  ]
++}
+diff --git a/Sources/ArborCore/AppSizes.swift b/Sources/ArborCore/AppSizes.swift
+index 54ad1392..599feec0 100644
+--- a/Sources/ArborCore/AppSizes.swift
++++ b/Sources/ArborCore/AppSizes.swift
+@@ -35,7 +35,8 @@ public struct AppSizes: Equatable, Sendable {
+     /// go below that would be a tile wherever it is docked. Nor does it say anything that a window goes no smaller than a few points.
+     var isSound: Bool {
+       func sound(_ side: Double) -> Bool { side.isFinite && (side == 0 || side >= AppSizes.leastSide) && side <= AppSizes.largestSide }
+-      return sound(width) && sound(height) && (width > 0 || height > 0) && seen.timeIntervalSinceReferenceDate.isFinite
++      // Nothing either way is something to know as well: that what Arbor ships with does not hold for this app on this Mac.
++      return sound(width) && sound(height) && seen.timeIntervalSinceReferenceDate.isFinite
+     }
+   }
+ 
+@@ -74,14 +75,19 @@ public struct AppSizes: Equatable, Sendable {
+   ///
+   /// There is one date for two numbers, and it is the older one's: it is renewed only when all that is known has been stood by. What
+   /// nobody stands by must not live on because the other direction is asked about every day.
++  /// `shipped`: what Arbor ships knowing of the app. Where nothing has been learned yet, that is what the other direction starts from.
+   @discardableResult
+-  public mutating func stoodBy(_ size: CGSize, app: String, macOS: Int, at date: Date) -> Bool {
+-    // Half of an answer that no window could have given is not believed either.
+-    guard Self.isName(app), size.width.isFinite, size.height.isFinite, size.width >= 0, size.height >= 0 else { return false }
++  public mutating func stoodBy(_ size: CGSize, app: String, macOS: Int, at date: Date, shipped: CGSize? = nil) -> Bool {
++    // Half of an answer that no window could have given is not believed either. Nor is no answer an answer.
++    guard Self.isName(app), size.width.isFinite, size.height.isFinite, size.width >= 0, size.height >= 0, size != .zero else {
++      return false
++    }
+     // An answer that is older than what is kept (a window answered while it floated, and is docked weeks later) is no news.
+     if let kept = apps[app], kept.macOS == macOS, date < kept.seen { return false }
+     // What is too old to go by does not come back to life with the other direction's answer.
+-    var entry = self.entry(for: app, at: date, macOS: macOS) ?? Entry(width: 0, height: 0, macOS: macOS, seen: date)
++    var entry =
++      self.entry(for: app, at: date, macOS: macOS)
++      ?? Entry(width: Double(shipped?.width ?? 0), height: Double(shipped?.height ?? 0), macOS: macOS, seen: date)
+     if (entry.width == 0 || size.width > 0) && (entry.height == 0 || size.height > 0) { entry.seen = date }
+     if size.width > 0 { entry.width = Double(size.width) }
+     if size.height > 0 { entry.height = Double(size.height) }
+@@ -94,14 +100,41 @@ public struct AppSizes: Equatable, Sendable {
+   /// A window of `app` has been seen at `size`. Where that is smaller than what is on record, the record was wrong, or is about another
+   /// kind of window: that direction is unknown again. Not what was seen: nobody stood by that, and a size that is merely not too
+   /// small would be disproved again at the next smaller slot, with a window going out of view and back each time.
++  ///
++  /// `shipped`, with the version of macOS and the date: what Arbor ships knowing of the app, which is disproved in the same way. That has to be kept,
++  /// or the next window of the app would be foreseen by the table again: so of such an app an entry stays that knows nothing.
+   @discardableResult
+-  public mutating func wasSeen(at size: CGSize, app: String) -> Bool {
++  public mutating func wasSeen(at size: CGSize, app: String, shipped: (size: CGSize, macOS: Int, at: Date)? = nil) -> Bool {
++    var kept = apps[app]
++    if let shipped {
++      // What is gone by: what is too old, or from another macOS, and has not been swept out yet does not stand before what ships.
++      kept =
++        entry(for: app, at: shipped.at, macOS: shipped.macOS)
++        ?? Entry(width: Double(shipped.size.width), height: Double(shipped.size.height), macOS: shipped.macOS, seen: shipped.at)
++    }
+     // A window with next to no size is coming or going, not one that goes down to nothing.
+-    guard var entry = apps[app], Double(size.width) >= Self.leastSide, Double(size.height) >= Self.leastSide else { return false }
++    guard var entry = kept, Double(size.width) >= Self.leastSide, Double(size.height) >= Self.leastSide else { return false }
++    let before = entry
+     if Double(size.width) < entry.width - Self.tolerance { entry.width = 0 }
+     if Double(size.height) < entry.height - Self.tolerance { entry.height = 0 }
+-    guard entry != apps[app] else { return false }
+-    apps[app] = entry.width > 0 || entry.height > 0 ? entry : nil
++    guard entry != before else { return false }
++    guard entry.width > 0 || entry.height > 0 else {
++      apps[app] = nil
++      // That nothing is known holds for as long as anything else, from now.
++      if let shipped { knowNothing(of: app, macOS: shipped.macOS, at: shipped.at) }
++      return true
++    }
++    apps[app] = entry
++    trim()
++    return true
++  }
++
++  /// Nothing is known of `app` from now on, and that is kept: for an app of which something ships, which would be believed again at once.
++  @discardableResult
++  public mutating func knowNothing(of app: String, macOS: Int, at date: Date) -> Bool {
++    guard Self.isName(app) else { return false }
++    apps[app] = Entry(width: 0, height: 0, macOS: macOS, seen: date)
++    trim()
+     return true
+   }
+ 
+@@ -175,3 +208,17 @@ extension AppSizes: Codable {
+     for (app, entry) in apps { try container.encode(entry, forKey: StringKey(app)) }
+   }
+ }
++
++extension AppSizes {
++  /// What Arbor ships knowing of `app` on this major version of macOS: what a hosted Mac measured (AppSizes+Shipped.swift), so that a person's first
++  /// minute meets no stranger among the apps that come with a Mac. On another version nothing: it is measured, not guessed.
++  public static func shipped(_ app: String, macOS: Int) -> CGSize? {
++    measured[macOS]?[app].map { CGSize(width: $0.width, height: $0.height) }
++  }
++
++  /// The major versions of macOS for which something ships, the newest first.
++  public static var measuredVersions: [Int] { measured.keys.sorted(by: >) }
++
++  /// The apps of which something ships for this version of macOS, in a fixed order.
++  public static func shippedApps(macOS: Int) -> [String] { (measured[macOS] ?? [:]).keys.sorted() }
++}
+diff --git a/Sources/ArborKit/Controller/Controller+KnownSizes.swift b/Sources/ArborKit/Controller/Controller+KnownSizes.swift
+index e3f81e9c..df8c0ec4 100644
+--- a/Sources/ArborKit/Controller/Controller+KnownSizes.swift
++++ b/Sources/ArborKit/Controller/Controller+KnownSizes.swift
+@@ -43,11 +43,16 @@ extension Controller {
+     enteredSizes = enteredSizes.filter { windows[$0.key] != nil }
+   }
+ 
++  func shippedSize(of app: String) -> CGSize? { goesByTheShippedSizes ? AppSizes.shipped(app, macOS: macOSVersion) : nil }
++
++  var somethingIsKnownOfApps: Bool { !appSizes.isEmpty || goesByTheShippedSizes }
++
+   /// What is foreseen of `window` and nothing has borne out or disproved yet; 0 in a direction in which there is nothing of the kind.
+   func unaskedForesight(about window: WindowID) -> CGSize {
+     // What cannot be asked about is not gone by: nobody gives room for a window whose app does not answer.
+-    guard !appSizes.isEmpty, !unplaced.contains(window), let snapshot = windows[window], let app = snapshot.bundleID,
+-      let known = appSizes.entry(for: app, at: now(), macOS: macOSVersion), filter.manages(snapshot)
++    // What was learned on this Mac outranks what ships, also where it says that nothing is known.
++    guard somethingIsKnownOfApps, !unplaced.contains(window), let snapshot = windows[window], let app = snapshot.bundleID,
++      let known = appSizes.entry(for: app, at: now(), macOS: macOSVersion)?.size ?? shippedSize(of: app), filter.manages(snapshot)
+     else { return .zero }
+     let own = minimumSizes[window] ?? .zero
+     let asked = askedAbout[window] ?? AskedAbout()
+@@ -61,7 +66,7 @@ extension Controller {
+   /// Under the person's own hand nothing is foreseen: the window follows the hand, and says itself where it stops. Nor where a command only
+   /// judges whether it may go ahead (`byAnswersAlone`).
+   var plannedSizes: [WindowID: CGSize] {
+-    guard !appSizes.isEmpty, !gapsInHand, !judgesByAnswersAlone else { return minimumSizes }
++    guard somethingIsKnownOfApps, !gapsInHand, !judgesByAnswersAlone else { return minimumSizes }
+     var sizes = minimumSizes
+     for window in windows.keys {
+       let foreseen = unaskedForesight(about: window)
+@@ -95,7 +100,7 @@ extension Controller {
+     _ layout: Layout, on displayID: DisplayID, reason: RelayoutReason, startingFrom before: inout Workspace?
+   ) -> Layout? {
+     // Nothing is foreseen under the hand. During a drag no room is made, and nothing may change under the pointer.
+-    guard !appSizes.isEmpty, !gapsInHand, drag == nil, edgeResize == nil else { return nil }
++    guard somethingIsKnownOfApps, !gapsInHand, drag == nil, edgeResize == nil else { return nil }
+     // In sight, so only inside an act a person asked for: a command, a drop, a move of the view, which a start is too (as in
+     // `aLayoutSomebodyAskedForEndsLettingBe`). What a timer, a putting-back or another window's coming and going lays out goes by the paper,
+     // and whoever has its room on that is asked at the next thing its person asks for.
+@@ -158,7 +163,11 @@ extension Controller {
+     }
+     minimumSizes[window] = own == .zero ? nil : own
+     // Now: in its corner it has the size it had again in a moment, and nobody would see that it went smaller.
+-    if !stood, let app = windows[window]?.bundleID, appSizes.wasSeen(at: actual, app: app) { scheduleSave() }
++    if !stood, let app = windows[window]?.bundleID,
++      appSizes.wasSeen(at: actual, app: app, shipped: shippedSize(of: app).map { ($0, macOSVersion, now()) })
++    {
++      scheduleSave()
++    }
+     Log.debug("\(window) was asked for a step less than is foreseen of its app, and \(stood ? "stood by it" : "did not stop there")")
+     return stood
+   }
+@@ -170,7 +179,7 @@ extension Controller {
+   ///   clicking a tile does. Where nobody pays nobody is asked: a question is a round trip to an app, and squeezes its window.
+   /// Each gets the size it had back, there and then. Returns true if the display should be laid out again.
+   func askOutOfView(_ layout: Layout, on displayID: DisplayID) -> Bool {
+-    guard !appSizes.isEmpty, drag == nil, edgeResize == nil, let display = display(displayID) else { return false }
++    guard somethingIsKnownOfApps, drag == nil, edgeResize == nil, let display = display(displayID) else { return false }
+     var changed = false
+     let tiles = Set(layout.tiles.flatMap(\.windows))
+     let somebodyPaid = layouts[displayID]?.tiles.contains { $0.kind == .window } == true
+@@ -209,7 +218,7 @@ extension Controller {
+   /// is often another kind of window.
+   func noteHowSmallAppsGo(after layout: Layout, on displayID: DisplayID) {
+     // Nearly always, on a Mac on which nothing has refused yet.
+-    guard !minimumSizes.isEmpty || !appSizes.isEmpty || !enteredSizes.isEmpty else { return }
++    guard !minimumSizes.isEmpty || somethingIsKnownOfApps || !enteredSizes.isEmpty else { return }
+     let now = self.now()
+     let docked = workspaces[displayID]?.tree.allWindows.sorted() ?? []
+     var changed = appSizes.expire(at: now, macOS: macOSVersion)
+@@ -222,16 +231,16 @@ extension Controller {
+       guard enteredSizes[window]?.size != record || enteredSizes[window]?.at != at else { continue }
+       enteredSizes[window] = EnteredSize(size: record, at: at)
+       guard let snapshot = windows[window], filter.manages(snapshot), let app = snapshot.bundleID else { continue }
+-      if appSizes.stoodBy(record, app: app, macOS: macOSVersion, at: at) {
++      if appSizes.stoodBy(record, app: app, macOS: macOSVersion, at: at, shipped: shippedSize(of: app)) {
+         changed = true
+         Log.debug("\(window) stood by \(Int(record.width))×\(Int(record.height)): kept for \(app)")
+       }
+     }
+     if !enteredSizes.isEmpty { enteredSizes = enteredSizes.filter { minimumSizes[$0.key] != nil } }
+-    if !appSizes.isEmpty {
++    if somethingIsKnownOfApps {
+       for window in docked {
+         guard let snapshot = windows[window], filter.manages(snapshot), let app = snapshot.bundleID else { continue }
+-        if appSizes.wasSeen(at: snapshot.frame.size, app: app) {
++        if appSizes.wasSeen(at: snapshot.frame.size, app: app, shipped: shippedSize(of: app).map { ($0, macOSVersion, now) }) {
+           changed = true
+           Log.debug("\(window) is smaller than \(app) was known to go: no longer known")
+         }
+@@ -242,7 +251,7 @@ extension Controller {
+     // record, and a point or two over is no refusal. And to a window whose answer does not count yet (only just back, in the hand) while another
+     // window of its app teaches in the same layout: so after the store has learned, and on every display. Otherwise what is shown would
+     // not be what a layout made now would say, and the next one would make a tile of it.
+-    if !appSizes.isEmpty {
++    if somethingIsKnownOfApps {
+       for shown in [layout] + layouts.filter({ $0.key != displayID }).values {
+         for (window, slot) in shown.windowFrames {
+           let foreseen = unaskedForesight(about: window)
+@@ -260,7 +269,11 @@ extension Controller {
+     let now = self.now()
+     confirmedSizes[window.id] = ConfirmedSize(size: record, at: now)
+     enteredSizes[window.id] = EnteredSize(size: record, at: now)
+-    if filter.manages(window), let app = window.bundleID, appSizes.wasSeen(at: window.frame.size, app: app) { scheduleSave() }
++    if filter.manages(window), let app = window.bundleID,
++      appSizes.wasSeen(at: window.frame.size, app: app, shipped: shippedSize(of: app).map { ($0, macOSVersion, now) })
++    {
++      scheduleSave()
++    }
+   }
+ 
+   /// With `forgetLearnedMinimums`: people run `relayout` because something looks wrong, and every window is then offered its
+@@ -268,7 +281,15 @@ extension Controller {
+   func forgetHowSmallAppsGo() {
+     askedAbout.removeAll()
+     enteredSizes.removeAll()
+-    if appSizes.drop(Set(windows.values.compactMap(\.bundleID))) { scheduleSave() }
++    // When an answer that is forgotten was last stood by says nothing of the next one, though it be the same: that one is of now.
++    confirmedSizes.removeAll()
++    let open = Set(windows.values.compactMap(\.bundleID))
++    var changed = appSizes.drop(open)
++    // What ships would be believed again at once, and whoever asked for everything to be found out afresh would have been given the same again.
++    for app in open.sorted() where shippedSize(of: app) != nil {
++      if appSizes.knowNothing(of: app, macOS: macOSVersion, at: now()) { changed = true }
++    }
++    if changed { scheduleSave() }
+   }
+ 
+   /// A trace's header tells of the apps that have a window when the recording begins. Of an app whose first window comes later the trace is told
+@@ -281,14 +302,24 @@ extension Controller {
+       toldInTheTrace = nil
+       return
+     }
+-    guard let app = window.bundleID, toldInTheTrace!.insert(app).inserted, let known = appSizes.entry(for: app) else { return }
++    guard let app = window.bundleID, toldInTheTrace!.insert(app).inserted, let known = appSizes.entry(for: app) ?? shippedAsIfLearned(app)
++    else { return }
+     _ = recorder.read(AppSizes.traceLine, [window.id]) { known }
+   }
+ 
+-  /// What a trace's header says of it: only about `apps`, which are in the trace anyway.
++  /// What ships of `app` as a trace is told it: like what was learned, a day old.
++  private func shippedAsIfLearned(_ app: String) -> AppSizes.Entry? {
++    shippedSize(of: app).map {
++      AppSizes.Entry(width: Double($0.width), height: Double($0.height), macOS: macOSVersion, seen: now().addingTimeInterval(-24 * 3600))
++    }
++  }
++
++  /// What a trace's header says of it: only about `apps`, which are in the trace anyway. What ships is told like what was learned, a day old: a
++  /// replay goes by its trace, whatever the Arbor that replays it ships with.
+   func appSizesForATrace(of apps: [String]) -> AppSizes? {
+     var told = appSizes
+     told.drop(Set(appSizes.apps.keys).subtracting(apps))
++    for app in Set(apps).sorted() { if let shipped = shippedAsIfLearned(app) { told.take(shipped, for: app) } }
+     return told.isEmpty ? nil : told
+   }
+ 
+diff --git a/Sources/ArborKit/Controller/Controller+Trace.swift b/Sources/ArborKit/Controller/Controller+Trace.swift
+index ae8ce6a9..1487abd1 100644
+--- a/Sources/ArborKit/Controller/Controller+Trace.swift
++++ b/Sources/ArborKit/Controller/Controller+Trace.swift
+@@ -142,6 +142,7 @@ extension Controller {
+     filter.ignoredWindowIDs = Set(header.ignored)
+     minimumSizes = header.minimumSizes
+     seenSizes = header.seenSizes
++    goesByTheShippedSizes = false
+     // As old as it was then. A date that cannot be read: a day, which is old enough to be asked about.
+     let recorded = ISO8601DateFormatter().date(from: header.recorded)
+     let newest = header.appSizes?.apps.values.map(\.seen).max() ?? now()
+diff --git a/Sources/ArborKit/Controller/Controller.swift b/Sources/ArborKit/Controller/Controller.swift
+index 486e701d..2afa6297 100644
+--- a/Sources/ArborKit/Controller/Controller.swift
++++ b/Sources/ArborKit/Controller/Controller.swift
+@@ -493,6 +493,8 @@ public final class Controller {
+   var enteredSizes: [WindowID: EnteredSize] = [:]
+   /// While a trace is recorded: the apps of which it has been told what is known (Controller+KnownSizes.swift).
+   var toldInTheTrace: Set<String>?
++  /// Whether what Arbor ships knowing of apps is gone by. Not in a replay, whose trace says what was known; not in tests, unless they say so.
++  public var goesByTheShippedSizes = true
+   /// The major version of macOS, which what is known of an app goes with. A test says which.
+   public var macOSVersion = ProcessInfo.processInfo.operatingSystemVersion.majorVersion
+ 
+diff --git a/Sources/ArborTesting/Harness.swift b/Sources/ArborTesting/Harness.swift
+index ec9f2876..99416254 100644
+--- a/Sources/ArborTesting/Harness.swift
++++ b/Sources/ArborTesting/Harness.swift
+@@ -66,6 +66,8 @@ public final class Harness {
+       scheduler: RecordingScheduler(wrapping: scheduler, recorder: recorder), settings: settings,
+       filter: WindowFilter(ownPID: 1))
+     controller.stats = CallStats()
++    // Tests say what Arbor knows. On a Mac the version of macOS is a real one, and apps in tests have real bundle ids now and then.
++    controller.goesByTheShippedSizes = false
+     // One clock: `scheduler.advance(by:)` also moves the time the controller reads.
+     let start = Date(timeIntervalSinceReferenceDate: 800_000_000)
+     controller.now = { [scheduler] in start.addingTimeInterval(scheduler.now) }
+diff --git a/Sources/arbor-sim/main.swift b/Sources/arbor-sim/main.swift
+index 723279ae..53404a37 100644
+--- a/Sources/arbor-sim/main.swift
++++ b/Sources/arbor-sim/main.swift
+@@ -393,13 +393,17 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
+   case "open":
+     let app = words.count > 1 ? words[1] : "App"
+     var frame = CGRect(x: 300, y: 200, width: 640, height: 420)
+-    var minimum = CGSize.zero
++    var minimum: CGSize?
++    var bundleID: String?
+     var isResizable = true
+     var index = 2
+     while index < words.count {
+       if words[index] == "min", index + 1 < words.count, let parsed = size(words[index + 1]) {
+         minimum = parsed
+         index += 2
++      } else if words[index] == "as", index + 1 < words.count {
++        bundleID = words[index + 1]
++        index += 2
+       } else if words[index] == "fixed" {
+         isResizable = false
+         index += 1
+@@ -413,9 +417,20 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
+         index += 1
+       }
+     }
++    // The window is as the Mac found it whatever this Arbor ships with: the newest table that has the app.
++    let measured = bundleID.flatMap { app in AppSizes.measuredVersions.lazy.compactMap { AppSizes.shipped(app, macOS: $0) }.first }
++    let smallest = minimum ?? measured ?? .zero
++    // No window is open at less than it goes. (With `min` the script says both, and may want just that.)
++    if minimum == nil { frame.size = CGSize(width: max(frame.width, smallest.width), height: max(frame.height, smallest.height)) }
+     let id = system.open(
+-      app: app, pid: pid(ofApp: app), frame: frame, minimumSize: minimum, isResizable: isResizable)
++      app: app, bundleID: bundleID, pid: pid(ofApp: app), frame: frame, minimumSize: smallest, isResizable: isResizable)
+     return ("opened \(id.rawValue) (\(app))", true)
++  case "ships":
++    guard words.count == 2, words[1] == "nothing" || Int(words[1]) != nil else { return usage("ships <macOS>|nothing") }
++    harness.controller.goesByTheShippedSizes = words[1] != "nothing"
++    guard let version = Int(words[1]) else { return ("Arbor ships knowing nothing of apps", true) }
++    harness.controller.macOSVersion = version
++    return ("this is macOS \(version), of which Arbor ships knowing \(AppSizes.shippedApps(macOS: version).count) apps", true)
+   case "close":
+     guard let id = window(1) else { return usage("close <id>") }
+     // With a window in full screen its Space goes, and macOS shows the one it came from.
+diff --git a/Tests/ArborCoreTests/AppSizesTests.swift b/Tests/ArborCoreTests/AppSizesTests.swift
+index 49bd11ca..e96cb5cb 100644
+--- a/Tests/ArborCoreTests/AppSizesTests.swift
++++ b/Tests/ArborCoreTests/AppSizesTests.swift
+@@ -276,6 +276,79 @@ private let morning = Date(timeIntervalSinceReferenceDate: 800_000_000)
+     #expect(sizes.entry(for: "com.example.app\(AppSizes.capacity + 9)") != nil)
+   }
+ 
++  // MARK: What ships (the table itself: ShippedSizesTests)
++
++  @Test func whereNothingHasBeenLearnedTheOtherDirectionStartsFromWhatShips() {
++    var sizes = AppSizes()
++    sizes.stoodBy(size(800, 0), app: "com.example.mail", macOS: 26, at: morning, shipped: size(760, 400))
++    #expect(sizes.entry(for: "com.example.mail") == .init(width: 800, height: 400, macOS: 26, seen: morning))
++    // What has been learned is what counts from then on.
++    sizes.stoodBy(size(0, 380), app: "com.example.mail", macOS: 26, at: morning + 1, shipped: size(999, 999))
++    #expect(sizes.entry(for: "com.example.mail")?.size == size(800, 380))
++  }
++
++  /// Or the next window of the app would be foreseen by the table again.
++  @Test func whatIsDisprovedOfWhatShipsIsKeptAlsoWhenNothingIsLeft() throws {
++    var sizes = AppSizes()
++    do {
++      let changed = sizes.wasSeen(at: size(900, 500), app: "com.example.mail", shipped: (size(760, 400), 26, morning))
++      #expect(!changed, "as large or larger says nothing")
++    }
++    #expect(sizes.isEmpty)
++    do {
++      let changed = sizes.wasSeen(at: size(600, 500), app: "com.example.mail", shipped: (size(760, 400), 26, morning))
++      #expect(changed)
++    }
++    #expect(sizes.entry(for: "com.example.mail") == .init(width: 0, height: 400, macOS: 26, seen: morning))
++    sizes.wasSeen(at: size(600, 300), app: "com.example.mail", shipped: (size(760, 400), 26, morning + 1))
++    #expect(sizes.entry(for: "com.example.mail") == .init(width: 0, height: 0, macOS: 26, seen: morning + 1), "dated when the last of it fell")
++    let read = try JSONDecoder().decode(AppSizes.self, from: JSONEncoder().encode(sizes))
++    #expect(read == sizes, "and comes back from the file")
++  }
++
++  /// Found by a reader: made of an entry that was learned four weeks ago, it had that entry's date, and what ships was believed again the next day.
++  @Test func thatNothingIsKnownHoldsForThirtyDaysFromWhenItWasFound() {
++    var sizes = AppSizes()
++    sizes.stoodBy(size(800, 420), app: "com.example.mail", macOS: 26, at: morning, shipped: size(760, 400))
++    let late = morning + 29 * 24 * 3600
++    sizes.wasSeen(at: size(300, 200), app: "com.example.mail", shipped: (size(760, 400), 26, late))
++    #expect(sizes.entry(for: "com.example.mail", at: late + 29 * 24 * 3600, macOS: 26) == .init(width: 0, height: 0, macOS: 26, seen: late))
++  }
++
++  /// Found by a reader: what is too old to go by, or from another macOS, and has not been swept out yet stood between a window and what ships.
++  @Test(arguments: [26, 25]) func whatIsNoLongerGoneByDoesNotHideWhatShips(then: Int) {
++    var sizes = AppSizes()
++    sizes.stoodBy(size(500, 300), app: "com.example.mail", macOS: then, at: morning)
++    let late = morning + 31 * 24 * 3600
++    let changed = sizes.wasSeen(at: size(600, 500), app: "com.example.mail", shipped: (size(760, 400), 26, late))
++    #expect(changed, "600 is less than the 760 that ships, which is what is gone by now")
++    #expect(sizes.entry(for: "com.example.mail") == .init(width: 0, height: 400, macOS: 26, seen: late))
++  }
++
++  /// Each way by itself: one that counts would tidy up after one that does not.
++  @Test(arguments: ["all of it disproved", "half of it disproved", "forgotten"]) func whatIsKeptOfWhatShipsCountsLikeEverythingElse(how: String) {
++    var sizes = AppSizes()
++    for index in 0..<AppSizes.capacity { sizes.stoodBy(size(500, 300), app: "com.example.app\(index)", macOS: 26, at: morning + Double(index)) }
++    for index in 0..<10 {
++      switch how {
++      case "all of it disproved": sizes.wasSeen(at: size(300, 200), app: "com.apple.app\(index)", shipped: (size(760, 400), 26, morning + 1000))
++      case "half of it disproved": sizes.wasSeen(at: size(300, 500), app: "com.apple.app\(index)", shipped: (size(760, 400), 26, morning + 1000))
++      default: sizes.knowNothing(of: "com.apple.app\(index)", macOS: 26, at: morning + 1000)
++      }
++    }
++    #expect(sizes.apps.count == AppSizes.capacity)
++    #expect(sizes.entry(for: "com.apple.app9") != nil, "the newest stay")
++  }
++
++  @Test func toKnowNothingOfAnAppIsSomethingToKeep() {
++    var sizes = knowing()
++    let changed = sizes.knowNothing(of: "com.example.mail", macOS: 26, at: morning + 5)
++    #expect(changed)
++    #expect(sizes.entry(for: "com.example.mail") == .init(width: 0, height: 0, macOS: 26, seen: morning + 5))
++    let again = sizes.knowNothing(of: "", macOS: 26, at: morning)
++    #expect(!again)
++  }
++
+   // MARK: On disk
+ 
+   @Test func itComesBackFromAFileAsItWent() throws {
+@@ -295,7 +368,7 @@ private let morning = Date(timeIntervalSinceReferenceDate: 800_000_000)
+   }
+ 
+   @Test(arguments: [
+-    #"{"width":"wide","height":400,"macOS":26,"seen":1}"#, #"{"height":400,"macOS":26,"seen":1}"#, #"{"width":0,"height":0,"macOS":26,"seen":1}"#,
++    #"{"width":"wide","height":400,"macOS":26,"seen":1}"#, #"{"height":400,"macOS":26,"seen":1}"#,
+     #"{"width":-5,"height":400,"macOS":26,"seen":1}"#, #"{"width":1e9,"height":400,"macOS":26,"seen":1}"#, "[]", "null", "7",
+     #"{"width":760,"height":400,"macOS":26.5,"seen":1}"#, #"{"width":760,"height":400,"macOS":26}"#,
+   ]) func anEntryThatCannotBeBelievedCostsOnlyItself(entry: String) throws {
+diff --git a/Tests/ArborKitTests/ShippedSizesTests.swift b/Tests/ArborKitTests/ShippedSizesTests.swift
+new file mode 100644
+index 00000000..9119eab5
+--- /dev/null
++++ b/Tests/ArborKitTests/ShippedSizesTests.swift
+@@ -0,0 +1,441 @@
++import ArborCore
++import ArborKit
++import ArborTesting
++import CoreGraphics
++import Foundation
++import Testing
++
++private let laptop = DisplaySnapshot(
++  id: DisplayID("main"), frame: CGRect(x: 0, y: 0, width: 1280, height: 800),
++  visibleFrame: CGRect(x: 0, y: 25, width: 1280, height: 775), isMain: true, isBuiltIn: true)
++private let day: TimeInterval = 24 * 3600
++/// How many `ShippedSizesTests.days` there are: arguments of a test cannot be read off the main actor.
++private let numberOfDays = 9
++/// The version of macOS the table was measured on first.
++private let measuredOn = 26
++
++/// The apps of the table that can be shown on the laptop's display at all, the widest first.
++private let stock: [String] = AppSizes.shippedApps(macOS: measuredOn)
++  .filter { AppSizes.shipped($0, macOS: measuredOn)!.width <= 1200 && AppSizes.shipped($0, macOS: measuredOn)!.height <= 700 }
++  .sorted { (AppSizes.shipped($0, macOS: measuredOn)!.width, $0) > (AppSizes.shipped($1, macOS: measuredOn)!.width, $1) }
++
++/// Pairs of them that are too wide for that display together. Not all: the widest dozen gives sixty-six at most.
++private let pairs: [[String]] = stock.prefix(12).flatMap { first in
++  stock.prefix(12).filter { $0 != first }.map { [first, $0] }
++}.filter { AppSizes.shipped($0[0], macOS: measuredOn)!.width + AppSizes.shipped($0[1], macOS: measuredOn)!.width > 1244 }
++
++/// Threes of the widest seven, to be arranged at once: where strangers are asked one after the other, a column is widened by one that refuses after
++/// another in it has shrunk.
++private let threes: [[String]] = stock.prefix(7).indices.flatMap { a in
++  stock.prefix(7).indices.filter { $0 > a }.flatMap { b in
++    stock.prefix(7).indices.filter { $0 > b }.map { c in [stock[a], stock[b], stock[c]] }
++  }
++}
++
++/// Arbor ships knowing how small the apps go that come with a Mac (docs/features/F68-how-small-apps-go.md, the second step), so that a person's first
++/// minute meets no stranger among them. These tests go by whatever the table holds: it is measured, and measured again.
++@Suite @MainActor struct ShippedSizesTests {
++  static var still: Settings {
++    var settings = Settings()
++    settings.animationDuration = 0
++    return settings
++  }
++
++  /// A run of Arbor that ships with the table, on a Mac on which `apps` are open, each as small as the table says unless `really` says otherwise.
++  private func run(
++    _ apps: [String], really: [String: CGSize] = [:], knowing saved: PersistedState? = nil, later: TimeInterval = 0, macOS: Int = measuredOn
++  ) -> Harness {
++    let h = Harness(displays: [laptop], settings: Self.still, saved: saved)
++    h.controller.goesByTheShippedSizes = true
++    h.controller.macOSVersion = macOS
++    h.scheduler.advance(by: later)
++    for (index, app) in apps.enumerated() { open(app, really: really[app], in: h, pid: Int32(2000 + index)) }
++    h.start()
++    return h
++  }
++
++  @discardableResult
++  private func open(_ app: String, really: CGSize? = nil, in h: Harness, pid: Int32) -> WindowID {
++    let smallest = really ?? AppSizes.shipped(app, macOS: measuredOn)!
++    return h.system.open(
++      app: app, bundleID: app, pid: pid,
++      frame: CGRect(x: 20, y: 45, width: max(smallest.width + 100, 900).clamped(to: 0...1240), height: max(smallest.height + 60, 500).clamped(to: 0...735)),
++      minimumSize: smallest)
++  }
++
++  private func dock(_ window: UInt32, _ side: String, _ h: Harness) {
++    h.system.userFocus(WindowID(window))
++    h.run("dock \(window) \(side)")
++    h.scheduler.advance(by: 1)
++  }
++
++  private func shows(_ frame: CGRect, _ h: Harness) -> Bool {
++    h.system.displayList.contains {
++      let part = frame.intersection($0.frame)
++      return !part.isNull && part.width > 2 && part.height > 2
++    }
++  }
++
++  /// What is wrong with the road each docked window was seen to take since `mark` (Roads.swift). What floats is board 1.18's.
++  private func detours(since mark: Int, _ h: Harness) -> [String] {
++    let docked = Set(h.workspace.tree.allWindows)
++    let seen = Dictionary(
++      grouping: h.system.moveLog.dropFirst(mark).filter {
++        docked.contains($0.window) && $0.before != $0.after && (shows($0.before, h) || shows($0.after, h))
++      }, by: \.window)
++    return seen.sorted { $0.key < $1.key }.compactMap { window, moves in
++      FakeWindowSystem.detour([moves[0].before] + moves.map(\.after)).map { "\(window) \($0)" }
++    }
++  }
++
++  // MARK: The row's own words: pairs from an empty home, no stage: each window moves once
++
++  @Test func thereArePairsToTry() {
++    #expect(stock.count >= 12, "the table has shrunk: \(stock.count)")
++    #expect(pairs.count >= 10, "\(pairs.count)")
++  }
++
++  @Test(arguments: pairs.indices) func fromAnEmptyHomeEachOfAPairThatCannotBothFitMovesOnce(index: Int) {
++    let pair = pairs[index]
++    let h = run(pair)
++    for (window, side) in [(UInt32(101), "left"), (UInt32(102), "right")] {
++      let mark = h.system.moveLog.count
++      dock(window, side, h)
++      #expect(detours(since: mark, h) == [], "\(pair[0]) and \(pair[1]): docking \(window)")
++    }
++    expectWindowsMatchLayout(h)
++  }
++
++  private func arrange(_ h: Harness) -> [String] {
++    h.system.userFocus(WindowID(101))
++    let mark = h.system.moveLog.count
++    h.run("arrange")
++    h.scheduler.advance(by: 1)
++    return detours(since: mark, h)
++  }
++
++  @Test(arguments: threes.indices) func fromAnEmptyHomeThreeArrangedAtOnceGoStraightToTheirPlaces(index: Int) {
++    let h = run(threes[index])
++    #expect(arrange(h) == [], "\(threes[index])")
++    expectWindowsMatchLayout(h)
++  }
++
++  /// The control: without the table some of the same threes are narrower or lower on the way than they end up. If this stops failing the test above
++  /// proves nothing any more. (The pairs, docked one after the other, go straight without the table too since a stranger is asked where it stands.)
++  @Test func withoutTheTableSuchThreesGoOutOfTheirWay() {
++    var faults = 0
++    for three in threes {
++      let innocent = Harness(displays: [laptop], settings: Self.still)
++      // On the very macOS for which something ships: that it is not gone by is the harness's word alone.
++      innocent.controller.macOSVersion = measuredOn
++      for (index, app) in three.enumerated() { open(app, in: innocent, pid: Int32(2000 + index)) }
++      innocent.start()
++      faults += arrange(innocent).count
++    }
++    #expect(faults > 0, "of \(threes.count) threes")
++  }
++
++  // MARK: Measured, not guessed
++
++  @Test func onAnotherMacOSNothingShips() throws {
++    let app = try #require(stock.first)
++    #expect(AppSizes.shipped(app, macOS: measuredOn) != nil)
++    #expect(AppSizes.shipped(app, macOS: 3) == nil)
++    #expect(AppSizes.shippedApps(macOS: 3).isEmpty)
++    #expect(AppSizes.shipped("com.example.unheard-of", macOS: measuredOn) == nil)
++  }
++
++  @Test func everySizeInTheTableIsASizeAWindowCouldHave() {
++    for app in AppSizes.shippedApps(macOS: measuredOn) {
++      let size = AppSizes.shipped(app, macOS: measuredOn)!
++      #expect(size.width >= 20 && size.width <= 3000 && size.height >= 20 && size.height <= 3000, "\(app): \(size)")
++    }
++  }
++
++  @Test func aTestKnowsNothingUnlessItSaysSo() {
++    #expect(!Harness().controller.goesByTheShippedSizes)
++  }
++
++  @Test func nothingIsWrittenBecauseSomethingShips() throws {
++    let h = run(Array(stock.prefix(2)))
++    h.scheduler.advance(by: 5)
++    h.controller.saveNow()
++    #expect(h.system.moveLog.isEmpty)
++    #expect(h.store.saved?.appSizes == nil)
++  }
++
++  // MARK: What was learned on this Mac outranks it
++
++  @Test func whatAWindowStoodByOutranksTheTable() throws {
++    let app = try #require(stock.first { AppSizes.shipped($0, macOS: measuredOn)!.width >= 650 })
++    let shipped = AppSizes.shipped(app, macOS: measuredOn)!
++    // Wider here than on the hosted Mac: a sidebar is showing.
++    let here = CGSize(width: shipped.width + 60, height: shipped.height)
++    let first = run([app], really: [app: here])
++    dock(101, "right", first)
++    // Or the next start would find it docked.
++    first.run("float-all")
++    first.scheduler.advance(by: 1)
++    first.controller.saveNow()
++    #expect(first.store.saved?.appSizes?.entry(for: app)?.width == Double(here.width))
++
++    let next = run([app], really: [app: here], knowing: first.store.saved, later: day)
++    let mark = next.system.moveLog.count
++    dock(101, "right", next)
++    #expect(detours(since: mark, next) == [])
++    let moves = next.system.moveLog.dropFirst(mark).filter { $0.window == WindowID(101) }
++    #expect(moves.contains { $0.requested.width == here.width - 40 }, "a step less than was learned here")
++    #expect(!moves.contains { $0.requested.width == shipped.width - 40 }, "not than ships")
++    #expect(moves.filter { $0.before.origin != $0.after.origin }.count == 1, "and it changes place once")
++    #expect(next.frame(WindowID(101))?.width == here.width)
++  }
++
++  /// What the table says of an app and a window of it disproves has to be kept, or the next window would be foreseen by the table again.
++  @Test func whatIsDisprovedOfTheTableStaysDisproved() throws {
++    let app = try #require(stock.first { AppSizes.shipped($0, macOS: measuredOn)!.width >= 650 })
++    let slim = CGSize(width: 200, height: 150)
++    let first = run([app], really: [app: slim])
++    dock(101, "right", first)
++    first.run("float-all")
++    first.scheduler.advance(by: 1)
++    first.controller.saveNow()
++    let entry = try #require(first.store.saved?.appSizes?.entry(for: app))
++    #expect(entry.width == 0)
++
++    let next = run([app], really: [app: slim], knowing: first.store.saved, later: day)
++    let mark = next.system.moveLog.count
++    dock(101, "right", next)
++    #expect(detours(since: mark, next) == [])
++    for move in next.system.moveLog.dropFirst(mark) where move.window == WindowID(101) {
++      #expect(move.requested.size == move.after.size, "it is offered its share like a stranger, not a step less than the table says")
++    }
++  }
++
++  @Test func thatSurvivesTheFileAndIsGoneAfterThirtyDaysLikeEverythingElse() throws {
++    let app = try #require(stock.first { AppSizes.shipped($0, macOS: measuredOn)!.width >= 650 })
++    let first = run([app], really: [app: CGSize(width: 100, height: 100)])
++    dock(101, "right", first)
++    first.run("dock 101 top")
++    first.scheduler.advance(by: 1)
++    first.run("float-all")
++    first.scheduler.advance(by: 1)
++    first.controller.saveNow()
++    let saved = try #require(first.store.saved)
++    guard case .loaded(let read) = PersistedState.read(try JSONEncoder().encode(saved)) else {
++      Issue.record("the file does not load")
++      return
++    }
++    #expect(read.appSizes == saved.appSizes)
++    #expect(read.appSizes?.entry(for: app) != nil)
++    let late = run([app], knowing: read, later: 31 * day)
++    #expect(late.controller.appSizes.isEmpty, "and the table is gone by again, and asked about again")
++  }
++
++  // MARK: What ships is foresight like what was learned
++
++  /// A home that learned the day before exactly what ships of `apps`.
++  private func learned(_ apps: [String]) -> PersistedState {
++    var known = AppSizes()
++    for app in apps {
++      if let size = AppSizes.shipped(app, macOS: measuredOn) {
++        known.stoodBy(size, app: app, macOS: measuredOn, at: Date(timeIntervalSinceReferenceDate: 800_000_000))
++      }
++    }
++    var home = PersistedState(workspaces: [:], hints: [:])
++    home.appSizes = known
++    return home
++  }
++
++  private static let easy = "com.example.easy"
++
++  /// What a person may do with three windows, by name. Each begins with nothing docked.
++  private static let days: [(name: String, acts: @MainActor (ShippedSizesTests, Harness) -> Void)] = [
++    ("docked left and right", { t, h in t.dock(101, "left", h); t.dock(102, "right", h) }),
++    ("docked right and left", { t, h in t.dock(101, "right", h); t.dock(102, "left", h) }),
++    ("docked top and bottom", { t, h in t.dock(101, "top", h); t.dock(102, "bottom", h) }),
++    ("all three docked", { t, h in t.dock(103, "left", h); t.dock(101, "right", h); t.dock(102, "bottom", h) }),
++    ("arranged", { t, h in _ = t.arrange(h) }),
++    ("arranged, and each looked at", { t, h in
++      _ = t.arrange(h)
++      for window in [101, 102, 103] {
++        h.run("zoom \(window)")
++        h.scheduler.advance(by: 1)
++        h.run("show-all")
++        h.scheduler.advance(by: 1)
++      }
++    }),
++    ("arranged, and laid out afresh", { t, h in
++      _ = t.arrange(h)
++      h.run("relayout")
++      h.scheduler.advance(by: 1)
++    }),
++    ("docked, and its edge pulled in to two points less than ships", { t, h in
++      t.dock(101, "left", h)
++      guard let width = h.frame(WindowID(101))?.width, let app = h.controller.windows[WindowID(101)]?.bundleID,
++        let ships = AppSizes.shipped(app, macOS: measuredOn)
++      else { return }
++      h.run("resize 101 right \(Int(ships.width - 2 - width))")
++      h.scheduler.advance(by: 1)
++      h.run("show-all")
++      h.scheduler.advance(by: 1)
++    }),
++    ("docked, refused, and made narrower by its own edge", { t, h in
++      t.dock(101, "left", h)
++      t.dock(102, "right", h)
++      guard var frame = h.frame(WindowID(101)) else { return }
++      h.system.setMinimumSize(WindowID(101), CGSize(width: 200, height: 150))
++      frame.size.width -= 80
++      h.system.userMove(WindowID(101), to: frame)
++      h.scheduler.advance(by: 2)
++    }),
++  ]
++
++  private func story(_ h: Harness) -> [String] {
++    h.system.moveLog.map { "\($0.window) asked \($0.requested.brief) took \($0.after.brief)" }
++      + (h.layout?.windowFrames.sorted { $0.key < $1.key }.map { "\($0.key) has \($0.value.brief)" } ?? [])
++  }
++
++  /// **Whatever the apps are really like, Arbor asks the same of every window, in the same order, from an empty home with the table as from a home
++  /// that learned the table's numbers the day before; and so the day after, from what each has saved.** So whatever holds of the store (its own
++  /// suite: that it is asked about, that what is wrong is put right, that things end as in a home that knows nothing) holds of what ships.
++  @Test(arguments: 0..<numberOfDays) func whatShipsIsGoneByExactlyAsIfItHadBeenLearned(day index: Int) throws {
++    #expect(Self.days.count == numberOfDays, "or some are not played")
++    let acts = Self.days[index].acts
++    let cast = [stock[8], stock[11], Self.easy]
++    for (who, more) in [(0, CGSize.zero), (0, CGSize(width: -300, height: 0)), (0, CGSize(width: -60, height: 0)), (0, CGSize(width: 60, height: 0)),
++      (0, CGSize(width: 0, height: -200)), (0, CGSize(width: 0, height: 60)), (0, CGSize(width: -300, height: -200)), (1, CGSize(width: -300, height: 0)),
++      (1, CGSize(width: 60, height: 60)), (1, CGSize(width: -60, height: -200))]
++    {
++      let ships = AppSizes.shipped(cast[who], macOS: measuredOn)!
++      let really = [cast[who]: CGSize(width: ships.width + more.width, height: ships.height + more.height), Self.easy: CGSize(width: 100, height: 100)]
++      var homes: [PersistedState?] = [nil, learned(cast)]
++      for today in 1...2 {
++        var stories: [[String]] = []
++        for (home, table) in [(0, true), (1, false)] {
++          let h = run(cast, really: really, knowing: homes[home], later: Double(today) * day)
++          h.controller.goesByTheShippedSizes = table
++          acts(self, h)
++          stories.append(story(h))
++          h.run("float-all")
++          h.scheduler.advance(by: 1)
++          h.controller.saveNow()
++          homes[home] = h.store.saved
++        }
++        #expect(stories[0] == stories[1], "\(Self.days[index].name), day \(today), \(cast[who]) really \(really[cast[who]]!)")
++      }
++    }
++  }
++
++  /// As in the store's suite, from an empty home. Under the hand a window is offered two points less than ships and stops two points over, which is
++  /// no refusal. It has been asked: the next layout must not make a tile of it.
++  @Test func aPointOrTwoOverUnderTheHandMakesNoTileAfterwards() throws {
++    let app = try #require(stock.last { (450...600).contains(AppSizes.shipped($0, macOS: measuredOn)!.width) })
++    let ships = AppSizes.shipped(app, macOS: measuredOn)!
++    let h = run([app, Self.easy], really: [Self.easy: CGSize(width: 100, height: 100)])
++    dock(101, "left", h)
++    let width = try #require(h.frame(WindowID(101))).width
++    #expect(width > ships.width + 1, "or this proves nothing: it has more than ships, and has not been asked")
++    #expect(h.run("resize 101 right \(Int(ships.width - 2 - width))").ok)
++    h.scheduler.advance(by: 1)
++    #expect(h.controller.freshLayout(of: h.display)?.windowFrames[WindowID(101)] != nil, "what a layout made now would say")
++    h.run("show-all")
++    h.scheduler.advance(by: 1)
++    #expect(h.layout?.windowFrames[WindowID(101)] != nil)
++  }
++
++  /// Found by a reader. A lender is believed unasked (the store's spec); `relayout` is one of the cures it names, and what ships came back at once.
++  @Test func layingOutAfreshCuresWhatShipsTooHigh() throws {
++    let wide = DisplaySnapshot(
++      id: DisplayID("main"), frame: CGRect(x: 0, y: 0, width: 1728, height: 1117), visibleFrame: CGRect(x: 0, y: 37, width: 1728, height: 1080),
++      isMain: true, isBuiltIn: true)
++    let h = Harness(displays: [wide], settings: Self.still)
++    h.controller.goesByTheShippedSizes = true
++    h.controller.macOSVersion = measuredOn
++    open("com.apple.finder", really: CGSize(width: 300, height: 200), in: h, pid: 2000)
++    open("com.example.large", really: CGSize(width: 1188, height: 600), in: h, pid: 2001)
++    h.start()
++    dock(101, "left", h)
++    dock(102, "right", h)
++    #expect(h.layout?.windowFrames[WindowID(102)] == nil, "or this proves nothing: Finder is believed to have nothing to spare")
++    h.run("relayout")
++    h.scheduler.advance(by: 1)
++    #expect(h.layout?.windowFrames[WindowID(102)] != nil, "both fit")
++    expectWindowsMatchLayout(h)
++  }
++
++  // MARK: Traces
++
++  /// A scenario's trace begins before anything is open, and so does many a recording on a Mac.
++  @Test(arguments: [TraceReplayer.Mode.free, .strict]) func aReplayForeseesAStockAppThatOpenedDuringTheRecording(mode: TraceReplayer.Mode) throws {
++    let three = try #require(threes.first)
++    let h = run([])
++    h.run("trace on later")
++    for (index, app) in three.enumerated() { open(app, in: h, pid: Int32(2000 + index)) }
++    #expect(arrange(h) == [], "or this proves nothing: the recording foresaw them")
++    h.run("trace off")
++    let trace = try Trace(text: try #require(h.lastTrace))
++    let replayer = TraceReplayer(trace, mode: mode)
++    #expect(replayer.run().problems == [])
++    for window in [WindowID(101), WindowID(102), WindowID(103)] { #expect(replayer.harness.frame(window) == h.frame(window)) }
++  }
++
++  /// Found by a reader: in the recording what ships came back after `relayout`; in the replay, which was told it as if learned, it was forgotten.
++  @Test(arguments: [TraceReplayer.Mode.free, .strict]) func aReplayLaysOutAfreshAsTheRecordingDid(mode: TraceReplayer.Mode) throws {
++    let three = Array(stock[8...10])
++    let h = run(three, really: Dictionary(uniqueKeysWithValues: three.map { app in
++      let ships = AppSizes.shipped(app, macOS: measuredOn)!
++      return (app, CGSize(width: ships.width + 60, height: ships.height))
++    }))
++    h.run("trace on afresh")
++    _ = arrange(h)
++    h.run("relayout")
++    h.scheduler.advance(by: 1)
++    h.run("show-all")
++    h.scheduler.advance(by: 1)
++    h.run("trace off")
++    #expect(TraceReplayer(try Trace(text: try #require(h.lastTrace)), mode: mode).run().problems == [])
++  }
++
++  @Test func inATraceWhatShipsIsADayOldAndWhatWasLearnedOutranksIt() throws {
++    let apps = Array(stock.prefix(2))
++    var home = PersistedState(workspaces: [:], hints: [:])
++    var known = AppSizes()
++    known.stoodBy(CGSize(width: 1111, height: 0), app: apps[0], macOS: measuredOn, at: Date(timeIntervalSinceReferenceDate: 800_000_000))
++    home.appSizes = known
++    let h = run(apps, knowing: home, later: 3600)
++    h.run("trace on sizes")
++    h.run("trace off")
++    let header = try JSONDecoder().decode(TraceHeader.self, from: Data(try #require(h.lastTrace?.split(separator: "\n").first).utf8))
++    #expect(header.appSizes?.entry(for: apps[0])?.width == 1111)
++    let age = try #require(header.appSizes?.entry(for: apps[1])).seen.distance(to: h.controller.now())
++    #expect(abs(age - day) < 60, "old enough to be asked about, and far from too old: \(age)")
++  }
++
++  /// Everything above says so itself. The app says nothing, and goes by it.
++  @Test func asArborComesItGoesByWhatShips() {
++    let controller = Controller(
++      system: FakeWindowSystem(), overlays: FakeOverlays(), store: MemoryStateStore(saved: nil), scheduler: ManualScheduler(), settings: Settings(),
++      filter: WindowFilter(ownPID: 1))
++    #expect(controller.goesByTheShippedSizes)
++  }
++
++  @Test func aReplayGoesByItsTraceWhateverTheArborThatReplaysItShipsWith() throws {
++    let apps = Array(stock.prefix(2))
++    let h = run(apps)
++    h.run("trace on sizes")
++    h.run("trace off")
++    let first = try #require(h.lastTrace?.split(separator: "\n").first)
++    let header = try JSONDecoder().decode(TraceHeader.self, from: Data(first.utf8))
++    #expect(header.appSizes?.apps.keys.sorted() == apps.sorted(), "what shipped is told like what was learned")
++
++    let replay = Harness(displays: [laptop], settings: Self.still)
++    replay.controller.goesByTheShippedSizes = true
++    replay.controller.restore(from: header)
++    #expect(!replay.controller.goesByTheShippedSizes)
++    #expect(replay.controller.appSizes.entry(for: apps[0])?.width == Double(AppSizes.shipped(apps[0], macOS: measuredOn)!.width))
++  }
++}
++
++extension CGFloat {
++  fileprivate func clamped(to range: ClosedRange<CGFloat>) -> CGFloat { Swift.min(Swift.max(self, range.lowerBound), range.upperBound) }
++}
+diff --git a/collab/evidence/app-sizes/macos-26.tsv b/collab/evidence/app-sizes/macos-26.tsv
+new file mode 100644
+index 00000000..49408e29
+--- /dev/null
++++ b/collab/evidence/app-sizes/macos-26.tsv
+@@ -0,0 +1,44 @@
++# bundle	version	macOS	display	verdict	smallest	largest	notes
++com.apple.finder	26.4	26.6.2	1920x1080	clean	501x252	1916x961	asked 638x365 got 638x365 late no slowest-ms 109 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.Safari	26.6.2	26.6.2	1920x1080	clean	574x240	1916x961	asked 711x353 got 711x353 late no slowest-ms 40 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.google.Chrome	155.0.8059.40	26.6.2	1920x1080	no-window	-	-	-
++org.mozilla.firefox	157.0.1	26.6.2	1920x1080	no-window	-	-	-
++com.microsoft.edgemac	155.0.4283.45	26.6.2	1920x1080	no-window	-	-	-
++com.apple.mail	16.0	26.6.2	1920x1080	no-answer	-	-	
++com.apple.Notes	4.13	26.6.2	1920x1080	clean	709x300	1916x961	asked 846x413 got 846x413 late no slowest-ms 88 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.iCal	16.0	26.6.2	1920x1080	clean	680x503	1916x961	asked 817x616 got 817x616 late no slowest-ms 37 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.MobileSMS	26.0	26.6.2	1920x1080	no-window	-	-	-
++com.apple.Terminal	2.15	26.6.2	1920x1080	clean	177x124	1913x964	asked 314x237 got 317x244 late no slowest-ms 9 errors none parked-at 1919,970 of 1919,1079 restored yes
++com.apple.systempreferences	15.0	26.6.2	1920x1080	clean	723x470	723x961	asked 723x583 got 723x583 late no slowest-ms 82 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.Preview	11.0	26.6.2	1920x1080	clean	708x224	1916x961	asked 845x337 got 845x337 late no slowest-ms 85 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.TextEdit	1.20	26.6.2	1920x1080	clean	115x46	1916x961	asked 252x159 got 252x159 late no slowest-ms 123 errors none parked-at 1919,970 of 1919,1079 restored yes
++com.apple.Music	1.6.6	26.6.2	1920x1080	in-the-way	980x600	1916x961	asked 1117x713 got 1117x713 late no slowest-ms 38 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.Photos	11.0	26.6.2	1920x1080	clean	715x615	1916x961	asked 852x728 got 852x728 late no slowest-ms 13 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.reminders	7.0	26.6.2	1920x1080	clean	768x692	1916x961	asked 905x805 got 905x805 late no slowest-ms 27 errors none parked-at 1919,970 of 1919,1079 restored yes
++com.apple.Maps	3.0	26.6.2	1920x1080	clean	660x360	1916x961	asked 797x473 got 797x473 late no slowest-ms 114 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.AddressBook	14.0	26.6.2	1920x1080	clean	644x360	1916x961	asked 781x473 got 781x473 late no slowest-ms 221 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.AppStore	3.0	26.6.2	1920x1080	clean	1000x110	1916x961	asked 1137x223 got 1137x223 late no slowest-ms 16 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.calculator	12.0	26.6.2	1920x1080	clean	230x408	230x408	asked 230x408 got 230x408 late no slowest-ms 1 errors -25200,-25200,-25200 parked-at 1919,950 of 1919,1079 restored yes
++com.apple.ActivityMonitor	10.14	26.6.2	1920x1080	clean	740x384	1916x961	asked 877x497 got 877x497 late no slowest-ms 174 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.podcasts	1.1.0	26.6.2	1920x1080	clean	1024x512	1916x961	asked 1161x625 got 1916x625 late no slowest-ms 73 errors none parked-at 1919,950 of 1919,1079 restored 448 82 1916 768
++com.apple.TV	1.6.6	26.6.2	1920x1080	clean	980x580	1916x961	asked 1117x693 got 1117x693 late no slowest-ms 11 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.iBooksX	8.5	26.6.2	1920x1080	clean	1001x530	1916x961	asked 1138x643 got 1138x643 late no slowest-ms 199 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.news	11.5	26.6.2	1920x1080	clean	860x670	1916x961	asked 997x783 got 997x783 late no slowest-ms 110 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.stocks	8.5	26.6.2	1920x1080	clean	860x670	1916x961	asked 997x783 got 997x783 late no slowest-ms 929 errors none parked-at 1919,936 of 1919,1079 restored yes
++com.apple.weather	6.0	26.6.2	1920x1080	clean	1048x640	1916x961	asked 1185x753 got 1185x753 late no slowest-ms 963 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.Home	10.0	26.6.2	1920x1080	clean	515x319	1916x961	asked 652x432 got 652x432 late no slowest-ms 44 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.VoiceMemos	3.2	26.6.2	1920x1080	clean	976x500	1916x961	asked 1113x613 got 1113x613 late no slowest-ms 66 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.freeform	4.5	26.6.2	1920x1080	clean	660x496	1916x961	asked 797x609 got 797x609 late no slowest-ms 98 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.clock	1.1	26.6.2	1920x1080	clean	600x640	1916x961	asked 737x753 got 737x753 late no slowest-ms 68 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.shortcuts	7.0	26.6.2	1920x1080	clean	750x400	1916x961	asked 887x513 got 887x513 late no slowest-ms 30 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.Dictionary	2.3.0	26.6.2	1920x1080	clean	400x300	1916x961	asked 537x413 got 537x413 late no slowest-ms 35 errors -25205 parked-at 1919,950 of 1919,1079 restored yes
++com.apple.FontBook	11.0	26.6.2	1920x1080	clean	508x532	1916x961	asked 645x645 got 645x645 late no slowest-ms 625 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.Console	1.1	26.6.2	1920x1080	clean	600x400	1916x961	asked 737x513 got 737x513 late no slowest-ms 91 errors -25205 parked-at 1919,950 of 1919,1079 restored yes
++com.apple.DiskUtility	22.7	26.6.2	1920x1080	clean	780x485	1916x961	asked 917x598 got 917x598 late no slowest-ms 84 errors none parked-at 1919,936 of 1919,1079 restored yes
++com.apple.ScriptEditor2	2.11	26.6.2	1920x1080	clean	334x413	1916x961	asked 471x526 got 471x526 late no slowest-ms 55 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.SystemProfiler	11.0	26.6.2	1920x1080	clean	761x440	1916x961	asked 898x553 got 898x553 late no slowest-ms 41 errors none parked-at 1919,970 of 1919,1079 restored yes
++com.apple.Passwords	2.6.2	26.6.2	1920x1080	clean	320x360	1916x961	asked 457x473 got 457x473 late no slowest-ms 9 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.findmy	4.0	26.6.2	1920x1080	clean	500x310	1916x961	asked 637x423 got 637x423 late no slowest-ms 163 errors none parked-at 1919,950 of 1919,1079 restored yes
++com.apple.Automator	2.10	26.6.2	1920x1080	no-answer	-	-	
++com.apple.ColorSyncUtility	12.2.0	26.6.2	1920x1080	clean	500x388	1916x961	asked 637x501 got 637x501 late no slowest-ms 18 errors none parked-at 1919,970 of 1919,1079 restored yes
++com.apple.dt.Xcode	26.3	26.6.2	1920x1080	no-window	-	-	-
+diff --git a/collab/parity.json b/collab/parity.json
+index d9323b73..444a588a 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -4430,7 +4430,7 @@
+       "area": "Arbor only",
+       "title": "Arbor knows how small apps go",
+       "trellis": "",
+-      "arbor": "What a docked window of an app would not go below is kept for the next window of that app, in this run and the next (`appSizes` in `state.json`: bundle id, two numbers, the version of macOS, a date), so that windows that cannot all fit are planned on paper and each moves once. Foresight, never the truth: where asking costs nothing, nobody is given room or refused a place for it unasked",
++      "arbor": "What a docked window of an app would not go below is kept for the next window of that app, in this run and the next (`appSizes` in `state.json`: bundle id, two numbers, the version of macOS, a date), so that windows that cannot all fit are planned on paper and each moves once; and Arbor ships with what hosted Macs measured of the apps that come with macOS. Foresight, never the truth: where asking costs nothing, nobody is given room or refused a place for it unasked",
+       "status": "shipped",
+       "spec": "F68",
+       "priority": 1,
+@@ -4438,7 +4438,9 @@
+         "aFloatingWindowIsPlacedByWhatItAnsweredItselfOnly",
+         "aLenderIsBelievedUntilItNextGoesOutOfView",
+         "aNewcomerThatIsForeseenNotToFitIsLeftWhereItsAppPutIt",
++        "aReplayForeseesAStockAppThatOpenedDuringTheRecording",
+         "aReplayForeseesAnAppWhoseFirstWindowCameDuringTheRecording",
++        "aReplayLaysOutAfreshAsTheRecordingDid",
+         "aSecondWindowOfAnAppMetTodayIsNoStranger",
+         "aSpaceNamedLikeTheAppCostsTheReplayNothing",
+         "aTraceSaysWhatWasKnownOfTheAppsInItAndOfNoOther",
+@@ -4450,28 +4452,36 @@
+         "aWindowThatWouldBeATileOnForesightIsAskedInItsCorner",
+         "aWindowWhoseRoomIsForeseenIsAskedForAStepLessWhereItStands",
+         "afterThirtyDaysByWhichNobodyStoodItIsGone",
++        "asArborComesItGoesByWhatShips",
+         "askedInACornerToTheLeftItStaysWithinReach",
++        "fromAnEmptyHomeEachOfAPairThatCannotBothFitMovesOnce",
++        "fromAnEmptyHomeThreeArrangedAtOnceGoStraightToTheirPlaces",
+         "inAColumnEachOfAPairThatCannotBothFitMovesOnceToo",
+         "inOneActAWindowIsAskedOnceHoweverManyStrangersRefuse",
++        "layingOutAfreshCuresWhatShipsTooHigh",
+         "letBeAtMoreThanIsForeseenItIsNotMadeSmallerInSight",
+         "merelyForeseeingRenewsNothing",
+         "noQuestionMakesAWindowLarger",
+         "nobodyIsPutIntoAPlaceThatTheNextAnswerTakesAway",
+         "nothingIsWrittenButTheAppTwoNumbersTheVersionAndADate",
+         "ofTheWindowThatIsLetBeThePaperIsBelievedUntilItsPersonAsksForSomething",
++        "onAnotherMacOSNothingShips",
+         "soIsAPairOfWhichEachWasMetAlone",
+         "theNextDayEachOfAPairThatCannotBothFitMovesOnce",
+         "thePreviewOfADropIsWorkedOutWithWhatIsForeseen",
+         "theQuestionInSightIsPutOnlyInsideAnActAPersonAskedFor",
+         "underTheHandNothingIsForeseen",
+         "whatCannotBeReadCostsNoArrangementAndIsNoLoss",
++        "whatIsDisprovedOfTheTableStaysDisproved",
+         "whatIsTooHighCostsNoNeighbourItsPlace",
++        "whatShipsIsGoneByExactlyAsIfItHadBeenLearned",
+         "whateverChoosesAnArrangementGoesByAnswersAlone",
+         "whenTheForesightIsWrongTheNeighboursStillMoveOnce",
+         "whileNothingIsDockedNothingMovesBecauseSomethingIsKnown",
+         "whoeverGivesWayFillsItsSlotAllTheSame",
+         "whoeverIsForeseenIsAskedWhenTheStrangersHaveAnswered",
+-        "whoeverTheStoreIsWrongAboutThingsEndAsIfNothingWereKnown"
++        "whoeverTheStoreIsWrongAboutThingsEndAsIfNothingWereKnown",
++        "withoutTheTableSuchThreesGoOutOfTheirWay"
+       ]
+     }
+   ]
+diff --git a/docs/features/F68-how-small-apps-go.md b/docs/features/F68-how-small-apps-go.md
+index a0e9a06f..66d711c5 100644
+--- a/docs/features/F68-how-small-apps-go.md
++++ b/docs/features/F68-how-small-apps-go.md
+@@ -2,7 +2,7 @@
+ 
+ Written by an executor, 2026-10-15, from the product owner's decision (`collab/QUESTIONS.md`, "how small apps go"; board 1.32); for the documenter to review.
+ 
+-Status: the store is done headlessly (`feat/arbor-knows-how-small-apps-go`), never run on a Mac; the shipped table is the second step
++Status: done headlessly (`feat/arbor-knows-how-small-apps-go`, `feat/arbor-ships-knowing-the-stock-apps`); the table was measured on a hosted Mac; Arbor with either has never run on one
+ Depends on: F45 (what is learned about a window can be unlearned), F61 (room before tiles), "a refused size costs nobody a second move" (`Controller+AskFirst.swift`: a stranger is asked where it stands, then moved once)
+ Size: small
+ 
+@@ -55,6 +55,17 @@ moves the gap, `relayout`, a docked window of that app is seen smaller, or thirt
+   longer gone by, and leaves the file at the next layout. With the size known and room to spare no window is asked, so this is also how often the truth is looked at again.
+ - At most 200 apps are kept; the oldest go first.
+ 
++**What Arbor ships knowing** (the second step). From an empty home every app is a stranger, and a first day is what a person judges by. So Arbor ships with a table of how small the apps go that come with a Mac: **measured on hosted Macs, not guessed**. `scripts/mac-shell/app-sizes.sh` opens
++each app in turn, Arbor not running, asks its first ordinary window through Accessibility for 40×40 and writes down what it took; only an app that showed an ordinary window with no sheet or dialog in the way enters the table, and of those not one during whose measuring Accessibility reported an error (which request failed is not on record: it may have been the small one), nor a window of one size (`scripts/app-sizes.py`, `collab/evidence/app-sizes/`; `make lint`
++fails if the table is not what was measured).
++
++- It holds **for the major version of macOS it was measured on**, and for no other: on another version nothing ships, and the store learns.
++- It is foresight like the rest: asked about in the same places, believed in the same one. **Whatever the apps are really like, Arbor asks the same of every window, in the same order, from an empty home with the table as from a home that learned the table's numbers the day before**, and so the day after, from what each has saved.
++- **What was learned on this Mac outranks it**, also where that says that nothing is known. What a window disproves of the table is therefore kept, as an entry that knows nothing in that direction: or the next window of the app would be foreseen by the table again. Thirty days after the last of it fell the entry is
++  gone like any other, and the table is gone by, and asked about, again. **`relayout`**, which forgets what is known of the apps that are open, leaves such an entry for each of them of which something ships: or what ships would be believed again at once, and whoever asked for everything to be found out afresh would be given the same again.
++- Nothing is written until a window of the app has answered or disproved something. An entry then begins from what ships: where only the width has been stood by, the height in the file is the table's.
++- A trace tells what shipped for its apps like what was learned, and a replay goes by its trace, whatever the Arbor that replays it ships with. Tests know nothing unless they say so.
++
+ **Where it errs it errs low.** Too low costs what not knowing costs: the window refuses, and is believed.
+ 
+ ## How it is proven
+@@ -104,9 +115,22 @@ Three designs went before this one. The first wrote what is foreseen into `minim
+ dictionary. The second asked for "the share the window would have had", worked out by a copy of `roomyLayout`, inside `apply`: neighbours moved into plans that were overturned a moment later. The third copied what was foreseen for each window at first sight: the copy outlived the entry it came
+ from, windows that were open before their app was met stayed strangers, and views were chosen and commands refused on sizes nobody had asked about.
+ 
++**Shipped, the second step: the table.** 32 apps on macOS 26 (26.6.2, one run of ten minutes on a hosted Mac, display 1920×1080; 35 came back clean, three of them are left out, below): `collab/evidence/app-sizes/macos-26.tsv`, `Sources/ArborCore/AppSizes+Shipped.swift` (generated). `ShippedSizesTests`, which go by whatever the table holds:
++`whatShipsIsGoneByExactlyAsIfItHadBeenLearned` (nine days a person may have with three windows, ten ways in which an app is not what ships, two days each: every request and every answer the same), `fromAnEmptyHomeThreeArrangedAtOnceGoStraightToTheirPlaces` (every three of the widest seven), its control `withoutTheTableSuchThreesGoOutOfTheirWay`, `fromAnEmptyHomeEachOfAPairThatCannotBothFitMovesOnce` (every pair of the widest dozen that is too wide for a laptop's display), `onAnotherMacOSNothingShips`, `whatAWindowStoodByOutranksTheTable`, `whatIsDisprovedOfTheTableStaysDisproved`,
++`thatSurvivesTheFileAndIsGoneAfterThirtyDaysLikeEverythingElse`, `nothingIsWrittenBecauseSomethingShips`, `layingOutAfreshCuresWhatShipsTooHigh`, `aPointOrTwoOverUnderTheHandMakesNoTileAfterwards`, `asArborComesItGoesByWhatShips`, `aReplayGoesByItsTraceWhateverTheArborThatReplaysItShipsWith`, `aReplayForeseesAStockAppThatOpenedDuringTheRecording`, `aReplayLaysOutAfreshAsTheRecordingDid`, `inATraceWhatShipsIsADayOldAndWhatWasLearnedOutranksIt`.
++
++What the Mac taught besides: several apps go far less small than anybody had guessed (Weather 1048×640, Podcasts 1024×512, Books 1001×530, the App Store 1000 wide, Reminders 768×692): on a laptop's display two of them never fit side by side. One frame set took 1 to 963 ms.
++
+ Not shipped:
+ 
+-- **The table** of what hosted Macs measured: the second step. Until then a first day meets nothing but strangers, as before.
++- **Measured and left out:** Calculator (a window of one size; three errors), Dictionary and Console (an error each). Their lines stay in the file, which is what the Mac brought back.
++- **What the measuring does not record:** the size each window opened at, so that an app that ignored the small request cannot be told from one that refused it (each took the large one, so none ignores requests altogether); and whether what opened was a first-run or a locked window (Reminders 768×692, Photos 715×615, Passwords 320×360 are to be looked at in the second run). What is too high is found out by asking, like anything else that is foreseen.
++- **A lender that ships too high is not cured by thirty days**, as one that was learned too high is: what ships does not age. The other cures hold: it goes out of view, a hand moves the gap, `relayout`, a docked window of the app is seen smaller.
++- **Where windows dock by themselves** (`newWindows` "dock", which does not ship), a newcomer of which too much ships is left floating every time: what floats is not asked, and teaches nothing. Docked by hand once, it is asked, and the next one docks by itself. With the store alone that ends after thirty days as well.
++- **Not in the table:** the browsers of other makers that the hosted Macs have (Chrome, Firefox, Edge), Messages and Xcode showed no ordinary window within the wait; Mail and Automator gave no answer; Music had something in the way. A second run, with the way the day's cast opens browsers, is owed. Apps that cannot be
++  installed on a hosted Mac are learned on each person's Mac: the first dock of an app Arbor has never met may take one correction.
++- **macOS 15 and 14:** `run.sh --on macos-15 scripts/mac-shell/app-sizes.sh`, a file and a table for each. Until then nothing ships there.
++- The lab's walks and the stand-ins have bundle ids of their own (`com.example.…`) and sizes that were guessed before this run, so the table does nothing for them, and `sized-there-and-back` stays a known failure from an empty home.
+ - **How large apps go**: not needed any more. Since "a refused size costs nobody a second move" where a window stops growing is learnt at the first question, where it stands, with no wrong place; keeping it for its app would save one request.
+ - **The lender beneath the stage**: ask only, never wait, and believe the paper if the answer is late. Its proof is a film from a hosted Mac.
+ - A question in the later rounds of one layout. A window that comes to rest on what is foreseen only after a stranger has refused in the same layout is asked at the next one. No script could be found in which that shows.
+diff --git a/scripts/app-sizes.py b/scripts/app-sizes.py
+new file mode 100755
+index 00000000..76da4256
+--- /dev/null
++++ b/scripts/app-sizes.py
+@@ -0,0 +1,181 @@
++#!/usr/bin/env python3
++"""Makes the table of how small apps go that Arbor ships with (F68) out of what hosted Macs measured.
++
++  scripts/app-sizes.py            rewrite Sources/ArborCore/AppSizes+Shipped.swift
++  scripts/app-sizes.py --check    fail if that file is not what the measurements make it (`make lint`)
++  scripts/app-sizes.py --self-test
++
++The measurements are collab/evidence/app-sizes/macos-<major>.tsv, one file for each major version of macOS, each as
++scripts/mac-shell/app-sizes.sh brought it back from a hosted Mac: bundle id, the app's version, macOS's version, the display's size, a
++verdict, the smallest and the largest size its first ordinary window took, and what else was seen. THE TABLE IS MEASURED, NOT GUESSED: nobody
++writes a line of either file by hand. To measure again: run the script (its header says how), copy its app-sizes.tsv over the file, run this.
++
++Only lines whose verdict is `clean` enter the table: a window with a sheet open goes less small than it does without. Of those, not one during
++which Accessibility reported an error (which request failed is not on record: it may have been the small one, and then the size is too high), nor one
++whose smallest size is its largest: that is a window of one size, which says nothing of how small its app goes (as in the store). They stay in the
++file, which is what the Mac brought back. A size that is no size (under 20 points or over 10,000 either way, as AppSizes has it), a verdict the
++measuring script does not give and two files for one version of macOS fail the run: then the measuring is at fault, and is to be looked at.
++"""
++
++import glob
++import os
++import re
++import sys
++
++ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
++EVIDENCE = os.path.join(ROOT, "collab", "evidence", "app-sizes")
++TABLE = os.path.join(ROOT, "Sources", "ArborCore", "AppSizes+Shipped.swift")
++
++HEAD = '''// Generated by scripts/app-sizes.py from collab/evidence/app-sizes/. Not to be edited: measure again instead.
++
++extension AppSizes {
++  /// How small the first ordinary window of each app went on a hosted Mac, asked through Accessibility for 40×40, by the major version of macOS
++  /// and the bundle id: width, height. Measured, not guessed (scripts/mac-shell/app-sizes.sh).
++  static let measured: [Int: [String: (width: Double, height: Double)]] = [
++'''
++TAIL = '''  ]
++}
++'''
++
++
++# What scripts/mac-shell/app-sizes.sh says of an app.
++VERDICTS = {"clean", "in-the-way", "no-answer", "no-window", "absent"}
++
++
++class Fault(Exception):
++    pass
++
++
++def number(text):
++    return int(text) if re.fullmatch(r"\d+", text) else float(text)
++
++
++def read(path, text):
++    """The clean lines of one file: {bundle id: (width, height)}, and the major version they were measured on."""
++    name = os.path.basename(path)
++    match = re.fullmatch(r"macos-(\d+)\.tsv", name)
++    if not match:
++        raise Fault("%s: measurements are called macos-<major>.tsv" % name)
++    major = int(match.group(1))
++    sizes, doubted = {}, set()
++    for count, line in enumerate(text.splitlines(), 1):
++        if not line.strip() or line.startswith("#"):
++            continue
++        fields = line.split("\t")
++        if len(fields) != 8:
++            raise Fault("%s:%d: %d fields, not 8" % (name, count, len(fields)))
++        bundle, _, system, _, verdict, smallest, largest, notes = fields
++        if verdict not in VERDICTS:
++            raise Fault("%s:%d: %r is no verdict" % (name, count, verdict))
++        if verdict != "clean":
++            continue
++        if system.split(".")[0] != str(major):
++            raise Fault("%s:%d: measured on macOS %s, in the file for %d" % (name, count, system, major))
++        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.-]{2,254}", bundle):
++            raise Fault("%s:%d: %r is no bundle id" % (name, count, bundle))
++        size = re.fullmatch(r"(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)", smallest)
++        if not size:
++            raise Fault("%s:%d: %r is no size" % (name, count, smallest))
++        width, height = number(size.group(1)), number(size.group(2))
++        if not (20 <= width <= 10000 and 20 <= height <= 10000):
++            raise Fault("%s:%d: no window goes down to %s" % (name, count, smallest))
++        if bundle in sizes:
++            raise Fault("%s:%d: %s is there twice" % (name, count, bundle))
++        sizes[bundle] = (width, height)
++        errors = re.search(r"\berrors (\S+)", notes)
++        if smallest == largest or not errors or errors.group(1) != "none":
++            doubted.add(bundle)
++    return major, {bundle: size for bundle, size in sizes.items() if bundle not in doubted}
++
++
++def table(files):
++    """The Swift file for {path: text}."""
++    body = []
++    tables = sorted((read(path, text) for path, text in files.items()), key=lambda one: one[0])
++    for one, next_one in zip(tables, tables[1:]):
++        if one[0] == next_one[0]:
++            raise Fault("two files for macOS %d" % one[0])
++    for major, sizes in tables:
++        body.append("    %d: [\n" % major)
++        for bundle in sorted(sizes, key=str.lower):
++            body.append('      "%s": (%s, %s),\n' % (bundle, sizes[bundle][0], sizes[bundle][1]))
++        if not sizes:
++            body.append("      :\n")
++        body.append("    ],\n")
++    if not body:
++        body.append("    :\n")
++    return HEAD + "".join(body) + TAIL
++
++
++def self_test():
++    row = "com.apple.Safari\t26.0\t26.0.1\t1920x1080\t%s\t%s\t1916x1040\tlate no errors none restored yes"
++    good = {"macos-26.tsv": "# head\n" + row % ("clean", "574x240") + "\n" + (row % ("in-the-way", "900x600")).replace("Safari", "mail") + "\n"}
++    made = table(good)
++    checks = [
++        ("a clean line is in the table", '"com.apple.Safari": (574, 240),' in made),
++        ("one with something in the way is not", "mail" not in made),
++        ("under its version of macOS", "    26: [\n" in made),
++        ("no measurements make an empty table", "    :\n" in table({})),
++        ("half points stay", "(574.5, 240)" in table({"macos-26.tsv": row % ("clean", "574.5x240")})),
++        ("a line during which Accessibility failed is left out", "Safari" not in table({"macos-26.tsv": (row % ("clean", "574x240")).replace("errors none", "errors -25205")})),
++        ("so is one that does not say", "Safari" not in table({"macos-26.tsv": (row % ("clean", "574x240")).replace(" errors none", "")})),
++        ("so is a window of one size", "Safari" not in table({"macos-26.tsv": row % ("clean", "1916x1040")})),
++        ("one side that cannot change is a size like any other", '(1916, 240)' in table({"macos-26.tsv": row % ("clean", "1916x240")})),
++    ]
++    for what, text in [
++        ("a size that is none", row % ("clean", "wide")), ("a window a point wide", row % ("clean", "1x1")),
++        ("a line cut short", "com.apple.Safari\tclean"), ("another macOS", (row % ("clean", "574x240")).replace("26.0.1", "15.6")),
++        ("the same app twice", row % ("clean", "574x240") + "\n" + row % ("clean", "574x240")),
++        ("no bundle id", (row % ("clean", "574x240")).replace("com.apple.Safari", 'x"; evil')),
++        ("a verdict nobody gives", row % ("Clean", "574x240")), ("a verdict with a blank after it", row % ("clean ", "574x240")),
++        ("the same app twice, once in doubt", row % ("clean", "574x240") + "\n" + (row % ("clean", "574x240")).replace("errors none", "errors -1")),
++    ]:
++        try:
++            table({"macos-26.tsv": text})
++            checks.append((what + " is refused", False))
++        except Fault:
++            checks.append((what + " is refused", True))
++    for what, second in [("the same", row % ("clean", "574x240")), ("another", row % ("clean", "600x240"))]:
++        try:
++            table({"macos-26.tsv": row % ("clean", "574x240"), "macos-026.tsv": second})
++            checks.append(("two files for one macOS are refused, holding " + what, False))
++        except Fault:
++            checks.append(("two files for one macOS are refused, holding " + what, True))
++    try:
++        table({"sizes.tsv": ""})
++        checks.append(("a file by another name is refused", False))
++    except Fault:
++        checks.append(("a file by another name is refused", True))
++    for what, held in checks:
++        print("  %s %s" % ("✔" if held else "✘", what))
++    return 0 if all(held for _, held in checks) else 1
++
++
++def main(arguments):
++    if arguments == ["--self-test"]:
++        return self_test()
++    if arguments not in ([], ["--check"]):
++        print(__doc__)
++        return 64
++    files = {path: open(path, encoding="utf-8").read() for path in glob.glob(os.path.join(EVIDENCE, "*.tsv"))}
++    try:
++        made = table(files)
++    except Fault as fault:
++        print("app-sizes.py: %s" % fault)
++        return 1
++    have = open(TABLE, encoding="utf-8").read() if os.path.exists(TABLE) else ""
++    if arguments == ["--check"]:
++        if made != have:
++            print("Sources/ArborCore/AppSizes+Shipped.swift is not what collab/evidence/app-sizes/ makes it: run scripts/app-sizes.py")
++            return 1
++        print("the table of how small apps go is what was measured")
++        return 0
++    if made != have:
++        with open(TABLE, "w", encoding="utf-8") as file:
++            file.write(made)
++    print("%s: %d apps" % (os.path.relpath(TABLE, ROOT), made.count('": (')))
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main(sys.argv[1:]))
+diff --git a/scripts/mac-shell/app-sizes.sh b/scripts/mac-shell/app-sizes.sh
+new file mode 100755
+index 00000000..be5292a4
+--- /dev/null
++++ b/scripts/mac-shell/app-sizes.sh
+@@ -0,0 +1,126 @@
++#!/bin/bash
++# How small and how large the apps go that come with macOS, or with GitHub's Macs: the measurements behind the table Arbor ships with (F68).
++#
++#   scripts/mac-shell/run.sh --priority 2 --no-preflight "real apps: the fake Mac has none" scripts/mac-shell/app-sizes.sh
++#   scripts/mac-shell/run.sh --on macos-15 …                          the same on another macOS: a table for each
++#
++# THE QUESTION ONLY A MAC CAN ANSWER: asked through Accessibility for 40×40 and for 3200×2400, what does the first ordinary window of each app
++# take? Nothing else tells: minimum and maximum sizes cannot be read, only met. Arbor is not started.
++#
++# Each app in turn is opened in the background, whatever first-run sheet is in the way is dismissed, its first standard window is asked
++# (apptool limits, which puts it back), and the app is quit. One app that fails does not stop the next. About eight seconds an app.
++#
++# What comes back: mac-shell/app-sizes.tsv, a line for each app:
++#     bundle id, the app's version, macOS's version, the display's size, verdict, smallest w×h, largest w×h, what else `limits` said
++# No titles, and nothing of what is in a window. The verdict is `clean`, or why the line is not fit for the table: `no-window` (none that
++# is standard within the wait), `in-the-way` (a sheet or a dialog stayed: a window with a sheet open goes less small than it does
++# without), `no-answer` (the window said nothing of its limits within the wait), `absent` (not on this Mac). scripts/app-sizes.py makes the
++# table of the clean ones, less those during which Accessibility reported an error and windows of one size.
++#
++# Only on one of GitHub's Macs: it opens three dozen apps for the first time, and quits them.
++ARBOR_TIME_LIMIT=${ARBOR_TIME_LIMIT:-900}
++source "$(dirname "${BASH_SOURCE[0]}")/lib-apps.sh"
++needs_throwaway_mac "open three dozen apps, each for the first time, and quit them"
++
++# Stop opening apps after this many seconds, and say which were not reached.
++SIZES_BUDGET=${SIZES_BUDGET:-540}
++TABLE="$ARBOR_OUT/app-sizes.tsv"
++
++# What a person may want to dock, of what comes with macOS, and the browsers of other makers that GitHub's Macs happen to have: a browser is the window
++# most people dock first. Not: what has no ordinary window (Stickies, Digital Color Meter, Screenshot), what asks for a
++# camera or a microphone at once (FaceTime, Photo Booth), what would change the Mac (Migration Assistant, Boot Camp Assistant, installers).
++# `bundle id` or `bundle id=what to open with it` (a name in $APPS_SCRATCH). Those most used first: the time may run out.
++APPS="
++com.apple.finder=grove com.apple.Safari=page.html com.google.Chrome=page.html org.mozilla.firefox=page.html com.microsoft.edgemac=page.html com.apple.mail com.apple.Notes com.apple.iCal com.apple.MobileSMS com.apple.Terminal
++com.apple.systempreferences com.apple.Preview=leaf.png com.apple.TextEdit=oak.txt com.apple.Music com.apple.Photos com.apple.reminders
++com.apple.Maps com.apple.AddressBook com.apple.AppStore com.apple.calculator com.apple.ActivityMonitor com.apple.podcasts com.apple.TV
++com.apple.iBooksX com.apple.news com.apple.stocks com.apple.weather com.apple.Home com.apple.VoiceMemos com.apple.freeform
++com.apple.clock com.apple.shortcuts com.apple.Dictionary com.apple.FontBook com.apple.Console com.apple.DiskUtility
++com.apple.ScriptEditor2=hello.applescript com.apple.SystemProfiler com.apple.Passwords com.apple.findmy com.apple.Automator
++com.apple.ColorSyncUtility com.apple.dt.Xcode
++"
++
++# Only the view through Accessibility is needed: no Arbor, no pointer.
++tool_build() {
++  mkdir -p "$(dirname "$ARBOR_APPTOOL")"
++  swiftc -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/apptool.swift" -o "$ARBOR_APPTOOL" > "$ARBOR_OUT/build-apptool.log" 2>&1 \
++    || { grep -A 6 "error:" "$ARBOR_OUT/build-apptool.log" | head -n 80; die "scripts/mac-shell/apptool.swift did not compile"; }
++}
++
++# Where an app is, by its bundle id; nothing when it is not on this Mac.
++path_of() { mdfind "kMDItemCFBundleIdentifier == '$1'" 2>/dev/null | grep -E '^(/System)?/Applications/' | head -n 1; }
++
++version_of() { defaults read "$1/Contents/Info" CFBundleShortVersionString 2>/dev/null || echo "?"; }
++
++row() { printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$@" >> "$TABLE"; }
++
++measure() {
++  local bundle=${1%%=*} with="" where version verdict=clean limits small large
++  case "$1" in *=*) with="$APPS_SCRATCH/${1#*=}" ;; esac
++  step "$bundle"
++  where=$(path_of "$bundle")
++  # Finder lives elsewhere, and is on every Mac.
++  [ "$bundle" = com.apple.finder ] && where=/System/Library/CoreServices/Finder.app
++  if [ -z "$where" ]; then
++    echo "not on this Mac"
++    row "$bundle" "?" "$MACOS" "$DISPLAY_SIZE" absent - - -
++    return 0
++  fi
++  version=$(version_of "$where")
++  APP_WAIT=20
++  [ "$bundle" = com.apple.dt.Xcode ] && APP_WAIT=40
++  # shellcheck disable=SC2086
++  app_open "$bundle" $with
++  if [ -z "$APP_WINDOW" ]; then
++    # What is in the way may be all there is: once it is gone the window comes.
++    [ -n "$APP_PID" ] && app_dismiss "$APP_PID" && app_await_window "$APP_PID" "" 6 && APP_WINDOW=$NEW_WINDOW
++  fi
++  if [ -z "$APP_WINDOW" ]; then
++    [ -n "$APP_PID" ] && apptool windows "$APP_PID" 2>/dev/null | cut -d ' ' -f 1-8 | sed 's/^/  /'
++    row "$bundle" "$version" "$MACOS" "$DISPLAY_SIZE" no-window - - -
++  else
++    app_dismiss "$APP_PID" || verdict=in-the-way
++    apptool windows "$APP_PID" 2>/dev/null | grep -Eq "sheets=|AXDialog|AXSystemDialog" && verdict=in-the-way
++    limits=$(bounded 20 "$ARBOR_APPTOOL" limits "$APP_WINDOW")
++    echo "limits: $limits"
++    small=$(echo "$limits" | awk '$1 == "min" { print $2 }')
++    large=$(echo "$limits" | awk '$3 == "max" { print $4 }')
++    [ -n "$small" ] && [ -n "$large" ] || { verdict=no-answer small=- large=-; }
++    row "$bundle" "$version" "$MACOS" "$DISPLAY_SIZE" "$verdict" "$small" "$large" "$(echo "$limits" | cut -d ' ' -f 5-)"
++  fi
++  # Finder cannot be quit for good, and its window is this script's own folder.
++  if [ "$bundle" = com.apple.finder ]; then
++    [ -n "$APP_WINDOW" ] && apptool close "$APP_WINDOW" > /dev/null 2>&1
++    apps_forget "$APP_PID"
++  else
++    app_quit "$APP_PID"
++  fi
++}
++
++apps_watchdog $((SIZES_BUDGET + 240))
++tool_build
++apps_scratch
++echo "display modes (w h pixel-w pixel-h): $(apptool modes | tr '\n' ';')"
++# As large as there is: the display is what stops a window that can grow for ever, and a largest size says something only where it is well below it.
++apptool set-mode 1920 1080 2>/dev/null || apptool set-mode 1680 1050 2>/dev/null || apptool set-mode 1440 900 2>/dev/null
++sleep 2
++MACOS=$(sw_vers -productVersion)
++DISPLAY_SIZE=$(apptool modes | awk '/\*/ { print $1 "x" $2; exit }')
++[ -n "$DISPLAY_SIZE" ] || DISPLAY_SIZE="?"
++echo "macOS $MACOS, display $DISPLAY_SIZE"
++printf '# bundle\tversion\tmacOS\tdisplay\tverdict\tsmallest\tlargest\tnotes\n' > "$TABLE"
++
++for app in $APPS; do
++  if [ "$SECONDS" -gt "$SIZES_BUDGET" ]; then
++    row "${app%%=*}" "?" "$MACOS" "$DISPLAY_SIZE" out-of-time - - -
++    continue
++  fi
++  began=$SECONDS
++  measure "$app"
++  echo "${app%%=*}: $((SECONDS - began)) s"
++done
++
++step "the table"
++cat "$TABLE"
++clean=$(awk -F '\t' '$5 == "clean"' "$TABLE" | wc -l | tr -d ' ')
++check "at least twenty apps were measured with nothing in the way ($clean)" test "$clean" -ge 20
+diff --git a/scripts/test-tooling.py b/scripts/test-tooling.py
+index e99d7544..c616b9dc 100755
+--- a/scripts/test-tooling.py
++++ b/scripts/test-tooling.py
+@@ -320,6 +320,12 @@ def check_ci_step():
+ 
+ # One line in which a window goes somewhere and on from there.
+ TWICE = "shove 101 10 40 then 500 40\n"
++
++
++# With windows docking by themselves, an app that comes with a Mac opens a window too wide to stand beside the one that is docked. Foreseen not to
++# fit, it is left where its app put it; a stranger is tried in a place and taken out of it again. Both end up floating.
++STOCK = ("display-size 1280x800\nships {}\nset newWindows dock\nopen Finder as com.apple.finder\nfocus 101\ndock 101 left\n"
++         "open Weather 1148x700 as com.apple.weather\nexpect still 102\nexpect floating 102\n")
+ SCENARIOS = [
+     (0, "a scenario that holds", "open A\ndock 101 left\nexpect docked 101\n"),
+     (1, "an expectation that does not hold", "open A\nexpect docked 101\n"),
+@@ -337,6 +343,10 @@ SCENARIOS = [
+     (1, "a window that is moved twice in the last line", "open A\nexpect floating 101\n" + TWICE),
+     (1, "a known fault that has been mended", "open A\nshove 101 10 40\nexpect jolt 101\n"),
+     (1, "another window answers for it", "open A\nopen B\n" + TWICE + "expect jolt 102\n"),
++    (0, "stock apps, and Arbor ships knowing them", STOCK.format(26)),
++    (1, "stock apps, and Arbor ships knowing nothing", STOCK.format("nothing")),
++    (1, "stock apps on a macOS that nobody has measured", STOCK.format(3)),
++    (1, "`ships` and no word on what", "open A\nships\nexpect floating 101\n"),
+ ]
+ 
+ 
+-- 
+2.43.0
+

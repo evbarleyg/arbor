@@ -1,0 +1,107 @@
+diff --git a/Sources/ArborKit/AX/AXWindowSystem.swift b/Sources/ArborKit/AX/AXWindowSystem.swift
+index 50943fc8..f78db7cd 100644
+--- a/Sources/ArborKit/AX/AXWindowSystem.swift
++++ b/Sources/ArborKit/AX/AXWindowSystem.swift
+@@ -1272,9 +1272,12 @@ public final class AXWindowSystem: WindowSystem {
+       if let window = draggingWindow { events?.dragMoved(window, to: cursorLocation()) }
+     case .leftMouseUp:
+       // One last look, whatever the rest between two looks says: a window that has stood for a while under a press below its
+-      // top is looked at ten times a second, and a flick that begins and ends between two looks would never be seen.
+-      if draggingWindow == nil, resizingWindow == nil, press?.memory.isBelowTheTop == true {
+-        press?.lookedAt = 0
++      // top is looked at ten times a second, and a flick that begins and ends between two looks would never be seen. Not
++      // after a click: a hand that has not moved has taken nothing along, whatever the window did by itself meanwhile.
++      if draggingWindow == nil, resizingWindow == nil, let press, press.memory.isBelowTheTop,
++        hypot(cursorLocation().x - press.point.x, cursorLocation().y - press.point.y) > WindowGrab.patience
++      {
++        self.press?.lookedAt = 0
+         lookAtPressedWindow()
+       }
+       noteAGrabThatWasMissed()
+diff --git a/scripts/mac-on-linux/README.md b/scripts/mac-on-linux/README.md
+index 26864343..f3d66342 100644
+--- a/scripts/mac-on-linux/README.md
++++ b/scripts/mac-on-linux/README.md
+@@ -135,7 +135,7 @@ hears. If the reports in the file are out of date the run rewrites it and fails
+ 
+ ## Does the net hold? (`make mac-on-linux-selftest`)
+ 
+-A story that stays green without the cure it is about proves nothing. `mutants.py` has fifty small changes to the copy, each of which takes one cure out of the layer again (the count of windows that tells a new one from a found one, the looks at an app macOS does not name in front yet, the watch for a lost release, the second reading of the lists after a Space switch, the
++A story that stays green without the cure it is about proves nothing. `mutants.py` has fifty-one small changes to the copy, each of which takes one cure out of the layer again (the count of windows that tells a new one from a found one, the looks at an app macOS does not name in front yet, the watch for a lost release, the second reading of the lists after a Space switch, the
+ look at the window server during a drag…), and names the checks that must go red, **and be news: one that the list of known failures excuses does not count**. Only the changed file is compiled again: eight seconds each. Before that it holds the program to its own book-keeping: arguments that select nothing or cannot be read
+ (`--only zzzzz`, `--seeds 3-x`, `--steps 0`, a `--replay` with a step it does not know) are refused with exit code 2, and a listed line with another number of seeds, or with `sometimes: `, excuses nothing. A change that no longer fits the sources is reported: write it anew, or delete it with its story.
+ 
+diff --git a/scripts/mac-on-linux/known-failures.txt b/scripts/mac-on-linux/known-failures.txt
+index 66052b4a..ac69cc96 100644
+--- a/scripts/mac-on-linux/known-failures.txt
++++ b/scripts/mac-on-linux/known-failures.txt
+@@ -449,3 +449,8 @@ served on time, a window is taken by its background and carried 120 points in on
+ text is selected over 120 points in 0.6 s, and the window goes 90 points the same way by itself in 2 step(s) within 0.2 s: no drag and no resize is made of it # two places the pointer's way are what a hand looks like
+ text is selected over 120 points in 0.6 s, and the window goes 90 points the same way by itself in 3 step(s) within 0.2 s: no drag and no resize is made of it # two places the pointer's way are what a hand looks like
+ text is selected over 120 points in 0.6 s, and the window goes 90 points the same way by itself in 8 step(s) within 0.2 s: no drag and no resize is made of it # two places the pointer's way are what a hand looks like
++# LEFT, red before it as well: a window that changes its size by itself under a plain click at its edge, its app telling while the button is down. (Where the app tells later or never, the release looks at nothing after a click.)
++a plain click 5 points inside the left edge, held 0.3 s; 10 ms before the button comes up the window grows by 40 points to the left, and its app tells 2 ms after: no drag and no resize is made of it # the app's report comes with the button still down: another size under a press at an edge is a resize at one look, however still the pointer
++a plain click 5 points inside the left edge, held 0.3 s; 30 ms before the button comes up the window grows by 40 points to the left, and its app tells 2 ms after: no drag and no resize is made of it # the app's report comes with the button still down: another size under a press at an edge is a resize at one look, however still the pointer
++a plain click 5 points inside the left edge, held 0.3 s; 100 ms before the button comes up the window grows by 40 points to the left, and its app tells 2 ms after: no drag and no resize is made of it # the app's report comes with the button still down: another size under a press at an edge is a resize at one look, however still the pointer
++a plain click 5 points inside the left edge, held 0.3 s; 100 ms before the button comes up the window grows by 40 points to the left, and its app tells 50 ms after: no drag and no resize is made of it # the app's report comes with the button still down: another size under a press at an edge is a resize at one look, however still the pointer
+diff --git a/scripts/mac-on-linux/mutants.py b/scripts/mac-on-linux/mutants.py
+index 4e28af4e..2c769bad 100755
+--- a/scripts/mac-on-linux/mutants.py
++++ b/scripts/mac-on-linux/mutants.py
+@@ -416,10 +416,19 @@ MUTANTS = [
+     },
+     {
+         "name": "the release looks at nothing",
+-        "old": "      if draggingWindow == nil, resizingWindow == nil, press?.memory.isBelowTheTop == true {\n",
+-        "new": "      if false, draggingWindow == nil, resizingWindow == nil, press?.memory.isBelowTheTop == true {\n",
++        "old": "      if draggingWindow == nil, resizingWindow == nil, let press, press.memory.isBelowTheTop,\n",
++        "new": "      if false, draggingWindow == nil, resizingWindow == nil, let press, press.memory.isBelowTheTop,\n",
+         "red": ["a window is taken by its background, the hand goes 6 points, trembles for 62 movements at sixty a second, flicks it away in 32 ms and lets go: the drag is reported to begin"],
+     },
++    {
++        "name": "the release of a plain click looks at the window too",
++        "old": "        hypot(cursorLocation().x - press.point.x, cursorLocation().y - press.point.y) > WindowGrab.patience\n",
++        "new": "        hypot(cursorLocation().x - press.point.x, cursorLocation().y - press.point.y) >= 0\n",
++        "red": [
++            "a plain click 5 points inside the left edge, held 0.3 s; 30 ms before the button comes up the window grows by 40 points to the left, and its app never tells: "
++            "no drag and no resize is made of it",
++        ],
++    },
+ ]
+ 
+ 
+diff --git a/scripts/mac-on-linux/tests/LatePresses.swift b/scripts/mac-on-linux/tests/LatePresses.swift
+index 0ab444bd..361313a1 100644
+--- a/scripts/mac-on-linux/tests/LatePresses.swift
++++ b/scripts/mac-on-linux/tests/LatePresses.swift
+@@ -640,6 +640,30 @@ func tellOfLatePresses(_ book: Book) {
+     }
+   }
+ 
++  // But a click takes nothing along. The judge's: by the left edge, held 0.3 s, and the window grows by itself just before the button comes up, its app telling late or never.
++  for (telling, after) in [("tells 2 ms after", 0.002), ("tells 50 ms after", 0.05), ("never tells", nil)] as [(String, TimeInterval?)] {
++    for before in [0.01, 0.03, 0.1] {
++      book.story("a plain click 5 points inside the left edge, held 0.3 s; \(Int(before * 1000)) ms before the button comes up the window grows by 40 points to the left, and its app \(telling)") { story in
++        let (one, window) = stage(story, frame: CGRect(x: 300, y: 200, width: 400, height: 300))
++        one.mac.pass(0.3)
++        one.heard.clear()
++        one.mac.press(at: CGPoint(x: 305, y: 380))
++        one.mac.pass(0.3 - before)
++        let grown = CGRect(x: 260, y: 200, width: 440, height: 300)
++        if let after {
++          one.mac.timing.report = after
++          one.mac.appMoves(window, to: grown)
++        } else {
++          one.mac.changeSilently(window, to: grown)
++        }
++        one.mac.pass(before)
++        one.mac.release()
++        one.mac.pass(2)
++        nothing(story, one)
++      }
++    }
++  }
++
+   // A window that moves by itself in steps goes on too, but not as the pointer does.
+   for steps in [1, 2, 3, 8] {
+     book.story("text is selected over 120 points in 0.6 s, and the window goes 90 points the same way by itself in \(steps) step(s) within 0.2 s") { story in

@@ -1,0 +1,62 @@
+From b14510bf36e585929d3ad2dcc4cee30187ad5045 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 06:10:46 +0000
+Subject: [PATCH] wip: half a point of y rounds up
+
+---
+ Sources/ArborTesting/FakeWindowSystem.swift |  4 +++-
+ Tests/ArborKitTests/HalfPointsTests.swift   | 25 +++++++++++++++++++++
+ 2 files changed, 28 insertions(+), 1 deletion(-)
+ create mode 100644 Tests/ArborKitTests/HalfPointsTests.swift
+
+diff --git a/Sources/ArborTesting/FakeWindowSystem.swift b/Sources/ArborTesting/FakeWindowSystem.swift
+index 2f15a0e3..bec65a9e 100644
+--- a/Sources/ArborTesting/FakeWindowSystem.swift
++++ b/Sources/ArborTesting/FakeWindowSystem.swift
+@@ -357,9 +357,11 @@ public final class FakeWindowSystem: WindowSystem {
+     {
+       applied.origin.y = min(applied.minY, display.visibleFrame.maxY - titleBar)
+     }
++    // Half a point of a place is rounded down where AppKit counts, from the bottom left: x goes down and y, counted from the top, goes up.
++    // In the traces x went down ten times out of ten and y up nine out of nine. No size with half a point was ever asked for there.
+     if echoes.wholePoints {
+       applied = CGRect(
+-        x: applied.minX.rounded(.down), y: applied.minY.rounded(.down), width: applied.width.rounded(.down),
++        x: applied.minX.rounded(.down), y: applied.minY.rounded(.up), width: applied.width.rounded(.down),
+         height: applied.height.rounded(.down))
+     }
+     return applied
+diff --git a/Tests/ArborKitTests/HalfPointsTests.swift b/Tests/ArborKitTests/HalfPointsTests.swift
+new file mode 100644
+index 00000000..a7126057
+--- /dev/null
++++ b/Tests/ArborKitTests/HalfPointsTests.swift
+@@ -0,0 +1,25 @@
++import ArborCore
++@testable import ArborKit
++import ArborTesting
++import CoreGraphics
++import Testing
++
++/// On a display of scale 1 the window server keeps whole points. Which way half a point goes was in the ledger as a riddle: 150.5 became 150 "but"
++/// 46.5 became 47. The one is an x and the other a y.
++@Suite @MainActor struct HalfPointsTests {
++  /// Asked and answered on a hosted Mac.
++  @Test(arguments: [
++    (CGRect(x: 596.5, y: 68, width: 337, height: 600), CGRect(x: 596, y: 68, width: 337, height: 600)),
++    (CGRect(x: 12, y: 55.5, width: 494, height: 625), CGRect(x: 12, y: 56, width: 494, height: 625)),
++  ])
++  func halfAPointOfXGoesDownAndOfYGoesUp(asked: CGRect, answered: CGRect) {
++    let system = FakeWindowSystem(displays: [
++      DisplaySnapshot(
++        id: DisplayID("main"), frame: CGRect(x: 0, y: 0, width: 1024, height: 768), visibleFrame: CGRect(x: 0, y: 31, width: 1024, height: 674),
++        isMain: true)
++    ])
++    let window = system.open(app: "Notes", frame: CGRect(x: 100, y: 100, width: 400, height: 300))
++    #expect(system.setFrame(asked, of: window) == answered)
++    #expect(system.frame(of: window) == answered)
++  }
++}
+-- 
+2.43.0
+

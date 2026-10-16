@@ -1,0 +1,53 @@
+diff --git a/Sources/ArborTesting/FakeWindowSystem.swift b/Sources/ArborTesting/FakeWindowSystem.swift
+index 8dd1a07..e7f8924 100644
+--- a/Sources/ArborTesting/FakeWindowSystem.swift
++++ b/Sources/ArborTesting/FakeWindowSystem.swift
+@@ -289,6 +289,9 @@ public final class FakeWindowSystem: WindowSystem {
+     if hearHalfNext.remove(window) != nil { frame.origin = fake.snapshot.frame.origin }
+     var applied = Self.accepted(frame, by: fake)
+     if fake.behaviour != .frozen { applied = whereMacOSPuts(applied) }
++    let end = whereTheWayEnds(from: fake.snapshot.frame, to: applied, atLeast: fake.minimumSize)
++    // What macOS left of the size the app rounds in its own way once more.
++    if end.size != applied.size { applied.size = Self.accepted(end, by: fake).size }
+     let changed = fake.snapshot.frame != applied
+     moveLog.append(
+       Move(window: window, requested: frame, before: fake.snapshot.frame, after: applied, together: together))
+@@ -306,6 +309,38 @@ public final class FakeWindowSystem: WindowSystem {
+     return applied
+   }
+ 
++  /// Where one `setFrame` ends. The Accessibility layer sets the size, the place and the size again, or the place alone (`FramePlan`).
++  /// Where the new size does not fit on the display at the old place macOS cuts the first resize short (`asFarAsItMayGrow`) and the last
++  /// step makes up for it, **if there is room at the new place**: a window asked for a size where it stands stays cut.
++  public func whereTheWayEnds(from old: CGRect, to new: CGRect, atLeast minimum: CGSize = .zero) -> CGRect {
++    var frame = old
++    for step in FramePlan.steps(from: old, to: new) {
++      switch step {
++      case .position: frame.origin = new.origin
++      case .size: frame.size = asFarAsItMayGrow(frame, to: new.size, atLeast: minimum)
++      }
++    }
++    return frame
++  }
++
++  /// macOS lets no call make a window grow past the Dock or past its display's right edge. The origin stays, and the bottom edge comes to
++  /// the visible frame's bottom less 1 (23 answers of 23 on a hosted Mac: asked 494×650 at 170,220 with the Dock's top at 705, a window
++  /// took 494×484), the right edge to the display's right edge (asked 494 wide at x 687 of 1024, it took 337). What counts is where the
++  /// window is when the size arrives. It only holds growth back: it shrinks nothing, the window's minimum beats it, and an edge that is
++  /// past the line already is not held (a parked window took 1000×650 where it was parked). Moving is another matter (`whereMacOSPuts`).
++  /// Measured with one display, the Dock at the bottom and both edges on the same side of their lines. That each edge goes by itself, and
++  /// that with several displays the one with the window's middle counts, are guesses.
++  public func asFarAsItMayGrow(_ frame: CGRect, to size: CGSize, atLeast minimum: CGSize = .zero) -> CGSize {
++    let middle = CGPoint(x: frame.midX, y: frame.midY)
++    guard let room = (displayList.first { $0.frame.contains(middle) } ?? displayList.first { $0.frame.overlaps(frame) })?.visibleFrame
++    else { return size }
++    var size = size
++    let (right, bottom) = (room.maxX, room.maxY - 1)
++    if frame.maxX <= right { size.width = min(size.width, max(frame.width, right - frame.minX, minimum.width)) }
++    if frame.maxY <= bottom { size.height = min(size.height, max(frame.height, bottom - frame.minY, minimum.height)) }
++    return size
++  }
++
+   /// What macOS makes of a frame an app has agreed to (`echoes.titleBarStaysReachable`, `echoes.wholePoints`).
+   public func whereMacOSPuts(_ frame: CGRect) -> CGRect {
+     var applied = frame

@@ -1,0 +1,162 @@
+From c2f9a139788e89d6e59732501900485035f6ec71 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 14:03:04 +0000
+Subject: [PATCH 5/5] wip: rotate is asked once, when all have answered; a
+ shrink that cannot shrink lets go of the gaps
+
+---
+ .../Controller/Controller+Layout.swift        | 25 +++++++++----
+ .../Controller/Controller+Tiling.swift        | 36 +++++++++----------
+ 2 files changed, 36 insertions(+), 25 deletions(-)
+
+diff --git a/Sources/ArborKit/Controller/Controller+Layout.swift b/Sources/ArborKit/Controller/Controller+Layout.swift
+index 8f5b4f2b..44bad634 100644
+--- a/Sources/ArborKit/Controller/Controller+Layout.swift
++++ b/Sources/ArborKit/Controller/Controller+Layout.swift
+@@ -54,15 +54,21 @@ extension Controller {
+   /// instead: nobody must see a window jump ahead of the motion that explains it, so they are moved
+   /// here, first of all, once the stage is up.
+   ///
+-  /// One thing that happens is one layout. A command whose arrangement depends on how small a window goes (`shrink`, `rotate`) cannot know
++  /// One thing that happens is one layout. A command whose arrangement depends on how small a window goes (`shrink`) cannot know
+   /// before the window has been asked, which is done here, before anybody is moved. `thinkingAgain` is called whenever one has
+   /// refused the size it was offered, where it stood or in its slot, for as long as gaps still move (see below), and may change
+   /// the arrangement, on paper, to what the command wants now that it knows. `about` is the window on whose answer that
+   /// hangs: it is asked whatever is known of it, and before the others, who would otherwise be asked for a layout that never comes.
++  ///
++  /// A command that would rather not happen than cost a window its place (`rotate`) is asked once, `unless`: when everybody who may
++  /// refuse has answered and nobody has been moved, with the layout that is about to be carried out. Not at the first refusal: what
++  /// is known by then is half of it, and the layout it gives is one that never comes. If it says true it has put the arrangement
++  /// back, and that is laid out as it stands, with no room made anew: whoever was asked where it stood gets its size back, and nobody
++  /// else hears of it.
+   func relayout(
+     _ displayID: DisplayID, reason: RelayoutReason, motion: Motion = .animated,
+     puttingBack handedOver: [(window: WindowID, frame: CGRect)] = [], about subject: WindowID? = nil,
+-    thinkingAgain: (() -> Void)? = nil
++    thinkingAgain: (() -> Void)? = nil, unless takesItselfBack: ((Layout) -> Bool)? = nil
+   ) {
+     let start = DispatchTime.now()
+     defer { stats.record("controller", "lay out a display", seconds: CallStats.seconds(since: start)) }
+@@ -110,6 +116,10 @@ extension Controller {
+       thinkAgain()
+       return self.roomyLayout(of: displayID, for: reason, startingFrom: before)
+     }
++    var isTakenBack = false
++    if let takesItselfBack, takesItselfBack(layout), let asItWas = self.layout(of: displayID) {
++      (layout, isTakenBack) = (asItWas, true)
++    }
+     // After the stage has its pictures of the windows where they are.
+     system.moveTogether(movesInSight(for: layout, on: displayID, reason: reason))
+     // A window refused its slot after all: lay out again so that room is made for it, or it becomes a tile. Or one that is
+@@ -118,9 +128,10 @@ extension Controller {
+     // refuse it in view, so there is a second round. After that no more gaps move, and after two more there is
+     // an end: an app that asks for more every time it is asked is not asked for ever.
+     var again = apply(layout, on: displayID)
+-    if askTilesAgain(layout, on: displayID) { again = true }
++    if !isTakenBack, askTilesAgain(layout, on: displayID) { again = true }
+     var round = 0
+-    while again, round < 4 {
++    // What has been taken back is what was there: nothing is tried again for it, and nothing about the gaps goes on record.
++    while again, !isTakenBack, round < 4 {
+       round += 1
+       if round <= 2 { thinkAgain() }
+       guard
+@@ -134,8 +145,10 @@ extension Controller {
+     if keptRoom[displayID] != nil, layoutAndWhoIsLate(of: displayID)?.atAWindowsCost == true {
+       giveUpRoom(on: displayID)
+     }
+-    rememberSqueezes(in: layout, on: displayID)
+-    noteWhereTheGapsStand(in: layout, on: displayID, for: reason)
++    if !isTakenBack {
++      rememberSqueezes(in: layout, on: displayID)
++      noteWhereTheGapsStand(in: layout, on: displayID, for: reason)
++    }
+     placeFloatingWindows(on: displayID, layout: layout, reason: reason)
+     layouts[displayID] = layout
+     lettingBeEndsWithAPlace(in: layout)
+diff --git a/Sources/ArborKit/Controller/Controller+Tiling.swift b/Sources/ArborKit/Controller/Controller+Tiling.swift
+index 7e7be978..90b9a5de 100644
+--- a/Sources/ArborKit/Controller/Controller+Tiling.swift
++++ b/Sources/ArborKit/Controller/Controller+Tiling.swift
+@@ -197,6 +197,8 @@ extension Controller {
+     }
+     guard var workspace = workspaces[display] else { return .failure("no display") }
+     let before = workspace
++    // A command that fails has changed nothing: nor what is on record about the gaps.
++    let (noted, standing, kept) = (treesBeforeRoomWasMade[display], standingGaps[display], keptRoom[display])
+     let words = name(of: group, on: display)
+     workspace.changeStructure {
+       $0.rotate(group)
+@@ -210,6 +212,7 @@ extension Controller {
+       let lost = shown.filter { turned.windowFrames[$0] == nil }.count
+       guard lost > 0 else { return nil }
+       workspaces[display] = before
++      (treesBeforeRoomWasMade[display], standingGaps[display], keptRoom[display]) = (noted, standing, kept)
+       return .failure(
+         "not enough room: rotated, \(Self.count(lost, "window")) would be too small to show; "
+           + "`grow` them first, or frame the group (`zoom`, then `out`) and rotate it there")
+@@ -218,14 +221,15 @@ extension Controller {
+     if let refusal = refusal(roomyLayout(of: display, for: .structure)) { return refusal }
+     workspaces[display] = workspace
+     // How small an app lets its window get is known only once it has been asked, which the layout does where each window stands, before
+-    // anybody has moved. One will not be as small as its new slot: judged again, on paper, from the gaps as the turn left them. Laid
+-    // out first, that window was a tile, and every window flew there and back for "not enough room".
++    // anybody has moved. Judged again when all have answered: laid out first, a window that would not be as small as its new slot
++    // was a tile, and every window flew there and back for "not enough room".
+     var takenBack: CommandResult?
+-    relayout(display, reason: .structure) {
+-      guard takenBack == nil else { return }
+-      self.workspaces[display] = workspace
+-      takenBack = refusal(self.layoutToCome(on: display))
+-    }
++    relayout(
++      display, reason: .structure,
++      unless: { turned in
++        takenBack = refusal(turned)
++        return takenBack != nil
++      })
+     if let takenBack { return takenBack }
+     // It took the size where it stood and refuses it in its slot.
+     if let refusal = refusal(layouts[display]) {
+@@ -295,14 +299,7 @@ extension Controller {
+           let usable = options(for: display).layoutOptions.minimumUsableSize
+           let learned = minimumSizes[id] ?? .zero
+           let floor = axis == .horizontal ? max(usable.width, learned.width) : max(usable.height, learned.height)
+-          let length = slot.length(along: axis)
+-          let spare = length - floor - 1
+-          // Its slot is a point or two short of what its app insists on, which passed for rounding until it was asked for less. Left
+-          // so, it would be a tile from now on: for a command that cannot do what it was asked, the window would go out of view.
+-          // Nothing goes out of view by itself, so it gets what it is short of. By the layout's own measure of a tile: a slot that is
+-          // a point short shows its window, and is left as it is.
+-          let wouldBeATile = (axis == .horizontal ? learned.width : learned.height) > length + 1
+-          change = wouldBeATile ? -spare : -min(-amount, max(spare, 0))
++          change = -min(-amount, max(slot.length(along: axis) - floor - 1, 0))
+         }
+         guard change != 0 else { continue }
+         let share = change / CGFloat(sides.count)
+@@ -331,6 +328,11 @@ extension Controller {
+           : {
+             putTheGapsBack()
+             movedAtAll = moveTheGaps()
++            // It cannot be made smaller at all, and may be short of what it has turned out to need: a point or two pass for
++            // rounding until a window is asked for less. No hand holds a gap any more, so room is made for it as for anybody,
++            // by whoever can spare it (F61). Left to the hand it would be a tile from now on: for a command that cannot do
++            // what it was asked, the window would go out of view.
++            if !movedAtAll { self.gapsInHand = false }
+           })
+     }
+     if layouts[display]?.windowFrames[id] == nil {
+@@ -346,10 +348,6 @@ extension Controller {
+     }
+     guard movedAtAll else { return .failure("\(id) cannot \(verb) any further") }
+     scheduleSave()
+-    // All that moved is what it was short of.
+-    if !growing, let now = layouts[display]?.nodeFrames[leaf], now.width > slot.width - 0.5, now.height > slot.height - 0.5 {
+-      return .failure("\(id) cannot \(verb) any further")
+-    }
+     return .success(growing ? "\(id) grew" : "\(id) shrank")
+   }
+ 
+-- 
+2.43.0
+

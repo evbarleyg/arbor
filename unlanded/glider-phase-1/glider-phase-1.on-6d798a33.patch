@@ -1,0 +1,3012 @@
+From e0f2b802abb14869718cde8c45ff285e3ec41b00 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 16:22:01 +0000
+Subject: [PATCH 1/6] feat(core): how long a glide lasts, and the one rule by
+ which its road is judged
+
+---
+ Sources/ArborCore/Glide.swift         | 42 ++++++++++++++++++++++
+ Tests/ArborCoreTests/GlideTests.swift | 51 +++++++++++++++++++++++++++
+ 2 files changed, 93 insertions(+)
+ create mode 100644 Sources/ArborCore/Glide.swift
+ create mode 100644 Tests/ArborCoreTests/GlideTests.swift
+
+diff --git a/Sources/ArborCore/Glide.swift b/Sources/ArborCore/Glide.swift
+new file mode 100644
+index 00000000..1dbf1e1b
+--- /dev/null
++++ b/Sources/ArborCore/Glide.swift
+@@ -0,0 +1,42 @@
++import CoreGraphics
++
++/// One window that travels as a picture of itself (Controller+Glider.swift): the numbers, and the one rule by which its road is judged.
++public enum Glide {
++  /// The real window is never out of view for longer than this, in seconds, whatever `animationDuration` says and whatever becomes
++  /// of the panel.
++  public static let longestAway = 0.5
++
++  /// How long a presenter may take over a picture, in seconds. From the key to the first frame a glide costs at most this much
++  /// more than a jump; a picture that takes longer is none.
++  public static let longestWaitForAPicture = 0.05
++
++  /// The window level of the panel: above every window, the stage and Arbor's passing panels. No other panel of Arbor's is at it,
++  /// because that is what the detector on a Mac knows the glider by (scripts/mac-shell/jolts.py, `GLIDER`).
++  public static let panelLevel = 7
++
++  /// A window whose place and size all end within this many points of what they are has no journey worth a picture.
++  public static let trifle: CGFloat = 8
++
++  /// How long a glide takes where a motion takes `motion` seconds.
++  public static func duration(motion: Double) -> Double { min(max(motion, 0), longestAway) }
++
++  public static func isAJourney(from: CGRect, to: CGRect) -> Bool { !from.approximatelyEquals(to, tolerance: trifle) }
++
++  /// "A window moves once, to where it ends up" is about what a person sees. From its picture's going up until its coming down a
++  /// person sees the picture of the one window that glides, so in that time its road is not judged and its end is.
++  ///
++  /// `road` is every frame the real window had in that time, beginning with where it stood when the picture went up and ending with
++  /// where it was when the picture came down; `shows` says whether a person could see a window at a frame. What a person saw of it
++  /// is its two ends, if it went from a place in view out of view and from there to a place in view, and nowhere else. Nil for
++  /// any other road, which is judged as ever: a third place in view, a second time out of view, an end that nobody can
++  /// see, or a window that never left.
++  ///
++  /// The one rule for whoever measures roads: `FakeWindowSystem.asSeen` hands it the fake's log, which `road(of:)`, `jolts(since:)` and the
++  /// chaos lab's nets read, and scripts/mac-shell/jolts.py (`glider_came_down`) says the same of a Mac's window list.
++  public static func whatWasSeen(of road: [CGRect], shows: (CGRect) -> Bool) -> [CGRect]? {
++    guard road.count > 2, let first = road.first, let last = road.last, shows(first), shows(last),
++      !road.dropFirst().dropLast().contains(where: shows)
++    else { return nil }
++    return [first, last]
++  }
++}
+diff --git a/Tests/ArborCoreTests/GlideTests.swift b/Tests/ArborCoreTests/GlideTests.swift
+new file mode 100644
+index 00000000..b52fa7f4
+--- /dev/null
++++ b/Tests/ArborCoreTests/GlideTests.swift
+@@ -0,0 +1,51 @@
++import ArborCore
++import CoreGraphics
++import Testing
++
++@Suite struct GlideTests {
++  static let display = CGRect(x: 0, y: 0, width: 1440, height: 900)
++  static func shows(_ frame: CGRect) -> Bool {
++    let showing = frame.intersection(display)
++    return !showing.isNull && showing.width > 2 && showing.height > 2
++  }
++
++  let old = CGRect(x: 300, y: 200, width: 640, height: 420)
++  let new = CGRect(x: 12, y: 37, width: 702, height: 781)
++  let away = CGRect(x: 1439, y: 37, width: 640, height: 420)
++  let sized = CGRect(x: 1439, y: 37, width: 702, height: 781)
++  let third = CGRect(x: 700, y: 37, width: 702, height: 781)
++
++  func seen(_ road: [CGRect]) -> [CGRect]? { Glide.whatWasSeen(of: road, shows: Self.shows) }
++
++  @Test func fromAPlaceInViewOutOfViewAndFromThereToAPlaceInViewIsSeenAsItsTwoEnds() {
++    #expect(seen([old, away, new]) == [old, new])
++    #expect(seen([old, away, sized, new]) == [old, new], "what it does out of view nobody sees")
++  }
++
++  @Test func anyOtherRoadIsJudgedAsEver() {
++    #expect(seen([old, away, third, new]) == nil, "a third place")
++    #expect(seen([old, third, away, new]) == nil)
++    #expect(seen([old, away, new, away, new]) == nil, "a second time out of view")
++    #expect(seen([old, away]) == nil, "an end nobody can see")
++    #expect(seen([old, away, sized]) == nil)
++    #expect(seen([away, sized, new]) == nil, "it was not in view when its picture went up")
++    #expect(seen([old, new]) == nil, "it never left: there is nothing to leave out")
++    #expect(seen([old]) == nil)
++    #expect(seen([]) == nil)
++  }
++
++  @Test func aGlideLastsAsLongAsAMotionAndNeverLongerThanTheWindowMayBeAway() {
++    #expect(Glide.duration(motion: 0.46) == 0.46)
++    #expect(Glide.duration(motion: 2) == Glide.longestAway)
++    #expect(Glide.duration(motion: 0) == 0)
++    #expect(Glide.duration(motion: -1) == 0)
++    #expect(Glide.longestAway == 0.5)
++  }
++
++  @Test func aTrifleIsNoJourney() {
++    #expect(!Glide.isAJourney(from: old, to: old))
++    #expect(!Glide.isAJourney(from: old, to: old.offsetBy(dx: 8, dy: -8)))
++    #expect(Glide.isAJourney(from: old, to: old.offsetBy(dx: 9, dy: 0)))
++    #expect(Glide.isAJourney(from: old, to: CGRect(x: 300, y: 200, width: 640, height: 440)), "a size is a journey too")
++  }
++}
+-- 
+2.43.0
+
+
+From 2750049f66bc0a20f149f03002df9734554beed1 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 16:22:01 +0000
+Subject: [PATCH 2/6] feat: one window glides as a picture of itself, over the
+ real display
+
+With motion on, windowPictures on and a picture to be had, the window an act is about travels as a picture on a small panel; the others
+jump in plain view. The real window waits out of view, takes its size there and is placed under the panel at the end. On a Mac the
+presenter still says that there is no picture, so nothing changes there yet.
+---
+ .../Controller/Controller+AskFirst.swift      |    2 +
+ .../Controller/Controller+Commands.swift      |    5 +
+ .../ArborKit/Controller/Controller+Drag.swift |    4 +
+ .../Controller/Controller+EdgeResize.swift    |    1 +
+ .../Controller/Controller+Events.swift        |    4 +-
+ .../Controller/Controller+Glider.swift        |  421 +++++++
+ .../Controller/Controller+Hardening.swift     |    1 +
+ .../Controller/Controller+Invariants.swift    |    1 +
+ .../Controller/Controller+Layout.swift        |   14 +-
+ .../ArborKit/Controller/Controller+Lead.swift |    1 +
+ .../ArborKit/Controller/Controller+Peek.swift |    2 +
+ .../Controller/Controller+Transitions.swift   |    3 +-
+ Sources/ArborKit/Controller/Controller.swift  |    6 +
+ .../ArborKit/Platform/OverlayPresenter.swift  |   15 +
+ .../ArborKit/Trace/RecordingOverlays.swift    |   18 +
+ .../ArborKit/UI/AppKitOverlays+Motion.swift   |    6 +
+ .../ArborTesting/FakeWindowSystem+Chaos.swift |    2 +
+ Sources/ArborTesting/FakeWindowSystem.swift   |   13 +-
+ Sources/ArborTesting/Fakes.swift              |   83 ++
+ .../ArborTesting/Film/OverlayPlayback.swift   |    2 +
+ Sources/ArborTesting/Harness.swift            |   10 +-
+ Sources/ArborTesting/Jolts.swift              |   10 +-
+ Sources/ArborTesting/Roads.swift              |   54 +-
+ Sources/ArborTesting/TraceReplayer.swift      |    7 +
+ Sources/arbor-fakemac/Arbor.swift             |    5 +
+ Sources/arbor-sim/main.swift                  |   13 +
+ Tests/ArborKitTests/GliderTests.swift         | 1040 +++++++++++++++++
+ 27 files changed, 1724 insertions(+), 19 deletions(-)
+ create mode 100644 Sources/ArborKit/Controller/Controller+Glider.swift
+ create mode 100644 Tests/ArborKitTests/GliderTests.swift
+
+diff --git a/Sources/ArborKit/Controller/Controller+AskFirst.swift b/Sources/ArborKit/Controller/Controller+AskFirst.swift
+index c1d74773..43898212 100644
+--- a/Sources/ArborKit/Controller/Controller+AskFirst.swift
++++ b/Sources/ArborKit/Controller/Controller+AskFirst.swift
+@@ -30,6 +30,8 @@ extension Controller {
+ 
+   /// Returns true if one of them will not be as small as its slot: `layout` no longer holds.
+   private func askThoseWhoMayRefuse(_ layout: Layout, on displayID: DisplayID, beginningWith first: WindowID?) -> Bool {
++    // The one that is away under its picture is asked where it waits (Controller+Glider.swift).
++    if aimTheGlide(at: layout, on: displayID) { return true }
+     let shown = layouts[displayID]?.windowFrames ?? [:]
+     let unknown = layout.windowFrames.keys.sorted().filter { window in
+       guard window != drag?.window, let current = windows[window], isStillToBePlaced(current, in: layout.windowFrames[window]!)
+diff --git a/Sources/ArborKit/Controller/Controller+Commands.swift b/Sources/ArborKit/Controller/Controller+Commands.swift
+index ee171e8e..a9e3a4fc 100644
+--- a/Sources/ArborKit/Controller/Controller+Commands.swift
++++ b/Sources/ArborKit/Controller/Controller+Commands.swift
+@@ -7,6 +7,9 @@ extension Controller {
+   /// Runs a command. Every entry point (hotkeys, menu, socket, URLs, tests)
+   /// ends up here, by way of `perform(_:from:)` (Controller+Lead.swift).
+   func execute(_ command: Command) -> CommandResult {
++    // Whatever a person does ends a glide at its end, and starts from there (Controller+Glider.swift).
++    anActBegins(command)
++    defer { glider.named = nil }
+     // Before it changes anything: a peek ends on the arrangement it began with. Here, so that no way in goes round it.
+     // The one exception is no command but a click (Controller+FrameRect.swift).
+     if let landed = landPeek(insteadOf: command) { return landed }
+@@ -223,6 +226,8 @@ extension Controller {
+       return .failure(.failure("\(id) is not on any display"))
+     }
+     stopWatchingTitle(of: id)  // the user has taken it in hand
++    // The first it names, of a command that names two.
++    glider.named = glider.named ?? id
+     return .window(id, displayID)
+   }
+ 
+diff --git a/Sources/ArborKit/Controller/Controller+Drag.swift b/Sources/ArborKit/Controller/Controller+Drag.swift
+index c0134578..bc3b60a6 100644
+--- a/Sources/ArborKit/Controller/Controller+Drag.swift
++++ b/Sources/ArborKit/Controller/Controller+Drag.swift
+@@ -73,6 +73,7 @@ extension Controller {
+ 
+   public func dragBegan(_ id: WindowID, at point: CGPoint) {
+     stopWatchingTitle(of: id)
++    landTheGlider()
+     // The end of the last drag can be lost (a missed mouse-up). What it left must go first.
+     cancelDrag()
+     closeFinderBecauseTheUserLeft()
+@@ -335,6 +336,9 @@ extension Controller {
+   ) {
+     let undoScope = beginUndoStep(dropping: window, on: hover.target, of: hover.display)
+     defer { endUndoStep(undoScope) }
++    // The drop is about this window (Controller+Glider.swift).
++    glider.named = window
++    defer { glider.named = nil }
+     // While the drop is laid out, a window dropped to float stays where it was dropped (`placeFloatingWindows`).
+     placedOnPurpose = [window]
+     defer { placedOnPurpose = [] }
+diff --git a/Sources/ArborKit/Controller/Controller+EdgeResize.swift b/Sources/ArborKit/Controller/Controller+EdgeResize.swift
+index 746e8b20..db3aef33 100644
+--- a/Sources/ArborKit/Controller/Controller+EdgeResize.swift
++++ b/Sources/ArborKit/Controller/Controller+EdgeResize.swift
+@@ -19,6 +19,7 @@ extension Controller {
+   }
+ 
+   public func resizeBegan(_ id: WindowID) {
++    landTheGlider()
+     edgeResize = nil
+     floatingEdgeInHand = nil
+     appsDoubleClick = nil
+diff --git a/Sources/ArborKit/Controller/Controller+Events.swift b/Sources/ArborKit/Controller/Controller+Events.swift
+index c7139e0b..a103590d 100644
+--- a/Sources/ArborKit/Controller/Controller+Events.swift
++++ b/Sources/ArborKit/Controller/Controller+Events.swift
+@@ -30,6 +30,7 @@ extension Controller: WindowSystemEvents {
+ 
+   public func windowDestroyed(_ id: WindowID) {
+     defer { holdForgets(id) }
++    theGlideEnds(withTheGoingOf: id)
+     let app = windows[id]?.pid
+     let appName = windows[id]?.appName
+     windows[id] = nil
+@@ -92,6 +93,7 @@ extension Controller: WindowSystemEvents {
+   }
+ 
+   public func windowChanged(_ window: WindowSnapshot, userInitiated: Bool) {
++    let window = whatIsNews(in: window)
+     let previous = windows[window.id]
+     // Every window Arbor moves reports back what Arbor knows already. Storing that would count as a change of `windows`.
+     if previous != window { windows[window.id] = window }
+@@ -295,7 +297,7 @@ extension Controller: WindowSystemEvents {
+     closeFinderBecauseTheUserLeft()
+     // Displays that go away keep their arrangement and get it back when they
+     // return: see Controller+Displays.swift.
+-    updateDisplays()
++    theGlideEndsWithTheDisplays { updateDisplays() }
+   }
+ }
+ 
+diff --git a/Sources/ArborKit/Controller/Controller+Glider.swift b/Sources/ArborKit/Controller/Controller+Glider.swift
+new file mode 100644
+index 00000000..90468987
+--- /dev/null
++++ b/Sources/ArborKit/Controller/Controller+Glider.swift
+@@ -0,0 +1,421 @@
++import ArborCore
++import CoreGraphics
++import Foundation
++
++/// One window travels as a picture of itself, over the real display.
++///
++/// With motion on, `windowPictures` on and a picture to be had, the window an act is about does not jump: the presenter puts a picture of
++/// it up on a small panel that lies exactly over it and lets the panel glide to where the window is going (`OverlayPresenter.liftOff`).
++/// Nothing else is covered. The other windows jump, in plain view, exactly as without motion. There is no stage, no card and no
++/// picture of the desktop, and nothing is kept when the glide is over. Where there is no glider, everything is as it is without one.
++///
++/// A window cannot be seen twice, so the real one is out of view meanwhile. Its road is: where it stood, out of view, where it ends
++/// up, and nothing else. Out of view it takes its final size, where nobody sees it lay itself out; at the end it is only moved,
++/// under the panel, and the panel goes. What a person sees is one window that moves once, to where it ends up.
++///
++/// The window away is the one in use, so:
++/// - **the way back is written down before it leaves** (`takeOff`): the arrangement as it will be is on disk, and where the window waits
++///   is a place from which every start fetches a window (`treatStrandedWindowsAsParked`, `reconcile`);
++/// - **there is a limit by the clock**: it is back when the glide's time is up, half a second at the most (`Glide.longestAway`), by the
++///   controller's own timer, whatever becomes of the panel;
++/// - **whatever a person does ends the glide at once, at its end** (`landTheGlider`): nothing queues, and what comes next starts from there;
++/// - **its own parking is no news to Arbor**: when the layout that began it is done, `windows` has it at the frame it is going to, so the menu, Go to…, the
++///   line on screen, the focus ring, the minimap, `state`, the invariants and what is saved all speak of that frame. It is not in
++///   `parked`, nothing is learnt from where it waits, and the keyboard stays with it. What its app reports of its place
++///   meanwhile is Arbor's own doing come back (`whatIsNews`);
++/// - **where it ends is found out while it is away** (`aim`): it is asked for its size where it waits, as others are asked where they stand
++///   (Controller+AskFirst.swift). If it will not be as small as its slot, or a neighbour's answer changes the layout, it is asked again for the
++///   layout that follows, and the panel is told where to go instead;
++/// - **whatever else is not as foreseen calls the glide off**: the books say where the window really is, the layout under way places it as
++///   it places any window, and the panel goes when that is done. It has then jumped, once.
++extension Controller {
++  /// One stored property of the controller.
++  struct Glider {
++    /// The window the act under way is about, if it names one or means the one with the keyboard.
++    var named: WindowID?
++    var flight: Flight?
++    /// The picture is up and where its window ends is still to be found. Only while a layout is under way.
++    var unaimed: Picture?
++    /// The panel is up and nothing glides: it goes when the layout under way has placed the window.
++    var panelIsToGo = false
++  }
++
++  /// The picture that is up.
++  struct Picture {
++    var window: WindowID
++    var display: DisplayID
++    /// Where it went up, when, and for how long.
++    var from: CGRect
++    var began: Date
++    var duration: Double
++    /// Where the panel has been told to go.
++    var goesTo: CGRect
++  }
++
++  /// The glide under way.
++  struct Flight {
++    var picture: Picture
++    /// Where it is going, which is where everybody but the window system has it.
++    var to: CGRect
++    /// Where it really is.
++    var waitsAt: CGRect
++    /// The slot it is to fill. Nil for a floating window.
++    var slot: CGRect?
++
++    var window: WindowID { picture.window }
++    var display: DisplayID { picture.display }
++  }
++
++  static let glideKey = "glide"
++
++  /// The window that is out of view under its own picture, for tests and the chaos lab.
++  public var glidingWindow: WindowID? { glider.flight?.window }
++
++  // MARK: Going up
++
++  /// Where a layout takes a window, and by whose books.
++  private enum Destination {
++    case slot(CGRect)
++    /// Handed to `relayout` to be put back (`putBack`).
++    case ownFrame(CGRect)
++    /// `FloatingMove.place`.
++    case onTheDesktop(CGRect)
++  }
++
++  /// Called by `relayout` before it moves anything, in the stage's place. True if a picture went up: then there is no stage, whatever
++  /// becomes of the glide. A window that glides to the frame it was to be put back at is taken off `puttingBack`.
++  func takeOff(
++    on displayID: DisplayID, to layout: Layout, reason: RelayoutReason, motion: Motion,
++    puttingBack: inout [(window: WindowID, frame: CGRect)]
++  ) -> Bool {
++    // With either off, not one line of this runs.
++    guard settings.windowPictures, settings.motionDuration > 0 else { return false }
++    guard reason != .enforce, motion == .animated, drag == nil, edgeResize == nil, glider.flight == nil, !glider.panelIsToGo,
++      let display = display(displayID), let window = glider.named ?? keyboardFocus(), let current = windows[window],
++      isFitToGlide(current, on: display),
++      let destination = destination(of: current, in: layout, on: displayID, reason: reason, puttingBack: puttingBack)
++    else { return false }
++    // What is asked of it, and where it is expected to end up if its app does as it did before.
++    let (asked, expected): (CGRect, CGRect)
++    switch destination {
++    case .slot(let slot): (asked, expected) = (request(for: current, in: slot), expectedFrame(of: current, in: slot))
++    case .ownFrame(let frame), .onTheDesktop(let frame): (asked, expected) = (frame, frame)
++    }
++    guard Glide.isAJourney(from: current.frame, to: expected), !showsOnlyASliver(expected),
++      wing(for: current.frame.size, then: asked, of: window, on: display) != nil,
++      // macOS is showing its desktop: the window is not where its picture would go up.
++      !isSweptAside(system.stackedWindows())
++    else { return false }
++    let duration = Glide.duration(motion: settings.motionDuration)
++    let picture = Picture(window: window, display: displayID, from: current.frame, began: now(), duration: duration, goesTo: expected)
++    guard overlays.liftOff(window, from: current.frame, to: expected, duration: duration) else { return false }
++    // Before it leaves: should Arbor die now, the start that follows reads where everything belongs. Not before there is a picture: where
++    // there is none, nothing is done that is not done without a glider.
++    saveNow()
++    store.flush()
++    // A stage still up from an earlier change would hide the others as they jump, and lift on something it did not lead to.
++    overlays.finishAnimations()
++    rehearsalWaits(for: duration)
++    // From here on the panel is up, and comes down when the window is in a place.
++    glider.panelIsToGo = true
++    glider.unaimed = picture
++    // What it says to its slot is for `askingFirst` to hear, which comes next.
++    guard leaves(for: asked) else { return true }
++    if case .slot = destination { return true }
++    _ = aim(at: destination)
++    glider.unaimed = nil
++    if glider.flight != nil { puttingBack.removeAll { $0.window == window } }
++    return true
++  }
++
++  /// The place alone: the window whose picture is up goes to where it will be asked for `asked`. False, and the glide is off, if it does not.
++  private func leaves(for asked: CGRect) -> Bool {
++    guard let picture = glider.unaimed, let current = windows[picture.window], let display = display(picture.display),
++      let wing = wing(for: current.frame.size, then: asked, of: picture.window, on: display)
++    else {
++      glider.unaimed = nil
++      return false
++    }
++    guard current.frame.origin != wing else { return true }
++    let left = system.setFrame(CGRect(origin: wing, size: current.frame.size), of: picture.window)
++    if let left { windows[picture.window]?.frame = left }
++    guard let left, isOutOfView(left) else {
++      glider.unaimed = nil
++      return false
++    }
++    return true
++  }
++
++  /// Asks the window whose picture is up for the size it is to have, out of view, and sets it on its way if the answer is one that `place` and
++  /// `putBack` would leave it with. Each of the two calls goes by the steps the window system takes for it (`FramePlan`).
++  ///
++  /// Returns true if it will not be as small as its slot and that is news (a new minimum size was learned): it waits for the layout
++  /// that follows. In every other case in which nothing glides when this returns, the glide is off.
++  private func aim(at destination: Destination) -> Bool {
++    guard var picture = glider.unaimed, let current = windows[picture.window] else { return false }
++    let window = picture.window
++    let asked: CGRect
++    switch destination {
++    case .slot(let slot): asked = request(for: current, in: slot)
++    case .ownFrame(let frame), .onTheDesktop(let frame): asked = frame
++    }
++    guard leaves(for: asked), var took = windows[window]?.frame else { return false }
++    glider.unaimed = nil
++    let wing = took.origin
++    if abs(asked.width - took.width) > 0.5 || abs(asked.height - took.height) > 0.5 {
++      let question = CGRect(origin: wing, size: asked.size)
++      guard let answer = system.setFrame(question, of: window) else { return false }
++      took = answer
++      if case .slot = destination { took = askForLess(window, slot: question, took: took) }
++      windows[window]?.frame = took
++    }
++    // An answer that may be the screen's says nothing about the window.
++    guard isOutOfView(took), !mayHaveBeenStoppedByTheScreen(took.size, shortOf: asked.size, at: wing) else { return false }
++    let origin: CGPoint
++    switch destination {
++    case .slot(let slot):
++      let isNews = learn(from: window, was: current.frame.size, took: took.size, offered: slot.size)
++      // Should `place` have to see to it after all, it is only moved: a terminal would round up again and be talked down again, in view.
++      justAnswered[window] = asked.size
++      guard took.width <= slot.width + 2, took.height <= slot.height + 2 else {
++        if isNews { glider.unaimed = picture }
++        return isNews
++      }
++      let isSmaller = took.width < slot.width - 2 || took.height < slot.height - 2
++      origin = isSmaller ? Self.centred(took.size, in: slot).origin : slot.origin
++    case .ownFrame(let frame), .onTheDesktop(let frame):
++      guard abs(took.width - frame.width) <= 1, abs(took.height - frame.height) <= 1 else { return false }
++      origin = frame.origin
++    }
++    // macOS puts windows on whole points, and the picture ends on the window to the point.
++    let end = CGRect(x: origin.x.rounded(.down), y: origin.y.rounded(.down), width: took.width, height: took.height)
++    // Now that it has answered there may be nowhere to go: a command that thought again (`shrink`) leaves it where it was.
++    guard !showsOnlyASliver(end), Glide.isAJourney(from: picture.from, to: end) else { return false }
++
++    // It glides. From now on it is where it is going, for everybody.
++    let elapsed = now().timeIntervalSince(picture.began)
++    // Its app rounds sizes, has stopped growing elsewhere than it did, or the layout is another.
++    if end != picture.goesTo {
++      picture.goesTo = end
++      _ = overlays.liftOff(window, from: picture.from, to: end, duration: Transition.timeLeft(of: picture.duration, after: elapsed))
++    }
++    glider.panelIsToGo = false
++    glider.flight = Flight(picture: picture, to: end, waitsAt: took, slot: nil)
++    windows[window]?.frame = end
++    unplaced.remove(window)
++    switch destination {
++    case .slot(let slot):
++      glider.flight?.slot = slot
++      settled[window] = end
++      misfits[window] = end.approximatelyEquals(slot, tolerance: 1) ? nil : (slot, end)
++    case .ownFrame:
++      // As `putBack` leaves it: where its user had it, not where Arbor chose to put it.
++      settled[window] = nil
++    case .onTheDesktop(let frame):
++      settled[window] = end
++      misfits[window] = end.approximatelyEquals(frame, tolerance: 1) ? nil : (frame, end)
++    }
++    // By the clock that began when the picture went up, whatever the answers took.
++    scheduler.schedule(Self.glideKey, after: max(picture.duration - max(elapsed, 0), 0)) { [weak self] in self?.landTheGlider() }
++    Log.debug("\(window) glides to \(end.brief)")
++    return false
++  }
++
++  /// In view, as itself, in nobody's hand, and with an app that can be taken at its word.
++  private func isFitToGlide(_ window: WindowSnapshot, on display: DisplaySnapshot) -> Bool {
++    // Present: not minimized, not hidden, not in full screen, not on another Space.
++    window.isPresent && isManaged(window.id) && workspaces[display.id]?.contains(window.id) == true && !parked.contains(window.id)
++      && window.frame.overlaps(display.frame) && !showsOnlyASliver(window.frame) && !isLetBe(window.id)
++      && !unplaced.contains(window.id) && !enforcement.givenUp.contains(window.id)
++      // Only just back, or on its way out of full screen: macOS may still be flying it in.
++      && landsAt[window.id] == nil && metAhead[window.id] == nil
++  }
++
++  /// Nil for a window that the layout leaves where it is, turns into a tile or takes out of view.
++  private func destination(
++    of window: WindowSnapshot, in layout: Layout, on displayID: DisplayID, reason: RelayoutReason,
++    puttingBack: [(window: WindowID, frame: CGRect)]
++  ) -> Destination? {
++    if let own = puttingBack.last(where: { $0.window == window.id }) { return .ownFrame(own.frame) }
++    if let slot = layout.windowFrames[window.id] { return isStillToBePlaced(window, in: slot) ? .slot(slot) : nil }
++    guard case .place(let frame, _)? = floatingMoves(on: displayID, layout: layout, reason: reason).first(where: { $0.window == window.id })?.move
++    else { return nil }
++    return .onTheDesktop(frame)
++  }
++
++  /// Where the real window waits: beside the display, a point of it showing, at the height of the frame it is going to. macOS lets a window
++  /// grow no further than the bottom of the visible frame where it stands, so in a bottom corner, where Arbor parks windows, the
++  /// answer would be the screen's. Here the height fits as it will at the end, and the width is free: the far edge is off the display.
++  ///
++  /// To the right. To the left what shows depends on the width, so that is a place only for a window that keeps its width: as in
++  /// `question`, it must neither grow into view nor shrink out of reach. Nil where a neighbouring display would show it.
++  private func wing(for size: CGSize, then asked: CGRect, of window: WindowID, on display: DisplaySnapshot) -> CGPoint? {
++    [CGPoint(x: display.frame.maxX - 1, y: asked.minY), CGPoint(x: display.frame.minX - size.width + 1, y: asked.minY)].first { origin in
++      let (first, second) = (CGRect(origin: origin, size: size), CGRect(origin: origin, size: asked.size))
++      return isOutOfView(first.union(second)) && [first, second].allSatisfy { frame in displays.contains { frame.overlaps($0.frame) } }
++        // macOS would stop it higher up than that.
++        && whereItStops(origin, titleBar: titleBars[window] ?? Self.guessedTitleBar) == origin
++    }
++  }
++
++  // MARK: During the layout that began it
++
++  /// Called with every layout of the display, before anybody is asked or moved for it. The window that is away is asked for what it is to be
++  /// in this one, unless it is on its way there already: another window's answer can change the layout, and the glide then leads to
++  /// a slot that is no longer there. Returns true if `layout` does not hold, because it will not be as small as its slot.
++  ///
++  /// `orNever`: by whoever goes on to place every window of `layout`, whatever this one answers. There is an end to the asking because
++  /// there is one to the layouts (`askingFirst`, `relayout`).
++  func aimTheGlide(at layout: Layout, on displayID: DisplayID, orNever: Bool = false) -> Bool {
++    defer { if orNever { glider.unaimed = nil } }
++    if let flight = glider.flight, flight.display == displayID, let slot = flight.slot, layout.windowFrames[flight.window] != slot {
++      callOffTheGlide()
++    }
++    guard let picture = glider.unaimed, picture.display == displayID else { return false }
++    // A tile, or out of view: that is no journey for a picture.
++    guard let slot = layout.windowFrames[picture.window] else {
++      glider.unaimed = nil
++      return false
++    }
++    return aim(at: .slot(slot))
++  }
++
++  /// The books say where the window really is. It may yet be aimed anew; if not, whoever lays out next places it like any window that stands
++  /// in a wrong place.
++  private func callOffTheGlide() {
++    guard let flight = glider.flight else { return }
++    glider.flight = nil
++    glider.panelIsToGo = true
++    scheduler.cancel(Self.glideKey)
++    Log.debug("the glide of \(flight.window) to \(flight.to.brief) is called off")
++    // Unless somebody has given it another frame meanwhile: then the books are right already.
++    guard windows[flight.window]?.frame == flight.to else { return }
++    windows[flight.window]?.frame = flight.waitsAt
++    settled[flight.window] = nil
++    misfits[flight.window] = nil
++    glider.unaimed = flight.picture
++  }
++
++  /// Called by `relayout` when everything is in place.
++  func settleTheGlide(on displayID: DisplayID) {
++    // Somebody has given it another frame meanwhile, which is a place: there is nothing left to do but to show it.
++    if let flight = glider.flight, flight.display == displayID, windows[flight.window]?.frame != flight.to {
++      glider.flight = nil
++      glider.panelIsToGo = true
++      scheduler.cancel(Self.glideKey)
++    }
++    thePanelGoesIfNothingGlides()
++  }
++
++  private func thePanelGoesIfNothingGlides() {
++    glider.unaimed = nil
++    guard glider.panelIsToGo else { return }
++    glider.panelIsToGo = false
++    overlays.touchDown()
++  }
++
++  /// The displays have changed, and `seeingToThem` is what Arbor does about that. Where the window was going may be nowhere now, so it is not sent
++  /// there first: the books say where it is, out of view, and it is fetched from there like any window the displays have left
++  /// stranded (`treatStrandedWindowsAsParked`). It moves once.
++  func theGlideEndsWithTheDisplays(_ seeingToThem: () -> Void) {
++    callOffTheGlide()
++    glider.unaimed = nil
++    seeingToThem()
++    thePanelGoesIfNothingGlides()
++  }
++
++  // MARK: Coming down
++
++  /// Ends the glide at its end, at once: when its time is up, and whenever a person does anything. The window is placed first,
++  /// then the panel goes. Costs a test of a flag while nothing glides.
++  func landTheGlider() {
++    guard let flight = glider.flight else { return }
++    glider.flight = nil
++    scheduler.cancel(Self.glideKey)
++    defer { overlays.touchDown() }
++    guard !isStoppingWithoutMoving, let actual = system.setFrame(flight.to, of: flight.window) else {
++      // Its app does not answer, or nothing can be moved. It is where it waits, and counts as what it is: a window out of view that has
++      // a place in view, which is given it when its app answers, at the next start, or when Arbor quits.
++      windows[flight.window]?.frame = flight.waitsAt
++      unplaced.insert(flight.window)
++      treatStrandedWindowsAsParked()
++      return
++    }
++    guard !actual.approximatelyEquals(flight.to, tolerance: 1) else {
++      windows[flight.window]?.frame = actual
++      if settled[flight.window] != nil { settled[flight.window] = actual }
++      return
++    }
++    // Only moved, it has ended elsewhere or at another size. That is where it is, and the put-back sees to the rest.
++    windows[flight.window]?.frame = actual
++    if isRunning { scheduleEnforce(flight.display) }
++  }
++
++  /// A window has closed. If it is the one that glides there is nothing left to place.
++  func theGlideEnds(withTheGoingOf window: WindowID) {
++    guard glider.flight?.window == window else { return landTheGlider() }
++    glider.flight = nil
++    scheduler.cancel(Self.glideKey)
++    overlays.touchDown()
++  }
++
++  /// A layout of the display it is on starts from the glide's end.
++  func landTheGlider(before displayID: DisplayID) {
++    if glider.flight?.display == displayID { landTheGlider() }
++  }
++
++  /// Called where a command begins. A question is no act.
++  func anActBegins(_ command: Command) {
++    glider.named = nil
++    if !command.isQuery { landTheGlider() }
++  }
++
++  /// `OverlayActions`.
++  public func glideWasInterrupted() { landTheGlider() }
++
++  /// The keyboard has gone to `window`, or to nothing Arbor knows. Its going to the window that glides is the act's own doing.
++  func theGlideEndsIfTheKeyboardWentElsewhere(_ window: WindowID?) {
++    if let flight = glider.flight, flight.window != window { landTheGlider() }
++  }
++
++  // MARK: What its app reports meanwhile
++
++  /// What is news in a report about a window. That the one that glides is where it waits, at the size it has there, is Arbor's own doing come
++  /// back, and no report of that is taken for the window's frame. Anything else that has changed about it (it is minimized, hidden, in
++  /// full screen, on another Space) ends the glide first. So does a report from anywhere else: somebody has moved it. If that is
++  /// a place in view, it is in view, and there is nothing to do but to take the panel away and hear the report like any other.
++  func whatIsNews(in report: WindowSnapshot) -> WindowSnapshot {
++    guard let flight = glider.flight, flight.window == report.id, var known = windows[report.id] else { return report }
++    if !report.frame.approximatelyEquals(flight.waitsAt, tolerance: 2), !isOutOfView(report.frame) {
++      glider.flight = nil
++      scheduler.cancel(Self.glideKey)
++      overlays.touchDown()
++      return report
++    }
++    var news = report
++    news.frame = known.frame
++    // A title is no reason to end anything.
++    known.title = news.title
++    if news != known {
++      landTheGlider()
++      news.frame = windows[report.id]?.frame ?? report.frame
++    }
++    return news
++  }
++
++  // MARK: Invariants
++
++  func gliderViolations(_ problems: inout [InvariantViolation]) {
++    if glider.panelIsToGo || glider.unaimed != nil { problems.append(.init("glider", "nothing glides, and the panel is still up")) }
++    guard let flight = glider.flight else { return }
++    guard let window = windows[flight.window] else {
++      return problems.append(.init("leak", "the window that glides, \(flight.window), no longer exists"))
++    }
++    if window.frame != flight.to {
++      problems.append(.init("glider", "\(flight.window) glides to \(flight.to.brief), and Arbor has it at \(window.frame.brief)"))
++    }
++    if parked.contains(flight.window) { problems.append(.init("glider", "\(flight.window) glides, and counts as out of view")) }
++    if !window.isPresent { problems.append(.init("glider", "\(flight.window) glides, and takes up no space")) }
++    if !isOutOfView(flight.waitsAt) { problems.append(.init("glider", "\(flight.window) waits in view, at \(flight.waitsAt.brief)")) }
++  }
++}
+diff --git a/Sources/ArborKit/Controller/Controller+Hardening.swift b/Sources/ArborKit/Controller/Controller+Hardening.swift
+index ae55ba48..0545bbe1 100644
+--- a/Sources/ArborKit/Controller/Controller+Hardening.swift
++++ b/Sources/ArborKit/Controller/Controller+Hardening.swift
+@@ -139,6 +139,7 @@ extension Controller {
+ 
+   public func windowReplaced(_ old: WindowID, by window: WindowSnapshot) {
+     guard old != window.id else { return }
++    landTheGlider()
+     guard isRunning, let display = workspaceID(containing: old), filter.manages(window) else {
+       // Nothing to hand over: the old window was not arranged, or the new one may not be.
+       let ignored = filter.ignoredWindowIDs.contains(old)
+diff --git a/Sources/ArborKit/Controller/Controller+Invariants.swift b/Sources/ArborKit/Controller/Controller+Invariants.swift
+index 556fd565..5961c8dd 100644
+--- a/Sources/ArborKit/Controller/Controller+Invariants.swift
++++ b/Sources/ArborKit/Controller/Controller+Invariants.swift
+@@ -59,6 +59,7 @@ extension Controller {
+       bookkeepingViolations(&problems)
+       pendingSlotViolations(&problems)
+       foundAtAStartViolations(&problems)
++      gliderViolations(&problems)
+     }
+     return problems.isEmpty ? problems : problems.sorted { ($0.rule, $0.message) < ($1.rule, $1.message) }
+   }
+diff --git a/Sources/ArborKit/Controller/Controller+Layout.swift b/Sources/ArborKit/Controller/Controller+Layout.swift
+index f0aa8652..19745c07 100644
+--- a/Sources/ArborKit/Controller/Controller+Layout.swift
++++ b/Sources/ArborKit/Controller/Controller+Layout.swift
+@@ -74,6 +74,7 @@ extension Controller {
+     }
+     // However this ends: a window that was promised a place gets it.
+     defer { putBackWhatWaits() }
++    landTheGlider(before: displayID)
+     guard isRunning, holdFences(displayID) else { return }
+     lettingBeEndsIfItNoLongerApplies()
+     aLayoutSomebodyAskedForEndsLettingBe(on: displayID)
+@@ -91,7 +92,9 @@ extension Controller {
+     if reason != .enforce { giveAFreshStart(in: layout, on: displayID) }
+     // What a window does after Arbor has given it a frame is its answer to that, not to a double-click before it.
+     if reason != .enforce { appsDoubleClick = nil }
+-    let staged = stageTransition(on: displayID, to: layout, reason: reason, motion: motion, puttingBack: waiting)
++    // One window as a picture of itself where that can be had (Controller+Glider.swift), or the stage. Never both.
++    let glides = takeOff(on: displayID, to: layout, reason: reason, motion: motion, puttingBack: &waiting)
++    let staged = glides ? nil : stageTransition(on: displayID, to: layout, reason: reason, motion: motion, puttingBack: waiting)
+     putBackWhatWaits()
+     // Once the stage is up, like everything that moves a window.
+     if askBeforeTheyLeave(layout, on: displayID, startingFrom: before),
+@@ -100,10 +103,13 @@ extension Controller {
+       layout = known
+     }
+     // Before anybody is moved, so that everybody moves once (Controller+AskFirst.swift).
+-    layout = askingFirst(layout, on: displayID, beginningWith: subject) {
++    func knowingMore() -> Layout? {
+       thinkingAgain?()
+-      return self.roomyLayout(of: displayID, for: reason, startingFrom: before)
++      return roomyLayout(of: displayID, for: reason, startingFrom: before)
+     }
++    layout = askingFirst(layout, on: displayID, beginningWith: subject, again: knowingMore)
++    // Where the asking ended by the count, this layout is news to the window that glides.
++    if aimTheGlide(at: layout, on: displayID), let known = knowingMore() { layout = known }
+     // After the stage has its pictures of the windows where they are.
+     system.moveTogether(movesInSight(for: layout, on: displayID, reason: reason))
+     // A window refused its slot after all: lay out again so that room is made for it, or it becomes a tile. Or one that is
+@@ -134,6 +140,7 @@ extension Controller {
+     layouts[displayID] = layout
+     lettingBeEndsWithAPlace(in: layout)
+     settleTransition(staged, on: displayID, layout: layout)
++    settleTheGlide(on: displayID)
+     stats.time("controller", "update overlays") {
+       overlays.update(display: displayID, scene: overlayScene(for: layout, on: displayID))
+     }
+@@ -161,6 +168,7 @@ extension Controller {
+     var learnedMinimum = false
+     // However this ends, an answer holds for the layout it was given in: next time a sheet may have closed.
+     defer { justAnswered.removeAll() }
++    if aimTheGlide(at: layout, on: displayID, orNever: true) { learnedMinimum = true }
+     // Of some that are out of view nobody knows whether they can grow as far as their slot, and where they go depends on it
+     // (Controller+AskFirst.swift).
+     var unknown: [(window: WindowID, slot: CGRect, question: CGRect)] = []
+diff --git a/Sources/ArborKit/Controller/Controller+Lead.swift b/Sources/ArborKit/Controller/Controller+Lead.swift
+index 1d1c5f04..5a315ed4 100644
+--- a/Sources/ArborKit/Controller/Controller+Lead.swift
++++ b/Sources/ArborKit/Controller/Controller+Lead.swift
+@@ -87,6 +87,7 @@ extension Controller {
+     if let focus = following.focus, focus.window == window { return }
+     following.focus = (window, now())
+     following.lead.focusChanged()
++    theGlideEndsIfTheKeyboardWentElsewhere(window)
+     theKeyboardHasGoneOn(to: window)
+   }
+ 
+diff --git a/Sources/ArborKit/Controller/Controller+Peek.swift b/Sources/ArborKit/Controller/Controller+Peek.swift
+index 65eee29a..08ba324c 100644
+--- a/Sources/ArborKit/Controller/Controller+Peek.swift
++++ b/Sources/ArborKit/Controller/Controller+Peek.swift
+@@ -43,6 +43,8 @@ extension Controller {
+     traced(binding, phase) {
+       // "Any key puts the panel of shortcuts away", also one that a peek takes and that runs no command.
+       if phase == .pressed, binding.command != .showShortcuts { hideCheatSheet() }
++      // Also one that runs no command.
++      if phase == .pressed { landTheGlider() }
+       if holdIgnores(binding, phase) || peekTakes(binding, phase) || minimapTakes(binding, phase) || phase == .released { return }
+       result = run?(binding.command) ?? perform(binding.command, from: .shortcut)
+       minimapKeyWentDown(binding)
+diff --git a/Sources/ArborKit/Controller/Controller+Transitions.swift b/Sources/ArborKit/Controller/Controller+Transitions.swift
+index 140c263d..1f3539df 100644
+--- a/Sources/ArborKit/Controller/Controller+Transitions.swift
++++ b/Sources/ArborKit/Controller/Controller+Transitions.swift
+@@ -72,7 +72,7 @@ extension Controller {
+   }
+ 
+   /// Whether macOS has swept the windows aside to show its desktop, going by what the window server has just `listed`.
+-  private func isSweptAside(_ listed: [StackedWindow]) -> Bool {
++  func isSweptAside(_ listed: [StackedWindow]) -> Bool {
+     SweptAside.isSwept(
+       believed: windows.filter(\.value.isPresent).mapValues(\.frame), listed: listed, displays: displays.map(\.frame))
+   }
+@@ -93,6 +93,7 @@ extension Controller {
+   public func pointerPressed() {
+     guard isRunning else { return }
+     overlays.finishAnimations()
++    landTheGlider()
+     lookAfterPinnedWindowsAfterAPress()
+     // "Any key or click": the panel itself hears only of clicks in other apps and of losing the keyboard. A press on a gap
+     // handle or on the Desktop's tile is neither.
+diff --git a/Sources/ArborKit/Controller/Controller.swift b/Sources/ArborKit/Controller/Controller.swift
+index 094d081f..ee1e267a 100644
+--- a/Sources/ArborKit/Controller/Controller.swift
++++ b/Sources/ArborKit/Controller/Controller.swift
+@@ -83,6 +83,7 @@ public struct WindowFilter: Sendable, Equatable {
+ /// - Controller+Minimap.swift: the whole arrangement in small, after the view has moved
+ /// - Controller+Undo.swift: undo and redo for changes to the arrangement
+ /// - Controller+AppsDoubleClick.swift: what macOS makes of a double-click on a docked window stays
++/// - Controller+Glider.swift: one window that travels as a picture of itself
+ @MainActor
+ public final class Controller {
+   public let system: any WindowSystem
+@@ -497,6 +498,9 @@ public final class Controller {
+   /// Windows on a display too small for their own size, which they take along when they leave it (Controller+UndockedFrames.swift).
+   var fittedToADisplay: [WindowID: FittedWindow] = [:]
+ 
++  /// The window that travels as a picture of itself, if one does (Controller+Glider.swift).
++  var glider = Glider()
++
+   public init(
+     system: any WindowSystem, overlays: any OverlayPresenter, store: any StateStore,
+     scheduler: any Scheduler, settings: Settings = Settings(), filter: WindowFilter = WindowFilter()
+@@ -548,6 +552,7 @@ public final class Controller {
+     floatingEdgeInHand = nil
+     appsDoubleClick = nil
+     whereAZoomBegan.removeAll()
++    glider = Glider()
+     system.start()
+     let shapes = Dictionary(displays.map { ($0.id, $0.frame) }, uniquingKeysWith: { first, _ in first })
+     displays = system.displays()
+@@ -676,6 +681,7 @@ public final class Controller {
+     }
+     isStoppingWithoutMoving = !movingWindows
+     defer { isStoppingWithoutMoving = false }
++    landTheGlider()
+     if movingWindows { cancelDragLettingGo() } else { cancelDrag() }
+     appsDoubleClick = nil
+     if movingWindows { lookAtTheDisplaysBeforeLettingGo() }
+diff --git a/Sources/ArborKit/Platform/OverlayPresenter.swift b/Sources/ArborKit/Platform/OverlayPresenter.swift
+index 54dc4ac5..18fb168a 100644
+--- a/Sources/ArborKit/Platform/OverlayPresenter.swift
++++ b/Sources/ArborKit/Platform/OverlayPresenter.swift
+@@ -149,6 +149,18 @@ public protocol OverlayPresenter: AnyObject {
+   /// make or look up for the first time while somebody waits, and skips what it has. Nothing shows and nothing moves. The
+   /// controller hands out one display or one app at a time, when nobody waits (Controller+Rehearsal.swift).
+   func rehearse(_ rehearsal: Rehearsal)
++  /// Takes a picture of `window`, which stands at `from`, puts it up on a small panel that lies exactly over the window and takes no
++  /// click, and lets the panel glide to `to` in `duration` seconds (Controller+Glider.swift). Nothing else is covered. True only
++  /// if the picture is on the screen when the call returns, because the controller then takes the real window out of view. False if
++  /// there is none to be had, or none within the time a person would not notice (`Glide.longestWaitForAPicture`): nothing is
++  /// up then, and the window jumps as it does without motion. There is one glider at a time.
++  ///
++  /// Called again for the window whose picture is up, it takes no new picture: the panel carries on from where it is now, to the
++  /// new `to`. (`from` is where the window stood, as before.)
++  func liftOff(_ window: WindowID, from: CGRect, to: CGRect, duration: Double) -> Bool
++  /// Takes the glider off the screen at once, wherever it is, and lets go of the picture. The controller has put the real
++  /// window in its place first. It says so by its own clock, whether or not the panel has arrived.
++  func touchDown()
+ }
+ 
+ /// What the user did with an overlay.
+@@ -170,4 +182,7 @@ public protocol OverlayActions: AnyObject {
+   func cheatSheetDismissed()
+   /// A click in a minimap that takes clicks, at `point` in the panel's coordinates (origin top-left, y down).
+   func minimapClicked(display: DisplayID, at point: CGPoint)
++  /// Something has happened that ends a glide and that only the presenter hears of: the Mac or its displays go to sleep, another
++  /// macOS Space shows, somebody else's session takes the screen. The controller puts the window in its place and calls `touchDown`.
++  func glideWasInterrupted()
+ }
+diff --git a/Sources/ArborKit/Trace/RecordingOverlays.swift b/Sources/ArborKit/Trace/RecordingOverlays.swift
+index ba9d8bea..b238df06 100644
+--- a/Sources/ArborKit/Trace/RecordingOverlays.swift
++++ b/Sources/ArborKit/Trace/RecordingOverlays.swift
+@@ -38,6 +38,22 @@ public final class RecordingOverlays: OverlayPresenter {
+   public func showMinimap(_ model: MinimapModel?, on display: DisplayID) { inner.showMinimap(model, on: display) }
+   /// Follows from the windows and displays, which are recorded.
+   public func rehearse(_ rehearsal: Rehearsal) { inner.rehearse(rehearsal) }
++
++  /// Drawn as well, but with an answer that decides where the real window goes next: a replay has to give the same one.
++  public func liftOff(_ window: WindowID, from: CGRect, to: CGRect, duration: Double) -> Bool {
++    recorder.call(
++      "liftOff", Self.words(window, from: from, to: to, duration: duration),
++      returning: { inner.liftOff(window, from: from, to: to, duration: duration) })
++  }
++
++  public func touchDown() { recorder.call("touchDown") { inner.touchDown() } }
++
++  /// What a `liftOff` line holds, for whoever writes one and whoever looks one up: rectangles as everywhere in a trace.
++  public static func words(_ window: WindowID, from: CGRect, to: CGRect, duration: Double) -> [any Encodable] {
++    func hundredths(_ value: CGFloat) -> Double { value.isFinite ? (Double(value) * 100).rounded() / 100 : 0 }
++    func numbers(_ rect: CGRect) -> [Double] { [rect.origin.x, rect.origin.y, rect.size.width, rect.size.height].map(hundredths) }
++    return [window, numbers(from), numbers(to), hundredths(CGFloat(duration))]
++  }
+ }
+ 
+ extension RecordingOverlays: OverlayActions {
+@@ -89,4 +105,6 @@ extension RecordingOverlays: OverlayActions {
+       actions?.minimapClicked(display: display, at: point)
+     }
+   }
++
++  public func glideWasInterrupted() { recorder.action("glideWasInterrupted") { actions?.glideWasInterrupted() } }
+ }
+diff --git a/Sources/ArborKit/UI/AppKitOverlays+Motion.swift b/Sources/ArborKit/UI/AppKitOverlays+Motion.swift
+index 135cdc7b..8a8c4933 100644
+--- a/Sources/ArborKit/UI/AppKitOverlays+Motion.swift
++++ b/Sources/ArborKit/UI/AppKitOverlays+Motion.swift
+@@ -1,4 +1,5 @@
+ import ArborCore
++import CoreGraphics
+ 
+ /// The moving part of `OverlayPresenter`: see `StageDirector`, `Stage` and `WindowPictures`.
+ extension AppKitOverlays {
+@@ -10,6 +11,11 @@ extension AppKitOverlays {
+ 
+   public func rehearse(_ rehearsal: Rehearsal) { director.rehearse(rehearsal) }
+ 
++  /// There is no panel and no picture at the act yet, so there is never a glider on a Mac: everything is as it is without one.
++  public func liftOff(_ window: WindowID, from: CGRect, to: CGRect, duration: Double) -> Bool { false }
++
++  public func touchDown() {}
++
+   /// Called when what was got ready, or was not, no longer fits: with Reduce Motion on there is no motion to get ready for,
+   /// and it has just been switched on or off.
+   public var onRehearsalOutdated: (() -> Void)? {
+diff --git a/Sources/ArborTesting/FakeWindowSystem+Chaos.swift b/Sources/ArborTesting/FakeWindowSystem+Chaos.swift
+index e10a24d1..b254a78d 100644
+--- a/Sources/ArborTesting/FakeWindowSystem+Chaos.swift
++++ b/Sources/ArborTesting/FakeWindowSystem+Chaos.swift
+@@ -225,5 +225,7 @@ extension FakeWindowSystem {
+     undelivered.removeAll()
+     mouseDown = false
+     resizing = nil
++    // Its panels go with the process.
++    underItsPicture = nil
+   }
+ }
+diff --git a/Sources/ArborTesting/FakeWindowSystem.swift b/Sources/ArborTesting/FakeWindowSystem.swift
+index 5f9051e9..95d3ba41 100644
+--- a/Sources/ArborTesting/FakeWindowSystem.swift
++++ b/Sources/ArborTesting/FakeWindowSystem.swift
+@@ -222,6 +222,8 @@ public final class FakeWindowSystem: WindowSystem {
+     public var after: CGRect
+     /// Announced with `moveTogether`, so its app worked beside the others.
+     public var together: Bool
++    /// Made while a picture of this very window was up on a panel of Arbor's: the how-manieth picture (`pictureWentUp`). Nil otherwise.
++    public var flight: Int? = nil
+   }
+ 
+   public struct Focus: Equatable {
+@@ -242,6 +244,12 @@ public final class FakeWindowSystem: WindowSystem {
+   var inHand: (window: WindowID, start: CGRect, grab: CGPoint)?
+   /// A window system is free to ignore `moveTogether`. Nothing but the cost may differ.
+   public var ignoresMoveTogether = false
++  /// The window a picture of which is up on a panel of Arbor's, lying over it or gliding, the how-manieth picture that is, and where
++  /// the panel is going (Roads.swift).
++  public internal(set) var underItsPicture: (window: WindowID, flight: Int, to: CGRect)?
++  var pictures = 0
++  /// The control: with this on there is no exemption, and every detector says of a glide what it says of the bare log.
++  public var judgesTheGliderAsEver = false
+   /// What came of the moves announced with `moveTogether`, until `setFrame` asks for it.
+   public private(set) var answersAhead: [WindowID: (requested: CGRect, answer: CGRect?)] = [:]
+ 
+@@ -347,7 +355,10 @@ public final class FakeWindowSystem: WindowSystem {
+       applied = whereMacOSPuts(Self.accepted(CGRect(origin: frame.origin, size: isAt.size), by: fake), titleBar: fake.titleBar)
+     }
+     let changed = before != applied
+-    moveLog.append(Move(window: window, requested: frame, before: before, after: applied, together: together))
++    moveLog.append(
++      Move(
++        window: window, requested: frame, before: before, after: applied, together: together,
++        flight: underItsPicture?.window == window ? underItsPicture?.flight : nil))
+     let (home, moves) = (fake.home ?? fake.snapshot.frame, fake.movesNotArbors)
+     fake.snapshot.frame = applied
+     (fake.home, fake.movesNotArbors) = (home, moves)
+diff --git a/Sources/ArborTesting/Fakes.swift b/Sources/ArborTesting/Fakes.swift
+index 7defbae4..c3125a3c 100644
+--- a/Sources/ArborTesting/Fakes.swift
++++ b/Sources/ArborTesting/Fakes.swift
+@@ -60,6 +60,9 @@ public final class FakeOverlays: OverlayPresenter {
+     case headsUp(HeadsUpModel?, DisplayID)
+     case cheatSheet(CheatSheetModel?, DisplayID)
+     case minimap(MinimapModel?, DisplayID)
++    /// `up`: whether there was a picture.
++    case liftOff(WindowID, from: CGRect, to: CGRect, duration: Double, up: Bool)
++    case touchDown
+   }
+ 
+   /// Hears of every call that has a moment to it, in order, once it is recorded: for whoever plays them back in time, as the
+@@ -210,6 +213,81 @@ public final class FakeOverlays: OverlayPresenter {
+     onCall?(.minimap(model, display))
+   }
+ 
++  // MARK: The glider
++
++  /// One picture of a window on a panel of its own, from its going up to its coming down.
++  public struct Flight: Equatable {
++    public var window: WindowID
++    public var from: CGRect
++    /// Where the panel is going. A second `liftOff` for the same window changes it; `aims` has them all.
++    public var to: CGRect
++    public var duration: Double
++    public var aims: [CGRect]
++    /// Where the real window stood when the picture went up over it, if the fake knows the windows (`mac`).
++    public var stoodAt: CGRect?
++    /// Where the real window was when the picture came down. Nil while it is up, and for a window that is gone.
++    public var landedAt: CGRect?
++    public var isDown = false
++  }
++
++  /// Whether there is a picture of a window to be had, in time. Nobody has granted Screen Recording on a Mac as it comes, so: none.
++  public var hasPicture: (WindowID) -> Bool = { _ in false }
++  /// For the replay of a trace: hears of every `liftOff` as it is made, and its answer counts, not `hasPicture`'s.
++  public var recordedPicture: ((_ window: WindowID, _ from: CGRect, _ to: CGRect, _ duration: Double) -> Bool)?
++  /// For the same: hears of every `touchDown`. Not `onCall`, which belongs to whoever films.
++  public var recordedTouchDown: (() -> Void)?
++  /// Every picture that went up, oldest first.
++  public private(set) var flights: [Flight] = []
++  /// The windows of which there was no picture, oldest first.
++  public private(set) var refusedLiftOffs: [WindowID] = []
++  /// How often the controller took the glider down, whether or not one was up.
++  public private(set) var touchDowns = 0
++  /// How often a picture was asked for while another window's was up. There is one glider at a time.
++  public private(set) var liftOffsUnderAnother = 0
++  /// The windows on the same Mac, which then know under whose picture they are moved (`FakeWindowSystem.underItsPicture`).
++  public weak var mac: FakeWindowSystem?
++  /// The picture that is up.
++  public var aloft: Flight? { flights.last.flatMap { $0.isDown ? nil : $0 } }
++
++  public func liftOff(_ window: WindowID, from: CGRect, to: CGRect, duration: Double) -> Bool {
++    let recorded = recordedPicture?(window, from, to, duration)
++    if let up = aloft {
++      guard up.window == window else {
++        liftOffsUnderAnother += 1
++        onCall?(.liftOff(window, from: from, to: to, duration: duration, up: false))
++        return false
++      }
++      flights[flights.count - 1].to = to
++      flights[flights.count - 1].aims.append(to)
++      mac?.pictureIsGoing(to: to)
++      onCall?(.liftOff(window, from: from, to: to, duration: duration, up: true))
++      return true
++    }
++    guard recorded ?? hasPicture(window) else {
++      refusedLiftOffs.append(window)
++      onCall?(.liftOff(window, from: from, to: to, duration: duration, up: false))
++      return false
++    }
++    flights.append(Flight(window: window, from: from, to: to, duration: duration, aims: [to], stoodAt: mac?.frame(of: window)))
++    mac?.pictureWentUp(over: window, goingTo: to)
++    onCall?(.liftOff(window, from: from, to: to, duration: duration, up: true))
++    return true
++  }
++
++  public func touchDown() {
++    touchDowns += 1
++    recordedTouchDown?()
++    if let up = aloft {
++      flights[flights.count - 1].landedAt = mac?.frame(of: up.window)
++      flights[flights.count - 1].isDown = true
++      mac?.pictureCameDown()
++    }
++    onCall?(.touchDown)
++  }
++
++  /// The Mac goes to sleep, another macOS Space shows: what only the presenter hears of.
++  public func interruptGlide() { actions?.glideWasInterrupted() }
++
+   /// Clicks at `point`, in the panel's coordinates. As on screen, a minimap that is not there or does not take clicks
+   /// lets the click through, and nobody hears of it.
+   public func clickMinimap(at point: CGPoint, on display: DisplayID = FakeWindowSystem.standardDisplay.id) {
+@@ -222,6 +300,9 @@ public final class FakeOverlays: OverlayPresenter {
+ public final class MemoryStateStore: StateStore {
+   public var saved: PersistedState?
+   public private(set) var saveCount = 0
++  /// What was saved when `flush` was last called: the real store writes on a queue of its own, and only that much is sure to outlive
++  /// a process that is killed the next moment.
++  public private(set) var onDisk: PersistedState?
+   /// What a test wants `load()` to have found wrong.
+   public var repairs: [String] = []
+   public var keptCopy: String?
+@@ -240,6 +321,8 @@ public final class MemoryStateStore: StateStore {
+     saved = state
+     saveCount += 1
+   }
++
++  public func flush() { onDisk = saved }
+ }
+ 
+ /// Holds scheduled work so tests control time: `runPending()` runs everything whatever its delay,
+diff --git a/Sources/ArborTesting/Film/OverlayPlayback.swift b/Sources/ArborTesting/Film/OverlayPlayback.swift
+index 2af1ee31..5c07a47b 100644
+--- a/Sources/ArborTesting/Film/OverlayPlayback.swift
++++ b/Sources/ArborTesting/Film/OverlayPlayback.swift
+@@ -82,6 +82,8 @@ public final class OverlayPlayback {
+     // `CheatSheetPanel.hide`: at once, because while it faded it would still have the keyboard.
+     case .cheatSheet(let model, _): cheatSheet.show(model, at: now, outAtOnce: true)
+     case .minimap(let model, let display): minimaps[display, default: Passing()].show(model, at: now)
++    // Not filmed yet: there is no panel on a Mac to film it after.
++    case .liftOff, .touchDown: break
+     case .removeAll:
+       // Every panel is closed, not faded.
+       stages.removeAll()
+diff --git a/Sources/ArborTesting/Harness.swift b/Sources/ArborTesting/Harness.swift
+index ec9f2876..47c7194e 100644
+--- a/Sources/ArborTesting/Harness.swift
++++ b/Sources/ArborTesting/Harness.swift
+@@ -51,6 +51,8 @@ public final class Harness {
+     let mac = self.mac
+     let system = self.system
+     overlays = FakeOverlays()
++    // One Mac: what is drawn over its windows is drawn over these.
++    overlays.mac = system
+     store = MemoryStateStore(saved: saved)
+     scheduler = ManualScheduler()
+     recorder = TraceRecorder()
+@@ -103,11 +105,13 @@ public final class Harness {
+   /// saved, and a clock that goes on. It knows nothing else of this run, which has quit (`controller.shutdown()`) or counts
+   /// as killed, and must not be used any more.
+   /// - Parameter byTheWatchdog: the watchdog does the starting, a second after an accident; otherwise a person, or a login.
+-  public func newProcess(byTheWatchdog: Bool = false) -> Harness {
++  /// - Parameter knowingOnlyWhatIsOnDisk: this run was killed before its store had written what it had not been told to flush.
++  public func newProcess(byTheWatchdog: Bool = false, knowingOnlyWhatIsOnDisk: Bool = false) -> Harness {
+     system.events = nil
+     system.stop()
+     system.forgetSession()
+-    let (new, ended) = (Harness(settings: controller.settings, saved: store.saved, system: system, mac: mac), controller.now())
++    let saved = knowingOnlyWhatIsOnDisk ? store.onDisk : store.saved
++    let (new, ended) = (Harness(settings: controller.settings, saved: saved, system: system, mac: mac), controller.now())
+     new.controller.now = { [scheduler = new.scheduler] in ended.addingTimeInterval(scheduler.now) }
+     new.controller.restartedAfterAccident = byTheWatchdog
+     return new
+@@ -224,7 +228,7 @@ public final class Harness {
+   /// the window where it was is no move, nor is a question put to it where it stood before it went anywhere (`Budget.questions`).
+   public var movesInStep: [WindowID: Int] {
+     var moves: [WindowID: [FakeWindowSystem.Move]] = [:]
+-    for move in system.moveLog[min(stepMark ?? firstMark, system.moveLog.count)...] where move.before != move.after {
++    for move in system.asSeen(system.moveLog[min(stepMark ?? firstMark, system.moveLog.count)...]) where move.before != move.after {
+       moves[move.window, default: []].append(move)
+     }
+     return moves.mapValues { $0.count - Budget.tally($0).questions }
+diff --git a/Sources/ArborTesting/Jolts.swift b/Sources/ArborTesting/Jolts.swift
+index 0f3ad9a8..8491adad 100644
+--- a/Sources/ArborTesting/Jolts.swift
++++ b/Sources/ArborTesting/Jolts.swift
+@@ -35,7 +35,7 @@ extension FakeWindowSystem {
+     func asAsked(_ move: Move) -> CGRect {
+       whereMacOSPuts(move.requested, titleBar: windows[move.window]?.titleBar ?? Self.usualTitleBar)
+     }
+-    for move in moveLog[min(mark, moveLog.count)...] {
++    for move in asSeen(moveLog[min(mark, moveLog.count)...]) {
+       defer { if move.after != asAsked(move) { learning = true } }
+       guard move.before != move.after else { continue }
+       // What nobody can see belongs to the move before it: a window asked for a size in its corner is still in its corner, and
+@@ -61,12 +61,4 @@ extension FakeWindowSystem {
+     }
+     return found
+   }
+-
+-  /// Whether some display shows more of `frame` than the sliver, a point or two wide, that is left of a window out of view.
+-  private func shows(_ frame: CGRect) -> Bool {
+-    displayList.contains {
+-      let showing = frame.intersection($0.frame)
+-      return !showing.isNull && showing.width > 2 && showing.height > 2
+-    }
+-  }
+ }
+diff --git a/Sources/ArborTesting/Roads.swift b/Sources/ArborTesting/Roads.swift
+index c777a337..e84522ed 100644
+--- a/Sources/ArborTesting/Roads.swift
++++ b/Sources/ArborTesting/Roads.swift
+@@ -10,7 +10,7 @@ extension FakeWindowSystem {
+   /// nothing about it.
+   public func road(of window: WindowID, since mark: Int = 0) -> [CGRect] {
+     var road: [CGRect] = []
+-    for move in moveLog[min(mark, moveLog.count)...] where move.window == window && move.before != move.after {
++    for move in asSeen(moveLog[min(mark, moveLog.count)...]) where move.window == window && move.before != move.after {
+       if road.last != move.before { road.append(move.before) }
+       road.append(move.after)
+     }
+@@ -45,4 +45,56 @@ extension FakeWindowSystem {
+     }
+     return nil
+   }
++
++  // MARK: The one window that glides
++
++  /// A picture of `window` has gone up on a panel of Arbor's that lies over it and glides to `end` (`FakeOverlays.liftOff`).
++  public func pictureWentUp(over window: WindowID, goingTo end: CGRect) {
++    pictures += 1
++    underItsPicture = (window, pictures, end)
++  }
++
++  public func pictureIsGoing(to end: CGRect) { underItsPicture?.to = end }
++
++  public func pictureCameDown() { underItsPicture = nil }
++
++  /// `moves`, which are some of `moveLog`, as a person saw them. From its picture's going up until its coming down the one window that glides
++  /// is seen as its picture, so what Arbor did with it meanwhile counts as one move, from where it stood to where it ended, if its road
++  /// in all that time was what `Glide.whatWasSeen` allows. While the picture is still up, it ends where the picture takes it. That one
++  /// move counts where the glide began: a stretch of the log that begins in the middle of a glide has nothing of it. Any other road stands as
++  /// it is, and so does every move of every other window and every move outside that time. Whoever judges roads reads the log through this.
++  public func asSeen(_ moves: some Sequence<Move>) -> [Move] {
++    let moves = Array(moves)
++    guard !judgesTheGliderAsEver else { return moves }
++    var seen: [Move?] = moves
++    for flight in Set(moves.compactMap(\.flight)) {
++      let whole = moveLog.filter { $0.flight == flight && $0.before != $0.after }
++      var road: [CGRect] = []
++      for move in whole {
++        // Where somebody else moved it in between, the frame Arbor found it at is part of the road.
++        if road.last != move.before { road.append(move.before) }
++        road.append(move.after)
++      }
++      let isUp = underItsPicture?.flight == flight
++      if isUp, let end = underItsPicture?.to { road.append(end) }
++      guard let ends = Glide.whatWasSeen(of: road, shows: shows) else { continue }
++      let indices = moves.indices.filter { moves[$0].flight == flight }
++      for index in indices { seen[index] = nil }
++      guard let last = indices.last, indices.contains(where: { moves[$0] == whole[0] }) else { continue }
++      var one = moves[last]
++      // A move like any other from here on: read a second time, it stands.
++      (one.before, one.after, one.flight) = (ends[0], ends[1], nil)
++      if isUp { one.requested = ends[1] }
++      seen[last] = one
++    }
++    return seen.compactMap { $0 }
++  }
++
++  /// Whether some display shows more of `frame` than the sliver, a point or two wide, that is left of a window out of view.
++  func shows(_ frame: CGRect) -> Bool {
++    displayList.contains {
++      let showing = frame.intersection($0.frame)
++      return !showing.isNull && showing.width > 2 && showing.height > 2
++    }
++  }
+ }
+diff --git a/Sources/ArborTesting/TraceReplayer.swift b/Sources/ArborTesting/TraceReplayer.swift
+index b2bbba1e..9810cf75 100644
+--- a/Sources/ArborTesting/TraceReplayer.swift
++++ b/Sources/ArborTesting/TraceReplayer.swift
+@@ -344,6 +344,7 @@ public final class TraceReplayer {
+         else { return }
+         harness.overlays.actions?.minimapClicked(display: display, at: CGPoint(x: x, y: y))
+       },
++      "glideWasInterrupted": { [unowned self] _ in harness.overlays.actions?.glideWasInterrupted() },
+     ]
+   }
+ 
+@@ -367,6 +368,12 @@ public final class TraceReplayer {
+     fake.mouseDown = header.mouseDown
+     harness.controller.restore(from: header)
+     harness.controller.loadSettings = { [weak self] in self?.settingsFile() ?? Settings() }
++    // Whether there was a picture decided where the real window went next. Where today's Arbor asks for one that the recording does not
++    // have, there is none.
++    harness.overlays.recordedPicture = { [weak self] window, from, to, duration in
++      self?.answer(call: "liftOff", RecordingOverlays.words(window, from: from, to: to, duration: duration))?.decoded() ?? false
++    }
++    harness.overlays.recordedTouchDown = { [weak self] in _ = self?.answer(call: "touchDown") }
+     // The Arbor that recorded this was watching its Accessibility permission (Controller+Permission.swift). The answers it got are in the trace.
+     let wasWatching = entries.contains {
+       if case .other(.read, "mayUseAccessibility", _, _) = $0.line { true } else { false }
+diff --git a/Sources/arbor-fakemac/Arbor.swift b/Sources/arbor-fakemac/Arbor.swift
+index f22a6046..7aa88282 100644
+--- a/Sources/arbor-fakemac/Arbor.swift
++++ b/Sources/arbor-fakemac/Arbor.swift
+@@ -296,6 +296,11 @@ final class WatchedOverlays: OverlayPresenter {
+   func animate(_ transition: Transition) { fake.animate(transition) }
+   func finishAnimations() { fake.finishAnimations() }
+   func rehearse(_ rehearsal: Rehearsal) { fake.rehearse(rehearsal) }
++  /// No picture, as on a Mac where nobody has granted Screen Recording: the fake's own answer.
++  func liftOff(_ window: WindowID, from: CGRect, to: CGRect, duration: Double) -> Bool {
++    fake.liftOff(window, from: from, to: to, duration: duration)
++  }
++  func touchDown() { fake.touchDown() }
+ 
+   /// `HeadsUpPanel.placement`. The model says where the middle of the bottom edge is and how wide the line may get; how wide
+   /// its words are only AppKit can measure. On a hosted Mac a line was 38 points high, and 231 wide with 26 characters and
+diff --git a/Sources/arbor-sim/main.swift b/Sources/arbor-sim/main.swift
+index 91810559..1cf32b79 100644
+--- a/Sources/arbor-sim/main.swift
++++ b/Sources/arbor-sim/main.swift
+@@ -175,6 +175,7 @@ func runSimulation() {
+     print("COMMAND FAILED: `\(line)` (follow it with `expect fail` if it is meant to)\n")
+   }
+   var printTransitions = false
++  var flightsPrinted = 0
+   var rehearsedStage: RehearsedStage?
+   var watcher = SimulatedWatcher(harness: harness)
+   var staleLayouts = 0
+@@ -218,6 +219,14 @@ func runSimulation() {
+       lastReply = ""
+       continue
+     }
++    // `pictures on|off`: Screen Recording is granted, or not, so there is a picture of a window for it to glide as (Controller+Glider.swift).
++    if words[0] == "pictures", words.count == 2, ["on", "off"].contains(words[1]) {
++      let pictures = words[1] == "on"
++      harness.overlays.hasPicture = { _ in pictures }
++      harness.beginStep()
++      lastReply = ""
++      continue
++    }
+     if words[0] == "rehearse-stage" {
+       rehearsedStage = rehearsedStage ?? RehearsedStage(recorder: harness.recorder, scheduler: harness.scheduler, overlays: harness.overlays)
+       continue
+@@ -295,7 +304,9 @@ func runSimulation() {
+     minimapsPrinted = harness.overlays.minimapHistory.count
+     if printTransitions {
+       for transition in harness.overlays.transitions { print(transition) }
++      for flight in harness.overlays.flights.dropFirst(flightsPrinted) { print("\(flight.window) glides \(flight.from.brief) -> \(flight.to.brief)") }
+     }
++    flightsPrinted = harness.overlays.flights.count
+     watcher.printLines()
+     firstLaunch?.aSecondPasses()
+     if printLayout, !["quiet", "loud", "help", "state", "ascii", "settings", "get", "spaces", "scene"].contains(words[0]) {
+@@ -337,6 +348,8 @@ func successor(of old: Harness, meanwhile: (FakeWindowSystem) -> Void = { _ in }
+   new.controller.loadSettings = old.controller.loadSettings
+   new.controller.replaceSettingsFile = old.controller.replaceSettingsFile
+   new.controller.keepCopyOfSettingsFile = old.controller.keepCopyOfSettingsFile
++  // The permission is the Mac's.
++  new.overlays.hasPicture = old.overlays.hasPicture
+   return new
+ }
+ 
+diff --git a/Tests/ArborKitTests/GliderTests.swift b/Tests/ArborKitTests/GliderTests.swift
+new file mode 100644
+index 00000000..ef2082c9
+--- /dev/null
++++ b/Tests/ArborKitTests/GliderTests.swift
+@@ -0,0 +1,1040 @@
++import ArborCore
++import ArborTesting
++import CoreGraphics
++import Foundation
++import Testing
++
++@testable import ArborKit
++
++/// One window travels as a picture of itself (Controller+Glider.swift): with motion on, `windowPictures` on and a picture to be had.
++@Suite @MainActor struct GliderTests {
++  /// Two windows that float on a display with a Dock, and a Mac that hands out pictures.
++  @MainActor final class Desk {
++    let h: Harness
++    let a: WindowID
++    let b: WindowID
++    static let display = DisplaySnapshot(
++      id: DisplayID("main"), frame: CGRect(x: 0, y: 0, width: 1440, height: 900),
++      visibleFrame: CGRect(x: 0, y: 25, width: 1440, height: 805), isMain: true, isBuiltIn: true)
++
++    init(
++      pictures: Bool = true, setting: Bool = true, motion: Double = 0.46, displays: [DisplaySnapshot] = [Desk.display],
++      change: (inout Settings) -> Void = { _ in }
++    ) {
++      var settings = Settings()
++      settings.windowPictures = setting
++      settings.animationDuration = motion
++      change(&settings)
++      h = Harness(displays: displays, settings: settings)
++      h.overlays.hasPicture = { _ in pictures }
++      a = h.system.open(app: "A", pid: 1001, frame: CGRect(x: 300, y: 200, width: 640, height: 420))
++      b = h.system.open(app: "B", pid: 1002, frame: CGRect(x: 500, y: 300, width: 600, height: 400))
++      h.start()
++      h.system.userFocus(a)
++    }
++
++    var flight: FakeOverlays.Flight? { h.overlays.flights.last }
++    var isAloft: Bool { h.overlays.aloft != nil }
++    func believed(_ window: WindowID) -> CGRect? { h.controller.windows[window]?.frame }
++    func slot(_ window: WindowID) -> CGRect? { h.layout?.windowFrames[window] }
++    func isInView(_ window: WindowID) -> Bool { h.system.isVisible(window) }
++    /// The time of every motion is over.
++    func land() { h.scheduler.advance(by: 1) }
++
++    /// Every frame `window` really had from `mark` on, the exemption left aside.
++    func rawRoad(of window: WindowID, since mark: Int = 0) -> [CGRect] {
++      var road: [CGRect] = []
++      for move in h.system.moveLog[mark...] where move.window == window && move.before != move.after {
++        if road.last != move.before { road.append(move.before) }
++        road.append(move.after)
++      }
++      return road
++    }
++  }
++
++  // MARK: What is seen
++
++  @Test func theWindowTheActNamesGlidesAsAPictureOfItself() throws {
++    let desk = Desk()
++    let stood = try #require(desk.h.frame(desk.a))
++    #expect(desk.h.run("dock \(desk.a.rawValue) left").ok)
++    let slot = try #require(desk.slot(desk.a))
++    let flight = try #require(desk.flight)
++    #expect(flight.window == desk.a && !flight.isDown)
++    #expect(flight.from == stood && flight.stoodAt == stood, "the picture goes up exactly over the window")
++    #expect(flight.to == slot)
++    #expect(flight.duration == 0.46)
++    #expect(desk.h.overlays.transitions.isEmpty, "the two never play together")
++    #expect(!desk.isInView(desk.a), "a window is not seen twice")
++    #expect(desk.h.frame(desk.a)?.size == slot.size, "it takes its final size where nobody sees it")
++    desk.h.scheduler.advance(by: 0.46)
++    #expect(desk.h.frame(desk.a) == slot)
++    #expect(desk.flight?.isDown == true && desk.flight?.landedAt == slot, "the window is placed first, then the panel goes, to the point")
++    #expect(desk.h.overlays.touchDowns == 1)
++    #expect(desk.h.controller.invariantViolations() == [])
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  @Test func itsRoadIsOldPlaceOutOfViewNewFrameAndNothingElse() throws {
++    let desk = Desk()
++    let stood = try #require(desk.h.frame(desk.a))
++    desk.h.run("dock \(desk.a.rawValue) left")
++    desk.land()
++    let slot = try #require(desk.slot(desk.a))
++    let road = desk.rawRoad(of: desk.a)
++    try #require(road.count == 4, "\(road)")
++    #expect(road.first == stood && road.last == slot)
++    #expect(road[1].size == stood.size, "out of view, the place alone")
++    #expect(road[2].origin == road[1].origin && road[2].size == slot.size, "the size, there")
++    #expect(road[1].minY == slot.minY && road[1].minX == Desk.display.frame.maxX - 1, "beside the display, at the height of the new frame")
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  @Test func theOthersJumpAtOnceInPlainView() throws {
++    let desk = Desk()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    desk.land()
++    desk.h.system.userFocus(desk.b)
++    let before = try #require(desk.h.frame(desk.a))
++    desk.h.run("dock \(desk.b.rawValue) left")
++    #expect(desk.flight?.window == desk.b && desk.isAloft)
++    #expect(desk.h.frame(desk.a) == desk.slot(desk.a) && desk.h.frame(desk.a) != before, "the other is in its slot while the picture glides")
++    #expect(desk.h.overlays.flights.count == 2)
++    desk.land()
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  @Test func anActThatNamesNoWindowLetsTheFrontOneGlide() throws {
++    let desk = Desk()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    desk.h.run("dock \(desk.b.rawValue) right")
++    desk.land()
++    desk.h.system.userFocus(desk.b)
++    let flights = desk.h.overlays.flights.count
++    #expect(desk.h.run("mirror").ok)
++    #expect(desk.h.overlays.flights.count == flights + 1 && desk.flight?.window == desk.b)
++    #expect(desk.h.frame(desk.a) == desk.slot(desk.a))
++    desk.land()
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  @Test func aWindowThatIsFramedGlidesAndTheOneThatLeavesTheViewDoesNot() throws {
++    let desk = Desk()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    desk.h.run("dock \(desk.b.rawValue) right")
++    desk.land()
++    desk.h.system.userFocus(desk.a)
++    let flights = desk.h.overlays.flights.count
++    #expect(desk.h.run("zoom").ok)
++    #expect(desk.h.overlays.flights.count == flights + 1 && desk.flight?.window == desk.a, "in view before and after, and larger")
++    #expect(!desk.isInView(desk.b))
++    desk.land()
++    expectWindowsMatchLayout(desk.h)
++    // The one with the keyboard only leaves the view, or only comes into it: that is not for the glider.
++    #expect(desk.h.run("zoom \(desk.b.rawValue)").ok)
++    #expect(desk.h.overlays.flights.count == flights + 1)
++    desk.land()
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  @Test func aWindowThatFloatsAgainGlidesToItsOwnFrame() throws {
++    let desk = Desk()
++    let own = try #require(desk.h.frame(desk.a))
++    desk.h.run("dock \(desk.a.rawValue) left")
++    desk.h.run("dock \(desk.b.rawValue) right")
++    desk.land()
++    desk.h.system.userFocus(desk.a)
++    let flights = desk.h.overlays.flights.count
++    #expect(desk.h.run("float").ok)
++    let flight = try #require(desk.flight)
++    #expect(desk.h.overlays.flights.count == flights + 1 && flight.window == desk.a)
++    #expect(flight.to.size == own.size, "its own earlier size")
++    #expect(!desk.isInView(desk.a) && desk.believed(desk.a) == flight.to)
++    desk.land()
++    #expect(desk.h.frame(desk.a) == flight.to && desk.flight?.landedAt == flight.to)
++    #expect(desk.h.controller.invariantViolations() == [])
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  @Test func aDropGlidesFromWhereTheHandLeftIt() throws {
++    let desk = Desk()
++    // Where macOS tiles itself the edge is macOS's.
++    desk.h.system.tiling = .off
++    desk.h.system.drag(desk.a, through: [CGPoint(x: 200, y: 400), CGPoint(x: 3, y: 400)])
++    let flight = try #require(desk.flight)
++    #expect(flight.window == desk.a && flight.to == desk.slot(desk.a))
++    #expect(flight.from == flight.stoodAt)
++    desk.land()
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  @Test func aTrifleIsNoJourney() throws {
++    let desk = Desk()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    desk.h.run("dock \(desk.b.rawValue) right")
++    desk.land()
++    desk.h.system.userFocus(desk.a)
++    let flights = desk.h.overlays.flights.count
++    #expect(desk.h.run("resize \(desk.a.rawValue) right 6").ok)
++    #expect(desk.h.overlays.flights.count == flights && desk.h.overlays.refusedLiftOffs.isEmpty)
++    desk.land()
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  // MARK: Where there is no glider everything is as it is without one
++
++  @Test func withNoPictureTheStagePlaysAsEver() throws {
++    let desk = Desk(pictures: false)
++    let onDisk = desk.h.store.onDisk?.workspaces
++    desk.h.run("dock \(desk.a.rawValue) left")
++    #expect(desk.h.overlays.refusedLiftOffs == [desk.a] && desk.h.overlays.flights.isEmpty)
++    #expect(desk.h.store.onDisk?.workspaces == onDisk, "nothing is written in a hurry for a window that stays")
++    #expect(desk.h.overlays.transitions.count == 1)
++    #expect(desk.h.frame(desk.a) == desk.slot(desk.a), "and the window is in its slot at once")
++    #expect(desk.rawRoad(of: desk.a).count == 2)
++    #expect(desk.h.overlays.touchDowns == 0)
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  static let journey = [
++    "dock 101 left", "dock 102 right", "swap 101 right", "zoom 101", "zoom", "resize 101 right 80", "mirror", "rotate", "equalize", "float 101",
++    "dock 101 top", "show-all", "desktop", "back", "toggle-float 102", "toggle-float 102", "arrange", "in", "out", "grow 40", "shrink 40",
++    "pin 101", "unpin 101", "float-all", "arrange", "undo", "redo", "layout 101 | 102", "home", "pause", "resume", "relayout",
++  ]
++
++  /// With motion off, or the setting off, not one line of it runs.
++  @Test(arguments: [(true, 0.0), (false, 0.46), (false, 0.0)])
++  func withMotionOrTheSettingOffThePresenterNeverHearsOfIt(setting: Bool, motion: Double) {
++    let desk = Desk(setting: setting, motion: motion)
++    var heard = 0
++    desk.h.overlays.onCall = { call in
++      switch call {
++      case .liftOff, .touchDown: heard += 1
++      default: break
++      }
++    }
++    for line in Self.journey {
++      desk.h.run(line)
++      #expect(desk.h.controller.glidingWindow == nil)
++      desk.h.system.click()
++      desk.h.scheduler.advance(by: 0.2)
++    }
++    desk.h.system.drag(desk.a, through: [CGPoint(x: 200, y: 400), CGPoint(x: 3, y: 400)])
++    desk.h.system.close(desk.b)
++    desk.h.controller.shutdown()
++    #expect(heard == 0)
++    #expect(desk.h.overlays.flights.isEmpty && desk.h.overlays.refusedLiftOffs.isEmpty && desk.h.overlays.touchDowns == 0)
++    #expect(!desk.h.scheduler.pendingKeys.contains(Controller.glideKey))
++  }
++
++  /// Nothing Arbor decides depends on the glider: where everything ends up is the same with it and without.
++  @Test(arguments: [0.0, 0.1, 1.0]) func everythingEndsWhereItEndsWithoutAGlider(pause: Double) {
++    let (with, without) = (Desk(), Desk(setting: false))
++    var glides = 0
++    for line in Self.journey {
++      let replies = (with.h.run(line), without.h.run(line))
++      #expect(replies.0.message == replies.1.message, "\(line)")
++      if with.isAloft { glides += 1 }
++      with.h.scheduler.advance(by: pause)
++      without.h.scheduler.advance(by: pause)
++      if pause >= 1 {
++        for window in [with.a, with.b] { #expect(with.h.frame(window) == without.h.frame(window), "\(window) after \(line)") }
++        #expect(with.h.controller.invariantViolations() == [], "\(line)")
++      }
++      #expect(with.h.workspace == without.h.workspace, "\(line)")
++      #expect(with.h.controller.windows == without.h.controller.windows, "what Arbor takes for true after \(line)")
++    }
++    with.land()
++    without.land()
++    for window in [with.a, with.b] { #expect(with.h.frame(window) == without.h.frame(window)) }
++    #expect(glides >= 8, "the journey proves nothing unless windows glide in it: \(glides)")
++    expectWindowsMatchLayout(with.h)
++  }
++
++  // MARK: a. The way back is written down before the window leaves
++
++  @Test func theNewArrangementIsOnDiskBeforeTheWindowLeaves() throws {
++    let desk = Desk()
++    var onDisk: [PersistedState?] = []
++    desk.h.system.willSetFrame = { [h = desk.h, a = desk.a] window, _ in if window == a { onDisk.append(h.store.onDisk) } }
++    desk.h.run("dock \(desk.a.rawValue) left")
++    #expect(desk.isAloft)
++    let written = try #require(onDisk.first)
++    let first = try #require(written)
++    #expect(first.workspaces[desk.h.display]?.isDocked(desk.a) == true)
++    #expect(first.workspaces[desk.h.display]?.tree == desk.h.workspace.tree, "the tree a start lays out from says the new frame")
++  }
++
++  @Test func theFrameItWillFloatAtIsOnDiskBeforeTheWindowLeaves() throws {
++    let desk = Desk()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    desk.h.run("dock \(desk.b.rawValue) right")
++    desk.land()
++    desk.h.system.userFocus(desk.a)
++    var onDisk: [PersistedState?] = []
++    desk.h.system.willSetFrame = { [h = desk.h, a = desk.a] window, _ in if window == a { onDisk.append(h.store.onDisk) } }
++    desk.h.run("float")
++    let to = try #require(desk.flight?.to)
++    #expect(desk.isAloft)
++    let written = try #require(onDisk.first)
++    #expect(written?.workspaces[desk.h.display]?.floating[desk.a] == to)
++  }
++
++  /// Arbor dies in the middle of a glide. What the next one knows is what was on disk.
++  @Test(arguments: [true, false], [true, false])
++  func anArborThatDiesInMidGlideLeavesAWindowThatTheNextStartPutsAtItsNewFrame(byTheWatchdog: Bool, floating: Bool) throws {
++    let desk = Desk()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    desk.h.run("dock \(desk.b.rawValue) right")
++    desk.land()
++    desk.h.system.userFocus(desk.a)
++    desk.h.run(floating ? "float" : "swap \(desk.a.rawValue) right")
++    let to = try #require(desk.flight?.to)
++    #expect(desk.isAloft && !desk.isInView(desk.a))
++    let h = desk.h.newProcess(byTheWatchdog: byTheWatchdog, knowingOnlyWhatIsOnDisk: true)
++    h.start()
++    h.scheduler.advance(by: 1)
++    #expect(h.frame(desk.a) == to, "whole, in view, at its new frame")
++    #expect(h.controller.invariantViolations() == [])
++    #expect(h.controller.parked.isEmpty)
++    expectWindowsMatchLayout(h)
++  }
++
++  /// The third accident in a row: the state is set aside, every window is adopted and brought into view, and Arbor quits.
++  @Test func aRescueInMidGlideBringsTheWindowBackWhole() throws {
++    let desk = Desk()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    #expect(desk.isAloft)
++    desk.h.system.events = nil
++    desk.h.system.stop()
++    desk.h.system.forgetSession()
++    let rescue = Harness(settings: desk.h.controller.settings, saved: nil, system: desk.h.system)
++    rescue.start()
++    rescue.controller.shutdown()
++    let frame = try #require(rescue.frame(desk.a))
++    #expect(Desk.display.visibleFrame.contains(frame), "\(frame)")
++  }
++
++  @Test func quittingInMidGlideGivesTheWindowItsOwnFrameBack() throws {
++    let desk = Desk()
++    let own = try #require(desk.h.frame(desk.a))
++    desk.h.run("dock \(desk.a.rawValue) left")
++    #expect(desk.isAloft)
++    desk.h.run("quit")
++    desk.h.controller.shutdown()
++    #expect(!desk.isAloft && desk.h.frame(desk.a) == own)
++    #expect(!desk.h.scheduler.pendingKeys.contains(Controller.glideKey))
++  }
++
++  @Test func aPauseInMidGlideGivesTheWindowItsOwnFrameBackAndAResumeItsSlot() throws {
++    let desk = Desk()
++    let own = try #require(desk.h.frame(desk.a))
++    desk.h.run("dock \(desk.a.rawValue) left")
++    let slot = try #require(desk.slot(desk.a))
++    #expect(desk.isAloft)
++    #expect(desk.h.run("pause").ok)
++    #expect(!desk.isAloft && desk.h.frame(desk.a) == own)
++    #expect(desk.h.run("resume").ok)
++    desk.land()
++    #expect(desk.h.frame(desk.a) == slot)
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  @Test func theSessionEndingInMidGlideLetsGoOfTheWindowInView() throws {
++    let desk = Desk()
++    let own = try #require(desk.h.frame(desk.a))
++    desk.h.run("dock \(desk.a.rawValue) left")
++    desk.h.controller.sessionIsEnding()
++    #expect(!desk.isAloft && desk.h.frame(desk.a) == own)
++  }
++
++  // MARK: b. A limit by the clock
++
++  @Test(arguments: [(0.1, 0.1), (0.46, 0.46), (0.5, 0.5), (2.0, 0.5)])
++  func itIsDownWhenTheGlidesTimeIsUpAndNeverLaterThanHalfASecond(motion: Double, away: Double) throws {
++    let desk = Desk(motion: motion)
++    desk.h.run("dock \(desk.a.rawValue) left")
++    #expect(desk.flight?.duration == away)
++    desk.h.scheduler.advance(by: away - 0.01)
++    #expect(desk.isAloft && !desk.isInView(desk.a))
++    // The presenter says nothing and does nothing: the clock is the controller's.
++    desk.h.scheduler.advance(by: 0.01)
++    #expect(!desk.isAloft && desk.h.frame(desk.a) == desk.slot(desk.a))
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  @Test func anAppThatDoesNotAnswerAtTheEndLeavesAWindowThatIsFetchedWhenItDoes() throws {
++    let desk = Desk()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    let slot = try #require(desk.slot(desk.a))
++    desk.h.system.setUnresponsive(pid: 1001, true)
++    desk.land()
++    #expect(!desk.isAloft, "the panel goes, glide or no glide")
++    #expect(desk.h.controller.glidingWindow == nil)
++    #expect(desk.believed(desk.a) == desk.h.frame(desk.a), "and the books say where it is")
++    desk.h.system.setUnresponsive(pid: 1001, false)
++    desk.land()
++    #expect(desk.h.frame(desk.a) == slot)
++    #expect(desk.h.controller.invariantViolations() == [])
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  // MARK: c. Any act of the person ends it at once, at its end
++
++  struct Act: CustomTestStringConvertible, Sendable {
++    var testDescription: String
++    var perform: @MainActor @Sendable (Desk) -> Void
++    init(_ name: String, _ perform: @escaping @MainActor @Sendable (Desk) -> Void) { (testDescription, self.perform) = (name, perform) }
++  }
++
++  nonisolated static let acts: [Act] = [
++    Act("a command about another window") { $0.h.run("pin \($0.b.rawValue)") },
++    Act("a command that fails") { $0.h.run("float 999") },
++    Act("a command that changes a setting") { $0.h.run("set gap 20") },
++    Act("a press of the pointer") { $0.h.system.click() },
++    Act("a drag of another window") { $0.h.system.beginDrag($0.b) },
++    Act("an edge of another window in the hand") { $0.h.system.userResize($0.b, to: CGRect(x: 500, y: 300, width: 620, height: 400), release: false) },
++    Act("a key of Arbor's that runs no command yet") { $0.h.keyDown("ctrl+opt+0") },
++    Act("another window closing") { $0.h.system.close($0.b) },
++    Act("another window minimized") { $0.h.system.setMinimized($0.b, true) },
++    Act("another app quitting") { $0.h.system.quit(pid: 1002) },
++    Act("the keyboard going elsewhere") { $0.h.system.userFocus($0.b) },
++    Act("another app coming forward") { $0.h.system.userSwitchesApp(to: $0.b) },
++    Act("sleep, or another macOS Space") { $0.h.overlays.interruptGlide() },
++    Act("a click on the minimap, a tile, a gap: a press comes first") { $0.h.system.click() },
++  ]
++
++  @Test(arguments: acts) func anyActEndsTheGlideAtOnceAtItsEnd(_ act: Act) throws {
++    let desk = Desk()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    let to = try #require(desk.flight?.to)
++    desk.h.scheduler.advance(by: 0.1)
++    #expect(desk.isAloft)
++    let mark = desk.h.system.moveLog.count
++    act.perform(desk)
++    #expect(!desk.isAloft && desk.h.controller.glidingWindow == nil)
++    #expect(desk.flight?.landedAt == to, "at its end")
++    #expect(desk.h.system.moveLog[mark...].first { $0.window == desk.a }?.after == to, "before anything else is done with it")
++    #expect(desk.h.overlays.flights.count == 1, "no second glide on top")
++    #expect(!desk.h.scheduler.pendingKeys.contains(Controller.glideKey), "nothing queues")
++    #expect(desk.isInView(desk.a))
++  }
++
++  /// Where it was going may be nowhere now. Sent there first, it would move twice for one thing that happened.
++  @Test(arguments: [false, true], [false, true])
++  func aChangeOfDisplaysEndsTheGlideAtOnceWhereTheWindowBelongsNow(anotherDisplay: Bool, floating: Bool) throws {
++    let (with, without) = (Desk(), Desk(setting: false))
++    var marks: [Int] = []
++    for desk in [with, without] {
++      desk.h.run("dock \(desk.a.rawValue) left")
++      if floating {
++        desk.land()
++        desk.h.run("float \(desk.a.rawValue)")
++      }
++      desk.h.scheduler.advance(by: 0.1)
++      marks.append(desk.h.system.moveLog.count)
++      var next = Desk.display
++      next.visibleFrame.size.height -= 40
++      if anotherDisplay {
++        next = DisplaySnapshot(
++          id: DisplayID("side"), frame: CGRect(x: 0, y: 0, width: 1920, height: 1080), visibleFrame: CGRect(x: 0, y: 25, width: 1920, height: 1055),
++          isMain: true, isBuiltIn: false)
++      }
++      #expect(desk.isAloft == (desk === with))
++      desk.h.system.setDisplays([next])
++    }
++    #expect(!with.isAloft && with.h.controller.glidingWindow == nil && !with.h.scheduler.pendingKeys.contains(Controller.glideKey))
++    #expect(with.rawRoad(of: with.a, since: marks[0]).count == 2, "once: \(with.rawRoad(of: with.a, since: marks[0]))")
++    #expect(with.flight?.landedAt == with.h.frame(with.a), "placed first, then the panel goes")
++    for window in [with.a, with.b] { #expect(with.h.frame(window) == without.h.frame(window)) }
++    #expect(with.isInView(with.a) && with.h.workspace == without.h.workspace)
++    #expect(with.h.controller.invariantViolations() == [])
++  }
++
++  @Test(arguments: ["state", "status", "ascii", "doctor", "displays", "spaces"]) func aQuestionIsNoAct(_ line: String) {
++    let desk = Desk()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    #expect(desk.h.run(line).ok)
++    #expect(desk.isAloft)
++    desk.land()
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  @Test func aSecondActThatGlidesStartsFromTheFirstOnesEnd() throws {
++    let desk = Desk()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    let first = try #require(desk.flight)
++    desk.h.scheduler.advance(by: 0.1)
++    desk.h.run("dock \(desk.a.rawValue) right")
++    let second = try #require(desk.flight)
++    #expect(desk.h.overlays.flights.count == 2 && desk.h.overlays.liftOffsUnderAnother == 0)
++    #expect(desk.h.overlays.flights[0].isDown && desk.h.overlays.flights[0].landedAt == first.to)
++    #expect(second.from == first.to && second.stoodAt == first.to)
++    desk.land()
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  @Test func theGlidersOwnWindowClosing() {
++    let desk = Desk()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    desk.h.system.close(desk.a)
++    #expect(!desk.isAloft && desk.h.controller.glidingWindow == nil)
++    #expect(!desk.h.scheduler.pendingKeys.contains(Controller.glideKey))
++    #expect(desk.h.controller.invariantViolations() == [])
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  @Test func theGlidersOwnWindowMinimized() throws {
++    let desk = Desk()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    let to = try #require(desk.flight?.to)
++    desk.h.system.setMinimized(desk.a, true)
++    #expect(!desk.isAloft && desk.h.controller.glidingWindow == nil)
++    #expect(desk.h.frame(desk.a) == to, "it comes out of the Dock where it belongs, not beside the display")
++    #expect(desk.believed(desk.a) == to)
++    #expect(desk.h.controller.invariantViolations() == [])
++    desk.h.system.setMinimized(desk.a, false)
++    desk.land()
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  @Test func theGlidersOwnAppHiddenOrItsWindowInFullScreen() throws {
++    for act in 0..<2 {
++      let (with, without) = (Desk(), Desk(setting: false))
++      for desk in [with, without] {
++        desk.h.run("dock \(desk.a.rawValue) left")
++        if act == 0 { desk.h.system.setHidden(pid: 1001, true) } else { desk.h.system.setFullScreen(desk.a, true) }
++        #expect(!desk.isAloft && desk.h.controller.glidingWindow == nil)
++        desk.land()
++      }
++      #expect(with.h.controller.invariantViolations() == without.h.controller.invariantViolations())
++      #expect(with.h.controller.windows == without.h.controller.windows)
++    }
++  }
++
++  @Test func thePermissionGoingInMidGlide() throws {
++    let desk = Desk()
++    desk.h.watchAccessibility()
++    desk.h.controller.shutdown()
++    desk.h.start()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    #expect(desk.isAloft)
++    desk.h.revokeAccessibility()
++    desk.h.scheduler.advance(by: 10)
++    #expect(!desk.isAloft && desk.h.controller.glidingWindow == nil, "no panel outstays the glide")
++    desk.h.grantAccessibility()
++    desk.h.scheduler.advance(by: 10)
++    #expect(desk.isInView(desk.a))
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  // MARK: e. Its own parking is no news to Arbor
++
++  @Test func whileItIsAwayEveryPartOfArborHasItAtItsNewFrame() throws {
++    let desk = Desk { $0.focusRing = true }
++    desk.h.run("dock \(desk.b.rawValue) right")
++    desk.land()
++    desk.h.system.userFocus(desk.a)
++    let messages = desk.h.overlays.messages.count
++    desk.h.run("dock \(desk.a.rawValue) left")
++    let to = try #require(desk.flight?.to)
++    #expect(desk.isAloft && !desk.isInView(desk.a))
++    let controller = desk.h.controller
++
++    #expect(desk.believed(desk.a) == to)
++    #expect(!controller.parked.contains(desk.a))
++    let state = try #require(desk.h.run("state").state)
++    let window = try #require(state.windows.first { $0.id == desk.a })
++    #expect(window.frame == to && !window.parked && window.docked)
++    #expect(desk.h.run("status").message.contains("0 out of view"))
++    #expect(controller.invariantViolations() == [])
++    let known = try #require(controller.windows[desk.a])
++    #expect(controller.place(of: known, on: desk.h.display) == .inView, "Go to… and the menu's list")
++    #expect(desk.h.overlays.scenes[desk.h.display]?.focusRing?.window == desk.a)
++    #expect(desk.h.overlays.scenes[desk.h.display]?.focusRing?.frame == to)
++    #expect(desk.h.overlays.messages.count == messages, "no line on screen")
++    #expect(controller.settled[desk.a] == to)
++    #expect(controller.titleBars[desk.a] == nil, "nothing is learnt from where it waits")
++    #expect(controller.stateToSave.workspaces[desk.h.display]?.undockedFrame(of: desk.a) == CGRect(x: 300, y: 200, width: 640, height: 420))
++    #expect(desk.isAloft, "and none of these questions ended it")
++    desk.h.run("minimap")
++    let item = try #require(desk.h.overlays.minimaps[desk.h.display]?.items.first { $0.window == desk.a })
++    #expect(item.isInView)
++    desk.land()
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  @Test func whatItsAppReportsOfItsPlaceMeanwhileIsNoNews() throws {
++    let desk = Desk()
++    desk.h.system.holdsEchoes = true
++    desk.h.run("dock \(desk.a.rawValue) left")
++    let to = try #require(desk.flight?.to)
++    let saves = desk.h.store.saveCount
++    // "Moved", "resized": its own parking comes back as events, whoever is said to have done it.
++    desk.h.system.appsReact()
++    desk.h.system.report(desk.a, userInitiated: false)
++    desk.h.system.report(desk.a, userInitiated: true)
++    #expect(desk.isAloft && desk.believed(desk.a) == to)
++    #expect(!desk.h.scheduler.pendingKeys.contains { $0.hasPrefix("enforce-") }, "nobody is going to put it back")
++    #expect(desk.h.controller.invariantViolations() == [])
++    desk.h.controller.saveNow()
++    #expect(desk.h.store.saveCount == saves, "and nothing new is written down")
++    desk.h.system.holdsEchoes = false
++    desk.land()
++    #expect(desk.h.frame(desk.a) == to)
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  /// Not its own parking: an app, a tool or macOS has taken it somewhere in view.
++  @Test func aReportFromAPlaceInViewIsNewsAndEndsTheGlideThere() throws {
++    let desk = Desk()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    let slot = try #require(desk.slot(desk.a))
++    let moves = desk.h.system.moveLog.count
++    desk.h.system.userMove(desk.a, to: CGRect(x: 400, y: 300, width: 500, height: 300))
++    #expect(!desk.isAloft && desk.h.controller.glidingWindow == nil, "or it would be seen twice")
++    #expect(desk.h.system.moveLog.count == moves, "it is in view: nothing is left to place")
++    #expect(desk.believed(desk.a) == desk.h.frame(desk.a))
++    // A docked window that something else has moved is put back, as ever.
++    desk.land()
++    #expect(desk.h.frame(desk.a) == slot)
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  @Test func aFloatingWindowsOwnFrameIsNotTheWing() throws {
++    let desk = Desk()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    desk.h.run("dock \(desk.b.rawValue) right")
++    desk.land()
++    desk.h.system.userFocus(desk.a)
++    desk.h.run("float")
++    let to = try #require(desk.flight?.to)
++    desk.h.system.report(desk.a, userInitiated: true)
++    #expect(desk.isAloft)
++    #expect(desk.h.workspace.floating[desk.a] == to)
++    desk.land()
++    #expect(desk.h.workspace.floating[desk.a] == to && desk.h.frame(desk.a) == to)
++  }
++
++  @Test func aNewTitleIsTakenInAndEndsNothing() throws {
++    let desk = Desk()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    let to = try #require(desk.flight?.to)
++    desk.h.system.setTitle(desk.a, "Another")
++    #expect(desk.isAloft && desk.believed(desk.a) == to)
++    #expect(desk.h.controller.windows[desk.a]?.title == "Another")
++    desk.land()
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  @Test func theKeyboardStaysWithTheWindowAndIsHandedToNobody() throws {
++    let desk = Desk()
++    desk.h.run("dock \(desk.b.rawValue) right")
++    desk.land()
++    desk.h.system.userFocus(desk.a)
++    let asked = desk.h.system.focusRequests.count
++    desk.h.run("dock \(desk.a.rawValue) left")
++    #expect(desk.isAloft)
++    // Keys that are not Arbor's: they go to the app in front, whose window has the keyboard, and Arbor does not hear of them.
++    desk.h.system.type(keys: 5)
++    desk.h.keyDown("cmd+s")
++    desk.h.keyUp("cmd+s")
++    desk.h.scheduler.advance(by: 0.3)
++    #expect(desk.isAloft, "what Arbor does not hear ends nothing")
++    #expect(desk.h.system.focused == desk.a)
++    #expect(desk.h.system.keysTheAppInFrontGot.count == 1)
++    #expect(desk.h.system.focusRequests[asked...].allSatisfy { $0 == desk.a }, "\(desk.h.system.focusRequests[asked...])")
++    desk.land()
++    #expect(desk.h.system.focused == desk.a)
++    #expect(desk.h.system.focusRequests[asked...].allSatisfy { $0 == desk.a })
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  // MARK: f. The size is asked for where it fits
++
++  /// In a bottom corner, where Arbor parks windows, macOS would cut a height at the top of the Dock. Beside the display at the height of
++  /// the new frame it fits as it will at the end.
++  @Test(arguments: ["left", "right", "top", "bottom"]) func theAnswerOutOfViewIsTheWindowsOwn(edge: String) throws {
++    let desk = Desk()
++    desk.h.run("dock \(desk.b.rawValue) \(edge == "left" ? "right" : "left")")
++    desk.land()
++    desk.h.system.userFocus(desk.a)
++    desk.h.run("dock \(desk.a.rawValue) \(edge)")
++    let slot = try #require(desk.slot(desk.a))
++    #expect(desk.isAloft && desk.h.frame(desk.a)?.size == slot.size)
++    #expect(desk.h.controller.seenSizes[desk.a]?.stoppedAt == .zero, "nothing is written down as where it stopped growing")
++    #expect(desk.h.controller.minimumSizes[desk.a] == nil && desk.h.controller.misfits[desk.a] == nil)
++    desk.land()
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  /// Without a glider it is asked where it stands, in view. Here it says so where it waits, room is made, and that is where the picture goes.
++  @Test func aWindowThatWillNotBeAsSmallAsItsSlotSaysSoOutOfViewAndGlidesToTheRoomMadeForIt() throws {
++    let (with, without) = (Desk(), Desk(setting: false))
++    var marks: [Int] = []
++    for desk in [with, without] {
++      desk.h.system.setMinimumSize(desk.a, CGSize(width: 900, height: 300))
++      desk.h.run("dock \(desk.b.rawValue) right")
++      desk.land()
++      desk.h.system.userFocus(desk.a)
++      marks.append(desk.h.system.moveLog.count)
++      desk.h.run("dock \(desk.a.rawValue) left")
++    }
++    let flight = try #require(with.flight)
++    #expect(with.isAloft && with.h.overlays.flights.count == 2 && flight.aims.count == 2, "one picture, told where its window really ends")
++    #expect(with.believed(with.a)?.width == 900 && with.believed(with.a) == flight.to)
++    #expect(with.rawRoad(of: with.a, since: marks[0]).dropFirst().allSatisfy { $0.minX == 1439 }, "all of it out of view")
++    #expect(with.h.frame(with.b) == without.h.frame(with.b), "the other has made room at once")
++    with.land()
++    without.land()
++    #expect(with.h.system.road(of: with.a, since: marks[0]) == [flight.from, flight.to])
++    #expect(with.h.system.jolts(since: marks[0]).isEmpty)
++    for window in [with.a, with.b] { #expect(with.h.frame(window) == without.h.frame(window)) }
++    #expect(with.flight?.landedAt == with.flight?.to, "to the point")
++    #expect(with.h.workspace == without.h.workspace)
++    #expect(with.h.controller.minimumSizes[with.a] == without.h.controller.minimumSizes[with.a])
++    #expect(with.h.controller.invariantViolations() == [])
++    expectWindowsMatchLayout(with.h)
++  }
++
++  /// System Settings: no narrower, no wider, and taller than half a display.
++  @Test func oneThatWillNeitherShrinkNorGrowAsAskedGoesStraightToTheMiddleOfTheRoomMadeForIt() throws {
++    let (with, without) = (Desk(), Desk(setting: false))
++    for desk in [with, without] {
++      desk.h.system.setMinimumSize(desk.a, CGSize(width: 640, height: 410))
++      desk.h.system.setMaximumSize(desk.a, CGSize(width: 640, height: 2000))
++      desk.h.run("dock \(desk.a.rawValue) bottom")
++    }
++    let flight = try #require(with.flight)
++    #expect(with.isAloft && with.h.overlays.flights.count == 1)
++    with.land()
++    without.land()
++    #expect(with.h.system.road(of: with.a) == [flight.from, flight.to], "by no corner of its slot")
++    #expect(with.h.frame(with.a) == without.h.frame(with.a) && with.flight?.landedAt == with.flight?.to)
++    #expect(with.h.workspace == without.h.workspace && with.h.controller.invariantViolations() == [])
++  }
++
++  /// There is no room to be made, on this display: it becomes a tile, which is no journey for a picture. This story needs tiles.
++  @Test func oneThatBecomesATileForItsAnswerLeavesAndThePanelGoes() throws {
++    let (with, without) = (Desk(), Desk(setting: false))
++    for desk in [with, without] {
++      desk.h.system.setMinimumSize(desk.a, CGSize(width: 1500, height: 300))
++      desk.h.run("dock \(desk.b.rawValue) right")
++      desk.land()
++      desk.h.system.userFocus(desk.a)
++      desk.h.run("dock \(desk.a.rawValue) left")
++    }
++    #expect(!with.isAloft && with.h.controller.glidingWindow == nil && with.h.overlays.touchDowns == with.h.overlays.flights.count)
++    with.land()
++    without.land()
++    #expect(with.h.workspace == without.h.workspace && with.h.layout?.tiles.count == 1 && without.h.layout?.tiles.count == 1)
++    for window in [with.a, with.b] { #expect(with.isInView(window) == without.isInView(window)) }
++    #expect(with.h.controller.invariantViolations() == [])
++  }
++
++  @Test func aWindowThatCannotGrowToItsSlotGlidesToTheMiddleOfIt() throws {
++    let (with, without) = (Desk(), Desk(setting: false))
++    for desk in [with, without] {
++      desk.h.system.setMaximumSize(desk.a, CGSize(width: 650, height: 500))
++      desk.h.run("dock \(desk.a.rawValue) left")
++    }
++    let flight = try #require(with.flight)
++    #expect(with.isAloft && flight.aims.count == 2, "the picture is told where the window really ends")
++    with.land()
++    without.land()
++    #expect(with.h.frame(with.a) == without.h.frame(with.a))
++    #expect(with.flight?.landedAt == with.flight?.to, "to the point")
++    #expect(with.h.controller.seenSizes[with.a] == without.h.controller.seenSizes[with.a], "and as much is known of it as without")
++    #expect(with.h.controller.invariantViolations() == [])
++  }
++
++  @Test func aTerminalGlidesToTheCellsItTakes() throws {
++    let (with, without) = (Desk(), Desk(setting: false))
++    for desk in [with, without] {
++      desk.h.system.setSizeStep(desk.a, CGSize(width: 7, height: 14), margin: CGSize(width: 4, height: 30))
++      desk.h.run("dock \(desk.a.rawValue) left")
++    }
++    #expect(with.isAloft)
++    with.land()
++    without.land()
++    #expect(with.h.frame(with.a) == without.h.frame(with.a))
++    #expect(with.flight?.landedAt == with.flight?.to)
++    #expect(with.h.controller.invariantViolations() == [])
++  }
++
++  @Test func anotherWindowsRefusalThatChangesTheLayoutAimsTheGlideAnew() throws {
++    let (with, without) = (Desk(), Desk(setting: false))
++    var marks: [Int] = []
++    for desk in [with, without] {
++      desk.h.run("dock \(desk.b.rawValue) right")
++      desk.land()
++      // Its place is split, so it has to shrink, whatever else there is on the display.
++      desk.h.system.setMinimumSize(desk.b, CGSize(width: 500, height: 300))
++      desk.h.system.userFocus(desk.a)
++      marks.append(desk.h.system.moveLog.count)
++      desk.h.run("dock \(desk.a.rawValue) beside \(desk.b.rawValue) left")
++    }
++    let flight = try #require(with.flight)
++    #expect(with.isAloft && with.h.overlays.flights.count == 2 && flight.aims.count == 2, "one picture, told where to go instead")
++    #expect(with.believed(with.a) == with.slot(with.a) && flight.to == with.slot(with.a))
++    with.land()
++    without.land()
++    #expect(with.h.system.road(of: with.a, since: marks[0]) == [flight.from, flight.to])
++    for window in [with.a, with.b] { #expect(with.h.frame(window) == without.h.frame(window)) }
++    #expect(with.h.workspace == without.h.workspace)
++    #expect(!with.isAloft && with.flight?.landedAt == with.flight?.to && with.h.controller.invariantViolations() == [])
++  }
++
++  // MARK: Where it waits
++
++  static let right = DisplaySnapshot(
++    id: DisplayID("right"), frame: CGRect(x: 1440, y: 0, width: 1440, height: 900), visibleFrame: CGRect(x: 1440, y: 25, width: 1440, height: 875),
++    isMain: false)
++
++  @Test func whereANeighbouringDisplayWouldShowItThereIsNoGlide() throws {
++    let desk = Desk(displays: [Desk.display, Self.right])
++    desk.h.run("dock \(desk.a.rawValue) left")
++    #expect(desk.h.overlays.flights.isEmpty && desk.h.overlays.refusedLiftOffs.isEmpty, "nobody is asked for a picture that cannot be used")
++    #expect(desk.h.frame(desk.a) == desk.slot(desk.a))
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  @Test func onTheDisplayWithNothingToItsRightThereIs() throws {
++    let desk = Desk(displays: [Desk.display, Self.right])
++    let c = desk.h.system.open(app: "C", pid: 1003, frame: CGRect(x: 1700, y: 200, width: 640, height: 420))
++    desk.h.system.userFocus(c)
++    desk.h.run("dock \(c.rawValue) left")
++    #expect(desk.flight?.window == c && desk.isAloft)
++    #expect(!desk.isInView(c))
++    desk.land()
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  /// To the left what shows depends on the width.
++  @Test func besideTheLeftEdgeOnlyAWindowThatKeepsItsWidthWaits() throws {
++    let desk = Desk(displays: [Desk.display, Self.right])
++    desk.h.run("dock \(desk.a.rawValue) top")
++    desk.h.run("dock \(desk.b.rawValue) bottom")
++    desk.land()
++    desk.h.system.userFocus(desk.a)
++    #expect(desk.h.overlays.flights.isEmpty)
++    #expect(desk.h.run("swap \(desk.a.rawValue) down").ok)
++    let flight = try #require(desk.flight)
++    #expect(flight.window == desk.a && desk.isAloft && !desk.isInView(desk.a))
++    #expect(desk.h.frame(desk.a)?.maxX == Desk.display.frame.minX + 1)
++    desk.land()
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  // MARK: Who does not glide
++
++  @Test func whatIsInTheHandOrNotItselfDoesNotGlide() throws {
++    // A window that becomes a tile.
++    var desk = Desk { $0.minimumUsableWidth = 1300 }
++    desk.h.run("dock \(desk.b.rawValue) right")
++    desk.land()
++    let flights = desk.h.overlays.flights.count
++    desk.h.system.userFocus(desk.a)
++    desk.h.run("dock \(desk.a.rawValue) left")
++    if desk.slot(desk.a) == nil { #expect(desk.h.overlays.flights.count == flights) }
++    // While another window is in the hand nothing glides.
++    desk = Desk()
++    desk.h.system.beginDrag(desk.b)
++    desk.h.run("dock \(desk.a.rawValue) left")
++    #expect(desk.h.overlays.flights.isEmpty)
++    desk.h.system.endDrag()
++    // While macOS shows its desktop.
++    desk = Desk()
++    desk.h.system.pressShowDesktopKey()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    #expect(desk.h.overlays.flights.isEmpty)
++  }
++
++  @Test func whatFollowsTheMouseOrPutsWindowsBackDoesNotGlide() throws {
++    let desk = Desk()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    desk.h.run("dock \(desk.b.rawValue) right")
++    desk.land()
++    desk.h.system.userFocus(desk.a)
++    let flights = desk.h.overlays.flights.count
++    let seam = try #require(desk.h.layout?.seams.first)
++    desk.h.overlays.dragSeam(seam, by: 60)
++    #expect(desk.h.overlays.flights.count == flights, "a gap in the hand")
++    desk.h.system.userMove(desk.a, to: CGRect(x: 400, y: 300, width: 500, height: 300))
++    desk.land()
++    #expect(desk.h.overlays.flights.count == flights, "a put-back")
++    desk.h.run("set gap 30")
++    #expect(desk.h.overlays.flights.count == flights, "settings")
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  // MARK: The rule, and the one exemption
++
++  /// The control: by the window system's list the road is a jolt, and every detector says so of the bare log.
++  @Test func byTheBareLogTheRoadIsAJolt() throws {
++    let desk = Desk()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    desk.land()
++    #expect(FakeWindowSystem.detour(desk.rawRoad(of: desk.a)) != nil)
++    #expect(FakeWindowSystem.changesOfPlace(desk.rawRoad(of: desk.a)) == 2)
++  }
++
++  @Test func underItsPictureTheRoadIsNotJudgedAndItsEndIs() throws {
++    let desk = Desk()
++    let stood = try #require(desk.h.frame(desk.a))
++    desk.h.beginStep()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    let slot = try #require(desk.slot(desk.a))
++    // While the picture is up, it ends where the picture takes it.
++    #expect(desk.isAloft && desk.h.system.road(of: desk.a) == [stood, slot])
++    #expect(desk.h.jolts == [] && desk.h.movesInStep[desk.a] == 1)
++    desk.land()
++    #expect(desk.h.system.road(of: desk.a) == [stood, slot])
++    #expect(FakeWindowSystem.detour(desk.h.system.road(of: desk.a)) == nil)
++    #expect(desk.h.jolts == [])
++    #expect(desk.h.movesInStep[desk.a] == 1)
++  }
++
++  /// One glide is one move, and it counts where it began: whoever looks at what came after sees nothing of it.
++  @Test func aStretchOfTheLogThatBeginsInMidGlideHasNothingOfIt() throws {
++    let desk = Desk()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    desk.h.beginStep()
++    let mark = desk.h.system.moveLog.count
++    desk.land()
++    #expect(desk.h.system.moveLog.count == mark + 1, "the window is placed")
++    #expect(desk.h.movesInStep[desk.a] == nil && desk.h.jolts == [] && desk.h.system.road(of: desk.a, since: mark) == [])
++  }
++
++  /// The control: cut the exemption, and each detector says of the very same glide what it says of any window that leaves and comes back.
++  @Test func withoutTheExemptionEveryDetectorCallsItAJolt() throws {
++    let desk = Desk()
++    desk.h.system.judgesTheGliderAsEver = true
++    desk.h.beginStep()
++    desk.h.run("dock \(desk.a.rawValue) left")
++    desk.land()
++    #expect(desk.h.jolts.map(\.window) == [desk.a])
++    #expect(FakeWindowSystem.detour(desk.h.system.road(of: desk.a)) != nil)
++    #expect((desk.h.movesInStep[desk.a] ?? 0) > 1)
++  }
++
++  /// Each is a road the exemption does not cover. The fake is driven by hand, as an Arbor with a fault would drive it.
++  @Test func anythingElseOnThatRoadIsJudgedAsEver() throws {
++    let (old, away, new) = (
++      CGRect(x: 300, y: 200, width: 640, height: 420), CGRect(x: 1439, y: 37, width: 640, height: 420), CGRect(x: 12, y: 37, width: 702, height: 781)
++    )
++    func play(_ body: (FakeWindowSystem, WindowID, WindowID) -> Void) -> (FakeWindowSystem, WindowID, WindowID) {
++      let system = FakeWindowSystem(displays: [Desk.display])
++      let a = system.open(app: "A", frame: old)
++      let b = system.open(app: "B", frame: old)
++      body(system, a, b)
++      return (system, a, b)
++    }
++    var (system, a, b) = play { system, a, _ in
++      system.pictureWentUp(over: a, goingTo: new)
++      system.setFrame(away, of: a)
++      system.setFrame(new, of: a)
++      system.pictureCameDown()
++    }
++    #expect(system.jolts(since: 0) == [] && system.road(of: a) == [old, new], "the road that is allowed")
++
++    (system, a, b) = play { system, a, _ in
++      system.pictureWentUp(over: a, goingTo: new)
++      system.setFrame(away, of: a)
++      system.setFrame(CGRect(x: 700, y: 37, width: 640, height: 420), of: a)
++      system.setFrame(new, of: a)
++      system.pictureCameDown()
++    }
++    #expect(!system.jolts(since: 0).isEmpty && FakeWindowSystem.detour(system.road(of: a)) != nil, "a third place")
++
++    (system, a, b) = play { system, a, _ in
++      system.pictureWentUp(over: a, goingTo: new)
++      system.setFrame(away, of: a)
++      system.setFrame(new, of: a)
++      system.setFrame(away, of: a)
++      system.setFrame(new, of: a)
++      system.pictureCameDown()
++    }
++    #expect(!system.jolts(since: 0).isEmpty && FakeWindowSystem.detour(system.road(of: a)) != nil, "a second detour")
++
++    (system, a, b) = play { system, a, b in
++      system.pictureWentUp(over: a, goingTo: new)
++      system.setFrame(away, of: b)
++      system.setFrame(new, of: b)
++      system.pictureCameDown()
++    }
++    #expect(system.jolts(since: 0).map(\.window) == [b] && FakeWindowSystem.detour(system.road(of: b)) != nil, "another window")
++
++    (system, a, b) = play { system, a, _ in
++      system.setFrame(away, of: a)
++      system.pictureWentUp(over: a, goingTo: new)
++      system.setFrame(new, of: a)
++      system.pictureCameDown()
++    }
++    #expect(system.jolts(since: 0).count == 1 && FakeWindowSystem.detour(system.road(of: a)) != nil, "it left before its picture was up")
++
++    (system, a, b) = play { system, a, _ in
++      system.pictureWentUp(over: a, goingTo: new)
++      system.setFrame(away, of: a)
++      system.pictureCameDown()
++      system.setFrame(new, of: a)
++    }
++    #expect(system.jolts(since: 0).count == 1 && FakeWindowSystem.detour(system.road(of: a)) != nil, "it came back after its picture was down")
++
++    (system, a, b) = play { system, a, _ in
++      system.pictureWentUp(over: a, goingTo: new)
++      system.setFrame(away, of: a)
++      system.setFrame(new, of: a)
++      system.pictureCameDown()
++      system.setFrame(CGRect(x: 726, y: 37, width: 702, height: 781), of: a)
++    }
++    #expect(system.jolts(since: 0).count == 1 && FakeWindowSystem.detour(system.road(of: a)) != nil, "its end is judged: moved again, it has moved twice")
++
++    (system, a, b) = play { system, a, _ in
++      for _ in 0..<2 {
++        system.pictureWentUp(over: a, goingTo: new)
++        system.setFrame(away, of: a)
++        system.setFrame(system.frame(of: a) == away && system.moveLog.count > 2 ? old : new, of: a)
++        system.pictureCameDown()
++      }
++    }
++    #expect(system.road(of: a) == [old, new, old], "two glides are two moves")
++    _ = b
++  }
++
++  // MARK: Traces
++
++  @Test func aGlideIsRecordedAndReplaysAsItWas() throws {
++    for pictures in [true, false] {
++      let desk = Desk(pictures: pictures)
++      desk.h.run("trace on glide")
++      desk.h.run("dock \(desk.a.rawValue) left")
++      desk.h.scheduler.advance(by: 0.2)
++      desk.h.system.click()
++      desk.h.run("dock \(desk.b.rawValue) right")
++      desk.h.scheduler.advance(by: 1)
++      desk.h.run("trace off")
++      let text = try #require(desk.h.lastTrace)
++      #expect(text.contains("\"call\":\"liftOff\""))
++      #expect(text.contains("\"call\":\"touchDown\"") == pictures)
++      #expect(text.contains("\"timer\":\"glide\"") == pictures)
++      let replayer = TraceReplayer(try Trace(text: text), mode: .strict)
++      let report = replayer.run()
++      #expect(report.problems.isEmpty, "\(report.problems)")
++      #expect(replayer.harness.overlays.flights.count == (pictures ? 2 : 0), "the recorded answer, not the fake's own")
++      for window in [desk.a, desk.b] { #expect(replayer.harness.frame(window) == desk.h.frame(window)) }
++    }
++  }
++
++  @Test func whatOnlyThePresenterHearsOfIsRecordedToo() throws {
++    let desk = Desk()
++    desk.h.run("trace on sleep")
++    desk.h.run("dock \(desk.a.rawValue) left")
++    desk.h.overlays.interruptGlide()
++    desk.h.run("trace off")
++    let text = try #require(desk.h.lastTrace)
++    #expect(text.contains("\"action\":\"glideWasInterrupted\""))
++    let report = TraceReplayer(try Trace(text: text), mode: .strict).run()
++    #expect(report.problems.isEmpty, "\(report.problems)")
++  }
++}
+-- 
+2.43.0
+
+
+From e709d47579d36cc84f9b323c7b5111db248b8325 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 16:22:01 +0000
+Subject: [PATCH 3/6] test(chaos): the walks meet the glider, and what pays for
+ the exemption has nets of its own
+
+---
+ Sources/ArborTesting/ChaosGenerator.swift     |   4 +
+ .../ArborTesting/ChaosInvariants+Glider.swift | 107 +++++++++++++
+ .../ChaosInvariants+SevenRules.swift          |   3 +-
+ Sources/ArborTesting/ChaosInvariants.swift    |   1 +
+ Sources/ArborTesting/ChaosRunner.swift        |   7 +-
+ .../ArborTesting/FakeWindowSystem+Chaos.swift |   3 +-
+ Sources/arbor-sim/ChaosModes.swift            |   1 +
+ Tests/ArborKitTests/ChaosGliderTests.swift    | 140 ++++++++++++++++++
+ 8 files changed, 263 insertions(+), 3 deletions(-)
+ create mode 100644 Sources/ArborTesting/ChaosInvariants+Glider.swift
+ create mode 100644 Tests/ArborKitTests/ChaosGliderTests.swift
+
+diff --git a/Sources/ArborTesting/ChaosGenerator.swift b/Sources/ArborTesting/ChaosGenerator.swift
+index f284714d..73242d2b 100644
+--- a/Sources/ArborTesting/ChaosGenerator.swift
++++ b/Sources/ArborTesting/ChaosGenerator.swift
+@@ -46,8 +46,11 @@ public struct ChaosGenerator {
+     // From a stream of its own, so that the other walks are what they were.
+     var forTheDesk = ChaosRandom(seed: seed &+ 0x5EED)
+     desk = Desk(&forTheDesk)
++    // `ARBOR_CHAOS_GLIDER=1`: every walk has the glider in it (ChaosInvariants+Glider.swift).
++    let glider = ProcessInfo.processInfo.environment["ARBOR_CHAOS_GLIDER"] != nil ? [ChaosAction.settings("{\"windowPictures\":true}")] : []
+     if self.ordinary {
+       startOrdinaryWalk()
++      planned += glider
+       return
+     }
+     // A script starts from one standard display, no windows and Arbor not running.
+@@ -69,6 +72,7 @@ public struct ChaosGenerator {
+             + "\"reflowWhileDragging\":true,\"soleFloatTakesDesktop\":true,\"windowPictures\":true,\"scrollOnDesktopZooms\":true,"
+             + "\"holdStillWhileMicrophoneIsOn\":true,\"allowAllURLCommands\":true,\"newWindows\":\"dock\",\"pointerGestures\":true,\"floatingWindowsMakeWay\":true}"))
+     }
++    planned += glider
+   }
+ 
+   // MARK: Commands
+diff --git a/Sources/ArborTesting/ChaosInvariants+Glider.swift b/Sources/ArborTesting/ChaosInvariants+Glider.swift
+new file mode 100644
+index 00000000..37eec7b6
+--- /dev/null
++++ b/Sources/ArborTesting/ChaosInvariants+Glider.swift
+@@ -0,0 +1,107 @@
++import ArborCore
++import ArborKit
++import CoreGraphics
++
++/// The walks with the glider in them (Controller+Glider.swift): a window that travels as a picture of itself is out of view meanwhile, which
++/// every net about where windows are would rightly call lost, flashed or moved twice.
++///
++/// The exemption is the rule's own and no wider. From its picture's going up until its coming down the road of the one window that glides is not
++/// judged, and its end is: so while the picture is up every net is asked about a Mac on which that window is where its picture takes it
++/// (`withTheGliderAtItsEnd`), and the nets that read the log of moves read it through `FakeWindowSystem.asSeen`. Every other window, and
++/// that one at any other time, is judged as ever. What pays for it has nets of its own (`gliderViolations`).
++extension ChaosRunner {
++  /// What the nets about the glider remember from step to step.
++  struct GliderWatch {
++    /// How many pictures this walk has asked for.
++    var asked = 0
++    /// How many pictures had gone up and been refused when the step began, and whether the last of them was still up.
++    var flightsBefore = 0
++    var refusalsBefore = 0
++    var wasUpBefore = false
++    /// The picture that is up, by its number among this run's, and the time it was first seen up.
++    var up: (flight: Int, since: Double)?
++  }
++
++  /// How often a walk met the glider, over every runner of the process: a walk that never does proves nothing about it.
++  public nonisolated(unsafe) static var pictures = (up: 0, refused: 0, calledOff: 0)
++
++  /// Called for every run of Arbor. Three times out of four there is a picture, by how many this walk has asked for: so a script
++  /// replays as it was walked, and no walk without `windowPictures` is another walk than it was.
++  func handOutPictures() {
++    harness.overlays.hasPicture = { [unowned self] _ in
++      self.gliderWatch.asked += 1
++      return self.gliderWatch.asked % 4 != 0
++    }
++  }
++
++  func noteBeforeTheGlider() {
++    gliderWatch.flightsBefore = harness.overlays.flights.count
++    gliderWatch.refusalsBefore = harness.overlays.refusedLiftOffs.count
++    gliderWatch.wasUpBefore = harness.overlays.aloft != nil
++    // Where it was before the step, to a person.
++    if isRunning, !system.judgesTheGliderAsEver, let up = harness.overlays.aloft, framesBefore[up.window] != nil {
++      framesBefore[up.window] = up.to
++    }
++  }
++
++  /// Does `body` on a Mac as a person sees it: the window whose picture is up is where the picture takes it.
++  func withTheGliderAtItsEnd<Result>(_ body: () -> Result) -> Result {
++    guard isRunning, !system.judgesTheGliderAsEver, let up = harness.overlays.aloft, let real = system.windows[up.window]
++    else { return body() }
++    var seen = real
++    seen.snapshot.frame = up.to
++    // Looking moves nothing.
++    (seen.placeIsArborsDoing, seen.movesNotArbors, seen.home) = (real.placeIsArborsDoing, real.movesNotArbors, real.home)
++    seen.lastRequest = (up.to, up.to)
++    system.windows[up.window] = seen
++    defer { system.windows[up.window] = real }
++    return body()
++  }
++
++  /// What pays for the exemption.
++  func gliderViolations() -> [InvariantViolation] {
++    var problems: [InvariantViolation] = []
++    let overlays = harness.overlays
++    let new = overlays.flights.indices.dropFirst(min(gliderWatch.flightsBefore, overlays.flights.count))
++    Self.pictures.up += new.count
++    Self.pictures.refused += max(overlays.refusedLiftOffs.count - gliderWatch.refusalsBefore, 0)
++    let settings = controller.settings
++    if !settings.windowPictures || settings.motionDuration <= 0, overlays.aloft != nil, isRunning {
++      problems.append(.init("glider-while-off", "a picture is up with motion or `windowPictures` off"))
++    }
++    if overlays.liftOffsUnderAnother > 0 { problems.append(.init("glider-two-at-once", "a picture was asked for while another was up")) }
++    for flight in new.map({ overlays.flights[$0] }) where flight.stoodAt != flight.from {
++      problems.append(
++        .init("glider-went-up-elsewhere", "the picture of \(flight.window) went up at \(flight.from.brief), and the window stood at \(flight.stoodAt?.brief ?? "nowhere")"))
++    }
++    // Those that came down in this step.
++    let first = max(gliderWatch.flightsBefore - (gliderWatch.wasUpBefore ? 1 : 0), 0)
++    for flight in overlays.flights.dropFirst(first) where flight.isDown {
++      // A glide that was called off ends where the layout put the window, which the other nets judge.
++      if flight.landedAt != flight.to { Self.pictures.calledOff += 1 }
++    }
++    guard isRunning, let up = overlays.aloft else {
++      gliderWatch.up = nil
++      if isRunning, let window = controller.glidingWindow {
++        problems.append(.init("glider-left-behind", "no picture is up, and Arbor still has \(window) out of view for one"))
++      }
++      return problems
++    }
++    let now = harness.scheduler.now
++    if gliderWatch.up?.flight != overlays.flights.count { gliderWatch.up = (overlays.flights.count, now) }
++    if let since = gliderWatch.up?.since, now - since > Glide.longestAway + 0.001 {
++      problems.append(.init("glider-away-too-long", "\(up.window) has been out of view under its picture for \(now - since) s"))
++    }
++    if !harness.scheduler.pendingKeys.contains("glide") {
++      problems.append(.init("glider-away-too-long", "\(up.window) is out of view under its picture, and no timer is going to bring it back"))
++    }
++    if controller.glidingWindow != up.window {
++      problems.append(.init("glider", "the picture of \(up.window) is up, and Arbor has \(controller.glidingWindow.map { "\($0)" } ?? "nobody") gliding"))
++    }
++    // An app that takes its window back is seen to.
++    if let fake = system.windows[up.window], cooperates(fake), isInView(fake.snapshot.frame) {
++      problems.append(.init("glider-seen-twice", "\(up.window) is in view at \(fake.snapshot.frame.brief) while its picture is up"))
++    }
++    return problems
++  }
++}
+diff --git a/Sources/ArborTesting/ChaosInvariants+SevenRules.swift b/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
+index e6b50636..28dfff2d 100644
+--- a/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
++++ b/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
+@@ -360,9 +360,10 @@ extension ChaosRunner {
+   }
+ 
+   /// Arbor's moves in this step that changed what a person sees: not one that left the window as it was, nor one from out of view to out of view.
++  /// What was done to the one window that glides, under its picture, is one move, in the step in which it began (Roads.swift).
+   private var movesSeenInThisStep: [FakeWindowSystem.Move] {
+     guard seven.moveLogMark < system.moveLog.count else { return [] }
+-    return system.moveLog[seven.moveLogMark...].filter { $0.before != $0.after && (isInView($0.before) || isInView($0.after)) }
++    return system.asSeen(system.moveLog[seven.moveLogMark...]).filter { $0.before != $0.after && (isInView($0.before) || isInView($0.after)) }
+   }
+ 
+   /// Whether something is still to come that may move windows: a timer that lays out, or (`orReports`) what macOS has still to report.
+diff --git a/Sources/ArborTesting/ChaosInvariants.swift b/Sources/ArborTesting/ChaosInvariants.swift
+index f6f6430b..00598198 100644
+--- a/Sources/ArborTesting/ChaosInvariants.swift
++++ b/Sources/ArborTesting/ChaosInvariants.swift
+@@ -24,6 +24,7 @@ extension ChaosRunner {
+     "rehearsal",
+     "meet-",
+     "fill-in-hand-",
++    "glide",
+   ]
+ 
+   /// How far a docked window may sit from its slot: 4 points of the app rounding its size
+diff --git a/Sources/ArborTesting/ChaosRunner.swift b/Sources/ArborTesting/ChaosRunner.swift
+index 1fc829b6..24cee435 100644
+--- a/Sources/ArborTesting/ChaosRunner.swift
++++ b/Sources/ArborTesting/ChaosRunner.swift
+@@ -94,6 +94,8 @@ public final class ChaosRunner {
+   var theChangeChangedNothing = false
+   /// What the nets for the product's seven rules remember (ChaosInvariants+SevenRules.swift).
+   var seven = SevenRules()
++  /// What the nets about the glider remember (ChaosInvariants+Glider.swift).
++  var gliderWatch = GliderWatch()
+   /// How many windows had been raised when the step began (ChaosInvariants+Raises.swift).
+   var raiseLogMark = 0
+   /// The displays there were last, for as long as there are none.
+@@ -243,6 +245,7 @@ public final class ChaosRunner {
+     wasPeekingBefore = timersBefore.contains("peek")
+     let movesBefore = system.windows.mapValues(\.movesNotArbors)
+     inHandBefore = system.dragging ?? system.resizing
++    noteBeforeTheGlider()
+     noteBeforeTheSevenRules(action)
+     raiseLogMark = system.raiseLog.count
+     madeWayBefore = controller.settings.floatingWindowsMakeWay
+@@ -252,7 +255,8 @@ public final class ChaosRunner {
+     beforeTheNextCheck = nil
+     noteWhereItsUserLeftEachWindow(after: action, movesBefore: movesBefore)
+     noteAfterTheSevenRules(action, movesBefore: movesBefore)
+-    let all = found + wayHomeViolations(after: action) + raiseViolations(after: action) + check(after: action)
++    var all = found + gliderViolations()
++    all += withTheGliderAtItsEnd { wayHomeViolations(after: action) + raiseViolations(after: action) + check(after: action) }
+     // Numbers, not gates: no walk, replay or test ends at them.
+     counted = all.filter { Self.countedRules.contains($0.rule) }
+     return counted.isEmpty ? all : all.filter { !Self.countedRules.contains($0.rule) }
+@@ -697,6 +701,7 @@ public final class ChaosRunner {
+       }
+     }
+     harness = Harness(settings: settings(), saved: saved, system: system)
++    handOutPictures()
+     let (controller, scheduler, before) = (harness.controller, harness.scheduler, elapsed)
+     let start = Date(timeIntervalSinceReferenceDate: 800_000_000)
+     controller.now = { start.addingTimeInterval(before + scheduler.now) }
+diff --git a/Sources/ArborTesting/FakeWindowSystem+Chaos.swift b/Sources/ArborTesting/FakeWindowSystem+Chaos.swift
+index b254a78d..a24361fa 100644
+--- a/Sources/ArborTesting/FakeWindowSystem+Chaos.swift
++++ b/Sources/ArborTesting/FakeWindowSystem+Chaos.swift
+@@ -193,7 +193,8 @@ extension FakeWindowSystem {
+   func inherit(_ front: FakeWindow?, by tab: WindowID) {
+     guard let front, windows[tab] != nil else { return }
+     windows[tab]!.behaviour = front.behaviour
+-    windows[tab]!.lastRequest = front.lastRequest
++    // Unless Arbor has asked the tab for a frame of its own since it came to the front.
++    if windows[tab]!.lastRequest == nil { windows[tab]!.lastRequest = front.lastRequest }
+     windows[tab]!.placeIsArborsDoing = front.placeIsArborsDoing
+     windows[tab]!.changedItsWays = front.changedItsWays
+     windows[tab]!.home = front.home
+diff --git a/Sources/arbor-sim/ChaosModes.swift b/Sources/arbor-sim/ChaosModes.swift
+index 41e93f94..8bd1651f 100644
+--- a/Sources/arbor-sim/ChaosModes.swift
++++ b/Sources/arbor-sim/ChaosModes.swift
+@@ -122,6 +122,7 @@ func runChaosMode(_ arguments: [String]) -> Int32? {
+     for (rule, seeds) in known.sorted(by: { $0.key < $1.key }) { say("known: \(rule) in \(seeds) seeds") }
+     // A net that never asks its question catches nothing.
+     for (net, times) in ChaosRunner.questionsAsked.sorted(by: { $0.key < $1.key }) { say("asked: \(net) \(times) times") }
++    say("pictures: \(ChaosRunner.pictures.up) up, \(ChaosRunner.pictures.refused) refused, \(ChaosRunner.pictures.calledOff) ended elsewhere than they were going")
+     return byRule.isEmpty ? 0 : 1
+ 
+   case "replay":
+diff --git a/Tests/ArborKitTests/ChaosGliderTests.swift b/Tests/ArborKitTests/ChaosGliderTests.swift
+new file mode 100644
+index 00000000..364784cc
+--- /dev/null
++++ b/Tests/ArborKitTests/ChaosGliderTests.swift
+@@ -0,0 +1,140 @@
++import ArborCore
++import ArborKit
++import ArborTesting
++import CoreGraphics
++import Foundation
++import Testing
++
++private let a = WindowID(101)
++private let b = WindowID(102)
++
++/// The walks with the glider in them (`ChaosInvariants+Glider.swift`): a glide breaks no rule, the exemption is no wider than the rule says, and what
++/// pays for it is watched. Each net has its control, as in `ChaosSevenRulesTests`.
++@Suite @MainActor struct ChaosGliderTests {
++  private let desk = [
++    "settings {\"windowPictures\":true}", "launch", "open 101 Notes pid 1001 at 100 100 500 400", "open 102 Mail pid 1002 at 800 300 500 400", "settle",
++    "focus 101", "react",
++  ]
++
++  private func rect(_ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloat) -> CGRect { CGRect(x: x, y: y, width: width, height: height) }
++
++  /// Plays `lines` and returns the rules each broke.
++  private func play(_ lines: [String], on runner: ChaosRunner = ChaosRunner()) -> [[String]] {
++    lines.map { runner.step(ChaosAction(text: $0)).map(\.rule) }
++  }
++
++  /// Plays the desk and a dock, then `last` with `fault` done as part of it. Returns the rules that `last` broke.
++  private func rules(after lines: [String] = ["dock 101 left"], then last: String, fault: @escaping (ChaosRunner) -> Void) -> Set<String> {
++    let runner = ChaosRunner()
++    let broken = play(desk + lines, on: runner).flatMap { $0 }
++    #expect(broken.isEmpty, "\(broken)")
++    #expect(runner.harness.overlays.aloft?.window == a, "the story is about a window that is aloft")
++    runner.beforeTheNextCheck = fault
++    return Set(runner.step(ChaosAction(text: last)).map(\.rule))
++  }
++
++  @Test func aGlideBreaksNoRuleAtAnyStep() {
++    let runner = ChaosRunner()
++    let story = desk + [
++      "dock 101 left", "react", "advance 0.2", "save", "advance 0.3", "react", "settle", "focus 102", "react", "dock 102 right", "advance 0.1", "dock 102 left",
++      "react", "settle", "focus 101", "react", "float 101", "advance 0.1", "react", "crash", "launch", "settle", "quit",
++    ]
++    for (line, broken) in zip(story, play(story, on: runner)) { #expect(broken.isEmpty, "\(line): \(broken)") }
++  }
++
++  /// The control for all of it: without the exemption the nets say of a glide what they say of any window that goes out of view and comes back.
++  @Test func withoutTheExemptionTheNetsCallItWhatTheBareLogSays() {
++    let runner = ChaosRunner()
++    runner.system.judgesTheGliderAsEver = true
++    let broken = play(desk + ["dock 101 left", "advance 0.5"], on: runner)
++    #expect(Set(broken[desk.count]).isSuperset(of: ["mirror", "slot", "lost"]), "while it is away: \(broken[desk.count])")
++    #expect(broken[desk.count + 1].contains("flipped-out-of-view"), "when it is back: \(broken[desk.count + 1])")
++  }
++
++  @Test func theWalkHandsOutAPictureThreeTimesOutOfFour() {
++    let runner = ChaosRunner()
++    _ = play(desk, on: runner)
++    for side in ["left", "right", "left", "right", "left", "right", "left", "right"] { _ = play(["dock 101 \(side)", "settle"], on: runner) }
++    #expect(runner.harness.overlays.flights.count == 6 && runner.harness.overlays.refusedLiftOffs.count == 2)
++  }
++
++  // MARK: No wider than the rule
++
++  @Test func aThirdPlaceUnderThePictureIsJudged() {
++    #expect(rules(then: "react") { _ in }.isEmpty, "the same story without a fault")
++    let broken = rules(then: "react") { _ = $0.system.setFrame(self.rect(700, 100, 702, 851), of: a) }
++    #expect(broken.contains("flipped-out-of-view"), "\(broken)")
++  }
++
++  @Test func anotherWindowThatGoesOutOfViewAndBackUnderThePictureIsJudged() {
++    let broken = rules(then: "cursor 10 10") { runner in
++      _ = runner.system.setFrame(self.rect(1439, 300, 500, 400), of: b)
++      _ = runner.system.setFrame(self.rect(800, 300, 500, 400), of: b)
++    }
++    #expect(broken.contains("flipped-out-of-view"))
++  }
++
++  @Test func whatIsDoneToItOnceThePictureIsDownIsJudged() {
++    let runner = ChaosRunner()
++    _ = play(desk + ["dock 101 left", "advance 0.5"], on: runner)
++    #expect(runner.harness.overlays.aloft == nil)
++    runner.beforeTheNextCheck = { _ = $0.system.setFrame(self.rect(40, 60, 702, 800), of: a) }
++    #expect(runner.step(.flush).map(\.rule).contains("moved-again"))
++  }
++
++  // MARK: What pays for it
++
++  @Test func aWindowInViewUnderItsPictureIsSeenTwice() {
++    #expect(rules(then: "cursor 10 10") { _ = $0.system.setFrame(self.rect(300, 100, 702, 851), of: a) }.contains("glider-seen-twice"))
++  }
++
++  @Test func aGlideThatNoTimerEndsIsAwayTooLong() {
++    #expect(rules(then: "cursor 10 10") { $0.harness.scheduler.cancel("glide") }.contains("glider-away-too-long"))
++    let runner = ChaosRunner()
++    _ = play(desk + ["dock 101 left"], on: runner)
++    // The timer is put off, as by a main thread that is held.
++    runner.harness.scheduler.cancel("glide")
++    runner.harness.scheduler.schedule("glide", after: 5) {}
++    #expect(runner.step(.advance(0.6)).map(\.rule).contains("glider-away-too-long"))
++  }
++
++  @Test func aPictureThatComesDownOverNothingLeavesItsWindowBehind() {
++    #expect(rules(then: "cursor 10 10") { $0.harness.overlays.touchDown() }.contains("glider-left-behind"))
++  }
++
++  @Test func aPictureThatGoesUpElsewhereThanOverItsWindowIsSeen() {
++    let runner = ChaosRunner()
++    _ = play(desk, on: runner)
++    runner.beforeTheNextCheck = {
++      _ = $0.harness.overlays.liftOff(a, from: self.rect(0, 0, 10, 10), to: self.rect(100, 100, 500, 400), duration: 0.4)
++    }
++    #expect(runner.step(ChaosAction(text: "cursor 10 10")).map(\.rule).contains("glider-went-up-elsewhere"))
++  }
++
++  @Test func aSecondPictureOverTheFirstIsSeen() {
++    let broken = rules(then: "cursor 10 10") {
++      _ = $0.harness.overlays.liftOff(b, from: self.rect(800, 300, 500, 400), to: self.rect(0, 0, 10, 10), duration: 0.4)
++    }
++    #expect(broken.contains("glider-two-at-once"))
++  }
++
++  // MARK: The walks get there
++
++  /// No rule is broken that is not broken without it, by the nets for the glider or by any other. And a walk that never meets the glider proves
++  /// nothing about it: the floors are about half of what these walks gave when this was written.
++  @Test func walksWithTheSettingOnMeetTheGlider() {
++    let before = ChaosRunner.pictures
++    var broken: [String: Int] = [:]
++    for seed in UInt64(1)...30 {
++      let runner = ChaosRunner()
++      var generator = ChaosGenerator(seed: seed, ordinary: true)
++      _ = runner.step(.settings("{\"windowPictures\":true}"))
++      for _ in 0..<200 {
++        for rule in runner.step(generator.next(runner)).map(\.rule) where !ChaosRunner.knownRules.contains(rule) { broken[rule, default: 0] += 1 }
++      }
++    }
++    #expect(broken.isEmpty, "\(broken)")
++    #expect(ChaosRunner.pictures.up - before.up >= 100, "\(ChaosRunner.pictures.up - before.up) pictures went up")
++    #expect(ChaosRunner.pictures.refused - before.refused >= 30, "\(ChaosRunner.pictures.refused - before.refused) were refused")
++  }
++}
+-- 
+2.43.0
+
+
+From de63c6eb001ff4d7e2b9f8e7040953f40adb9f70 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 16:22:01 +0000
+Subject: [PATCH 4/6] test(mac-shell): jolts.py knows the glider by its panel,
+ and judges its end and not its road
+
+---
+ scripts/mac-shell/jolts.py | 65 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 65 insertions(+)
+
+diff --git a/scripts/mac-shell/jolts.py b/scripts/mac-shell/jolts.py
+index ba1a9497..f0d6e9cf 100755
+--- a/scripts/mac-shell/jolts.py
++++ b/scripts/mac-shell/jolts.py
+@@ -149,6 +149,8 @@ STRIP = 0.03
+ SHOWS = 0.05
+ # Points that are no move at all: apps round sizes, and Retina screens deal in halves.
+ SAME = 2
++# The window level of the one panel on which a window travels as a picture of itself (`Glide.panelLevel`). No other panel of Arbor's is at it.
++GLIDER = 7
+ DETECTORS = {"6": "input-held", "1": "fought", "2": "moved-unasked", "3": "jolt", "4": "focus", "5": "size-lost", "L": "lost", "-": "script"}
+ RULES = [
+     ("1", "never fight macOS: where it answers a drag, Arbor stands aside"),
+@@ -228,6 +230,8 @@ class Step:
+         self.staged_since = None
+         self.all_displays = []
+         self.under_the_stage = 0
++        # The glider's panel, while it is up: panel -> (the window it came up over, since when).
++        self.gliders_up = {}
+         # Where Arbor's drop preview was when the button came up, if it was up.
+         self.preview_at_drop = None
+         # When the button first came up. A press after that is a click, and nothing is in the hand any more.
+@@ -263,6 +267,25 @@ class Step:
+                 trace.append((time, last[1], last[2]))
+         self.under_the_stage += 1
+ 
++    def glider_came_down(self, panel, time, displays):
++        """"A window moves once" is about what a person sees. From its picture's going up until its coming down a person sees the picture of the one window
++        that glides, so its road in that time is not judged and its end is. Only this road: from a place in view out of view, and from there to a place in
++        view. A third place, a second time out of view, an end nobody can see, another window, and whatever comes before or after that time are
++        judged as ever. The same rule as `Glide.whatWasSeen` (Sources/ArborCore/Glide.swift), which the detectors on Linux go by."""
++        window, since = self.gliders_up.pop(panel, (None, 0))
++        trace = self.traces.get(window, [])
++        under = [index for index, entry in enumerate(trace) if entry[0] >= since and index > 0]
++        if not under:
++            return
++        frames = [trace[index][1] for index in [under[0] - 1] + under]
++        if None in frames or len(frames) < 3:
++            return
++        shows = [showing(frame, displays) > STRIP for frame in frames]
++        if shows[0] and shows[-1] and not any(shows[1:-1]):
++            last = trace[under[-1]]
++            del trace[under[0]:]
++            trace.append((time, last[1], last[2]))
++
+     def find(self, rule, level, window, what, trace=None, detector=None, explained=None):
+         self.findings.append({
+             "rule": rule, "detector": detector or DETECTORS[rule], "level": level, "window": window, "what": what, "trace": trace})
+@@ -301,6 +324,8 @@ class World:
+         # Arbor's stage, while it is up: a panel at level 4 over the whole display that shows a picture of the desktop and a stand-in for each window.
+         self.stages = set()
+         self.stage_seen = False
++        # For each ordinary window: when it last changed, and the frame it had until then.
++        self.until = {}
+         self.labels = {}
+         self.witnessed = False
+ 
+@@ -394,6 +419,8 @@ def read(path):
+                 frame = tuple(float(number) for number in rest[3:7])
+                 known = window in world.seen
+                 showing = window in world.frames
++                if showing and world.frames[window] != frame:
++                    world.until[window] = (time, world.frames[window])
+                 world.pids[window], world.layers[window] = int(rest[1]), int(rest[2])
+                 world.owners[window] = " ".join(rest[7:]).replace("_", " ")
+                 world.frames[window] = frame
+@@ -405,6 +432,13 @@ def read(path):
+                         current.stage_went_up(window, time, covered[0])
+                     world.stages.add(window)
+                     world.stage_seen = True
++                if world.pids[window] in world.arbors and world.layers[window] == GLIDER and not showing and current:
++                    # It comes up lying on its window. The window may have left within the same sample, whose lines come in no order that means anything.
++                    for other, stands in world.frames.items():
++                        changed, stood = world.until.get(other, (None, None))
++                        if world.ordinary(other) and not differs(stood if changed == time else stands, frame):
++                            current.gliders_up[window] = (other, time)
++                            break
+                 if world.owners[window] == "WindowManager" and world.layers[window] == 0:
+                     world.macos_previews.add(window)
+                 elif world.pids[window] in world.arbors and world.layers[window] == 3 and world.button and not showing:
+@@ -431,6 +465,8 @@ def read(path):
+                     world.stages.discard(window)
+                     if current:
+                         current.stage_came_down(window, time)
++                if current and window in current.gliders_up:
++                    current.glider_came_down(window, time, world.displays())
+                 if window in world.arbor_previews:
+                     world.arbor_preview_last = (time, world.gone_frame)
+                 if window in world.macos_previews:
+@@ -1305,6 +1341,35 @@ def self_test():
+         "2100 W 1 10 0 0 30 500 700 One", "2120 W 2 20 0 600 100 400 300 Two", "2600 G 70", "3700 M end 2 moves=1"], [("2", "FAIL")])
+     expect("a small panel of Arbor's at that level hides nothing", start + ["2000 M begin 2 dock", "2050 W 70 99 4 100 100 300 200 Arbor",
+         "2100 W 1 10 0 600 30 400 300 One", "2140 W 1 10 0 0 30 400 300 One", "2600 G 70", "3700 M end 2 moves=1"], [("3", "FAIL")])
++    # The one window that glides as a picture of itself: the panel comes up lying on it, it waits out of view, and is back when the panel goes.
++    up, away, back, down = (["2050 W 70 99 7 100 100 400 300 Arbor"], ["2060 W 1 10 0 999 30 400 300 One", "2070 W 1 10 0 999 30 500 700 One"],
++                            ["2500 W 1 10 0 0 30 500 700 One"], ["2510 G 70"])
++    gliding = ["2200 W 70 99 7 60 70 440 460 Arbor", "2400 W 70 99 7 5 32 495 690 Arbor"]
++    dock, docked_one = start + ["2000 M begin 2 dock"], ["3700 M end 2 moves=1"]
++    expect("without a picture that road is two moves", dock + away + back + docked_one, [("3", "FAIL")])
++    expect("under its own picture a window's road is not judged", dock + up + away + gliding + back + down + docked_one, [])
++    expect("it may have left in the very sample that shows the panel", dock + [
++        "2050 W 1 10 0 999 30 400 300 One"] + up + away[1:] + gliding + back + down + docked_one, [])
++    expect("its end is: moved again, it has moved twice", dock + up + away + back + down + [
++        "3000 W 1 10 0 500 30 500 700 One", "4100 M end 2 moves=1"], [("3", "FAIL")])
++    expect("a third place is seen", dock + up + away + ["2300 W 1 10 0 300 30 500 700 One"] + back + down + docked_one, [("3", "FAIL")])
++    expect("a second time out of view is judged", dock + up + away + ["2200 W 1 10 0 0 30 500 700 One", "2300 W 1 10 0 999 30 500 700 One"] + back + down
++           + docked_one, [("3", "FAIL")])
++    expect("another window under that picture is judged as ever", dock + up + [
++        "2060 W 2 20 0 999 30 400 300 Two", "2500 W 2 20 0 500 30 500 700 Two"] + down + ["3700 M end 2 moves=1,2"], [("3", "FAIL")])
++    expect("it left before its picture was up", dock + ["1900 W 1 10 0 100 100 400 300 One", "2010 W 1 10 0 999 30 400 300 One",
++        "2300 W 70 99 7 100 100 400 300 Arbor"] + back + down + docked_one, [("3", "FAIL")])
++    expect("it came back after its picture was down", dock + up + away + ["2300 G 70", "2600 W 1 10 0 0 30 500 700 One"] + docked_one, [("3", "FAIL")])
++    expect("a panel that does not lie on it stands for nothing", dock + ["2050 W 70 99 7 100 100 300 200 Arbor"] + away + back + down + docked_one,
++           [("3", "FAIL")])
++    expect("nor does one at another level", dock + ["2050 W 70 99 3 100 100 400 300 Arbor"] + away + back + down + docked_one, [("3", "FAIL")])
++    expect("nor somebody else's", dock + ["2050 W 70 55 7 100 100 400 300 Other"] + away + back + down + docked_one, [("3", "FAIL")])
++    core = os.path.join(HERE, "..", "..", "Sources", "ArborCore", "Glide.swift")
++    if os.path.exists(core):
++        with open(core, encoding="utf-8") as handle:
++            said = re.search(r"panelLevel = (\d+)", handle.read())
++        if not said or int(said.group(1)) != GLIDER:
++            failures.append(f"the glider's panel is known by level {GLIDER}, and Glide.swift says {said.group(1) if said else 'nothing'}")
+     expect("a late move counts for the step before", start + [
+         "2000 M begin 2 dock", "2100 W 1 10 0 0 30 500 700 One", "3200 M end 2 moves=1", "3300 W 1 10 0 0 30 490 700 One",
+         "3400 M begin 3 idle", "4400 M end 3"], [("3", "FAIL"), ("3", "ODD")])
+-- 
+2.43.0
+
+
+From 0a6725cc594f8ac39e95a64de4c90ec8a4edc2a2 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 16:22:02 +0000
+Subject: [PATCH 5/6] docs: the glider in the architecture and in the traces
+
+---
+ docs/ARCHITECTURE.md | 17 +++++++++++++++++
+ docs/TRACES.md       |  2 ++
+ 2 files changed, 19 insertions(+)
+
+diff --git a/docs/ARCHITECTURE.md b/docs/ARCHITECTURE.md
+index e1b51628..4df2eb7e 100644
+--- a/docs/ARCHITECTURE.md
++++ b/docs/ARCHITECTURE.md
+@@ -314,6 +314,23 @@ new ones as they arrive. Without permission stand-ins are the app's colour and i
+ is the wallpaper's file. Arbor never prompts for the permission from here (`WindowPictures.isAllowed` is
+ for onboarding to ask), and nothing is written to disk.
+ 
++**The glider** (`Controller+Glider.swift`, `Glide` in ArborCore). With motion on, `windowPictures` on and a picture to be had at the act, one window travels
++as a picture of itself and there is no stage: `relayout` calls `takeOff` where it would call `stageTransition`, and the two never play together. The window is the one the
++act names (a command's target, the window that was dropped), or else the one with the keyboard; it has to be in view before and after, as itself, in nobody's hand, and
++go further than a trifle. `OverlayPresenter.liftOff` is synchronous and bounded: true only when the picture is up over the window, false when there is none in time, and then
++everything is as it is without a glider. So the controller stays deterministic, and a glide is never late: no picture, no glide. The other windows jump, in plain view.
++The real window's road is its old place, out of view, its new frame. It waits beside the display at the height of the frame it is going to, a point of it showing,
++where the size fits as it will at the end; each of the three steps is one `setFrame`. It is asked for its size there as the others are asked where they stand (`aimTheGlide`, called
++by `askingFirst` and `apply` with every layout): if it will not be as small as its slot, or a neighbour's answer changes the layout, it is asked again for the layout that follows, still out of
++view, and the panel is told where to go instead. Once it has an end, `windows` has it at that frame, so no other part of Arbor
++knows that it is away, and what its app reports of its place meanwhile is dropped (`whatIsNews`). What pays for taking the window in use out of view: the arrangement is
++saved and flushed before it leaves, and where it waits is a place every start fetches windows from; the timer `glide` brings it back after the glide's length, half a second at the
++most, whatever the presenter does; every command, press, drag, key of Arbor's, closing, and what only the presenter hears of (`glideWasInterrupted`: sleep, a
++Space) ends it at once at its end (`landTheGlider`: the window is placed, then the panel goes); a change of displays ends it at once where the window belongs on the displays as
++they are now, fetched from where it waits like any window they left stranded, because its end may be nowhere by then; and whatever else is not as foreseen (an answer that may be the screen's, an app that does not answer, a window that
++becomes a tile for its answer) calls it off: the books say where the window is, the layout under way places it, the panel
++goes. **On a Mac there is no panel yet**: `AppKitOverlays.liftOff` says no. `GliderTests`; the one rule by which its road is judged is `Glide.whatWasSeen`, which every detector reads the log through (`FakeWindowSystem.asSeen`; `glider_came_down` in `jolts.py`).
++
+ ## What a command costs
+ 
+ Measured on a Mac with twelve real windows: Arbor's own
+diff --git a/docs/TRACES.md b/docs/TRACES.md
+index 153114c0..06f86e54 100644
+--- a/docs/TRACES.md
++++ b/docs/TRACES.md
+@@ -217,6 +217,7 @@ arguments and its result as plain JSON:
+ | `{"event":"shortcut","args":["ctrl+opt+space","show-all","pressed"]}` | The key of one of Arbor's shortcuts went down or came up. The command it runs, if any, follows as a nested line; a key that is held is a peek (F51) |
+ | `{"action":"cheatSheetDismissed"}`, `{"action":"finderChose","args":[{"window":101}]}`, `{"action":"finderChose","args":[{"command":"dock left"}]}` | Something else the user did with an overlay (a stimulus). The command that a row of Go to… runs follows as a nested line |
+ | `{"call":"raise","args":[7]}`, `{"call":"launchApp","args":["Safari"],"result":true}` | Something else Arbor asked for that a person can see. Strict replays compare name and arguments |
++| `{"call":"liftOff","args":[7,[300,200,640,420],[12,37,702,781],0.46],"result":true}`, `{"call":"touchDown"}` | A picture of the window was asked for, to glide from the first frame to the second in so many seconds, and whether there was one; the glider was taken down (`Controller+Glider.swift`). The answer decides where the real window goes next, so a replay gives the recorded one, and none where today's Arbor asks for a picture the recording does not have |
+ | `{"read":"inputActivity","result":{"keyPresses":9,"pointerIdle":0.25}}`, `{"read":"isHolding","args":["ctrl+opt+space"],"result":true}` | Another question Arbor asked, with the answer. JSON has no infinity: a hand that has not been used at all is left out |
+ 
+ That is also how an event, action or call from a newer Arbor is read, so nothing of it is lost; a replay says that it does not know the name and goes on. A line
+@@ -325,6 +326,7 @@ a trace does not carry. One line in each of these places, and nothing in ArborCo
+ | an event (`WindowSystemEvents`) | `func dragCancelled(_ id: WindowID) { recorder.event("dragCancelled", [id]) { events?.dragCancelled(id) } }` | an entry in `knownStimuli()` that takes the arguments apart and calls `bridge.events?.dragCancelled(id)` |
+ | an overlay action (`OverlayActions`) | `recorder.action("cheatSheetDismissed") { actions?.cheatSheetDismissed() }` | an entry in `knownStimuli()` that calls `harness.overlays.actions?.…` |
+ | something Arbor draws (`OverlayPresenter`) | forward it, unrecorded, as scenes are | nothing |
++| something Arbor draws whose answer it goes by (`liftOff`) | `recorder.call("liftOff", […], returning: { inner.liftOff(…) })` | in `boot()`: a closure of `FakeOverlays` that answers with `answer(call: "liftOff", […])` |
+ | a hint that changes what calls cost and nothing else (`moveTogether`) | forward it; a note with the time it took | an empty function |
+ 
+ Arguments and results must be `Codable` (for a plain struct or an option set, add the word). A `WindowSnapshot` goes as `recorder.window(snapshot)`, which replaces its title, and
+-- 
+2.43.0
+
+
+From fb949583d8d3dc06e67cfeda555b5c45a463bb93 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 16:22:02 +0000
+Subject: [PATCH 6/6] docs(viable): once is what a person sees
+
+---
+ docs/VIABLE.md | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/docs/VIABLE.md b/docs/VIABLE.md
+index 79fdddf2..15796e78 100644
+--- a/docs/VIABLE.md
++++ b/docs/VIABLE.md
+@@ -200,6 +200,7 @@ Over the whole ledger at most 3 % of the acts of the journeys that count may go
+ ## 6. What an act may move
+ 
+ Each window at most once, straight to where it ends up: that holds in every row, "anything" included. With Arbor's settings as they ship.
++"Once" is what a person sees: from its picture's going up until its coming down, the one window that glides as a picture of itself (`windowPictures`, which ships off) is judged by where it ends and not by its road, which is its old place, out of view, its new frame and nothing else.
+ 
+ | Act | May move |
+ |---|---|
+-- 
+2.43.0
+

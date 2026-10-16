@@ -1,0 +1,79 @@
+From 8a0ed5a66e4d9cb7452ca2127756d6f79c056bd8 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 15:58:02 +0000
+Subject: [PATCH 2/2] fix(ci): the runner's own Swift is really asked for; a
+ lint for `a && '' || c`, which is always c
+
+`swift: ${{ inputs.swift == 'own' && '' || '6.4' }}` was 6.4 for everybody: `a && b || c` is "if a then b, else c" only while b counts as true, and '' does not. No row could see it: they hold what run.sh sends, not what the workflow makes of it. A run on a real Mac did: asked for its own Swift it said "toolchain: installed 4997 MB" and "Swift version 6.4.1".
+
+Turned round: `inputs.swift != 'own' && '6.4' || ''`. And lint-workflows.py has a rule, "one or the other": '', false, null or 0 between && and || in an expression. It names the faulty line; nothing else in the workflows has the form.
+---
+ .github/workflows/mac-shell.yml |  2 +-
+ scripts/lint-workflows.py       | 17 +++++++++++++++++
+ 2 files changed, 18 insertions(+), 1 deletion(-)
+
+diff --git a/.github/workflows/mac-shell.yml b/.github/workflows/mac-shell.yml
+index 87ecaa62..3fbf1cca 100644
+--- a/.github/workflows/mac-shell.yml
++++ b/.github/workflows/mac-shell.yml
+@@ -179,7 +179,7 @@ jobs:
+         uses: ./.ci/.github/actions/mac-setup
+         with:
+           # A commit from before the promise of Swift 6.2 needs 6.4, which has to be fetched. The compiler is part of a kept build's name, so the two never mix.
+-          swift: ${{ inputs.swift == 'own' && '' || '6.4' }}
++          swift: ${{ inputs.swift != 'own' && '6.4' || '' }}
+           build-cache: ${{ inputs.configuration == 'release' && 'release' || 'products' }}
+       # Here, so that what is kept is a build and nothing else. A build that fails is the script's to report, as it always was.
+       - name: Build
+diff --git a/scripts/lint-workflows.py b/scripts/lint-workflows.py
+index ba2dd909..e778abcb 100755
+--- a/scripts/lint-workflows.py
++++ b/scripts/lint-workflows.py
+@@ -18,6 +18,9 @@ Many hands write workflows here, quickly. Each of these rules was once a sentenc
+   no text in commands   Nothing is written into a command (`run:`, `script:`, `shell:`) as ${{ … }} but a few values nobody can type: the
+                commit's id, the run's number, the runner's own. Everything else reaches a shell through `env:` and "$NAME". Written into
+                the command it becomes part of the script, and a title like `"; curl … | sh; "` runs.
++  one or the other   `${{ a && b || c }}` is "if a then b, else c" only while b counts as true. With '', false, null or 0 in the middle it is c
++               whatever a is. `${{ inputs.swift == 'own' && '' || '6.4' }}` was 6.4 for everybody; a run on a real Mac showed it, no test could.
++               Turn it round: `${{ inputs.swift != 'own' && '6.4' || '' }}`.
+   no strangers' code with a token   A workflow that strangers can start and that runs with the repository's own token
+                (`pull_request_target`, `workflow_run`, `issues`, `issue_comment`, discussions) reaches for nothing of a pull request:
+                not its commit, its branch, its repository or what another run built from it.
+@@ -48,6 +51,7 @@ FREE = re.compile(r"^(ubuntu-(latest|slim|\d\d\.\d\d(-arm)?)|macos-(latest|\d\d(
+ LONGEST = 120
+ EXPRESSION = re.compile(r"\$\{\{(.*?)(\}\}|$)")
+ NOBODY_TYPES = re.compile(r"^\s*(github\.(sha|run_id|run_number|run_attempt|repository|workspace|event_name|job)|runner\.\w+)\s*$")
++NEVER_THE_MIDDLE_ONE = re.compile(r"&&\s*(''|false|null|0)\s*\|\|")
+ STARTED_BY_STRANGERS = re.compile(r"\b(pull_request_target|workflow_run|issues|issue_comment|discussion|discussion_comment)\b")
+ OF_THE_PULL_REQUEST = re.compile(
+     r"head\.(sha|ref|repo)|\['head'\]|head_ref|head_sha|head_branch|head_repository|\bpull/|merge_commit_sha|gh pr (checkout|diff)|download-artifact")
+@@ -196,6 +200,10 @@ def problems_in(text, name):
+                 report(number, "pinned", f"say which version {uses.group(2)[:-32]}… is, as a remark and nothing else: `# v5.1.0` (Dependabot reads it too)")
+         if uses and uses.group(2).startswith("docker://") and "@sha256:" not in uses.group(2):
+             report(number, "pinned", f"{uses.group(2)} is not named by its digest (@sha256:…)")
++        for expression in EXPRESSION.finditer(bare):
++            empty = NEVER_THE_MIDDLE_ONE.search(expression.group(1))
++            if empty:
++                report(number, "one or the other", f"`… && {empty.group(1)} || …` is what stands after the `||`, always: {empty.group(1)} does not count as true. Turn the condition round")
+         if privileged and OF_THE_PULL_REQUEST.search(bare):
+             report(number, "no strangers' code with a token",
+                    "strangers can start this workflow, it holds the repository's token, and here it reaches for a pull request's own commit, branch or build")
+@@ -324,6 +332,15 @@ def self_test():
+         ("`uses:` as a step's second key", rules(changed(f"      - uses: actions/checkout@{sha} # v5.1.0", "      - name: Out\n        uses: actions/checkout@v5")), ["pinned"]),
+         ("an image by its tag", rules(changed("./.github/actions/mac-setup", "docker://alpine:3")), ["pinned"]),
+         ("a composite action is read too", rules("runs:\n  using: composite\n  steps:\n    - uses: actions/cache@v4\n", ".github/actions/x/action.yml"), ["pinned"]),
++        ("one or the other, with nothing in the middle", rules(changed("${{ github.event.pull_request.title }}", "${{ inputs.swift == 'own' && '' || '6.4' }}")), ["one or the other"]),
++        ("with false, null or 0 there", [rules(changed("${{ github.event.pull_request.title }}", "${{ inputs.a && %s || 'x' }}" % middle)) for middle in ("false", "null", "0")],
++         [["one or the other"]] * 3),
++        ("turned round", rules(changed("${{ github.event.pull_request.title }}", "${{ inputs.swift != 'own' && '6.4' || '' }}")), []),
++        ("a word, a number that counts, a call in the middle", [rules(changed("${{ github.event.pull_request.title }}", "${{ inputs.a && %s || '' }}" % middle))
++                                                                for middle in ("'0'", "10", "format('-{0}', env.TAG)")], [[]] * 3),
++        ("the same in a remark, or outside an expression", rules(changed("        env:", "        # ${{ a && '' || 'b' }}, as it must not be; in a shell: a && '' || b\n        env:")), []),
++        ("in a composite action too", rules("runs:\n  using: composite\n  steps:\n    - run: true\n      shell: bash\n      env:\n        X: ${{ inputs.a && '' || 'b' }}\n", ".github/actions/x/action.yml"),
++         ["one or the other"]),
+         ("a Mac", rules(changed("ubuntu-latest", "macos-26")), []),
+         ("a larger Mac", rules(changed("ubuntu-latest", "macos-26-xlarge")), ["free"]),
+         ("a larger Linux machine", rules(changed("ubuntu-latest", "ubuntu-latest-8-cores")), ["free"]),
+-- 
+2.43.0
+

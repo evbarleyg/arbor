@@ -1,0 +1,53 @@
+From d950add328c54c486b36c70b5fbe3117dff811d2 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 13:36:45 +0000
+Subject: [PATCH 4/5] test(parity): what holds shrink and rotate to one layout
+ stands under A222 and A223
+
+---
+ collab/parity.json | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/collab/parity.json b/collab/parity.json
+index f5a09634..404d6825 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -2461,6 +2461,8 @@
+         "aFloatingWindowPutOverDockedWindowsGrowsWhereItIs",
+         "aGroupThatRunsAlongItsRowCountsForAsManyPlacesAsItShows",
+         "aNeighbourThatShrinksAlongIsNotAskedForALayoutThatNeverComes",
++        "aShrinkThatCannotShrinkKeepsTheWindowInView",
++        "aSlotThatIsAPointShortIsLeftAsItIs",
+         "aWindowThatWillNotBeThatSmallNeverLeavesTheScreen",
+         "aWindowWhoseEqualShareIsTooSmallIsGivenTheRoomItNeeds",
+         "afterArrangeTheDesktopKeepsItsNarrowColumn",
+@@ -2480,6 +2482,7 @@
+         "theKeyboardStaysInASheet",
+         "theStepComesFromTheSettings",
+         "whatIsInViewCanBeRearranged",
++        "whatItWasGivenCanBeUndone",
+         "withOneSeamItMovesByTheWholeAmount",
+         "zoomedInOnlyTheViewIsEvenedOutUnlessAllIsAsked"
+       ],
+@@ -2504,6 +2507,7 @@
+         "aTurnedPairIsAGroupLikeAnyOther",
+         "anInnerGroupStaysAGroupAndTurnsBack",
+         "mirrorReversesTheGroupOfTheFocusedWindow",
++        "nobodyChangesPlaceForARefusal",
+         "nothingIsRearrangedWhileTheFocusedWindowIsFullScreen",
+         "randomOperationsKeepInvariants",
+         "rotateIsItsOwnWayBack",
+@@ -2513,7 +2517,9 @@
+         "rotateTurnsTheRowOfTheFocusedWindowIntoAColumnAndBack",
+         "rotatingAnInnerGroupPutsItsWindowsSideBySideInTheSameRoom",
+         "rotatingTheRootTurnsRowsIntoColumnsAllTheWayDown",
+-        "theWholeViewTurnsAndStaysTheView"
++        "theWholeViewTurnsAndStaysTheView",
++        "whereThereIsNotEnoughRoomNobodyGoesAnywhere",
++        "whereThereIsRoomEverybodyMovesOnce"
+       ],
+       "e2e": [
+         "choose Adjust, Balance Sizes and Adjust, Mirror Group from the menu: they do what the shortcuts do",
+-- 
+2.43.0
+

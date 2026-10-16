@@ -1,0 +1,38 @@
+diff --git a/Sources/ArborTesting/Chaos.swift b/Sources/ArborTesting/Chaos.swift
+index 993d100f..67a0536b 100644
+--- a/Sources/ArborTesting/Chaos.swift
++++ b/Sources/ArborTesting/Chaos.swift
+@@ -211,6 +211,10 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
+     case silent
+     /// The windows stay at their old coordinates, which no Mac does; Arbor must cope anyway.
+     case never
++    /// One window speaks while macOS's list of displays is still the old one; then the list is new, the others speak, and Arbor hears about the
++    /// displays. As recorded with eleven real apps in 10 of 13 changes: one report 0.003 to 0.7 s before macOS's first notice. The one is the
++    /// lowest number that floats, or else the lowest: a script chooses by numbering.
++    case oneFirst = "one-first"
+   }
+ 
+   // MARK: Text form
+diff --git a/Sources/ArborTesting/ChaosRunner.swift b/Sources/ArborTesting/ChaosRunner.swift
+index fbd584ad..d56c6461 100644
+--- a/Sources/ArborTesting/ChaosRunner.swift
++++ b/Sources/ArborTesting/ChaosRunner.swift
+@@ -576,6 +576,18 @@ public final class ChaosRunner {
+     case .silent:
+       for move in moves { system.moveSilently(move.window, to: move.frame) }
+       system.setDisplays(displays)
++    case .oneFirst:
++      let early = (moves.first { move in controller.workspaces.values.contains { $0.isFloating(move.window) } } ?? moves.first)?.window
++      for move in moves where move.window == early {
++        system.moveSilently(move.window, to: move.frame)
++        system.report(move.window, userInitiated: true)
++      }
++      system.displayList = displays
++      for move in moves where move.window != early {
++        system.moveSilently(move.window, to: move.frame)
++        system.report(move.window, userInitiated: true)
++      }
++      system.setDisplays(displays)
+     case .late:
+       for move in moves { system.moveSilently(move.window, to: move.frame) }
+       let mark = system.frameLog.count

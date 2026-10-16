@@ -1,0 +1,287 @@
+From ff473be5e24e6302a8d6330fcd793bdf4313e3ad Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 06:52:54 +0000
+Subject: [PATCH] fix: what a floating window has when it has come to rest is
+ what is remembered
+
+---
+ .../ArborKit/Controller/Controller+Drag.swift |   2 +-
+ .../Controller/Controller+Events.swift        |  10 +-
+ .../Controller/Controller+FoundAtAStart.swift |   2 +-
+ .../Controller+UndockedFrames.swift           |  17 +-
+ Tests/ArborKitTests/AtRestTests.swift         | 172 ++++++++++++++++++
+ 5 files changed, 193 insertions(+), 10 deletions(-)
+ create mode 100644 Tests/ArborKitTests/AtRestTests.swift
+
+diff --git a/Sources/ArborKit/Controller/Controller+Drag.swift b/Sources/ArborKit/Controller/Controller+Drag.swift
+index 36df5435..4cfaa8a9 100644
+--- a/Sources/ArborKit/Controller/Controller+Drag.swift
++++ b/Sources/ArborKit/Controller/Controller+Drag.swift
+@@ -346,7 +346,7 @@ extension Controller {
+       let home = workspaceID(containing: window)
+       summonedWindowIsCarried(window, to: display)
+       // A drag by the title bar moves and never resizes (Controller+UndockedFrames.swift). Asked while it still floats there.
+-      let remembered = frameToRemember(of: window, movedFrom: current.frame, to: current.frame)
++      let remembered = frameToRemember(of: window, at: current.frame)
+       // Asked while the display it leaves still remembers it, and noted if it is docked on the other, which may be refused.
+       let own = home.flatMap { $0 == display ? nil : frameToTakeAlong(of: window, from: $0)?.size }
+       // The size it had in its slot, which is not always the one it has now: see `leaves`.
+diff --git a/Sources/ArborKit/Controller/Controller+Events.swift b/Sources/ArborKit/Controller/Controller+Events.swift
+index 6cb59ba4..618c44a9 100644
+--- a/Sources/ArborKit/Controller/Controller+Events.swift
++++ b/Sources/ArborKit/Controller/Controller+Events.swift
+@@ -172,9 +172,9 @@ extension Controller: WindowSystemEvents {
+     // size it had before. That is the window's own size again. Left as it was, what is remembered would be the tile's,
+     // and the smaller window would pass for one that Arbor had squeezed (`frameToRemember`). Only the size: where it is on its way
+     // through is no place to come back to, should it be docked at the end of this drag. (What macOS took out of a slot it gives the
+-    // slot's size, which is nobody's: `finishDrop` sees to that.)
+-    if userInitiated, drag?.window == window.id, let previous, workspaces[display]!.isFloating(window.id),
+-      abs(previous.frame.width - window.frame.width) > 1 || abs(previous.frame.height - window.frame.height) > 1
++    // slot's size, which is nobody's: `finishDrop` sees to that.) Every step counts, the last ones of a point too.
++    if userInitiated, drag?.window == window.id, workspaces[display]!.isFloating(window.id), previous?.frame.size != window.frame.size,
++      !hasTheSizeArborGaveIt(window.id, window.frame.size)
+     {
+       workspaces[display]!.floating[window.id]?.size = window.frame.size
+     }
+@@ -195,7 +195,9 @@ extension Controller: WindowSystemEvents {
+       let destination = displayID(at: window.frame.center) ?? display
+       let role = workspaces[display]!.role(of: window.id)
+       summonedWindowIsCarried(window.id, to: destination)
+-      let remembered = frameToRemember(of: window.id, movedFrom: previous?.frame, to: window.frame)
++      let remembered = frameToRemember(of: window.id, at: window.frame)
++      // Sized away from what Arbor gave it, that is over: given that very size by a hand later on, it is the hand's.
++      if !hasTheSizeArborGaveIt(window.id, window.frame.size) { settled[window.id] = nil }
+       noteSizeGivenSinceItLeftItsSlot(window, was: previous)
+       if destination != display { workspaces[display]!.floating[window.id] = nil }
+       workspaces[destination]?.floating[window.id] = remembered
+diff --git a/Sources/ArborKit/Controller/Controller+FoundAtAStart.swift b/Sources/ArborKit/Controller/Controller+FoundAtAStart.swift
+index 08857eb9..97f8f81c 100644
+--- a/Sources/ArborKit/Controller/Controller+FoundAtAStart.swift
++++ b/Sources/ArborKit/Controller/Controller+FoundAtAStart.swift
+@@ -77,7 +77,7 @@ extension Controller {
+         // A move is not a resize: in the size Arbor left it in, it keeps its own to go back to. Where nobody can tell who gave it its size
+         // (squeezed, or in the shape of a slot that the file, half a second behind, knows nothing of), the one remembered stands.
+         let own =
+-          leftAt[window].map { frameToRemember(of: window, movedFrom: $0, to: found, ownSize: ownSizes[window]) }
++          leftAt[window].map { frameToRemember(of: window, at: found, leftByArborAs: $0.size, ownSize: ownSizes[window]) }
+           ?? CGRect(origin: found.origin, size: ownSizes[window] ?? remembered.size).fitted(into: visible)
+         let role = workspaces[id]!.role(of: window)
+         if home != id { workspaces[id]!.floating[window] = nil }
+diff --git a/Sources/ArborKit/Controller/Controller+UndockedFrames.swift b/Sources/ArborKit/Controller/Controller+UndockedFrames.swift
+index 23ab5c04..c07947dd 100644
+--- a/Sources/ArborKit/Controller/Controller+UndockedFrames.swift
++++ b/Sources/ArborKit/Controller/Controller+UndockedFrames.swift
+@@ -255,12 +255,16 @@ extension Controller {
+ 
+   // MARK: Moved by its user
+ 
+-  /// What to remember of a floating window that its user has moved from `before` to `frame`. A move is not a resize:
++  /// What to remember of a floating window that somebody other than Arbor has brought to `frame`. A move is not a resize:
+   /// a window Arbor squeezed to keep it on the Desktop has not become its user's idea of its size by being pushed a
+   /// little further. It keeps its own size to go back to, from where it is now, on the display as far as `frame` is.
+-  /// `ownSize`: if that is not the size remembered where it floats now.
+-  func frameToRemember(of window: WindowID, movedFrom before: CGRect?, to frame: CGRect, ownSize: CGSize? = nil) -> CGRect {
+-    guard let before, abs(before.width - frame.width) <= 1, abs(before.height - frame.height) <= 1,
++  ///
++  /// Whether it was only moved is not told by the report before: macOS eases a window into a tile and out of one, and its last steps are a point
++  /// apart, which add up. It is told by whose the size is. Only a size that Arbor gave stands between a window and the books; any other is
++  /// taken at its word, so that what is remembered is what the window has when it has come to rest.
++  /// `given`: the size Arbor left it in, if that was in a run before this one. `ownSize`: if that is not the size remembered where it floats now.
++  func frameToRemember(of window: WindowID, at frame: CGRect, leftByArborAs given: CGSize? = nil, ownSize: CGSize? = nil) -> CGRect {
++    guard hasTheSizeArborGaveIt(window, frame.size, given),
+       let own = ownSize ?? workspaceID(containing: window).flatMap({ workspaces[$0]?.floating[window]?.size }), own != frame.size,
+       // Squeezed, not stretched: one that fills the Desktop and is taken in hand stays as it is (Controller+SoleFloat.swift). Or still
+       // as large as the slot it left.
+@@ -280,6 +284,11 @@ extension Controller {
+     return remembered
+   }
+ 
++  /// Whether `size`, which `window` is seen to have, is what it took when Arbor last gave it a frame. To within a point, by which apps round.
++  func hasTheSizeArborGaveIt(_ window: WindowID, _ size: CGSize, _ given: CGSize? = nil) -> Bool {
++    (given ?? settled[window]?.size).map { abs($0.width - size.width) <= 1 && abs($0.height - size.height) <= 1 } ?? false
++  }
++
+   // MARK: Out of its slot as large as the slot
+ 
+   /// A window that left the arrangement where macOS may tile it. Arbor stood aside and set no frame, so it went as large as its slot.
+diff --git a/Tests/ArborKitTests/AtRestTests.swift b/Tests/ArborKitTests/AtRestTests.swift
+new file mode 100644
+index 00000000..a3779d4c
+--- /dev/null
++++ b/Tests/ArborKitTests/AtRestTests.swift
+@@ -0,0 +1,172 @@
++import ArborCore
++@testable import ArborKit
++import ArborTesting
++import CoreGraphics
++import Testing
++
++/// What Arbor remembers of a floating window is what the window has when it has come to rest (board 1.68).
++///
++/// "A move is not a resize": a window that Arbor squeezed and that a hand then only moves keeps its own size to go back to. That was told by holding each
++/// report against the one before: sizes a point apart at most were a move. But macOS eases its windows into a tile and out of one, and its
++/// last steps ARE a point apart. So the books stopped at the first such step, a few points from where the window came to rest, and at the next
++/// pause, Quit or Float All Arbor set a window that nobody had touched to a size it no longer had. Seen on hosted Macs: 481×352 for 480×348,
++/// 514 for 513. Steps of a point add up. What stands between a window and the books is only a size that ARBOR gave it.
++///
++/// The arrangement is [a | Desktop | b] with c floating, 400×300.
++@Suite @MainActor struct AtRestTests {
++  /// Reports `sizes` for `window`, one after the other, 16 ms apart, its corner staying where it is, as its app does while macOS sizes it.
++  func report(_ sizes: [(CGFloat, CGFloat)], of window: WindowID, _ s: DragScene) {
++    for (width, height) in sizes {
++      s.h.system.userMove(window, to: CGRect(origin: s.frame(window).origin, size: CGSize(width: width, height: height)))
++      s.h.scheduler.advance(by: 0.016)
++    }
++  }
++
++  func expectTheBooksSayWhatIsOnTheScreen(_ window: WindowID, _ s: DragScene, sourceLocation: SourceLocation = #_sourceLocation) {
++    #expect(
++      s.h.workspace.floating[window] == s.frame(window), "remembered: \(String(describing: s.h.workspace.floating[window])), is: \(s.frame(window))",
++      sourceLocation: sourceLocation)
++  }
++
++  /// No way out sets a frame on a window that nobody has touched since it came to rest.
++  func expectNoWayOutTouches(_ window: WindowID, _ s: DragScene, _ wayOut: String, sourceLocation: SourceLocation = #_sourceLocation) {
++    let rest = s.frame(window)
++    s.h.system.clearFrameLog()
++    s.h.run(wayOut)
++    if wayOut == "quit" { s.h.controller.shutdown() }
++    s.h.scheduler.advance(by: 3)
++    #expect(!s.h.system.frameLog.contains { $0.window == window }, "\(wayOut): \(s.h.system.frameLog)", sourceLocation: sourceLocation)
++    #expect(s.frame(window) == rest, sourceLocation: sourceLocation)
++  }
++
++  nonisolated static let waysOut = ["float-all", "pause", "quit"]
++
++  /// As recorded on a hosted Mac, macOS 26.6: a window dragged off its tile shrinks in the hand. The last reports: 356, 354, 352, 351, 350, 349 high.
++  @Test(arguments: waysOut) func shrunkInTheHandOffItsTileTheLastStepsCountToo(wayOut: String) {
++    let s = DragScene()
++    s.h.system.drag(s.c, through: [s.frame(s.c).center, CGPoint(x: 0, y: 450)])
++    s.h.scheduler.advance(by: 3)
++    // Played by hand: the fake gives the size back in one step.
++    _ = s.h.system.takeSizeBeforeTile(of: s.c)
++    s.h.system.beginDrag(s.c)
++    report(
++      [(640, 700), (560, 520), (500, 420), (486, 385), (483, 372), (482, 365), (482, 360), (481, 356), (481, 354), (481, 352), (481, 351), (481, 350), (481, 349)],
++      of: s.c, s)
++    s.h.system.moveDrag(to: CGPoint(x: 700, y: 400), holding: 0.3)
++    s.h.system.endDrag()
++    s.h.scheduler.advance(by: 3)
++    #expect(s.frame(s.c).size == CGSize(width: 481, height: 349))
++    expectTheBooksSayWhatIsOnTheScreen(s.c, s)
++    expectNoWayOutTouches(s.c, s, wayOut)
++  }
++
++  /// Arbor can hear of the drag after macOS has begun: the first steps come as reports about a window in nobody's hand.
++  @Test func heardOfTheDragInTheMiddleOfTheShrinking() {
++    let s = DragScene()
++    s.h.system.drag(s.c, through: [s.frame(s.c).center, CGPoint(x: 0, y: 450)])
++    s.h.scheduler.advance(by: 3)
++    _ = s.h.system.takeSizeBeforeTile(of: s.c)
++    report([(640, 700), (500, 420), (483, 372), (482, 360), (481, 354), (481, 352), (481, 351)], of: s.c, s)
++    s.h.system.beginDrag(s.c)
++    report([(481, 350), (481, 349)], of: s.c, s)
++    s.h.system.moveDrag(to: CGPoint(x: 700, y: 400), holding: 0.3)
++    s.h.system.endDrag()
++    s.h.scheduler.advance(by: 3)
++    expectTheBooksSayWhatIsOnTheScreen(s.c, s)
++  }
++
++  /// As recorded: a window of 554×650 let go at the left edge travels into 513×674. The widths at the end: 519 517 516 515 514 514 513 513.
++  @Test(arguments: waysOut) func easedIntoItsTileTheLastStepsCountToo(wayOut: String) {
++    let s = DragScene()
++    s.h.system.userMove(s.c, to: CGRect(x: 300, y: 100, width: 554, height: 650))
++    s.h.scheduler.advance(by: 3)
++    s.h.system.beginDrag(s.c)
++    s.h.system.moveDrag(to: CGPoint(x: 0, y: 450), holding: 1)
++    // Played by hand.
++    s.h.system.macOSOverlooksTheNextDrop = true
++    s.h.system.endDrag()
++    s.h.scheduler.advance(by: 0.02)
++    report([(548, 655), (536, 664), (527, 670), (522, 673), (519, 674), (517, 674), (516, 674), (515, 674), (514, 674), (514, 674), (513, 674), (513, 674)], of: s.c, s)
++    s.h.scheduler.advance(by: 3)
++    #expect(s.frame(s.c).size == CGSize(width: 513, height: 674))
++    expectTheBooksSayWhatIsOnTheScreen(s.c, s)
++    expectNoWayOutTouches(s.c, s, wayOut)
++  }
++
++  /// A release that Arbor never saw: macOS's steps arrive while Arbor still takes the window to be in the hand, and go by the rule for a drag.
++  @Test(arguments: waysOut) func withTheReleaseLostTheStepsComeDuringTheDragAndCountToo(wayOut: String) {
++    let s = DragScene()
++    s.h.system.userMove(s.c, to: CGRect(x: 200, y: 25, width: 1000, height: 875))
++    s.h.scheduler.advance(by: 3)
++    s.h.system.beginDrag(s.c)
++    s.h.system.moveDrag(to: CGPoint(x: 400, y: 300), holding: 0.3)
++    s.h.system.moveDrag(to: CGPoint(x: 0, y: 450), holding: 1)
++    s.h.system.loseTheReleaseOfTheDrag()
++    // Before anything looks again: what the drop itself writes down.
++    #expect(s.frame(s.c).width == 721)
++    expectTheBooksSayWhatIsOnTheScreen(s.c, s)
++    s.h.scheduler.advance(by: 3)
++    expectTheBooksSayWhatIsOnTheScreen(s.c, s)
++    expectNoWayOutTouches(s.c, s, wayOut)
++  }
++
++  /// A height that stays while the width shrinks: nothing broke the chain, and 723 was remembered for 721.
++  @Test func asHighAsTheDisplayAndShrunkIntoAHalf() {
++    let s = DragScene()
++    s.h.system.userMove(s.c, to: CGRect(x: 200, y: 25, width: 1000, height: 875))
++    s.h.scheduler.advance(by: 3)
++    report([(900, 875), (800, 875), (750, 875), (733, 875), (727, 875), (725, 875), (723, 875), (722, 875), (721, 875)], of: s.c, s)
++    s.h.scheduler.advance(by: 3)
++    expectTheBooksSayWhatIsOnTheScreen(s.c, s)
++    expectNoWayOutTouches(s.c, s, "float-all")
++  }
++
++  /// A hand that makes a window smaller a point at a time, with rests between: every point counts.
++  @Test func madeSmallerByHandAPointAtATime() {
++    let s = DragScene()
++    for width in stride(from: CGFloat(399), through: 390, by: -1) {
++      s.h.system.userResize(s.c, to: CGRect(origin: s.frame(s.c).origin, size: CGSize(width: width, height: 300)))
++      s.h.scheduler.advance(by: 1)
++    }
++    #expect(s.frame(s.c).width == 390)
++    expectTheBooksSayWhatIsOnTheScreen(s.c, s)
++  }
++
++  // MARK: What still holds
++
++  /// A size that Arbor gave is not the window's own, however it is pushed about afterwards.
++  @Test func squeezedByArborAndOnlyMovedItKeepsItsOwnSizeToGoBackTo() throws {
++    let s = DragScene()
++    let wide = s.h.system.open(app: "Pages", frame: CGRect(x: 480, y: 200, width: 460, height: 400))
++    s.h.scheduler.advance(by: 1)
++    // The Desktop gets narrower, and the window with it, where floating windows make way.
++    s.h.run("resize \(s.a.rawValue) right 120")
++    s.h.scheduler.advance(by: 3)
++    let squeezed = s.frame(wide)
++    try #require(squeezed.width < 460, "the story needs a window that Arbor squeezed: \(squeezed)")
++    for step in 1...5 {
++      s.h.system.userMove(wide, to: squeezed.offsetBy(dx: 0, dy: CGFloat(step) * 7))
++      s.h.scheduler.advance(by: 0.1)
++    }
++    #expect(s.h.workspace.floating[wide]?.size == CGSize(width: 460, height: 400))
++    s.h.run("float-all")
++    s.h.scheduler.advance(by: 3)
++    #expect(s.frame(wide).size == CGSize(width: 460, height: 400))
++  }
++
++  /// Sized by a hand away from what Arbor gave it, and later back to that very size: that is the hand's choice now.
++  @Test func givenTheSqueezedSizeByAHandLaterOnThatIsItsOwn() throws {
++    let s = DragScene()
++    let wide = s.h.system.open(app: "Pages", frame: CGRect(x: 480, y: 200, width: 460, height: 400))
++    s.h.scheduler.advance(by: 1)
++    s.h.run("resize \(s.a.rawValue) right 120")
++    s.h.scheduler.advance(by: 3)
++    let squeezed = s.frame(wide)
++    try #require(squeezed.width < 460, "\(squeezed)")
++    s.h.system.userResize(wide, to: CGRect(origin: squeezed.origin, size: CGSize(width: squeezed.width - 60, height: 300)))
++    s.h.scheduler.advance(by: 1)
++    s.h.system.userResize(wide, to: squeezed)
++    s.h.scheduler.advance(by: 1)
++    #expect(s.h.workspace.floating[wide]?.size == squeezed.size)
++  }
++}
+-- 
+2.43.0
+

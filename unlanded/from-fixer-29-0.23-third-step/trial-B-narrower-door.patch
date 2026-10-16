@@ -1,0 +1,154 @@
+diff --git a/Sources/ArborKit/Controller/Controller+Displays.swift b/Sources/ArborKit/Controller/Controller+Displays.swift
+index 13a9e260..f9e3fdb4 100644
+--- a/Sources/ArborKit/Controller/Controller+Displays.swift
++++ b/Sources/ArborKit/Controller/Controller+Displays.swift
+@@ -103,6 +103,8 @@ extension Controller {
+     }
+     unasked { relayoutAll(reason: .camera, motion: .instant) }
+     parkAgain()
++    // What macOS left on no display Arbor has placed: its own doing, to be given back when that display returns.
++    for window in floatedOnWhatWent.intersection(arriving) where !parked.contains(window) { evacuated[window] = windows[window]?.frame }
+     scheduleSave()
+   }
+ 
+@@ -482,10 +484,10 @@ extension Controller {
+   static let asGoodAsBack: CGFloat = 4
+ 
+   /// Brings back the arrangement `displayID` had when it went away. Windows
+-  /// that are still open and not docked anywhere else return to their slots
+-  /// (floating ones to their frames); the rest are dropped from the restored
++  /// that are still open and not docked anywhere else return to their slots; the rest are dropped from the restored
+   /// tree, which moves the camera, history and saved views to the nodes that
+-  /// remain. Returns the windows that came back. `movedByMacOS`: the windows macOS has moved with this change of displays.
++  /// remain. A floating window in view is not fetched (`isLeftToMacOSAtAReturn`); the others return to their frames.
++  /// Returns the windows that came back. `movedByMacOS`: the windows macOS has moved with this change of displays.
+   func restoreDormantWorkspace(of displayID: DisplayID, movedByMacOS: Set<WindowID> = []) -> [WindowID] {
+     guard let entry = dormant.removeValue(forKey: displayID) else { return [] }
+     let arrived = workspaces[displayID] ?? Workspace()
+@@ -516,7 +518,20 @@ extension Controller {
+       if pendingSlots.contains(window) {
+         continue  // still waiting for its window, now on this display
+       } else if isManaged(window) && !dockedElsewhere && !neededElsewhere {
+-        returning.append(window)
++        if fillsAgain(window, in: restored) {
++          // Its mark and its own place sleep here. Its own size is what it has had on record since: it may have been filled and given back meanwhile.
++          // (Not if that record is the fill's frame: then the window spoke of this very move before macOS's list was new, and it was booked.)
++          if let own = workspaceID(containing: window).flatMap({ workspaces[$0]!.floating[window] }),
++            restored.filled?[window].map({ own.approximatelyEquals($0, tolerance: 0.99) }) != true
++          {
++            restored.floating[window]?.size = own.size
++          }
++          for id in workspaces.keys.sorted() { workspaces[id]!.floating[window] = nil }
++        } else if isLeftToMacOSAtAReturn(window, in: restored) {
++          restored.forget(window, shareSpace: settings.shareRemovedSpace)
++        } else {
++          returning.append(window)
++        }
+       } else {
+         restored.forget(window, shareSpace: settings.shareRemovedSpace)
+       }
+@@ -527,6 +542,7 @@ extension Controller {
+       restored.setRole(role(of: window), of: window)
+     }
+     for window in returning {
++      evacuated[window] = nil
+       for id in workspaces.keys.sorted() { workspaces[id]!.floating[window] = nil }
+       endStays(of: window, begunAfter: entry.since)
+       // macOS remembers too. What it has itself brought back as good as there is there: no second move for a few points.
+@@ -551,6 +567,37 @@ extension Controller {
+     return returning
+   }
+ 
++  /// At a display's return Arbor fetches no floating window (board 0.23, the third step): where macOS puts it, it is, and where macOS leaves it on the display
++  /// that stayed, it stays (`takeFloatingWindowsFromWhereTheyAre`, later in the same pass). On hosted Macs the fetching was a frame that changed
++  /// nothing, macOS having the window there already, or a frame against macOS: a display came back smaller, macOS put the window wholly on
++  /// it, and Arbor fetched it to a place remembered for the larger one, 176 points over the edge.
++  ///
++  /// What stays Arbor's: docked windows, windows kept in view, summoned or stashed, what Arbor has out of view just now, whose place is a corner it was
++  /// sent to, what is still as Arbor fitted it, which is given back, one that is in the Dock, hidden or on another Space, and everything where
++  /// floating windows make way.
++  private func isLeftToMacOSAtAReturn(_ window: WindowID, in sleeping: Workspace) -> Bool {
++    guard !settings.floatingWindowsMakeWay, sleeping.isFloating(window), sleeping.role(of: window) == nil, role(of: window) == nil,
++      !parked.contains(window), let current = windows[window], current.isPresent,
++      let own = workspaceID(containing: window).flatMap({ workspaces[$0]!.floating[window] })
++    else { return false }
++    // The fill ended with its display, for good.
++    if sleeping.isFilled(window) { return true }
++    // Where ARBOR put it is not where macOS put it or left it. macOS had left it on no display, which no Mac was seen to do to a window in sight (an
++    // app that hangs; the stand-ins' plain unplug), and alone would have it on this display still: what Arbor did is given back.
++    if evacuated[window]?.approximatelyEquals(current.frame, tolerance: 1) == true { return false }
++    return !isAsArborFittedIt(window, at: current.frame, whoseOwnSizeIs: own.size)
++  }
++
++  /// A window that filled the display that went: the fill ended with its display. macOS brings a window back to the frame it last had on a display, and that
++  /// frame is the fill's. Taken for the window's own it would cost it its own size for good. Found to the point where the fill had left it, it
++  /// fills again: the mark is back, its own frame is the one on record, and nothing moves.
++  private func fillsAgain(_ window: WindowID, in sleeping: Workspace) -> Bool {
++    guard !settings.floatingWindowsMakeWay, sleeping.isFilled(window), let filled = sleeping.filled?[window], !parked.contains(window),
++      let current = windows[window], current.isPresent
++    else { return false }
++    return current.frame.approximatelyEquals(filled, tolerance: 0.99)
++  }
++
+   /// Sends windows that changed workspace because of a display change where
+   /// that workspace wants them. Docked windows are left to the next relayout,
+   /// which puts them in their slots or parks them. Floating windows go onto
+diff --git a/Sources/ArborKit/Controller/Controller+Events.swift b/Sources/ArborKit/Controller/Controller+Events.swift
+index 9944be7e..19caa9a3 100644
+--- a/Sources/ArborKit/Controller/Controller+Events.swift
++++ b/Sources/ArborKit/Controller/Controller+Events.swift
+@@ -54,6 +54,7 @@ extension Controller: WindowSystemEvents {
+     chosenOnShape[id] = nil
+     if floatingEdgeInHand == id { floatingEdgeInHand = nil }
+     fittedFrames[id] = nil
++    evacuated[id] = nil
+     appPlacedFrames[id] = nil
+     spokeOfItsPlace[id] = nil
+     shrunk[id] = nil
+diff --git a/Sources/ArborKit/Controller/Controller+Hardening.swift b/Sources/ArborKit/Controller/Controller+Hardening.swift
+index b44fc1ea..8a1c4c1a 100644
+--- a/Sources/ArborKit/Controller/Controller+Hardening.swift
++++ b/Sources/ArborKit/Controller/Controller+Hardening.swift
+@@ -182,6 +182,7 @@ extension Controller {
+     shrunk[window.id] = shrunk.removeValue(forKey: old)
+     fittedToADisplay[window.id] = fittedToADisplay.removeValue(forKey: old)
+     fittedFrames[window.id] = fittedFrames.removeValue(forKey: old)
++    evacuated[window.id] = evacuated.removeValue(forKey: old)
+     hints[window.id] = WindowHint(bundleID: window.bundleID, title: window.title)
+     focusHistory.removeAll { $0 == window.id }
+     if let index = focusHistory.firstIndex(of: old) { focusHistory[index] = window.id }
+diff --git a/Sources/ArborKit/Controller/Controller+Invariants.swift b/Sources/ArborKit/Controller/Controller+Invariants.swift
+index bbba4e0e..f3555002 100644
+--- a/Sources/ArborKit/Controller/Controller+Invariants.swift
++++ b/Sources/ArborKit/Controller/Controller+Invariants.swift
+@@ -262,6 +262,7 @@ extension Controller {
+     check("chosenOnShape", chosenOnShape.keys)
+     check("fittedToADisplay", fittedToADisplay.keys)
+     check("fittedFrames", fittedFrames.keys)
++    check("evacuated", evacuated.keys)
+     check("fills.inHand", fills.inHand)
+     check("fills.saidToGoNoLarger", fills.saidToGoNoLarger)
+     if Set(focusHistory).count != focusHistory.count {
+diff --git a/Sources/ArborKit/Controller/Controller.swift b/Sources/ArborKit/Controller/Controller.swift
+index 10da3789..ead1f92d 100644
+--- a/Sources/ArborKit/Controller/Controller.swift
++++ b/Sources/ArborKit/Controller/Controller.swift
+@@ -503,6 +503,10 @@ public final class Controller {
+   /// (Controller+OwnFrames.swift). An entry counts for as long as its window is at that frame.
+   var fittedFrames: [WindowID: CGRect] = [:]
+ 
++  /// Floating windows that macOS left on no display when theirs went, and where Arbor placed them (`isLeftToMacOSAtAReturn`). An entry counts for as long as
++  /// its window is at that frame.
++  var evacuated: [WindowID: CGRect] = [:]
++
+   /// The window ⌃⌥F floated last, and where it was docked (Controller+FloatAndBack.swift).
+   var floatedOut: FloatedOut?
+ 
+@@ -630,6 +634,7 @@ public final class Controller {
+     chosenOnShape = chosenOnShape.filter { windows[$0.key] != nil }
+     fittedToADisplay = fittedToADisplay.filter { windows[$0.key] != nil }
+     fittedFrames = fittedFrames.filter { windows[$0.key] != nil }
++    evacuated = evacuated.filter { windows[$0.key] != nil }
+     keepOnlyWhatIsStillOwedAfterAStart()
+     parkedAgain.removeAll()
+     unplaced.removeAll()

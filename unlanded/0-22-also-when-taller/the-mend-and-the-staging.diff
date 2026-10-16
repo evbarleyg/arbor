@@ -1,0 +1,130 @@
+diff --git a/Sources/ArborKit/Controller/Controller+AskFirst.swift b/Sources/ArborKit/Controller/Controller+AskFirst.swift
+index 4d507d1d..d6cc4be8 100644
+--- a/Sources/ArborKit/Controller/Controller+AskFirst.swift
++++ b/Sources/ArborKit/Controller/Controller+AskFirst.swift
+@@ -136,10 +136,12 @@ extension Controller {
+   }
+ 
+   /// Whether it may have been the screen that kept a window from growing to `asked` while it stood at `origin`, or from shrinking to it: it `took` as
+-  /// much as macOS lets a window have there, or as little (`sidesTheScreenKept`). A point or two is nobody's refusal.
+-  func mayHaveBeenStoppedByTheScreen(_ took: CGSize, shortOf asked: CGSize, at origin: CGPoint) -> Bool {
++  /// much as macOS lets a window have there, or as little (`sidesTheScreenKept`). A point or two is nobody's refusal. Held, a side keeps what it
++  /// `had` or loses some of it: one that has come out longer than it was asked and longer than it was has grown of its own accord.
++  func mayHaveBeenStoppedByTheScreen(_ took: CGSize, shortOf asked: CGSize, at origin: CGPoint, had: CGSize) -> Bool {
+     let kept = sidesTheScreenKept(of: took, shortOf: asked, at: [origin])
+-    return kept.height && abs(took.height - asked.height) > 2 || kept.width && abs(took.width - asked.width) > 2
++    func says(_ took: CGFloat, _ asked: CGFloat, _ had: CGFloat) -> Bool { took < asked - 2 || took > asked + 2 && took <= had + 2 }
++    return kept.height && says(took.height, asked.height, had.height) || kept.width && says(took.width, asked.width, had.width)
+   }
+ 
+   /// Puts a question. Returns true if the window refused to be that small (a new minimum size was learned).
+@@ -148,6 +150,10 @@ extension Controller {
+     guard let was = windows[window]?.frame.size, let actual = offer(question, to: window) else { return false }
+     windows[window]?.frame = actual
+     settled[window] = actual
++    // Fresh from another display, it is judged by that one wherever it stands, also where it waits out of view
++    // (Controller+AcrossDisplays.swift). Nothing is made of such an answer, and it does not count as having answered: `place` offers it the
++    // whole slot, where `request` would only move one that has said what it makes of the size.
++    if isAnotherDisplaysAnswer(actual, shortOf: question, on: displayID) { return false }
+     justAnswered[window] = question.size
+     // Only just back, it may not be ready to take a frame, and answers with the one it has (Controller+OnTheWayBack.swift). It goes
+     // where the size it has belongs, and nothing is concluded. One that has changed its size has heard the question.
+diff --git a/Tests/ArborKitTests/TheScreensAnswerIsTallerTests.swift b/Tests/ArborKitTests/TheScreensAnswerIsTallerTests.swift
+index cfdd8eb3..a2e5dbe4 100644
+--- a/Tests/ArborKitTests/TheScreensAnswerIsTallerTests.swift
++++ b/Tests/ArborKitTests/TheScreensAnswerIsTallerTests.swift
+@@ -172,6 +172,21 @@ import Testing
+     #expect(h.system.moveLog[mark...].filter { $0.window == a }.count == 1 && h.system.moveLog[mark...].filter { $0.window == b }.count == 2)
+   }
+ 
++  /// Held, a window keeps the height it had or loses some of it. One that has grown past its slot has a smallest height of its own, though its foot would
++  /// have stood in the strip where it came from: that is learnt as ever. (In a recording of a hosted Mac a window of 709×660 answered 789×776 for
++  /// 709×767; taken for the screen's, that left a neighbour out of view.)
++  @Test func whatHasGrownPastItsSlotHasNotBeenHeld() throws {
++    let h = Harness(displays: [Self.withADock])
++    let w = h.system.open(app: "W", frame: CGRect(x: 170, y: 60, width: 480, height: 300))
++    h.start()
++    let visible = Self.withADock.visibleFrame
++    let least = visible.height - 12
++    try #require(60 + least > visible.maxY + 2 && 60 + least - 12 > visible.maxY + 2, "from where it stood both would end in the strip")
++    h.system.setMinimumSize(w, CGSize(width: 200, height: least))
++    h.run("dock \(w.rawValue) left")
++    #expect(h.controller.minimumSizes[w]?.height == least, "\(h.controller.minimumSizes)")
++  }
++
+   /// Without a Dock below there is no strip, and one request does it.
+   @Test func withoutADockBelowOneRequestWillDo() throws {
+     let display = DisplaySnapshot(
+diff --git a/scripts/mac-shell/check-own-size.sh b/scripts/mac-shell/check-own-size.sh
+index 2e5863b2..a39769eb 100755
+--- a/scripts/mac-shell/check-own-size.sh
++++ b/scripts/mac-shell/check-own-size.sh
+@@ -16,7 +16,7 @@
+ # And the other way round: no size call puts a window's foot into the Dock's strip. A window as high as its slot, dragged out and let go low, hangs off the
+ # display, and asked for its own size it came in no further than the display's bottom: 480×360 for 480×348, written down, and more at every such drop.
+ # Now it is moved, as it is, to where it can shrink, and sized from there.
+-#   - out of a slot as high as the screen, let go where its own size ends in the strip: its own size? Drop after drop? By a fast drag? After Quit?
++#   - out of a slot as high as the screen, let go where its own size ends in the strip: its own size? Drop after drop? By a slow drag? After Quit?
+ # How it got there is printed from arbor.log after each: how many frames Arbor asked for.
+ #
+ # Safe on a person's Mac: it changes no setting, touches only windows it opened, and moves the pointer.
+@@ -77,32 +77,44 @@ ctl float-all > /dev/null
+ sleep 1
+ 
+ own="480 348"
+-# Where the pointer has to be let go for a window of that height to end 35 points below the visible frame, in the Dock's strip.
+-low=$((bottom - 348 + 35 + 28))
+ left_at "$((sx + 300)) $((sy + 30)) $own"
+-for round in 1 2 3; do
+-  claim "out of a slot as high as the screen, let go where its own size ends in the Dock's strip: its own size (drop $round)"
++# From the recording of the claim that is running: where the window stood when the button came up, and the frames Arbor asked it for since.
++this_claim() { ls -t "$ARBOR_HOME"/traces/*.jsonl | head -n 1; }
++stood_at() { grep -E "\"event\":\"changed\",\"user\":true.*\"id\":$1[,}]" "$(this_claim)" | tail -n 1 | sed -E 's/.*"frame":\[([^]]*)\].*/\1/; s/,/ /g' | whole; }
++asked_since_the_drop() { awk -v id="\"id\":$1[,}]" '/"dragEnded"/ { up = 1 } up && /"call":"setFrame"/ && $0 ~ id' "$(this_claim)"; }
++# It shrinks both ways, so it is sized where it stands: that is where its own height has to end in the strip. A check of its own, for a hosted Mac's
++# window lags a slow pointer by as much as 200 points: without it every drop passed by one request, and the way round was never gone.
++would_end_in_the_strip() {
++  local foot=$(($(stood_at "$1" | cut -d' ' -f2) + 348))
++  [ "$foot" -gt "$((bottom + 1))" ] && [ "$foot" -le "$((fy + fh))" ] || { echo "    it stood at $(stood_at "$1"): its own height would end at $foot"; return 1; }
++}
++more_than_one_request() { [ "$(asked_since_the_drop "$1" | wc -l)" -gt 1 ]; }
++# let_go_low <x> <options of the drag>
++let_go_low() {
++  local x=$1
++  shift
+   ctl dock "$W2" left
+   check "it is docked, as high as the screen" eventually taller_than "$W2" "$((sh - 40))"
+   take "tx ty" titlebar_of "$W2"
+-  drag "$tx" "$ty" "$((sx + sw * 3 / 4))" "$low" --steps 24 --duration 0.8 --plain
++  # So far down that it stands where its own height ends 30 points below the visible frame.
++  drag "$tx" "$ty" "$x" "$((ty + bottom + 30 - 348 - $(now_at "$W2" | cut -d' ' -f2)))" "$@" --plain
+   check "it floats" eventually is floating "$W2"
+   check "at its own size" eventually has_size "$W2" "$own"
+   check "and stays so" stays has_size "$W2" "$own"
+-  echo "    it is at $(now_at "$W2"): its foot at $(now_at "$W2" | awk '{ print $2 + $4 }'), the visible frame ends at $bottom, the display at $((fy + fh))"
++  echo "    it stood at $(stood_at "$W2") and is at $(now_at "$W2"); the visible frame ends at $bottom, the display at $((fy + fh))"
++  asked_since_the_drop "$W2" | sed -E 's/^/    /; s/,"id":[0-9]+//'
+   asked_of "$W2"
++}
++for round in 1 2 3; do
++  claim "out of a slot as high as the screen, let go where its own size ends in the Dock's strip: its own size (drop $round)"
++  let_go_low "$((sx + sw * 3 / 5))" --duration 0.25 --steps 12 --hold 0
++  check "the case: where it stood its own height would end in the strip" would_end_in_the_strip "$W2"
++  check "so it was not done by one request" more_than_one_request "$W2"
+   shot "let-go-in-the-strip-$round"
+ done
+ 
+-claim "the same by a fast drag, let go without a pause"
+-ctl dock "$W2" left
+-check "it is docked, as high as the screen" eventually taller_than "$W2" "$((sh - 40))"
+-take "tx ty" titlebar_of "$W2"
+-drag "$tx" "$ty" "$((sx + sw * 3 / 5))" "$low" --duration 0.25 --steps 12 --hold 0 --plain
+-check "it floats" eventually is floating "$W2"
+-check "at its own size" eventually has_size "$W2" "$own"
+-check "and stays so" stays has_size "$W2" "$own"
+-asked_of "$W2"
++claim "the same by a slow drag, wherever the window has got to by then"
++let_go_low "$((sx + sw * 3 / 4))" --steps 24 --duration 0.8
+ ctl dock "$W2" left
+ sleep 1
+ arbor_quit

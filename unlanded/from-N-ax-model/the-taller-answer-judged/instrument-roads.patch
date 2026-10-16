@@ -1,0 +1,14 @@
+diff --git a/scripts/mac-on-linux/tests/StoreyTwo.swift b/scripts/mac-on-linux/tests/StoreyTwo.swift
+index ee20b2538..4f98769a0 100644
+--- a/scripts/mac-on-linux/tests/StoreyTwo.swift
++++ b/scripts/mac-on-linux/tests/StoreyTwo.swift
+@@ -49,6 +49,9 @@ final class StoreyTwo {
+     mac.note("Arbor starts")
+     story.listens(heard, storey: 2, from: mac.now)
+     story.onFailure { [mac] in String(format: "    THE MAIN THREAD STOOD STILL FOR %.2f s in all", mac.secondsTheMainThreadWaited) }
++    story.onFailure { [mac] in
++      mac.stack.sorted { $0.number < $1.number }.map { "    ROAD w\($0.number) asked \($0.timesAskedForAFrame): " + $0.road.map(\.text).joined(separator: " > ") }.joined(separator: "\n")
++    }
+     watcher.start()
+     controller.start()
+     mac.pass(1)

@@ -1,0 +1,93 @@
+diff --git a/Sources/ArborKit/Controller/Controller+Commands.swift b/Sources/ArborKit/Controller/Controller+Commands.swift
+index 5825b8d..44fb06e 100644
+--- a/Sources/ArborKit/Controller/Controller+Commands.swift
++++ b/Sources/ArborKit/Controller/Controller+Commands.swift
+@@ -70,6 +70,9 @@ extension Controller {
+     case .launchAtLogin(let enabled):
+       return launchAtLogin(enabled)
+     case .settings(let command):
++      // A setting can lay out every display.
++      let looked = lookAtTheDisplaysBeforeActing()
++      defer { if looked { layOutForTheDisplays() } }
+       return performSettings(command)
+     case .trace(let action):
+       return trace(action)
+@@ -85,6 +88,8 @@ extension Controller {
+     }
+ 
+     guard isRunning else { return .failure(statusText) }
++    let looked = lookAtTheDisplaysBeforeActing()
++    defer { if looked { layOutForTheDisplays() } }
+     expectFocusToMove()
+ 
+     let namesBefore = everyName()
+diff --git a/Sources/ArborKit/Controller/Controller+Displays.swift b/Sources/ArborKit/Controller/Controller+Displays.swift
+index 3547c18..60afb20 100644
+--- a/Sources/ArborKit/Controller/Controller+Displays.swift
++++ b/Sources/ArborKit/Controller/Controller+Displays.swift
+@@ -19,10 +19,11 @@ extension Controller {
+   ///
+   /// With `lettingGo` only the books are brought up to date and nothing is moved, raised or focused: for `shutdown`, which
+   /// moves every window itself, once (`lookAtTheDisplaysBeforeLettingGo`).
+-  func updateDisplays(lettingGo: Bool = false) {
++  func updateDisplays(lettingGo: Bool = false, layingOutLater: Bool = false) {
+     // If windows were moved behind Arbor's back, here is the report after all. What follows looks after every window.
+     movedBehindArborsBack = []
+     scheduler.cancel("displays-blinked")
++    scheduler.cancel(Self.lookingAgain)
+     overlays.finishAnimations()
+     let previous = Set(workspaces.keys)
+     let before = displays
+@@ -71,6 +72,10 @@ extension Controller {
+     if !added.isEmpty || !removed.isEmpty, let focused = system.focusedWindow(), !arrivingInView.contains(focused) {
+       bringIntoViewIfFocused(focused)
+     }
++    if !layingOutLater { layOutForTheDisplays() }
++  }
++
++  func layOutForTheDisplays() {
+     relayoutAll(reason: .camera, motion: .instant)
+     parkAgain()
+     scheduleSave()
+@@ -188,6 +193,41 @@ extension Controller {
+     updateDisplays(lettingGo: true)
+   }
+ 
++  /// Look before acting. The wait that keeps Arbor from chasing a display that only blinks (`DisplayChange`) is for what
++  /// Arbor does by itself. A person who asks for something within it is looking at the displays that are: a command carried
++  /// out by the ones Arbor still believes in sent windows to slots and corners on a display that was gone, and fetched them
++  /// again when the report came; with nothing docked at all, `home` took a window macOS had just brought over out of view
++  /// and back; and the key acted on the arrangement that was about to go to sleep. So the wait ends there: Arbor does now
++  /// what it would do at the report, the whole of it, and then what was asked, which ends as if it had been asked afterwards.
++  ///
++  /// The whole of it, unlike `lookAtTheDisplaysBeforeLettingGo`: books alone are for an Arbor that stops. One that goes on
++  /// would count windows in plain view as out of view, and leave the arrangement of a display that came asleep for good.
++  ///
++  /// Not while there is no display at all: there is nothing to go by. What apps and macOS report meanwhile ends no wait.
++  func lookAtTheDisplaysBeforeActing() -> Bool {
++    guard isRunning, !knowsTheDisplays, !system.displays().isEmpty else { return false }
++    Log.info("a command before a change of displays was reported: looking at the displays first")
++    updateDisplays(layingOutLater: true)
++    lookAgain(triesLeft: Self.blinkTries)
++    return true
++  }
++
++  private static let lookingAgain = "displays-blinked-after-a-look"
++
++  /// Whoever reports the displays says nothing if they are by then as it last reported them: that was a blink. But Arbor has
++  /// looked in the midst of it, and would go on believing in what it saw. Until the report comes, which ends this, it asks.
++  private func lookAgain(triesLeft: Int) {
++    scheduler.schedule(Self.lookingAgain, after: DisplayChange.comingAndGoing + 0.5) { [weak self] in
++      guard let self, self.isRunning else { return }
++      if !self.knowsTheDisplays, !self.system.displays().isEmpty {
++        Log.info("the displays are not the ones Arbor looked at, and nobody said so: looking again")
++        self.updateDisplays()
++      } else if triesLeft > 1 {
++        self.lookAgain(triesLeft: triesLeft - 1)
++      }
++    }
++  }
++
+   /// macOS moved `window` because a display came or went that Arbor has not heard of yet. If the report comes,
+   /// `updateDisplays` puts every window where it belongs. If the display only blinked, on wake or while a dock
+   /// negotiates, there never is a report (`DisplayChange`), and nobody else would: the move was not the user's, so nothing

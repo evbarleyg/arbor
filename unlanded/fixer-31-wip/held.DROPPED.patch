@@ -1,0 +1,107 @@
+diff --git a/Sources/ArborKit/Controller/Controller+Commands.swift b/Sources/ArborKit/Controller/Controller+Commands.swift
+index 9f5cbef4..225c23c7 100644
+--- a/Sources/ArborKit/Controller/Controller+Commands.swift
++++ b/Sources/ArborKit/Controller/Controller+Commands.swift
+@@ -85,6 +85,7 @@ extension Controller {
+     }
+ 
+     guard isRunning else { return .failure(statusText) }
++    if let answer = waitForTheDisplays(with: command) { return answer }
+     expectFocusToMove()
+ 
+     let namesBefore = everyName()
+diff --git a/Sources/ArborKit/Controller/Controller+Displays.swift b/Sources/ArborKit/Controller/Controller+Displays.swift
+index 3547c188..d9497b75 100644
+--- a/Sources/ArborKit/Controller/Controller+Displays.swift
++++ b/Sources/ArborKit/Controller/Controller+Displays.swift
+@@ -188,6 +188,59 @@ extension Controller {
+     updateDisplays(lettingGo: true)
+   }
+ 
++  // MARK: A command given meanwhile
++
++  struct WaitingForTheDisplays {
++    /// In the order they were given, each with where it came from.
++    var commands: [(command: Command, source: CommandSource)] = []
++    /// They are being carried out: nothing is held now, whatever the displays.
++    var isOver = false
++  }
++
++  /// How long a command waits at most. Arbor has heard 1.5 to 2.4 s after macOS's first notice wherever that was recorded.
++  static let longestWaitForTheDisplays = 3.0
++
++  /// Whether a command given now has to wait: macOS has other displays than Arbor was told of, or others wait already.
++  var commandsWaitForTheDisplays: Bool {
++    isRunning && !waitingForTheDisplays.isOver && (!waitingForTheDisplays.commands.isEmpty || !knowsTheDisplays)
++  }
++
++  /// A command waits for the displays. Whoever asks for something before Arbor has heard of a change (`DisplayChange`) is looking at
++  /// the displays that are, and was answered by the ones Arbor still believed in: windows went to slots and corners on a
++  /// display that was gone and were fetched again at the report, and the key acted on an arrangement about to go to sleep.
++  ///
++  /// Arbor does not look for itself and go on. That wait is there for a display that only blinks, on wake and while a dock
++  /// negotiates, and a look in the midst of a blink makes an unplugging and a plugging in of it, whose traces stay: Float All
++  /// was answered with "nothing is docked" and undone when the display was back. Nor can it tell: whoever reports the displays says
++  /// nothing after a blink, and reads every window's frame anew only before it speaks. So what Arbor believes changes at a report
++  /// and nowhere else, and the command is carried out as soon as the displays are the ones Arbor knows: it has heard, or they are as
++  /// they were. It ends as if it had been asked then. As a put-back waits (`scheduleEnforce`).
++  ///
++  /// Not for ever: after `longestWaitForTheDisplays` it is carried out as before, so that Arbor's keys are never dead. Quit and a
++  /// pause do not wait (`lookAtTheDisplaysBeforeLettingGo`), nor does a question. Returns the answer if `command` waits.
++  func waitForTheDisplays(with command: Command) -> CommandResult? {
++    guard commandsWaitForTheDisplays else { return nil }
++    waitingForTheDisplays.commands.append((command, following.source))
++    Log.info("\(command.verb) waits: macOS has other displays than Arbor was told of")
++    if waitingForTheDisplays.commands.count == 1 { askWhetherTheDisplaysAreKnown() }
++    return .success("waiting for the displays to settle")
++  }
++
++  private func askWhetherTheDisplaysAreKnown(havingWaited turns: Int = 1) {
++    scheduler.schedule("displays-blinked-and-commands-wait", after: 0.25) { [weak self] in
++      guard let self else { return }
++      // A pause or a quit meanwhile: what was asked of an Arbor that arranged windows is not owed by one that does not.
++      guard self.isRunning else { return self.waitingForTheDisplays.commands = [] }
++      guard self.knowsTheDisplays || Double(turns) * 0.25 >= Self.longestWaitForTheDisplays else {
++        return self.askWhetherTheDisplaysAreKnown(havingWaited: turns + 1)
++      }
++      let waiting = self.waitingForTheDisplays.commands
++      self.waitingForTheDisplays = WaitingForTheDisplays(isOver: true)
++      defer { self.waitingForTheDisplays.isOver = false }
++      for (command, source) in waiting { self.perform(command, from: source) }
++    }
++  }
++
+   /// macOS moved `window` because a display came or went that Arbor has not heard of yet. If the report comes,
+   /// `updateDisplays` puts every window where it belongs. If the display only blinked, on wake or while a dock
+   /// negotiates, there never is a report (`DisplayChange`), and nobody else would: the move was not the user's, so nothing
+diff --git a/Sources/ArborKit/Controller/Controller+Peek.swift b/Sources/ArborKit/Controller/Controller+Peek.swift
+index 9f7b631e..0ba4c2b1 100644
+--- a/Sources/ArborKit/Controller/Controller+Peek.swift
++++ b/Sources/ArborKit/Controller/Controller+Peek.swift
+@@ -78,11 +78,11 @@ extension Controller {
+ 
+   /// Shows everything, as the command does, and waits to see whether the key stays down. False leaves the
+   /// key to the plain command: peeking is off, Arbor is not running, the mouse is busy with a window, or the view
+-  /// is held, and the command says so.
++  /// is held, and the command says so; or the displays are changing, and the command waits (`waitForTheDisplays`).
+   private func beginPeek(holding chord: KeyChord) -> Bool {
+     // As before a command: a peek must not pretend either (Controller+Permission.swift).
+     askAboutAccessibility(beyondDoubt: true, inPassing: true)
+-    guard settings.peek, isRunning, holdLevel != .view, drag == nil, edgeResize == nil,
++    guard settings.peek, isRunning, holdLevel != .view, drag == nil, edgeResize == nil, !commandsWaitForTheDisplays,
+       let (display, workspace) = deciding(true, { from(.shortcut) { cameraDisplay() } })
+     else { return false }
+     watchLifecycleForPeek()
+diff --git a/Sources/ArborKit/Controller/Controller.swift b/Sources/ArborKit/Controller/Controller.swift
+index 64aef47a..f00c79d0 100644
+--- a/Sources/ArborKit/Controller/Controller.swift
++++ b/Sources/ArborKit/Controller/Controller.swift
+@@ -143,6 +143,8 @@ public final class Controller {
+   var lastMainDisplay: DisplaySnapshot?
+   /// Windows macOS moved while it had other displays than Arbor was told of (Controller+Displays.swift).
+   var movedBehindArborsBack: Set<WindowID> = []
++  /// Commands given meanwhile (Controller+Displays.swift).
++  var waitingForTheDisplays = WaitingForTheDisplays()
+   public internal(set) var windows: [WindowID: WindowSnapshot] = [:] {
+     didSet { desktopGuardZonesMayHaveChanged() }
+   }

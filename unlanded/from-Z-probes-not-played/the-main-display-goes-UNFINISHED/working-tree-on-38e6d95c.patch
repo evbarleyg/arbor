@@ -1,0 +1,1685 @@
+diff --git a/scripts/mac-shell/probe-the-main-display-goes-control.sh b/scripts/mac-shell/probe-the-main-display-goes-control.sh
+new file mode 100755
+index 00000000..807d660a
+--- /dev/null
++++ b/scripts/mac-shell/probe-the-main-display-goes-control.sh
+@@ -0,0 +1,26 @@
++#!/bin/bash
++# The main display goes, and comes back, with NO ARBOR: the control of probe-the-main-display-goes.sh, whose header has the question, the rule written before the answer, the windows, the
++# rounds and how to read the output. What macOS and the apps do by themselves: the same windows at the same places, the same changes, the same lines.
++#
++#   scripts/mac-shell/run.sh --no-preflight "<why>" scripts/mac-shell/probe-the-main-display-goes.sh scripts/mac-shell/probe-the-main-display-goes-control.sh
++#
++# By itself or in one dispatch with the other, in either order: it builds the tools it needs (no Arbor) and leaves the Mac as it found it.
++# Why no pre-flight: the fake Mac has no stand-in for vdisplay, apptool or the sampler, so a rehearsal ends with exit code 2 before the first step.
++#
++# THE TIME, reckoned as in the other's header: the tools' build (36 s in an earlier control), the Mac, five windows and A's first coming (40 s); R1, 16 s; R3 five times, 130 to 165 s; R2,
++# 16 s; the end, 15 s. FOUR AND A QUARTER TO FIVE MINUTES. No round begins after 500 s (JOURNEY_BUDGET); lib.sh ends the script at 1,020 s.
++#
++# WHAT DIFFERS. R1 once, R3 FIVE times, R2 once. The steps are m-<round>-…. There is no trace: `told` is `no Arbor` in every `word` line, there is no `word-trace`, and macOS's own
++# first word about its screens is in screens.log alone (N, R): if screens.swift does not compile, which the script says with a `!!!`, this script has no notice at all, `notice` is
++# `unknown`, and the list is new when a loop around `vdisplay list` sees it, some twenty times a second.
++# That no Arbor runs: `pgrep -x Arbor` at the step `arbor` (the script ends there if one does), before the part, after it, and after the last step; the script builds and starts none.
++#
++# Only on GitHub's Macs: it plugs a display in and out, changes which display is the main one, switches the display's size, changes Reduce Motion and puts it back, hides apps, opens
++# and quits four apps.
++JOURNEY_ARBOR=no
++JOURNEY_PARTS=G
++JOURNEY_REST=${JOURNEY_REST:-2}
++JOURNEY_BUDGET=${JOURNEY_BUDGET:-500}
++# As finely as the sampler goes.
++DAY_HZ=${DAY_HZ:-240}
++source "$(dirname "${BASH_SOURCE[0]}")/probe-went-and-came-back-journey.sh"
+diff --git a/scripts/mac-shell/probe-the-main-display-goes.sh b/scripts/mac-shell/probe-the-main-display-goes.sh
+new file mode 100755
+index 00000000..f8c32821
+--- /dev/null
++++ b/scripts/mac-shell/probe-the-main-display-goes.sh
+@@ -0,0 +1,90 @@
++#!/bin/bash
++# The main display goes, and comes back, WITH ARBOR. The display at 0 0 is the main one, and every other display's numbers, and every window's, are counted from its corner. No
++# recording so far has a change of the main display in it: every display that came or went was another one. THE QUESTION: when the main display goes, and when it comes back, does a
++# window's own word of its move come before the news of the displays, by how many milliseconds, and in which list's numbers is the frame it reports? For each window and each change.
++# Part G of probe-went-and-came-back-journey.sh; probe-the-main-display-goes-control.sh plays it without Arbor.
++#
++# IT DECIDES SOMETHING, BY A RULE WRITTEN BEFORE ITS ANSWER. The product owner's words, before the run:
++#   "(a) at a change in which the MAIN display goes or comes, a window's word of a move arrives while macOS's own list of displays is STILL THE OLD ONE (before macOS's first word
++#   about its screens and before its list is new) AND THE FRAME IT REPORTS IS IN THE NEW LIST's NUMBERS: once or more in ten rounds. (b) never in ten rounds; early words that are all
++#   in the OLD list's numbers are (b) too, and what was seen is said. (c) a hosted Mac cannot stage it: as (b), 'never staged'."
++#   What follows from each: (a) a board row goes into the sentence that decides the next cut; (b) it stays wanted and holds nothing; (c) as (b), and the row says "never staged".
++#   Why the second half of (a): a word in the old list's numbers under the old list is true and harms nobody; a frame in the new numbers, read under the old list, is a false place.
++# The script itself judges nothing: it stages, writes down, and puts the times side by side.
++#
++#   scripts/mac-shell/run.sh --no-preflight "<why>" scripts/mac-shell/probe-the-main-display-goes.sh scripts/mac-shell/probe-the-main-display-goes-control.sh
++#
++# Either by itself or both in one dispatch, in either order: each builds what it needs and leaves the Mac as it found it, however it ends: once A is unplugged the Mac's own display is
++# the main one again, because it is the only one.
++# Why no pre-flight: the fake Mac has no stand-in for vdisplay, apptool or the sampler, so a rehearsal ends with exit code 2 before the first step.
++#
++# THE TIME, reckoned from a dry run against stand-ins about as slow as the tools, and from what the build, the apps and Arbor's start took in earlier playings: a change costs 6 to 7 s (four
++# of waiting: Arbor is told up to 2.7 s after macOS's first word; the rest is lines), a put 3 to 4 s. R1: 16 s. R3: 26 s, or 33 s if A comes back as the main display and H has to be
++# made it again: ten times, 260 to 330 s. R2: 16 s. Before them the build (15 to 40 s), the Mac, six windows, Arbor's start and A's first coming (55 s); after them 20 s.
++# SIX AND A QUARTER TO EIGHT MINUTES; with the control, ten and a half to thirteen. No round begins after 800 s (JOURNEY_BUDGET), and R2 comes last; lib.sh ends the script at 1,020 s.
++#
++# WHAT IT PLAYS. H is the Mac's own display, 1600×900 if it offers that (`H, the Mac's own display …` says what it is); A a virtual one, 1920×1080, at its right. Arbor runs as a person
++# runs it, all but its welcome window: its trace on, nothing docked, the settings it ships with.
++#   TEXT (TextEdit), LIVES (Notes)          wholly on A, the display that goes
++#   WIDE (TextEdit, a second document)      wholly on A and 1,700 points wide: wider than H
++#   STRADDLES (Terminal)                    across the edge between H and A, a little more than half of it on A
++#   DESK (Script Editor)                    wholly on H, the display that stays
++#   LITTLE (TextEdit, a third document)     800×600, left with little of it showing and its title bar within reach: it hangs over H's bottom edge at the border, 36 rows of it on H, 40
++#                                           columns on A, which reaches 180 points lower than H, the rest on no display: some 7 % shows. If macOS does not have it there: `!!!`, and on
++# Four real apps. No Java app: it would cost eight seconds and a seventh of every look. Before every round each window is put at its place through Accessibility, with its size, and seen
++# there by the window server (`put`, `placed`). No two have one size, and the two lists' numbers differ by H's width: no frame can be read as both.
++#   R1, once      the control, what the changes on record are: A is NOT the main display. It goes (-goes: it is unplugged) and comes (-comes: it is plugged in again)
++#   R3, TEN TIMES the question: A is made the main display (-A-main), the windows are put again, A GOES, and COMES, and is left where it comes (`came-back`: as the main display?)
++#   R2, once      the numbers change and nothing goes: A is made the main display (-A-main); then H again (-H-main)
++# `staged: yes (<round>: …)` or `staged: no: <the tools' words> (<round>)`, ONCE IN EVERY ROUND of R3 and R2: whether A was the main display, by `vdisplay list`, just before it was
++# unplugged. Outcome (c) is ten times `staged: no`. A display is made the main one by `screens main <id>`, which moves every display by the same distance in one configuration, so that
++# the arrangement stays and is counted from another corner, as after the menu bar has been dragged to another display in System Settings; failing that, or with
++# JOURNEY_MAIN_BY=move, by `vdisplay move <id> 0 0`, which leaves it to macOS where the other display goes. NOBODY HAS TRIED EITHER ON A HOSTED MAC. If both are refused twice they are
++# not tried again; R1 is played, and the script ends with exit code 0.
++#
++# THE NEWS OF THE DISPLAYS HAS THREE MEANINGS, and a window's word three witnesses, all on one clock:
++#   (i)   macOS's own first word about its screens      screens.log: N (didChangeScreenParameters), R (the display reconfiguration callback). The trace: the raw line didChangeScreenParameters
++#   (ii)  the moment macOS's list of displays is new    screens.log: C (CoreGraphics' list), X (AppKit's), asked for every 4 ms. The trace: its `screens` line, and its reads of the displays.
++#                                                       samples.log: D, V, Y, four times a second
++#   (iii) the moment Arbor is told                      the trace: the event `displaysChanged`
++#   a window's word       screens.log: H, with both lists AS THE SAME PROCESS READ THEM WHEN THE WORD ARRIVED. macos-reports.log: AXMoved, AXResized. The trace: the event `changed`, and the
++#                         read of the displays that follows it
++# apptool watch, which writes macos-reports.log, hears neither NSApplicationDidChangeScreenParameters nor CGDisplayReconfiguration, and it has no NSApplication to hear the first with:
++# that is more than a few lines in a tool every script needs. Hence screens.swift, new with this probe, which hears the notices, the lists and the windows in ONE process on one thread,
++# as Arbor does. NO MAC HAS COMPILED IT YET. If it does not compile the script says so (`!!!`) and goes on: screens.log then has C lines alone, from a loop around `vdisplay list`,
++# some twenty times a second, and (i) can be read from the trace only.
++#
++# HOW TO READ IT. Every line of the output is explained at part G in the journey, the last ones in words-before-the-news.py. The steps are a-<round>-<put|A-main|put-again|goes|comes|H-main>.
++#   ONE CLOCK, the Mac's own, to the millisecond: samples.log and screens.log count it in milliseconds since 1970, macos-reports.log and Arbor's log write it as UTC. A trace counts
++#   seconds from its own beginning: `trace-zero <trace> between <ms> and <ms>` says when that was. THE MARKER of a change is the moment the command that makes it was given:
++#   `changed <step> at <ms>` in the output, `M change <step>` in samples.log (after `M begin <n> display-<step>`), `SCRIPT == <n> display-<step>` a second earlier in macos-reports.log.
++#   - `word <round> <goes|comes|A-main|H-main> <NAME> <id> first-word <ms|none> list-new <ms|unknown> notice <ms|unknown> told <ms|no> | frame <x y w h> numbers <…> list-at-word <old|new|unknown>`,
++#     at the very end, for every window and change, in milliseconds after the marker: by screens.log. `word-reports`: the word by macos-reports.log. `word-trace`: all four by the trace.
++#     `early …`: EVERY word that came before the notice or under the old list. `tally …`: the counts, the wider readings among them (before Arbor was told; before the list was new, in
++#     whichever numbers). They are made from the logs by words-before-the-news.py, which can be run again on the folder that came back: check it against the logs before believing it.
++#   - IN WHICH LIST's NUMBERS? `expects <round> <change> <NAME> <id> old <x y w h> on <display> same-glass-in-new <x y w h>`, before each change: the frame now, and that same place on the
++#     glass in the new list's numbers. `arrangement <step> … | shift <dx> <dy>` and the whole `vdisplay list`, after it: the offset that really applied. A window that macOS also moves
++#     on the glass fits neither: `main <step> <NAME> … | accessibility … | server … is … | shown … on …`, 0.5 and 3.5 s after the marker, has where it rests, in the new numbers;
++#     `numbers resting-new` and `resting-old` in the `word` lines are that place in either list's numbers.
++#   - Where is LITTLE after the main display went, and after it came back? `little <round> LITTLE <id> before <x y w h> after-it-went <x y w h> after-it-came-back <x y w h> same-as-before
++#     <yes|no> | before, in the numbers of the list now: <x y w h>`, after -comes in R1 and R3; each frame in the numbers of the list in force at that moment. The control's are macOS alone.
++#   - What does Arbor do? `arbor-set <step> <NAME> <id> <before|after>-told … asked … took …`; `told`, `heard`, `reported` beside it; `arbor <step> | …`, its own account. The traces come
++#     back whole: traces/*-went-and-came-back-G1.jsonl, -G2, …
++#   - samples.log has the window server's frames (W lines) as often as the sampler manages of the 240 times a second it is asked for: its last line says how often that was.
++#   A line that begins `!!!` spoils the reading, `SKIPPED:` names what was not played, `rounds played to the end: …` sums it up.
++#
++# WHAT IT CANNOT TELL. Whether the main display COMES is macOS's choice, not the script's: A is plugged in and left where it comes, and `came-back` says whether it came as the main
++# display; if it never does, only its going is staged, and -A-main is the one change in which the numbers turn the other way. A is virtual, and a hosted Mac's own display is no monitor either: no cable, lid, dock or sleep, and nobody drags the menu bar in System Settings. Each witness says
++# when a word reached THAT process: screens.log's is not an app with windows and not Arbor, and three processes listening may be served in another order than one. The frame in an H line
++# and in macos-reports.log is Accessibility's answer a moment after the word, not something the word carries. Six windows of four apps, ten rounds, one playing on one Mac.
++#
++# Only on GitHub's Macs: it plugs a display in and out, changes which display is the main one, switches the display's size, changes Reduce Motion and puts it back, hides apps, opens
++# and quits four apps.
++JOURNEY_ARBOR=yes
++ARBOR_RECORD=1
++JOURNEY_PARTS=G
++JOURNEY_REST=${JOURNEY_REST:-2}
++JOURNEY_BUDGET=${JOURNEY_BUDGET:-800}
++# As finely as the sampler goes.
++DAY_HZ=${DAY_HZ:-240}
++source "$(dirname "${BASH_SOURCE[0]}")/probe-went-and-came-back-journey.sh"
+diff --git a/scripts/mac-shell/probe-went-and-came-back-journey.sh b/scripts/mac-shell/probe-went-and-came-back-journey.sh
+index 9845cb0a..88e1bd90 100644
+--- a/scripts/mac-shell/probe-went-and-came-back-journey.sh
++++ b/scripts/mac-shell/probe-went-and-came-back-journey.sh
+@@ -1,10 +1,11 @@
+ # The journey of probe-went-and-came-back.sh and of its control, second playing: a display goes and comes back, with four windows that live on it and two
+ # that lie across its edge. Read in by those two, which say whether Arbor runs (JOURNEY_ARBOR=yes|no) and differ in nothing else but the places. Do not run it.
+-# And by probe-went-and-came-back-unseen.sh, probe-the-top-corners.sh and probe-a-display-made-narrower.sh, each of which plays one part of it alone. JOURNEY_PARTS names the parts to play: S F M L D H P1 if nothing is said, which is
++# And by probe-went-and-came-back-unseen.sh, probe-the-top-corners.sh, probe-a-display-made-narrower.sh, probe-the-main-display-goes.sh and its control, each of which plays one part of it alone. JOURNEY_PARTS names the parts to play: S F M L D H P1 if nothing is said, which is
+ # what the two play. U (with Arbor) and T (without) are played only where they are named, after P1; N only where it is named, before Arbor is started. A part that is not named is left out without a word but for the line
+ # `parts: …`; the build, the Mac, `stays`, the windows, `arbor`, `quit`, `end` and the clean-up are always played, s0 to s2 and z1 for any of S F M L D H, s2c for S and
+ # F; STRADDLES and CARRIED are opened for all but U, T and N. D asks what it asks only straight after a return: name it with L. T alone (probe-the-top-corners.sh) has
+-# no `stays` and opens LIVES, TEXT and JAVA only; N alone (probe-a-display-made-narrower.sh) has none either, and opens LIVES and TEXT.
++# no `stays` and opens LIVES, TEXT and JAVA only; N alone (probe-a-display-made-narrower.sh) has none either, and opens LIVES and TEXT. G (probe-the-main-display-goes.sh, and its control without Arbor) is played by
++# itself or not at all; it has no `stays`, and opens LIVES, TEXT, STRADDLES, WIDE, LITTLE and DESK.
+ #
+ # Nothing here is a verdict. The script ends itself (`die`, exit code 2) only where going on would measure nothing: a tool that did not compile, a display
+ # that did not come, no sampler, fewer than two windows, no window on A, with Arbor no trace at the start. What else goes wrong is said (`!!!`, `SKIPPED:`) and
+@@ -19,6 +20,7 @@
+ #   CARRIED     TextEdit, a second document   across the same edge, most of it on the MAIN display, carried there by the real pointer and dropped (s2c). Neither a
+ #                                          clamp wholly onto A nor one wholly onto the main display gives the x it is dropped at, nor STRADDLES' x
+ #   DESK        Script Editor, a script    wholly on the main display throughout: a bystander, and what Arbor docks and frames at d1 and P1c. (Or Activity Monitor)
++#   WIDE        TextEdit, a second document   in G alone: wholly on A and wider than the Mac's own display, which is called H there, because it is not always the main one
+ #   stays       a virtual display, 1280×720, serial 9, left of the main one, from before anything is measured until the end: on a hosted Mac the
+ #               FIRST virtual display may also change the main display's size, and that change is to be over and done with
+ #   A           1920×1080, serial 1, right of the main one
+@@ -34,6 +36,7 @@
+ #   stays  the display that stays is plugged in         open-<NAME>  the windows are opened; every other app with a window is hidden
+ #   arbor  Arbor is started (the control: `pgrep -x Arbor` finds none)
+ #  N, with no Arbor running and only where JOURNEY_PARTS names it: a display made narrower. n0 to n17: see part_N
++#  G, by itself, after `arbor`: the main display changes, and goes. a-… with Arbor, m-… without: see part_G, which has its lines too
+ #  S, the first playing's steps with more windows
+ #   s0   every window is put wholly on the main display      s1   plug A
+ #   s2   LIVES, TEXT, JAVA and PICTURE are put wholly on A, STRADDLES across the edge, through Accessibility
+@@ -86,8 +89,9 @@
+ #   samples.log         the window server's list sixty times a second (sampler.swift), from before `stays` until after `end`, with lib-day.sh's marks:
+ #                       `M begin <n> <name>`, `M text <n> …`, `M end <n> …`, `M label <id> <NAME>`. A change of displays is called `display-<step>-…`
+ #   macos-reports.log   what Accessibility reported of the apps' windows, to the millisecond (apptool watch), with the steps as `SCRIPT ==` lines
+-#   traces/*.jsonl      with Arbor: went-and-came-back-S, -F, -M, -L, -D, -H, -P1, one for each part, -U1, -U2, -U3 for U, every step as a remark (docs/TRACES.md)
++#   traces/*.jsonl      with Arbor: went-and-came-back-S, -F, -M, -L, -D, -H, -P1, one for each part, -G1, -G2, … for G, -U1, -U2, -U3 for U, every step as a remark (docs/TRACES.md)
+ #   arbor-<script>.log  with Arbor: its log at debug level. After U also arbor-<script>-2.log and -3.log, one for each start, each with all that came before it
++#   screens.log         in G: macOS's own notices of its screens, and when its lists of displays were new (screens.swift), and the windows' words as the same process heard them, on the clock of samples.log. changes.txt, trace-clock.txt: see part_G
+ # A reader of the `Y` lines has to keep every display, by its id: `stays` is one of them.
+ case "${JOURNEY_ARBOR:-}" in
+   yes | no) ;;
+@@ -98,12 +102,13 @@ esac
+ JOURNEY_BUDGET=${JOURNEY_BUDGET:-900}
+ JOURNEY_REST=${JOURNEY_REST:-4}
+ JOURNEY_LONG=${JOURNEY_LONG:-30}
+-# Which parts are played, whatever the order they are named in: always in the order N S F M L D H P1 U T.
++# Which parts are played, whatever the order they are named in: always in the order N S F M L D H P1 U T. G is played by itself.
+ JOURNEY_PARTS=${JOURNEY_PARTS:-S F M L D H P1}
+ for part in $JOURNEY_PARTS; do
+   case "$part" in
+     N | S | F | M | L | D | H | P1 | U | T) ;;
+-    *) echo "JOURNEY_PARTS: no part is called $part (N S F M L D H P1 U T)" >&2; exit 64 ;;
++    G) [ "$JOURNEY_PARTS" = G ] || { echo "JOURNEY_PARTS: G is played by itself" >&2; exit 64; } ;;
++    *) echo "JOURNEY_PARTS: no part is called $part (N S F M L D H P1 U T, or G by itself)" >&2; exit 64 ;;
+   esac
+ done
+ # Under the 1,200 s of scripts/ci-mac-shell.sh, so that a journey that hangs is ended by lib.sh's supervisor, which cleans up and lets the logs come back.
+@@ -115,8 +120,8 @@ rm -f "$ARBOR_OUT/run.json"
+ 
+ # The windows that opened, by name. W_<NAME> is a window's id, P_<NAME> its process.
+ CAST=""
+-W_LIVES="" W_TEXT="" W_JAVA="" W_PICTURE="" W_STRADDLES="" W_CARRIED="" W_DESK="" W_TEST=""
+-P_LIVES="" P_TEXT="" P_JAVA="" P_PICTURE="" P_STRADDLES="" P_CARRIED="" P_DESK="" P_TEST=""
++W_LIVES="" W_TEXT="" W_JAVA="" W_PICTURE="" W_STRADDLES="" W_CARRIED="" W_DESK="" W_TEST="" W_WIDE="" W_LITTLE=""
++P_LIVES="" P_TEXT="" P_JAVA="" P_PICTURE="" P_STRADDLES="" P_CARRIED="" P_DESK="" P_TEST="" P_WIDE="" P_LITTLE=""
+ # Those that are meant to lie wholly on A, and those of them that were seen to when they were last put there.
+ FOR_A="LIVES TEXT JAVA PICTURE"
+ ON_A=""
+@@ -134,6 +139,11 @@ HIDDEN=""
+ MOTION_WAS=""
+ # The size the main display was found in, where part N is played: w h
+ SIZE_FOUND=""
++# In part G: the id of the Mac's own display, which is not always the main one there; the tool screens, if it compiled; what writes screens.log.
++H_ID=""
++SCREENS=""
++SCREENS_PID=""
++SCREENS_HEARS=""
+ 
+ with_arbor() { [ "$JOURNEY_ARBOR" = yes ]; }
+ in_cast() { case " $CAST " in *" $1 "*) return 0 ;; esac; return 1; }
+@@ -154,6 +164,8 @@ in_time() {
+ }
+ clock() { echo "clock: $* ${SECONDS}s after the script began, at $(date -u +%H:%M:%SZ)"; }
+ loud() { echo "!!! $*"; }
++# Milliseconds since 1970, as samples.log counts.
++now_ms() { perl -MTime::HiRes=time -e 'printf "%d", time * 1000'; }
+ # no_arbor <step>: says whether an Arbor runs, loudly if one does
+ no_arbor() {
+   local found
+@@ -191,6 +203,11 @@ record() {
+   arborctl trace status 2>/dev/null | grep -q "^recording "
+ }
+ 
++# alike <a> <b>: yes if both are one frame, to the point
++alike() { if [ -n "$1" ] && [ "$1" = "$2" ]; then echo yes; else echo no; fi; }
++# trace_of <name>: the newest trace of that name in Arbor's home
++trace_of() { ls "$ARBOR_HOME"/traces/*-"$1".jsonl 2>/dev/null | tail -n 1; }
++
+ # part <letter> "<title>": a heading, and with Arbor a trace of its own: a trace ends by itself after ten minutes, and a part is what is read together.
+ part() {
+   step "$1. $2"
+@@ -241,7 +258,7 @@ await_count() {
+ }
+ 
+ # plug <name> [side]: right, left, under (flush with the main display's left edge), under-and-wider (centred under it), left-of-stays, left-and-lower (500 points
+-# down), right-and-higher (700 points up), above (flush with the left edge)
++# down), right-and-higher (700 points up), above (flush with the left edge), as-it-comes (it is left where macOS puts it)
+ plug() {
+   local name=$1 width="" height="" serial="" side="" file pid hello="" tries=0 id x y main at
+   read -r width height serial side <<< "$(display_facts "$name")"
+@@ -279,11 +296,15 @@ plug() {
+     left-and-lower) x=-$width y=500 ;;
+     right-and-higher) x=${main% *} y=-700 ;;
+     above) x=0 y=-$height ;;
++    as-it-comes) x="" y="" ;;
+     *) die "plug: no side is called $side" ;;
+   esac
+   eval "DISPLAY_PID_$name=\$pid DISPLAY_ID_$name=\$id DISPLAY_AT_$name=\"\$x \$y \$width \$height\""
+   at=$("$ARBOR_VDISPLAY" list | awk -v id="$id" '$1 == id { print $3, $4 }')
+-  if [ "$at" = "$x $y" ]; then
++  if [ "$side" = as-it-comes ]; then
++    eval "DISPLAY_AT_$name=\"\$at \$width \$height\""
++    echo "> plug $name: display $id, serial $serial, $width x $height: it came at $at and is left there"
++  elif [ "$at" = "$x $y" ]; then
+     echo "> plug $name: display $id, serial $serial, $width x $height: it came at $at, where it belongs, and is not moved"
+   else
+     echo "> plug $name: display $id, serial $serial, $width x $height: it came at $at and is moved to $x $y: now at $("$ARBOR_VDISPLAY" move "$id" "$x" "$y" 2>&1)"
+@@ -305,14 +326,16 @@ unplug() {
+ 
+ # MARK: What is written down after every step
+ 
+-# lies "<x y w h>" "<what vdisplay list printed>": <0…1> <display>: how much of the rectangle lies on the display that has most of it, and which that is
++# lies "<x y w h>" "<what vdisplay list printed>": <0…1> <display>: how much of the rectangle lies on the display that has most of it, and which that is.
++# In part G, where now one display is the main one and now the other, each goes by its name (H, A) and none is called `main`.
+ lies() {
+   local each id names=""
+   for each in $PLUGGED; do
+     eval "id=\$DISPLAY_ID_$each"
+     names="$names $id=$each"
+   done
+-  echo "$2" | awk -v frame="$1" -v names="$names" '
++  [ -z "$H_ID" ] || names="$names $H_ID=H"
++  echo "$2" | awk -v frame="$1" -v names="$names" -v named="$H_ID" '
+     BEGIN {
+       split(frame, f, " ")
+       count = split(names, pair, " ")
+@@ -325,7 +348,7 @@ lies() {
+       down = (f[2] + f[4] < $4 + $6 ? f[2] + f[4] : $4 + $6) - (f[2] > $4 ? f[2] : $4)
+       if (across > 0 && down > 0 && f[3] * f[4] > 0 && across * down / (f[3] * f[4]) > best) {
+         best = across * down / (f[3] * f[4])
+-        where = ($8 == "main" ? "main" : (($1 in name) ? name[$1] : $1))
++        where = ($8 == "main" && named == "" ? "main" : (($1 in name) ? name[$1] : $1))
+       }
+     }
+     END { printf "%.2f %s\n", best, where }'
+@@ -571,6 +594,45 @@ put_on_A() {
+   [ $# -ge 3 ] || loud "$step: FEWER THAN THREE WINDOWS LIE WHOLLY ON A ($#): if one of them speaks early, little is left for Arbor to remember"
+ }
+ 
++# MARK: macOS's own word about its displays, for part G
++
++# What stands in for `screens watch` where it did not compile: C lines alone, some twenty times a second, each stamped after the list was read.
++poll_displays() {
++  local last="" now
++  while :; do
++    now=$("$ARBOR_VDISPLAY" list | awk '{ printf "%s%s %s %s %s %s %s %s", (NR > 1 ? " ; " : ""), $1, $3, $4, $5, $6, $8, $11 }')
++    if [ "$now" != "$last" ]; then
++      echo "$(now_ms) C $now"
++      last=$now
++    fi
++    sleep 0.02
++  done
++}
++# screens_start [loop]
++screens_start() {
++  local tiers="" by="a loop around vdisplay list"
++  if [ -n "$SCREENS" ] && [ -z "${1:-}" ]; then
++    by="screens watch"
++    # The tightest tiers, as lib-day.sh gives the sampler: its own waking up late would count as macOS's.
++    if command -v taskpolicy > /dev/null; then tiers="taskpolicy -l 0 -t 0"; fi
++    # shellcheck disable=SC2086
++    $tiers "$SCREENS" watch "$ARBOR_OUT/screens.log" $SCREENS_HEARS 2>> "$ARBOR_OUT/screens-said.log" 3>&- 5<&- 6>&- 8>&- 9>&- &
++  else
++    poll_displays >> "$ARBOR_OUT/screens.log" 2> /dev/null 3>&- 5<&- 6>&- 8>&- 9>&- &
++  fi
++  SCREENS_PID=$!
++  started "$SCREENS_PID"
++  echo "mac-shell/screens.log is written by $by (pid $SCREENS_PID)"
++}
++# screens_lives <step>: if what writes screens.log has ended, that is said, and the loop takes over
++screens_lives() {
++  [ -n "$SCREENS_PID" ] || return 0
++  kill -0 "$SCREENS_PID" 2>/dev/null && return 0
++  loud "$1: WHAT WROTE mac-shell/screens.log HAS ENDED ($(tail -n 1 "$ARBOR_OUT/screens-said.log" 2>/dev/null)): from here on it has C lines alone"
++  kill_started "$SCREENS_PID"
++  screens_start loop
++}
++
+ # MARK: However it ends, the Mac is as it was found
+ 
+ journey_leave() {
+@@ -586,6 +648,11 @@ journey_leave() {
+     DAY_WITNESS_PID=""
+   fi
+   watch_stop
++  if [ -n "$SCREENS_PID" ]; then
++    kill -0 "$SCREENS_PID" 2>/dev/null || loud "what wrote mac-shell/screens.log had ended before the script did ($(tail -n 1 "$ARBOR_OUT/screens-said.log" 2>/dev/null))"
++    kill_started "$SCREENS_PID"
++    SCREENS_PID=""
++  fi
+   # Started by this script itself and not through `open`, so lib-apps.sh does not know it.
+   [ -z "$P_JAVA" ] || kill_started "$P_JAVA"
+   P_JAVA=""
+@@ -612,6 +679,12 @@ trap 'journey_last_words; apps_exit' EXIT
+ # MARK: The build
+ 
+ step "the build"
++if plays G; then
++  rm -f "$ARBOR_OUT/screens.log" "$ARBOR_OUT/trace-clock.txt" "$ARBOR_OUT/changes.txt"
++  mkdir -p "$ARBOR_ROOT/.build/mac-shell"
++  swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/screens.swift" -o "$ARBOR_ROOT/.build/mac-shell/screens" > "$ARBOR_OUT/build-screens.log" 2>&1 &
++  screens_build=$!
++fi
+ if with_arbor; then
+   day_build
+ else
+@@ -623,6 +696,15 @@ else
+     || cat "$ARBOR_OUT/build-vdisplay.log"
+ fi
+ [ -x "$ARBOR_VDISPLAY" ] || die "scripts/mac-shell/vdisplay.m did not compile: no virtual display, no journey"
++if plays G; then
++  # No Mac has compiled it before this script's first run, and the part can be played without it.
++  if wait "$screens_build" && [ -x "$ARBOR_ROOT/.build/mac-shell/screens" ]; then
++    SCREENS="$ARBOR_ROOT/.build/mac-shell/screens"
++  else
++    grep -A 6 "error:" "$ARBOR_OUT/build-screens.log" | head -n 60
++    loud "scripts/mac-shell/screens.swift DID NOT COMPILE: macOS's own notice of its screens is NOT WRITTEN DOWN, nor what the windows say in the same process (no N, R, X or H lines in screens.log, and its C lines are coarse), and a display is made the main one by \`vdisplay move\`"
++  fi
++fi
+ clock "built"
+ 
+ # MARK: The Mac
+@@ -650,7 +732,9 @@ tell before
+ sampler_start
+ sleep 1
+ 
+-if few_windows; then
++if plays G; then
++  echo "no display stays, and none comes and goes first: A's own first coming (G0) is over before anything is measured"
++elif few_windows; then
+   step "no display stays: a display comes and goes once, before the main display's frame is read"
+   change_now t0a plug B
+   change_now t0b unplug B
+@@ -686,7 +770,7 @@ step "the windows"
+ apps_scratch
+ opens LIVES com.apple.Notes
+ opens TEXT com.apple.TextEdit "$APPS_SCRATCH/oak.txt"
+-if [ "$JOURNEY_PARTS" != N ]; then
++if [ "$JOURNEY_PARTS" != N ] && ! plays G; then
+   begin_step open-close open-JAVA "starts jconsole, a Java app"
+   if java=$("${JOURNEY_JAVA_HOME:-/usr/libexec/java_home}" 2>/dev/null) && [ -x "$java/bin/jconsole" ]; then
+     "$java/bin/jconsole" > /dev/null 2>&1 3>&- 5<&- 6>&- 8>&- 9>&- &
+@@ -721,7 +805,28 @@ if begins_on_A || plays P1; then
+   fi
+   REST_NOW=2 rested
+ fi
+-if ! few_windows; then
++if plays G; then
++  opens STRADDLES com.apple.Terminal
++  begin_step open-close open-WIDE "opens a second document in TextEdit"
++  if in_cast TEXT && app_open com.apple.TextEdit "$APPS_SCRATCH/elm.txt" > /dev/null && app_await_window "$P_TEXT" "$W_TEXT" 10; then
++    W_WIDE=$NEW_WINDOW P_WIDE=$P_TEXT
++    label "$W_WIDE" WIDE
++    CAST="$CAST WIDE"
++  else
++    loud "WIDE: TextEdit opened no second window: no window is wider than H"
++  fi
++  REST_NOW=2 rested
++  begin_step open-close open-LITTLE "opens a third document in TextEdit"
++  if in_cast TEXT && app_open com.apple.TextEdit "$APPS_SCRATCH/grove/ash.txt" > /dev/null && app_await_window "$P_TEXT" "$W_TEXT $W_WIDE" 10; then
++    W_LITTLE=$NEW_WINDOW P_LITTLE=$P_TEXT
++    label "$W_LITTLE" LITTLE
++    CAST="$CAST LITTLE"
++  else
++    loud "LITTLE: TextEdit opened no further window: no window has little of it showing"
++  fi
++  REST_NOW=2 rested
++fi
++if ! few_windows || plays G; then
+   opens DESK com.apple.ScriptEditor2 "$APPS_SCRATCH/hello.applescript"
+   in_cast DESK || opens DESK com.apple.ActivityMonitor
+ fi
+@@ -744,7 +849,7 @@ for name in $CAST; do
+   esac
+   fresh=""
+   for id in $listed; do
+-    case " $W_TEXT $W_CARRIED " in *" $id "*) ;; *) fresh=$id; break ;; esac
++    case " $W_TEXT $W_CARRIED $W_WIDE $W_LITTLE " in *" $id "*) ;; *) fresh=$id; break ;; esac
+   done
+   if [ -n "$fresh" ]; then
+     eval "W_$name=\$fresh"
+@@ -766,6 +871,10 @@ set -- $CAST
+ [ $# -ge 2 ] || die "fewer than two windows opened: no journey to speak of"
+ # shellcheck disable=SC2086
+ watch_start macos-reports.log $pids
++if plays G; then
++  SCREENS_HEARS=$pids
++  screens_start
++fi
+ 
+ # Whatever else has an ordinary window on the screen is hidden, if it is an app that can be; unhidden at the end.
+ for pid in $(pointer windows --on-screen | awk '$3 == 0 { print $2 }' | sort -u); do
+@@ -960,6 +1069,554 @@ if in_cast TEST; then
+   CAST=$kept
+ fi
+ 
++# MARK: G: the main display changes, and goes
++
++# The display at 0 0 is the main one, and every other display's numbers, and every window's, are counted from its corner. So when another display becomes the main one, a window
++# that stays where it is on the glass has other NUMBERS afterwards; and when the main display goes, the one that is left is at 0 0. Who says what, when, and in which
++# list's numbers? Played by itself (JOURNEY_PARTS=G), after the step `arbor`: with Arbor (steps a-…), its trace on, nothing docked, the settings it ships with, or without (steps m-…).
++# THE DISPLAYS: H, the Mac's own, and A, 1920×1080, at its right. No display stays, and none comes and goes first: A's own first coming (G0) is over before anything is measured.
++# THE WINDOWS, each put through Accessibility at a place counted from its display's corner, and seen there by the window server, before every round (`put`, `placed`):
++#   TEXT, LIVES   wholly on A, the display that goes                 WIDE        TextEdit, another document: wholly on A and 1,700 points wide, wider than H
++#   STRADDLES     Terminal, across the edge between H and A, a little more than half of it on A                DESK        wholly on H, the display that stays
++#   LITTLE        TextEdit, a third document, 800×600: left with little of it showing, its title bar within reach: it hangs over H's bottom edge at the border, 36 rows of it on H and 40 columns
++#                 on A, which reaches 180 points lower than H; the rest lies on no display. Asked once; if macOS does not have it there, `!!!`, and the round goes on with where it lies
++#   No two have one size, so no window's frame in one list's numbers is another's in the other's; and the two lists' numbers differ by H's width, 1,600 points.
++# THE ROUNDS, in the order JOURNEY_G_ROUNDS names them:
++#   R1  what the changes on record are: A is NOT the main display.              <round>-put, -goes (A is unplugged), -comes (and plugged in again)
++#   R2  the numbers change and nothing goes.                                    <round>-put, -A-main (A is made the main display), -H-main (and H again)
++#   R3  the main display goes, and comes.                                       <round>-put, -A-main, -put-again, -goes, -comes (`came-back`: as the main display?)
++#   At every -comes A is left where it comes, so that the plug is one change. After the looks, if need be: -H-main (H is made the main display again), -A-right (A is moved to its right)
++#   staged: yes (<round>: …)   or   staged: no: <the tools' words> (<round>)       once in every round of R2 and R3: whether A was the main display, by `vdisplay list`, when the round
++#   needed it to be: in R3 just before it is unplugged. After two rounds in which it could not be made so it is not tried again, and every round left says `staged: no` all the same.
++# HOW A DISPLAY IS MADE THE MAIN ONE: `screens main <id>` (screens.swift), which moves every display by the same distance in one configuration: the arrangement stays, and is counted
++# from another corner, as after the menu bar has been dragged to another display in System Settings. If that tool did not compile, if it is refused, or if JOURNEY_MAIN_BY=move:
++# `vdisplay move <id> 0 0`, which moves that display alone and leaves it to macOS where the other goes; if it goes elsewhere than the arrangement has it, it is moved there at once,
++# and the output says that these were TWO changes.
++# THE LINES. Before each change:
++#   plan <step> H <x y|gone> A <x y|gone> main <H|A>       where the displays' corners will be if the arrangement stays as it is (at -comes: if H stays the main display)
++#   expects <round> <change> <NAME> <id> old <x y w h> on <display> same-glass-in-new <x y w h> | home <x y w h>
++#       old: the window server's frame now, in the old list's numbers. same-glass-in-new: that same place on the glass in the new list's numbers, by the plan: the frame less the
++#       corner that the display which will be the main one has now. For a window on the display that goes it is where that glass was. home: see below, by the plan
++#   trace-clock <step> <ms> <ms>       with Arbor: the remark `clock <step>` was sent to the trace after the first moment and had been taken before the second
++#   changed <step> at <ms> …           THE MARKER: when the command that makes the change was given, in milliseconds since 1970; samples.log has `M change <step>` and `M changed <step>` around it
++# Half a second and three and a half seconds after the marker:
++#   list <step> H <id> <x y w h> <main|-> ; A <id> … | after <seconds>
++#   main <step> <NAME> <id> before <x y w h> on <display> | glass <x y w h> | home <x y w h> | accessibility <x y w h> | server <x y w h> is <…> | shown <0.00…1.00> on <display> | after <seconds>
++#       before: `old` again. glass: the numbers that frame has NOW if the window has not moved on the glass, by where `vdisplay list` has its display at this look, or H if its own has
++#       gone. home: the same for the frame it had when it was last put; `- - - -`: its display is not there. STRADDLES, which lies on both, is counted from H's corner.
++#       is: which of the three the server's frame equals, to the point, joined by +, or `elsewhere`: `glass`, it has stayed on the glass; `before`, it has kept its numbers.
++# Four seconds after the marker or later: in each kind's first round a picture, main-<step>.png (-d2.png: the display that is not the main one); then
++#   arrangement <step> H … ; A … | main <H|A> | as planned <yes|no> | shift <dx> <dy>       and `vdisplay list` as it is. shift: H's corner now less H's corner before: by how much the
++#       numbers of a place on the glass really changed
++#   screens-log <step> +<ms> <N|R …|C …|X …|H …>       what screens.log has from the marker on, in milliseconds after it: macOS's notices, when each of its lists was new, the windows' words
++#   with Arbor: `arbor <step> | …` (its own account), `log <step> …` (what its log says of displays, with the log's own stamps), and from the trace, between this step's remark and the next:
++#     heard <step> t <t> ms <ms>                              didChangeScreenParameters reached Arbor          screens <step> t <t> ms <ms> | …     the trace's `screens` line
++#     told <step> t <t> ms <ms> | <x y w h main|-> ; …        the controller was told (`displaysChanged`), or `told <step> no`
++#     reported <step> <NAME> <id> <before|after>-told t <t> ms <ms> user <true|false> frame <x y w h>      a window's `changed`, with the frame it carried
++#     arbor-set <step> <NAME> <id> <before|after>-told t <t> ms <ms> asked <x y w h> took <x y w h>        every setFrame call, or `arbor-set <step> none`
++#     trace-zero <step> between <ms> and <ms>      when the trace's t was 0, by all the remarks of `trace-clock` so far: after the latest of the first moments less the remark's t, before
++#     the earliest of the second. t: seconds since the trace began. ms: since 1970, t counted from the middle of the two, so it is right to half of what they differ by.
++#     A trace ends by itself after ten minutes, so a new one is begun before a round once the one at hand is 200 s old: went-and-came-back-G1, -G2, …
++# At the very end, from the logs (words-before-the-news.py, which explains them; it can be run again on the folder that came back): `word`, `word-reports`, `word-trace`, `early`, `tally`.
++#   little <round> LITTLE <id> before <x y w h> after-it-went <x y w h> after-it-came-back <x y w h> same-as-before <yes|no> | before, in the numbers of the list now: <x y w h>
++#       after -comes in R1 and R3, by the window server, 3.5 s after each change, each frame in the numbers of the list in force at that moment. same-as-before: the last is, to the point,
++#       the first as the list now counts that place on the glass
++# Besides: `placed <step> <NAME> …` after a put; `came-back <round> A as …` after -comes in R3; `rounds played to the end: … | cut short: … | not played: …`.
++# mac-shell/changes.txt has every change for that program: its marker, its shift, each window's frame before and at rest.
++# ONE CLOCK: the Mac's own. samples.log and screens.log count it in milliseconds since 1970, macos-reports.log and Arbor's log write it as UTC to the millisecond.
++if with_arbor; then
++  JOURNEY_G_ROUNDS=${JOURNEY_G_ROUNDS:-R1-1 R3-1 R3-2 R3-3 R3-4 R3-5 R3-6 R3-7 R3-8 R3-9 R3-10 R2-1}
++  G_HALF=a
++else
++  JOURNEY_G_ROUNDS=${JOURNEY_G_ROUNDS:-R1-1 R3-1 R3-2 R3-3 R3-4 R3-5 R2-1}
++  G_HALF=m
++fi
++JOURNEY_MAIN_BY=${JOURNEY_MAIN_BY:-screens}
++CHANGED=0
++# How often a display could not be made the main one, and what the tools said the last time.
++REFUSED=0
++REFUSAL=""
++MADE_BY=""
++G_PICTURE=""
++G_TRACE=""
++G_TRACES=0
++G_TRACE_BEGAN=0
++PLAN_H="" PLAN_A="" PLAN_MAIN=""
++H_FROM="" MAIN_WAS=""
++LITTLE_BEFORE="" LITTLE_FROM="" LITTLE_WENT=""
++
++since_change() { echo "$1 $CHANGED" | awk '{ printf "%.3f", ($1 - $2) / 1000 }'; }
++# id_of <H|A>.  frame_in "<vdisplay list>" <H|A>: x y w h.  origin_of <H|A|anything else> "<vdisplay list>": x y. Nothing if it is not listed
++id_of() { if [ "$1" = H ]; then echo "$H_ID"; elif [ "$1" = A ]; then echo "${DISPLAY_ID_A:-}"; fi; }
++frame_in() { echo "$1" | awk -v id="$(id_of "$2")" '$1 == id { print $3, $4, $5, $6 }'; }
++origin_of() { echo "$2" | awk -v id="$(id_of "$1")" '$1 == id { print $3, $4 }'; }
++main_is() { echo "$1" | awk -v h="$H_ID" -v a="${DISPLAY_ID_A:-none}" '$8 == "main" { print ($1 == h ? "H" : ($1 == a ? "A" : $1)) }'; }
++is_main() { [ "$(main_is "$("$ARBOR_VDISPLAY" list)")" = "$1" ]; }
++short_list() {
++  echo "$1" | awk -v h="$H_ID" -v a="${DISPLAY_ID_A:-none}" '{ printf "%s%s %s %s %s %s %s %s", (NR > 1 ? " ; " : ""), ($1 == h ? "H" : ($1 == a ? "A" : "?")), $1, $3, $4, $5, $6, $8 }'
++}
++# A mark in the samples, unless the sampler has gone: writing to it then would end the script.
++mark_G() { sampler_lives && note "$@"; }
++# counted_from <NAME> <the display most of it lies on>: the display from whose corner its place on the glass is counted. STRADDLES and LITTLE lie on both, and H never goes.
++counted_from() { if [ "$1" = STRADDLES ] || [ "$1" = LITTLE ]; then echo H; else echo "$2"; fi; }
++# carried_along "<x y w h>" "<its display's corner then: x y>" "<and now>": the frame's numbers if it kept its place on that glass
++carried_along() { echo "$1 $2 $3" | awk 'NF == 8 { print $1 + $7 - $5, $2 + $8 - $6, $3, $4; next } { print "- - - -" }'; }
++# which_of "<a frame>" "<glass>" "<before>" "<home>": which of the three it is, to the point, joined by +; `elsewhere` if none
++which_of() {
++  local words=""
++  [ "$1" != "$2" ] || words=glass
++  [ "$1" != "$3" ] || words="${words:+$words+}before"
++  [ "$1" != "$4" ] || words="${words:+$words+}home"
++  echo "${words:-elsewhere}"
++}
++
++# put_G <step>: a step. Every window at its place, counted from the corner its display has now. What fails has been said loudly.
++put_G() {
++  local step=$1 list hx="" hy="" hw="" hh="" ax="" ay="" aw="" ah="" edge="" top name id frame on w x y
++  begin_step instrument "put-$step" "$step: every window is put at its place, through Accessibility"
++  list=$("$ARBOR_VDISPLAY" list)
++  read -r hx hy hw hh <<< "$(frame_in "$list" H)"
++  read -r ax ay aw ah <<< "$(frame_in "$list" A)"
++  if [ -z "$hh" ] || [ -z "$ah" ]; then
++    loud "$step: \`vdisplay list\` does not have both H and A"
++    REST_NOW=0 rested
++    return 1
++  fi
++  if [ $((hx + hw)) -eq "$ax" ]; then edge=$ax; elif [ $((ax + aw)) -eq "$hx" ]; then edge=$hx; fi
++  if [ "$hy" -gt "$ay" ]; then top=$hy; else top=$ay; fi
++  for name in $CAST; do
++    case "$name" in
++      TEXT) put "$step" TEXT "$((ax + 90))" "$((ay + 70))" 640 420 wholly_on "$ax $ay $aw $ah" ;;
++      LIVES) put "$step" LIVES "$((ax + 860))" "$((ay + 330))" 1000 660 wholly_on "$ax $ay $aw $ah" ;;
++      WIDE)
++        put "$step" WIDE "$((ax + 110))" "$((ay + 560))" 1700 400 wholly_on "$ax $ay $aw $ah"
++        w=""
++        read -r _ _ w _ <<< "$(real_of "$W_WIDE")"
++        [ "${w:-0}" -gt "$hw" ] || loud "$step: WIDE is ${w:-?} points wide, which is not wider than H ($hw)" ;;
++      STRADDLES)
++        if [ -n "$edge" ]; then
++          put "$step" STRADDLES "$((edge - 390))" "$((top + 300))" 800 500 across "$edge"
++        else
++          loud "$step: H and A do not lie side by side, so no window can lie across the edge between them"
++          echo "SKIPPED: $step: STRADDLES is left where it is"
++        fi ;;
++      DESK) put "$step" DESK "$((hx + 230))" "$((hy + 250))" 620 460 wholly_on "$hx $hy $hw $hh" ;;
++      LITTLE)
++        # Asked once, and taken as it comes: macOS may refuse the place, and where the window then lies is what the round goes on with.
++        if [ "$edge" = "$ax" ] && [ -n "$edge" ] && [ $((ay + ah)) -ge $((hy + hh + 100)) ]; then
++          x=$((edge + 40 - 800)) y=$((hy + hh - 36))
++          echo "put $step LITTLE $W_LITTLE asked $x $y 800 600 took $(apptool set-frame "$W_LITTLE" "$x" "$y" 800 600 2>&1)"
++          sleep 0.3
++          near "$x" "$y" "$(real_frame_of "$W_LITTLE" 2>/dev/null)" \
++            || loud "$step: LITTLE (window $W_LITTLE) was asked to go to $x $y 800 600 and lies at $(real_frame_of "$W_LITTLE" 2>&1): macOS did not have it there, and the round goes on with where it lies"
++        else
++          loud "$step: A does not lie at H's right and reach a hundred points lower, so there is no place of which little shows"
++          echo "SKIPPED: $step: LITTLE is left where it is"
++        fi ;;
++    esac
++  done
++  REST_NOW=1 rested
++  for name in $CAST; do
++    eval "id=\$W_$name"
++    frame=$(real_frame_of "$id" 2>/dev/null)
++    on=$(lies "$frame" "$list" | cut -d ' ' -f 2)
++    echo "placed $step $name $id accessibility $(apptool describe "$id" 2>/dev/null | awk 'NF >= 7 { print $4, $5, $6, $7; said = 1 } END { if (!said) print "- - - -" }') | server ${frame:-- - - -} | shown $("$ARBOR_POINTER" visible "$id" 2>/dev/null || echo -) on $on"
++    on=$(counted_from "$name" "$on")
++    eval "PUT_$name=\$frame PUT_ON_$name=\$on PUT_FROM_$name=\$(origin_of \"\$on\" \"\$list\")"
++  done
++  clock "$step done"
++}
++
++# before_G <round> <goes|comes|A-main|H-main>: where the displays will be if the arrangement stays, where each window lies, and what its numbers will be if it stays on the glass
++before_G() {
++  local round=$1 what=$2 step="$1-$2" list oh oa o="" name id frame on by from put puton putfrom putto
++  screens_lives "$step"
++  list=$("$ARBOR_VDISPLAY" list)
++  oh=$(origin_of H "$list") oa=$(origin_of A "$list")
++  H_FROM=$oh
++  MAIN_WAS=$(main_is "$list")
++  case "$what" in
++    *-main)
++      if [ "$what" = H-main ]; then o=$oh; else o=$oa; fi
++      PLAN_H=$(echo "$oh $o" | awk 'NF == 4 { print $1 - $3, $2 - $4 }')
++      PLAN_A=$(echo "$oa $o" | awk 'NF == 4 { print $1 - $3, $2 - $4 }')
++      PLAN_MAIN=${what%-main} ;;
++    goes)
++      # A display that is alone is the main one, at 0 0.
++      PLAN_H="0 0" PLAN_A="" PLAN_MAIN=H ;;
++    comes)
++      PLAN_H=$oh PLAN_MAIN=H
++      PLAN_A=$(frame_in "$list" H | awk 'NF == 4 { print $1 + $3, $2 }') ;;
++  esac
++  echo "plan $step H ${PLAN_H:-gone} A ${PLAN_A:-gone} main $PLAN_MAIN$([ "$what" != comes ] || echo " (if H stays the main display and A comes at its right)")"
++  for name in $CAST; do
++    eval "id=\$W_$name put=\${PUT_$name:-} puton=\${PUT_ON_$name:-none} putfrom=\${PUT_FROM_$name:-}"
++    frame=$(real_frame_of "$id" 2>/dev/null)
++    on=$(lies "$frame" "$list" | cut -d ' ' -f 2)
++    by=$(counted_from "$name" "$on")
++    from=$(origin_of "$by" "$list")
++    eval "BEFORE_$name=\$frame BEFORE_ON_$name=\$on BEFORE_BY_$name=\$by BEFORE_FROM_$name=\$from"
++    eval "putto=\${PLAN_$puton:-}"
++    # Every place on the glass changes its numbers as H's corner does, if the arrangement stays.
++    echo "expects $round $what $name $id old ${frame:-- - - -} on $on same-glass-in-new $(carried_along "$frame" "$oh" "$PLAN_H") | home $(carried_along "$put" "$putfrom" "$putto")"
++  done
++}
++
++# trace_clock <step>: ties the trace's own seconds to the Mac's clock: a remark, and the moments before it was sent and after it was taken
++trace_clock() {
++  arbor_answers || return 0
++  echo "trace-clock $1 $(perl -MTime::HiRes=time -e '$a = time; if (open(my $said, "-|", @ARGV)) { my @words = <$said>; close $said } $b = time; printf "%d %d", $a * 1000, $b * 1000' \
++    "$ARBOR_BIN/arborctl" trace note "clock $1" 2> /dev/null)" | tee -a "$ARBOR_OUT/trace-clock.txt"
++}
++
++# new_trace: with Arbor, a trace of the part's own, numbered
++new_trace() {
++  arbor_answers || return 0
++  G_TRACES=$((G_TRACES + 1))
++  G_TRACE="went-and-came-back-G$G_TRACES"
++  G_TRACE_BEGAN=$SECONDS
++  record "$G_TRACE" || loud "part G: NO TRACE is being recorded ($(arborctl trace status 2>&1 | head -n 1))"
++}
++
++# in_the_trace_G <step> <the step's name in the marks>: see THE LINES
++in_the_trace_G() {
++  local step=$1 file name id pairs=""
++  file=$(trace_of "$G_TRACE")
++  if [ -z "$file" ]; then
++    echo "SKIPPED: $step: what the trace says: Arbor's home holds no trace $G_TRACE"
++    return 0
++  fi
++  for name in $CAST; do
++    eval "id=\$W_$name"
++    pairs="$pairs $id=$name"
++  done
++  # shellcheck disable=SC2086
++  python3 -c '
++import json, sys
++path, clocks, step, wanted = sys.argv[1:5]
++names = dict(pair.split("=") for pair in sys.argv[5:])
++sent = {}
++try:
++    with open(clocks, encoding="utf-8") as lines:
++        for words in (line.split() for line in lines):
++            if len(words) == 4:
++                sent[words[1]] = (int(words[2]), int(words[3]))
++except OSError:
++    pass
++trace = []
++with open(path, encoding="utf-8", errors="replace") as lines:
++    for text in lines:
++        try:
++            trace.append(json.loads(text))
++        except ValueError:
++            continue  # the last line, if Arbor is writing it at this moment
++# When was t = 0? After the latest of the moments before a remark was sent, before the earliest of those after one was taken, each less the t the remark has.
++low, high = None, None
++for line in trace:
++    words = str(line.get("note", "")).split()
++    if len(words) == 2 and words[0] == "clock" and words[1] in sent and isinstance(line.get("t"), (int, float)):
++        first, second = (moment - line["t"] * 1000 for moment in sent[words[1]])
++        low = first if low is None else max(low, first)
++        high = second if high is None else min(high, second)
++if low is None:
++    print("trace-zero", step, "not known")
++else:
++    print("trace-zero", step, "between %.1f and %.1f" % (low, high))
++def four(frame):
++    return " ".join("%g" % number for number in frame) if isinstance(frame, list) and len(frame) == 4 else "- - - -"
++def when(line):
++    t = line.get("t")
++    known = low is not None and isinstance(t, (int, float))
++    return "t %s ms %s" % ("-" if t is None else t, "%d" % ((low + high) / 2 + t * 1000) if known else "-")
++inside, told, sets = False, False, 0
++for line in trace:
++    words = str(line.get("note", "")).split()
++    raw = str(line.get("raw", ""))
++    if len(words) >= 3 and words[0] == "step":
++        if inside:
++            break
++        inside = words[2] == wanted
++    elif not inside:
++        continue
++    elif raw == "didChangeScreenParameters":
++        print("heard", step, when(line))
++    elif raw.startswith("screens "):
++        print("screens", step, when(line), "|", raw[8:])
++    elif line.get("event") == "displaysChanged":
++        told = True
++        print("told", step, when(line), "|", " ; ".join(
++            "%s %s" % (four(display.get("frame")), "main" if display.get("main") else "-") for display in line.get("to", [])))
++    elif line.get("event") == "changed" and str(line.get("window", {}).get("id")) in names:
++        window = line["window"]
++        print("reported", step, names[str(window["id"])], window["id"], "after-told" if told else "before-told", when(line),
++              "user", "true" if line.get("user") else "false", "frame", four(window.get("frame")))
++    elif line.get("call") == "setFrame" and str(line.get("id")) in names:
++        sets += 1
++        print("arbor-set", step, names[str(line["id"])], line["id"], "after-told" if told else "before-told", when(line),
++              "asked", four(line.get("frame")), "took", four(line.get("result")))
++if not told:
++    print("told", step, "no")
++if not sets:
++    print("arbor-set", step, "none")' "$file" "$ARBOR_OUT/trace-clock.txt" "$step" "$2" $pairs 2>&1
++}
++
++# looks_G <step>: the two looks after the marker. RESTING_<NAME>: the window server's frame at the second
++looks_G() {
++  local step=$1 moment list name id before on by from to put puton putfrom when said server glass home
++  for moment in 0.5 3.5; do
++    sleep "$(echo "$CHANGED $moment $(now_ms)" | awk '{ left = $2 - ($3 - $1) / 1000; printf "%.3f", (left > 0 ? left : 0) }')"
++    when=$(now_ms)
++    list=$("$ARBOR_VDISPLAY" list)
++    echo "list $step $(short_list "$list") | after $(since_change "$when")"
++    for name in $CAST; do
++      eval "id=\$W_$name before=\$BEFORE_$name on=\$BEFORE_ON_$name by=\$BEFORE_BY_$name from=\$BEFORE_FROM_$name"
++      eval "put=\${PUT_$name:-} puton=\${PUT_ON_$name:-none} putfrom=\${PUT_FROM_$name:-}"
++      when=$(now_ms)
++      said=$(apptool describe "$id" 2>/dev/null | awk 'NF >= 7 { print $4, $5, $6, $7 }')
++      server=$(real_frame_of "$id" 2>/dev/null)
++      to=$(origin_of "$by" "$list")
++      # Its own display has gone: where that glass was, counted as H is counted now.
++      if [ -z "$to" ]; then from=$H_FROM to=$(origin_of H "$list"); fi
++      glass=$(carried_along "$before" "$from" "$to")
++      home=$(carried_along "$put" "$putfrom" "$(origin_of "$puton" "$list")")
++      echo "main $step $name $id before ${before:-- - - -} on $on | glass $glass | home $home | accessibility ${said:-- - - -} | server ${server:-- - - -} is $(which_of "$server" "$glass" "$before" "$home") | shown $("$ARBOR_POINTER" visible "$id" 2>/dev/null || echo -) on $(lies "$server" "$list" | cut -d ' ' -f 2) | after $(since_change "$when")"
++      eval "RESTING_$name=\$server"
++    done
++  done
++}
++
++# after_G <round> <change> <lines arbor.log had before, or nothing> [unlooked]: four seconds are over, the picture, the step's end, the arrangement, the lines for words-before-the-news.py, and Arbor's side
++after_G() {
++  local round=$1 what=$2 step="$1-$2" lines=$3 list held=no moved over name id before resting
++  sleep "$(echo "$CHANGED $(now_ms)" | awk '{ left = 4 - ($2 - $1) / 1000; printf "%.3f", (left > 0 ? left : 0) }')"
++  over=$(now_ms)
++  [ -z "$G_PICTURE" ] || ARBOR_SETTLE=0 shot "main-$step"
++  REST_NOW=0 rested
++  list=$("$ARBOR_VDISPLAY" list)
++  # The displays move on purpose here: `tell` is to hold A to where it is now.
++  if A_is_there; then DISPLAY_AT_A=$(frame_in "$list" A); fi
++  if [ "$(origin_of H "$list")" = "$PLAN_H" ] && [ "$(origin_of A "$list")" = "$PLAN_A" ] && [ "$(main_is "$list")" = "$PLAN_MAIN" ]; then held=yes; fi
++  moved=$(echo "$(origin_of H "$list") $H_FROM" | awk 'NF == 4 { print $1 - $3, $2 - $4; next } { print "? ?" }')
++  echo "arrangement $step $(short_list "$list") | main $(main_is "$list") | as planned $held | shift $moved"
++  echo "$list" | sed 's/^/  vdisplay list: /'
++  awk -v from="$CHANGED" -v step="$step" '$1 >= from { printf "screens-log %s +%d %s\n", step, $1 - from, substr($0, index($0, " ") + 1) }' "$ARBOR_OUT/screens.log" 2>/dev/null
++  if [ -z "${4:-}" ] && [ "$moved" != "? ?" ]; then
++    {
++      echo "change $step round $round kind $what marker $CHANGED until $over main-before ${MAIN_WAS:-?} main-after $(main_is "$list") shift $moved trace ${G_TRACE:--} slug $DAY_SLUG"
++      for name in $CAST; do
++        eval "id=\$W_$name before=\$BEFORE_$name resting=\$RESTING_$name"
++        echo "window $step $name $id old ${before:-- - - -} resting ${resting:-- - - -}"
++      done
++    } >> "$ARBOR_OUT/changes.txt"
++  fi
++  if arbor_answers; then
++    summary 2>&1 | sed "s/^/arbor $step | /"
++    [ -z "$lines" ] || arbor_log_since "$lines" | grep -i "display" | sed "s/^/log $step /"
++    in_the_trace_G "$step" "$DAY_SLUG"
++  elif [ -n "$ARBOR_PID" ]; then
++    loud "$step: ARBOR'S PROCESS HAS ENDED, and nobody asked it to: from here on this is macOS alone"
++  fi
++  clock "$step done"
++}
++
++# change_G <round> <goes|comes>: A is unplugged, or plugged in and left where it comes; and is looked at
++change_G() {
++  local round=$1 what=$2 step="$1-$2" lines=""
++  if arbor_answers; then lines=$(arbor_log_lines); fi
++  begin_step display-change "display-$step" "$step: display A $what"
++  before_G "$round" "$what"
++  trace_clock "$step"
++  mark_G "change $step"
++  CHANGED=$(now_ms)
++  if [ "$what" = goes ]; then unplug A; else plug A as-it-comes; fi
++  mark_G "changed $step"
++  echo "changed $step at $CHANGED, and the command had returned $(since_change "$(now_ms)") s later"
++  looks_G "$step"
++  if [ "$what" = goes ]; then LITTLE_BEFORE=${BEFORE_LITTLE:-} LITTLE_FROM=$H_FROM LITTLE_WENT=${RESTING_LITTLE:-}; fi
++  after_G "$round" "$what" "$lines"
++}
++
++# make_main <round> <H|A>: fails, loudly, if the display is not the main one afterwards. REFUSAL: what the tools said then
++make_main() {
++  local round=$1 name=$2 step="$1-$2-main" id other said code how lines="" list want at
++  id=$(id_of "$name")
++  if [ "$name" = H ]; then other=A; else other=H; fi
++  if [ -z "$id" ]; then
++    REFUSAL="display $name is not there"
++    echo "SKIPPED: $step: $REFUSAL"
++    return 1
++  fi
++  if arbor_answers; then lines=$(arbor_log_lines); fi
++  begin_step display-change "display-$step" "$step: display $name is made the main display"
++  before_G "$round" "$name-main"
++  trace_clock "$step"
++  REFUSAL=""
++  if [ -n "$SCREENS" ] && [ "$JOURNEY_MAIN_BY" = screens ]; then
++    how="screens main $id"
++    mark_G "change $step"
++    CHANGED=$(now_ms)
++    said=$("$SCREENS" main "$id" 2>&1)
++    code=$?
++    mark_G "changed $step"
++    echo "> $how: exit code $code: $said"
++    if ! within 2 is_main "$name" > /dev/null; then
++      loud "$step: \`$how\` did not make $name the main display: \`vdisplay move\` is tried"
++      REFUSAL="\`$how\`: $said (exit code $code); "
++      how=""
++    fi
++  fi
++  if [ -z "${how:-}" ]; then
++    how="vdisplay move $id 0 0"
++    mark_G "change $step"
++    CHANGED=$(now_ms)
++    said=$("$ARBOR_VDISPLAY" move "$id" 0 0 2>&1)
++    code=$?
++    mark_G "changed $step"
++    echo "> $how: exit code $code: $said"
++  fi
++  echo "changed $step at $CHANGED, and the command had returned $(since_change "$(now_ms)") s later"
++  if ! within 2 is_main "$name" > /dev/null; then
++    REFUSAL="$REFUSAL\`$how\`: $said (exit code $code); \`vdisplay list\` then: $(short_list "$("$ARBOR_VDISPLAY" list)")"
++    loud "$step: DISPLAY $name COULD NOT BE MADE THE MAIN DISPLAY. $REFUSAL"
++    REFUSED=$((REFUSED + 1))
++    after_G "$round" "$name-main" "$lines" unlooked
++    return 1
++  fi
++  REFUSAL=""
++  MADE_BY=$how
++  list=$("$ARBOR_VDISPLAY" list)
++  eval "want=\$PLAN_$other"
++  at=$(origin_of "$other" "$list")
++  if [ -n "$want" ] && [ -n "$at" ] && [ "$at" != "$want" ]; then
++    mark_G "change $step the-other-display"
++    # shellcheck disable=SC2086
++    echo "$step IS TWO CHANGES, NOT ONE: macOS put display $other at $at, and it is moved to $want, where the arrangement has it, $(since_change "$(now_ms)") s after the first: now at $("$ARBOR_VDISPLAY" move "$(id_of "$other")" $want 2>&1)"
++  fi
++  looks_G "$step"
++  after_G "$round" "$name-main" "$lines"
++}
++
++# ready_G <round>: A is plugged in, H is the main display, and A lies at its right. Whatever the clock says. Silent where all that is so.
++ready_G() {
++  local round=$1 list want at
++  A_is_there || change_G "$round-again" comes
++  is_main H || make_main "$round" H || return 1
++  list=$("$ARBOR_VDISPLAY" list)
++  want=$(frame_in "$list" H | awk 'NF == 4 { print $1 + $3, $2 }')
++  at=$(origin_of A "$list")
++  [ "$at" != "$want" ] || return 0
++  begin_step display-change "display-$round-A-right" "$round-A-right: display A is moved to the right of H"
++  PLAN_H=$(origin_of H "$list") PLAN_A=$want PLAN_MAIN=H H_FROM=$PLAN_H
++  CHANGED=$(now_ms)
++  # shellcheck disable=SC2086
++  echo "> vdisplay move: A lay at ${at:-no place} and is moved to $want: now at $("$ARBOR_VDISPLAY" move "$DISPLAY_ID_A" $want 2>&1)"
++  G_PICTURE="" after_G "$round" A-right "" unlooked
++  [ "$(origin_of A "$("$ARBOR_VDISPLAY" list)")" = "$want" ]
++}
++
++# little <round>: after A has gone and come back: where LITTLE was before, after the one and after the other, each in the numbers of the list in force at that moment
++little() {
++  local now there
++  in_cast LITTLE || return 0
++  now=$(origin_of H "$("$ARBOR_VDISPLAY" list)")
++  there=$(carried_along "$LITTLE_BEFORE" "$LITTLE_FROM" "$now")
++  echo "little $1 LITTLE $W_LITTLE before ${LITTLE_BEFORE:-- - - -} after-it-went ${LITTLE_WENT:-- - - -} after-it-came-back ${RESTING_LITTLE:-- - - -} same-as-before $(alike "$RESTING_LITTLE" "$there") | before, in the numbers of the list now: $there"
++}
++
++# staged <round>: the one plain line: is A the main display now, by `vdisplay list`?
++staged() {
++  if is_main A; then
++    echo "staged: yes ($1: A is the main display by \`vdisplay list\`, made so by \`$MADE_BY\`)"
++  else
++    echo "staged: no: ${REFUSAL:-\`$MADE_BY\` made A the main display, and by \`vdisplay list\` it is not any more: $(short_list "$("$ARBOR_VDISPLAY" list)")} ($1)"
++    return 1
++  fi
++}
++
++round_R1() {
++  put_G "$1-put" || return 1
++  change_G "$1" goes
++  change_G "$1" comes
++  little "$1"
++  ready_G "$1"
++}
++round_R2() {
++  put_G "$1-put" || { REFUSAL="the windows could not be put"; staged "$1"; return 1; }
++  make_main "$1" A
++  staged "$1" || return 1
++  make_main "$1" H
++}
++round_R3() {
++  put_G "$1-put" || { REFUSAL="the windows could not be put"; staged "$1"; return 1; }
++  make_main "$1" A || { staged "$1"; return 1; }
++  put_G "$1-put-again"
++  staged "$1" || return 1
++  change_G "$1" goes
++  change_G "$1" comes
++  little "$1"
++  echo "came-back $1 A as $(if is_main A; then echo "the main display"; else echo "a display that is not the main one"; fi): $(short_list "$("$ARBOR_VDISPLAY" list)")"
++  ready_G "$1"
++}
++
++part_G() {
++  local half=$G_HALF round whole="" short="" never=""
++  in_time "G, all of it" || return 0
++  step "G. the main display changes, and goes: $(if with_arbor; then echo "with Arbor"; else echo "macOS alone"; fi)"
++  with_arbor || no_arbor "$half-G"
++  new_trace
++  # The main display changes on purpose here. H is known by its id from here on, whichever display is the main one.
++  H_ID=${MAIN%% *}
++  MAIN=""
++  echo "com.apple.spaces spans-displays: $(defaults read com.apple.spaces spans-displays 2>/dev/null || echo "not set") (1: the displays share one Space; else each has its own, and a window shows on one display only)"
++  A_is_there || change_now "$half-G0" plug A
++  echo "H, the Mac's own display (id x y w h): $H_ID $(frame_in "$("$ARBOR_VDISPLAY" list)" H). A: $DISPLAY_ID_A $(frame_in "$("$ARBOR_VDISPLAY" list)" A)"
++  for round in $JOURNEY_G_ROUNDS; do
++    never="$never $round"
++    case "$round" in
++      R1-* | R2-* | R3-*) ;;
++      *) echo "SKIPPED: $half-$round: JOURNEY_G_ROUNDS: no round is called $round"; continue ;;
++    esac
++    if ! in_time "$half-$round"; then
++      [ "${round%-*}" = R1 ] || echo "staged: no: the clock left no time for it ($half-$round)"
++      continue
++    fi
++    if [ "${round%-*}" != R1 ] && [ "$REFUSED" -ge 2 ]; then
++      echo "SKIPPED: $half-$round: twice a display could not be made the main one, and it is not tried again"
++      echo "staged: no: not tried again. The last time: $REFUSAL ($half-$round)"
++      continue
++    fi
++    step "G, $half-$round"
++    if ! ready_G "$half-$round"; then
++      echo "SKIPPED: $half-$round: H is not the main display with A at its right, and could not be made so"
++      [ "${round%-*}" = R1 ] || echo "staged: no: H is not the main display with A at its right to begin with, and could not be made so ($half-$round)"
++      continue
++    fi
++    if arbor_answers && [ $((SECONDS - G_TRACE_BEGAN)) -ge 200 ]; then new_trace; fi
++    if [ "${round#*-}" = 1 ]; then G_PICTURE=yes; else G_PICTURE=""; fi
++    never=${never% *}
++    if "round_${round%-*}" "$half-$round"; then
++      whole="$whole $round"
++    else
++      short="$short $round"
++      echo "SKIPPED: the rest of $half-$round"
++    fi
++  done
++  echo "rounds played to the end:${whole:- none} | cut short:${short:- none} | not played:${never:- none}"
++  G_PICTURE=""
++  ready_G "$half-end" || loud "$half-end: H IS NOT THE MAIN DISPLAY WITH A AT ITS RIGHT at the end of the part"
++  with_arbor || no_arbor "$half-end"
++  # Within reach again: the script checks at its end that every window is.
++  if in_cast LITTLE; then
++    round=$(frame_in "$("$ARBOR_VDISPLAY" list)" H)
++    # shellcheck disable=SC2086
++    put "$half-end" LITTLE $(echo "$round" | awk '{ print $1 + 300, $2 + 200 }') 800 600 wholly_on "$round"
++  fi
++  change_now "$half-G9" unplug A
++  H_ID=""
++  MAIN=$("$ARBOR_VDISPLAY" list | awk '$8 == "main" { print $1, $3, $4, $5, $6 }')
++  echo "the main display from here on (id x y w h): $MAIN"
++}
++
+ # MARK: Arbor, or none
+ 
+ # As a person runs it: every regular app's windows, its shortcuts, its event taps, its menu bar item, the settings it ships with. All but the
+@@ -999,6 +1656,7 @@ fi
+ rest_pointer
+ rested
+ tell arbor
++if plays G; then part_G; fi
+ 
+ # MARK: S. The first playing's steps, with more windows
+ 
+@@ -1262,7 +1920,7 @@ if with_arbor && plays P1; then part_P1; fi
+ # home: each line goes to the file as it happens (TraceFile.swift), and `tell`, which asks Arbor for its state, makes it write what it held back for thinning.
+ U_NAMES=""
+ 
+-# note_frames <tag>: where the window server has U's windows now.  noted <tag> <NAME>: what was noted.  alike <a> <b>: yes if both are one frame, to the point
++# note_frames <tag>: where the window server has U's windows now.  noted <tag> <NAME>: what was noted
+ note_frames() {
+   local name id
+   for name in $U_NAMES; do
+@@ -1271,7 +1929,6 @@ note_frames() {
+   done
+ }
+ noted() { eval "echo \"\${NOTED_$1_$2:-}\""; }
+-alike() { if [ -n "$1" ] && [ "$1" = "$2" ]; then echo yes; else echo no; fi; }
+ # waits <step>: notes the frames under the step's name, and prints them
+ waits() {
+   local name id
+@@ -1282,7 +1939,6 @@ waits() {
+   done
+ }
+ 
+-trace_of() { ls "$ARBOR_HOME"/traces/*-"$1".jsonl 2>/dev/null | tail -n 1; }
+ # in_the_trace <file> <a step's name in the marks, or - for the trace's beginning> <window id…>: reads from that step's remark (or the beginning) to the next step's remark.
+ # Prints `told yes|no`: was there a `displaysChanged`? Then for each window: <id> <yes|no: a `changed` of it with user true before that> <setFrame calls to it before that> <after it>
+ in_the_trace() {
+@@ -1657,6 +2313,9 @@ step "what came back"
+ echo "mac-shell/samples.log: $(lines_of "$ARBOR_OUT/samples.log") lines, $(grep -c " M begin " "$ARBOR_OUT/samples.log" 2>/dev/null) steps"
+ echo "  the sampler's own account: $(tail -n 1 "$ARBOR_OUT/samples.log" 2>/dev/null | cut -d ' ' -f 2-)"
+ echo "mac-shell/macos-reports.log: $(lines_of "$ARBOR_OUT/macos-reports.log") lines"
++if plays G; then
++  echo "mac-shell/screens.log: $(lines_of "$ARBOR_OUT/screens.log") lines: $(for kind in N R C X H; do echo "$(grep -c "^[0-9]* $kind" "$ARBOR_OUT/screens.log" 2>/dev/null) $kind"; done | tr '\n' ' ')"
++fi
+ if with_arbor; then
+   for file in "$ARBOR_OUT"/traces/*.jsonl; do
+     [ -f "$file" ] || { loud "NO TRACE CAME BACK"; continue; }
+@@ -1668,4 +2327,8 @@ if with_arbor; then
+     echo "mac-shell/$(basename "$file"): $(lines_of "$file") lines"
+   done
+ fi
++if plays G; then
++  step "the windows' words and the news of the displays, from the logs"
++  python3 "$ARBOR_ROOT/scripts/mac-shell/words-before-the-news.py" "$ARBOR_OUT" 2>&1
++fi
+ clock "all done"
+diff --git a/scripts/mac-shell/screens.swift b/scripts/mac-shell/screens.swift
+new file mode 100644
+index 00000000..113a0fea
+--- /dev/null
++++ b/scripts/mac-shell/screens.swift
+@@ -0,0 +1,235 @@
++// screens: when macOS says that its displays have changed, when its lists of them are new, what the windows say meanwhile, and a way to make another display the main one.
++// apptool watch hears the apps and the sampler asks for the displays four times a second; neither hears macOS's own notice of its screens, and no one process hears both.
++//
++//   screens watch <log file> [pid…]     writes until it is killed. A line is `<milliseconds since 1970> <kind> …`: the clock and the form of the sampler's samples.log, so
++//                                that the two files sort into one. All of it happens on the main thread of ONE process, as it does in Arbor, so the order of the lines is the
++//                                order in which a process that listens to all of it hears of things (an R that came on another thread ends with `off-main`).
++//       N                                           NSApplication.didChangeScreenParametersNotification arrived, which is what Arbor listens to
++//       R <display> <flags> <words>                 the callback of CGDisplayRegisterReconfigurationCallback was called for that display. The flags as a number and in
++//                                                   words, joined by +: begin moved main mode add remove enabled disabled mirror unmirror shape
++//       C <id> <x> <y> <w> <h> <main|-> <serial> ; …     CoreGraphics' list is not what it was (CGGetActiveDisplayList, CGDisplayBounds, CGDisplayIsMain)
++//       X <id> <x> <y> <w> <h> ; …                  AppKit's list is not what it was (NSScreen.screens, the first of which is the main one), counted from the top left
++//                                                   corner of the main display like everything else here
++//       H <AXMoved|AXResized> <window> <x> <y> <w> <h> | C … | X …      a window of one of the pids said that it has moved or changed its size. The time is that of the
++//                                                   word's arrival. Both lists are as this process read them at that moment, BEFORE it asked the window for the frame, which
++//                                                   is Accessibility's answer a moment later (`- - - -`: none)
++//       M …                                         `screens watch`: it has begun, and both lists follow; `hears <window> of <pid>`; `cannot hear <pid>`
++//     Both lists are asked for every 4 ms, and at once at every N, R and H: a C or an X between two lines says that the list was new by the second.
++//   screens main <display>       makes it the main display and leaves the arrangement as it is, as after the menu bar has been dragged to it in System Settings: in
++//                                one configuration every display is moved by the same distance, so that this one comes to lie at 0 0. The display at 0 0 is the main one.
++//                                Prints the list as a C line has it. Exit code 1 with macOS's error if it is refused.
++// `watch` with pids needs Accessibility permission, as apptool does. It never reads a window's title.
++import AppKit
++import ApplicationServices
++import CoreGraphics
++import Foundation
++
++/// The window server's number for an Accessibility window, as in apptool.swift.
++@_silgen_name("_AXUIElementGetWindow")
++func _AXUIElementGetWindow(_ element: AXUIElement, _ identifier: UnsafeMutablePointer<CGWindowID>) -> AXError
++
++func fail(_ message: String, code: Int32 = 64) -> Never {
++  FileHandle.standardError.write(Data("screens: \(message)\n".utf8))
++  exit(code)
++}
++
++let arguments = Array(CommandLine.arguments.dropFirst())
++guard arguments.count >= 2, arguments[0] == "watch" || (arguments[0] == "main" && arguments.count == 2) else {
++  fail("usage: screens watch <log file> [pid…] | screens main <display>")
++}
++
++@Sendable func active() -> [CGDirectDisplayID] {
++  var count: UInt32 = 0
++  CGGetActiveDisplayList(0, nil, &count)
++  var ids = [CGDirectDisplayID](repeating: 0, count: Int(count))
++  CGGetActiveDisplayList(count, &ids, &count)
++  return Array(ids.prefix(Int(count)))
++}
++
++@Sendable func listed() -> String {
++  var parts: [String] = []
++  for id in active() {
++    let bounds = CGDisplayBounds(id)
++    let main = CGDisplayIsMain(id) != 0 ? "main" : "-"
++    parts.append(
++      "\(id) \(Int(bounds.minX)) \(Int(bounds.minY)) \(Int(bounds.width)) \(Int(bounds.height)) \(main) \(CGDisplaySerialNumber(id))")
++  }
++  return parts.joined(separator: " ; ")
++}
++
++if arguments[0] == "main" {
++  guard let display = CGDirectDisplayID(arguments[1]), active().contains(display) else {
++    fail("no display \(arguments[1])", code: 1)
++  }
++  let origin = CGDisplayBounds(display).origin
++  var configuration: CGDisplayConfigRef?
++  var result = CGBeginDisplayConfiguration(&configuration)
++  for each in active() where result == .success {
++    let bounds = CGDisplayBounds(each)
++    result = CGConfigureDisplayOrigin(configuration, each, Int32(bounds.minX - origin.x), Int32(bounds.minY - origin.y))
++  }
++  if result != .success {
++    if configuration != nil { CGCancelDisplayConfiguration(configuration) }
++    fail("could not configure the displays (error \(result.rawValue))", code: 1)
++  }
++  // For the session: it has to outlive this process.
++  result = CGCompleteDisplayConfiguration(configuration, .forSession)
++  if result != .success { fail("the arrangement was refused (error \(result.rawValue))", code: 1) }
++  print(listed())
++  exit(0)
++}
++
++/// Not `guard let`: what that binds at the top of a file is no global, and the functions below could not use it.
++nonisolated(unsafe) let logFile: UnsafeMutablePointer<FILE> = {
++  guard let file = fopen(arguments[1], "a") else { fail("cannot write to \(arguments[1])") }
++  return file
++}()
++
++@Sendable func now() -> Int64 { Int64(Date().timeIntervalSince1970 * 1000) }
++
++/// At once: the process is killed, not asked to end.
++@Sendable func write(_ line: String, at time: Int64 = now()) {
++  fputs("\(time) \(line)\n", logFile)
++  fflush(logFile)
++}
++
++@MainActor final class Lists {
++  private(set) var coreGraphics = ""
++  private(set) var appKit = ""
++
++  func note() {
++    let current = listed()
++    if current != coreGraphics {
++      coreGraphics = current
++      write("C \(current)")
++    }
++    guard let first = NSScreen.screens.first else { return }
++    var parts: [String] = []
++    for screen in NSScreen.screens {
++      let id = (screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.stringValue ?? "?"
++      let frame = screen.frame
++      // AppKit counts from the bottom of the main display.
++      parts.append("\(id) \(Int(frame.minX)) \(Int(first.frame.maxY - frame.maxY)) \(Int(frame.width)) \(Int(frame.height))")
++    }
++    let seen = parts.joined(separator: " ; ")
++    if seen != appKit {
++      appKit = seen
++      write("X \(seen)")
++    }
++  }
++}
++
++let app = NSApplication.shared
++app.setActivationPolicy(.prohibited)
++// As in the sampler: a process without a window is put to sleep between its timers, and its timers are run together with others'.
++let awake = ProcessInfo.processInfo.beginActivity(
++  options: [.userInitiated, .latencyCritical], reason: "asking for the list of displays at a steady rate")
++let lists = MainActor.assumeIsolated { Lists() }
++
++/// A function and no closure: macOS takes a C function pointer, which can capture nothing.
++func reconfigured(_ display: CGDirectDisplayID, _ flags: CGDisplayChangeSummaryFlags, _ context: UnsafeMutableRawPointer?) {
++  let names: [(UInt32, String)] = [
++    (1 << 0, "begin"), (1 << 1, "moved"), (1 << 2, "main"), (1 << 3, "mode"), (1 << 4, "add"), (1 << 5, "remove"), (1 << 8, "enabled"),
++    (1 << 9, "disabled"), (1 << 10, "mirror"), (1 << 11, "unmirror"), (1 << 12, "shape"),
++  ]
++  var words: [String] = []
++  for (bit, name) in names where flags.rawValue & bit != 0 { words.append(name) }
++  // On the main thread as far as anybody knows. Should it come on another, that is said, and the lists wait for the timer.
++  let here = Thread.isMainThread
++  write("R \(display) \(flags.rawValue) \(words.isEmpty ? "-" : words.joined(separator: "+"))\(here ? "" : " off-main")")
++  if here { MainActor.assumeIsolated { lists.note() } }
++}
++
++// MARK: What the windows say. The helpers are apptool.swift's.
++
++extension AXUIElement {
++  func attribute(_ name: String) -> CFTypeRef? {
++    var raw: CFTypeRef?
++    guard AXUIElementCopyAttributeValue(self, name as CFString, &raw) == .success else { return nil }
++    return raw
++  }
++
++  func elements(_ name: String) -> [AXUIElement] {
++    guard let raw = attribute(name), CFGetTypeID(raw) == CFArrayGetTypeID() else { return [] }
++    return (raw as? [AnyObject] ?? []).compactMap { item in
++      CFGetTypeID(item) == AXUIElementGetTypeID() ? (item as! AXUIElement) : nil
++    }
++  }
++
++  var position: CGPoint? {
++    guard let raw = attribute(kAXPositionAttribute), CFGetTypeID(raw) == AXValueGetTypeID() else { return nil }
++    var point = CGPoint.zero
++    return AXValueGetValue(raw as! AXValue, .cgPoint, &point) ? point : nil
++  }
++
++  var size: CGSize? {
++    guard let raw = attribute(kAXSizeAttribute), CFGetTypeID(raw) == AXValueGetTypeID() else { return nil }
++    var extent = CGSize.zero
++    return AXValueGetValue(raw as! AXValue, .cgSize, &extent) ? extent : nil
++  }
++
++  var windowNumber: UInt32? {
++    var identifier = CGWindowID(0)
++    guard _AXUIElementGetWindow(self, &identifier) == .success, identifier != 0 else { return nil }
++    return identifier
++  }
++}
++
++/// `12` for 12.0 and `12.5` for 12.5.
++func text(_ value: CGFloat) -> String {
++  let number = Double(value)
++  return number == number.rounded() ? String(Int(number)) : String(format: "%.1f", number)
++}
++
++/// Kept: an observer that nobody holds hears nothing.
++var observers: [AXObserver] = []
++
++/// A function and no closure, for the same reason as `reconfigured`. It comes on the run loop its source was added to, which is the main one.
++func heard(_ observer: AXObserver, _ element: AXUIElement, _ notification: CFString, _ refcon: UnsafeMutableRawPointer?) {
++  let arrived = now()
++  let id = refcon.map { UInt32(truncatingIfNeeded: UInt(bitPattern: $0)) } ?? 0
++  // The lists first: asking the window takes a moment, in which they may change.
++  let (coreGraphics, appKit) = MainActor.assumeIsolated { () -> (String, String) in
++    lists.note()
++    return (lists.coreGraphics, lists.appKit)
++  }
++  var frame = "- - - -"
++  if let origin = element.position, let extent = element.size {
++    frame = "\(text(origin.x)) \(text(origin.y)) \(text(extent.width)) \(text(extent.height))"
++  }
++  write("H \(notification as String) \(id) \(frame) | C \(coreGraphics) | X \(appKit)", at: arrived)
++}
++
++func hear(_ pid: pid_t) {
++  var created: AXObserver?
++  let element = AXUIElementCreateApplication(pid)
++  // An app that is busy must not hold up the lines that follow for long.
++  AXUIElementSetMessagingTimeout(element, 2)
++  guard AXObserverCreate(pid, heard, &created) == .success, let observer = created else {
++    write("M cannot hear \(pid)")
++    return
++  }
++  CFRunLoopAddSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(observer), .defaultMode)
++  observers.append(observer)
++  for window in element.elements(kAXWindowsAttribute) {
++    guard let id = window.windowNumber else { continue }
++    let refcon = UnsafeMutableRawPointer(bitPattern: UInt(id))
++    for name in [kAXMovedNotification, kAXResizedNotification] { AXObserverAddNotification(observer, window, name as CFString, refcon) }
++    write("M hears \(id) of \(pid)")
++  }
++}
++
++write("M screens watch")
++MainActor.assumeIsolated { lists.note() }
++for word in arguments.dropFirst(2) {
++  if let pid = pid_t(word) { hear(pid) }
++}
++CGDisplayRegisterReconfigurationCallback(reconfigured, nil)
++NotificationCenter.default.addObserver(
++  forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
++) { _ in
++  write("N")
++  MainActor.assumeIsolated { lists.note() }
++}
++Timer.scheduledTimer(withTimeInterval: 0.004, repeats: true) { _ in MainActor.assumeIsolated { lists.note() } }
++app.run()
+diff --git a/scripts/mac-shell/words-before-the-news.py b/scripts/mac-shell/words-before-the-news.py
+new file mode 100755
+index 00000000..0e0bff18
+--- /dev/null
++++ b/scripts/mac-shell/words-before-the-news.py
+@@ -0,0 +1,375 @@
++#!/usr/bin/env python3
++"""Does a window's own word of its move come before the news of the displays, by how much, and in which list's numbers?
++
++    scripts/mac-shell/words-before-the-news.py <folder>      what probe-the-main-display-goes.sh and its control left in mac-shell/
++    scripts/mac-shell/words-before-the-news.py --self-test
++
++The probe runs it at its end; anybody can run it again on the folder that came back. It judges nothing: it puts times side by side.
++
++It reads
++    changes.txt         written by the probe, two kinds of line:
++                        change <step> round <round> kind <goes|comes|A-main|H-main> marker <ms> until <ms> main-before <H|A> main-after <H|A> shift <dx> <dy> trace <name|-> slug <name>
++                        window <step> <NAME> <id> old <x y w h> resting <x y w h>
++                        marker: when the command that makes the change was given. shift: by how much the numbers of a place on the glass changed (the corner of H, the display
++                        that never goes, after the change less before it). old: the window server's frame just before the change. resting: 3.5 s after it.
++    screens.log         screens.swift: N and R (macOS's notices), C and X (its lists are new), H (a window's word, with both lists as they were read when it arrived)
++    macos-reports.log   apptool watch: AXMoved and AXResized with the frames they carry
++    traces/*-<name>.jsonl and trace-clock.txt     with Arbor
++
++It prints, for every change and window, one line for each witness that has anything to say. All times are milliseconds after the marker.
++    word <round> <kind> <NAME> <id> first-word <ms|none> list-new <ms|unknown> notice <ms|unknown> told <ms|no|no Arbor> | frame <x y w h> numbers <…> list-at-word <old|new|unknown>
++            before-list <yes|no|unknown> before-notice <yes|no|unknown>
++            screens.log alone: ONE process heard the word, the notice and the lists, on one thread. list-new: the earlier of C and X. notice: the earlier of N and R
++    word-reports …      the word by macos-reports.log, which is another process's; list-new and notice by screens.log
++    word-trace …        the trace alone, which is Arbor's own process: the word is a `changed`, the notice the raw line didChangeScreenParameters, list-new the first `screens` line or
++                        read of the displays that differs from the last before the step, list-at-word the read of the displays that follows the word
++    before-list, before-notice: within one witness's file by the ORDER OF ITS LINES, which tells two lines of one millisecond apart; between two files by their times.
++    told is the trace's `displaysChanged` in all three, brought to the Mac's clock by the remarks of trace-clock.txt (right to half of what `trace-zero` says they leave open).
++    numbers: in which list's numbers the first word's frame is:
++            same          the shift is 0 0: both lists count alike
++            old, new      the frame it had before the change; that same place on the glass in the new list's numbers (old + shift)
++            resting-new, resting-old      the frame it rests at 3.5 s after the change, which is in the new list's numbers; that place in the old list's numbers (resting - shift)
++            …-origin      the corner alone is that, the size is another            neither       none of these
++    early <witness> <round> <kind> <NAME> <id> <+ms> <what> frame <x y w h> numbers <…> list-at-word <…> before-list <…> before-notice <…> main-changed <yes|no>
++            EVERY word, not the first alone, that came before the witness's notice or before its list was new (or under a list that was read as the old one)
++    tally <witness> …   counts, at the end
++"""
++import calendar
++import glob
++import json
++import os
++import re
++import sys
++import tempfile
++import time
++
++
++def four(words):
++    try:
++        return tuple(float(word) for word in words)
++    except ValueError:
++        return None
++
++
++def text(frame):
++    return " ".join("%g" % number for number in frame) if frame else "- - - -"
++
++
++def read_changes(folder):
++    changes, order = {}, []
++    with open(os.path.join(folder, "changes.txt"), encoding="utf-8") as lines:
++        for words in (line.split() for line in lines):
++            if len(words) == 21 and words[0] == "change":
++                changes[words[1]] = {
++                    "step": words[1], "round": words[3], "kind": words[5], "marker": int(words[7]), "until": int(words[9]),
++                    "changed": words[11] != words[13], "shift": (float(words[15]), float(words[16])), "trace": words[18], "slug": words[20], "windows": []}
++                order.append(words[1])
++            elif len(words) == 14 and words[0] == "window" and words[1] in changes:
++                changes[words[1]]["windows"].append({"name": words[2], "id": words[3], "old": four(words[5:9]), "resting": four(words[10:14])})
++    return [changes[step] for step in order]
++
++
++def read_screens(folder):
++    """[(ms, kind, the rest)]"""
++    found = []
++    try:
++        with open(os.path.join(folder, "screens.log"), encoding="utf-8", errors="replace") as lines:
++            for line in lines:
++                words = line.rstrip("\n").split(" ", 2)
++                if len(words) >= 2 and words[0].isdigit():
++                    found.append((int(words[0]), words[1], words[2] if len(words) > 2 else ""))
++    except OSError:
++        pass
++    return found
++
++
++REPORT = re.compile(r"^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)\.(\d{3})Z MACOS pid \d+ (AXMoved|AXResized) w(\d+) \S+ (\S+) (\S+) (\S+) (\S+)")
++
++
++def read_reports(folder):
++    """[(ms, what, window id, frame)]"""
++    found = []
++    try:
++        with open(os.path.join(folder, "macos-reports.log"), encoding="utf-8", errors="replace") as lines:
++            for line in lines:
++                match = REPORT.match(line)
++                if match:
++                    seconds = calendar.timegm(time.strptime(match.group(1), "%Y-%m-%dT%H:%M:%S"))
++                    found.append((seconds * 1000 + int(match.group(2)), match.group(3), match.group(4), four(match.groups()[4:8])))
++    except OSError:
++        pass
++    return found
++
++
++def read_trace(folder, name):
++    """The trace's lines, and the moment of its t = 0 as (low, high) in ms since 1970, or None."""
++    paths = sorted(glob.glob(os.path.join(folder, "traces", "*-%s.jsonl" % name)))
++    if not paths:
++        return None, None
++    sent = {}
++    try:
++        with open(os.path.join(folder, "trace-clock.txt"), encoding="utf-8") as lines:
++            for words in (line.split() for line in lines):
++                if len(words) == 4:
++                    sent[words[1]] = (int(words[2]), int(words[3]))
++    except OSError:
++        pass
++    trace = []
++    with open(paths[-1], encoding="utf-8", errors="replace") as lines:
++        for line in lines:
++            try:
++                trace.append(json.loads(line))
++            except ValueError:
++                continue
++    low = high = None
++    for line in trace:
++        words = str(line.get("note", "")).split()
++        if len(words) == 2 and words[0] == "clock" and words[1] in sent and isinstance(line.get("t"), (int, float)):
++            first, second = (moment - line["t"] * 1000 for moment in sent[words[1]])
++            low = first if low is None else max(low, first)
++            high = second if high is None else min(high, second)
++    return trace, (None if low is None else (low, high))
++
++
++def numbers(frame, window, shift):
++    if frame is None:
++        return "unknown"
++    if shift == (0, 0):
++        return "same"
++
++    def moved(other, sign):
++        return None if other is None else (other[0] + sign * shift[0], other[1] + sign * shift[1], other[2], other[3])
++    named = [("old", window["old"]), ("new", moved(window["old"], 1)), ("resting-new", window["resting"]), ("resting-old", moved(window["resting"], -1))]
++    for name, other in named:
++        if other is not None and frame == other:
++            return name
++    for name, other in named:
++        if other is not None and frame[:2] == other[:2]:
++            return name + "-origin"
++    return "neither"
++
++
++def signature(displays):
++    return tuple((display.get("id"), tuple(display.get("frame", []))) for display in displays or [])
++
++
++def in_the_trace(change, trace, zero):
++    """{"notice", "list", "told": a moment or None; "words": [(moment, what, id, frame, old|new|unknown)]}, or None if the step is not in the trace.
++    A moment: (ms after the marker, the line's place in the file)."""
++    middle = (zero[0] + zero[1]) / 2
++
++    def after(line):
++        return (middle + line["t"] * 1000 - change["marker"], place)
++    before, inside, seen = None, False, {"notice": None, "list": None, "told": None, "words": []}
++    waiting = None
++    found = False
++    for place, line in enumerate(trace):
++        words = str(line.get("note", "")).split()
++        raw = str(line.get("raw", ""))
++        if len(words) >= 3 and words[0] == "step":
++            if inside:
++                break
++            inside = found = words[2] == change["slug"]
++            continue
++        lists = None
++        if line.get("call") == "displays":
++            lists = signature(line.get("result"))
++        elif line.get("event") == "displaysChanged":
++            lists = signature(line.get("to"))
++        elif "displays" in line and "settings" in line:
++            lists = signature(line.get("displays"))  # the header
++        if not inside:
++            before = lists if lists is not None else before
++            continue
++        if not isinstance(line.get("t"), (int, float)):
++            continue
++        if line.get("call") == "displays" and waiting is not None:
++            seen["words"][waiting] = seen["words"][waiting][:4] + ("old" if lists == before else "new",)
++        if line.get("call") != "displays" or waiting is not None:
++            waiting = None
++        if raw == "didChangeScreenParameters" and seen["notice"] is None:
++            seen["notice"] = after(line)
++        if (raw.startswith("screens ") or (lists is not None and lists != before)) and seen["list"] is None:
++            seen["list"] = after(line)
++        if line.get("event") == "displaysChanged" and seen["told"] is None:
++            seen["told"] = after(line)
++        if line.get("event") == "changed":
++            window = line.get("window", {})
++            frame = window.get("frame")
++            seen["words"].append((after(line), "changed", str(window.get("id")), tuple(float(n) for n in frame) if frame else None, "unknown"))
++            waiting = len(seen["words"]) - 1
++    return seen if found else None
++
++
++def ms(moment, missing):
++    return missing if moment is None else "%d" % round(moment[0])
++
++
++def before(word, news):
++    """Did the word come before the news? By their places in one file, if both have one."""
++    if news is None:
++        return "unknown"
++    if word[1] is not None and news[1] is not None:
++        return "yes" if word[1] < news[1] else "no"
++    return "yes" if word[0] < news[0] else "no"
++
++
++def report(folder, out=sys.stdout):
++    changes = read_changes(folder)
++    screens, reports = read_screens(folder), read_reports(folder)
++    traces = {}
++    tallies = {}
++
++    def say(*words):
++        print(*words, file=out)
++
++    def witness(name, change, words, notice, new, told):
++        """words: [(moment, what, id, frame, list at the word)], in order of time"""
++        tally = tallies.setdefault(name, {"changes": 0, "main": 0, "first": 0, "told": 0, "list": 0, "notice": 0, "silent": 0, "early": {}, "a": 0})
++        tally["changes"] += 1
++        tally["main"] += change["changed"]
++        for window in change["windows"]:
++            own = [word for word in words if word[2] == window["id"]]
++            line = ["word" if name == "screens" else "word-" + name, change["round"], change["kind"], window["name"], window["id"],
++                    "first-word", ms(own[0][0] if own else None, "none"), "list-new", ms(new, "unknown"), "notice", ms(notice, "unknown"),
++                    "told", told if isinstance(told, str) else ms(told, "no")]
++            if own:
++                line += ["|", "frame", text(own[0][3]), "numbers", numbers(own[0][3], window, change["shift"]), "list-at-word", own[0][4],
++                         "before-list", before(own[0][0], new), "before-notice", before(own[0][0], notice)]
++                tally["first"] += 1
++                tally["told"] += not isinstance(told, str) and told is not None and own[0][0][0] < told[0]
++                tally["list"] += before(own[0][0], new) == "yes"
++                tally["notice"] += before(own[0][0], notice) == "yes"
++            else:
++                tally["silent"] += 1
++            say(*line)
++            for word in own:
++                under_old = word[4] == "old" or (word[4] == "unknown" and before(word[0], new) == "yes")
++                if under_old or before(word[0], notice) == "yes":
++                    kind = numbers(word[3], window, change["shift"])
++                    say("early", name, change["round"], change["kind"], window["name"], window["id"], "%+d" % round(word[0][0]), word[1], "frame", text(word[3]),
++                        "numbers", kind, "list-at-word", word[4], "before-list", before(word[0], new), "before-notice", before(word[0], notice),
++                        "main-changed", "yes" if change["changed"] else "no")
++                    tally["early"][kind] = tally["early"].get(kind, 0) + 1
++                    if change["changed"] and under_old and before(word[0], notice) != "no" and kind.startswith(("new", "resting-new")):
++                        tally["a"] += 1
++
++    for change in changes:
++        marker, until = change["marker"], change["until"]
++        told = "no Arbor"
++        traced = None
++        if change["trace"] != "-":
++            if change["trace"] not in traces:
++                traces[change["trace"]] = read_trace(folder, change["trace"])
++                trace, zero = traces[change["trace"]]
++                say("trace-zero", change["trace"], "no such trace" if trace is None else "not known" if zero is None else "between %.1f and %.1f" % zero)
++            trace, zero = traces[change["trace"]]
++            told = "unknown"
++            if trace is not None and zero is not None:
++                traced = in_the_trace(change, trace, zero)
++                told = traced["told"] if traced else "unknown"
++        during = [(place,) + line for place, line in enumerate(screens) if marker <= line[0] <= until]
++        notice = next(((line[1] - marker, line[0]) for line in during if line[2] in "NR"), None)
++        new = next(((line[1] - marker, line[0]) for line in during if line[2] in "CX"), None)
++        last = {kind: next((line[2] for line in reversed(screens) if line[0] < marker and line[1] == kind), None) for kind in "CX"}
++        heard = []
++        for place, when, kind, rest in during:
++            if kind != "H":
++                continue
++            parts = [part.strip() for part in rest.split("|")]
++            words = parts[0].split()
++            lists = {part[0]: part[2:] for part in parts[1:] if len(part) > 2}
++            at = "unknown"
++            if last["C"] is not None and "C" in lists:
++                at = "old" if lists["C"] == last["C"] and lists.get("X", last["X"]) == last["X"] else "new"
++            if len(words) == 6:
++                heard.append(((when - marker, place), words[0], words[1], four(words[2:6]), at))
++        if any(line[1] == "H" for line in screens):
++            witness("screens", change, heard, notice, new, told)
++        said = [((when - marker, None), what, window, frame, "unknown") for when, what, window, frame in reports if marker <= when <= until]
++        if reports:
++            witness("reports", change, said, notice, new, told)
++        if traced:
++            witness("trace", change, traced["words"], traced["notice"], traced["list"], traced["told"])
++    for name in ("screens", "reports", "trace"):
++        tally = tallies.get(name)
++        if not tally:
++            say("tally", name, "has nothing to say")
++            continue
++        say("tally", name, "changes", tally["changes"], "in which the main display changed", tally["main"], "| windows that spoke", tally["first"], "that said nothing", tally["silent"],
++            "| first words before Arbor was told", tally["told"], "before the list was new", tally["list"], "before the notice", tally["notice"],
++            "| early words by their numbers:", " ".join("%s %d" % pair for pair in sorted(tally["early"].items())) or "none",
++            "| under the old list, before the notice, in the new list's numbers, the main display changing:", tally["a"])
++    return tallies
++
++
++def self_test():
++    with tempfile.TemporaryDirectory() as folder:
++        os.mkdir(os.path.join(folder, "traces"))
++
++        def write(name, lines):
++            with open(os.path.join(folder, name), "w", encoding="utf-8") as file:
++                file.write("\n".join(lines) + "\n")
++        base = 1792000000000  # 2026-10-14T17:46:40Z
++        old, new = "1 -1600 0 1600 900 - 0 ; 2 0 0 1920 1080 main 1", "1 0 0 1600 900 main 0"
++        write("changes.txt", [
++            "change a-R3-1-goes round a-R3-1 kind goes marker %d until %d main-before A main-after H shift 1600 0 trace G1 slug display-a-R3-1-goes" % (base, base + 4000),
++            "window a-R3-1-goes DESK 45 old -1370 250 620 460 resting 230 250 620 460",
++            "window a-R3-1-goes TEXT 41 old 90 70 640 420 resting 120 120 640 420",
++            "window a-R3-1-goes WIDE 44 old 110 560 1700 400 resting 0 31 1600 400"])
++        write("screens.log", [
++            "%d C %s" % (base - 9000, old), "%d X 2 0 0 1920 1080 ; 1 -1600 0 1600 900" % (base - 9000),
++            "%d H AXMoved 45 230 250 620 460 | C %s | X 2 0 0 1920 1080 ; 1 -1600 0 1600 900" % (base + 50, old),  # in the millisecond of the notice, and before it
++            "%d R 2 1 begin" % (base + 50), "%d C %s" % (base + 60, new), "%d N" % (base + 70),
++            "%d H AXMoved 41 120 120 640 420 | C %s | X 1 0 0 1600 900" % (base + 80, new)])
++        write("macos-reports.log", [
++            "2026-10-14T17:46:40.045Z MACOS pid 7 AXMoved w45 AXWindow/AXStandardWindow 230 250 620 460",
++            "2026-10-14T17:46:40.090Z MACOS pid 8 AXResized w41 AXWindow/AXStandardWindow -1480 120 640 420",
++            "2026-10-14T17:46:39.000Z MACOS pid 8 AXMoved w41 AXWindow/AXStandardWindow 1 2 3 4"])
++        write("trace-clock.txt", ["trace-clock a-R3-1-goes %d %d" % (base - 110, base - 90)])
++        two = [{"id": "H", "frame": [-1600, 0, 1600, 900]}, {"id": "A", "frame": [0, 0, 1920, 1080], "main": True}]
++        one = [{"id": "H", "frame": [0, 0, 1600, 900], "main": True}]
++        write("traces/2026-G1.jsonl", [json.dumps(line) for line in [
++            {"displays": two, "settings": {}}, {"t": 9.0, "note": "step 5 display-a-R3-1-goes"}, {"t": 9.9, "note": "clock a-R3-1-goes"},
++            {"t": 10.03, "raw": "AXMoved w45"}, {"t": 10.031, "event": "changed", "user": True, "window": {"id": 45, "frame": [230, 250, 620, 460]}},
++            {"t": 10.032, "call": "displays", "result": two}, {"t": 10.05, "raw": "didChangeScreenParameters"}, {"t": 10.051, "raw": "screens H 0,0 1600x900"},
++            {"t": 10.06, "event": "changed", "user": True, "window": {"id": 41, "frame": [120, 120, 640, 420]}}, {"t": 10.061, "call": "displays", "result": one},
++            {"t": 11.6, "event": "displaysChanged", "to": one}, {"t": 14.0, "note": "step 6 put-x"}]])
++
++        class Lines:
++            def __init__(self):
++                self.text = ""
++
++            def write(self, more):
++                self.text += more
++        lines = Lines()
++        tallies = report(folder, lines)
++        wanted = [
++            "word a-R3-1 goes DESK 45 first-word 50 list-new 60 notice 50 told 1600 | frame 230 250 620 460 numbers new list-at-word old before-list yes before-notice yes",
++            "word a-R3-1 goes TEXT 41 first-word 80 list-new 60 notice 50 told 1600 | frame 120 120 640 420 numbers resting-new list-at-word new before-list no before-notice no",
++            "word a-R3-1 goes WIDE 44 first-word none list-new 60 notice 50 told 1600",
++            "early screens a-R3-1 goes DESK 45 +50 AXMoved frame 230 250 620 460 numbers new list-at-word old before-list yes before-notice yes main-changed yes",
++            "word-reports a-R3-1 goes TEXT 41 first-word 90 list-new 60 notice 50 told 1600 | frame -1480 120 640 420 numbers resting-old list-at-word unknown before-list no before-notice no",
++            "word-trace a-R3-1 goes DESK 45 first-word 31 list-new 51 notice 50 told 1600 | frame 230 250 620 460 numbers new list-at-word old before-list yes before-notice yes",
++            "word-trace a-R3-1 goes TEXT 41 first-word 60 list-new 51 notice 50 told 1600 | frame 120 120 640 420 numbers resting-new list-at-word new before-list no before-notice no",
++            "trace-zero G1 between %.1f and %.1f" % (base - 10010, base - 9990),
++        ]
++        missing = [line for line in wanted if line not in lines.text.split("\n")]
++        for line in missing:
++            print("✘ not printed:", line)
++        if tallies["screens"]["a"] != 1 or tallies["trace"]["a"] != 1 or tallies["reports"]["a"] != 1:
++            missing.append("the tallies")
++            print("✘ the tallies:", tallies)
++        if missing:
++            print(lines.text)
++            return 1
++    print("words-before-the-news.py: its self-test holds")
++    return 0
++
++
++if __name__ == "__main__":
++    if sys.argv[1:] == ["--self-test"]:
++        sys.exit(self_test())
++    if len(sys.argv) != 2 or not os.path.isfile(os.path.join(sys.argv[1], "changes.txt")):
++        sys.exit(__doc__)
++    report(sys.argv[1])
+diff --git a/scripts/typecheck-mac/stubs/CoreGraphics/CoreGraphics.swift b/scripts/typecheck-mac/stubs/CoreGraphics/CoreGraphics.swift
+index df70f668..5a25fad5 100644
+--- a/scripts/typecheck-mac/stubs/CoreGraphics/CoreGraphics.swift
++++ b/scripts/typecheck-mac/stubs/CoreGraphics/CoreGraphics.swift
+@@ -147,6 +147,7 @@ public struct CGConfigureOption: OptionSet, Sendable {
+ public func CGBeginDisplayConfiguration(_ config: UnsafeMutablePointer<CGDisplayConfigRef?>?) -> CGError { .failure }
+ public func CGConfigureDisplayWithDisplayMode(
+   _ config: CGDisplayConfigRef?, _ display: CGDirectDisplayID, _ mode: CGDisplayMode?, _ options: CFDictionary?) -> CGError { .failure }
++public func CGConfigureDisplayOrigin(_ config: CGDisplayConfigRef?, _ display: CGDirectDisplayID, _ x: Int32, _ y: Int32) -> CGError { .failure }
+ public func CGCompleteDisplayConfiguration(_ config: CGDisplayConfigRef?, _ option: CGConfigureOption) -> CGError { .failure }
+ public func CGCancelDisplayConfiguration(_ config: CGDisplayConfigRef?) -> CGError { .failure }
+ public struct CGDisplayChangeSummaryFlags: OptionSet, Sendable {

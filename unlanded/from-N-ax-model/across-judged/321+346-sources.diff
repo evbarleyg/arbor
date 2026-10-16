@@ -1,0 +1,1062 @@
+diff --git a/Sources/ArborCore/ScreenLines.swift b/Sources/ArborCore/ScreenLines.swift
+new file mode 100644
+index 00000000..849dfaf3
+--- /dev/null
++++ b/Sources/ArborCore/ScreenLines.swift
+@@ -0,0 +1,52 @@
++import CoreGraphics
++
++/// How far macOS lets a window grow where it stands.
++///
++/// A call that sets a window's size makes it grow no further than to two lines of its display, from where it stands at that moment. A
++/// call that sets its position is not held back so. Measured call by call on hosted Macs, macOS 26, with a plain test window and
++/// with real apps alike (`collab/reality.json`: a-window-asked-to-grow-stops-at-the-dock). Arbor reckons with it, and the stand-ins play it.
++///
++/// Which display that is, of a window that lies astride two, is for whoever asks. Arbor and the fake go by the window's corner; the one
++/// sighting there is says the larger part. On one display it makes no difference.
++public struct ScreenLines: Equatable, Sendable {
++  /// How far to the right growth goes: all the way to the display's edge; a point short of the visible frame's with the Dock at the right.
++  public var right: CGFloat
++  /// How far down growth goes: a point short of the visible frame's bottom above a Dock; with the Dock at a side or hidden all the way to the
++  /// display's bottom.
++  public var bottom: CGFloat
++  /// The display's right edge and its bottom. Between a line and these, in the Dock's strip, a window's edge is held as it is; past them it is
++  /// free. At the right edge that was seen to the point. Below, a foot at 729 was held and one at 900 free, on a display 768 high, so that it
++  /// turns at the display's bottom is a guess. So is the strip of a Dock at the right, by likeness.
++  public var end: CGPoint
++
++  public init(frame: CGRect, visibleFrame: CGRect) {
++    end = CGPoint(x: frame.maxX, y: frame.maxY)
++    right = visibleFrame.maxX - (visibleFrame.maxX < frame.maxX ? 1 : 0)
++    bottom = visibleFrame.maxY - (visibleFrame.maxY < frame.maxY ? 1 : 0)
++  }
++
++  /// What macOS passes on of a `size` asked of a window that stands at `standing`. Each side by itself. Nobody is made smaller by it, and a
++  /// side that is off the display already is free. Its app has its say afterwards.
++  public func allows(_ size: CGSize, to standing: CGRect) -> CGSize {
++    CGSize(
++      width: standing.maxX > end.x ? size.width : min(size.width, max(standing.width, right - standing.minX)),
++      height: standing.maxY > end.y ? size.height : min(size.height, max(standing.height, bottom - standing.minY)))
++  }
++
++  /// What a window that stands at `standing` has of `target`'s size after the calls one request is made of (`FramePlan.steps`), if its app takes
++  /// whatever it is passed. Into a frame that hangs over an edge that is size, position, size: what the first call gives it, it takes along,
++  /// and may with that be off the display where it is going, and free. `rooms` as for `FramePlan.steps`; `lines`: those of the display that
++  /// judges a window with its corner there.
++  public static func sizeAfterOneRequest(
++    for target: CGRect, from standing: CGRect, rooms: [CGRect], lines: (CGPoint) -> ScreenLines?
++  ) -> CGSize {
++    var isAt = standing
++    for step in FramePlan.steps(from: standing, to: target, rooms: rooms) {
++      switch step {
++      case .position(let origin): isAt.origin = origin
++      case .size(let size): isAt.size = lines(isAt.origin)?.allows(size, to: isAt) ?? size
++      }
++    }
++    return isAt.size
++  }
++}
+diff --git a/Sources/ArborKit/Controller/Controller+AcrossDisplays.swift b/Sources/ArborKit/Controller/Controller+AcrossDisplays.swift
+new file mode 100644
+index 00000000..106c4c1f
+--- /dev/null
++++ b/Sources/ArborKit/Controller/Controller+AcrossDisplays.swift
+@@ -0,0 +1,138 @@
++import ArborCore
++import CoreGraphics
++import Foundation
++
++/// A docked window that Arbor takes from one display to another.
++///
++/// Right after a position call has taken a window across, macOS judges a size call by the display the window came from: under 6 ms 10 of
++/// 10, from 200 ms on by the new one, 4 of 4, in every order of the calls (a probe on a hosted Mac, macOS 26). From 1280×720 to 1920×1080 a
++/// window asked to be 947 high at y 43 took 677: 720 − 43, the foot of the display it had left. Asked again a millisecond later: 677. Arbor
++/// took that for an app that will not grow, centred the window in its slot and wrote the short size down, and so it lay until it next
++/// went out of view.
++///
++/// That is the screen's answer and not the window's. It is never written down and never taken for a refusal, the window stays at its slot's
++/// corner meanwhile, and it is asked once more when macOS has caught up: after a quarter of a second, and if it is still as short as another
++/// display would have it a second after the journey. What it answers then is its own answer, like any other.
++extension Controller {
++  /// A window that came out short after a journey, as short as another display would have it.
++  struct Journey {
++    /// On which display it is to be.
++    var display: DisplayID
++    /// How often it has been asked again.
++    var askedAgain = 0
++    /// For a window that is not docked: the frame it is to have, and the one it has for now.
++    var owed: (wanted: CGRect, has: CGRect)?
++  }
++
++  /// When it is asked again, counted from the answer before: a quarter of a second after the journey, and a second after it.
++  static let timesToCatchUp: [TimeInterval] = [0.25, 0.75]
++
++  /// One for each display, like the wait for a window that is only just back (`postponesJudgement`).
++  private func askAgainKey(_ display: DisplayID) -> String { "across-\(display.rawValue)" }
++
++  /// Whether `answer`, which is short of `slot` on `display`, may be what another display made of the asking. Wherever the window stood when
++  /// it was asked: it may have been taken across by a call that only moved it, and be asked to grow by the next layout, within the same moment.
++  func isAnotherDisplaysAnswer(_ answer: CGRect, shortOf slot: CGRect, on display: DisplayID) -> Bool {
++    let kept = sidesAnotherDisplayKept(of: answer.size, shortOf: slot.size, at: [answer.origin], on: display)
++    return kept.width || kept.height
++  }
++
++  /// Which sides of a window that `took` less than it was `asked` for another display than `display` may have kept short: judged by that one's
++  /// lines, with its corner at one of `origins`, macOS lets it be no larger than it is (`ScreenLines`, as in `sidesTheScreenKept`). So it ends
++  /// on such a line, or in the strip of that display's Dock, where a window keeps the height it has. Each side by itself. By which display
++  /// macOS counts a window that straddles two nobody has measured, so any other will do.
++  func sidesAnotherDisplayKept(
++    of took: CGSize, shortOf asked: CGSize, at origins: [CGPoint], on display: DisplayID
++  ) -> (width: Bool, height: Bool) {
++    var (width, height) = (false, false)
++    for other in displays where other.id != display {
++      for origin in origins {
++        let allowed = other.lines.allows(asked, to: CGRect(origin: origin, size: took))
++        if took.width < asked.width - 2, allowed.width < asked.width, allowed.width <= took.width + Self.theDocksPlay { width = true }
++        if took.height < asked.height - 2, allowed.height < asked.height, allowed.height <= took.height + Self.theDocksPlay { height = true }
++      }
++    }
++    return (width, height)
++  }
++
++  /// The windows that are short for now and are going to be asked again, for whoever compares windows with the layout. Only while the time until
++  /// then is running.
++  public var windowsToBeAskedAgain: Set<WindowID> { Set(journeys.filter { displaysToAskAgain.contains($0.value.display) }.keys) }
++
++  /// Gives `window` the frame it is to have, which is not a slot: its own size, where a hand left it (`giveAtOnce`). Fresh from another display
++  /// it comes out short. What it is to write down as its own is then what was asked for, since a size written down is lost for good; and
++  /// it is given the frame again when macOS has caught up.
++  func give(_ frame: CGRect, to window: WindowID) -> Given? {
++    // It may be sized somewhere else than where it ends up, and is judged where it was sized.
++    let before = windows[window].flatMap { whereItHasToBeSized(for: frame, from: $0.frame) }
++    guard var given = giveAtOnce(frame, to: window) else { return nil }
++    guard let display = stopper(of: given.frame.origin)?.id else { return given }
++    let places = [given.frame.origin, before, whereItHasToBeSized(for: frame, from: given.frame)].compactMap { $0 }
++    let kept = sidesAnotherDisplayKept(of: given.frame.size, shortOf: frame.size, at: places, on: display)
++    guard kept.width || kept.height, askAgainAfterTheJourney(window, on: display) else {
++      journeyIsOver(window)
++      return given
++    }
++    if kept.width { given.own.size.width = frame.width }
++    if kept.height { given.own.size.height = frame.height }
++    journeys[window]?.owed = (frame, given.frame)
++    return given
++  }
++
++  /// Called for such an answer. True if nothing is to be made of it: the window is going to be asked again. False if it has been asked often
++  /// enough: macOS has long caught up, and this is its own answer.
++  func askAgainAfterTheJourney(_ window: WindowID, on display: DisplayID) -> Bool {
++    if journeys[window]?.display != display {
++      journeyIsOver(window)
++      journeys[window] = Journey(display: display)
++    }
++    guard let journey = journeys[window], journey.askedAgain < Self.timesToCatchUp.count else {
++      Log.info("\(window) is as short as another display would have it a second after it came to display \(display): that is its own answer")
++      return false
++    }
++    // A layout that comes meanwhile asks too, and ends here. The time that is running goes on running.
++    if !displaysToAskAgain.contains(display) { askAgain(on: display, after: Self.timesToCatchUp[journey.askedAgain]) }
++    return true
++  }
++
++  private func askAgain(on display: DisplayID, after seconds: TimeInterval, havingWaited turns: Int = 0) {
++    displaysToAskAgain.insert(display)
++    scheduler.schedule(askAgainKey(display), after: seconds) { [weak self] in
++      guard let self else { return }
++      self.displaysToAskAgain.remove(display)
++      let waiting = self.journeys.filter { $0.value.display == display }.keys.sorted()
++      guard self.isRunning else { return waiting.forEach(self.journeyIsOver) }
++      // Not under a hand, nor by displays that may be gone, like any put-back (`scheduleEnforce`). For ten seconds; the next layout asks anyway.
++      if self.system.isMouseButtonDown() || self.isAwaitingResizeEnd(on: display) || self.someoneIsOnItsWayOutOfFullScreen(on: display)
++        || !self.knowsTheDisplays
++      {
++        guard turns < 40 else { return waiting.forEach(self.journeyIsOver) }
++        return self.askAgain(on: display, after: 0.25, havingWaited: turns + 1)
++      }
++      // Counted here and not by the answers, so that it ends whatever the clock says and however many layouts come between.
++      for window in waiting { self.journeys[window]?.askedAgain += 1 }
++      for window in waiting {
++        guard let owed = self.journeys[window]?.owed else { continue }
++        // Only if it is still where that answer left it: whoever has moved or sized it since, a hand or its app, has had the last word.
++        guard self.windows[window]?.frame == owed.has, !self.parked.contains(window),
++          self.workspaces.values.contains(where: { $0.isFloating(window) })
++        else {
++          self.journeyIsOver(window)
++          continue
++        }
++        _ = self.give(owed.wanted, to: window)
++      }
++      self.relayout(display, reason: .enforce)
++      // Whoever that layout did not come to (out of view, given up on, held) is asked by the layout that does.
++      if !self.displaysToAskAgain.contains(display) { self.journeys.filter { $0.value.display == display }.keys.sorted().forEach(self.journeyIsOver) }
++    }
++  }
++
++  /// It has what it was asked for, has answered for itself, has gone, or is somebody else's business by now.
++  func journeyIsOver(_ window: WindowID) {
++    guard let journey = journeys.removeValue(forKey: window) else { return }
++    guard displaysToAskAgain.contains(journey.display), !journeys.values.contains(where: { $0.display == journey.display }) else { return }
++    displaysToAskAgain.remove(journey.display)
++    scheduler.cancel(askAgainKey(journey.display))
++  }
++}
+diff --git a/Sources/ArborKit/Controller/Controller+AskFirst.swift b/Sources/ArborKit/Controller/Controller+AskFirst.swift
+index c1d74773..f7da467e 100644
+--- a/Sources/ArborKit/Controller/Controller+AskFirst.swift
++++ b/Sources/ArborKit/Controller/Controller+AskFirst.swift
+@@ -106,14 +106,15 @@ extension Controller {
+   /// (measured on macOS 26: at 170,220, asked to be 650 high above a Dock that begins at 705, a window became 484 high). That is
+   /// the room there was, not what the window can do; taken for that, it left every window docked from lower down short of its
+   /// slot. And a window that grows where it stands lies over its neighbours, in neither its old frame nor its new one. So each side is
+-  /// only asked to shrink. A window past both those lines, which is where Arbor parks them, was seen to grow as it is asked to.
++  /// only asked to shrink. A window off the display on both those sides, which is where Arbor parks all but the lowest of them, grows as it is
++  /// asked to; with its foot in the Dock's strip it keeps its height (`ScreenLines`).
+   ///
+   /// In the corner to the left of a display what shows of a window depends on its width, so it would grow into view or shrink
+   /// out of reach. And a window its person has left lower than macOS lets anybody put one would not stay where it stands.
+   private func question(_ window: WindowSnapshot, toTake size: CGSize) -> CGRect? {
+     let has = window.frame
+     let growsAsAsked =
+-      parked.contains(window.id) && stopper(of: has.origin).map { has.maxX > $0.frame.maxX && has.maxY > $0.visibleFrame.maxY } == true
++      parked.contains(window.id) && stopper(of: has.origin).map { has.maxX > $0.frame.maxX && has.maxY > $0.frame.maxY } == true
+     let question = CGRect(
+       origin: has.origin,
+       size: growsAsAsked ? size : CGSize(width: min(size.width, has.width), height: min(size.height, has.height)))
+@@ -125,14 +126,11 @@ extension Controller {
+     return isOutOfView(question.union(has)) && displays.contains { question.overlaps($0.frame) } ? question : nil
+   }
+ 
+-  /// Whether it may have been the screen that kept a window from growing to `asked` while it stood at `origin`: it `took` as much as ends
+-  /// on a line macOS lets no window grow across where it stands (`question`). Those lines are where they are at that moment,
+-  /// whatever Arbor has been told: the Dock's was seen to move by two points a third of a second before the news came.
++  /// Whether it may have been the screen that kept a window from growing to `asked` while it stood at `origin`: it `took` as much as macOS lets
++  /// a window have there (`sidesTheScreenKept`). A point or two short is nobody's refusal.
+   func mayHaveBeenStoppedByTheScreen(_ took: CGSize, shortOf asked: CGSize, at origin: CGPoint) -> Bool {
+-    guard let display = stopper(of: origin) else { return false }
+-    func ends(_ edge: CGFloat, on lines: CGFloat...) -> Bool { lines.contains { abs(edge - $0) <= 4 } }
+-    return took.height < asked.height - 2 && ends(origin.y + took.height, on: display.visibleFrame.maxY)
+-      || took.width < asked.width - 2 && ends(origin.x + took.width, on: display.frame.maxX, display.visibleFrame.maxX)
++    let kept = sidesTheScreenKept(of: took, shortOf: asked, at: [origin])
++    return kept.height && took.height < asked.height - 2 || kept.width && took.width < asked.width - 2
+   }
+ 
+   /// Puts a question. Returns true if the window refused to be that small (a new minimum size was learned).
+@@ -142,6 +140,10 @@ extension Controller {
+     actual = askForLess(window, slot: question, took: actual)
+     windows[window]?.frame = actual
+     settled[window] = actual
++    // Fresh from another display, it is judged by that one wherever it stands, also where it waits out of view
++    // (Controller+AcrossDisplays.swift). Nothing is made of such an answer, and it does not count as having answered: `place` offers it the
++    // whole slot, where `request` would only move one that has said what it makes of the size.
++    if isAnotherDisplaysAnswer(actual, shortOf: question, on: displayID) { return false }
+     justAnswered[window] = question.size
+     // Only just back, it may not be ready to take a frame, and answers with the one it has (Controller+OnTheWayBack.swift). It goes
+     // where the size it has belongs, and nothing is concluded. One that has changed its size has heard the question.
+diff --git a/Sources/ArborKit/Controller/Controller+AutoDock.swift b/Sources/ArborKit/Controller/Controller+AutoDock.swift
+index a616481c..3b5fa487 100644
+--- a/Sources/ArborKit/Controller/Controller+AutoDock.swift
++++ b/Sources/ArborKit/Controller/Controller+AutoDock.swift
+@@ -128,7 +128,7 @@ extension Controller {
+ 
+   /// Puts a window that was not docked after all back where its app opened it.
+   private func returnToWhereItOpened(_ id: WindowID, _ frame: CGRect) {
+-    guard let current = windows[id], current.frame != frame, let actual = system.setFrame(frame, of: id) else { return }
++    guard let current = windows[id], current.frame != frame, let actual = give(frame, to: id)?.frame else { return }
+     windows[id]?.frame = actual
+   }
+ 
+diff --git a/Sources/ArborKit/Controller/Controller+Events.swift b/Sources/ArborKit/Controller/Controller+Events.swift
+index d992703e..ff8d7e6a 100644
+--- a/Sources/ArborKit/Controller/Controller+Events.swift
++++ b/Sources/ArborKit/Controller/Controller+Events.swift
+@@ -37,6 +37,7 @@ extension Controller: WindowSystemEvents {
+     parked.remove(id)
+     settled[id] = nil
+     misfits[id] = nil
++    journeyIsOver(id)
+     minimumSizes[id] = nil
+     disprovedMinimums[id] = nil
+     seenSizes[id] = nil
+diff --git a/Sources/ArborKit/Controller/Controller+Hardening.swift b/Sources/ArborKit/Controller/Controller+Hardening.swift
+index 1b49ce21..d1e14625 100644
+--- a/Sources/ArborKit/Controller/Controller+Hardening.swift
++++ b/Sources/ArborKit/Controller/Controller+Hardening.swift
+@@ -94,7 +94,7 @@ extension Controller {
+     system.start()
+     defer { system.stop() }
+     for (window, frame) in couldNotComeBack.sorted(by: { $0.key < $1.key }) {
+-      guard let actual = system.setFrame(frame, of: window) else { continue }
++      guard let actual = give(frame, to: window)?.frame else { continue }
+       couldNotComeBack[window] = nil
+       leftAt?[window] = actual
+       noteThatThePauseFetched(window, to: actual)
+@@ -172,6 +172,8 @@ extension Controller {
+     seenSizes[window.id] = seenSizes.removeValue(forKey: old)
+     if fixedSizesNoted.remove(old) != nil { fixedSizesNoted.insert(window.id) }
+     misfits[window.id] = misfits.removeValue(forKey: old)
++    // What stands there now is asked at the next layout like anybody.
++    journeyIsOver(old)
+     parkedAgain[window.id] = parkedAgain.removeValue(forKey: old)
+     titleBars[window.id] = titleBars.removeValue(forKey: old)
+     chosenOnShape[window.id] = chosenOnShape.removeValue(forKey: old)
+diff --git a/Sources/ArborKit/Controller/Controller+Invariants.swift b/Sources/ArborKit/Controller/Controller+Invariants.swift
+index 0a857458..d918d8db 100644
+--- a/Sources/ArborKit/Controller/Controller+Invariants.swift
++++ b/Sources/ArborKit/Controller/Controller+Invariants.swift
+@@ -231,6 +231,7 @@ extension Controller {
+     check("settled", settled.keys)
+     check("minimumSizes", minimumSizes.keys)
+     check("misfits", misfits.keys)
++    check("journeys", journeys.keys)
+     check("disprovedMinimums", disprovedMinimums.keys)
+     check("seenSizes", seenSizes.keys)
+     check("justAnswered", justAnswered.keys)
+diff --git a/Sources/ArborKit/Controller/Controller+Layout.swift b/Sources/ArborKit/Controller/Controller+Layout.swift
+index 59c196c9..b46e3310 100644
+--- a/Sources/ArborKit/Controller/Controller+Layout.swift
++++ b/Sources/ArborKit/Controller/Controller+Layout.swift
+@@ -216,6 +216,18 @@ extension Controller {
+     let isOnlyMoved = asked.size == current.frame.size
+     // Where it was asked, not by way of the slot's corner.
+     if !isOnlyMoved { actual = askForLess(window, slot: asked, took: actual) }
++    // Fresh from another display, it has been judged by that one (Controller+AcrossDisplays.swift). Nothing is made of such an answer: it is
++    // not asked again on the spot, which brings the same; not centred; not written down. It is asked again when macOS has caught up.
++    if isAnotherDisplaysAnswer(actual, shortOf: target, on: displayID), askAgainAfterTheJourney(window, on: displayID) {
++      parked.remove(window)
++      windows[window]?.frame = actual
++      settled[window] = actual
++      misfits[window] = nil
++      // (Whatever frame it was owed while it floated, it is docked now.)
++      journeys[window]?.owed = nil
++      return false
++    }
++    journeyIsOver(window)
+     // An answer the screen may have given is no refusal (`mayHaveBeenStoppedByTheScreen`). It can be, anywhere but in the slot, which
+     // lies on the screen: where the window stood, if its app carries out a move late and was still there when it was asked for the
+     // size; and where it answers from, if it was not expected to grow, was asked lower than its slot begins, and has grown. Not
+@@ -441,10 +453,11 @@ extension Controller {
+       }
+       if let current = windows[window], !isInPlace(current, at: target) {
+         // Its app does not answer, so it is where it was, out of view if it was. It is placed when the app answers.
+-        guard var actual = system.setFrame(target, of: window) else {
++        guard let given = give(target, to: window) else {
+           unplaced.insert(window)
+           continue
+         }
++        var actual = given.frame
+         unplaced.remove(window)
+         // A few points over can be the nearest character cell, not a refusal (Controller+SizeSteps.swift), as in `apply`.
+         actual = askForLess(window, slot: target, took: actual)
+@@ -470,7 +483,7 @@ extension Controller {
+             target = informed
+             actual = system.setFrame(target, of: window) ?? actual
+           }
+-        } else if actual.width < target.width - 2 || actual.height < target.height - 2, showsLessThanHalf(actual) {
++        } else if actual.width < target.width - 2 || actual.height < target.height - 2, given.own.size == actual.size, showsLessThanHalf(actual) {
+           // The app will not make it that large any more. A window shrinks towards its top-left corner, so one that
+           // hung over the left edge of the screen has gone beyond it. The frame it had is no frame to go back to: it
+           // floats on the display from now on. One that took the frame it was asked to goes on hanging, whatever shows.
+diff --git a/Sources/ArborKit/Controller/Controller+LeftInFullScreen.swift b/Sources/ArborKit/Controller/Controller+LeftInFullScreen.swift
+index a0137c28..a90c680c 100644
+--- a/Sources/ArborKit/Controller/Controller+LeftInFullScreen.swift
++++ b/Sources/ArborKit/Controller/Controller+LeftInFullScreen.swift
+@@ -83,7 +83,7 @@ extension Controller {
+       return
+     }
+     let fits = !showsLessThanHalf(note.frame)
+-    if let actual = system.setFrame(fits ? note.frame : note.frame.fitted(into: main.visibleFrame), of: window) {
++    if let actual = give(fits ? note.frame : note.frame.fitted(into: main.visibleFrame), to: window)?.frame {
+       windows[window]?.frame = actual
+     }
+     guard isMostlyOffScreen(window) else {
+diff --git a/Sources/ArborKit/Controller/Controller+LetBe.swift b/Sources/ArborKit/Controller/Controller+LetBe.swift
+index 48d09735..0981531e 100644
+--- a/Sources/ArborKit/Controller/Controller+LetBe.swift
++++ b/Sources/ArborKit/Controller/Controller+LetBe.swift
+@@ -73,7 +73,7 @@ extension Controller {
+     workspaces[id]?.rememberUndockedFrames(ofArrivals: [state.window: state.stood])
+     // It was offered its place, because nobody knew that it would not fit, and is wherever that left it: with a slot
+     // on the right, mostly off the display.
+-    if windows[state.window]?.frame != state.stood, let actual = system.setFrame(state.stood, of: state.window) {
++    if windows[state.window]?.frame != state.stood, let actual = give(state.stood, to: state.window)?.frame {
+       windows[state.window]?.frame = actual
+     }
+   }
+diff --git a/Sources/ArborKit/Controller/Controller+OwnFrames.swift b/Sources/ArborKit/Controller/Controller+OwnFrames.swift
+index e04918ec..5d47eb33 100644
+--- a/Sources/ArborKit/Controller/Controller+OwnFrames.swift
++++ b/Sources/ArborKit/Controller/Controller+OwnFrames.swift
+@@ -56,6 +56,13 @@ extension Controller {
+     // Where Arbor fitted it, it is for the displays' sake, and its own frame is still its own, as long as it will be fitted
+     // to the same place again.
+     if fittedFrames[window] == frame, whereItWas(own, of: window, on: display).approximatelyEquals(frame, tolerance: 1) { return }
++    // Nor is the point its own that the screen keeps from a window which ends on the Dock's line (Controller+TheScreensAnswer.swift): it would
++    // lose one every time it went out of view.
++    if own.width - frame.width <= 2, own.height - frame.height <= 2, ownFrame(of: frame, askedFor: own.size).approximatelyEquals(own, tolerance: 0.99) {
++      return
++    }
++    // Nor what another display has made of it for the moment (Controller+AcrossDisplays.swift).
++    if journeys[window]?.owed?.has == frame { return }
+     workspaces[displayID]?.floating[window] = frame
+   }
+ 
+diff --git a/Sources/ArborKit/Controller/Controller+PendingSlots.swift b/Sources/ArborKit/Controller/Controller+PendingSlots.swift
+index fa637d53..a05555bc 100644
+--- a/Sources/ArborKit/Controller/Controller+PendingSlots.swift
++++ b/Sources/ArborKit/Controller/Controller+PendingSlots.swift
+@@ -386,7 +386,7 @@ extension Controller {
+       // The one that came first is a new window after all. It floats where its app had put it.
+       let home = displayID(at: held.openedAt.center).flatMap { workspaces[$0] == nil ? nil : $0 } ?? display
+       workspaces[home]!.floating[holder] = held.openedAt
+-      if let actual = system.setFrame(held.openedAt, of: holder) { windows[holder]?.frame = actual }
++      if let actual = give(held.openedAt, to: holder)?.frame { windows[holder]?.frame = actual }
+       parked.remove(holder)
+       settled[holder] = nil
+       misfits[holder] = nil
+diff --git a/Sources/ArborKit/Controller/Controller+Pin.swift b/Sources/ArborKit/Controller/Controller+Pin.swift
+index b7cec66b..712b89a5 100644
+--- a/Sources/ArborKit/Controller/Controller+Pin.swift
++++ b/Sources/ArborKit/Controller/Controller+Pin.swift
+@@ -53,7 +53,8 @@ extension Controller {
+       let remembered = workspaces[display]!.floating[id]
+     else { return }
+     let own = sizeToTakeAlong(of: id, from: display, remembered: remembered.size)
+-    workspaces[display]!.floating[id] = snapshot.frame
++    // But for what the screen kept from it: a point above the Dock, pin after pin.
++    workspaces[display]!.floating[id] = ownFrame(of: snapshot.frame, askedFor: remembered.size)
+     noteFit(of: id, own: own, into: snapshot.frame.size, on: display)
+   }
+ 
+@@ -187,7 +188,7 @@ extension Controller {
+       if frame.size != windows[window]?.frame.size { drag?.sizeOwed = frame.size }
+       return
+     }
+-    if var actual = system.setFrame(frame, of: window) {
++    if var actual = give(frame, to: window)?.frame {
+       // Its app insists on more by now, and it grew from the corner it was given: no way home would fetch what hangs over an
+       // edge. It is slid, at the size it insists on: what it has just refused is not asked of it again.
+       if actual.width > frame.width + 2 || actual.height > frame.height + 2, let visible = display(displayID)?.visibleFrame {
+diff --git a/Sources/ArborKit/Controller/Controller+Reflow.swift b/Sources/ArborKit/Controller/Controller+Reflow.swift
+index 9f160bd6..8e2a9aa3 100644
+--- a/Sources/ArborKit/Controller/Controller+Reflow.swift
++++ b/Sources/ArborKit/Controller/Controller+Reflow.swift
+@@ -165,7 +165,9 @@ extension Controller {
+     for (window, way) in returning.sorted(by: { $0.key < $1.key }) where windows[window]?.frame == way.to {
+       // An app that does not answer leaves its window where the trials put it, and that is what Arbor has to know:
+       // when the app wakes, a frame that differs from the one on record is taken for its user's doing.
+-      windows[window]?.frame = system.setFrame(way.to, of: window) ?? way.from
++      // And what `give` has to know to reckon the way.
++      windows[window]?.frame = way.from
++      _ = give(way.to, to: window)
+     }
+   }
+ }
+diff --git a/Sources/ArborKit/Controller/Controller+Rules.swift b/Sources/ArborKit/Controller/Controller+Rules.swift
+index a56a03f0..887e3dce 100644
+--- a/Sources/ArborKit/Controller/Controller+Rules.swift
++++ b/Sources/ArborKit/Controller/Controller+Rules.swift
+@@ -290,16 +290,16 @@ extension Controller {
+     return true
+   }
+ 
+-  /// Puts a window that a rule docked back where its app opened it. Returns the frame it took.
++  /// Puts a window that a rule docked back where its app opened it. Returns the frame to remember as its own.
+   @discardableResult
+   private func returnToOpeningFrame(_ id: WindowID) -> CGRect? {
+-    guard let frame = titleWatches[id]?.openingFrame, let actual = system.setFrame(frame, of: id) else {
++    guard let frame = titleWatches[id]?.openingFrame, let given = give(frame, to: id) else {
+       return nil
+     }
+-    windows[id]?.frame = actual
+-    settled[id] = actual
++    windows[id]?.frame = given.frame
++    settled[id] = given.frame
+     parked.remove(id)
+-    return actual
++    return given.own
+   }
+ 
+   /// Ends the wait for one window: it closed, or the user took it in hand (a drag, an edge resize, a
+diff --git a/Sources/ArborKit/Controller/Controller+SoleFloat.swift b/Sources/ArborKit/Controller/Controller+SoleFloat.swift
+index 795c5ba1..4ab4a940 100644
+--- a/Sources/ArborKit/Controller/Controller+SoleFloat.swift
++++ b/Sources/ArborKit/Controller/Controller+SoleFloat.swift
+@@ -270,7 +270,8 @@ extension Controller {
+     {
+       let size = CGSize(width: min(ownSize.width, room.width), height: min(ownSize.height, room.height))
+       let frame = Self.frame(ofSize: size, inPlaceOf: dropped, under: system.cursorLocation())
+-      if var actual = system.setFrame(frame, of: window) {
++      if let given = give(frame, to: window) {
++        var actual = given.frame
+         // Its app may not let it be that size (any more), and keeps the corner it was given, which was reckoned for another
+         // width: the window would jump away from under the pointer, off the display if it is near the edge.
+         if abs(actual.width - size.width) > 2 || abs(actual.height - size.height) > 2 {
+@@ -278,7 +279,7 @@ extension Controller {
+           actual = system.setFrame(again, of: window) ?? actual
+         }
+         windows[window]?.frame = actual
+-        workspaces[displayID]?.floating[window] = actual
++        workspaces[displayID]?.floating[window] = CGRect(origin: actual.origin, size: actual.size == given.frame.size ? given.own.size : actual.size)
+       }
+     }
+     // From one Desktop to another, as above.
+diff --git a/Sources/ArborKit/Controller/Controller+Summon.swift b/Sources/ArborKit/Controller/Controller+Summon.swift
+index 0eaa1738..7cb3ca64 100644
+--- a/Sources/ArborKit/Controller/Controller+Summon.swift
++++ b/Sources/ArborKit/Controller/Controller+Summon.swift
+@@ -150,7 +150,7 @@ extension Controller {
+     let own = home.flatMap { workspaces[$0]!.floating[window] } ?? snapshot.frame
+     let whereItIs =
+       home.map { windowThatTakesDesktop(of: $0) == window } == true
+-      ? own : frameWithoutSqueeze(of: window, on: display) ?? snapshot.frame
++      ? own : frameWithoutSqueeze(of: window, on: display) ?? ownFrame(of: snapshot.frame, askedFor: own.size)
+     let size = own.size
+     // In view with the keyboard in it already: someone is using it there, and it must not jump.
+     let inUseHere =
+@@ -169,11 +169,12 @@ extension Controller {
+     for other in workspaces.keys.sorted() where other != displayID { workspaces[other]!.floating[window] = nil }
+     let replaced = workspaces[displayID]!.summon(window, app: app, at: frame)
+     if let replaced, windows[replaced]?.isPresent == true { park(replaced, on: display) }
+-    if let actual = system.setFrame(frame, of: window) {
++    if let given = give(frame, to: window) {
++      let actual = given.frame
+       windows[window]?.frame = actual
+       settled[window] = actual
+       // What the app made of it is where it is, and where it will be next time.
+-      workspaces[displayID]!.floating[window] = actual
++      workspaces[displayID]!.floating[window] = given.own
+       parked.remove(window)
+       unplaced.remove(window)
+     } else {
+diff --git a/Sources/ArborKit/Controller/Controller+TheScreensAnswer.swift b/Sources/ArborKit/Controller/Controller+TheScreensAnswer.swift
+new file mode 100644
+index 00000000..10c650aa
+--- /dev/null
++++ b/Sources/ArborKit/Controller/Controller+TheScreensAnswer.swift
+@@ -0,0 +1,123 @@
++import ArborCore
++import CoreGraphics
++
++/// The screen's answer is not the window's.
++///
++/// A call that sets a window's size makes it grow no further than to the bottom of the visible frame (less a point above a Dock) and the
++/// right edge of its display, from where it stands at that moment; with its foot in the Dock's strip it does not grow at all. A call that
++/// sets its position is not held back so (`ScreenLines`). So a window cannot grow into a frame that hangs over such a line once it stands
++/// there, and what it answers is the room there was: 400×319 for a window of 400×600, let go low on the display. Written down as its own
++/// size, that is what it got back from then on.
++///
++/// Into such a frame a window is sent with three calls, size, position, size (`FramePlan`), so one request will do wherever the size fits
++/// where the window stands. Where it does not, the window is **sized where the size fits, and then only moved**.
++extension Controller {
++  /// What came of giving a window a frame.
++  struct Given: Equatable {
++    /// The frame it has.
++    var frame: CGRect
++    /// What to write down as its own: `frame`, but for a side that the screen kept short, which has the size that was asked for.
++    var own: CGRect
++  }
++
++  /// Gives `window` the frame it is to have, which may hang over an edge of its display: what a hand left there, or its own size at the
++  /// place where a hand let go of it. Nil if its app does not answer, and the window may then be anywhere on the way.
++  ///
++  /// For a frame that lies on the screen this is `setFrame`. A docked window's slot does, and `place` sees to its own.
++  ///
++  /// Called through `give`, which knows besides what a journey across displays does to the answer (Controller+AcrossDisplays.swift).
++  func giveAtOnce(_ frame: CGRect, to window: WindowID) -> Given? {
++    let standing = windows[window]?.frame
++    if let standing, whereItHasToBeSized(for: frame, from: standing) != nil {
++      lookAtTheDock(under: frame.origin)
++      if let place = whereItHasToBeSized(for: frame, from: standing) { return size(window, at: place, for: frame, from: standing) }
++    }
++    guard let actual = system.setFrame(frame, of: window) else { return nil }
++    windows[window]?.frame = actual
++    guard actual.width < frame.width || actual.height < frame.height else { return Given(frame: actual, own: actual) }
++    lookAtTheDock(under: actual.origin)
++    // Judged where it was asked: there, and where it stood before, for an app may carry a move out late.
++    let kept = sidesTheScreenKept(of: actual.size, shortOf: frame.size, at: [standing?.origin, actual.origin].compactMap { $0 })
++    let given = Given(frame: actual, own: CGRect(origin: actual.origin, size: kept.own))
++    // Cut after all: it did not stand where Arbor believed. Once more, from where it is now. Only if the answer ends on a line: held in the
++    // Dock's strip a window has whatever size it came with, which may as well be all its app allows, and a hop would be for nothing.
++    guard kept.endsOnALine else { return given }
++    if let place = whereItHasToBeSized(for: frame, from: actual) { return size(window, at: place, for: frame, from: actual) }
++    guard let again = system.setFrame(frame, of: window) else { return nil }
++    windows[window]?.frame = again
++    return Given(frame: again, own: ownFrame(of: again, askedFor: frame.size))
++  }
++
++  private func size(_ window: WindowID, at place: CGPoint, for frame: CGRect, from standing: CGRect) -> Given? {
++    guard let sized = system.setFrame(CGRect(origin: place, size: frame.size), of: window) else { return nil }
++    windows[window]?.frame = sized
++    // Judged here, where it was sized, and where it stood. Short of what was asked where there was room for it, that is its app's answer.
++    let own = sidesTheScreenKept(of: sized.size, shortOf: frame.size, at: [standing.origin, sized.origin]).own
++    // If its app has stopped answering half-way, it is not where it belongs, and whoever asked has to know. Where it is, is on record.
++    guard let moved = system.setFrame(CGRect(origin: frame.origin, size: sized.size), of: window) else { return nil }
++    windows[window]?.frame = moved
++    return Given(frame: moved, own: CGRect(origin: moved.origin, size: moved.size == sized.size ? own : moved.size))
++  }
++
++  /// macOS does not say when the Dock has grown or shrunk, so a layout looks before it reckons (`refreshVisibleFrame`). So does whoever
++  /// reckons with the Dock's line between two layouts.
++  private func lookAtTheDock(under origin: CGPoint) {
++    if let display = stopper(of: origin) { refreshVisibleFrame(of: display.id) }
++  }
++
++  /// What to write down as the own frame of a window that was asked for `size` where it stands and has `actual`.
++  func ownFrame(of actual: CGRect, askedFor size: CGSize) -> CGRect {
++    CGRect(origin: actual.origin, size: sidesTheScreenKept(of: actual.size, shortOf: size, at: [actual.origin]).own)
++  }
++
++  /// Which sides of a window that `took` less than it was `asked` for the screen may have kept short: with its corner at one of `origins`, macOS
++  /// lets it be no larger than it is. Each side by itself, and by as little as the point that is missing above a Dock. `own`: what it took, but
++  /// for those sides, which have what was asked. `endsOnALine`: one of them is short by more than a point or two and ends where growth
++  /// stops, which is what a cut looks like; not merely somewhere in the Dock's strip, where a window keeps whatever height it has.
++  func sidesTheScreenKept(
++    of took: CGSize, shortOf asked: CGSize, at origins: [CGPoint]
++  ) -> (width: Bool, height: Bool, own: CGSize, endsOnALine: Bool) {
++    var (width, height, endsOnALine) = (false, false, false)
++    for origin in origins {
++      guard let display = stopper(of: origin) else { continue }
++      let allowed = display.lines.allows(asked, to: CGRect(origin: origin, size: took))
++      let play = display.visibleFrame.maxX < display.frame.maxX ? Self.theDocksPlay : 1
++      if took.width < asked.width, allowed.width < asked.width, allowed.width <= took.width + play {
++        width = true
++        if took.width < asked.width - 2, origin.x + took.width <= display.visibleFrame.maxX + play { endsOnALine = true }
++      }
++      if took.height < asked.height, allowed.height < asked.height, allowed.height <= took.height + Self.theDocksPlay {
++        height = true
++        if took.height < asked.height - 2, origin.y + took.height <= display.visibleFrame.maxY + Self.theDocksPlay { endsOnALine = true }
++      }
++    }
++    return (width, height, CGSize(width: width ? asked.width : took.width, height: height ? asked.height : took.height), endsOnALine)
++  }
++
++  /// The Dock is as high as it is at that moment, whatever Arbor has been told: it was seen to change by two points as a window went into
++  /// it, a third of a second before the news came. So a window is sized this far above it, and an answer that ends this near it is the screen's.
++  static let theDocksPlay: CGFloat = 4
++
++  /// Where a window that stands at `standing` has to go to be given the size of `frame`, before it is moved there. Nil if it need not go
++  /// anywhere for that: one request will do, to a point. As near to where it is going as the size fits, so straight above it or beside it; if it
++  /// fits nowhere, where most of it does.
++  func whereItHasToBeSized(for frame: CGRect, from standing: CGRect) -> CGPoint? {
++    let rooms = displays.map { FramePlan.room(onDisplay: $0.frame, visible: $0.visibleFrame) }
++    let after = ScreenLines.sizeAfterOneRequest(for: frame, from: standing, rooms: rooms) { stopper(of: $0)?.lines }
++    let (wide, high) = (after.width >= frame.width - 1, after.height >= frame.height - 1)
++    guard !wide || !high, let display = stopper(of: frame.origin) else { return nil }
++    let (visible, whole) = (display.visibleFrame, display.frame)
++    let right = visible.maxX - (visible.maxX < whole.maxX ? Self.theDocksPlay : 0)
++    let bottom = visible.maxY - (visible.maxY < whole.maxY ? Self.theDocksPlay : 0)
++    let place = CGPoint(
++      x: wide ? frame.minX : max(whole.minX, min(frame.minX, right - frame.width)),
++      y: high ? frame.minY : max(visible.minY, min(frame.minY, bottom - frame.height)))
++    // Nothing is to be had there that is not to be had where it is going.
++    return place == frame.origin || stopper(of: place)?.id != display.id ? nil : place
++  }
++}
++
++extension DisplaySnapshot {
++  /// How far a window with its corner on this display can be made to grow.
++  var lines: ScreenLines { ScreenLines(frame: frame, visibleFrame: visibleFrame) }
++}
+diff --git a/Sources/ArborKit/Controller/Controller+Tiling.swift b/Sources/ArborKit/Controller/Controller+Tiling.swift
+index 8a7b14ba..42d3493a 100644
+--- a/Sources/ArborKit/Controller/Controller+Tiling.swift
++++ b/Sources/ArborKit/Controller/Controller+Tiling.swift
+@@ -471,7 +471,7 @@ extension Controller {
+       // It is placed before the layouts below; a motion still playing would end on a window that has left.
+       overlays.finishAnimations()
+       // Asked before anything is written down: a window whose app does not answer is where it was.
+-      guard var actual = system.setFrame(wanted, of: id) else {
++      guard var actual = give(wanted, to: id)?.frame else {
+         return .failure("\(id) stays where it is: its app does not answer")
+       }
+       parked.remove(id)
+diff --git a/Sources/ArborKit/Controller/Controller+UndockedFrames.swift b/Sources/ArborKit/Controller/Controller+UndockedFrames.swift
+index 5db2f51e..bde15d20 100644
+--- a/Sources/ArborKit/Controller/Controller+UndockedFrames.swift
++++ b/Sources/ArborKit/Controller/Controller+UndockedFrames.swift
+@@ -143,10 +143,11 @@ extension Controller {
+   /// Gives a window that was just dropped to float on `displayID` the frame `droppedFrame` chose.
+   func shrinkDropped(_ window: WindowID, to frame: CGRect, on displayID: DisplayID) {
+     misfits[window] = nil
+-    guard let actual = system.setFrame(frame, of: window) else { return }
++    guard let given = give(frame, to: window) else { return }
++    let actual = given.frame
+     Log.debug("\(window) was dropped out of its slot and took its own size, \(Int(actual.width))×\(Int(actual.height))")
+     windows[window]?.frame = actual
+-    workspaces[displayID]?.floating[window] = actual
++    workspaces[displayID]?.floating[window] = given.own
+   }
+ 
+   // MARK: Arbor lets go
+@@ -230,7 +231,7 @@ extension Controller {
+     let wasParked = parked.remove(window) != nil
+     let isThere = !wasParked && windows[window]?.frame == frame
+     // A call to another app costs more than everything Arbor does itself: not for a window that is there already.
+-    guard var actual = isThere ? frame : system.setFrame(frame, of: window) else {
++    guard let given = isThere ? Given(frame: frame, own: frame) : give(frame, to: window) else {
+       // Its app does not answer, so it is where it was, out of view if it was. It still counts as that, or nothing
+       // would ever fetch it, and it is placed when the app answers (`noteThatTheAppAnswers`).
+       if wasParked { parked.insert(window) }
+@@ -239,6 +240,7 @@ extension Controller {
+       return
+     }
+     unplaced.remove(window)
++    var actual = given.frame
+     // One that took the frame it was asked to is where its user had it, however little of it shows.
+     let isSmaller = actual.width < frame.width - 2 || actual.height < frame.height - 2
+     if actual.width > frame.width + 2 || actual.height > frame.height + 2
+@@ -251,7 +253,7 @@ extension Controller {
+       if isSmaller, let home = workspaceID(containing: window),
+         workspaces[home]?.floating[window]?.approximatelyEquals(frame, tolerance: 1) == true
+       {
+-        workspaces[home]?.floating[window] = actual
++        workspaces[home]?.floating[window] = CGRect(origin: actual.origin, size: given.own.size)
+       }
+     }
+     windows[window]?.frame = actual
+diff --git a/Sources/ArborKit/Controller/Controller.swift b/Sources/ArborKit/Controller/Controller.swift
+index fada80bb..8d662fb9 100644
+--- a/Sources/ArborKit/Controller/Controller.swift
++++ b/Sources/ArborKit/Controller/Controller.swift
+@@ -243,6 +243,10 @@ public final class Controller {
+   var misfits: [WindowID: (slot: CGRect, frame: CGRect)] = [:]
+   /// How small and how large each window has been seen, so that only what is not known is asked (Controller+AskFirst.swift).
+   var seenSizes: [WindowID: SeenSizes] = [:]
++  /// The windows that are to be asked for their slot's size again after a journey across displays (Controller+AcrossDisplays.swift).
++  var journeys: [WindowID: Journey] = [:]
++  /// The displays for which the time until that asking is running.
++  var displaysToAskAgain: Set<DisplayID> = []
+   /// The windows asked for a size during the layout under way that have yet to go to their place: what each was offered.
+   var justAnswered: [WindowID: CGSize] = [:]
+   /// The windows whose size Accessibility said cannot be changed, once that has been written down.
+@@ -521,6 +525,7 @@ public final class Controller {
+     parked.removeAll()
+     settled.removeAll()
+     misfits.removeAll()
++    for window in journeys.keys.sorted() { journeyIsOver(window) }
+     owedMoves.removeAll()
+     forgetWhatCouldNotComeBack()
+     pendingSlots.removeAll()
+@@ -1124,7 +1129,7 @@ public final class Controller {
+   /// Tries again for `only`, or for all that are owed it.
+   func payTheWayBack(to only: WindowID? = nil) {
+     for (window, place) in owedTheWayBack.sorted(by: { $0.key < $1.key }) where only == nil || only == window {
+-      guard let actual = system.setFrame(place, of: window) else { continue }
++      guard let actual = give(place, to: window)?.frame else { continue }
+       windows[window]?.frame = actual
+       owedTheWayBack[window] = nil
+     }
+diff --git a/Sources/ArborTesting/ChaosInvariants+SevenRules.swift b/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
+index d3cc8823..7c57f368 100644
+--- a/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
++++ b/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
+@@ -354,7 +354,7 @@ extension ChaosRunner {
+       || harness.scheduler.pendingKeys.contains { key in
+         // Not the focus ring's own timers, which are pending after most acts and lay nothing out.
+         if key.hasPrefix("focus-ring") { return false }
+-        return ["space-", "enforce-", "landed-", "displays-blinked", "focus", "back-from-full-screen", "summon-wait", "pending-slots", "sole-float-after-launch", "meet-"]
++        return ["space-", "enforce-", "landed-", "across-", "displays-blinked", "focus", "back-from-full-screen", "summon-wait", "pending-slots", "sole-float-after-launch", "meet-"]
+           .contains { key.hasPrefix($0) }
+       }
+   }
+@@ -420,8 +420,14 @@ extension ChaosRunner {
+       // Nobody in view is asked to grow where it stands: a window grows in its slot. That it cannot shows there, and it goes on to the
+       // middle of the slot, at the size it took. Once: from then on Arbor knows. That hop is left out of the road.
+       var mayLearn = floats.isEmpty && (!seven.refusedMore.contains(window) || seven.foundUnableToGrow.contains(window))
+-      let road = Self.road(of: moves) { refusal, next in
+-        guard mayLearn, Self.isTheWayToTheMiddle(next, after: refusal) else { return false }
++      // Nor can anybody grow into a frame that hangs over the edge of the screen: it is sized where the size fits, and then only moved.
++      var mayBeSizedElsewhere = true
++      let road = Self.road(of: moves) { move, next in
++        if mayBeSizedElsewhere, system.isSizedWhereItFits(move, then: next) {
++          mayBeSizedElsewhere = false
++          return true
++        }
++        guard mayLearn, Self.isTheWayToTheMiddle(next, after: move) else { return false }
+         mayLearn = false
+         return true
+       }
+diff --git a/Sources/ArborTesting/ChaosInvariants.swift b/Sources/ArborTesting/ChaosInvariants.swift
+index c0f13008..b6f8b9f0 100644
+--- a/Sources/ArborTesting/ChaosInvariants.swift
++++ b/Sources/ArborTesting/ChaosInvariants.swift
+@@ -23,6 +23,7 @@ extension ChaosRunner {
+     "left-to-macos",
+     "rehearsal",
+     "meet-",
++    "across-",
+   ]
+ 
+   /// How far a docked window may sit from its slot: 4 points of the app rounding its size
+@@ -101,6 +102,8 @@ extension ChaosRunner {
+     // A window on its way back (from the Dock, full screen, a hidden app) is judged once it has landed.
+     return timers.contains("enforce-" + display.rawValue) || timers.contains("space-" + display.rawValue)
+       || timers.contains("landed-" + display.rawValue)
++      // One that has just come from another display is asked for its slot's size again when macOS has caught up.
++      || timers.contains("across-" + display.rawValue)
+   }
+ 
+   /// Whether the window's app does what it is asked, within its size limits.
+@@ -456,7 +459,7 @@ extension ChaosRunner {
+       return
+     }
+     let timers = harness.scheduler.pendingKeys
+-    guard !timers.contains(where: { key in ["space-", "enforce-", "landed-", "displays-blinked"].contains { key.hasPrefix($0) } }) else { return }
++    guard !timers.contains(where: { key in ["space-", "enforce-", "landed-", "across-", "displays-blinked"].contains { key.hasPrefix($0) } }) else { return }
+     for (window, place) in restingPlaces.sorted(by: { $0.key < $1.key }) {
+       guard let fake = system.windows[window], fake.movesNotArbors == place.moves, fake.snapshot.isPresent, !fake.snapshot.isFullScreen,
+         cooperates(fake), controller.filter.manages(fake.snapshot),
+diff --git a/Sources/ArborTesting/FakeWindowSystem.swift b/Sources/ArborTesting/FakeWindowSystem.swift
+index ab815d63..737b5cdf 100644
+--- a/Sources/ArborTesting/FakeWindowSystem.swift
++++ b/Sources/ArborTesting/FakeWindowSystem.swift
+@@ -320,10 +320,16 @@ public final class FakeWindowSystem: WindowSystem {
+       func perform(_ steps: [FramePlan.Step]) {
+         for (index, step) in steps.enumerated() {
+           switch step {
+-          case .position(let origin): isAt = whereMacOSPuts(CGRect(origin: origin, size: isAt.size), titleBar: fake.titleBar)
++          case .position(let origin):
++            let left = display(holdingMostOf: isAt)
++            isAt = whereMacOSPuts(CGRect(origin: origin, size: isAt.size), titleBar: fake.titleBar)
++            if echoes.theDisplayItCameFromJudgesForAMoment, let left, display(holdingMostOf: isAt)?.id != left.id {
++              cameFrom[window] = (left, clock() + Self.timeToCatchUp)
++            }
+           case .size(let size):
+             let late = movesLate.contains(window) && index > 0 && index == steps.count - 1
+-            let allowed = sizeMacOSAllows(size, to: late ? CGRect(origin: before.origin, size: isAt.size) : isAt)
++            let allowed = sizeMacOSAllows(
++              size, to: late ? CGRect(origin: before.origin, size: isAt.size) : isAt, judgedBy: displayThatStillJudges(window))
+             isAt.size = Self.accepted(CGRect(origin: isAt.origin, size: allowed), by: fake).size
+           }
+         }
+@@ -425,15 +431,73 @@ public final class FakeWindowSystem: WindowSystem {
+     displayList.first { $0.frame.contains(origin) } ?? displayList.min { $0.frame.distance(to: origin) < $1.frame.distance(to: origin) }
+   }
+ 
+-  /// What macOS passes on of a `size` asked of a window that stands at `standing` (`echoes.growsNoFurtherThanTheScreen`). Its
+-  /// app has its say afterwards: a minimum size wins.
+-  private func sizeMacOSAllows(_ size: CGSize, to standing: CGRect) -> CGSize {
+-    guard echoes.growsNoFurtherThanTheScreen, let display = display(stopping: standing.origin) else { return size }
+-    let (right, bottom) = (display.frame.maxX, display.visibleFrame.maxY)
+-    return CGSize(
+-      width: standing.maxX > right ? size.width : min(size.width, max(standing.width, right - standing.minX)),
+-      height: standing.maxY > bottom || standing.minY + size.height <= bottom
+-        ? size.height : min(size.height, max(standing.height, bottom - 1 - standing.minY)))
++  /// The display a window is on, to macOS: the one that holds the largest part of it, as AppKit's `NSWindow.screen` has it. A guess as
++  /// far as sizes go: nobody has measured a window that straddles two.
++  private func display(holdingMostOf frame: CGRect) -> DisplaySnapshot? {
++    func part(_ display: DisplaySnapshot) -> CGFloat {
++      let shared = display.frame.intersection(frame)
++      return shared.isNull ? 0 : shared.width * shared.height
++    }
++    let most = displayList.max { part($0) < part($1) }
++    return most.map(part) ?? 0 > 0 ? most : display(stopping: frame.origin)
++  }
++
++  /// How long macOS goes on judging a size by the display a position call has taken a window away from
++  /// (`echoes.theDisplayItCameFromJudgesForAMoment`). Somewhere between 6 ms and 200 ms; the longest it can be.
++  public nonisolated static let timeToCatchUp = 0.2
++  /// The windows a position call has taken to another display, which one they came from, and until when it judges.
++  private var cameFrom: [WindowID: (display: DisplaySnapshot, until: Double)] = [:]
++
++  /// Work that was due then is being run, whatever the clock says (`ManualScheduler.beforeEach`): macOS has caught up with what it needed
++  /// no longer than that for.
++  public func itIsAtLeast(_ time: Double) {
++    cameFrom = cameFrom.filter { $0.value.until > time }
++  }
++
++  private func displayThatStillJudges(_ window: WindowID) -> DisplaySnapshot? {
++    guard let came = cameFrom[window] else { return nil }
++    // (A display that has gone meanwhile judges nobody.)
++    guard clock() < came.until, displayList.contains(where: { $0.id == came.display.id }) else {
++      cameFrom[window] = nil
++      return nil
++    }
++    return came.display
++  }
++
++  /// What macOS passes on of a `size` asked of a window that stands at `standing` (`echoes.growsNoFurtherThanTheScreen`, `ScreenLines`). Its
++  /// app has its say afterwards: a minimum size wins. `judge`: the display whose lines count, if not the one it stands on.
++  private func sizeMacOSAllows(_ size: CGSize, to standing: CGRect, judgedBy judge: DisplaySnapshot? = nil) -> CGSize {
++    guard echoes.growsNoFurtherThanTheScreen, let judge else { return lines(at: standing.origin)?.allows(size, to: standing) ?? size }
++    return ScreenLines(frame: judge.frame, visibleFrame: judge.visibleFrame).allows(size, to: standing)
++  }
++
++  private func lines(at origin: CGPoint) -> ScreenLines? {
++    guard echoes.growsNoFurtherThanTheScreen else { return nil }
++    return display(stopping: origin).map { ScreenLines(frame: $0.frame, visibleFrame: $0.visibleFrame) }
++  }
++
++  /// Whether `move` and `next` are a window **sized where its size fits and then only moved**, because no one request could have given it the
++  /// frame it ends at: that hangs over a line, and there was no room for the size where the window stood either
++  /// (Controller+TheScreensAnswer.swift). It went no further out of its way than it had to: straight above or beside where it ends up, up
++  /// against the line. Those who count a window's moves count these two as one.
++  public func isSizedWhereItFits(_ move: Move, then next: Move) -> Bool {
++    let (asked, via, end) = (move.requested, move.after, next.after)
++    // To a point: half points are rounded on the way.
++    func same(_ a: CGFloat, _ b: CGFloat) -> Bool { abs(a - b) <= 1 }
++    guard same(via.minX, asked.minX), same(via.minY, asked.minY), next.before == via, end.approximatelyEquals(next.requested, tolerance: 1),
++      end.size == via.size, let display = display(stopping: end.origin),
++      // It took what it was asked for, or, from the very edge of the display, all there is room for.
++      same(via.width, asked.width) || same(via.minX, display.frame.minX), same(via.height, asked.height) || same(via.minY, display.visibleFrame.minY)
++    else { return false }
++    // What it has by going there that one request would not have given it.
++    let last = ScreenLines.sizeAfterOneRequest(
++      for: CGRect(origin: end.origin, size: asked.size), from: move.before,
++      rooms: displayList.map { FramePlan.room(onDisplay: $0.frame, visible: $0.visibleFrame) }, lines: lines(at:))
++    let (narrow, low) = (last.width < via.width - 1, last.height < via.height - 1)
++    return (narrow || low)
++      && (narrow ? abs(display.visibleFrame.maxX - via.maxX) <= 5 && via.minX < end.minX : same(via.minX, end.minX))
++      // (As far above a Dock as Arbor keeps, `Controller.theDocksPlay`, and the point.)
++      && (low ? abs(display.visibleFrame.maxY - via.maxY) <= 5 && via.minY < end.minY : same(via.minY, end.minY))
+   }
+ 
+   public func focus(_ window: WindowID) {
+@@ -852,12 +916,13 @@ extension FakeWindowSystem {
+     /// A window cannot be moved so low that its title bar is under the Dock or below the display: asked for
+     /// 1023,767 on a display whose visible frame ends at 705, it stops at 1023,677, its title bar's 28 points above (`setTitleBar`).
+     public var titleBarStaysReachable = true
+-    /// A window whose size is set grows no further than to the bottom of the visible frame, less a point, and to the right edge
+-    /// of its display: at 170,220 on a display whose visible frame ends at 705, asked to be 650 high, it becomes 484 high;
+-    /// at 687,106 on one 1024 wide, asked to be 494 wide, 337 wide (25 answers on macOS 26). It is never made smaller by it. One
+-    /// that is past both already, as in the corner where Arbor parks windows, grows as it is asked to. Not seen, and a guess
+-    /// here: past one of them and not the other, each side goes by itself; asked to end on the very line, it does; with several
+-    /// displays, the one its corner is on counts; a Dock at the side.
++    /// A window whose size is set grows no further than to the bottom of the visible frame, less a point above a Dock, and to the right
++    /// edge of its display: at 170,220 on a display whose visible frame ends at 705, asked to be 650 high, it becomes 484 high; at
++    /// 687,106 on one 1024 wide, asked to be 494 wide, 337 wide. So a frame that ends on the visible bottom is a point short above a
++    /// Dock, and whole with the Dock at the side or hidden. It is never made smaller by it. Each side goes by itself, and is free only
++    /// once it is off the display, as in the corner where Arbor parks windows: with its bottom in the Dock's strip a window keeps its
++    /// height. (Recordings and a probe of bare calls on hosted Macs, macOS 26; real apps alike.) A guess here: where in the
++    /// strip that turns (seen: held down to 729 of 768, free from 900); with several displays, that the one its corner is on counts.
+     public var growsNoFurtherThanTheScreen = true
+     /// For this many seconds after a window leaves the Dock it is still flying: asked for a frame, it answers with the
+     /// one it has and keeps it. 0, the default: not seen on a Mac so far (the report of the un-minimize seems to come
+@@ -866,6 +931,10 @@ extension FakeWindowSystem {
+     /// The same for the way back from full screen, which takes macOS longer. All the way it has not been seen either: see
+     /// `leaveFullScreen`, which plays what has.
+     public var flightFromFullScreen = 0.0
++    /// Right after a position call has taken a window to another display, a size call is judged by the lines of the display it came
++    /// from: under 6 ms 10 of 10, from 200 ms on by the new display's, 4 of 4 (macOS 26; between the two nobody has looked). From 1280×720
++    /// to 1920×1080, asked to be 947 high at y 43, a window became 677 high: 720 − 43. In every order of calls.
++    public var theDisplayItCameFromJudgesForAMoment = true
+ 
+     public init() {}
+     /// Nothing happens that a test did not ask for.
+@@ -873,6 +942,7 @@ extension FakeWindowSystem {
+       var echoes = Echoes()
+       (echoes.focus, echoes.frames, echoes.keyboard, echoes.wholePoints) = (false, false, false, false)
+       (echoes.titleBarStaysReachable, echoes.growsNoFurtherThanTheScreen) = (false, false)
++      echoes.theDisplayItCameFromJudgesForAMoment = false
+       return echoes
+     }
+   }
+diff --git a/Sources/ArborTesting/Fakes.swift b/Sources/ArborTesting/Fakes.swift
+index 7defbae4..1484217e 100644
+--- a/Sources/ArborTesting/Fakes.swift
++++ b/Sources/ArborTesting/Fakes.swift
+@@ -255,6 +255,9 @@ public final class ManualScheduler: Scheduler {
+   private var order: [String] = []
+   /// Called after each piece of work. `Harness` delivers the fake window system's echoes here.
+   public var afterEach: (@MainActor () -> Void)?
++  /// Called before each piece of work with the time it was due. `runPending` and `fire` run work with the clock standing still, and yet
++  /// work that runs says that its time has come: whoever plays something of macOS's that passes by itself goes by this as well.
++  public var beforeEach: (@MainActor (_ due: Double) -> Void)?
+   /// Seconds since the scheduler was made. Only `advance(by:)` moves it.
+   public private(set) var now: Double = 0
+ 
+@@ -280,6 +283,7 @@ public final class ManualScheduler: Scheduler {
+     pending.removeAll()
+     for key in keys {
+       guard let item = items[key] else { continue }
++      beforeEach?(item.due)
+       item.action()
+       afterEach?()
+     }
+@@ -294,6 +298,7 @@ public final class ManualScheduler: Scheduler {
+     {
+       now = max(now, item.due)
+       cancel(key)
++      beforeEach?(item.due)
+       item.action()
+       afterEach?()
+     }
+@@ -314,6 +319,7 @@ extension ManualScheduler {
+   public func fire(_ key: String) -> Bool {
+     guard let item = pending[key] else { return false }
+     cancel(key)
++    beforeEach?(item.due)
+     item.action()
+     return true
+   }
+@@ -329,6 +335,7 @@ extension ManualScheduler {
+       now = max(now, item.due)
+       cancel(key)
+       willRun(key)
++      beforeEach?(item.due)
+       item.action()
+     }
+     now = max(now, end)
+diff --git a/Sources/ArborTesting/Harness+LayoutCheck.swift b/Sources/ArborTesting/Harness+LayoutCheck.swift
+index 97b9ad6c..bce5a1a8 100644
+--- a/Sources/ArborTesting/Harness+LayoutCheck.swift
++++ b/Sources/ArborTesting/Harness+LayoutCheck.swift
+@@ -13,6 +13,7 @@ extension Harness {
+     for display in system.displayList.map(\.id) where only == nil || only == display {
+       guard let fresh = controller.freshLayout(of: display) else { continue }
+       for (window, slot) in fresh.windowFrames.sorted(by: { $0.key < $1.key }) where frame(window) != slot {
++        if isShortForNow(window, in: slot) { continue }
+         problems.append("\(window) is at \(frame(window).map(Self.brief) ?? "nowhere"), and its place is \(Self.brief(slot))")
+       }
+       for window in fresh.hiddenWindows.sorted() where system.isVisible(window) && window != controller.windowLetBe {
+@@ -23,6 +24,14 @@ extension Harness {
+     return problems
+   }
+ 
++  /// Fresh from another display, a window is as large as that one let it be, and is asked again when macOS has caught up
++  /// (Controller+AcrossDisplays.swift). Until it has been asked it may be short of its slot, at the slot's corner and nowhere else. For
++  /// whoever compares windows with their slots in the very instant after a journey.
++  public func isShortForNow(_ window: WindowID, in slot: CGRect) -> Bool {
++    guard controller.windowsToBeAskedAgain.contains(window), let has = frame(window) else { return false }
++    return has.origin == slot.origin && has.width <= slot.width && has.height <= slot.height
++  }
++
+   /// The displays whose last layout is not what a layout would give now. That is never right once a command or an event
+   /// is over, whatever the apps do with the frames they are given, unless a layout is scheduled: a switch of macOS
+   /// Spaces, or an app being hidden, is laid out once all of its reports are in. arbor-sim asks after every line.
+diff --git a/Sources/ArborTesting/Harness.swift b/Sources/ArborTesting/Harness.swift
+index ec9f2876..ab43736b 100644
+--- a/Sources/ArborTesting/Harness.swift
++++ b/Sources/ArborTesting/Harness.swift
+@@ -70,6 +70,7 @@ public final class Harness {
+     let start = Date(timeIntervalSinceReferenceDate: 800_000_000)
+     controller.now = { [scheduler] in start.addingTimeInterval(scheduler.now) }
+     scheduler.afterEach = { [system] in system.deliverEchoes() }
++    scheduler.beforeEach = { [system] due in system.itIsAtLeast(due) }
+     system.afterEvents = { [scheduler] in scheduler.advance(by: 0) }
+     system.clock = { [scheduler] in scheduler.now }
+     controller.releaseFeed = releases
+diff --git a/Sources/ArborTesting/Jolts.swift b/Sources/ArborTesting/Jolts.swift
+index 0f3ad9a8..99331ac9 100644
+--- a/Sources/ArborTesting/Jolts.swift
++++ b/Sources/ArborTesting/Jolts.swift
+@@ -9,7 +9,8 @@ import CoreGraphics
+ /// the same window for another frame. Not a jolt: asking again because the app answered with another size than it was asked for
+ /// (nobody can know an app's limits before asking), two moves of which a person sees one, because the
+ /// place in between is out of view like the place before or after it, and a question: a window of which Arbor does not know how small
+-/// it goes is asked to shrink where it stands and goes to its place afterwards, which is one road (Roads.swift).
++/// it goes is asked to shrink where it stands and goes to its place afterwards, which is one road (Roads.swift). Nor a window sized where
++/// its size fits and then moved into a frame that hangs over the edge of the screen, into which macOS lets nobody grow (`isSizedWhereItFits`).
+ public struct Jolt: Equatable, Sendable, CustomStringConvertible {
+   public var window: WindowID
+   public var from: CGRect
+@@ -52,7 +53,8 @@ extension FakeWindowSystem {
+         // Nobody else has had the window since.
+         first.after == move.before,
+         // Not a question: a size where it stood, and from there straight on.
+-        first.after.origin != first.before.origin || Self.detour([first.before, first.after, move.after]) != nil
++        first.after.origin != first.before.origin || Self.detour([first.before, first.after, move.after]) != nil,
++        !isSizedWhereItFits(first, then: move)
+       else { continue }
+       let (before, between, after) = (shows(first.before), shows(first.after), shows(move.after))
+       if between || (before && after) {

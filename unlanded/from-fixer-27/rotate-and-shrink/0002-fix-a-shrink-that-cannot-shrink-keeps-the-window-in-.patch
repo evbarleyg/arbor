@@ -1,0 +1,140 @@
+From f6f6346a8b874ae55ad73a91efca496d2bafa605 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 13:03:48 +0000
+Subject: [PATCH 2/5] fix: a shrink that cannot shrink keeps the window in
+ view: it gets the points it is short of
+
+A slot can be a point or two below what the window's app insists on, which passes for rounding until the window is asked for less. The
+next `shrink` learnt the true size, answered "cannot shrink any further", and the window was a tile from then on, out of view, with
+the keyboard gone elsewhere. Decided by the product owner: nothing goes out of view by itself outranks a command that fails has
+changed nothing. The gaps go out by what the window is short of, the answer is the same, and the window stays.
+---
+ .../Controller/Controller+Tiling.swift        | 13 +++-
+ .../OneEventOneLayoutTests.swift              | 73 ++++++++++++++++++-
+ 2 files changed, 82 insertions(+), 4 deletions(-)
+
+diff --git a/Sources/ArborKit/Controller/Controller+Tiling.swift b/Sources/ArborKit/Controller/Controller+Tiling.swift
+index 8a7b14ba..405e4db6 100644
+--- a/Sources/ArborKit/Controller/Controller+Tiling.swift
++++ b/Sources/ArborKit/Controller/Controller+Tiling.swift
+@@ -286,7 +286,14 @@ extension Controller {
+           let usable = options(for: display).layoutOptions.minimumUsableSize
+           let learned = minimumSizes[id] ?? .zero
+           let floor = axis == .horizontal ? max(usable.width, learned.width) : max(usable.height, learned.height)
+-          change = -min(-amount, max(slot.length(along: axis) - floor - 1, 0))
++          let length = slot.length(along: axis)
++          let spare = length - floor - 1
++          // Its slot is a point or two short of what its app insists on, which passed for rounding until it was asked for less. Left
++          // so, it would be a tile from now on: for a command that cannot do what it was asked, the window would go out of view.
++          // Nothing goes out of view by itself, so it gets what it is short of. By the layout's own measure of a tile: a slot that is
++          // a point short shows its window, and is left as it is.
++          let wouldBeATile = (axis == .horizontal ? learned.width : learned.height) > length + 1
++          change = wouldBeATile ? -spare : -min(-amount, max(spare, 0))
+         }
+         guard change != 0 else { continue }
+         let share = change / CGFloat(sides.count)
+@@ -330,6 +337,10 @@ extension Controller {
+     }
+     guard movedAtAll else { return .failure("\(id) cannot \(verb) any further") }
+     scheduleSave()
++    // All that moved is what it was short of.
++    if !growing, let now = layouts[display]?.nodeFrames[leaf], now.width > slot.width - 0.5, now.height > slot.height - 0.5 {
++      return .failure("\(id) cannot \(verb) any further")
++    }
+     return .success(growing ? "\(id) grew" : "\(id) shrank")
+   }
+ 
+diff --git a/Tests/ArborKitTests/OneEventOneLayoutTests.swift b/Tests/ArborKitTests/OneEventOneLayoutTests.swift
+index e4cdfcec..a1d6fc34 100644
+--- a/Tests/ArborKitTests/OneEventOneLayoutTests.swift
++++ b/Tests/ArborKitTests/OneEventOneLayoutTests.swift
+@@ -159,9 +159,8 @@ private let oneLayout: Set<String> = [
+     expectSound(h)
+   }
+ 
+-  /// Its app lets it be no smaller than a point or two more than its slot, which passes for rounding until it is asked for less. However
+-  /// that ends, no key goes to a window out of view.
+-  @Test func theKeyboardIsNeverLeftInAWindowOutOfView() {
++  /// Mail above Preview, whose app lets it be no lower than 419 points, in a slot of 417: that passes for rounding until it is asked for less.
++  private func aSlotTwoPointsShort() -> (Harness, above: WindowID, below: WindowID) {
+     let h = Harness()
+     let above = h.system.open(app: "Mail", pid: 1002, frame: CGRect(x: 17, y: 193, width: 602, height: 433), minimumSize: CGSize(width: 100, height: 60))
+     let below = h.system.open(app: "Preview", pid: 1007, frame: CGRect(x: 207, y: 161, width: 700, height: 557), minimumSize: CGSize(width: 702, height: 419))
+@@ -171,6 +170,74 @@ private let oneLayout: Set<String> = [
+     h.system.userFocus(below)
+     h.scheduler.runPending()
+     _ = h.run("shrink 2")
++    #expect(h.layout!.windowFrames[below].map { $0.height < 419 } == true, "the story needs a slot that is short: \(h.ascii())")
++    return (h, above, below)
++  }
++
++  /// "Nothing goes out of view by itself" outranks "a command that fails has changed nothing": a shrink that cannot shrink gives the window
++  /// the points it is short of, says so, and the window stays. (It became a tile, and the keyboard went elsewhere.)
++  @Test func aShrinkThatCannotShrinkKeepsTheWindowInView() {
++    let (h, _, below) = aSlotTwoPointsShort()
++    let roads = Roads(h) { #expect(h.run("shrink 2").message == "\(below) cannot shrink any further") }
++    roads.expectOneRoadEach()
++    #expect(h.layout!.windowFrames[below].map { $0.height >= 419 && $0.height <= 421 } == true, "\(h.ascii())")
++    #expect(h.layout!.tiles.isEmpty && h.system.focused == below)
++    expectSound(h)
++    // And again: by now there is nothing to give.
++    let again = Roads(h) { #expect(h.run("shrink").message == "\(below) cannot shrink any further") }
++    #expect(again.roads.values.allSatisfy { FakeWindowSystem.changesOfPlace($0) == 0 }, "\(again.roads)")
++    expectSound(h)
++  }
++
++  /// Only what would otherwise go out of view. A slot that is a point short of what the app insists on shows its window all the same (a point
++  /// passes for rounding, `LayoutEngine`): there a shrink that cannot shrink has changed nothing, and nobody is asked for anything.
++  /// A walk's own script: Xcode, which is known to go no narrower than 1188, in a slot of 1187.
++  @Test func aSlotThatIsAPointShortIsLeftAsItIs() {
++    let runner = ChaosRunner()
++    let actions = ChaosAction.script(
++      """
++      displays main:0,0,1512,982:37,0,86,0* side:-1920,323,1920,1080:25,0,0,0 windows-never
++      open 101 Music pid 1006 at 351 180 980 600 min 980 600
++      launch
++      open 103 Mail pid 1002 at 102 314 1265 539 min 871 236
++      via menu arrange all
++      focus 101
++      open 104 Notes pid 1001 at 491 330 909 558 min 709 320
++      focus 103
++      open 105 Xcode pid 1004 at 65 37 1188 859 min 1188 685
++      key down dock left
++      key down neighbor right
++      minimize 101
++      key down mirror
++      close 104
++      focus 103
++      restore 105
++      key down zoom
++      key down dock right
++      key down shrink
++      """)
++    for action in actions.dropLast() { _ = runner.step(action) }
++    let xcode = WindowID(105)
++    let slot = runner.controller.layouts.values.compactMap { $0.windowFrames[xcode] }.first
++    #expect(slot?.width == 1187, "the story needs a slot a point short: \(String(describing: slot))")
++    let mark = runner.system.moveLog.count
++    _ = runner.step(actions.last!)
++    #expect(runner.system.moveLog.count == mark, "\(runner.system.moveLog[mark...].map(\.window))")
++  }
++
++  /// What it was given is a move of a gap like any other: Undo takes it back, with the shrink before it, which is one step with it.
++  @Test func whatItWasGivenCanBeUndone() {
++    let (h, _, below) = aSlotTwoPointsShort()
++    let short = h.workspace
++    _ = h.run("shrink 2")
++    #expect(h.workspace != short)
++    runOK(h, "undo")
++    #expect(h.layout!.windowFrames[below].map { $0.height >= 419 } == true && h.system.focused == below, "\(h.ascii())")
++  }
++
++  /// However a shrink ends, no key goes to a window out of view.
++  @Test func theKeyboardIsNeverLeftInAWindowOutOfView() {
++    let (h, _, _) = aSlotTwoPointsShort()
+     _ = h.run("shrink 2")
+     h.scheduler.advance(by: 1)
+     #expect(h.system.focused.map { !h.controller.parked.contains($0) } == true, "\(String(describing: h.system.focused)) has the keyboard")
+-- 
+2.43.0
+

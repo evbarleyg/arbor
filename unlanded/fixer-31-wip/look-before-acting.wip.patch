@@ -1,0 +1,455 @@
+diff --git a/Sources/ArborKit/Controller/Controller+Commands.swift b/Sources/ArborKit/Controller/Controller+Commands.swift
+index 5825b8d..c0c5cac 100644
+--- a/Sources/ArborKit/Controller/Controller+Commands.swift
++++ b/Sources/ArborKit/Controller/Controller+Commands.swift
+@@ -70,6 +70,8 @@ extension Controller {
+     case .launchAtLogin(let enabled):
+       return launchAtLogin(enabled)
+     case .settings(let command):
++      // A setting can lay out every display.
++      if !command.isQuery { lookAtTheDisplaysBeforeActing() }
+       return performSettings(command)
+     case .trace(let action):
+       return trace(action)
+@@ -85,6 +87,7 @@ extension Controller {
+     }
+ 
+     guard isRunning else { return .failure(statusText) }
++    lookAtTheDisplaysBeforeActing()
+     expectFocusToMove()
+ 
+     let namesBefore = everyName()
+diff --git a/Sources/ArborKit/Controller/Controller+Displays.swift b/Sources/ArborKit/Controller/Controller+Displays.swift
+index 3547c18..002c52d 100644
+--- a/Sources/ArborKit/Controller/Controller+Displays.swift
++++ b/Sources/ArborKit/Controller/Controller+Displays.swift
+@@ -23,6 +23,7 @@ extension Controller {
+     // If windows were moved behind Arbor's back, here is the report after all. What follows looks after every window.
+     movedBehindArborsBack = []
+     scheduler.cancel("displays-blinked")
++    scheduler.cancel(Self.lookingAgain)
+     overlays.finishAnimations()
+     let previous = Set(workspaces.keys)
+     let before = displays
+@@ -188,6 +189,40 @@ extension Controller {
+     updateDisplays(lettingGo: true)
+   }
+ 
++  /// Look before acting. The wait that keeps Arbor from chasing a display that only blinks (`DisplayChange`) is for what
++  /// Arbor does by itself. A person who asks for something within it is looking at the displays that are: a command carried
++  /// out by the ones Arbor still believes in sent windows to slots and corners on a display that was gone, and fetched them
++  /// again when the report came; with nothing docked at all, `home` took a window macOS had just brought over out of view
++  /// and back; and the key acted on the arrangement that was about to go to sleep. So the wait ends there: Arbor does now
++  /// what it would do at the report, the whole of it, and then what was asked, which ends as if it had been asked afterwards.
++  ///
++  /// The whole of it, unlike `lookAtTheDisplaysBeforeLettingGo`: books alone are for an Arbor that stops. One that goes on
++  /// would count windows in plain view as out of view, and leave the arrangement of a display that came asleep for good.
++  ///
++  /// Not while there is no display at all: there is nothing to go by. What apps and macOS report meanwhile ends no wait.
++  func lookAtTheDisplaysBeforeActing() {
++    guard isRunning, !knowsTheDisplays, !system.displays().isEmpty else { return }
++    Log.info("a command before a change of displays was reported: looking at the displays first")
++    updateDisplays()
++    lookAgain(triesLeft: Self.blinkTries)
++  }
++
++  private static let lookingAgain = "displays-blinked-after-a-look"
++
++  /// Whoever reports the displays says nothing if they are by then as it last reported them: that was a blink. But Arbor has
++  /// looked in the midst of it, and would go on believing in what it saw. Until the report comes, which ends this, it asks.
++  private func lookAgain(triesLeft: Int) {
++    scheduler.schedule(Self.lookingAgain, after: DisplayChange.comingAndGoing + 0.5) { [weak self] in
++      guard let self, self.isRunning else { return }
++      if !self.knowsTheDisplays, !self.system.displays().isEmpty {
++        Log.info("the displays are not the ones Arbor looked at, and nobody said so: looking again")
++        self.updateDisplays()
++      } else if triesLeft > 1 {
++        self.lookAgain(triesLeft: triesLeft - 1)
++      }
++    }
++  }
++
+   /// macOS moved `window` because a display came or went that Arbor has not heard of yet. If the report comes,
+   /// `updateDisplays` puts every window where it belongs. If the display only blinked, on wake or while a dock
+   /// negotiates, there never is a report (`DisplayChange`), and nobody else would: the move was not the user's, so nothing
+diff --git a/Tests/ArborKitTests/LookBeforeActingTests.swift b/Tests/ArborKitTests/LookBeforeActingTests.swift
+new file mode 100644
+index 0000000..f6ee680
+--- /dev/null
++++ b/Tests/ArborKitTests/LookBeforeActingTests.swift
+@@ -0,0 +1,294 @@
++import ArborCore
++import ArborKit
++import ArborTesting
++import CoreGraphics
++import Foundation
++import Testing
++
++/// Arbor hears of a change of displays only once it has settled, a second and a half after macOS's last notice
++/// (`DisplayChange`). On every recording of a hosted Mac the list of displays is new, and macOS's own moves of the windows are
++/// over, within a third of a second. A person who presses one of Arbor's keys in the time that is left is looking at
++/// the displays that are, and was answered by the ones Arbor still believed in: windows went to slots and corners on a display that
++/// was gone and were fetched again at the report, and the key acted on an arrangement that was about to go to sleep.
++///
++/// Look before acting: what is asked within the wait ends as if it had been asked after it.
++@Suite @MainActor struct LookBeforeActingTests {
++  static let side = LookBeforeLettingGoTests.side
++
++  /// What happens to the displays, with what macOS does to the windows by itself, which their apps report as any move.
++  enum Change: String, CaseIterable, CustomTestStringConvertible {
++    case theSideGoes, theLidShuts, theSideChangesSides, theSideShrinks, theSideComes
++    var testDescription: String { rawValue }
++  }
++
++  struct Desk {
++    var h: Harness
++    /// Two to dock and one that floats, on each display.
++    var onTheLaptop: [WindowID]
++    var onTheSide: [WindowID]
++    var all: [WindowID] { onTheLaptop + onTheSide }
++  }
++
++  enum Arrangement: String, CaseIterable, CustomTestStringConvertible {
++    case nothingDocked, docked, framed
++    var testDescription: String { rawValue }
++  }
++
++  func make(_ arrangement: Arrangement, before change: Change) -> Desk {
++    let h = Harness(displays: change == .theSideComes ? [FakeWindowSystem.standardDisplay] : [FakeWindowSystem.standardDisplay, Self.side])
++    func open(_ count: Int, from x: CGFloat, pid: Int32) -> [WindowID] {
++      (0..<count).map { index in
++        h.system.open(
++          app: "App\(pid + Int32(index))", pid: pid + Int32(index),
++          frame: CGRect(x: x + 90 * CGFloat(index), y: 100 + 60 * CGFloat(index), width: 480, height: 348))
++      }
++    }
++    let desk = Desk(h: h, onTheLaptop: open(3, from: 100, pid: 1001), onTheSide: change == .theSideComes ? [] : open(3, from: 1600, pid: 1011))
++    h.start()
++    guard arrangement != .nothingDocked else { return desk }
++    for windows in [desk.onTheLaptop, desk.onTheSide] where !windows.isEmpty {
++      h.system.cursor = h.frame(windows[0])!.center
++      h.run("dock \(windows[0].rawValue) left")
++      h.run("dock \(windows[1].rawValue) right")
++      if arrangement == .framed { h.run("zoom \(windows[0].rawValue)") }
++    }
++    h.scheduler.advance(by: 5)
++    return desk
++  }
++
++  /// macOS has other displays from here on, and Arbor is not told.
++  func quietly(_ h: Harness, _ change: () -> Void) {
++    let listener = h.system.events
++    h.system.events = nil
++    change()
++    h.system.events = listener
++  }
++
++  /// The list is new at once; macOS moves what it moves, and the apps say so; nobody has told Arbor of the displays.
++  func happen(_ change: Change, to desk: Desk) {
++    let h = desk.h
++    /// Onto the display that stays, as far from its corner as they were from their own.
++    func bringOver(_ windows: [WindowID], by dx: CGFloat) {
++      for window in windows { h.system.userMove(window, to: h.frame(window)!.offsetBy(dx: dx, dy: 0)) }
++    }
++    switch change {
++    case .theSideGoes:
++      quietly(h) { h.system.unplug(Self.side.id) }
++      bringOver(desk.onTheSide, by: -1440)
++    case .theLidShuts:
++      // Every coordinate is another, of which no app speaks; what was on the laptop lies to the left of all there is.
++      quietly(h) { h.system.unplug(h.display) }
++      bringOver(desk.onTheLaptop, by: 1440)
++    case .theSideChangesSides:
++      quietly(h) { h.system.moveDisplay(Self.side.id, to: CGPoint(x: -1920, y: 0)) }
++      for window in desk.onTheSide { h.system.report(window, userInitiated: true) }
++    case .theSideShrinks:
++      var smaller = Self.side
++      smaller.frame.size = CGSize(width: 1280, height: 720)
++      smaller.visibleFrame.size = smaller.frame.size
++      quietly(h) { h.system.plug(smaller) }
++    case .theSideComes:
++      quietly(h) { h.system.plug(Self.side) }
++    }
++    // The pointer cannot stay where there is no display any more.
++    if !h.system.displayList.contains(where: { $0.frame.contains(h.system.cursor) }) {
++      let nearest = h.system.displayList.min { $0.frame.distance(to: h.system.cursor) < $1.frame.distance(to: h.system.cursor) }!.frame
++      h.system.cursor = CGPoint(
++        x: min(max(h.system.cursor.x, nearest.minX), nearest.maxX - 1), y: min(max(h.system.cursor.y, nearest.minY), nearest.maxY - 1))
++    }
++    h.scheduler.advance(by: 0.4)
++  }
++
++  /// The report, when the displays have settled.
++  func tell(_ h: Harness) { h.system.setDisplays(h.system.displayList) }
++
++  static let commands = [
++    "show-all", "home", "desktop", "out", "back", "zoom 101", "zoom 102", "dock 103 left", "dock 103 bottom", "float 101", "toggle-float 102",
++    "arrange", "undo", "focus right", "move-to-display next", "pin 103", "set gap 30", "reload-settings",
++  ]
++
++  /// The same story twice: asked within the wait, and asked when Arbor has heard. Nil: nothing is asked at all.
++  ///
++  /// Both end with a report that brings nothing new, as the first does whose command came early. (A Mac sends such a one whenever
++  /// the Dock changes its size.) Where that by itself moves a floating window, because a layout for the view and one for the
++  /// arrangement do not agree on its place, that is an older fault and no part of this story.
++  func play(_ command: String?, _ arrangement: Arrangement, _ change: Change, within: Bool) -> Desk {
++    let desk = make(arrangement, before: change)
++    let h = desk.h
++    happen(change, to: desk)
++    h.system.clearFrameLog()
++    if within, let command { h.run(command) }
++    h.scheduler.advance(by: 1.3)
++    tell(h)
++    h.scheduler.advance(by: 1)
++    if !within, let command { h.run(command) }
++    h.scheduler.advance(by: 1)
++    if !within { tell(h) }
++    h.scheduler.advance(by: 5)
++    return desk
++  }
++
++  @Test(arguments: Arrangement.allCases, Change.allCases)
++  func whatIsAskedBeforeArborHasHeardEndsAsIfItHadBeenAskedAfterwards(_ arrangement: Arrangement, _ change: Change) {
++    for command in Self.commands {
++      let (early, late) = (play(command, arrangement, change, within: true), play(command, arrangement, change, within: false))
++      for window in early.all {
++        #expect(early.h.frame(window) == late.h.frame(window), "`\(command)`: \(window)")
++      }
++      #expect(early.h.controller.parked == late.h.controller.parked, "`\(command)`")
++      #expect(
++        early.h.controller.workspaces.mapValues { $0.tree.allWindows.sorted() } == late.h.controller.workspaces.mapValues { $0.tree.allWindows.sorted() },
++        "`\(command)`: who is docked where")
++      expectWindowsMatchLayout(early.h)
++    }
++  }
++
++  /// The corner that is out of view shows a point of the window; a slot or a corner on a display that is gone shows nothing.
++  @Test(arguments: Arrangement.allCases, Change.allCases)
++  func andNothingIsSentToWhereThereIsNoDisplay(_ arrangement: Arrangement, _ change: Change) {
++    for command in Self.commands + ["float-all"] {
++      let h = play(command, arrangement, change, within: true).h
++      for move in h.system.frameLog {
++        #expect(h.system.displayList.contains { $0.frame.overlaps(move.frame) }, "`\(command)`: \(move.window) to \(move.frame)")
++      }
++    }
++  }
++
++  /// Rule 2. With nothing docked these keys have nothing to do, and do nothing: what happens to the windows is what happens when
++  /// no key is pressed. (Before, `home` took a window that macOS had just brought over out of view and fetched it again.)
++  @Test(arguments: ["home", "show-all", "desktop", "back", "undo"], Change.allCases)
++  func withNothingDockedAKeyPressedMeanwhileMovesNothingThatWouldNotHaveMoved(_ command: String, _ change: Change) {
++    let (pressed, left) = (play(command, .nothingDocked, change, within: true), play(nil, .nothingDocked, change, within: true))
++    #expect(pressed.h.system.frameLog.map(\.window) == left.h.system.frameLog.map(\.window))
++    #expect(pressed.h.system.frameLog.map(\.frame) == left.h.system.frameLog.map(\.frame))
++  }
++
++  /// Float All is a way out: it holds at once, whether or not a report ever follows.
++  @Test(arguments: [Arrangement.docked, .framed], Change.allCases)
++  func floatAllBeforeArborHasHeardGivesEveryWindowBackInViewAtItsOwnSize(_ arrangement: Arrangement, _ change: Change) {
++    let desk = make(arrangement, before: change)
++    happen(change, to: desk)
++    #expect(desk.h.run("float-all").ok)
++    for window in desk.all {
++      let frame = desk.h.frame(window)!
++      #expect(desk.h.system.displayList.contains { $0.frame.contains(frame) }, "\(window) at \(frame)")
++      #expect(frame.size == CGSize(width: 480, height: 348), "its own size: \(window) at \(frame)")
++    }
++    #expect(desk.h.controller.parked == [])
++  }
++
++  /// The key is about what the person sees: the window macOS has brought over is docked on the display it is on now, not in the
++  /// arrangement that goes to sleep with the display that went.
++  @Test func aWindowDockedMeanwhileIsDockedWhereItIs() {
++    let desk = make(.nothingDocked, before: .theSideGoes)
++    let h = desk.h
++    happen(.theSideGoes, to: desk)
++    h.system.userFocus(desk.onTheSide[0])
++    #expect(h.run("dock \(desk.onTheSide[0].rawValue) left").ok)
++    #expect(h.workspace.isDocked(desk.onTheSide[0]))
++    h.scheduler.advance(by: 1.3)
++    tell(h)
++    h.scheduler.advance(by: 5)
++    #expect(h.workspace.isDocked(desk.onTheSide[0]))
++    #expect(h.controller.dormant.isEmpty || h.controller.dormant[Self.side.id]?.workspace.isDocked(desk.onTheSide[0]) != true)
++    expectWindowsMatchLayout(h)
++  }
++
++  /// A display that has only just come can be reached at once.
++  @Test func aWindowCanBeSentToADisplayThatHasJustCome() {
++    let desk = make(.nothingDocked, before: .theSideComes)
++    let h = desk.h
++    happen(.theSideComes, to: desk)
++    h.system.userFocus(desk.onTheLaptop[0])
++    #expect(h.run("move-to-display next").ok)
++    #expect(Self.side.frame.contains(h.frame(desk.onTheLaptop[0])!))
++  }
++
++  // MARK: The report that follows, or does not
++
++  /// It brings nothing new, and moves nothing.
++  @Test(arguments: Arrangement.allCases, [Change.theSideGoes, .theLidShuts, .theSideChangesSides, .theSideComes])
++  func theReportThatFollowsMovesNothing(_ arrangement: Arrangement, _ change: Change) {
++    let desk = make(arrangement, before: change)
++    let h = desk.h
++    happen(change, to: desk)
++    h.run("show-all")
++    h.scheduler.advance(by: 1.3)
++    h.system.clearFrameLog()
++    tell(h)
++    h.scheduler.advance(by: 5)
++    #expect(h.system.frameLog.map(\.window) == [])
++    #expect(!h.scheduler.pendingKeys.contains { $0.hasPrefix("displays-blinked") }, "and nobody goes on asking")
++  }
++
++  /// Whoever reports the displays says nothing if they are by then as it reported them last. Arbor has looked in between.
++  /// `after`: how long the display is away once the key has been pressed. The second is longer than the first look back.
++  @Test(arguments: [0.5, 2.6, 7])
++  func aDisplayThatOnlyBlinkedGetsItsArrangementBackThoughNobodyReportsIt(after seconds: Double) {
++    let desk = make(.docked, before: .theSideGoes)
++    let h = desk.h
++    let before = desk.all.map { h.frame($0)! }
++    happen(.theSideGoes, to: desk)
++    h.run("show-all")
++    #expect(h.controller.displays.count == 1, "Arbor has looked")
++    #expect(h.controller.dormant[Self.side.id] != nil)
++    h.scheduler.advance(by: seconds)
++    quietly(h) { h.system.plug(Self.side) }
++    h.scheduler.advance(by: 5)
++    #expect(h.controller.displays.count == 2)
++    #expect(h.controller.workspaces[Self.side.id]?.tree.allWindows.sorted() == Array(desk.onTheSide.prefix(2)))
++    #expect(desk.all.map { h.frame($0)! } == before)
++    expectWindowsMatchLayout(h)
++    #expect(!h.scheduler.pendingKeys.contains { $0.hasPrefix("displays-blinked") }, "and nobody goes on asking")
++  }
++
++  /// It does not ask for ever.
++  @Test func theAskingEnds() {
++    let desk = make(.docked, before: .theSideGoes)
++    happen(.theSideGoes, to: desk)
++    desk.h.run("show-all")
++    desk.h.scheduler.advance(by: 60)
++    #expect(!desk.h.scheduler.pendingKeys.contains { $0.hasPrefix("displays-blinked") })
++  }
++
++  // MARK: What ends no wait
++
++  /// The wait is there for a display that only blinks, on wake and while a dock negotiates. What apps and macOS report meanwhile
++  /// is no person asking for anything.
++  @Test func whatAppsReportMeanwhileEndsNoWait() {
++    let desk = make(.docked, before: .theSideGoes)
++    let h = desk.h
++    happen(.theSideGoes, to: desk)
++    h.system.userFocus(desk.onTheLaptop[1])
++    h.system.setTitle(desk.onTheLaptop[0], "Other")
++    h.scheduler.advance(by: 0.5)
++    #expect(h.controller.displays.count == 2)
++  }
++
++  @Test(arguments: ["state", "status", "ascii", "displays", "help", "bindings", "get gap"])
++  func norDoesAQuestion(_ query: String) {
++    let desk = make(.docked, before: .theSideGoes)
++    happen(.theSideGoes, to: desk)
++    desk.h.system.clearFrameLog()
++    desk.h.run(query)
++    #expect(desk.h.controller.displays.count == 2)
++    #expect(desk.h.system.frameLog.map(\.window) == [])
++  }
++
++  /// For a moment on wake and when docking there is none. There is nothing to go by, and what Arbor believes in is the best guess
++  /// at what comes back.
++  @Test func withNoDisplayAtAllArborDoesNotLook() {
++    let desk = make(.docked, before: .theSideGoes)
++    quietly(desk.h) { desk.h.system.setDisplays([]) }
++    desk.h.run("show-all")
++    #expect(desk.h.controller.displays.count == 2)
++    #expect(desk.h.controller.dormant.isEmpty)
++  }
++
++  /// With the displays as Arbor knows them a command costs no look, and starts no asking.
++  @Test func withTheDisplaysAsTheyWereNothingIsDifferent() {
++    let desk = make(.docked, before: .theSideGoes)
++    desk.h.run("show-all")
++    #expect(!desk.h.scheduler.pendingKeys.contains { $0.hasPrefix("displays-blinked") })
++  }
++}
+diff --git a/collab/scenarios/52-a-key-before-the-displays-have-settled.sim b/collab/scenarios/52-a-key-before-the-displays-have-settled.sim
+new file mode 100644
+index 0000000..dab4b21
+--- /dev/null
++++ b/collab/scenarios/52-a-key-before-the-displays-have-settled.sim
+@@ -0,0 +1,75 @@
++# Proposed by the swarm (2026-10-15; board 1.66); the documenter may edit or drop it.
++# Story: three windows docked and one floating on the big display at a desk, a fifth on the laptop. The cable comes out. macOS brings
++# the four windows over to the laptop by itself, and their apps say so. Arbor hears of displays only once they have settled, a second and
++# a half later. Before that the person asks Arbor for something. They are looking at the one display there is, and are answered by it.
++# Before: the windows went to slots and places on the display that was gone, and were fetched when Arbor heard.
++# Spec: docs/features/F08-displays-and-spaces.md. Window ids start at 101.
++quiet
++plug desk right 1920x1080
++open Code 480x348
++open Safari 480x348
++open Terminal 480x348
++open Chat 480x348
++open Notes 480x348
++move 101 1600 100 480 348
++move 102 1700 150 480 348
++move 103 1800 200 480 348
++move 104 1900 250 480 348
++cursor 2000 500
++dock 101 left
++dock 102 right
++dock 103 beside 102 bottom
++wait 5
++loud
++expect count docked 3
++# The cable comes out.
++quietly unplug desk
++move 101 170 220 480 348
++move 102 220 180 480 348
++move 103 270 140 480 348
++move 104 320 100 480 348
++cursor 400 300
++wait 0.4
++# The window in front is docked on the display it is on.
++focus 104
++dock 104 left
++expect ok
++expect docked 104
++expect visible 104
++expect visible 101
++expect visible 102
++expect visible 103
++expect at 105 300 200
++# Now Arbor is told, and nothing is new to it.
++wait 1.3
++report-displays
++wait 3
++expect docked 104
++expect visible 101
++expect visible 102
++expect visible 103
++expect at 105 300 200
++# Back at the desk the arrangement is too, and what was docked on the laptop meanwhile stays there.
++plug desk right 1920x1080
++wait 3
++expect left-of 101 102
++expect above 102 103
++expect docked 104
++# The cable comes out again, and this time the way out is asked for: every window in view, at its own size, at once.
++quietly unplug desk
++move 101 170 220 480 348
++move 102 220 180 480 348
++move 103 270 140 480 348
++wait 0.4
++float-all
++expect ok
++expect count docked 0
++expect visible 101
++expect visible 102
++expect visible 103
++expect visible 104
++expect visible 105
++expect size 101 480x348
++expect size 102 480x348
++expect size 103 480x348
++expect size 104 480x348

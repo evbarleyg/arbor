@@ -1,0 +1,1390 @@
+From 8886b85b8766b2a35d41c22e019db5770cf8831f Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 04:12:00 +0000
+Subject: [PATCH 1/6] ci(release): what was built is tried on a fresh Mac, as a
+ download, before it can reach the releases page
+
+The Release workflow gets a job between build and publish. On a Mac that has built nothing, scripts/mac-shell/check-download.sh takes the files of the release
+as a person who downloads them would: checksums, signature, both programs for both kinds of Mac from macOS 14 on, no library but the system's; marked as a
+browser marks a download, macOS refuses the app, in the words the install page and the notes of that very release quote; the road through
+System Settings is followed as far as a script can, to the dialog that wants an administrator's password; with the mark taken off Arbor starts,
+says its version, shows its welcome window and waits; given the permission as System Settings gives it, the process that waited runs, docks
+two windows side by side, quits, and both are back in view at their own sizes; the disk image holds the same app, its signature whole.
+
+The release is built with the Swift of the newest Xcode on the runner that is no beta: Apple's compiler for what people run, and no path into a
+toolchain in the runner's home folder in the programs.
+---
+ .github/workflows/release.yml       |  46 +++-
+ scripts/mac-shell/announce.swift    |  13 ++
+ scripts/mac-shell/check-download.sh | 322 ++++++++++++++++++++++++++++
+ 3 files changed, 373 insertions(+), 8 deletions(-)
+ create mode 100644 scripts/mac-shell/announce.swift
+ create mode 100755 scripts/mac-shell/check-download.sh
+
+diff --git a/.github/workflows/release.yml b/.github/workflows/release.yml
+index f9762a9e..fcb36d78 100644
+--- a/.github/workflows/release.yml
++++ b/.github/workflows/release.yml
+@@ -1,7 +1,7 @@
+ name: Release
+ 
+-# Builds a release on GitHub's Mac and leaves it on the releases page as a DRAFT for a person to read and publish:
+-# the disk image, the zip, their checksums, the Homebrew cask, and notes from the top of CHANGELOG.md.
++# Builds a release on GitHub's Mac, tries it on another as a person who downloads it would, and leaves it on the releases page as a
++# DRAFT for a person to read and publish: the disk image, the zip, their checksums, the Homebrew cask, and notes from the top of CHANGELOG.md.
+ # It starts by hand and in no other way (Actions → Release → Run workflow, or `gh workflow run release.yml -f rehearsal=false`), on a branch
+ # or on a tag: v0.9.0 for the version in the VERSION file, v0.9.0-rc.1 for a release candidate of it. See "Making a
+ # release" in docs/INSTALL.md. Pushing a tag starts nothing: a tag marks a commit, and marking one must not take half an
+@@ -50,12 +50,13 @@ jobs:
+           fetch-depth: 0 # the build number is the number of commits
+           persist-credentials: false
+ 
++      # And its own Swift: Apple's compiler for what people run, and no path into a toolchain in the runner's home folder in the programs.
++      # No beta and no release candidate: what people download is built with a compiler Apple has released.
+       - name: Use the newest Xcode on the runner
+         run: |
+-          xcode=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
++          xcode=$(ls -d /Applications/Xcode*.app | grep -viE 'beta|candidate|_rc' | sort -V | tail -1)
+           sudo xcode-select -s "$xcode"
+-          ./scripts/ci-toolchain.sh
+-          export PATH="$HOME/.swiftly/bin:$PATH"
++          echo "::notice title=toolchain::$(swift --version 2>&1 | head -n 1)"
+ 
+       # Inputs and ref names reach the shell only through the environment, and version.sh checks the result.
+       - name: Decide the version
+@@ -80,7 +81,7 @@ jobs:
+           echo "version=$version" >> "$GITHUB_OUTPUT"
+ 
+       - name: Check
+-        run: ./scripts/ci-step.py --summary 'Test run with|passed|failed' --report .build/test-report.jsonl check make check
++        run: ./scripts/ci-step.py --summary 'Test run with|smoke test|✘' --report .build/test-report.jsonl check make check
+ 
+       - name: Build the release
+         run: ./scripts/ci-step.py release make release
+@@ -94,10 +95,39 @@ jobs:
+             build/arbor.rb
+           if-no-files-found: error
+ 
++  # On a Mac that has not built it and has no toolchain but Xcode's: the files are marked as a browser marks a download, and the app has to
++  # get from there to two windows docked side by side (scripts/mac-shell/check-download.sh). What does not start here goes nowhere.
++  first-launch:
++    needs: build
++    runs-on: macos-26
++    timeout-minutes: 15
++    steps:
++      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
++        with:
++          persist-credentials: false
++
++      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
++        with:
++          name: arbor-release
++          path: build
++
++      - name: From the download to two docked windows
++        run: |
++          mkdir -p mac-shell
++          ./scripts/ci-step.py --log mac-shell/output.txt --summary '✘|[0-9]+ passed|DOES NOT HAVE THESE WORDS' first-launch ./scripts/mac-shell/check-download.sh
++
++      - name: Keep what it said, and the pictures
++        if: always()
++        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
++        with:
++          name: first-launch
++          path: mac-shell/
++          if-no-files-found: warn
++
+   # In a rehearsal, in place of `publish`: the same files and the same script, told to send nothing, in a job whose token can write nothing.
+   rehearse-publish:
+     if: ${{ inputs.rehearsal }}
+-    needs: build
++    needs: [build, first-launch]
+     runs-on: ubuntu-latest
+     timeout-minutes: 10
+     env:
+@@ -120,7 +150,7 @@ jobs:
+   # whole file to that ("a rehearsal sends nothing"), and wants the condition in these very words.
+   publish:
+     if: ${{ github.event_name == 'workflow_dispatch' && inputs.rehearsal == false }}
+-    needs: build
++    needs: [build, first-launch]
+     runs-on: ubuntu-latest
+     timeout-minutes: 10
+     permissions:
+diff --git a/scripts/mac-shell/announce.swift b/scripts/mac-shell/announce.swift
+new file mode 100644
+index 00000000..6c6e0c27
+--- /dev/null
++++ b/scripts/mac-shell/announce.swift
+@@ -0,0 +1,13 @@
++// announce: tells running processes that an Accessibility permission has changed, for Mac shell scripts.
++//
++// The switch in System Settings does three things: it writes a row into the permission database, the service that keeps the
++// permissions knows of it, and this notification goes round. A process that is already running hears of a grant or a loss through the
++// notification alone. So a script that writes the row itself restarts the service (`sudo killall -9 tccd`), waits a moment, and
++// then runs this. In that order: announced before the restart, the flag says yes and event taps stay refused in that process.
++//
++// A script compiles it itself (swiftc -O -swift-version 5 scripts/mac-shell/announce.swift -o …). Needs no permission.
++
++import Foundation
++
++DistributedNotificationCenter.default().postNotificationName(
++  Notification.Name("com.apple.accessibility.api"), object: nil, userInfo: nil, deliverImmediately: true)
+diff --git a/scripts/mac-shell/check-download.sh b/scripts/mac-shell/check-download.sh
+new file mode 100755
+index 00000000..074f4362
+--- /dev/null
++++ b/scripts/mac-shell/check-download.sh
+@@ -0,0 +1,322 @@
++#!/bin/bash
++# What a person gets who downloads Arbor instead of building it: from the files of a release to two windows docked side by side, on a Mac
++# that did not build them.
++#
++#   scripts/mac-shell/check-download.sh        the files are in build/, as `make release` leaves them, or in $ARBOR_DOWNLOAD
++#
++# The Release workflow runs it on a fresh Mac, between the build and the releases page: what does not start there goes nowhere. No
++# toolchain is needed and nothing of Arbor is compiled, so it takes three minutes.
++#
++#   1  the files: the checksums hold, the cask names the disk image's
++#   2  the zip, marked as a browser marks a download and unpacked: the signature holds, both programs for both kinds of Mac from macOS 14 on, nothing
++#      but the system's libraries, both halves say their version
++#   3  opened as it is: macOS refuses it, in the words docs/INSTALL.md and the release notes quote
++#   4  the way past that in System Settings, as far as a script can follow it: to the dialog that wants an administrator's password (told,
++#      not judged: they are macOS's windows, not Arbor's)
++#   5  the way past it in Terminal, as docs/INSTALL.md has it: Arbor starts, says its version, shows its welcome window and waits for permission
++#   6  with the permission: the process that waited runs, docks two windows side by side, and gives them back at their own sizes when it quits
++#   7  the disk image holds the same app, its signature whole, and the link to drag it onto
++# A build that Apple has notarized is not refused: then 3 says so, 4 is left out, and the notes have no detour to tell (ARBOR_NOTARIZED).
++ARBOR_TIME_LIMIT=${ARBOR_TIME_LIMIT:-540}
++source "$(dirname "$0")/lib.sh"
++needs_throwaway_mac "mark files as downloaded and open them, write to the permission database with sudo, start an Arbor from a download that \
++arranges every window on the account's own settings, click in System Settings and in macOS's own dialogs, restart the service that keeps the permissions, and quit TextEdit"
++[ -z "${ARBOR_REHEARSAL:-}" ] || { echo "a rehearsal has no Gatekeeper, no code signatures and no disk images: only a real Mac can judge this"; exit 77; }
++
++files=${ARBOR_DOWNLOAD:-$ARBOR_ROOT/build}
++bundle_id=com.evbarleyg.arbor
++AXFIND="$ARBOR_ROOT/.build/mac-shell/axfind"
++ANNOUNCE="$ARBOR_ROOT/.build/mac-shell/announce"
++tcc="/Library/Application Support/com.apple.TCC/TCC.db"
++# The Arbor under test is started by macOS, as a person's is, and lives in the account's own home, whatever lib.sh has set up for a session.
++# Named, not taken away: lib.sh looks there when a check fails, to show what Arbor's log has gained since, and under `set -u` it dies of asking in vain.
++unset ARBOR_ONLY_PIDS
++export ARBOR_HOME="$HOME/Library/Application Support/Arbor"
++export ARBOR_SOCKET="$ARBOR_HOME/arbor.sock"
++# Gatekeeper's dialogs are what this script is about: a press on one has not missed Arbor.
++ARBOR_PRESSES_ON="CoreServicesUIAgent"
++scratch_dir download work real
++
++with() { case "$1" in *"$2"*) return 0 ;; *) return 1 ;; esac; }
++same() { [ -n "$1" ] && [ "$1" = "$2" ]; }
++not() { ! "$@"; }
++within() { local deadline=$((SECONDS + $1)); shift; until "$@"; do [ "$SECONDS" -lt "$deadline" ] || return 1; sleep 0.3; done; }
++mark() { xattr -w com.apple.quarantine "0083;$(printf '%x' "$(date +%s)");Safari;$(uuidgen)" "$1"; }
++mark_of() { xattr -p com.apple.quarantine "$1" 2>/dev/null; }
++cdhash() { codesign --display --verbose=3 "$1" 2>&1 | sed -n 's/^CDHash=//p'; }
++ask() { limit 5 "$app/Contents/Helpers/arborctl" "$@" 2>&1; }
++status_starts() { case "$(ask status)" in "$1"*) return 0 ;; *) return 1 ;; esac; }
++status_has() { [[ "$(ask status)" =~ $1 ]]; }
++# Everywhere here: read whole, then matched. A grep -q that leaves at the match would fail the pipe under pipefail, and make a no of a yes.
++# A process is listed from the moment macOS looks the app over, long before it may run: only an answer says that Arbor runs.
++answers() { local said; said=$(ask status); [ -n "$said" ] && ! with "$said" "is not running"; }
++# Whose window is on screen under that name, as the window server has it. Not pgrep -x: it goes by a name cut off after 16 characters.
++pid_named() {
++  "$ARBOR_POINTER" windows --on-screen | awk -v name="$1" '{ pid = $2; $1 = $2 = $3 = $4 = $5 = $6 = $7 = $8 = ""; sub(/^ +/, ""); if ($0 == name) { print pid; exit } }'
++}
++# Everybody with a window on screen, one name a line.
++on_screen() { "$ARBOR_POINTER" windows --on-screen | awk '{ $1 = $2 = $3 = $4 = $5 = $6 = $7 = $8 = ""; sub(/^ +/, ""); print }' | sort -u; }
++# The line breaks outside the $(…), which drops the last one: the last name of the list would never be found, and coreautha sorts last.
++is_on_screen() { with $'\n'"$(on_screen)"$'\n' $'\n'"$1"$'\n'; }
++# Who has come on screen since `before` was taken: macOS's dialog that asks for a password belongs to a process of its own.
++newcomer() { on_screen | grep -vxF -e "$before" | head -n 1; }
++has_come() { [ -n "$(newcomer)" ]; }
++# shows <process> <role> <text>, point_of likewise: through Accessibility, as assistive software reads a window
++shows() { local pid; pid=$(pid_named "$1"); [ -n "$pid" ] && limit 5 "$AXFIND" "$pid" point "$2" "$3" > /dev/null 2>&1; }
++press() {
++  local pid point
++  pid=$(pid_named "$1"); [ -n "$pid" ] || { echo "  no $1 is running"; return 1; }
++  point=$(limit 5 "$AXFIND" "$pid" point "$2" "$3" 2>/dev/null) || { echo "  $1 shows no $2 “$3”"; return 1; }
++  # shellcheck disable=SC2086
++  click $point
++}
++# value_of <process> <text>: the whole of the text that holds those words.
++value_of() { local pid; pid=$(pid_named "$1"); [ -n "$pid" ] && limit 5 "$AXFIND" "$pid" value AXStaticText "$2" 2>/dev/null; }
++# page_has <file> <words>, wherever the file breaks its lines.
++page_has() { [ -n "$2" ] && with "$(tr '\n' ' ' < "$1" | tr -s ' ')" "$2"; }
++# For what is told and not judged.
++quoted() {
++  if page_has "$ARBOR_ROOT/docs/INSTALL.md" "$1"; then echo "    (docs/INSTALL.md has these words)"; else echo "    DOCS/INSTALL.MD DOES NOT HAVE THESE WORDS: ${1:-(none were found)}"; fi
++}
++# What a window says, without the furniture.
++told() {
++  local pid; pid=$(pid_named "$1"); [ -n "$pid" ] || return 0
++  limit 5 "$AXFIND" "$pid" tree 2>/dev/null | grep -E "AXStaticText|AXButton|AXTextField|AXCheckBox" | grep -vE '"" "" ' | sed -E 's/^ +//; s/ -?[0-9]+ -?[0-9]+ [0-9]+ [0-9]+$//' \
++    | cut -c 1-200 | head -n "${2:-12}" | sed 's/^/    /'
++}
++# open_it <name>: as a double click does. In the background, into a file: `open` waits as long as macOS's dialog stands.
++open_it() {
++  limit 30 open "$app" > "$ARBOR_OUT/open-$1.txt" 2>&1 &
++  started $!
++}
++put_away_dialogs() {
++  local tries=0 name
++  while [ "$tries" -lt 4 ]; do
++    for name in Done Cancel OK ""; do shows CoreServicesUIAgent AXButton "${name:-no such button}" && break; done
++    [ -n "$name" ] || return 0
++    press CoreServicesUIAgent AXButton "$name"
++    sleep 1
++    tries=$((tries + 1))
++  done
++}
++# Whatever of macOS's stands between a script and the next launch: Gatekeeper's dialogs, and the one that wants a password, which comes late.
++# While any of them stands, `open` fails with -10673.
++clear_the_way() {
++  local tries=0
++  put_away_dialogs
++  while [ "$tries" -lt 5 ] && { is_on_screen coreautha || is_on_screen SecurityAgent; }; do key escape; sleep 1; tries=$((tries + 1)); done
++}
++# launch <name>: open it until it answers, three times at most, with the way cleared in between.
++launch() {
++  local try
++  for try in 1 2 3; do
++    open_it "$1-$try"
++    # A notarized download is asked about once: "… is an app downloaded from the Internet. Are you sure you want to open it?" (Never tried.)
++    [ -n "$notarized" ] && within 8 shows CoreServicesUIAgent AXButton Open && press CoreServicesUIAgent AXButton Open
++    within 15 answers && return 0
++    clear_the_way
++    sleep 2
++  done
++  return 1
++}
++# The process itself: its watchdog runs the same program, with an argument.
++process() { pgrep -f "^$program\$" | head -n 1; }
++minos() { otool -arch "$1" -l "$2" | awk '/LC_BUILD_VERSION/ { found = 1 } found && /minos/ { print $2; exit }'; }
++# TextEdit's windows, as the window server has them.
++texts() { "$ARBOR_POINTER" windows --on-screen | awk '$3 == 0 && $9 == "TextEdit" && NF == 9 { print $1 }' | sort -n; }
++sizes() { local id; for id in $(texts); do "$ARBOR_POINTER" frame "$id" | cut -d ' ' -f 3-4; done | tr '\n' ','; }
++all_in_view() { local id; for id in $(texts); do [ "$("$ARBOR_POINTER" visible "$id")" = 1.00 ] || return 1; done; [ "$(texts | wc -l)" -ge 2 ]; }
++clean_up() {
++  [ -n "${app:-}" ] && [ -x "$app/Contents/Helpers/arborctl" ] && ask quit > /dev/null
++  clear_the_way > /dev/null 2>&1
++  sudo sqlite3 "$tcc" "DELETE FROM access WHERE client = '$bundle_id';" 2>/dev/null
++  [ -n "${volume:-}" ] && limit 20 hdiutil detach "$volume" -quiet 2>/dev/null
++  cp "$ARBOR_HOME/arbor.log" "$ARBOR_OUT/arbor-downloaded.log" 2>/dev/null
++  kill_started --all
++}
++at_exit clean_up
++
++step "the Mac"
++echo "macOS $(sw_vers -productVersion) on $(uname -m); Gatekeeper: $(spctl --status 2>&1)"
++echo "a Swift toolchain of swift.org's here? $(ls "$HOME/Library/Developer/Toolchains" 2>/dev/null | head -n 1 || true)"
++mkdir -p "$(dirname "$ARBOR_POINTER")" "$(dirname "$AXFIND")"
++# With the newest Xcode that is here and no beta: the default of an older Mac may be older than the tools are written for.
++newest=$(ls -d /Applications/Xcode*.app 2>/dev/null | grep -viE 'beta|candidate|_rc' | sort -V | tail -n 1)
++[ -n "$newest" ] && export DEVELOPER_DIR="$newest/Contents/Developer"
++echo "the tools are compiled by $(swiftc --version 2>&1 | head -n 1 | cut -c 1-90)"
++builds=""
++for tool in pointer axfind announce; do
++  case "$tool" in pointer) made=$ARBOR_POINTER ;; axfind) made=$AXFIND ;; announce) made=$ANNOUNCE ;; esac
++  limit 120 swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/$tool.swift" -o "$made" > "$ARBOR_OUT/build-$tool.log" 2>&1 &
++  started $!
++  builds="$builds $!"
++done
++for build in $builds; do ended "$build" 1300; done
++for made in "$ARBOR_POINTER" "$AXFIND" "$ANNOUNCE"; do
++  [ -x "$made" ] || { cat "$ARBOR_OUT"/build-*.log; die "$(basename "$made") did not compile"; }
++done
++
++step "1  the files"
++version=$(ls "$files" | sed -n 's/^Arbor-\(.*\)\.zip$/\1/p' | head -n 1)
++[ -n "$version" ] || die "there is no Arbor-<version>.zip in $files: run \`make release\` first, or point ARBOR_DOWNLOAD at the files"
++zip="$files/Arbor-$version.zip" dmg="$files/Arbor-$version.dmg"
++echo "Arbor $version: $(du -h "$zip" | cut -f 1 | tr -d ' ') zip, $(du -h "$dmg" | cut -f 1 | tr -d ' ') disk image"
++check "the checksums hold" sh -c 'cd "$1" && shasum -a 256 -c "$2"' sh "$files" "Arbor-$version-checksums.txt"
++check "the cask names this version" grep -qF "version \"$version\"" "$files/arbor.rb"
++check "and the disk image's checksum" grep -qF "sha256 \"$(shasum -a 256 "$dmg" | cut -d ' ' -f 1)\"" "$files/arbor.rb"
++check "the cask is Ruby that parses" ruby -c "$files/arbor.rb"
++
++step "2  the zip, marked as a browser marks a download, and unpacked"
++cp "$zip" "$work/"
++mark "$work/Arbor-$version.zip"
++(cd "$work" && limit 60 ditto -x -k "Arbor-$version.zip" .)
++app="$work/Arbor.app"
++program="$app/Contents/MacOS/Arbor"
++check "unpacking passes the mark on to the app" with "$(mark_of "$app")" ";Safari;"
++check "and to the program inside" with "$(mark_of "$program")" ";Safari;"
++check "the signature holds" codesign --verify --deep --strict "$app"
++codesign --display --verbose=2 "$app" 2>&1 | grep -E '^(Identifier|Signature|Authority|TeamIdentifier)' | sed 's/^/    /'
++for binary in "$program" "$app/Contents/Helpers/arborctl"; do
++  check "$(basename "$binary") is for Apple silicon and for Intel" same "$(lipo -archs "$binary" | tr ' ' '\n' | sort | tr '\n' ' ')" "arm64 x86_64 "
++  for arch in arm64 x86_64; do check "  its $arch half from macOS 14 on" same "$(minos "$arch" "$binary")" 14.0; done
++done
++foreign=$(for arch in arm64 x86_64; do otool -arch "$arch" -L "$program" "$app/Contents/Helpers/arborctl" | grep -E "^\s" | grep -vE "^\s+/(System/Library|usr/lib)/"; done)
++check "it needs no library but the system's" [ -z "$foreign" ] || echo "$foreign"
++check "arborctl says the version" with "$("$app/Contents/Helpers/arborctl" --version 2>&1 | head -n 1)" "arborctl $version "
++check "and so does Arbor" with "$(limit 10 "$program" --version 2>&1 | head -n 1)" " $version "
++# On Apple silicon through Rosetta, where there is one; on an Intel Mac the two lines above were it.
++if [ "$(uname -m)" = arm64 ] && arch -x86_64 /usr/bin/true 2>/dev/null; then
++  check "arborctl's Intel half says it too" with "$(arch -x86_64 "$app/Contents/Helpers/arborctl" --version 2>&1 | head -n 1)" "arborctl $version "
++  check "and Arbor's" with "$(limit 10 arch -x86_64 "$program" --version 2>&1 | head -n 1)" " $version "
++fi
++verdict=$(spctl --assess --type execute --verbose=4 "$app" 2>&1)
++echo "    $verdict" | head -n 3
++
++step "3  opened as it is"
++if with "$verdict" ": accepted"; then
++  echo "macOS accepts this build (notarized?): there is no detour, and docs/INSTALL.md and the notes should not tell of one"
++  notarized=yes
++else
++  notarized=""
++  open_it refused
++  check "macOS puts up its dialog" within 15 shows CoreServicesUIAgent AXStaticText "Arbor"
++  shot 03-refused
++  told CoreServicesUIAgent
++  # macOS 14 words it otherwise, and lets a right click and Open past it.
++  if [ "$(sw_vers -productVersion | cut -d . -f 1)" -ge 15 ]; then
++    words=$(value_of CoreServicesUIAgent "Apple could not verify")
++    check "in the words the install page quotes" page_has "$ARBOR_ROOT/docs/INSTALL.md" "$words"
++    check "and the notes of this very release" page_has "$files/Arbor-$version-notes.md" "$words"
++    check "with Done to click" shows CoreServicesUIAgent AXButton Done
++    check "beside Move to Trash, which page and notes warn of" shows CoreServicesUIAgent AXButton "Move to Trash"
++  fi
++  check "Arbor does not run" not answers
++  put_away_dialogs
++
++  step "4  the way past it in System Settings (told, not judged)"
++  limit 20 open "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Security"
++  if within 15 shows "System Settings" AXButton "Open Anyway"; then
++    told "System Settings" 400 | grep -iE "arbor|anyway" | head -n 6
++    quoted "$(value_of "System Settings" "was blocked")"
++    shot 04-open-anyway
++    press "System Settings" AXButton "Open Anyway"
++    within 10 shows CoreServicesUIAgent AXButton "Open Anyway"
++    shot 04-asked-again
++    told CoreServicesUIAgent
++    quoted "$(value_of CoreServicesUIAgent "Apple is not able")"
++    before=$(on_screen)
++    if press CoreServicesUIAgent AXButton "Open Anyway"; then
++      # It takes its time: five seconds and more on a hosted Mac.
++      if within 15 has_come && ! answers; then
++        asker=$(newcomer)
++        echo "  asked by: $asker"
++        shot 04-asked-who
++        told "$asker"
++        quoted "$(value_of "$asker" "You are attempting")"
++        # Here the road ends for a script. Nobody knows the password of the account GitHub's Macs run jobs under, it cannot be given another
++        # ("not permitted without secure token unlock"), and an administrator made on the spot is turned away.
++        clear_the_way
++        is_on_screen "$asker" && echo "  $asker's dialog is still there"
++      else
++        echo "  nothing more was asked"
++        shot 04-nothing-asked
++      fi
++    fi
++  else
++    echo "  System Settings shows no Open Anyway"
++    shot 04-no-open-anyway
++  fi
++  clear_the_way
++  limit 10 osascript -e 'tell application "System Settings" to quit'
++  if answers; then
++    echo "  ARBOR RUNS: that road leads through. From where: $(pgrep -fl "Arbor.app/Contents/MacOS/Arbor" | grep -v watchdog | cut -d ' ' -f 2- | sed "s|$work|<where it was unpacked>|" | cut -c 1-110 | head -n 1)"
++    echo "  the mark now: $(mark_of "$app")"
++    ask quit > /dev/null
++    within 10 not answers
++  else
++    echo "  Arbor does not run yet"
++  fi
++fi
++
++step "5  the way past it in Terminal, and the first run"
++# A copy of its own, as marked as the first was: whatever macOS has noted about that one does not count.
++mkdir -p "$work/again"
++(cd "$work/again" && limit 60 ditto -x -k "$work/Arbor-$version.zip" .)
++app="$work/again/Arbor.app"
++program="$app/Contents/MacOS/Arbor"
++if [ -z "$notarized" ]; then
++  check "a second copy is marked like the first" with "$(mark_of "$app")" ";Safari;"
++  xattr -dr com.apple.quarantine "$app"
++  check "xattr -dr com.apple.quarantine takes the mark off" [ -z "$(mark_of "$app")$(mark_of "$program")" ]
++fi
++sudo sqlite3 "$tcc" "DELETE FROM access WHERE client = '$bundle_id';" 2>/dev/null
++check "Arbor starts" launch first-run
++check "no dialog of macOS's stands in the way" not shows CoreServicesUIAgent AXStaticText "Arbor"
++echo "    $(ask status | head -n 1)"
++check "it says its version" with "$(ask version | head -n 1)" "Arbor $version "
++check "never given anything, it waits for the permission" status_starts "waiting for Accessibility"
++check "its welcome window is up and names the permission" within 8 shows Arbor AXStaticText Accessibility
++shot 05-first-run
++told Arbor 14
++told universalAccessAuthWarn
++
++step "6  with the permission"
++waiting=$(process)
++# What switching Arbor on in System Settings records: the bundle id and the signature's designated requirement, compiled.
++codesign --display --requirements - "$app" 2>/dev/null | sed -n 's/^\(# \)\{0,1\}designated => //p' > "$work/requirement.txt"
++echo "    designated => $(cut -c 1-120 "$work/requirement.txt")"
++csreq -r- -b "$work/requirement.bin" < "$work/requirement.txt"
++sudo sqlite3 "$tcc" "INSERT OR REPLACE INTO access (service, client, client_type, auth_value, auth_reason, auth_version, csreq, indirect_object_identifier, flags, last_modified) VALUES ('kTCCServiceAccessibility', '$bundle_id', 0, 2, 3, 1, X'$(xxd -p "$work/requirement.bin" | tr -d '\n')', 'UNUSED', 0, strftime('%s', 'now'));"
++# The other two things the switch does, in this order (announce.swift says why).
++sudo killall -9 tccd
++sleep 2
++"$ANNOUNCE"
++check "it runs, without having been started again" within 15 status_starts "running"
++check "the very process that was waiting" same "$(process)" "$waiting"
++echo one > "$work/one.txt"; echo two > "$work/two.txt"
++limit 20 open -a TextEdit "$work/one.txt" "$work/two.txt"
++check "it sees two windows" within 12 status_has "[2-9] floating"
++own=$(sizes)
++echo "    $(ask arrange | head -n 1)"
++check "and docks them" within 8 status_has "[2-9] docked"
++shot 06-docked
++ask ascii | head -n 24
++echo "    $(ask quit | head -n 1)"
++check "asked to quit, it has gone" within 10 not answers
++check "both windows are wholly in view" within 5 all_in_view
++check "at the sizes they had before" within 5 eval '[ -n "$own" ] && [ "$(sizes)" = "$own" ]'
++shot 06-after-quit
++limit 10 osascript -e 'tell application "TextEdit" to quit'
++
++step "7  the disk image"
++cp "$dmg" "$work/"
++mark "$work/Arbor-$version.dmg"
++volume="$work/volume"
++limit 60 hdiutil attach -nobrowse -readonly -mountpoint "$volume" "$work/Arbor-$version.dmg" > "$ARBOR_OUT/attach.txt" 2>&1
++check "it mounts" [ -d "$volume/Arbor.app" ]
++check "the signature of the app on it holds" codesign --verify --deep --strict "$volume/Arbor.app"
++check "it holds the very app that is in the zip" same "$(cdhash "$volume/Arbor.app")" "$(cdhash "$app")"
++check "and the link to drag it onto" same "$(readlink "$volume/Applications")" /Applications
++limit 20 hdiutil detach "$volume" -quiet && volume=""
++# What unmounting said is not the script's verdict: a volume that is busy for a moment is let go of at the end (clean_up).
++true
+-- 
+2.43.0
+
+
+From 44fbce1f5d040f64129ee1d2e1aeee496594d963 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 04:12:00 +0000
+Subject: [PATCH 2/6] docs: what macOS does to a downloaded Arbor, dialog by
+ dialog, as hosted Macs showed it
+
+Four steps with the mouse, in macOS's own words, and that the blue default button of both dialogs is Move to Trash; or one line in Terminal. The install page
+says which of it was seen and which is Apple's account. The release notes and the cask's caveats lead with the sentence a person needs at that
+moment, and say of which macOS they speak. What is true today of updates and of Homebrew: no release is published yet, the cask installs from a
+tap and spares nobody the detour.
+---
+ README.md                     |  4 +-
+ collab/parity.json            |  2 +-
+ docs/INSTALL.md               | 72 ++++++++++++++++++++++++++---------
+ packaging/arbor.rb            | 18 +++++----
+ scripts/release-notes.sh      |  2 +-
+ scripts/release-tools-test.sh |  2 +
+ 6 files changed, 72 insertions(+), 28 deletions(-)
+
+diff --git a/README.md b/README.md
+index d668fd55..8b98d104 100644
+--- a/README.md
++++ b/README.md
+@@ -151,8 +151,8 @@ To update, `git pull && make install`; to remove it, `make uninstall`.
+ [docs/INSTALL.md](docs/INSTALL.md) has the rest: what the certificate is and is not, updates,
+ launch at login, downloaded builds and their first launch (they are not notarized,
+ so macOS blocks them until you choose Open Anyway in System Settings → Privacy &
+-Security; building from source avoids that), Homebrew (a cask is ready for when the
+-repository is public), and what to do when Arbor says it has no permission
++Security; building from source avoids that), Homebrew (a cask is ready for the first
++release), and what to do when Arbor says it has no permission
+ although System Settings shows it switched on.
+ 
+ ### First run
+diff --git a/collab/parity.json b/collab/parity.json
+index 5858ea55..2e288e50 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -1376,7 +1376,7 @@
+       "area": "Control",
+       "title": "Automatic updates",
+       "trellis": "Sparkle",
+-      "arbor": "`check-for-updates`, a menu item and an optional weekly check (`automaticUpdateChecks`, off; it only changes the menu item's title) compare with the latest GitHub release and link to its page. Partial by design: Arbor does not install, because a replaced ad-hoc-signed app loses its Accessibility permission, and a real updater needs a Developer ID and third-party code, both outside the project's rules. No information while the repository is private",
++      "arbor": "`check-for-updates`, a menu item and an optional weekly check (`automaticUpdateChecks`, off; it only changes the menu item's title) compare with the latest GitHub release and link to its page. Partial by design: Arbor does not install, because a replaced ad-hoc-signed app loses its Accessibility permission, and a real updater needs a Developer ID and third-party code, both outside the project's rules. No information as long as no release is published",
+       "status": "partial",
+       "spec": "F13",
+       "priority": 3,
+diff --git a/docs/INSTALL.md b/docs/INSTALL.md
+index f7fa5275..f897ce5c 100644
+--- a/docs/INSTALL.md
++++ b/docs/INSTALL.md
+@@ -177,38 +177,73 @@ It leaves, and lists:
+ 
+ ## A downloaded build
+ 
+-Releases carry a disk image and a zip for Apple silicon and Intel. Until the project has an Apple Developer ID they are
+-signed ad hoc and not notarized, which costs two detours that building from source does not have:
++Releases carry a disk image and a zip, for Apple silicon and Intel alike. Open the disk image and drag Arbor onto Applications, or
++unpack the zip and move Arbor there.
+ 
+-1. **The first launch is blocked.** macOS marks downloads as quarantined and refuses one that Apple has not checked:
+-   "Apple could not verify "Arbor" is free of malware". Click **Done**, open System Settings → Privacy & Security, scroll
+-   down to "Arbor was blocked to protect your Mac" and click **Open Anyway**. Right-click → Open no longer gets past
+-   this on current macOS. Or take the mark off in Terminal:
++Until the project has an Apple Developer ID, which costs a yearly fee, they are signed ad hoc and **not notarized**: Apple has not looked at
++them. macOS says so in strong words, to everybody and about every app of that kind, and it costs two detours that building from source
++does not have. What follows is what macOS 26 does and says, seen on a Mac that had never met Arbor. The Release workflow goes
++through it on such a Mac for every release: the way with the mouse up to the password in step 4, which no script can give there, and
++the way through Terminal to its end, two windows docked side by side.
+ 
+-   ```bash
+-   xattr -dr com.apple.quarantine /Applications/Arbor.app
+-   ```
++### 1. The first launch is refused
+ 
+-2. **Every update needs the permission again**, because every release has a signature of its own: see the next section.
++It makes no difference whether Arbor came out of the zip, off the disk image or through Homebrew. There are two ways past it.
++
++**With the mouse: four steps, once.**
++
++1. Open Arbor. **Click Done, not the blue button**, which is Move to Trash, and which Return as a rule presses too. What macOS says there is
++   **“Arbor” Not Opened**: "Apple could not verify “Arbor” is free of malware that may harm your Mac or compromise your privacy."
++2. Open System Settings → **Privacy & Security** and scroll down to *Security*. There it says "“Arbor” was blocked to protect your Mac."
++   Click **Open Anyway** beside it. (By Apple's account the button stays for about an hour after step 1. If it has gone, open Arbor once more.)
++3. macOS asks again: **Open “Arbor”?** "Apple is not able to verify that it is free from malware that could harm your Mac or compromise your
++   privacy. Don’t open this unless you are certain it is from a trustworthy source." Click **Open Anyway**, the middle button. The blue one
++   is Move to Trash here too.
++4. A last dialog, *Privacy & Security*, says "You are attempting to open an app that may cause harm to your Mac or compromise your privacy"
++   and wants an administrator's name and password. It can take some seconds to come up. After that, by Apple's account, Arbor opens
++   and this copy is not asked about again.
++
++A right click and Open, which used to be the short cut, no longer gets past this on current macOS.
++
++**In Terminal: one line.** macOS marks what is downloaded, and refuses only what bears the mark. This takes it off:
++
++```bash
++xattr -dr com.apple.quarantine /Applications/Arbor.app
++```
++
++Then Arbor opens like any other app, and none of the four dialogs appears.
++
++Either way you are overruling a check that is there for your protection, on the project's word alone. If you would rather not: the
++sources are all here, and building them takes three commands and no Xcode (the top of this page).
++
++### 2. Every update needs the permission again
++
++macOS ties the Accessibility permission to the signature, and each release has a signature of its own: see "Arbor says it has no
++permission" below, after every update.
++
++### Checking, and Homebrew
+ 
+ To check a download: `shasum -a 256 -c Arbor-<version>-checksums.txt`.
+ 
+-**Homebrew.** `packaging/arbor.rb` is a cask; `make release` fills in the version and the checksum. It goes live when
+-the repository is public, because Homebrew downloads without credentials: then
+-`brew install --cask evbarleyg/tap/arbor`.
++**Homebrew.** `packaging/arbor.rb` is a cask; `make release` fills in the version and the checksum. It is not offered anywhere
++yet: that takes a published release to download and a tap to list it in, and then `brew install --cask evbarleyg/tap/arbor`.
++Tried from a tap on the spot, it installs the app and links `arborctl`. It spares nobody the detour: Homebrew marks what it
++installs as downloaded too, and the first launch is blocked just the same.
+ 
+ ## Troubleshooting
+ 
+ **Arbor says it has no permission, and System Settings shows it switched on.** The entry belongs to a build with
+ another signature: an ad-hoc build that has been replaced, or a build from before (or after) you made the signing
+-identity. Select Arbor in the list, remove it with the − button, and let Arbor ask again; or
++identity. Switch it off and on again. If Arbor still has no permission, select it in the list, remove it with the − button, and let
++Arbor ask again; or
+ 
+ ```bash
+ tccutil reset Accessibility com.evbarleyg.arbor
+ ```
+ 
+ and switch it on when it asks. `arborctl status` says `waiting for Accessibility permission` until then, and `running`
+-a second after. To see what macOS compares: `codesign -d -r- ~/Applications/Arbor.app`.
++a second after. To see what macOS compares: `codesign -d -r- ~/Applications/Arbor.app`. (The switch and the − button have not been
++tried on the hosted Macs where the rest of this page was: for both, System Settings wants a password that no script has there.)
+ 
+ **`make install` ends with "THIS BUILD IS SIGNED AD HOC".** No keychain has the signing identity, so every build is a new app to macOS
+ and has to be given the permission again. `./scripts/make-signing-identity.sh`, then `make install`, and it is asked once more and
+@@ -259,8 +294,11 @@ in ways nobody is likely to notice in a window manager. Please report the errors
+    `gh workflow run release.yml -f rehearsal=false`), on a branch or on the tag `v<version>`. A suffix makes a pre-release
+    of the version in `VERSION`, which update checks do not offer: `v0.9.0-rc.1`. The workflow starts only by hand: pushing
+    a tag marks a commit and does nothing else.
+-3. It runs `make check` and `make release` on a Mac and leaves a **draft** on the releases page with the disk image, the
+-   zip, the checksums, the cask and the notes. Read it, then publish it; publishing creates the tag if there is none.
++3. It runs `make check` and `make release` on a Mac. A second Mac, which has built nothing, then takes the files as a person
++   who downloads them would (`scripts/mac-shell/check-download.sh`): checksums, signature, both kinds of Mac, what macOS says to the
++   first launch, the way past it, the first run, two windows docked side by side. What does not get that far goes nowhere.
++4. It leaves a **draft** on the releases page with the disk image, the zip, the checksums, the cask and the notes. Read it,
++   then publish it; publishing creates the tag if there is none.
+ 
+ With "rehearsal" ticked, as it is to begin with, it does all of that except the last step: nothing is sent to the releases
+ page, and there is nothing to send with. The one job whose token can write does not start, and no other reads a secret or a
+diff --git a/packaging/arbor.rb b/packaging/arbor.rb
+index e0a4d2ea..a41758a2 100644
+--- a/packaging/arbor.rb
++++ b/packaging/arbor.rb
+@@ -1,7 +1,9 @@
+ # The Homebrew cask for Arbor. This file is a template: `make release` fills in @VERSION@ and @SHA256@ and
+-# writes the result to build/arbor.rb. It goes live when the repository is public, because Homebrew downloads the
+-# disk image from the release page without credentials. Then it belongs in a tap, a repository named
++# writes the result to build/arbor.rb. It goes live with the first published release, whose disk image Homebrew
++# downloads from the release page. Then it belongs in a tap, a repository named
+ # evbarleyg/homebrew-tap, as Casks/arbor.rb, and installs with `brew install --cask evbarleyg/tap/arbor`.
++# `depends_on macos: ">= :sonoma"` is the form that was seen to install (Homebrew 6.0, which warns that it would rather read
++# `:sonoma`). It stays until that one has been tried: to older Homebrews a bare name meant that release and no other.
+ cask "arbor" do
+   version "@VERSION@"
+   sha256 "@SHA256@"
+@@ -32,12 +34,14 @@ cask "arbor" do
+   zap trash: "~/Library/Application Support/Arbor"
+ 
+   caveats <<~EOS
++    When macOS refuses the first launch: click Done, not the blue button,
++    which is Move to Trash (macOS 26; older ones word it otherwise). Until
++    Arbor is notarized that launch is blocked; allow it under
++      System Settings → Privacy & Security → Open Anyway
++
+     Arbor needs Accessibility permission to move other apps' windows:
+       System Settings → Privacy & Security → Accessibility
+-
+-    Until Arbor is notarized, macOS blocks its first launch. Allow it under
+-      System Settings → Privacy & Security → Open Anyway
+-    and, because each release has a signature of its own, remove Arbor's entry
+-    under Accessibility after an upgrade and let it ask again.
++    Each release has a signature of its own, so after an upgrade remove
++    Arbor's entry there and let it ask again.
+   EOS
+ end
+diff --git a/scripts/release-notes.sh b/scripts/release-notes.sh
+index acadbb24..07a86006 100755
+--- a/scripts/release-notes.sh
++++ b/scripts/release-notes.sh
+@@ -48,7 +48,7 @@ if [ "${ARBOR_NOTARIZED:-}" = 1 ]; then
+ NOTES
+ else
+   cat <<NOTES
+-2. **The first launch takes a detour.** This build is not notarized by Apple, which takes a paid developer account, so macOS refuses a downloaded copy at first: "Apple could not verify "Arbor" is free of malware". Click **Done**, open System Settings → Privacy & Security, scroll down to "Arbor was blocked to protect your Mac" and click **Open Anyway**. (Right-click → Open no longer gets past this on current macOS.) Or take the download's mark off in Terminal: \`xattr -dr com.apple.quarantine /Applications/Arbor.app\`
++2. **When macOS refuses the first launch, click Done, not the blue button: that one is Move to Trash, and Return presses it too.** (So on macOS 26, where all of this was seen; older ones word it otherwise.) This build is not notarized by Apple, which takes a paid developer account, so macOS refuses a downloaded copy at first: **“Arbor” Not Opened**, "Apple could not verify “Arbor” is free of malware that may harm your Mac or compromise your privacy." After **Done**, open System Settings → Privacy & Security, scroll down to "“Arbor” was blocked to protect your Mac" and click **Open Anyway**; in the dialog that follows click **Open Anyway** again, then give an administrator's name and password. (Right-click → Open no longer gets past this on current macOS.) Or take the download's mark off in Terminal, after which none of this is asked: \`xattr -dr com.apple.quarantine /Applications/Arbor.app\`
+ 3. Give Arbor **Accessibility** permission when it asks (System Settings → Privacy & Security → Accessibility). It needs that to move other apps' windows. macOS ties the permission to the signature, and this build's signature is its own, so after replacing Arbor with a later download, remove its entry there and let it ask again.
+ 
+ Building from source avoids both the detour and the repeated permission, in three commands: [docs/INSTALL.md](https://github.com/evbarleyg/arbor/blob/main/docs/INSTALL.md).
+diff --git a/scripts/release-tools-test.sh b/scripts/release-tools-test.sh
+index 9bb33fd2..0371c603 100755
+--- a/scripts/release-tools-test.sh
++++ b/scripts/release-tools-test.sh
+@@ -79,6 +79,8 @@ check "tables keep their rows" contains "$notes" "|---|---|"
+ check "older sections stay out" lacks "$notes" "Old news"
+ check "the heading of the section stays out" lacks "$notes" "Unreleased"
+ check "the first launch is explained" contains "$notes" "Open Anyway"
++check "in macOS's own words, which check-download.sh holds against the real dialog" contains "$notes" "Apple could not verify “Arbor” is free of malware"
++check "with a word on the button that throws Arbor away" contains "$notes" "Move to Trash"
+ check "and the way around it" contains "$notes" "xattr -dr com.apple.quarantine /Applications/Arbor.app"
+ check "the files are named after the version" contains "$notes" "Arbor-1.2.3.dmg"
+ check "the checksums are listed" contains "$notes" "def  Arbor-1.2.3.dmg"
+-- 
+2.43.0
+
+
+From f3966a1dd7ac6b8ad99e70005fc269c20e39f515 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 04:12:00 +0000
+Subject: [PATCH 3/6] docs: five things real Macs and older compilers taught,
+ in the ledger
+
+---
+ collab/reality.json | 102 ++++++++++++++++++++++++++++++++++++++++++++
+ docs/REALITY.md     |  72 ++++++++++++++++++++++++++++---
+ 2 files changed, 168 insertions(+), 6 deletions(-)
+
+diff --git a/collab/reality.json b/collab/reality.json
+index eef86538..b798ef3d 100644
+--- a/collab/reality.json
++++ b/collab/reality.json
+@@ -2359,6 +2359,25 @@
+    ],
+    "certainty": "suspected"
+   },
++  {
++   "id": "a-refused-app-is-listed-as-a-process-and-holds-up-its-next-launch",
++   "kind": "late-or-partial-answer",
++   "layer": "test",
++   "expected": "An app macOS refuses to open does not run; `open` says so and returns.",
++   "happened": "While Gatekeeper's dialog stands, `pgrep` lists the app's program (at a path under AppTranslocation if it bears the mark), though not one line of it has run: only an answer on the control socket says that Arbor runs. `open` does not return until the dialog is dismissed, then fails with -128. As long as any of the dialogs of that road stands, the one for the password included, which comes up seconds late, every other launch of a copy of the app fails with -10673. A background `open … | head` left waiting like that held a script's output pipe open for thirteen minutes after its last line.",
++   "found": "`scripts/mac-shell/check-download.sh` and the probes before it, on hosted Macs on 2026-10-14 and 15 (macOS 26.6.2), with the files the Release workflow's rehearsal had built on another Mac.",
++   "modelled": "cannot",
++   "knobs": [],
++   "guards": [
++    "e2e: Arbor does not run",
++    "e2e: no dialog of macOS's stands in the way"
++   ],
++   "copes": "scripts/mac-shell/check-download.sh asks `arborctl status`, runs `open` under a time limit and into a file, waits for the late dialog and puts it away.",
++   "hurt": 4,
++   "sources": [
++    "scripts/mac-shell/check-download.sh"
++   ]
++  },
+   {
+    "id": "a-release-can-be-lost",
+    "kind": "missing-report",
+@@ -8813,6 +8832,23 @@
+     "docs/TESTING.md"
+    ]
+   },
++  {
++   "id": "nobody-can-answer-for-an-administrator-on-a-hosted-mac",
++   "kind": "permissions",
++   "layer": "machine",
++   "expected": "On a throwaway Mac with `sudo` a script can give itself whatever password a dialog asks for.",
++   "happened": "The account hosted Macs run jobs under cannot be given a password: `dscl . -passwd` fails with eDSAuthFailed, `sysadminctl -resetPasswordFor` with \"not permitted without secure token unlock\". An administrator made on the spot (`sysadminctl -addUser … -admin`) passes `dscl . -authonly`, and the dialog turns its name and password away all the same. So what lies behind a dialog that wants an administrator cannot be tried there. (One that wants the password of a keychain the script made itself can be answered: `check-signing.sh` does.)",
++   "found": "`scripts/mac-shell/check-download.sh` and the probes before it, on hosted Macs on 2026-10-14 and 15 (macOS 26.6.2), with the files the Release workflow's rehearsal had built on another Mac.",
++   "modelled": "cannot",
++   "knobs": [],
++   "guards": [],
++   "copes": "scripts/mac-shell/check-download.sh follows the road to that dialog, tells what it says and stops; docs/INSTALL.md says that the rest is Apple's account.",
++   "hurt": 4,
++   "sources": [
++    "scripts/mac-shell/check-download.sh",
++    "docs/INSTALL.md"
++   ]
++  },
+   {
+    "id": "nobody-has-the-keyboard-also-means-a-launcher-has-it",
+    "kind": "late-or-partial-answer",
+@@ -8947,6 +8983,26 @@
+     "Sources/arbor-fakemac/World.swift"
+    ]
+   },
++  {
++   "id": "older-swifts-take-a-method-for-the-constant-being-declared",
++   "kind": "toolchain",
++   "layer": "machine",
++   "expected": "`let row = try #require(row(h, window))` calls the method `row`.",
++   "happened": "Inside a closure, and `#require` and `#expect` make one, Swift 6.2 and 6.3 take `row(…)` for the constant that is being declared, or for one declared further down in the function: \"generic parameter could not be inferred\", \"cannot call value of non-function type\". Swift 6.4 takes it. Ten lines of Arbor's were like that, and nobody noticed as long as every machine at hand had 6.4. Swift 6.2 also gives up (\"unable to type-check this expression in reasonable time\") on expressions 6.3 gets through, the manifest's one list of targets among them, without which nothing is built at all.",
++   "found": "The first run of CI on hosted Macs; then found and mended wholly on Linux, in the images of Swift 6.2 and 6.3.3.",
++   "modelled": "cannot",
++   "knobs": [],
++   "guards": [
++    "tool: lint-older-swift.py"
++   ],
++   "copes": ".github/workflows/ci.yml has the job `oldest-swift`, which compiles everything, tests included, with Swift 6.2 and type-checks the macOS-only code, on every pull request that is no draft; scripts/lint-older-swift.py finds the first kind without a compiler; Package.swift asks for 6.2, so that an older Swift says so in one line.",
++   "hurt": 4,
++   "sources": [
++    "Package.swift",
++    ".github/workflows/ci.yml",
++    "docs/INSTALL.md"
++   ]
++  },
+   {
+    "id": "on-a-retina-display-frames-come-in-half-points",
+    "kind": "geometry",
+@@ -10101,6 +10157,28 @@
+     "docs/TESTING.md"
+    ]
+   },
++  {
++   "id": "swift-6-3-crashes-on-a-main-actor-closure-handed-to-a-binding",
++   "kind": "toolchain",
++   "layer": "machine",
++   "expected": "What Swift 6.4 compiles, the release before it compiles too, or refuses with a line number.",
++   "happened": "A closure marked `@MainActor` that takes a parameter, handed straight to SwiftUI's `Binding(get:set:)`, kills Swift 6.3.3 (Xcode 26.6, which is what hosted Macs and many people have) while it generates code: \"fatal error encountered during compilation\", a stack dump, the file's name and no line. Only with Apple's SwiftUI: with no compiler does it happen on Linux, against the stand-ins or without them. Seven lines reproduce it on a Mac. A closure first given a name and a `@MainActor` type crashes it as well. The same conversion inside a generic function compiles.",
++   "found": "The first run of CI on hosted Macs, then small variants compiled one by one on a hosted Mac with and without the optimizer.",
++   "modelled": "cannot",
++   "knobs": [],
++   "guards": [
++    "tool: lint-older-swift.py"
++   ],
++   "copes": "Sources/ArborKit/UI/SettingsListViews.swift has `Binding.onMainActor(get:set:)`, which the settings window's bindings use; CI's macOS job builds with the runner's own Swift.",
++   "hurt": 4,
++   "sources": [
++    "Sources/ArborKit/UI/SettingsListViews.swift",
++    "Sources/ArborKit/UI/SettingsViews.swift",
++    "scripts/lint-older-swift.py",
++    "scripts/typecheck-mac/README.md",
++    "docs/INSTALL.md"
++   ]
++  },
+   {
+    "id": "swift-test-ended-with-1-though-every-test-passed",
+    "kind": "toolchain",
+@@ -10584,6 +10662,30 @@
+     "scripts/mac-shell/input-taps.sh"
+    ]
+   },
++  {
++   "id": "the-default-button-of-gatekeepers-dialogs-is-move-to-trash",
++   "kind": "permissions",
++   "layer": "machine",
++   "expected": "A downloaded Arbor that is not notarized takes one detour: Done, then Open Anyway in System Settings.",
++   "happened": "Four steps. “Arbor” Not Opened (Move to Trash, Done); in System Settings, under Security, \"“Arbor” was blocked to protect your Mac\" with Open Anyway; a second dialog, Open “Arbor”? (Move to Trash, Open Anyway, Done); and some seconds later a third, from `coreautha`, that wants an administrator's name and password. In both of the first two the blue button is Move to Trash (seen in the pictures; that Return presses it is macOS's custom with a blue button, and was not tried). It is the same for the zip, the disk image and Homebrew, which leaves a mark of its own. What follows the password nobody has seen: no script can give one on a hosted Mac.",
++   "found": "`scripts/mac-shell/check-download.sh` and the probes before it, on hosted Macs on 2026-10-14 and 15 (macOS 26.6.2), with the files the Release workflow's rehearsal had built on another Mac.",
++   "modelled": "cannot",
++   "knobs": [],
++   "guards": [
++    "e2e: in the words the install page quotes",
++    "e2e: with Done to click",
++    "e2e: beside Move to Trash, which page and notes warn of",
++    "tool: release-tools-test.sh"
++   ],
++   "copes": "docs/INSTALL.md tells the four steps in macOS's words, the release notes tell them in short, the cask's caveats the first two; all three lead with \"click Done, not the blue button\". `xattr -dr com.apple.quarantine` spares all four. Only an Apple Developer ID would end it.",
++   "hurt": 3,
++   "sources": [
++    "docs/INSTALL.md",
++    "scripts/release-notes.sh",
++    "packaging/arbor.rb",
++    "scripts/mac-shell/check-download.sh"
++   ]
++  },
+   {
+    "id": "the-display-showing-most-of-a-window-stops-it",
+    "kind": "geometry",
+diff --git a/docs/REALITY.md b/docs/REALITY.md
+index 51698625..bd5305ea 100644
+--- a/docs/REALITY.md
++++ b/docs/REALITY.md
+@@ -57,17 +57,17 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
+ | [order-of-reports](#order-of-reports) | 28 | 3 | 9 | 11 | 3 | 5 | 18 | 1 | 3 | 6 | 4 |
+ | [missing-report](#missing-report) | 44 | 7 | 14 | 7 | 4 | 19 | 25 | 1 | 5 | 13 | 10 |
+ | [extra-report](#extra-report) | 10 | 0 | 4 | 3 | 1 | 2 | 6 | 0 | 0 | 4 | 1 |
+-| [late-or-partial-answer](#late-or-partial-answer) | 46 | 9 | 12 | 15 | 6 | 13 | 29 | 0 | 6 | 11 | 14 |
++| [late-or-partial-answer](#late-or-partial-answer) | 47 | 9 | 12 | 15 | 6 | 14 | 29 | 0 | 7 | 11 | 14 |
+ | [second-actor](#second-actor) | 60 | 8 | 25 | 19 | 9 | 7 | 40 | 0 | 4 | 16 | 11 |
+ | [geometry](#geometry) | 42 | 2 | 18 | 14 | 8 | 2 | 31 | 1 | 2 | 8 | 7 |
+ | [identity](#identity) | 32 | 4 | 7 | 7 | 7 | 11 | 14 | 1 | 4 | 13 | 8 |
+-| [permissions](#permissions) | 23 | 7 | 5 | 4 | 3 | 11 | 12 | 2 | 3 | 6 | 4 |
++| [permissions](#permissions) | 25 | 7 | 5 | 4 | 3 | 13 | 13 | 2 | 3 | 7 | 4 |
+ | [timing](#timing) | 56 | 7 | 9 | 14 | 11 | 22 | 33 | 4 | 6 | 13 | 9 |
+ | [input](#input) | 60 | 8 | 8 | 14 | 14 | 24 | 25 | 6 | 8 | 21 | 10 |
+ | [looks](#looks) | 21 | 0 | 1 | 0 | 0 | 20 | 3 | 2 | 3 | 13 | 5 |
+ | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
+-| [toolchain](#toolchain) | 52 | 1 | 0 | 2 | 4 | 46 | 28 | 1 | 2 | 21 | 10 |
+-| **all** | 489 | 63 | 113 | 123 | 70 | 183 | 264 | 19 | 60 | 146 | 108 |
++| [toolchain](#toolchain) | 54 | 1 | 0 | 2 | 4 | 48 | 30 | 1 | 2 | 21 | 10 |
++| **all** | 494 | 63 | 113 | 123 | 70 | 188 | 267 | 19 | 61 | 147 | 108 |
+ 
+ **Where the difference bit**
+ 
+@@ -76,8 +76,8 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
+ | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 145 | 90 | 48 | 13 | 33 | 51 |
+ | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 176 | 104 | 138 | 0 | 10 | 28 |
+ | controller | in the controller or the core, given reports that were right | 31 | 16 | 19 | 0 | 1 | 11 |
+-| test | in a test, a script or a harness that expected the wrong thing | 89 | 0 | 32 | 5 | 12 | 40 |
+-| machine | in the machine, the toolchain or the way things are built and installed | 48 | 3 | 27 | 1 | 4 | 16 |
++| test | in a test, a script or a harness that expected the wrong thing | 90 | 0 | 32 | 5 | 13 | 40 |
++| machine | in the machine, the toolchain or the way things are built and installed | 52 | 3 | 30 | 1 | 4 | 17 |
+ 
+ Each case is counted under the best guard it has: one that goes red on any machine (a test, a scenario, a replayed trace, a tool that `make check` or CI runs), one that needs CI's Macs (a test for macOS alone, a step of a real-window run that CI starts), one that somebody has to start, or none.
+ 
+@@ -1732,6 +1732,18 @@ Late or partial answers: a call returns before the deed, after it, with half of
+ - **Arbor copes:** Sources/ArborKit/Controller/Controller+SoleFloat.swift waits until two seconds after the last window has turned up. There is no knob: the tests open windows after the start, which is `windowAppeared`.
+ - **Read in:** `docs/features/F18-sole-floating-window.md`, `Sources/ArborKit/Controller/Controller+SoleFloat.swift`
+ 
++### a-refused-app-is-listed-as-a-process-and-holds-up-its-next-launch
++
++*hurt 4 · test*
++
++- **Expected:** An app macOS refuses to open does not run; `open` says so and returns.
++- **Happened:** While Gatekeeper's dialog stands, `pgrep` lists the app's program (at a path under AppTranslocation if it bears the mark), though not one line of it has run: only an answer on the control socket says that Arbor runs. `open` does not return until the dialog is dismissed, then fails with -128. As long as any of the dialogs of that road stands, the one for the password included, which comes up seconds late, every other launch of a copy of the app fails with -10673. A background `open … | head` left waiting like that held a script's output pipe open for thirteen minutes after its last line.
++- **Found by:** `scripts/mac-shell/check-download.sh` and the probes before it, on hosted Macs on 2026-10-14 and 15 (macOS 26.6.2), with the files the Release workflow's rehearsal had built on another Mac.
++- **Stand-ins play it:** cannot: it lies below or beside the seam
++- **Guard:** `e2e: Arbor does not run` (by hand); `e2e: no dialog of macOS's stands in the way` (by hand)
++- **Arbor copes:** scripts/mac-shell/check-download.sh asks `arborctl status`, runs `open` under a time limit and into a file, waits for the late dialog and puts it away.
++- **Read in:** `scripts/mac-shell/check-download.sh`
++
+ ### a-terminals-window-has-a-margin-besides-its-characters
+ 
+ *hurt 4 · at the seam · touches `jolt`*
+@@ -3560,6 +3572,18 @@ Permissions: what macOS allows, to whom, and how it says no.
+ - **Arbor copes:** OnboardingModel goes by the page and not by the person (the product owner's ruling): on Check Setup… always, on the welcome never.
+ - **Read in:** `Sources/ArborCore/OnboardingModel.swift`, `Sources/ArborTesting/FakeWelcomeWindow.swift`, `scripts/mac-shell/first-five-minutes.sh`
+ 
++### the-default-button-of-gatekeepers-dialogs-is-move-to-trash
++
++*hurt 3 · machine*
++
++- **Expected:** A downloaded Arbor that is not notarized takes one detour: Done, then Open Anyway in System Settings.
++- **Happened:** Four steps. “Arbor” Not Opened (Move to Trash, Done); in System Settings, under Security, "“Arbor” was blocked to protect your Mac" with Open Anyway; a second dialog, Open “Arbor”? (Move to Trash, Open Anyway, Done); and some seconds later a third, from `coreautha`, that wants an administrator's name and password. In both of the first two the blue button is Move to Trash (seen in the pictures; that Return presses it is macOS's custom with a blue button, and was not tried). It is the same for the zip, the disk image and Homebrew, which leaves a mark of its own. What follows the password nobody has seen: no script can give one on a hosted Mac.
++- **Found by:** `scripts/mac-shell/check-download.sh` and the probes before it, on hosted Macs on 2026-10-14 and 15 (macOS 26.6.2), with the files the Release workflow's rehearsal had built on another Mac.
++- **Stand-ins play it:** cannot: it lies below or beside the seam
++- **Guard:** `e2e: in the words the install page quotes` (by hand); `e2e: with Done to click` (by hand); `e2e: beside Move to Trash, which page and notes warn of` (by hand); `tool: release-tools-test.sh`
++- **Arbor copes:** docs/INSTALL.md tells the four steps in macOS's words, the release notes tell them in short, the cask's caveats the first two; all three lead with "click Done, not the blue button". `xattr -dr com.apple.quarantine` spares all four. Only an Apple Developer ID would end it.
++- **Read in:** `docs/INSTALL.md`, `scripts/release-notes.sh`, `packaging/arbor.rb`, `scripts/mac-shell/check-download.sh`
++
+ ### the-login-item-can-be-refused
+ 
+ *hurt 3 · at the seam · suspected · M1066*
+@@ -3644,6 +3668,18 @@ Permissions: what macOS allows, to whom, and how it says no.
+ - **Arbor copes:** scripts/e2e.sh runs the real-window suite in CI.
+ - **Read in:** `collab/QUESTIONS.md`, `CHANGELOG.md`, `docs/TESTING.md`
+ 
++### nobody-can-answer-for-an-administrator-on-a-hosted-mac
++
++*hurt 4 · machine*
++
++- **Expected:** On a throwaway Mac with `sudo` a script can give itself whatever password a dialog asks for.
++- **Happened:** The account hosted Macs run jobs under cannot be given a password: `dscl . -passwd` fails with eDSAuthFailed, `sysadminctl -resetPasswordFor` with "not permitted without secure token unlock". An administrator made on the spot (`sysadminctl -addUser … -admin`) passes `dscl . -authonly`, and the dialog turns its name and password away all the same. So what lies behind a dialog that wants an administrator cannot be tried there. (One that wants the password of a keychain the script made itself can be answered: `check-signing.sh` does.)
++- **Found by:** `scripts/mac-shell/check-download.sh` and the probes before it, on hosted Macs on 2026-10-14 and 15 (macOS 26.6.2), with the files the Release workflow's rehearsal had built on another Mac.
++- **Stand-ins play it:** cannot: it lies below or beside the seam
++- **Guard:** **none**
++- **Arbor copes:** scripts/mac-shell/check-download.sh follows the road to that dialog, tells what it says and stops; docs/INSTALL.md says that the rest is Apple's account.
++- **Read in:** `scripts/mac-shell/check-download.sh`, `docs/INSTALL.md`
++
+ ### reading-another-process-asks-for-a-password
+ 
+ *hurt 4 · test · K1300*
+@@ -5956,6 +5992,18 @@ Toolchain and machines: compilers, runners and shells that differ from the ones
+ - **Arbor copes:** scripts/mac-shell/rehearse.sh runs a rehearsal under a bash 3.2 with `ARBOR_REHEARSAL_BASH`, and `ARBOR_TEST_BASH` does the same for the tools' self-test; the default is the machine's bash.
+ - **Read in:** `docs/TESTING.md`, `scripts/mac-shell/lib.sh`, `scripts/mac-shell/lib-apps.sh`, `scripts/mac-shell/run-list.sh`, `collab/BACKLOG.md`
+ 
++### older-swifts-take-a-method-for-the-constant-being-declared
++
++*hurt 4 · machine*
++
++- **Expected:** `let row = try #require(row(h, window))` calls the method `row`.
++- **Happened:** Inside a closure, and `#require` and `#expect` make one, Swift 6.2 and 6.3 take `row(…)` for the constant that is being declared, or for one declared further down in the function: "generic parameter could not be inferred", "cannot call value of non-function type". Swift 6.4 takes it. Ten lines of Arbor's were like that, and nobody noticed as long as every machine at hand had 6.4. Swift 6.2 also gives up ("unable to type-check this expression in reasonable time") on expressions 6.3 gets through, the manifest's one list of targets among them, without which nothing is built at all.
++- **Found by:** The first run of CI on hosted Macs; then found and mended wholly on Linux, in the images of Swift 6.2 and 6.3.3.
++- **Stand-ins play it:** cannot: it lies below or beside the seam
++- **Guard:** `tool: lint-older-swift.py`
++- **Arbor copes:** .github/workflows/ci.yml has the job `oldest-swift`, which compiles everything, tests included, with Swift 6.2 and type-checks the macOS-only code, on every pull request that is no draft; scripts/lint-older-swift.py finds the first kind without a compiler; Package.swift asks for 6.2, so that an older Swift says so in one line.
++- **Read in:** `Package.swift`, `.github/workflows/ci.yml`, `docs/INSTALL.md`
++
+ ### open-hands-on-no-environment
+ 
+ *hurt 4 · test*
+@@ -6052,6 +6100,18 @@ Toolchain and machines: compilers, runners and shells that differ from the ones
+ - **Arbor copes:** scripts/mac-shell/run.sh asks Git whatever Git can answer, which does not count, and looks at the queue seldom: a run costs about ten calls however long it waits.
+ - **Read in:** `scripts/mac-shell/run.sh`, `scripts/mac-queue.py`, `docs/TESTING.md`
+ 
++### swift-6-3-crashes-on-a-main-actor-closure-handed-to-a-binding
++
++*hurt 4 · machine*
++
++- **Expected:** What Swift 6.4 compiles, the release before it compiles too, or refuses with a line number.
++- **Happened:** A closure marked `@MainActor` that takes a parameter, handed straight to SwiftUI's `Binding(get:set:)`, kills Swift 6.3.3 (Xcode 26.6, which is what hosted Macs and many people have) while it generates code: "fatal error encountered during compilation", a stack dump, the file's name and no line. Only with Apple's SwiftUI: with no compiler does it happen on Linux, against the stand-ins or without them. Seven lines reproduce it on a Mac. A closure first given a name and a `@MainActor` type crashes it as well. The same conversion inside a generic function compiles.
++- **Found by:** The first run of CI on hosted Macs, then small variants compiled one by one on a hosted Mac with and without the optimizer.
++- **Stand-ins play it:** cannot: it lies below or beside the seam
++- **Guard:** `tool: lint-older-swift.py`
++- **Arbor copes:** Sources/ArborKit/UI/SettingsListViews.swift has `Binding.onMainActor(get:set:)`, which the settings window's bindings use; CI's macOS job builds with the runner's own Swift.
++- **Read in:** `Sources/ArborKit/UI/SettingsListViews.swift`, `Sources/ArborKit/UI/SettingsViews.swift`, `scripts/lint-older-swift.py`, `scripts/typecheck-mac/README.md`, `docs/INSTALL.md`
++
+ ### swift-test-ended-with-1-though-every-test-passed
+ 
+ *hurt 4 · machine · K064 · K1776*
+-- 
+2.43.0
+
+
+From 3b086620d4d962ec46a2433fd4389d22c7f16c79 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 13:34:28 +0000
+Subject: [PATCH 4/6] docs(release): the notes open with what whoever ran an
+ earlier build has to do
+
+---
+ README.md                     |  7 ++++---
+ docs/INSTALL.md               |  6 +++---
+ packaging/arbor.rb            |  6 ++++--
+ scripts/install.sh            |  3 ++-
+ scripts/release-notes.sh      | 16 ++++++++++++----
+ scripts/release-tools-test.sh | 15 ++++++++++++++-
+ scripts/test-tooling.py       |  2 +-
+ 7 files changed, 40 insertions(+), 15 deletions(-)
+
+diff --git a/README.md b/README.md
+index 8b98d104..dd22a135 100644
+--- a/README.md
++++ b/README.md
+@@ -153,7 +153,7 @@ launch at login, downloaded builds and their first launch (they are not notarize
+ so macOS blocks them until you choose Open Anyway in System Settings → Privacy &
+ Security; building from source avoids that), Homebrew (a cask is ready for the first
+ release), and what to do when Arbor says it has no permission
+-although System Settings shows it switched on.
++though it was given one.
+ 
+ ### First run
+ 
+@@ -171,8 +171,9 @@ same page has the box for Open at Login, which is also in the settings window, u
+ opens the right pane of System Settings:
+ 
+ - **Accessibility** (required): macOS lets an app move other apps' windows only with this permission (System Settings →
+-  Privacy & Security → Accessibility). If the switch is on there and Arbor still says it has no permission, the build's signature has
+-  changed: switch it off and on again ([docs/INSTALL.md](docs/INSTALL.md) has how to sign so that this does not happen).
++  Privacy & Security → Accessibility). If Arbor had it and says it has none, the build's signature has changed:
++  switch Arbor on; if it is on already, switch it off and on again. If Arbor still says it has no permission, select it in that list,
++  remove it with the − button, and let Arbor ask again. ([docs/INSTALL.md](docs/INSTALL.md) has how to sign so that this does not happen.)
+ - **macOS tiling** (recommended): macOS's own tiling, three settings under Desktop & Dock, reacts to the same drags as Arbor, and before it. **Switch Off macOS Tiling** in
+   the row does it in one step (`arborctl fix-setup`): it changes those settings and nothing else, takes effect at once, and writes down how they
+   were. They are off **only while Arbor runs**: a quit or a pause leaves the Mac as Arbor found it, and the next start switches them off again.
+diff --git a/docs/INSTALL.md b/docs/INSTALL.md
+index f897ce5c..ca3918e1 100644
+--- a/docs/INSTALL.md
++++ b/docs/INSTALL.md
+@@ -232,10 +232,10 @@ installs as downloaded too, and the first launch is blocked just the same.
+ 
+ ## Troubleshooting
+ 
+-**Arbor says it has no permission, and System Settings shows it switched on.** The entry belongs to a build with
++**Arbor says it has no permission, though it was given one** (System Settings may even show it switched on). The entry belongs to a build with
+ another signature: an ad-hoc build that has been replaced, or a build from before (or after) you made the signing
+-identity. Switch it off and on again. If Arbor still has no permission, select it in the list, remove it with the − button, and let
+-Arbor ask again; or
++identity. In System Settings → Privacy & Security → Accessibility, switch Arbor on; if it is on already, switch it off and on again. If
++Arbor still says it has no permission, select it in that list, remove it with the − button, and let Arbor ask again. The last resort:
+ 
+ ```bash
+ tccutil reset Accessibility com.evbarleyg.arbor
+diff --git a/packaging/arbor.rb b/packaging/arbor.rb
+index a41758a2..294b8c25 100644
+--- a/packaging/arbor.rb
++++ b/packaging/arbor.rb
+@@ -41,7 +41,9 @@ cask "arbor" do
+ 
+     Arbor needs Accessibility permission to move other apps' windows:
+       System Settings → Privacy & Security → Accessibility
+-    Each release has a signature of its own, so after an upgrade remove
+-    Arbor's entry there and let it ask again.
++    Each release has a signature of its own, so after an upgrade:
++    switch Arbor on; if it is on already, switch it off and on again.
++    If Arbor still says it has no permission, select it in that list,
++    remove it with the − button, and let Arbor ask again.
+   EOS
+ end
+diff --git a/scripts/install.sh b/scripts/install.sh
+index 343170bd..93f0c57b 100755
+--- a/scripts/install.sh
++++ b/scripts/install.sh
+@@ -189,7 +189,8 @@ say_what_the_signature_costs() {
+   echo
+   echo "NOTE: THIS BUILD IS SIGNED AD HOC. To macOS it is a new app, so macOS will ask for the Accessibility permission again,"
+   echo "  now and after every \`make install\`. An entry an older build left under Accessibility does nothing for this one:"
+-  echo "  switch it off and on again, or"
++  echo "  switch Arbor on; if it is on already, switch it off and on again."
++  echo "  If Arbor still says it has no permission, select it in that list, remove it with the − button, and let Arbor ask again, or"
+   echo "    tccutil reset Accessibility com.evbarleyg.arbor     then switch Arbor on again"
+   echo "  To be asked once more and never again:  ./scripts/make-signing-identity.sh  then  make install  (docs/INSTALL.md)."
+ }
+diff --git a/scripts/release-notes.sh b/scripts/release-notes.sh
+index 07a86006..9980cc0f 100755
+--- a/scripts/release-notes.sh
++++ b/scripts/release-notes.sh
+@@ -1,6 +1,7 @@
+ #!/bin/bash
+-# Prints the notes of a release, in Markdown: the top section of CHANGELOG.md, how to install the download and get
+-# it past its first launch, and the checksums when `make release` has made them.
++# Prints the notes of a release, in Markdown: a line for whoever ran an earlier build, the top section of
++# CHANGELOG.md, how to install the download and get it past its first launch, and the checksums when `make release`
++# has made them.
+ #
+ #   scripts/release-notes.sh > notes.md
+ #
+@@ -10,6 +11,13 @@ cd "$(dirname "$0")/.."
+ 
+ version=$(./scripts/version.sh version)
+ 
++# First, because whoever it concerns finds an Arbor that does nothing and reads no further: a build that is not
++# notarized has a signature of its own, and macOS gave its permission to the last one's (docs/INSTALL.md, "The
++# signing identity, and why"). So has the first that is notarized. From the second on this can go. The same words as in README.md,
++# docs/INSTALL.md and the cask (release-tools-test.sh): what the switch shows for an older build's entry nobody has seen.
++echo "If you have run an earlier build: System Settings → Privacy & Security → Accessibility: switch Arbor on; if it is on already, switch it off and on again. If Arbor still says it has no permission, select it in that list, remove it with the − button, and let Arbor ask again."
++echo
++
+ # From the first "## " heading, without it, to the next. GitHub shows a release's notes with every line break kept, so
+ # paragraphs and list items that are wrapped in the file are joined up again; headings, list items, tables,
+ # code blocks and blank lines start afresh.
+@@ -48,8 +56,8 @@ if [ "${ARBOR_NOTARIZED:-}" = 1 ]; then
+ NOTES
+ else
+   cat <<NOTES
+-2. **When macOS refuses the first launch, click Done, not the blue button: that one is Move to Trash, and Return presses it too.** (So on macOS 26, where all of this was seen; older ones word it otherwise.) This build is not notarized by Apple, which takes a paid developer account, so macOS refuses a downloaded copy at first: **“Arbor” Not Opened**, "Apple could not verify “Arbor” is free of malware that may harm your Mac or compromise your privacy." After **Done**, open System Settings → Privacy & Security, scroll down to "“Arbor” was blocked to protect your Mac" and click **Open Anyway**; in the dialog that follows click **Open Anyway** again, then give an administrator's name and password. (Right-click → Open no longer gets past this on current macOS.) Or take the download's mark off in Terminal, after which none of this is asked: \`xattr -dr com.apple.quarantine /Applications/Arbor.app\`
+-3. Give Arbor **Accessibility** permission when it asks (System Settings → Privacy & Security → Accessibility). It needs that to move other apps' windows. macOS ties the permission to the signature, and this build's signature is its own, so after replacing Arbor with a later download, remove its entry there and let it ask again.
++2. **When macOS refuses the first launch, click Done, not the blue button: that one is Move to Trash, and Return as a rule presses the blue one.** (So on macOS 26, where this was seen as far as the password; older ones word it otherwise.) This build is not notarized by Apple, which takes a paid developer account, so macOS refuses a downloaded copy at first: **“Arbor” Not Opened**, "Apple could not verify “Arbor” is free of malware that may harm your Mac or compromise your privacy." After **Done**, open System Settings → Privacy & Security, scroll down to "“Arbor” was blocked to protect your Mac" and click **Open Anyway**; in the dialog that follows click **Open Anyway** again, then give an administrator's name and password. (Right-click → Open no longer gets past this on current macOS.) Or take the download's mark off in Terminal, after which none of this is asked: \`xattr -dr com.apple.quarantine /Applications/Arbor.app\`
++3. Give Arbor **Accessibility** permission when it asks (System Settings → Privacy & Security → Accessibility). It needs that to move other apps' windows. macOS ties the permission to the signature, and this build's signature is its own, so a later download has to be given it anew: the first lines of its notes say how.
+ 
+ Building from source avoids both the detour and the repeated permission, in three commands: [docs/INSTALL.md](https://github.com/evbarleyg/arbor/blob/main/docs/INSTALL.md).
+ NOTES
+diff --git a/scripts/release-tools-test.sh b/scripts/release-tools-test.sh
+index 0371c603..e5363d23 100755
+--- a/scripts/release-tools-test.sh
++++ b/scripts/release-tools-test.sh
+@@ -70,7 +70,19 @@ echo "release-notes.sh"
+ printf 'abc  Arbor-1.2.3.zip\ndef  Arbor-1.2.3.dmg\n' > "$root/build/Arbor-1.2.3-checksums.txt"
+ notes="$root/notes.md"
+ "$root/scripts/release-notes.sh" > "$notes"
+-check "they start with the top section's first line" test "$(head -n 1 "$notes")" = "### Added"
++# One road, in the same words wherever it is told: nobody has seen the switch of an older build's entry, which macOS may have rewritten to denied.
++on_or_off_and_on="switch Arbor on; if it is on already, switch it off and on again."
++then_the_button="If Arbor still says it has no permission, select it in that list, remove it with the − button, and let Arbor ask again"
++check "they open with what whoever ran an earlier build has to do" test "$(head -n 1 "$notes")" = \
++  "If you have run an earlier build: System Settings → Privacy & Security → Accessibility: $on_or_off_and_on $then_the_button."
++check "then comes the top section's first line, as a paragraph of its own" test "$(sed -n 2,3p "$notes")" = "
++### Added"
++check "and the steps send whoever takes a later download there" contains "$notes" "the first lines of its notes say how"
++says() { case "$(tr '\n' ' ' < "$1" | tr -s ' ')" in *"$2"*) return 0 ;; *) return 1 ;; esac; }  # wherever the file breaks its lines
++for page in README.md docs/INSTALL.md packaging/arbor.rb scripts/install.sh; do
++  check "$page tells the same road: on, or off and on" says "$page" "$on_or_off_and_on"
++  check "  and then the − button" says "$page" "$then_the_button"
++done
+ check "wrapped list items are joined" contains "$notes" "- **Tabs.** Drop a window on the middle of another to stack them."
+ check "wrapped paragraphs are joined" contains "$notes" "A paragraph that is wrapped in the file."
+ check "the next item starts a new line" contains "$notes" "- Second item."
+@@ -86,6 +98,7 @@ check "the files are named after the version" contains "$notes" "Arbor-1.2.3.dmg
+ check "the checksums are listed" contains "$notes" "def  Arbor-1.2.3.dmg"
+ ARBOR_NOTARIZED=1 "$root/scripts/release-notes.sh" > "$root/notarized.md"
+ check "a notarized build's notes leave Gatekeeper out" lacks "$root/notarized.md" "Open Anyway"
++check "and open like the others: the first such build has a new signature too" test "$(head -n 1 "$root/notarized.md")" = "$(head -n 1 "$notes")"
+ 
+ echo "publish-release.sh"
+ check "it refuses to run before make release" fails "$root/scripts/publish-release.sh" --dry-run
+diff --git a/scripts/test-tooling.py b/scripts/test-tooling.py
+index f1562afe..6c3f9ad7 100755
+--- a/scripts/test-tooling.py
++++ b/scripts/test-tooling.py
+@@ -1421,7 +1421,7 @@ def check_install():
+         (code, output.count("SIGNED AD HOC"), "macOS will ask for the Accessibility permission again" in output,
+          "make-signing-identity.sh" in output.splitlines()[-1], output.find("SIGNED AD HOC") > output.find("Not started") >= 0), (0, 1, True, True, True))
+     row("install.sh: of an older build's entry it says what to do; how the switch looks differs from road to road, and is the install page's to tell",
+-        ("switch it off and on again, or" in output, "looks switched on" in output), (True, False))
++        ("switch Arbor on; if it is on already, switch it off and on again." in output, "looks switched on" in output), (True, False))
+     # As the real one writes: a line at a time. A reader that leaves at the match kills it, and under pipefail that made a no of the yes.
+     slowly = "for line in Executable=/x Identifier=com.evbarleyg.arbor Signature=adhoc 'Info.plist entries=24' 'TeamIdentifier=not set' 'Sealed Resources version=2'; do echo \"$line\" >&2 || exit 1; sleep 0.02; done"
+     row("install.sh: however slowly codesign writes what follows", "SIGNED AD HOC" in installed('exec /bin/cp "$@"', codesign=slowly, said=True)[1], True)
+-- 
+2.43.0
+
+
+From e1f05be1f14dacc230e6d932d1ab8ef3540fcdd3 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 13:45:03 +0000
+Subject: [PATCH 5/6] fix(mac-shell): a script whose clean-up died before it
+ had counted its failures does not pass
+
+On a hosted Mac a script ended with 0 and without its count, six checks failed: it had taken ARBOR_HOME away, lib.sh's
+clean-up asked for it under set -u, and the shell ended there with what the last command had come to. ci-mac-shell.sh
+has since held a 0 to what was said, for what the mac-shell workflow runs. The Release workflow and a person at a Mac
+start a script directly, so this is the same at the source: the script leaves a mark when it has counted, and a
+supervisor that finds 0 or 1 and no mark says so and ends with 2. Rows red first, under bash 5 and 3.2.57.
+---
+ collab/reality.json      | 21 +++++++++++++++++++++
+ docs/REALITY.md          | 18 +++++++++++++++---
+ scripts/mac-shell/lib.sh | 14 +++++++++++++-
+ scripts/test-tooling.py  | 20 +++++++++++++++++++-
+ 4 files changed, 68 insertions(+), 5 deletions(-)
+
+diff --git a/collab/reality.json b/collab/reality.json
+index b798ef3d..13063313 100644
+--- a/collab/reality.json
++++ b/collab/reality.json
+@@ -142,6 +142,27 @@
+     "Sources/arbor-fakemac/World+Arbor.swift"
+    ]
+   },
++  {
++   "id": "a-clean-up-that-dies-hands-on-the-last-commands-exit-code",
++   "kind": "toolchain",
++   "layer": "test",
++   "expected": "A Mac shell script with a failed check ends with an exit code other than 0, and says how many passed and how many failed.",
++   "happened": "`check-F13-system.sh` ended with 0 and without its count, six checks failed. It had taken `ARBOR_HOME` away, to look at the Arbor in the account's own home; lib.sh's clean-up asked for the folder under `set -u`, and the shell ended there, before the failures were counted, with what the script's last command had come to. bash 3.2 and 5 do the same, and so does a variable that is not set in what a script gives `at_exit`. Whoever goes by the exit code, as a workflow does, takes such a run for a pass.",
++   "found": "A run on a hosted Mac on 2026-10-15 (macOS 26.6.2), read to its last line; then played on Linux under both shells.",
++   "modelled": "cannot",
++   "knobs": [],
++   "guards": [
++    "tool: test-tooling.py"
++   ],
++   "copes": "scripts/mac-shell/lib.sh, at the source, for a script that is started directly (as the Release workflow and a person at a Mac start one): the script leaves a mark of its own when it has counted, and a supervisor that finds 0 or 1 and no such mark says so and ends with 2. And scripts/ci-mac-shell.sh, the runner of the `mac-shell` workflow, holds a 0 to what was said: a ✘ that was never counted makes it 70. Not yet: a script that another script starts, as the suite starts its sections, is looked at by neither; its caller sees the 0. The two scripts about the account's own Arbor, `check-F13-system.sh` and `check-download.sh`, name its folder instead of taking the variable away.",
++   "hurt": 4,
++   "sources": [
++    "scripts/mac-shell/lib.sh",
++    "scripts/ci-mac-shell.sh",
++    "scripts/mac-shell/check-F13-system.sh",
++    "scripts/mac-shell/check-download.sh"
++   ]
++  },
+   {
+    "id": "a-click-in-the-middle-of-the-menu-bar-item-presses-a-button",
+    "kind": "input",
+diff --git a/docs/REALITY.md b/docs/REALITY.md
+index bd5305ea..838d6dca 100644
+--- a/docs/REALITY.md
++++ b/docs/REALITY.md
+@@ -66,8 +66,8 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
+ | [input](#input) | 60 | 8 | 8 | 14 | 14 | 24 | 25 | 6 | 8 | 21 | 10 |
+ | [looks](#looks) | 21 | 0 | 1 | 0 | 0 | 20 | 3 | 2 | 3 | 13 | 5 |
+ | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
+-| [toolchain](#toolchain) | 54 | 1 | 0 | 2 | 4 | 48 | 30 | 1 | 2 | 21 | 10 |
+-| **all** | 494 | 63 | 113 | 123 | 70 | 188 | 267 | 19 | 61 | 147 | 108 |
++| [toolchain](#toolchain) | 55 | 1 | 0 | 2 | 4 | 49 | 31 | 1 | 2 | 21 | 10 |
++| **all** | 495 | 63 | 113 | 123 | 70 | 189 | 268 | 19 | 61 | 147 | 108 |
+ 
+ **Where the difference bit**
+ 
+@@ -76,7 +76,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
+ | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 145 | 90 | 48 | 13 | 33 | 51 |
+ | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 176 | 104 | 138 | 0 | 10 | 28 |
+ | controller | in the controller or the core, given reports that were right | 31 | 16 | 19 | 0 | 1 | 11 |
+-| test | in a test, a script or a harness that expected the wrong thing | 90 | 0 | 32 | 5 | 13 | 40 |
++| test | in a test, a script or a harness that expected the wrong thing | 91 | 0 | 33 | 5 | 13 | 40 |
+ | machine | in the machine, the toolchain or the way things are built and installed | 52 | 3 | 30 | 1 | 4 | 17 |
+ 
+ Each case is counted under the best guard it has: one that goes red on any machine (a test, a scenario, a replayed trace, a tool that `make check` or CI runs), one that needs CI's Macs (a test for macOS alone, a step of a real-window run that CI starts), one that somebody has to start, or none.
+@@ -5644,6 +5644,18 @@ Toolchain and machines: compilers, runners and shells that differ from the ones
+ - **Arbor copes:** **not yet**
+ - **Read in:** `scripts/typecheck-mac/README.md`, `scripts/typecheck-mac/check.sh`
+ 
++### a-clean-up-that-dies-hands-on-the-last-commands-exit-code
++
++*hurt 4 · test*
++
++- **Expected:** A Mac shell script with a failed check ends with an exit code other than 0, and says how many passed and how many failed.
++- **Happened:** `check-F13-system.sh` ended with 0 and without its count, six checks failed. It had taken `ARBOR_HOME` away, to look at the Arbor in the account's own home; lib.sh's clean-up asked for the folder under `set -u`, and the shell ended there, before the failures were counted, with what the script's last command had come to. bash 3.2 and 5 do the same, and so does a variable that is not set in what a script gives `at_exit`. Whoever goes by the exit code, as a workflow does, takes such a run for a pass.
++- **Found by:** A run on a hosted Mac on 2026-10-15 (macOS 26.6.2), read to its last line; then played on Linux under both shells.
++- **Stand-ins play it:** cannot: it lies below or beside the seam
++- **Guard:** `tool: test-tooling.py`
++- **Arbor copes:** scripts/mac-shell/lib.sh, at the source, for a script that is started directly (as the Release workflow and a person at a Mac start one): the script leaves a mark of its own when it has counted, and a supervisor that finds 0 or 1 and no such mark says so and ends with 2. And scripts/ci-mac-shell.sh, the runner of the `mac-shell` workflow, holds a 0 to what was said: a ✘ that was never counted makes it 70. Not yet: a script that another script starts, as the suite starts its sections, is looked at by neither; its caller sees the 0. The two scripts about the account's own Arbor, `check-F13-system.sh` and `check-download.sh`, name its folder instead of taking the variable away.
++- **Read in:** `scripts/mac-shell/lib.sh`, `scripts/ci-mac-shell.sh`, `scripts/mac-shell/check-F13-system.sh`, `scripts/mac-shell/check-download.sh`
++
+ ### a-display-mode-is-undone-when-the-process-exits
+ 
+ *hurt 4 · test*
+diff --git a/scripts/mac-shell/lib.sh b/scripts/mac-shell/lib.sh
+index 8996fba9..23739b36 100644
+--- a/scripts/mac-shell/lib.sh
++++ b/scripts/mac-shell/lib.sh
+@@ -42,6 +42,8 @@
+ #
+ # Everything a script leaves in mac-shell/ comes back to the caller. Written for bash 3.2, macOS's own.
+ # Sets -u and pipefail but not -e: a step that fails should not cost the steps after it.
++# Under -u a variable that is not set ends the shell on the spot. In the clean-up that is before the failures are counted, so
++# a script that ends with 0 or 1 and has not counted ends with 2, and the supervisor says why. Do not unset what this file has set.
+ #
+ # Whose Mac is this?
+ #   on_throwaway_mac                whether this is one of GitHub's Macs ($GITHUB_ACTIONS is true)
+@@ -1052,6 +1054,12 @@ arbor_supervise() {
+     interrupted) code=130 ;;
+     *) code=124 ;;
+   esac
++  # Under `set -u` one variable that is not set ends the clean-up where it stands (arbor_exit, or what the script gave at_exit), before the
++  # failures are counted, and bash hands on what the script's last command came to: on a hosted Mac 0, with six checks failed.
++  if [ -z "$reason" ] && [ "$code" -lt 2 ] && [ ! -f "$ARBOR_LEDGER/counted.$child" ]; then
++    echo "  ✘ $(basename "$ARBOR_SCRIPT") ended before it had counted its failures: its clean-up died, see the last lines above"
++    code=2
++  fi
+ 
+   arbor_sweep
+   if ! on_throwaway_mac; then
+@@ -1528,7 +1536,11 @@ arbor_exit() {
+     rmdir "$ARBOR_OUT/evidence" 2>/dev/null
+   fi
+   [ "$code" -eq 0 ] && [ "$ARBOR_FAILED" -gt "$ARBOR_KNOWN_FAILED" ] && code=1
+-  if ! arbor_supervised; then
++  if arbor_supervised; then
++    # For the supervisor: the failures have been counted, so the exit code means what it says. By its number: a script that this one
++    # started (a section of the suite) is on the same record, and does not vouch for it.
++    : > "$ARBOR_LEDGER/counted.$$"
++  else
+     arbor_sweep
+     scratch_remove "$ARBOR_LEDGER"
+   fi
+diff --git a/scripts/test-tooling.py b/scripts/test-tooling.py
+index 6c3f9ad7..01397d47 100755
+--- a/scripts/test-tooling.py
++++ b/scripts/test-tooling.py
+@@ -1027,6 +1027,24 @@ kill $mine
+     # A session as arbor_start leaves it, without the windows. At the end there is no Arbor to stop.
+     SESSION = 'ARBOR_PID=$$ ARBOR_SESSION=1\n'
+ 
++    def clean_up_dies(mac):
++        # As on a hosted Mac: a script about the Arbor in the account's own home took the session's folder away, lib.sh's clean-up asked for it under `set -u` and
++        # died there, before the failures were counted, and bash handed on what the script's last command had come to: 0, with six checks failed.
++        libs, said = mac.run(SESSION + 'ARBOR_PID=""\nunset ARBOR_HOME\ncheck "red" false\ntrue')
++        own, _ = mac.run('at_exit \'echo "$nobody_has_set_this"\'\ncheck "red" false\ntrue')
++        after_a_failure, _ = mac.run('at_exit \'echo "$nobody_has_set_this"\'\ncheck "green" true\nfalse')
++        whole, counted = mac.run('unset ARBOR_HOME\ncheck "green" true')
++        # As the suite starts its sections: under the same supervisor, on the same record.
++        with open(os.path.join(mac.folder, "inner.sh"), "w", encoding="utf-8") as handle:
++            handle.write(f'source "{LIB}"\ncheck "green" true\n')
++        vouched, _ = mac.run('"$BASH" "$FAKE/inner.sh"\nat_exit \'echo "$nobody_has_set_this"\'\ncheck "red" false\ntrue')
++        return [("lib.sh: a script whose clean-up died before the failures were counted does not pass, and the reader is told",
++                 (libs, "passed, " in said, "ended before it had counted" in said), (2, False, True)),
++                ("lib.sh: nor one whose own clean-up died, whatever its last command came to", (own, after_a_failure), (2, 2)),
++                ("lib.sh: nor does a script it started, which got to its end, vouch for it", vouched, 2),
++                ("lib.sh: one that got to its end passes, and nothing of the kind is said",
++                 (whole, "1 passed, 0 failed" in counted, "ended before" in counted), (0, True, False))]
++
+     def words_to_the_recorder(mac):
+         return [line.replace("--timeout 1 -- ", "") for line in mac.read("told").splitlines() if " trace " in f" {line} "]
+ 
+@@ -1120,7 +1138,7 @@ kill $mine
+                       "✘ NOT ARBOR: UserNotificationCenter's window (382 118 260 250, layer 8) lies over 460,192: the press lands on it, and what follows says nothing about Arbor"])),
+                 ("lib.sh: the presses are made all the same", mac.read("posted").splitlines()[:4], ["click 510 152", "click 100 500", "click 650 450", "drag 460 192 3 400"])]
+ 
+-    throwaway = [under_an_alert, the_log_is_the_sessions, ended_by_the_script, recorded, told_not_to_record, refused, trace_had_ended, arbor_does_not_answer, cut_off, second_lock, which_build, folders, full_disk, disk_fills_up, strange_mktemp, refusals, strangers, limited, both_killed, supervisor_killed, two_at_once,
++    throwaway = [under_an_alert, the_log_is_the_sessions, ended_by_the_script, recorded, told_not_to_record, refused, trace_had_ended, arbor_does_not_answer, cut_off, second_lock, which_build, folders, full_disk, disk_fills_up, strange_mktemp, refusals, strangers, limited, clean_up_dies, both_killed, supervisor_killed, two_at_once,
+                  ended("the time limit"), ended("an interrupt"), ended("kill -9"), own_shell]
+     somebodys = [not_recorded, asked_to_record, nets, pictures, discreet, nameless, curtain_down, stale_output, defaults_for_arbor, no_curtain, both_killed, supervisor_killed,
+                  ended("the time limit", "on somebody's Mac, "), ended("an interrupt", "on somebody's Mac, "), ended("kill -9", "on somebody's Mac, "),
+-- 
+2.43.0
+
+
+From a71dedfafcd8c4ee7c1a6bda2ee91eed540ef4f9 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 14:23:19 +0000
+Subject: [PATCH 6/6] feat(mac-shell): a script about macOS's dialogs names
+ whose it means to press on
+
+lib.sh takes a press that lands on an alert or a dialog of macOS's for one that missed Arbor, and counts it as a failed
+check, unless the dialog's process began after the run. check-download.sh presses Gatekeeper's dialogs on purpose: with
+an agent that was running already, a good download would have been held back. ARBOR_PRESSES_ON names the owners that are
+meant; everything else about a press stays.
+---
+ scripts/mac-shell/lib.sh |  7 ++++++-
+ scripts/test-tooling.py  | 11 ++++++++++-
+ 2 files changed, 16 insertions(+), 2 deletions(-)
+
+diff --git a/scripts/mac-shell/lib.sh b/scripts/mac-shell/lib.sh
+index 23739b36..3459864c 100644
+--- a/scripts/mac-shell/lib.sh
++++ b/scripts/mac-shell/lib.sh
+@@ -2202,6 +2202,8 @@ arbor_what_lies_over() {
+ # it of a press that never arrived. (e2e-drag.sh was red for hours, and six theories about Arbor died, before somebody saw the alert that lay over
+ # the title bars it pressed on.) Anything else up there may be what the script means to press on (a menu of Finder's), so it is only said.
+ # On GitHub's Macs: on a person's, arbor_input_is_ours has declined such a press already, and without naming whose window it is.
++# A script about those very dialogs names whose it means to press on (ARBOR_PRESSES_ON="CoreServicesUIAgent SecurityAgent"). Without that it
++# depends on when the dialog's process began: one that is older than the run is taken for a stranger's.
+ arbor_look_before_pressing() {
+   local x=${2:-} y=${3:-} stranger
+   on_throwaway_mac || return 0
+@@ -2209,8 +2211,11 @@ arbor_look_before_pressing() {
+   x=${x%.*} y=${y%.*}
+   case "$x$y" in "" | *[!0-9-]*) return 0 ;; esac
+   stranger=$(arbor_what_lies_over "$x" "$y")
++  [ -n "$stranger" ] || return 0
++  case " ${ARBOR_PRESSES_ON:-} " in
++    *" ${stranger%%\'s window (*} "*) echo "  the press at $x,$y lands on $stranger, as meant" >&3; return 0 ;;
++  esac
+   case "$stranger" in
+-    "") return 0 ;;
+     UserNotificationCenter\'* | CoreServicesUIAgent\'* | SecurityAgent\'* | universalAccessAuthWarn\'* | loginwindow\'* | "Notification Center'"* | "Notification Centre'"*) ;;
+     *) echo "  the press at $x,$y lands on $stranger" >&3; return 0 ;;
+   esac
+diff --git a/scripts/test-tooling.py b/scripts/test-tooling.py
+index 01397d47..9d16b06f 100755
+--- a/scripts/test-tooling.py
++++ b/scripts/test-tooling.py
+@@ -1138,7 +1138,16 @@ kill $mine
+                       "✘ NOT ARBOR: UserNotificationCenter's window (382 118 260 250, layer 8) lies over 460,192: the press lands on it, and what follows says nothing about Arbor"])),
+                 ("lib.sh: the presses are made all the same", mac.read("posted").splitlines()[:4], ["click 510 152", "click 100 500", "click 650 450", "drag 460 192 3 400"])]
+ 
+-    throwaway = [under_an_alert, the_log_is_the_sessions, ended_by_the_script, recorded, told_not_to_record, refused, trace_had_ended, arbor_does_not_answer, cut_off, second_lock, which_build, folders, full_disk, disk_fills_up, strange_mktemp, refusals, strangers, limited, clean_up_dies, both_killed, supervisor_killed, two_at_once,
++    def on_an_alert_as_meant(mac):
++        mac.put("windows", HOSTED)
++        code, output = mac.run('ARBOR_PRESSES_ON="SecurityAgent UserNotificationCenter"\nclick 510 152\ncheck "green" true')
++        other, _ = mac.run('ARBOR_PRESSES_ON="SecurityAgent"\nclick 510 152\ncheck "green" true')
++        return [("lib.sh: a script about macOS's dialogs names whose it means to press on: such a press is only named, and made",
++                 (code, [line.strip() for line in output.splitlines() if "lies over" in line or "lands on" in line], mac.read("posted").splitlines()[:1]),
++                 (0, ["the press at 510,152 lands on UserNotificationCenter's window (382 118 260 250, layer 8), as meant"], ["click 510 152"])),
++                ("lib.sh: another's dialog under the press still counts", other, 1)]
++
++    throwaway = [under_an_alert, on_an_alert_as_meant, the_log_is_the_sessions, ended_by_the_script, recorded, told_not_to_record, refused, trace_had_ended, arbor_does_not_answer, cut_off, second_lock, which_build, folders, full_disk, disk_fills_up, strange_mktemp, refusals, strangers, limited, clean_up_dies, both_killed, supervisor_killed, two_at_once,
+                  ended("the time limit"), ended("an interrupt"), ended("kill -9"), own_shell]
+     somebodys = [not_recorded, asked_to_record, nets, pictures, discreet, nameless, curtain_down, stale_output, defaults_for_arbor, no_curtain, both_killed, supervisor_killed,
+                  ended("the time limit", "on somebody's Mac, "), ended("an interrupt", "on somebody's Mac, "), ended("kill -9", "on somebody's Mac, "),
+-- 
+2.43.0
+

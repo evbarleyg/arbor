@@ -1,0 +1,31 @@
+diff --git a/Sources/ArborTesting/ChaosInvariants+SevenRules.swift b/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
+index 2818270..e70d007 100644
+--- a/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
++++ b/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
+@@ -268,7 +268,10 @@ extension ChaosRunner {
+       let path = ([moves[0].before] + moves.map(\.after)).map(\.brief).joined(separator: " → ")
+       problems.append(
+         .init(
+-          (timeOnly ? "moved-again" : "moved-twice") + (knew ? "-sizing-again" : refused ? "-sizing" : ""),
++          // LAB ONLY (hunter 4, never pushed): there and back for one thing that happened, and no app refused anything in the step.
++          !refused && moves[0].before.approximatelyEquals(moves[moves.count - 1].after, tolerance: 1)
++            && !seen.contains(where: { abs($0.after.width - $0.requested.width) > 1 || abs($0.after.height - $0.requested.height) > 1 })
++            ? "flipped" : (timeOnly ? "moved-again" : "moved-twice") + (knew ? "-sizing-again" : refused ? "-sizing" : ""),
+           "Arbor moved \(window) \(moves.count) times for one thing that happened: \(path)"))
+     }
+     for move in seen {
+@@ -311,7 +314,13 @@ extension ChaosRunner {
+       if untouched {
+         // A command that names a window is somebody asking, and so is one that asks for everything.
+         // Timers finish what it began.
+-        if action.isACommand || seven.timeOnly, named || seven.askedForEverything { continue }
++        if action.isACommand || seven.timeOnly, named || seven.askedForEverything {
++          // LAB ONLY (hunter 4, never pushed): nothing is arranged, the window was wholly in view, nobody named it, and a way home moved it.
++          if !named, showedBefore >= 0.995 * before.area, !seven.displaysChangedLast {
++            problems.append(.init("whole-and-moved-by-a-way-home", "\(whatHappened), wholly in view before, and nothing has been docked, pinned or summoned"))
++          }
++          continue
++        }
+         if seven.displaysChangedLast { continue }
+         problems.append(
+           .init(

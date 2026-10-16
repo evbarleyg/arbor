@@ -1,0 +1,15 @@
+diff --git a/Sources/ArborKit/Controller/Controller+AskFirst.swift b/Sources/ArborKit/Controller/Controller+AskFirst.swift
+index a1cab26..3cba4ca 100644
+--- a/Sources/ArborKit/Controller/Controller+AskFirst.swift
++++ b/Sources/ArborKit/Controller/Controller+AskFirst.swift
+@@ -89,7 +89,9 @@ extension Controller {
+     let question = CGRect(origin: window.frame.origin, size: size)
+     guard parked.contains(window.id) else {
+       let staysThere = whereItStops(question.origin, titleBar: titleBars[window.id] ?? Self.guessedTitleBar) == question.origin
+-      return staysThere ? question : nil
++      let room = displays.first { $0.frame.contains(window.frame.center) }?.visibleFrame
++      let fits = room.map { question.maxX <= $0.maxX && question.maxY <= $0.maxY - 1 } ?? false
++      return staysThere && fits ? question : nil
+     }
+     return isOutOfView(question.union(window.frame)) && displays.contains { question.overlaps($0.frame) } ? question : nil
+   }

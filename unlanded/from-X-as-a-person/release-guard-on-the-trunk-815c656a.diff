@@ -1,0 +1,13 @@
+diff --git a/scripts/mac-shell/run.sh b/scripts/mac-shell/run.sh
+index 4682e3f8..2e99914b 100755
+--- a/scripts/mac-shell/run.sh
++++ b/scripts/mac-shell/run.sh
+@@ -121,7 +121,7 @@ done
+ # The workflow is one branch's for everybody, but lib.sh is <ref>'s own. One from before the switch takes no notice of it: the workflow would build release, and the
+ # script then build and drive debug, without a word: a number measured on the wrong program.
+ if [ "$configuration" != debug ] && git cat-file -e "$remote:scripts/mac-shell/lib.sh" 2>/dev/null \
+-  && ! git show "$remote:scripts/mac-shell/lib.sh" | grep -q 'swift build -c "\$ARBOR_CONFIGURATION"'; then
++  && ! git show "$remote:scripts/mac-shell/lib.sh" | grep 'swift build -c "\$ARBOR_CONFIGURATION"' > /dev/null; then
+   fail "$ref's scripts/mac-shell/lib.sh is older than the switch for the $configuration build, and would drive debug whatever is asked: bring the branch up to date first"
+ fi
+ if [ "$ref" = "$(git rev-parse --abbrev-ref HEAD)" ]; then

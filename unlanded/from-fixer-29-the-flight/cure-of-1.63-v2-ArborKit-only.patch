@@ -1,0 +1,370 @@
+diff --git a/Sources/ArborKit/AX/AXWindowSystem.swift b/Sources/ArborKit/AX/AXWindowSystem.swift
+index 947b4ee0..e37f035b 100644
+--- a/Sources/ArborKit/AX/AXWindowSystem.swift
++++ b/Sources/ArborKit/AX/AXWindowSystem.swift
+@@ -377,6 +377,29 @@ public final class AXWindowSystem: WindowSystem {
+ 
+   public func macTiling() -> MacTiling { MacFacts.tiling }
+ 
++  public func whereabouts(of window: WindowID) -> Whereabouts {
++    guard let record = records[window] else { return .inTheDockOrGone }
++    guard answers(record.snapshot.pid) else { return .unknown }
++    let began = uptime
++    let answer = record.element.read(kAXMinimizedAttribute)
++    switch answer.error {
++    case .success:
++      guard let value = answer.value, CFGetTypeID(value) == CFBooleanGetTypeID() else { return .here }
++      return CFBooleanGetValue((value as! CFBoolean)) ? .inTheDockOrGone : .here
++    case .invalidUIElement:
++      return .inTheDockOrGone
++    case .apiDisabled:
++      events?.accessibilityWasRefused()
++      return .unknown
++    case .cannotComplete:
++      noteSilence(of: record.snapshot.pid, since: began)
++      return .unknown
++    default:
++      // A window that cannot be minimized has nothing to say about it.
++      return .here
++    }
++  }
++
+   public func modifierKeysDown() -> KeyChord.Modifiers {
+     // People let go of the key and the button together, and by the time Arbor hears of the
+     // mouse-up the key can be up as well. What counts is what was held when it happened.
+diff --git a/Sources/ArborKit/Controller/Controller+Commands.swift b/Sources/ArborKit/Controller/Controller+Commands.swift
+index 9274267c..29fcaec0 100644
+--- a/Sources/ArborKit/Controller/Controller+Commands.swift
++++ b/Sources/ArborKit/Controller/Controller+Commands.swift
+@@ -397,7 +397,7 @@ extension Controller {
+       }
+       return result
+     }
+-    moveCamera(on: display, to: space)
++    onTheWay(to: id) { moveCamera(on: display, to: space) }
+     askForTheKeyboard(for: inFront(of: id, on: display))
+     if space == tree.desktop { return .success("showing the Desktop, where \(id) floats") }
+     return .success(tree.leaf(containing: id) == nil ? "framed \(name(of: space, on: display))" : "framed \(id)")
+diff --git a/Sources/ArborKit/Controller/Controller+Finder.swift b/Sources/ArborKit/Controller/Controller+Finder.swift
+index 06eb173f..774bbe1d 100644
+--- a/Sources/ArborKit/Controller/Controller+Finder.swift
++++ b/Sources/ArborKit/Controller/Controller+Finder.swift
+@@ -283,10 +283,12 @@ extension Controller {
+       // Now, rather than when the reports come in (Controller+Focus.swift), so that the command does what it says
+       // whether or not the window gets the keyboard. The view is picked as if the window were back already,
+       // it takes its place there when macOS says it is, and the reports then find nothing to do.
+-      bringIntoView(id, onItsWayBack: !snapshot.isPresent)
+-      // How small a window can be, Arbor learns by trying (and has forgotten since it was last launched). One that refused
+-      // its slot is a tile now: it is framed at once, not when macOS reports that a window out of view has the keyboard.
+-      if windows[id]?.isPresent == true, parked.contains(id) { bringIntoView(id) }
++      onTheWay(to: id) {
++        bringIntoView(id, onItsWayBack: !snapshot.isPresent)
++        // How small a window can be, Arbor learns by trying (and has forgotten since it was last launched). One that refused
++        // its slot is a tile now: it is framed at once, not when macOS reports that a window out of view has the keyboard.
++        if windows[id]?.isPresent == true, parked.contains(id) { bringIntoView(id) }
++      }
+     }
+     // Otherwise focusing it makes macOS switch Spaces. Moving the camera now would rearrange the Space the user is
+     // about to leave; the camera follows the focus report once the window's own Space shows.
+diff --git a/Sources/ArborKit/Controller/Controller+Hold.swift b/Sources/ArborKit/Controller/Controller+Hold.swift
+index a9df265b..abe312f3 100644
+--- a/Sources/ArborKit/Controller/Controller+Hold.swift
++++ b/Sources/ArborKit/Controller/Controller+Hold.swift
+@@ -482,11 +482,11 @@ extension Controller {
+     if level == .still { holdSaysThatItTurnedAway(id) }
+     hold.isSendingBack = true
+     scheduler.schedule("focus-held", after: Self.arrivalSpan) { [weak self] in self?.holdLooksAgain() }
+-    if let home = hold.home, windows[home]?.isPresent == true, !isOutOfView(home) {
+-      askForTheKeyboard(for: home)
+-    } else if let display = displayWithSomethingInView(preferring: workspaceID(containing: id)) {
+-      ensureFocusIsVisible(on: display)
+-    }
++    let home = hold.home.flatMap { windows[$0]?.isPresent == true && !isOutOfView($0) ? $0 : nil }
++    if let home, sendTheKeyboard(to: home) { return true }
++    // On to the next display where the only window in view is the one that has gone.
++    let asked = Set([home].compactMap { $0 })
++    _ = displaysWithSomethingInView(preferring: workspaceID(containing: id)).contains { ensureFocusIsVisible(on: $0, notTo: asked) }
+     return true
+   }
+ 
+@@ -530,9 +530,10 @@ extension Controller {
+     return home
+   }
+ 
+-  private func displayWithSomethingInView(preferring preferred: DisplayID?) -> DisplayID? {
+-    let order = [pointerDisplayID, preferred].compactMap { $0 } + workspaces.keys.sorted()
+-    return order.first { display in
++  private func displaysWithSomethingInView(preferring preferred: DisplayID?) -> [DisplayID] {
++    var seen: Set<DisplayID> = []
++    let order = ([pointerDisplayID, preferred].compactMap { $0 } + workspaces.keys.sorted()).filter { seen.insert($0).inserted }
++    return order.filter { display in
+       guard let workspace = workspaces[display] else { return false }
+       return layouts[display]?.windowFrames.isEmpty == false
+         || workspace.floating.keys.contains { !parked.contains($0) && windows[$0]?.isPresent == true }
+diff --git a/Sources/ArborKit/Controller/Controller+KeyboardFocus.swift b/Sources/ArborKit/Controller/Controller+KeyboardFocus.swift
+index b97d5f2c..e37428af 100644
+--- a/Sources/ArborKit/Controller/Controller+KeyboardFocus.swift
++++ b/Sources/ArborKit/Controller/Controller+KeyboardFocus.swift
+@@ -167,12 +167,39 @@ extension Controller {
+   /// Asks macOS to give `window` the keyboard, and remembers having asked until macOS has got there. Across apps a Mac moves the
+   /// keyboard only after the call has returned: whoever asks it in the same breath who has the keyboard is told the old window.
+   /// `keyboardFocus()` knows better. (Nothing comes into view for it, and nobody is told: that is `giveFocus`.)
++  ///
++  /// For a window its person has named or pointed at. One that Arbor picks by itself goes through `sendTheKeyboard(to:)`.
+   func askForTheKeyboard(for window: WindowID) {
+     let replaced = focusRequest
+     system.focus(window)
+     noteFocusRequest(for: window, replacing: replaced)
+   }
+ 
++  /// `askForTheKeyboard` for a window that Arbor has picked by itself: the keyboard has to go somewhere, or back. A person's ⌘M is never undone,
++  /// so the window is asked first, then and there, where it is. It may have landed in the Dock: its app names its next window, which is
++  /// why Arbor is looking for somebody to give the keyboard to, a moment before it reports the minimizing, and the request would
++  /// fetch the window back out. Returns false if it was not made, for that reason or because the window's app does not say: what cannot
++  /// be found out is no leave to act, and there may be another to pick. (Whoever names a window gets it, out of the Dock too: what
++  /// they ask for last counts. And a request to an app that hangs waits there until it wakes, which a question would forestall.)
++  func sendTheKeyboard(to window: WindowID) -> Bool {
++    let whereabouts = window == namedWindow ? .here : system.whereabouts(of: window)
++    guard whereabouts == .here else {
++      Log.info("\(window) \(whereabouts == .unknown ? "does not say where it is" : "is in the Dock or gone"): the keyboard is not sent to it")
++      return false
++    }
++    askForTheKeyboard(for: window)
++    return true
++  }
++
++  /// Runs `move`, which moves the view on the way to `window`, named by its person. A view that moves takes the keyboard along and picks that very
++  /// window as a rule. It is asked nothing then, as at the request that follows.
++  func onTheWay(to window: WindowID, _ move: () -> Void) {
++    let outer = namedWindow
++    namedWindow = window
++    defer { namedWindow = outer }
++    move()
++  }
++
+   private func noteFocusRequest(for window: WindowID, replacing replaced: FocusRequest?) {
+     let named = system.focusedWindow()
+     guard named != window else {
+diff --git a/Sources/ArborKit/Controller/Controller+Layout.swift b/Sources/ArborKit/Controller/Controller+Layout.swift
+index 80a38ba5..96fa7d41 100644
+--- a/Sources/ArborKit/Controller/Controller+Layout.swift
++++ b/Sources/ArborKit/Controller/Controller+Layout.swift
+@@ -434,7 +434,7 @@ extension Controller {
+       // Back in view, at the place in macOS's order that it had. A guest raised over its host would cover the very
+       // window its person has just switched to, which is how ⌘Tab brings a view back. ⌃⌥D shows all that floats.
+       // Only a window kept in view is raised: pinned while it was out of view, this is the raise at the pin.
+-      if parked.remove(window) != nil, workspace.staysInView(window) { system.raise(window) }
++      if parked.remove(window) != nil, workspace.staysInView(window) { raiseIfItIsThere(window) }
+     }
+   }
+ 
+@@ -690,7 +690,7 @@ extension Controller {
+   /// given the focus would cover a guest that was used after it.
+   @discardableResult
+   func ensureFocusIsVisible(
+-    on displayID: DisplayID, alsoFromAPinnedWindow: Bool = false, alsoFromNothing: Bool = true
++    on displayID: DisplayID, alsoFromAPinnedWindow: Bool = false, alsoFromNothing: Bool = true, notTo asked: Set<WindowID> = []
+   ) -> Bool {
+     // A command that moves the view says where the attention goes, so the keyboard goes along, also out of a
+     // pinned window, which is still in view: keys meant for the window that arrived must not end up in a call.
+@@ -700,12 +700,13 @@ extension Controller {
+         parked.contains($0) || (alsoFromNothing && windows[$0]?.isMinimized == true)
+           || (alsoFromAPinnedWindow && staysInView($0))
+       } ?? alsoFromNothing
+-    return nobody && giveTheKeyboardToTheView(on: displayID)
++    return nobody && giveTheKeyboardToTheView(on: displayID, notTo: asked)
+   }
+ 
+-  /// The choice itself, for a caller that knows the keyboard has to come (a peek that landed beside it).
++  /// The choice itself, for a caller that knows the keyboard has to come (a peek that landed beside it). `asked`: those the caller has
++  /// asked already, in vain. Each question is a round trip to an app.
+   @discardableResult
+-  func giveTheKeyboardToTheView(on displayID: DisplayID) -> Bool {
++  func giveTheKeyboardToTheView(on displayID: DisplayID, notTo asked: Set<WindowID> = []) -> Bool {
+     guard let layout = layouts[displayID], let workspace = workspaces[displayID] else { return false }
+     // The layout can be a moment behind the windows (an app being hidden is laid out once all are reported).
+     var candidates = layout.windowFrames.filter { windows[$0.key]?.isPresent == true }
+@@ -724,11 +725,12 @@ extension Controller {
+     }
+     let cursor = system.cursorLocation()
+     let underPointer = ordered.filter { $0.value.contains(cursor) }
+-    let target =
+-      focusHistory.first { candidates[$0] != nil }
+-      ?? (underPointer.first { workspace.isFloating($0.key) } ?? underPointer.first ?? ordered.first)?.key
+-    if let target { askForTheKeyboard(for: target) }
+-    return target != nil
++    let byChoice =
++      focusHistory.filter { candidates[$0] != nil }
++      + (underPointer.filter { workspace.isFloating($0.key) } + underPointer + ordered).map(\.key)
++    // The first that is there to take it: the one used last may have landed in the Dock, which is why the keyboard has to go somewhere.
++    var asked = asked
++    return byChoice.contains { asked.insert($0).inserted && sendTheKeyboard(to: $0) }
+   }
+ 
+   /// Whether the view is on one space that is not a group: a window, a tab group, the Desktop. Then the level is kept:
+diff --git a/Sources/ArborKit/Controller/Controller+Pin.swift b/Sources/ArborKit/Controller/Controller+Pin.swift
+index 903b49ec..6b95ca91 100644
+--- a/Sources/ArborKit/Controller/Controller+Pin.swift
++++ b/Sources/ArborKit/Controller/Controller+Pin.swift
+@@ -210,6 +210,7 @@ extension Controller {
+   /// and how long apart in seconds.
+   static let pinChecks = 3
+   static let pinCheckInterval = 0.2
++  static let pinChecksWhileAnAppHangs = 60
+ 
+   /// Called with every change observers hear of. Being in view is worth little behind the window
+   /// that just arrived or was just clicked, and macOS has no way to keep another app's window
+@@ -249,31 +250,50 @@ extension Controller {
+ 
+   private func checkPinnedWindows() {
+     guard isRunning else { return }
+-    raisePinnedWindows()
++    let allSaid = raisePinnedWindows()
+     // A click is not over until the button is up.
+     if !system.isMouseButtonDown() { pinChecksLeft -= 1 }
+-    guard pinChecksLeft > 0 else { return }
+-    scheduler.schedule("raise-pins", after: Self.pinCheckInterval) { [weak self] in self?.checkPinnedWindows() }
++    // An app that hangs does not say where its window is, and a raise that is not made does not wait with it until it wakes. So Arbor
++    // looks again once a second, for a minute: asking an app that is known to hang costs nothing.
++    guard pinChecksLeft > 0 || (!allSaid && pinChecksLeft > -Self.pinChecksWhileAnAppHangs) else { return }
++    scheduler.schedule("raise-pins", after: pinChecksLeft > 0 ? Self.pinCheckInterval : 1) { [weak self] in self?.checkPinnedWindows() }
+   }
+ 
+   /// Brings the pinned windows that another window covers in front of it. The keyboard stays where it
+-  /// is. One that nothing covers is left alone: raising asks its app, which may be busy with a call.
+-  func raisePinnedWindows() {
++  /// is. One that nothing covers is left alone: raising asks its app, which may be busy with a call. Returns false if one that is covered
++  /// was not raised because its app does not say where it is.
++  @discardableResult
++  func raisePinnedWindows() -> Bool {
+     let pins = workspaces.keys.sorted()
+       .flatMap { workspaces[$0]!.pinnedWindows + [workspaces[$0]!.summoned?.window].compactMap { $0 } }
+       .filter { windows[$0]?.isPresent == true && isManaged($0) && !parked.contains($0) }
+     let frontToBack = system.windowsFrontToBack()
+     let covered = pins.filter { isCovered($0, by: frontToBack, apartFrom: pins) }
+     // Nearly every look ends here. Who has the keyboard is a question to the app in front, which is being worked in.
+-    guard !covered.isEmpty else { return }
++    guard !covered.isEmpty else { return true }
+     // A pinned window with the keyboard is in front already, and the others must not cover it.
+-    if let focused = system.focusedWindow(), pins.contains(focused) { return }
++    if let focused = system.focusedWindow(), pins.contains(focused) { return true }
+     // The one used last ends up in front of the other pinned windows, as it was.
+     func recency(_ window: WindowID) -> Int { focusHistory.firstIndex(of: window) ?? Int.max }
++    var allSaid = true
+     for window in covered.sorted(by: { (recency($0), $0) > (recency($1), $1) }) {
+-      system.raise(window)
+-      Log.debug("raised \(window), which stays in view")
++      switch raiseIfItIsThere(window) {
++      case .here: Log.debug("raised \(window), which stays in view")
++      case .inTheDockOrGone: break
++      case .unknown: allSaid = false
++      }
+     }
++    return allSaid
++  }
++
++  /// A raise fetches a window out of the Dock, like the one that is part of giving a window the keyboard (`sendTheKeyboard`), and a press on the yellow
++  /// button of a window kept in view is a press like any other: Arbor looks at what is kept in view while that window lands. So it is asked
++  /// first, and raised only if it says that it is there. Returns what it said.
++  @discardableResult
++  func raiseIfItIsThere(_ window: WindowID) -> Whereabouts {
++    let whereabouts = system.whereabouts(of: window)
++    if whereabouts == .here { system.raise(window) }
++    return whereabouts
+   }
+ 
+   /// Whether a window Arbor knows, other than `others`, lies over part of `window`. What Arbor does
+diff --git a/Sources/ArborKit/Controller/Controller+Summon.swift b/Sources/ArborKit/Controller/Controller+Summon.swift
+index 0eaa1738..724dc153 100644
+--- a/Sources/ArborKit/Controller/Controller+Summon.swift
++++ b/Sources/ArborKit/Controller/Controller+Summon.swift
+@@ -119,11 +119,8 @@ extension Controller {
+     if visit.cameraBefore != workspaces[home]!.camera, workspaces[home]!.tree.contains(visit.cameraBefore) {
+       moveCamera(on: home, to: visit.cameraBefore)
+     }
+-    if let keyboard = visit.keyboardBefore, windows[keyboard]?.isPresent == true, !parked.contains(keyboard) {
+-      askForTheKeyboard(for: keyboard)
+-    } else {
+-      ensureFocusIsVisible(on: home)
+-    }
++    let before = visit.keyboardBefore.flatMap { windows[$0]?.isPresent == true && !parked.contains($0) ? $0 : nil }
++    if before.map(sendTheKeyboard(to:)) != true { ensureFocusIsVisible(on: home, notTo: Set([before].compactMap { $0 })) }
+     return .success("back from \(window.appName)")
+   }
+ 
+@@ -198,11 +195,11 @@ extension Controller {
+     let previous = keyboardBeforeSummon
+     keyboardBeforeSummon = nil
+     if system.focusedWindow() == window {
+-      if let previous, windows[previous]?.isPresent == true, !parked.contains(previous) {
+-        askForTheKeyboard(for: previous)
+-      } else if !ensureFocusIsVisible(on: displayID) {
++      let before = previous.flatMap { windows[$0]?.isPresent == true && !parked.contains($0) ? $0 : nil }
++      let asked = Set([before].compactMap { $0 })
++      if before.map(sendTheKeyboard(to:)) != true, !ensureFocusIsVisible(on: displayID, notTo: asked) {
+         // Nothing else is in view here. A window on another display is better than one that is out of view.
+-        _ = workspaces.keys.sorted().first { $0 != displayID && ensureFocusIsVisible(on: $0) }
++        _ = workspaces.keys.sorted().first { $0 != displayID && ensureFocusIsVisible(on: $0, notTo: asked) }
+       }
+     }
+     notify(.layout(displayID))
+diff --git a/Sources/ArborKit/Controller/Controller.swift b/Sources/ArborKit/Controller/Controller.swift
+index 9e6717da..0110cf6b 100644
+--- a/Sources/ArborKit/Controller/Controller.swift
++++ b/Sources/ArborKit/Controller/Controller.swift
+@@ -270,6 +270,8 @@ public final class Controller {
+   public var openWelcomeWindow: ((OnboardingFlow.Page) -> Void)?
+   /// How many more times to look whether a pinned window is covered (Controller+Pin.swift).
+   var pinChecksLeft = 0
++  /// The window a command is on its way to (`onTheWay(to:)`).
++  var namedWindow: WindowID?
+   /// Whether and how the view is held (Controller+Hold.swift).
+   var hold = Hold()
+   /// The shortcut that released a held view, until it comes up. It outlives the hold.
+diff --git a/Sources/ArborKit/Platform/WindowSystem.swift b/Sources/ArborKit/Platform/WindowSystem.swift
+index 210cdf90..645dcd83 100644
+--- a/Sources/ArborKit/Platform/WindowSystem.swift
++++ b/Sources/ArborKit/Platform/WindowSystem.swift
+@@ -174,6 +174,13 @@ public protocol WindowSystem: AnyObject {
+   /// macOS takes the window, Arbor stands aside (`MacTiling`). No default: in a wrapper that forgot to pass it on, the fight
+   /// over the window would be back in silence.
+   func macTiling() -> MacTiling
++
++  /// Asks the window itself, now, where it is. What was last reported does not tell: when a window has landed in the Dock its app names its
++  /// next window first and reports the minimizing up to 32 ms later, and `focus` and `raise` fetch a minimized window out of the Dock.
++  /// Given the keyboard in between it comes straight back, and its person's ⌘M is undone. (One that is still on its way there answers
++  /// when it has landed: its app answers nobody meanwhile.) No default: in a wrapper that forgot to pass it on, windows would
++  /// come back out of the Dock in silence.
++  func whereabouts(of window: WindowID) -> Whereabouts
+ }
+ 
+ extension WindowSystem {
+@@ -203,6 +210,14 @@ extension WindowSystem {
+   }
+ }
+ 
++/// What a window says of itself when it is asked (`WindowSystem.whereabouts`).
++public enum Whereabouts: String, Codable, Sendable {
++  case here
++  case inTheDockOrGone
++  /// Its app does not answer, or Arbor may not ask.
++  case unknown
++}
++
+ /// Notifications from a `WindowSystem`. All arrive on the main actor.
+ @MainActor
+ public protocol WindowSystemEvents: AnyObject {
+diff --git a/Sources/ArborKit/Trace/RecordingWindowSystem.swift b/Sources/ArborKit/Trace/RecordingWindowSystem.swift
+index 894bfdfe..12e9aea5 100644
+--- a/Sources/ArborKit/Trace/RecordingWindowSystem.swift
++++ b/Sources/ArborKit/Trace/RecordingWindowSystem.swift
+@@ -119,6 +119,9 @@ public final class RecordingWindowSystem: WindowSystem {
+   public func stackedWindows() -> [StackedWindow] { recorder.read("stackedWindows") { inner.stackedWindows() } }
+   public func modifierKeysDown() -> KeyChord.Modifiers { recorder.read("modifierKeysDown") { inner.modifierKeysDown() } }
+   public func macTiling() -> MacTiling { recorder.read("macTiling") { inner.macTiling() } }
++  public func whereabouts(of window: WindowID) -> Whereabouts {
++    recorder.read("whereabouts", [window]) { inner.whereabouts(of: window) }
++  }
+   public func openApplication(_ app: String) -> Bool {
+     recorder.call("openApplication", [app], returning: { inner.openApplication(app) })
+   }

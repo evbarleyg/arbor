@@ -1,0 +1,87 @@
+From 37f0289c845f4289c6991010d271a2f5efbb378e Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 16:58:42 +0000
+Subject: [PATCH] fix: across displays a window is asked once more on the spot
+ before nothing is made of its answer (WRITTEN, NEVER BUILT)
+
+---
+ .../Controller/Controller+Layout.swift        | 10 ++++-
+ Tests/ArborKitTests/AcrossDisplaysTests.swift | 41 +++++++++++++++++++
+ 2 files changed, 49 insertions(+), 2 deletions(-)
+
+diff --git a/Sources/ArborKit/Controller/Controller+Layout.swift b/Sources/ArborKit/Controller/Controller+Layout.swift
+index e68ffecf..1d82c219 100644
+--- a/Sources/ArborKit/Controller/Controller+Layout.swift
++++ b/Sources/ArborKit/Controller/Controller+Layout.swift
+@@ -223,8 +223,14 @@ extension Controller {
+     let isOnlyMoved = asked.size == current.frame.size
+     // Where it was asked, not by way of the slot's corner.
+     if !isOnlyMoved { actual = askForLess(window, slot: asked, took: actual) }
+-    // Fresh from another display, it has been judged by that one (Controller+AcrossDisplays.swift). Nothing is made of such an answer: it is
+-    // not asked again on the spot, which brings the same; not centred; not written down. It is asked again when macOS has caught up.
++    // Fresh from another display, it has been judged by that one (Controller+AcrossDisplays.swift). How long macOS does so is a race: asked once
++    // more on the spot, 2 to 8 ms later, windows took the whole size in 3 of 4 on hosted Macs, before anybody could see them short. So that
++    // is tried, once, at the first such answer.
++    if journeys[window] == nil, isAnotherDisplaysAnswer(actual, shortOf: target, on: displayID), let again = system.setFrame(target, of: window) {
++      actual = askForLess(window, slot: target, took: again)
++    }
++    // Still as short as that: nothing is made of either answer. It is not centred and nothing is written down; it is asked again when macOS
++    // has caught up.
+     if isAnotherDisplaysAnswer(actual, shortOf: target, on: displayID), askAgainAfterTheJourney(window, on: displayID) {
+       parked.remove(window)
+       windows[window]?.frame = actual
+diff --git a/Tests/ArborKitTests/AcrossDisplaysTests.swift b/Tests/ArborKitTests/AcrossDisplaysTests.swift
+index 1ff1c6db..83948671 100644
+--- a/Tests/ArborKitTests/AcrossDisplaysTests.swift
++++ b/Tests/ArborKitTests/AcrossDisplaysTests.swift
+@@ -410,6 +410,47 @@ import Testing
+     #expect(!h.scheduler.pendingKeys.contains { $0.hasPrefix("across-") } && h.controller.journeys.isEmpty, "\(h.scheduler.pendingKeys)")
+   }
+ 
++  // MARK: Once more on the spot
++
++  /// How long the old display judges is a race: on hosted Macs a second asking 2 to 8 ms after the first took the whole size in 3 of 4. Then nobody
++  /// sees the window short: it is whole when the command returns, and nothing waits.
++  @Test func askedOnceMoreOnTheSpotItIsWholeAtOnceWhereMacOSHasCaughtUp() {
++    let (h, _, b, _) = desk()
++    h.system.userFocus(b)
++    // macOS catches up between Arbor's first call to the window and its second.
++    var calls = 0
++    h.system.willSetFrame = { [system = h.system] window, _ in
++      guard window == b else { return }
++      calls += 1
++      if calls == 2 { system.itIsAtLeast(.infinity) }
++    }
++    let mark = h.system.moveLog.count
++    h.run("move-to-display next")
++    h.system.willSetFrame = nil
++    #expect(h.system.moveLog[mark...].contains { $0.window == b && $0.after.height < 700 }, "or this proves nothing: the first answer was cut")
++    #expect(h.frame(b) == slot(b, h), "at once: \(String(describing: h.frame(b)))")
++    #expect(calls == 2 && h.controller.journeys.isEmpty && !h.scheduler.pendingKeys.contains { $0.hasPrefix("across-") }, "\(calls) \(h.scheduler.pendingKeys)")
++    #expect(h.controller.seenSizes[b]?.stoppedAt ?? .zero == .zero && h.controller.misfits[b] == nil)
++    expectItEndsWhole(b, h, since: mark, "on the spot")
++  }
++
++  /// Where it has not, nothing is made of the second answer either: not centred on, not written down; and it is asked on the spot once, not at
++  /// every asking.
++  @Test func shortOnTheSpotTooNothingIsMadeOfEitherAnswer() {
++    let (h, _, b, _) = desk()
++    h.system.timeToCatchUp = 0.6
++    h.system.userFocus(b)
++    let mark = h.system.moveLog.count
++    let atOnce = attempts(on: b, h) { h.run("move-to-display next") }
++    #expect(atOnce == 2, "the journey, and once more on the spot: \(atOnce)")
++    #expect(h.frame(b)!.height < 700 && h.frame(b)!.origin == slot(b, h)!.origin, "\(h.frame(b)!)")
++    #expect(h.controller.seenSizes[b]?.stoppedAt ?? .zero == .zero && h.controller.misfits[b] == nil && h.controller.windowsToBeAskedAgain == [b])
++    // At a quarter and at half a second: one call each, still short; at a second: whole.
++    #expect(attempts(on: b, h) { h.scheduler.advance(by: 0.55) } == 2)
++    #expect(h.frame(b)!.height < 700)
++    expectItEndsWhole(b, h, since: mark, "short on the spot too")
++  }
++
+   /// All that Macs have said is that the old display judged no more after 200 ms. Should one take 300, the window does not stand short for a whole
+   /// second: it is asked at a quarter, at half a second and at a second.
+   @Test(arguments: [(0.3, 0.55), (0.45, 0.55), (0.9, 1.05)]) func aSlowerMacIsAskedAtHalfASecondToo(takes: Double, wholeBy: Double) {
+-- 
+2.43.0
+

@@ -1,0 +1,131 @@
+diff --git a/Sources/ArborTesting/ChaosInvariants+SevenRules.swift b/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
+index 361fc7f..fa25bff 100644
+--- a/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
++++ b/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
+@@ -55,6 +55,16 @@ extension ChaosRunner {
+     /// Windows whose app has refused to go below a size, or above one, in an earlier step: Arbor has had its chance to learn.
+     var refusedLess: Set<WindowID> = []
+     var refusedMore: Set<WindowID> = []
++    /// The displays each window is at home on: where its app opened it, where somebody other than Arbor last put it, or where a command
++    /// about it took it; more than one where it lies across a border. A change of the displays says nothing of that: macOS carries a
++    /// window to whatever display is left.
++    var homeDisplays: [WindowID: Set<DisplayID>] = [:]
++    /// Every display somebody ever put it on.
++    var everAtHomeOn: [WindowID: Set<DisplayID>] = [:]
++    /// No display showed a window when last asked at rest: said once.
++    var deskWasEmpty = false
++    /// The displays have changed since a window was last seen in view at rest.
++    var displaysChangedSinceSomethingShowed = false
+   }
+ 
+   /// The detector of docs/VIABLE.md, section 5, that a rule of the walks stands for: one vocabulary on Linux and on a Mac.
+@@ -181,6 +191,7 @@ extension ChaosRunner {
+     }
+     seven.ownSizes = seven.ownSizes.filter { system.windows[$0.key] != nil || system.backgroundTabs[$0.key] != nil }
+     seven.earlierOwnSizes = seven.earlierOwnSizes.filter { system.windows[$0.key] != nil }
++    noteWhichDisplayEachWindowIsAtHomeOn(after: action, movesBefore: movesBefore)
+     for (id, fake) in system.windows {
+       guard let known = seven.ownSizes[id] else {
+         seven.ownSizes[id] = (fake.home ?? fake.snapshot.frame).size
+@@ -251,6 +262,8 @@ extension ChaosRunner {
+     afterDisplaysViolations(&problems)
+     draggedGapViolations(&problems)
+     switchedToViolations(&problems)
++    homeDisplayViolations(after: action, &problems)
++    emptyDeskViolations(after: action, &problems)
+   }
+ 
+   // MARK: No jolts: a window moves once, to where it ends up
+@@ -571,6 +584,92 @@ extension ChaosRunner {
+     }
+   }
+ 
++  // MARK: A change of the displays takes no window to a display that nobody put it on
++
++  /// Whether `action` is a change of the displays, or time passing after one.
++  private func belongsToAChangeOfDisplays(_ action: ChaosAction) -> Bool {
++    if case .displays = action { return true }
++    return seven.displaysChangedLast && seven.timeOnly
++  }
++
++  func noteWhichDisplayEachWindowIsAtHomeOn(after action: ChaosAction, movesBefore: [WindowID: Int]) {
++    seven.homeDisplays = seven.homeDisplays.filter { system.windows[$0.key] != nil }
++    seven.everAtHomeOn = seven.everAtHomeOn.filter { system.windows[$0.key] != nil }
++    let aboutAChange = belongsToAChangeOfDisplays(action)
++    var summons = false
++    if case .summon = action.parsedCommand { summons = true }
++    for (id, fake) in system.windows {
++      // A guest that nobody touches stays a guest, whatever the view does with it meanwhile.
++      let somebodyPutIt = fake.movesNotArbors != movesBefore[id]
++      let askedFor = action.isACommand && framesBefore[id] != fake.snapshot.frame && (summons || seven.concerned?.contains(id) == true)
++      guard seven.homeDisplays[id] == nil || (!aboutAChange && (somebodyPutIt || askedFor)), isInView(fake.snapshot.frame) else { continue }
++      let frame = fake.snapshot.frame
++      seven.homeDisplays[id] = Set(system.displayList.filter { frame.intersection($0.frame).area > 0.1 * frame.area }.map(\.id))
++      seven.everAtHomeOn[id, default: []].formUnion(seven.homeDisplays[id]!)
++    }
++  }
++
++  /// A floating window goes along with its display, and to another one only while its own is away (F08). When displays come and go, Arbor takes
++  /// none to a display that it only visited, or never saw, while the one somebody put it on is there.
++  func homeDisplayViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
++    guard belongsToAChangeOfDisplays(action), !system.displayList.isEmpty else { return }
++    for window in Set(movesSeenInThisStep.map(\.window)).sorted() {
++      guard let fake = isFairGame(window), let homes = seven.homeDisplays[window], system.displayList.contains(where: { homes.contains($0.id) }),
++        controller.workspaces.values.contains(where: { $0.isFloating(window) && !$0.isStashed(window) })
++      else { continue }
++      asked("home-display")
++      let frame = fake.snapshot.frame
++      let home = homes.sorted().map(\.rawValue).joined(separator: " and ")
++      if isInView(frame), !controller.parked.contains(window) {
++        guard let now = Self.display(showingMostOf: frame, among: system.displayList), !homes.contains(now.id) else { continue }
++        problems.append(
++          .init(seven.everAtHomeOn[window]?.contains(now.id) == true ? "taken-back-from-where-it-was-put" : "taken-to-another-display", "the displays changed, and Arbor has put \(window) at \(frame.brief) on \(now.id); somebody had put it on \(home), which is there"))
++      } else if let counted = controller.workspaceID(containing: window), !homes.contains(counted) {
++        // Out of view there is nothing to see of where it belongs: here alone the controller is asked.
++        problems.append(
++          .init(seven.everAtHomeOn[window]?.contains(counted) == true ? "taken-back-out-of-view-from-where-it-was-put" : "taken-out-of-view-with-another-display", "the displays changed, and Arbor has put \(window) out of view at \(frame.brief) with \(counted); somebody had put it on \(home), which is there"))
++      }
++    }
++  }
++
++  // MARK: Something is always in view
++
++  /// After a change of the displays, at rest, with windows that Arbor arranges and a person could see: no display shows any of them, nor a tile.
++  /// Said once. `-held` where a hold keeps them out (F58 lets a held view show the wallpaper; it does not speak of a display that goes).
++  func emptyDeskViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
++    if case .displays = action {
++      // By the displays as they were: a desk that showed nothing before the change was not emptied by it.
++      let showed = framesBefore.contains { window, frame in
++        presentBefore.contains(window)
++          && displaysBefore.contains {
++            let showing = frame.intersection($0.frame)
++            return !showing.isNull && showing.width > 2 && showing.height > 2
++          }
++      }
++      if showed { seven.displaysChangedSinceSomethingShowed = true } else { seven.deskWasEmpty = true }
++    }
++    guard isRunning, wasRunningBefore, !system.displayList.isEmpty, !isWaitingForALayout(), system.dragging == nil, system.resizing == nil,
++      !controller.aPeekIsUnderWay
++    else { return }
++    let fair = system.windows.keys.sorted().filter { isFairGame($0) != nil }
++    guard !fair.isEmpty else { return }
++    asked("empty-desk")
++    // Any window at all that shows counts: one in full screen, one Arbor does not arrange. So does a tile, which is there to be seen and clicked.
++    guard !system.windows.values.contains(where: { $0.snapshot.isPresent && isInView($0.snapshot.frame) }),
++      harness.overlays.tiles.values.allSatisfy(\.isEmpty)
++    else {
++      (seven.deskWasEmpty, seven.displaysChangedSinceSomethingShowed) = (false, false)
++      return
++    }
++    // A person may look at an empty Desktop, or frame a space whose window is away: only a desk that a change of the displays emptied is asked about.
++    let wasEmpty = seven.deskWasEmpty
++    seven.deskWasEmpty = true
++    // Whatever somebody has done since the change may have emptied it: Show Desktop, closing the last window in view.
++    guard !wasEmpty, seven.displaysChangedSinceSomethingShowed, belongsToAChangeOfDisplays(action) else { return }
++    problems.append(
++      .init("nothing-in-view-after-displays" + (controller.holdLevel != nil ? "-held" : ""), "the displays changed, no display shows a window or a tile, and \(fair) are out of view"))
++  }
++
+   // MARK: The ways home
+ 
+   /// What a way home promises, asked once it has been taken and everything has come to rest. `displays` are the ones it was about;

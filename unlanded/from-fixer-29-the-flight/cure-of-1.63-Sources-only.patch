@@ -1,0 +1,418 @@
+diff --git a/Sources/ArborKit/AX/AXWindowSystem.swift b/Sources/ArborKit/AX/AXWindowSystem.swift
+index 947b4ee..345df4b 100644
+--- a/Sources/ArborKit/AX/AXWindowSystem.swift
++++ b/Sources/ArborKit/AX/AXWindowSystem.swift
+@@ -377,6 +377,28 @@ public final class AXWindowSystem: WindowSystem {
+ 
+   public func macTiling() -> MacTiling { MacFacts.tiling }
+ 
++  public func isInTheDockOrGone(_ window: WindowID) -> Bool {
++    guard let record = records[window], answers(record.snapshot.pid) else { return true }
++    let began = uptime
++    let answer = record.element.read(kAXMinimizedAttribute)
++    switch answer.error {
++    case .success:
++      guard let value = answer.value, CFGetTypeID(value) == CFBooleanGetTypeID() else { return false }
++      return CFBooleanGetValue((value as! CFBoolean))
++    case .apiDisabled:
++      events?.accessibilityWasRefused()
++      return true
++    case .cannotComplete:
++      noteSilence(of: record.snapshot.pid, since: began)
++      return true
++    case .invalidUIElement:
++      return true
++    default:
++      // A window that cannot be minimized has nothing to say about it.
++      return false
++    }
++  }
++
+   public func modifierKeysDown() -> KeyChord.Modifiers {
+     // People let go of the key and the button together, and by the time Arbor hears of the
+     // mouse-up the key can be up as well. What counts is what was held when it happened.
+diff --git a/Sources/ArborKit/Controller/Controller+Hold.swift b/Sources/ArborKit/Controller/Controller+Hold.swift
+index 65368f1..ff76cbb 100644
+--- a/Sources/ArborKit/Controller/Controller+Hold.swift
++++ b/Sources/ArborKit/Controller/Controller+Hold.swift
+@@ -483,11 +483,9 @@ extension Controller {
+     if level == .still { holdSaysThatItTurnedAway(id) }
+     hold.isSendingBack = true
+     scheduler.schedule("focus-held", after: Self.arrivalSpan) { [weak self] in self?.holdLooksAgain() }
+-    if let home = hold.home, windows[home]?.isPresent == true, !isOutOfView(home) {
+-      askForTheKeyboard(for: home)
+-    } else if let display = displayWithSomethingInView(preferring: workspaceID(containing: id)) {
+-      ensureFocusIsVisible(on: display)
+-    }
++    if let home = hold.home, windows[home]?.isPresent == true, !isOutOfView(home), askForTheKeyboard(for: home) { return true }
++    // On to the next display where the only window in view is the one that is leaving.
++    _ = displaysWithSomethingInView(preferring: workspaceID(containing: id)).contains { ensureFocusIsVisible(on: $0) }
+     return true
+   }
+ 
+@@ -531,9 +529,10 @@ extension Controller {
+     return home
+   }
+ 
+-  private func displayWithSomethingInView(preferring preferred: DisplayID?) -> DisplayID? {
+-    let order = [pointerDisplayID, preferred].compactMap { $0 } + workspaces.keys.sorted()
+-    return order.first { display in
++  private func displaysWithSomethingInView(preferring preferred: DisplayID?) -> [DisplayID] {
++    var seen: Set<DisplayID> = []
++    let order = ([pointerDisplayID, preferred].compactMap { $0 } + workspaces.keys.sorted()).filter { seen.insert($0).inserted }
++    return order.filter { display in
+       guard let workspace = workspaces[display] else { return false }
+       return layouts[display]?.windowFrames.isEmpty == false
+         || workspace.floating.keys.contains { !parked.contains($0) && windows[$0]?.isPresent == true }
+diff --git a/Sources/ArborKit/Controller/Controller+KeyboardFocus.swift b/Sources/ArborKit/Controller/Controller+KeyboardFocus.swift
+index 1e1f1e1..1d660c6 100644
+--- a/Sources/ArborKit/Controller/Controller+KeyboardFocus.swift
++++ b/Sources/ArborKit/Controller/Controller+KeyboardFocus.swift
+@@ -164,10 +164,21 @@ extension Controller {
+   /// Asks macOS to give `window` the keyboard, and remembers having asked until macOS has got there. Across apps a Mac moves the
+   /// keyboard only after the call has returned: whoever asks it in the same breath who has the keyboard is told the old window.
+   /// `keyboardFocus()` knows better. (Nothing comes into view for it, and nobody is told: that is `giveFocus`.)
+-  func askForTheKeyboard(for window: WindowID) {
++  ///
++  /// A person's ⌘M is never undone. A window that counts as being there is asked first, then and there, whether it is: its app may have
++  /// named its next window, which is why Arbor is looking for somebody to give the keyboard to, half a second before it reports
++  /// the minimizing, and the request would fetch the window back out of the Dock. Returns false if it was not asked for that reason.
++  /// (One that counts as minimized has been asked out of the Dock by whoever calls this.)
++  @discardableResult
++  func askForTheKeyboard(for window: WindowID) -> Bool {
++    if windows[window]?.isPresent == true, system.isInTheDockOrGone(window) {
++      Log.info("\(window) is in the Dock, on its way there or gone: the keyboard is not sent to it")
++      return false
++    }
+     let replaced = focusRequest
+     system.focus(window)
+     noteFocusRequest(for: window, replacing: replaced)
++    return true
+   }
+ 
+   private func noteFocusRequest(for window: WindowID, replacing replaced: FocusRequest?) {
+diff --git a/Sources/ArborKit/Controller/Controller+Layout.swift b/Sources/ArborKit/Controller/Controller+Layout.swift
+index 8af5c9e..9e30f4a 100644
+--- a/Sources/ArborKit/Controller/Controller+Layout.swift
++++ b/Sources/ArborKit/Controller/Controller+Layout.swift
+@@ -419,7 +419,7 @@ extension Controller {
+       // Back in view, at the place in macOS's order that it had. A guest raised over its host would cover the very
+       // window its person has just switched to, which is how ⌘Tab brings a view back. ⌃⌥D shows all that floats.
+       // Only a window kept in view is raised: pinned while it was out of view, this is the raise at the pin.
+-      if parked.remove(window) != nil, workspace.staysInView(window) { system.raise(window) }
++      if parked.remove(window) != nil, workspace.staysInView(window) { raiseIfItIsThere(window) }
+     }
+   }
+ 
+@@ -691,11 +691,12 @@ extension Controller {
+     }
+     let cursor = system.cursorLocation()
+     let underPointer = ordered.filter { $0.value.contains(cursor) }
+-    let target =
+-      focusHistory.first { candidates[$0] != nil }
+-      ?? (underPointer.first { workspace.isFloating($0.key) } ?? underPointer.first ?? ordered.first)?.key
+-    if let target { askForTheKeyboard(for: target) }
+-    return target != nil
++    let byChoice =
++      focusHistory.filter { candidates[$0] != nil }
++      + (underPointer.filter { workspace.isFloating($0.key) } + underPointer + ordered).map(\.key)
++    // The first that is there to take it: the one used last may be on its way to the Dock, which is why the keyboard has to go somewhere.
++    var declined: Set<WindowID> = []
++    return byChoice.contains { declined.insert($0).inserted && askForTheKeyboard(for: $0) }
+   }
+ 
+   /// Whether the view is on one space that is not a group: a window, a tab group, the Desktop. Then the level is kept:
+diff --git a/Sources/ArborKit/Controller/Controller+Pin.swift b/Sources/ArborKit/Controller/Controller+Pin.swift
+index 903b49e..517c4c8 100644
+--- a/Sources/ArborKit/Controller/Controller+Pin.swift
++++ b/Sources/ArborKit/Controller/Controller+Pin.swift
+@@ -271,11 +271,19 @@ extension Controller {
+     // The one used last ends up in front of the other pinned windows, as it was.
+     func recency(_ window: WindowID) -> Int { focusHistory.firstIndex(of: window) ?? Int.max }
+     for window in covered.sorted(by: { (recency($0), $0) > (recency($1), $1) }) {
+-      system.raise(window)
+-      Log.debug("raised \(window), which stays in view")
++      if raiseIfItIsThere(window) { Log.debug("raised \(window), which stays in view") }
+     }
+   }
+ 
++  /// A raise fetches a window out of the Dock, like the one that is part of giving a window the keyboard (`askForTheKeyboard`), and a press on the yellow
++  /// button of a window kept in view is a press like any other: Arbor looks at what is kept in view while that window lands. So it is asked first.
++  @discardableResult
++  func raiseIfItIsThere(_ window: WindowID) -> Bool {
++    guard !system.isInTheDockOrGone(window) else { return false }
++    system.raise(window)
++    return true
++  }
++
+   /// Whether a window Arbor knows, other than `others`, lies over part of `window`. What Arbor does
+   /// not know (menus, panels, its own overlays) does not count. True when the stacking cannot be told.
+   private func isCovered(_ window: WindowID, by frontToBack: [WindowID], apartFrom others: [WindowID]) -> Bool {
+diff --git a/Sources/ArborKit/Platform/WindowSystem.swift b/Sources/ArborKit/Platform/WindowSystem.swift
+index 210cdf9..38ecf06 100644
+--- a/Sources/ArborKit/Platform/WindowSystem.swift
++++ b/Sources/ArborKit/Platform/WindowSystem.swift
+@@ -174,6 +174,13 @@ public protocol WindowSystem: AnyObject {
+   /// macOS takes the window, Arbor stands aside (`MacTiling`). No default: in a wrapper that forgot to pass it on, the fight
+   /// over the window would be back in silence.
+   func macTiling() -> MacTiling
++
++  /// Asks the window itself, now, whether it is in the Dock, on its way there, or gone. What was last reported does not tell: an app can
++  /// name its next window half a second before it says that the one in use has been minimized, and `focus` fetches a window out
++  /// of the Dock. Asked to take the keyboard in that half second it flies there and straight back, and its person's ⌘M is undone.
++  /// True as well where its app does not answer: what cannot be found out is no leave to act. No default: in a wrapper that
++  /// forgot to pass it on, windows would come back out of the Dock in silence.
++  func isInTheDockOrGone(_ window: WindowID) -> Bool
+ }
+ 
+ extension WindowSystem {
+diff --git a/Sources/ArborKit/Trace/RecordingWindowSystem.swift b/Sources/ArborKit/Trace/RecordingWindowSystem.swift
+index 894bfdf..4773fd1 100644
+--- a/Sources/ArborKit/Trace/RecordingWindowSystem.swift
++++ b/Sources/ArborKit/Trace/RecordingWindowSystem.swift
+@@ -119,6 +119,9 @@ public final class RecordingWindowSystem: WindowSystem {
+   public func stackedWindows() -> [StackedWindow] { recorder.read("stackedWindows") { inner.stackedWindows() } }
+   public func modifierKeysDown() -> KeyChord.Modifiers { recorder.read("modifierKeysDown") { inner.modifierKeysDown() } }
+   public func macTiling() -> MacTiling { recorder.read("macTiling") { inner.macTiling() } }
++  public func isInTheDockOrGone(_ window: WindowID) -> Bool {
++    recorder.read("isInTheDockOrGone", [window]) { inner.isInTheDockOrGone(window) }
++  }
+   public func openApplication(_ app: String) -> Bool {
+     recorder.call("openApplication", [app], returning: { inner.openApplication(app) })
+   }
+diff --git a/Sources/ArborTesting/ChaosInvariants+Undone.swift b/Sources/ArborTesting/ChaosInvariants+Undone.swift
+new file mode 100644
+index 0000000..c081065
+--- /dev/null
++++ b/Sources/ArborTesting/ChaosInvariants+Undone.swift
+@@ -0,0 +1,14 @@
++import ArborCore
++import ArborKit
++
++/// "A person's ⌘M is never undone" (collab/QUESTIONS.md). The stand-in plays what a Mac does to a window that is asked to take the keyboard on its way
++/// to the Dock: it comes straight back out (`FakeWindowSystem.land`). Whoever asks, on whichever road, this net sees what came of it.
++extension ChaosRunner {
++  func undoneViolations(after action: ChaosAction) -> [InvariantViolation] {
++    guard case .minimize(let window, true) = action, let fake = system.windows[window] else { return [] }
++    // Counted where it could have gone wrong: Arbor was looking.
++    if isRunning { Self.questionsAsked["undone", default: 0] += 1 }
++    guard !fake.snapshot.isMinimized else { return [] }
++    return [.init("minimize-undone", "its user minimized \(window), and it is back out of the Dock: somebody asked it to take the keyboard on its way there")]
++  }
++}
+diff --git a/Sources/ArborTesting/ChaosInvariants.swift b/Sources/ArborTesting/ChaosInvariants.swift
+index 66a1e73..1520be0 100644
+--- a/Sources/ArborTesting/ChaosInvariants.swift
++++ b/Sources/ArborTesting/ChaosInvariants.swift
+@@ -113,7 +113,8 @@ extension ChaosRunner {
+         problems.append(.init("mirror", "\(id) exists but Arbor does not know it"))
+         continue
+       }
+-      if snapshot != fake.snapshot, filter.manages(fake.snapshot) {
++      // (`zoom` with the number of a minimized window gives it the keyboard, which fetches it out of the Dock. macOS says so a moment later.)
++      if snapshot != fake.snapshot, filter.manages(fake.snapshot), !system.hasStillToReportThatItCameBack(id) {
+         problems.append(
+           .init("mirror", "\(id) is at \(fake.snapshot.frame.brief), Arbor thinks \(snapshot.frame.brief) (or its state differs)"))
+       }
+diff --git a/Sources/ArborTesting/ChaosRunner.swift b/Sources/ArborTesting/ChaosRunner.swift
+index e8a0e57..6dd63d2 100644
+--- a/Sources/ArborTesting/ChaosRunner.swift
++++ b/Sources/ArborTesting/ChaosRunner.swift
+@@ -224,7 +224,7 @@ public final class ChaosRunner {
+     beforeTheNextCheck = nil
+     noteWhereItsUserLeftEachWindow(after: action, movesBefore: movesBefore)
+     noteAfterTheSevenRules(action, movesBefore: movesBefore)
+-    return found + wayHomeViolations(after: action) + raiseViolations(after: action) + check(after: action)
++    return found + wayHomeViolations(after: action) + raiseViolations(after: action) + undoneViolations(after: action) + check(after: action)
+   }
+ 
+   /// Where somebody other than Arbor last put each window, as seen from the corner of the display that shows most of it, and
+diff --git a/Sources/ArborTesting/FakeWindowSystem+Chaos.swift b/Sources/ArborTesting/FakeWindowSystem+Chaos.swift
+index 0edfe4b..463583f 100644
+--- a/Sources/ArborTesting/FakeWindowSystem+Chaos.swift
++++ b/Sources/ArborTesting/FakeWindowSystem+Chaos.swift
+@@ -47,6 +47,8 @@ extension FakeWindowSystem {
+ 
+   /// Whether `appsReact()` has anything to deliver.
+   public var hasHeldEchoes: Bool { !undelivered.isEmpty }
++  /// Whether `window` has come out of the Dock because it was given the keyboard, and its app has still to say so.
++  public func hasStillToReportThatItCameBack(_ window: WindowID) -> Bool { undelivered.contains(.cameBack(window)) }
+ 
+   /// Delivers the echoes held back since the last call (`holdsEchoes`), in order; what Arbor's reactions queue
+   /// meanwhile waits for the next call. A window that snaps back does so instead of echoing, which looks like a user's move.
+@@ -65,6 +67,8 @@ extension FakeWindowSystem {
+         }
+       case .focus(let window):
+         if windows[window] != nil { events?.windowFocused(window) }
++      case .cameBack(let window):
++        if let fake = windows[window] { events?.windowChanged(fake.snapshot, userInitiated: true) }
+       }
+     }
+   }
+diff --git a/Sources/ArborTesting/FakeWindowSystem+Stacking.swift b/Sources/ArborTesting/FakeWindowSystem+Stacking.swift
+index acafbfd..44a8960 100644
+--- a/Sources/ArborTesting/FakeWindowSystem+Stacking.swift
++++ b/Sources/ArborTesting/FakeWindowSystem+Stacking.swift
+@@ -7,6 +7,14 @@ extension FakeWindowSystem {
+     guard windows[window] != nil else { return }
+     raiseLog.append(window)
+     bringToFront(window)
++    // It becomes its app's focused window as well, which is the keyboard if that app is in front.
++    if comesOutOfTheDockIfRaised(window) {
++      if let holder = focused, windows[holder]?.snapshot.pid == windows[window]?.snapshot.pid {
++        focused = window
++        if echoes.focus { undelivered.append(.focus(window)) }
++      }
++      if echoes.focus { undelivered.append(.cameBack(window)) }
++    }
+   }
+ 
+   /// Focusing or raising a window brings it to the front. Windows that never were lie behind the
+diff --git a/Sources/ArborTesting/FakeWindowSystem.swift b/Sources/ArborTesting/FakeWindowSystem.swift
+index 086c83e..3776224 100644
+--- a/Sources/ArborTesting/FakeWindowSystem.swift
++++ b/Sources/ArborTesting/FakeWindowSystem.swift
+@@ -182,6 +182,8 @@ public final class FakeWindowSystem: WindowSystem {
+   var lateRestores: [WindowID] = []
+   /// Those of them whose app shows again.
+   var shownLate: Set<WindowID> = []
++  /// The window that has landed in the Dock, which its app has still to report (`landInTheDock`, `reportTheLanding`).
++  var unreportedLanding: WindowID?
+ 
+   /// One `setFrame`, with where the window was before, so tests can tell moves that changed nothing.
+   public struct Move: Equatable {
+@@ -340,6 +342,8 @@ public final class FakeWindowSystem: WindowSystem {
+     }
+     // Its app comes forward, which brings back what macOS had swept aside.
+     sweptAside = nil
++    let wasInTheDock = comesOutOfTheDockIfRaised(window)
++    defer { if wasInTheDock, echoes.focus { undelivered.append(.cameBack(window)) } }
+     let moved = focused != window
+     // macOS reports it two to four times when it crosses apps. Telling those apart is the Accessibility layer's job.
+     if moved, echoes.focus { undelivered.append(.focus(window)) }
+@@ -374,6 +378,10 @@ public final class FakeWindowSystem: WindowSystem {
+   public func strayDialogsWaiting() -> Int { strayDialogs.count }
+   public func modifierKeysDown() -> KeyChord.Modifiers { heldModifiers }
+   public func macTiling() -> MacTiling { tiling }
++  public func isInTheDockOrGone(_ window: WindowID) -> Bool {
++    guard !isDenied, let fake = windows[window], !unresponsive.contains(fake.snapshot.pid) else { return true }
++    return fake.snapshot.isMinimized
++  }
+ 
+   public func inputActivity() -> InputActivity {
+     InputActivity(
+@@ -428,17 +436,46 @@ public final class FakeWindowSystem: WindowSystem {
+ 
+   public func setMinimized(_ window: WindowID, _ minimized: Bool) {
+     guard windows[window] != nil else { return }
+-    // Either way the focus report comes first: of the app's next window, or of the window flying out of the Dock.
+-    if echoes.keyboard, started {
+-      if !minimized {
+-        giveKeyboard(to: window)
+-      } else if focused == window {
+-        giveKeyboard(to: nextWindowOfApp(after: window))
+-      }
++    if minimized {
++      landInTheDock(window)
++      return reportTheLanding()
+     }
+-    windows[window]!.snapshot.isMinimized = minimized
+-    landings[window] = !minimized && echoes.flightFromTheDock > 0 ? clock() + echoes.flightFromTheDock : nil
+-    if restoresLate, !minimized { return lateRestores.append(window) }
++    // The focus report comes first: of the window flying out of the Dock.
++    if echoes.keyboard, started { giveKeyboard(to: window) }
++    windows[window]!.snapshot.isMinimized = false
++    landings[window] = echoes.flightFromTheDock > 0 ? clock() + echoes.flightFromTheDock : nil
++    if restoresLate { return lateRestores.append(window) }
++    events?.windowChanged(windows[window]!.snapshot, userInitiated: true)
++    deliverEchoes()
++  }
++
++  /// Raised, a window comes out of the Dock, whether it has been there for an hour or has only just landed. Returns whether it did.
++  func comesOutOfTheDockIfRaised(_ window: WindowID) -> Bool {
++    guard windows[window]?.snapshot.isMinimized == true else { return false }
++    windows[window]!.snapshot.isMinimized = false
++    landings[window] = echoes.flightFromTheDock > 0 ? clock() + echoes.flightFromTheDock : nil
++    return true
++  }
++
++  /// The first half of a minimize as Arbor meets it. The window has flown for half a second, in which its whole app answers nobody, and has landed.
++  /// It says itself that it is minimized, and if it had the keyboard its app names its next window. That the window is minimized
++  /// the app reports a moment later: `reportTheLanding()`. Measured 0 to 32 ms, mostly 1 to 4. `setMinimized` is both at once.
++  public func landInTheDock(_ window: WindowID) {
++    guard windows[window] != nil else { return }
++    reportTheLanding()
++    windows[window]!.snapshot.isMinimized = true
++    landings[window] = nil
++    unreportedLanding = window
++    if echoes.keyboard, started, focused == window { giveKeyboard(to: nextWindowOfApp(after: window)) }
++  }
++
++  /// The second half. Whoever has given the window the keyboard meanwhile has fetched it back out of the Dock (`focus`), and its person's ⌘M
++  /// is undone. Then the report comes after that flight, and whoever looks at the window because of it finds it not minimized.
++  public func reportTheLanding() {
++    guard let window = unreportedLanding else { return }
++    unreportedLanding = nil
++    guard let fake = windows[window] else { return }
++    if !fake.snapshot.isMinimized { deliverEchoes() }
+     events?.windowChanged(windows[window]!.snapshot, userInitiated: true)
+     deliverEchoes()
+   }
+@@ -743,6 +780,7 @@ extension FakeWindowSystem {
+   enum Echo: Equatable {
+     case focus(WindowID)
+     case frame(WindowID)
++    case cameBack(WindowID)
+   }
+ 
+   /// Delivers what is queued, and what Arbor's reactions queue meanwhile. Returns how many focus reports
+@@ -765,6 +803,8 @@ extension FakeWindowSystem {
+       case .frame(let window):
+         // Like the Accessibility layer, this reads the frame when the report arrives, not when it was sent.
+         if let snapshot = windows[window]?.snapshot { events?.windowChanged(snapshot, userInitiated: false) }
++      case .cameBack(let window):
++        if let snapshot = windows[window]?.snapshot { events?.windowChanged(snapshot, userInitiated: true) }
+       }
+     }
+     return focusReports
+diff --git a/Sources/ArborTesting/TraceReplayer.swift b/Sources/ArborTesting/TraceReplayer.swift
+index f8dccca..60915d6 100644
+--- a/Sources/ArborTesting/TraceReplayer.swift
++++ b/Sources/ArborTesting/TraceReplayer.swift
+@@ -793,9 +793,12 @@ public final class TraceReplayer {
+   /// For `ReplayWindowSystem`: the recorded answer to a question that `TraceLine` has no case for, or nil to ask the fake.
+   ///
+   ///     func isHolding(_ chord: KeyChord) -> Bool { replayer?.answer(read: "isHolding") ?? fake?.isHolding(chord) ?? true }
+-  public func answer<T: Decodable>(read name: String, as type: T.Type = T.self) -> T? {
++  ///
++  /// With `about`, only an answer to the question with those arguments: of two windows asked after one stimulus each gets its own.
++  public func answer<T: Decodable>(read name: String, about arguments: [any Encodable]? = nil, as type: T.Type = T.self) -> T? {
++    let wanted = arguments?.map { TraceJSON(encoding: $0) }
+     for index in unconsumedResponse() {
+-      if case .other(.read, name, _, let result?) = entries[index].line {
++      if case .other(.read, name, let asked, let result?) = entries[index].line, wanted == nil || wanted == asked {
+         consumed[index] = true
+         return result.decoded()
+       }
+@@ -1110,6 +1113,9 @@ private final class ReplayWindowSystem: WindowSystem {
+   func modifierKeysDown() -> KeyChord.Modifiers { replayer?.answer(read: "modifierKeysDown") ?? fake?.modifierKeysDown() ?? [] }
+   /// A trace without the answer was recorded by an Arbor that did not ask, and stood aside for nobody.
+   func macTiling() -> MacTiling { replayer?.answer(read: "macTiling") ?? .off }
++  func isInTheDockOrGone(_ window: WindowID) -> Bool {
++    replayer?.answer(read: "isInTheDockOrGone", about: [window]) ?? fake?.isInTheDockOrGone(window) ?? true
++  }
+   func openApplication(_ app: String) -> Bool {
+     replayer?.answer(call: "openApplication", [app])?.decoded() ?? fake?.openApplication(app) ?? false
+   }
+diff --git a/Sources/arbor-fakemac/Arbor.swift b/Sources/arbor-fakemac/Arbor.swift
+index 7e448a6..6746e91 100644
+--- a/Sources/arbor-fakemac/Arbor.swift
++++ b/Sources/arbor-fakemac/Arbor.swift
+@@ -108,6 +108,7 @@ final class WatchedSystem: WindowSystem {
+   func isMouseButtonDown() -> Bool { fake.isMouseButtonDown() }
+   func modifierKeysDown() -> KeyChord.Modifiers { fake.modifierKeysDown() }
+   func macTiling() -> MacTiling { fake.macTiling() }
++  func isInTheDockOrGone(_ window: WindowID) -> Bool { fake.isInTheDockOrGone(window) }
+   func existingWindowIDs() -> Set<WindowID> { fake.existingWindowIDs() }
+   func inputActivity() -> InputActivity { fake.inputActivity() }
+   func isHolding(_ chord: KeyChord) -> Bool { fake.isHolding(chord) }

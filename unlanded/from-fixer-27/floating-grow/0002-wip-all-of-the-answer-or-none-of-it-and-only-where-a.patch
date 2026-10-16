@@ -1,0 +1,154 @@
+From 835988888d4c5e37715c4ec2052578cac07917e1 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 15:56:30 +0000
+Subject: [PATCH 2/2] wip: all of the answer or none of it, and only where a
+ side stopped (after the seventh read): its eight tests green; NOT yet through
+ the suite, the walks, the reader's generator or a gate
+
+---
+ .../Controller/Controller+Tiling.swift        | 38 +++++++---
+ .../OneEventOneLayoutTests.swift              | 74 +++++++++++++++++++
+ 2 files changed, 102 insertions(+), 10 deletions(-)
+
+diff --git a/Sources/ArborKit/Controller/Controller+Tiling.swift b/Sources/ArborKit/Controller/Controller+Tiling.swift
+index 56dbd24d..cf5a3107 100644
+--- a/Sources/ArborKit/Controller/Controller+Tiling.swift
++++ b/Sources/ArborKit/Controller/Controller+Tiling.swift
+@@ -400,16 +400,7 @@ extension Controller {
+     overlays.finishAnimations()
+     let asked = centred(size)
+     guard var actual = system.setFrame(asked, of: id) else { return .failure("\(id) cannot \(verb) any further") }
+-    // Where it stopped growing is known from now on, as of a docked window (Controller+AskFirst.swift): docked, it goes straight to the
+-    // middle of its slot and not by way of the corner. Not a side the screen kept short, which says nothing of the window. And nothing
+-    // about how small it goes: a terminal rounds up to whole cells, which looks like a refusal to whoever has not talked it down.
+-    if amount > 0 {
+-      var seen = seenSizes[id] ?? SeenSizes(current.size)
+-      seen.see(current.size)
+-      seen.note(
+-        took: sidesTheScreenKept(of: actual.size, shortOf: asked.size, at: [current.origin, actual.origin]).own, offered: asked.size)
+-      seenSizes[id] = seen
+-    }
++    if amount > 0 { noteWhereItStoppedGrowing(id, was: current, asked: asked, took: actual) }
+     // An app that took another size than asked (or kept its own) is now off centre.
+     let settledFrame = centred(actual.size)
+     if !settledFrame.approximatelyEquals(actual) { actual = system.setFrame(settledFrame, of: id) ?? actual }
+@@ -428,6 +419,33 @@ extension Controller {
+     return .success(amount > 0 ? "\(id) grew" : "\(id) shrank")
+   }
+ 
++  /// Where a floating window stopped growing is known from then on, as of a docked one (Controller+AskFirst.swift): docked, it goes straight to
++  /// the middle of its slot and not by way of the corner. It has told Arbor; it used not to be written down.
++  ///
++  /// All of the answer or none of it, for a record that is half, false or stale costs a move more than knowing nothing:
++  /// - both ways it was offered more, and both ways the answer is plain: it took that, or stopped short by more than any character cell. A
++  ///   terminal takes the whole cells nearest to the offer, which is neither. With one way on record a window goes to the middle that way, back
++  ///   to the corner to be asked the other, and to the middle again;
++  /// - no side that the screen may have kept short: where it stands, macOS lets a window grow no further than the edge of its display, and an
++  ///   app may carry a move out late;
++  /// - it has heard: a window grows about its middle, so one that has not budged is an app that hangs. Nor is one asked that has only just come
++  ///   out of the Dock or out of full screen, which may not be ready to take a frame (Controller+OnTheWayBack.swift).
++  /// And nothing about how small it goes: rounding up to whole cells looks like a refusal to whoever has not talked it down, as `place` does.
++  private func noteWhereItStoppedGrowing(_ id: WindowID, was: CGRect, asked: CGRect, took: CGRect) {
++    func isPlain(_ was: CGFloat, _ asked: CGFloat, _ took: CGFloat) -> Bool {
++      asked > was + 2 && (abs(took - asked) <= 2 || took < asked - SeenSizes.largestStep)
++    }
++    guard landsAt[id] == nil, took != was, isPlain(was.width, asked.width, took.width), isPlain(was.height, asked.height, took.height),
++      // One that grew as it was asked has said nothing that anybody needs: no record is begun for it.
++      took.width < asked.width - 2 || took.height < asked.height - 2
++    else { return }
++    let kept = sidesTheScreenKept(of: took.size, shortOf: asked.size, at: [was.origin, took.origin])
++    guard !kept.width, !kept.height else { return }
++    var seen = seenSizes[id] ?? SeenSizes(was.size)
++    seen.note(took: took.size, offered: asked.size)
++    seenSizes[id] = seen
++  }
++
+   // MARK: move-to-display
+ 
+   /// Sends a window to another display, docked or floating as it was: a docked window docks at the
+diff --git a/Tests/ArborKitTests/OneEventOneLayoutTests.swift b/Tests/ArborKitTests/OneEventOneLayoutTests.swift
+index 2c9dbb6c..a390705c 100644
+--- a/Tests/ArborKitTests/OneEventOneLayoutTests.swift
++++ b/Tests/ArborKitTests/OneEventOneLayoutTests.swift
+@@ -1208,4 +1208,78 @@ private let oneLayout: Set<String> = [
+     #expect(h.frame(window) == h.layout!.windowFrames[window], "\(h.frame(window)!.brief)")
+     expectSound(h)
+   }
++  /// How many places a window is sent to at the last line of a script of the walks, and how often it is asked for anything.
++  private func atTheEnd(of script: String, _ window: WindowID) -> (places: Int, requests: Int) {
++    let runner = ChaosRunner()
++    let actions = ChaosAction.script(script)
++    for action in actions.dropLast() { _ = runner.step(action) }
++    let mark = runner.system.moveLog.count
++    _ = runner.step(actions.last!)
++    return (
++      FakeWindowSystem.changesOfPlace(runner.system.road(of: window, since: mark)),
++      runner.system.moveLog[mark...].filter { $0.window == window }.count
++    )
++  }
++
++  /// All or nothing. A window that grows neither way stands on the line above the Dock when it is asked to grow: its height may be the
++  /// screen's answer. With its width alone on record it went to the middle one way, back to the corner to be asked the other, and to the
++  /// middle again: three places, where knowing nothing costs two.
++  @Test func halfAnAnswerIsNotWrittenDown() {
++    let (places, requests) = atTheEnd(
++      of: """
++        displays side:0,0,2560,1440:25,0,59,0* windows-never
++        launch
++        open 107 Settings pid 1007 at 900 796 723 585 min 723 470 max 723 585
++        settle
++        focus 107
++        key down grow
++        settle
++        key down dock right
++        """, WindowID(107))
++    #expect(places == 2, "as if nothing were known; \(requests) requests")
++  }
++
++  /// A terminal takes the whole cells nearest to what it is offered: neither what it was offered nor a stop. Nothing is written down, and it is
++  /// treated as if it had never been asked. (A walk's own script: with its answer on record it was set right by a point in its slot.)
++  @Test func aTerminalsAnswerIsNotWrittenDown() {
++    let (places, requests) = atTheEnd(
++      of: """
++        displays main:0,0,1440,900:25,0,48,0* side:-1920,-200,1920,1080:25,0,0,0 windows-never
++        open 101 Terminal pid 1003 at -987 144 912 564 min 177 64 cells 7 15 2 4
++        launch
++        key down zoom
++        key down grow
++        edge 101 -2638 -35 1920 972
++        key down toggle-float
++        """, WindowID(101))
++    #expect(places == 1 && requests == 1, "\(places) places, \(requests) requests")
++  }
++
++  /// An app that hangs does not answer at all, which looks like a window that grows neither way. One that has heard has at least moved: a
++  /// window grows about its middle.
++  @Test func anAppThatHangsHasSaidNothing() {
++    let (places, requests) = atTheEnd(
++      of: """
++        displays side:0,0,2560,1440:25,0,59,0* windows-never
++        launch
++        open 107 Notes pid 1001 at 1358 463 723 585 min 300 200
++        settle
++        focus 107
++        behave 107 frozen
++        key down grow
++        settle
++        behave 107 normal
++        key down dock right
++        """, WindowID(107))
++    #expect(places == 1, "it fills its slot in one move; \(requests) requests")
++  }
++
++  /// A few points short is what a terminal's rounding looks like (`SeenSizes.largestStep`): nobody calls that a stop.
++  @Test func aFewPointsShortSayNothing() {
++    let (h, window) = settings()
++    runOK(h, "grow 20")
++    h.scheduler.advance(by: 1)
++    let roads = Roads(h) { runOK(h, "dock right") }
++    #expect(roads.roads[window].map(FakeWindowSystem.changesOfPlace) == 2, "as if nothing were known: \(roads.roads[window]?.map(\.brief) ?? [])")
++  }
+ }
+-- 
+2.43.0
+

@@ -1,0 +1,622 @@
+diff --git a/Sources/ArborCore/Settings.swift b/Sources/ArborCore/Settings.swift
+index 3830768b..f3ae82ba 100644
+--- a/Sources/ArborCore/Settings.swift
++++ b/Sources/ArborCore/Settings.swift
+@@ -219,8 +219,8 @@ public struct Settings: Codable, Equatable, Sendable {
+   /// Off as Arbor ships: no tap goes in at launch until all its checks of the taps on a Mac are green.
+   public var pointerGestures: Bool = false
+   /// Floating windows are kept on the Desktop: docked windows push them aside and squeeze them, and they go back as room
+-  /// returns. Off, as it ships, a floating window's frame is its person's: Arbor sets it only to take the window out
+-  /// of view and to put it back exactly where it was (collab/QUESTIONS.md, Q20).
++  /// returns, and they leave the view with the Desktop. Off, as it ships, a floating window's frame is its person's, and
++  /// no view takes it away (collab/QUESTIONS.md, Q20 and Q29, 4).
+   public var floatingWindowsMakeWay: Bool = false
+ 
+   public init() {}
+diff --git a/Sources/ArborCore/SettingsSchema.swift b/Sources/ArborCore/SettingsSchema.swift
+index cd55619d..657a8671 100644
+--- a/Sources/ArborCore/SettingsSchema.swift
++++ b/Sources/ArborCore/SettingsSchema.swift
+@@ -171,8 +171,8 @@ public enum SettingsSchema {
+       .toggle(
+         "floatingWindowsMakeWay", \.floatingWindowsMakeWay, "Floating windows make way",
+         "Docked windows push floating windows aside and squeeze them, so that they stay on the Desktop. Off, a floating "
+-          + "window stays exactly where you put it, over docked windows too: it only goes out of view with the Desktop and "
+-          + "comes back to the same place.", advanced: true),
++          + "window stays exactly where you put it, over docked windows too, wherever the view goes. On, it also leaves the "
++          + "view with the Desktop and comes back with it.", advanced: true),
+     ])
+ 
+   private static let dragging = section(
+diff --git a/Sources/ArborKit/Controller/Controller+Focus.swift b/Sources/ArborKit/Controller/Controller+Focus.swift
+index c9636257..aee8cc88 100644
+--- a/Sources/ArborKit/Controller/Controller+Focus.swift
++++ b/Sources/ArborKit/Controller/Controller+Focus.swift
+@@ -290,7 +290,7 @@ extension Controller {
+     let showsTheDesktop = workspace.tree.subtree(layout.camera, contains: workspace.tree.desktop)
+     return workspace.floating.keys.contains {
+       windows[$0]?.isPresent == true && isManaged($0) && !workspace.isStashed($0) && !workspace.staysInView($0)
+-        && (showsTheDesktop || hostInView(of: $0, in: workspace, layout: layout) != nil)
++        && (!settings.floatingWindowsMakeWay || showsTheDesktop || hostInView(of: $0, in: workspace, layout: layout) != nil)
+     }
+   }
+ 
+diff --git a/Sources/ArborKit/Controller/Controller+Layout.swift b/Sources/ArborKit/Controller/Controller+Layout.swift
+index ce03c594..1ef6b1eb 100644
+--- a/Sources/ArborKit/Controller/Controller+Layout.swift
++++ b/Sources/ArborKit/Controller/Controller+Layout.swift
+@@ -535,9 +535,7 @@ extension Controller {
+       guard !placedOnPurpose.contains(window) || showsOnlyASliver(window) else { continue }
+       // As Arbor ships, that is all: its frame is its person's (Controller+OwnFrames.swift).
+       if !settings.floatingWindowsMakeWay {
+-        let move = moveKeepingItsFrame(
+-          window, floatingAt: preferred, in: workspace, layout: layout, desktopIsInView: desktopIsPartOfTheView, reason: reason,
+-          isTheFirstLayout: previous == nil, on: display)
++        let move = moveKeepingItsFrame(window, floatingAt: preferred, isTheFirstLayout: previous == nil, on: display)
+         if let move { moves.append((window, move)) }
+         continue
+       }
+diff --git a/Sources/ArborKit/Controller/Controller+OwnFrames.swift b/Sources/ArborKit/Controller/Controller+OwnFrames.swift
+index 0fa9ab05..14c5584c 100644
+--- a/Sources/ArborKit/Controller/Controller+OwnFrames.swift
++++ b/Sources/ArborKit/Controller/Controller+OwnFrames.swift
+@@ -1,44 +1,40 @@
+ import ArborCore
+ import CoreGraphics
+ 
+-/// A floating window's frame is its person's (collab/QUESTIONS.md, Q20): **Arbor sets a floating window's frame only to take it
+-/// out of view and to put it back exactly where it was.**
++/// A floating window's frame is its person's (collab/QUESTIONS.md, Q20), and **Arbor never takes a floating window out of view**
++/// (Q29, 4): it is moved, sized, raised or hidden only by a command that names it.
+ ///
+ /// That is how Arbor ships, with `floatingWindowsMakeWay` off. No layout places, shoves or squeezes a floating window; one
+ /// that floats alone is not stretched over the Desktop (F18); and when room is made for docked windows the Desktop counts
+-/// as not in use (F61). Floating and docked windows may overlap, as windows on a Mac do, and macOS's order says which
+-/// is in front.
++/// as not in use (F61). Wherever the view goes, a window framed, another space, the Desktop left behind, what floats stays
++/// where it is. Floating and docked windows may overlap, as windows on a Mac do, and macOS's order says which is in front.
+ ///
+-/// With the setting on, floating windows are kept on the Desktop as they were until Q20: `floatingMoves` places them,
+-/// and everything that follows from that (own sizes of squeezed windows, pushed windows going back) is at work.
++/// With the setting on, floating windows are kept on the Desktop as they were until Q20: `floatingMoves` places them, they leave
++/// the view with the Desktop and come back with it, and everything that follows from that (own sizes of squeezed windows,
++/// pushed windows going back) is at work.
+ ///
+ /// `Workspace.floating` holds the frame the window's person gave it, as ever. With the setting off that is also where the
+-/// window is, for as long as it is in view.
++/// window is, unless something other than Arbor's view took it away: a change of displays, an Arbor that died.
+ extension Controller {
+-  // MARK: Out of view and back
++  // MARK: Back into view
+ 
+-  /// What a layout does to a window that lives on the Desktop, or is the guest of a space: nothing, while it is where it
+-  /// belongs. `reason` is `.camera` only if the view really moved (`floatingMoves`).
++  /// What a layout does to a window that lives on the Desktop, or is the guest of a space: nothing, whatever the view shows.
++  ///
++  /// But for one that is out of view all the same, and no view of Arbor's took it there: a change of displays
++  /// (`countAsOutOfViewWhatTheDisplaysDisplaced`), an Arbor that died with the setting on or was an earlier build
++  /// (`treatStrandedWindowsAsParked`), or whoever left it where no display shows it. That one comes back with the next layout.
+   func moveKeepingItsFrame(
+-    _ window: WindowID, floatingAt own: CGRect, in workspace: Workspace, layout: Layout, desktopIsInView: Bool,
+-    reason: RelayoutReason, isTheFirstLayout: Bool, on display: DisplaySnapshot
++    _ window: WindowID, floatingAt own: CGRect, isTheFirstLayout: Bool, on display: DisplaySnapshot
+   ) -> FloatingMove? {
+-    // (In view as a tile too: however small the Desktop is drawn, its windows are in view with it.)
+-    if desktopIsInView || hostInView(of: window, in: workspace, layout: layout) != nil {
+-      // One that no display shows is out of view whoever put it there. And one that is nowhere a window can be used, where no hand
+-      // is known to have left it, is what a change of displays made of it while Arbor could not act (its app hung, Arbor had
+-      // crashed): never lost outranks never moved. Not at a start, which sets no frame (Q16): the next layout, ⌃⌥0 for one.
+-      guard
+-        parked.contains(window) || showsOnlyASliver(window)
+-          || (!isTheFirstLayout && windows[window].map { !isAPlace($0.frame) && !wasLeftThereByItsUser($0.frame, of: window, on: display) } == true)
+-      else { return nil }
+-      // Nothing is raised: going out of view and coming back changes nobody's place in macOS's order.
+-      return .putBack(whereItWas(own, of: window, on: display))
+-    }
+-    if parked.contains(window) { return hasLeftItsCorner(window) ? .park : nil }
+-    // Only a move of the view takes it away. Or a display that shrank has left it where nothing shows it: parked, it
+-    // comes back when it is switched to. Or its app did not answer when the view moved.
+-    return reason == .camera || showsOnlyASliver(window) || owedMoves.contains(window) ? .park : nil
++    // One that no display shows is out of view whoever put it there. And one that is nowhere a window can be used, where no hand
++    // is known to have left it, is what a change of displays made of it while Arbor could not act (its app hung, Arbor had
++    // crashed): never lost outranks never moved. Not at a start, which sets no frame (Q16): the next layout, ⌃⌥0 for one.
++    guard
++      parked.contains(window) || showsOnlyASliver(window)
++        || (!isTheFirstLayout && windows[window].map { !isAPlace($0.frame) && !wasLeftThereByItsUser($0.frame, of: window, on: display) } == true)
++    else { return nil }
++    // Nothing is raised: coming back changes nobody's place in macOS's order.
++    return .putBack(whereItWas(own, of: window, on: display))
+   }
+ 
+   /// Called before a layout takes `window` out of view. Where it is at that moment is where it comes back to: whoever put
+diff --git a/Sources/ArborKit/Controller/Controller+Undo.swift b/Sources/ArborKit/Controller/Controller+Undo.swift
+index c2ed0209..1a3dbb3a 100644
+--- a/Sources/ArborKit/Controller/Controller+Undo.swift
++++ b/Sources/ArborKit/Controller/Controller+Undo.swift
+@@ -512,10 +512,8 @@ extension Controller {
+         } else if !floatsInView {
+           plan.homes[window] = preferred.fitted(into: display.visibleFrame)
+         }
+-      } else if !settings.floatingWindowsMakeWay,
+-        // By what shows, as a layout goes (`moveKeepingItsFrame`): more than the view is on, while that has nothing to show.
+-        layout.map({ workspace.tree.subtree($0.camera, contains: workspace.tree.desktop) }) ?? desktopIsPartOfTheView
+-      {
++      } else if !settings.floatingWindowsMakeWay {
++        // Whatever the view of the step shows: no view takes a floating window away (`moveKeepingItsFrame`).
+         // Its frame is its person's (Controller+OwnFrames.swift), and the restored workspace has it: the one the step took it from, or,
+         // if it was moved since, the one it was moved to. Where it happened to be on screen when the step was saved says no more.
+         // One that floats in view, and of which the step changes nothing, is left where it is: what is remembered can be behind it.
+diff --git a/Tests/ArborKitTests/FloatingFrameTests.swift b/Tests/ArborKitTests/FloatingFrameTests.swift
+index 4eb24b8f..b244d72c 100644
+--- a/Tests/ArborKitTests/FloatingFrameTests.swift
++++ b/Tests/ArborKitTests/FloatingFrameTests.swift
+@@ -4,8 +4,7 @@ import ArborTesting
+ import CoreGraphics
+ import Testing
+ 
+-/// A floating window's frame is its person's (collab/QUESTIONS.md, Q20). **Arbor sets a floating window's frame only to take
+-/// it out of view and to put it back exactly where it was.**
++/// A floating window's frame is its person's (collab/QUESTIONS.md, Q20), and no view takes it away (Q29, 4; `FloatsStayInViewTests`).
+ ///
+ /// The desk is the one of the first day played with real apps on a hosted Mac: a display 1600 points wide, nine apps,
+ /// the frames and the smallest sizes they had there. On that day a dock squeezed Safari from 1324 to 794 points, ⌘M, ⌘H and
+@@ -94,16 +93,13 @@ import Testing
+ 
+   // MARK: There and back is nothing (steps 47 to 59)
+ 
+-  @Test func frameThenShowEverythingBringsEveryFloatingWindowBackToItsOwnFrame() {
++  @Test func frameThenShowEverythingTouchesNoFloatingWindow() {
+     let desk = makeArrangedDesk()
+     desk.h.run("zoom \(desk.safari.rawValue)")
+-    for window in desk.own.keys.sorted() { #expect(!desk.h.system.isVisible(window), "\(window) leaves with the Desktop") }
++    expectUntouched(desk, "with Safari framed")
++    for window in desk.own.keys.sorted() { #expect(desk.h.system.isVisible(window), "\(window) stays, behind Safari") }
+     desk.h.run("show-all")
+-    for (window, frame) in desk.own.sorted(by: { $0.key < $1.key }) {
+-      #expect(desk.h.frame(window) == frame, "\(window) is back where it was")
+-      // One move out, one move back.
+-      #expect(desk.h.system.frameLog.filter { $0.window == window }.count == 2, "\(window): \(desk.h.system.frameLog.filter { $0.window == window })")
+-    }
++    expectUntouched(desk, "after Show Everything")
+     expectWindowsMatchLayout(desk.h)
+   }
+ 
+@@ -111,15 +107,14 @@ import Testing
+     for (out, back) in [("zoom", "back"), ("zoom", "home"), ("zoom", "show-all"), ("zoom", "desktop"), ("zoom", "out")] {
+       let desk = makeArrangedDesk()
+       desk.h.run("\(out) \(desk.finder.rawValue)")
++      expectUntouched(desk, "after \(out)")
+       desk.h.run(back)
+-      for (window, frame) in desk.own.sorted(by: { $0.key < $1.key }) {
+-        #expect(desk.h.frame(window) == frame, "\(window) after \(out) and \(back)")
+-      }
++      expectUntouched(desk, "after \(out) and \(back)")
+     }
+   }
+ 
+-  /// Where it is when the view leaves is where it comes back to, whoever put it there and whether or not Arbor heard of it.
+-  @Test func aWindowMovedByHandComesBackWhereTheHandLeftIt() {
++  /// Where a hand left it, it stays, whatever is docked under it and wherever the view goes.
++  @Test func aWindowMovedByHandStaysWhereTheHandLeftIt() {
+     var desk = makeArrangedDesk()
+     let notes = desk.own.keys.sorted()[1]
+     // Over Finder and the gap, hanging over the left edge of the screen: all of that is its person's business.
+@@ -130,7 +125,7 @@ import Testing
+     expectUntouched(desk, "after a gap was moved")
+     desk.h.run("zoom \(desk.safari.rawValue)")
+     desk.h.run("show-all")
+-    #expect(desk.h.frame(notes) == desk.own[notes], "overhang and all")
++    expectUntouched(desk, "overhang and all")
+   }
+ 
+   // MARK: ⌘M, ⌘H, ⌘Q and ⌘W of a docked window (steps 71 to 77)
+@@ -225,11 +220,11 @@ import Testing
+     }
+   }
+ 
+-  @Test func quittingWhileTheyAreOutOfViewPutsThemBackWhereTheyWere() {
++  @Test func quittingWhileAWindowIsFramedTouchesNoFloatingWindow() {
+     let desk = makeArrangedDesk()
+     desk.h.run("zoom \(desk.safari.rawValue)")
+     desk.h.controller.shutdown()
+-    for (window, frame) in desk.own.sorted(by: { $0.key < $1.key }) { #expect(desk.h.frame(window) == frame, "\(window)") }
++    expectUntouched(desk, "after a quit with Safari framed")
+   }
+ 
+   /// A window that floats by command is the window acted on: it takes its own size, around where it was docked, whatever
+@@ -378,8 +373,8 @@ import Testing
+ 
+   // MARK: Order
+ 
+-  /// Out of view and back changes nobody's place in the order, and Arbor raises nothing but the window acted on.
+-  @Test func nothingIsRaisedWhenFloatingWindowsComeBack() {
++  /// Arbor raises nothing but the window acted on (`FloatsStayInViewTests` holds every move of the view to that).
++  @Test func nothingIsRaisedWhenTheViewWidens() {
+     let desk = makeArrangedDesk()
+     desk.h.run("zoom \(desk.safari.rawValue)")
+     desk.h.system.clearRaiseLog()
+diff --git a/Tests/ArborKitTests/FloatsStayInViewTests.swift b/Tests/ArborKitTests/FloatsStayInViewTests.swift
+new file mode 100644
+index 00000000..19398978
+--- /dev/null
++++ b/Tests/ArborKitTests/FloatsStayInViewTests.swift
+@@ -0,0 +1,200 @@
++import ArborCore
++@testable import ArborKit
++import ArborTesting
++import CoreGraphics
++import Testing
++
++/// **Arbor never takes a floating window out of view** (collab/QUESTIONS.md, Q29, 4). "The one thing Arbor does to a floating window",
++/// taking it away when the view leaves the Desktop and putting it back, is withdrawn.
++///
++/// What is held here: after every command, each floating window that the command does not name has the frame and the place in macOS's
++/// order that it had, and Arbor has not called its app once.
++@Suite @MainActor struct FloatsStayInViewTests {
++  /// Two windows docked, left and right, and three that lie about, over them and over each other.
++  @MainActor struct Desk {
++    var h: Harness
++    var safari, notes: WindowID
++    var floats: [WindowID: CGRect] = [:]
++    /// The floating windows from front to back, as macOS has them.
++    var order: [WindowID] { h.system.windowsFrontToBack().filter { floats[$0] != nil } }
++  }
++
++  func makeDesk(_ change: (inout Settings) -> Void = { _ in }) -> Desk {
++    var settings = Settings()
++    change(&settings)
++    let h = Harness(settings: settings)
++    let safari = h.system.open(app: "Safari", pid: 2001)
++    let notes = h.system.open(app: "Notes", pid: 2002)
++    var desk = Desk(h: h, safari: safari, notes: notes)
++    for (app, pid, frame) in [
++      ("Mail", Int32(2003), CGRect(x: 500, y: 200, width: 640, height: 420)),
++      ("Music", 2004, CGRect(x: 700, y: 350, width: 640, height: 420)),
++      ("Preview", 2005, CGRect(x: 60, y: 90, width: 420, height: 300)),
++    ] { desk.floats[h.system.open(app: app, pid: pid, frame: frame)] = frame }
++    h.start()
++    h.run("dock \(safari.rawValue) left")
++    h.run("dock \(notes.rawValue) right")
++    h.system.clearFrameLog()
++    h.system.clearRaiseLog()
++    return desk
++  }
++
++  /// Runs `command` and holds every floating window to where and how it was before.
++  func expectNothingOfWhatFloats(
++    _ desk: Desk, changesWith command: String, sourceLocation: SourceLocation = #_sourceLocation
++  ) {
++    let order = desk.order
++    desk.h.system.clearFrameLog()
++    desk.h.system.clearRaiseLog()
++    desk.h.run(command)
++    desk.h.scheduler.advance(by: 1)
++    for (window, frame) in desk.floats.sorted(by: { $0.key < $1.key }) {
++      #expect(desk.h.frame(window) == frame, "\(window) after \(command)", sourceLocation: sourceLocation)
++      #expect(desk.h.system.isVisible(window), "\(window) is in view after \(command)", sourceLocation: sourceLocation)
++    }
++    #expect(desk.order == order, "the order after \(command)", sourceLocation: sourceLocation)
++    let touched = Set(desk.h.system.frameLog.map(\.window)).intersection(desk.floats.keys).sorted()
++    #expect(touched.isEmpty, "\(command) set the frame of \(touched)", sourceLocation: sourceLocation)
++    let raised = desk.h.system.raiseLog.filter { desk.floats[$0] != nil }
++    #expect(raised.isEmpty, "\(command) raised \(raised)", sourceLocation: sourceLocation)
++  }
++
++  // MARK: Wherever the view goes
++
++  @Test func aDockedWindowFillsTheScreenAndWhatFloatsStaysBehindIt() {
++    let desk = makeDesk()
++    expectNothingOfWhatFloats(desk, changesWith: "zoom \(desk.safari.rawValue)")
++    #expect(desk.h.frame(desk.safari).map { $0.width > 1300 } == true, "or nothing was framed")
++    #expect(!desk.h.system.isVisible(desk.notes), "a docked window the view leaves out goes, as ever")
++    expectNothingOfWhatFloats(desk, changesWith: "show-all")
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  /// Every command that moves the view, one after another on one desk, there and back and across.
++  @Test func noMoveOfTheViewTouchesWhatFloats() {
++    let desk = makeDesk()
++    let (safari, notes) = (desk.safari.rawValue, desk.notes.rawValue)
++    for command in [
++      "zoom \(safari)", "focus right", "back", "forward", "out", "zoom \(notes)", "home", "zoom \(safari)", "save-view 1", "show-all",
++      "view 1", "desktop", "back", "in", "out", "zoom \(notes)", "desktop", "show-all",
++    ] { expectNothingOfWhatFloats(desk, changesWith: command) }
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  /// The control: with floating windows kept on the Desktop, as until Q20, they leave with it. If they stop, the tests above prove nothing.
++  @Test func withFloatingWindowsMakingWayTheyLeaveWithTheDesktopAsTheyDid() {
++    let desk = makeDesk { $0.floatingWindowsMakeWay = true }
++    desk.h.run("zoom \(desk.safari.rawValue)")
++    for window in desk.floats.keys.sorted() { #expect(!desk.h.system.isVisible(window), "\(window)") }
++    desk.h.run("show-all")
++    for window in desk.floats.keys.sorted() { #expect(desk.h.system.isVisible(window), "\(window)") }
++  }
++
++  // MARK: What happens by itself
++
++  @Test func aClickOnAFloatingWindowBesideAFramedOneLeavesTheViewAlone() {
++    let desk = makeDesk()
++    desk.h.run("zoom \(desk.safari.rawValue)")
++    let (view, mail) = (desk.h.workspace.camera, desk.floats.keys.sorted()[0])
++    desk.h.system.clearFrameLog()
++    desk.h.system.userFocus(mail)
++    desk.h.scheduler.advance(by: 1)
++    #expect(desk.h.workspace.camera == view, "it is in view: there is nothing to bring into view")
++    #expect(desk.h.system.frameLog.isEmpty, "\(desk.h.system.frameLog)")
++    #expect(desk.h.system.focused == mail)
++  }
++
++  @Test func aWindowThatOpensWhileAnotherIsFramedStaysWhenTheViewMovesOn() {
++    var desk = makeDesk()
++    desk.h.run("zoom \(desk.safari.rawValue)")
++    let guest = desk.h.system.open(app: "Calculator", pid: 2006, frame: CGRect(x: 300, y: 300, width: 240, height: 320))
++    desk.h.scheduler.advance(by: 1)
++    desk.floats[guest] = desk.h.frame(guest)
++    #expect(desk.floats[guest] == CGRect(x: 300, y: 300, width: 240, height: 320), "where its app opened it")
++    for command in ["show-all", "zoom \(desk.notes.rawValue)", "desktop", "back"] { expectNothingOfWhatFloats(desk, changesWith: command) }
++  }
++
++  @Test func closingTheFramedWindowTakesNothingThatFloatsAway() {
++    let desk = makeDesk()
++    desk.h.run("zoom \(desk.safari.rawValue)")
++    desk.h.system.clearFrameLog()
++    desk.h.system.close(desk.safari)
++    desk.h.scheduler.advance(by: 1)
++    for (window, frame) in desk.floats { #expect(desk.h.frame(window) == frame && desk.h.system.isVisible(window), "\(window)") }
++    #expect(Set(desk.h.system.frameLog.map(\.window)).isDisjoint(with: desk.floats.keys))
++    #expect(desk.h.system.isVisible(desk.notes))
++  }
++
++  @Test func aPauseAResumeAndAStartWhileAWindowIsFramedTouchNothingThatFloats() {
++    let desk = makeDesk()
++    desk.h.run("zoom \(desk.safari.rawValue)")
++    for command in ["toggle-pause", "toggle-pause"] { expectNothingOfWhatFloats(desk, changesWith: command) }
++    desk.h.system.clearFrameLog()
++    desk.h.controller.shutdown()
++    desk.h.system.clearFrameLog()
++    let next = Harness(settings: Settings(), saved: desk.h.store.saved, system: desk.h.system)
++    next.start()
++    for (window, frame) in desk.floats { #expect(next.frame(window) == frame && next.system.isVisible(window), "\(window)") }
++    #expect(Set(next.system.frameLog.map(\.window)).isDisjoint(with: desk.floats.keys))
++  }
++
++  // MARK: Undo
++
++  /// The step before had a window floating while another was framed. Taken back, it floats in view, at its own frame.
++  @Test func anUndoThatMakesAWindowFloatAgainUnderAFramedViewLeavesItInView() {
++    let desk = makeDesk()
++    let mail = desk.floats.keys.sorted()[0]
++    desk.h.run("zoom \(desk.safari.rawValue)")
++    desk.h.run("dock \(mail.rawValue) right")
++    #expect(desk.h.workspace.isDocked(mail))
++    desk.h.run("undo")
++    desk.h.scheduler.advance(by: 1)
++    #expect(desk.h.workspace.isFloating(mail))
++    #expect(desk.h.frame(mail) == desk.floats[mail], "its own frame")
++    #expect(desk.h.system.isVisible(mail))
++    for (window, frame) in desk.floats where window != mail { #expect(desk.h.frame(window) == frame, "\(window)") }
++  }
++
++  // MARK: A command that names it
++
++  /// What is withdrawn is what Arbor did by itself. Sent away by name, a window goes, and comes when it is called.
++  @Test func aWindowSentAwayByNameGoesAndTheOthersStay() {
++    var desk = makeDesk()
++    let mail = desk.floats.keys.sorted()[0]
++    let own = desk.floats.removeValue(forKey: mail)
++    expectNothingOfWhatFloats(desk, changesWith: "summon \(mail.rawValue)")
++    expectNothingOfWhatFloats(desk, changesWith: "summon \(mail.rawValue)")
++    #expect(!desk.h.system.isVisible(mail), "summoned and sent back: out of view, because its person said so")
++    expectNothingOfWhatFloats(desk, changesWith: "zoom \(desk.safari.rawValue)")
++    #expect(!desk.h.system.isVisible(mail), "and stays away whatever the view does")
++    expectNothingOfWhatFloats(desk, changesWith: "summon \(mail.rawValue)")
++    #expect(desk.h.system.isVisible(mail))
++    _ = own
++  }
++
++  // MARK: Out of view all the same
++
++  /// An earlier build, or an Arbor with the setting on, died with a window framed: what floats is in its corner. Whatever the view that
++  /// comes back shows, the start fetches it.
++  @Test func whatAnArborThatDiedLeftInItsCornerComesBackAtTheStartWhateverTheViewShows() {
++    let desk = makeDesk { $0.floatingWindowsMakeWay = true }
++    desk.h.run("zoom \(desk.safari.rawValue)")
++    #expect(desk.floats.keys.allSatisfy { !desk.h.system.isVisible($0) }, "or there is nothing to fetch")
++    // No shutdown: nothing was fetched on the way out.
++    let next = Harness(settings: Settings(), saved: desk.h.store.saved, system: desk.h.system)
++    next.start()
++    next.scheduler.advance(by: 1)
++    for window in desk.floats.keys.sorted() { #expect(next.system.isVisible(window), "\(window)") }
++  }
++
++  /// The setting goes off while they are away: they come back now, not when the Desktop next shows.
++  @Test func switchingTheSettingOffWhileTheyAreAwayBringsThemBack() {
++    let desk = makeDesk { $0.floatingWindowsMakeWay = true }
++    desk.h.run("zoom \(desk.safari.rawValue)")
++    #expect(desk.floats.keys.allSatisfy { !desk.h.system.isVisible($0) })
++    desk.h.run("set floatingWindowsMakeWay false")
++    desk.h.scheduler.advance(by: 1)
++    for window in desk.floats.keys.sorted() { #expect(desk.h.system.isVisible(window), "\(window)") }
++    #expect(desk.h.frame(desk.safari).map { $0.width > 1300 } == true, "and the view is as it was")
++  }
++}
+diff --git a/collab/scenarios/67-a-floating-windows-frame-is-its-persons.sim b/collab/scenarios/67-a-floating-windows-frame-is-its-persons.sim
+index d009f8fc..d4357cd1 100644
+--- a/collab/scenarios/67-a-floating-windows-frame-is-its-persons.sim
++++ b/collab/scenarios/67-a-floating-windows-frame-is-its-persons.sim
+@@ -2,7 +2,7 @@
+ # Story: an ordinary desk, as it stood on the first day played with real apps on a hosted Mac: a display 1600 points wide, Finder,
+ # Safari and TextEdit to be docked, and Terminal, Notes, Calendar and Mail floating where their person left them. On that day a
+ # dock squeezed Safari from 1324 to 794 points, and ⌘M, ⌘H and ⌘Q of a docked window shoved the others about.
+-# Arbor sets a floating window's frame only to take it out of view and to put it back exactly where it was.
++# A floating window's frame is its person's, and no view takes it away (Q29, 4).
+ # Reference: rules 2, 3 and 5 of the product direction.
+ display-size 1600x822 31
+ open Finder 920x436 min 501x200
+@@ -33,13 +33,18 @@ expect at 104 40 51 877x499
+ expect at 105 300 105 1000x660
+ expect at 106 200 86 935x598
+ expect at 107 240 72 1120x630
+-# Frame, then Show Everything: there and back is nothing.
++# Frame, then Show Everything: what floats stays where it is, behind Safari, and nobody touches it.
+ zoom 102
+-expect hidden 104
+-expect hidden 105
+-expect hidden 106
+-expect hidden 107
++expect fills 102
++expect still 104
++expect still 105
++expect at 104 40 51 877x499
++expect at 105 300 105 1000x660
++expect at 106 200 86 935x598
++expect at 107 240 72 1120x630
+ show-all
++expect still 104
++expect still 107
+ expect at 104 40 51 877x499
+ expect at 105 300 105 1000x660
+ expect at 106 200 86 935x598
+@@ -66,7 +71,7 @@ expect at 104 40 51 877x499
+ expect at 105 300 105 1000x660
+ expect at 106 200 86 935x598
+ expect at 107 240 72 1120x630
+-# Left hanging over the edge of the screen and over Finder by hand, it comes back to that.
++# Left hanging over the edge of the screen and over Finder by hand, it stays so.
+ move 105 -300 200 1000 560
+ zoom 102
+ show-all
+diff --git a/collab/scenarios/I20c-a-dock-touches-what-is-docked.sim b/collab/scenarios/I20c-a-dock-touches-what-is-docked.sim
+new file mode 100644
+index 00000000..a37bc2d0
+--- /dev/null
++++ b/collab/scenarios/I20c-a-dock-touches-what-is-docked.sim
+@@ -0,0 +1,24 @@
++# IDEAS I20 c, I17, I25 a; QUESTIONS Q20 and Q29, 4; board 0.5. Written by the product owner as a wanted scenario; answered, so it moved up.
++# Story: three windows lie about. One is docked. The other two stay exactly as they are: same place, same size. Then the docked
++# one fills the screen: the two are still where they were, behind it, and not sent out of view.
++open Safari
++open Notes
++open Mail
++move 102 500 200 640 420
++move 103 700 350 640 420
++dock 101 left
++expect still 102
++expect still 103
++expect at 102 500 200
++expect size 102 640x420
++expect at 103 700 350
++expect size 103 640x420
++zoom 101
++expect fills 101
++expect still 102
++expect still 103
++expect at 102 500 200
++expect at 103 700 350
++zoom 101
++expect still 102
++expect still 103
+diff --git a/docs/ARCHITECTURE.md b/docs/ARCHITECTURE.md
+index 20993391..5475189f 100644
+--- a/docs/ARCHITECTURE.md
++++ b/docs/ARCHITECTURE.md
+@@ -96,17 +96,17 @@ windows changed, `.enforce` to put back docked windows that something else moved
+ just excluded, `float-all`, quitting, and parking floating windows that arrive
+ from a display that went away.)
+ 
+-**A floating window's frame is its person's** (`Controller+OwnFrames.swift`; `collab/QUESTIONS.md`, Q20). Arbor sets it only to
+-take the window out of view and to put it back exactly where it was. Each floating window has the frame its person last gave it
+-(`Workspace.floating`), and while it is in view that is where it is: no layout places, shoves or squeezes it, whatever is docked,
+-closed, hidden or minimized around it, so floating and docked windows may overlap and macOS's order says which is in front. The
+-plan for floating windows (`floatingMoves`) asks `moveKeepingItsFrame`, which knows two moves. When the camera moves and the Desktop
+-is no longer part of the view, the window is parked, and where it is at that moment is noted as its frame
+-(`noteWhereItLeavesFrom`), whoever put it there. When the Desktop is part of the view again, as a tile too, it is put back there in
+-one move, and nothing is raised (`putBackWhereItWas`). The one exception is `whereItWas`: if the displays have changed meanwhile and
+-less than half of the window would show, or its title bar would be out of reach, it is fitted into its display; what is
+-remembered stays its own frame (`fittedFrames`), so that it goes back when the displays are as they were. A change of displays
+-also displaces windows that are in view; `countAsOutOfViewWhatTheDisplaysDisplaced` says which of them the layout then fetches.
++**A floating window's frame is its person's, and no view takes it away** (`Controller+OwnFrames.swift`; `collab/QUESTIONS.md`, Q20
++and Q29, 4). Each floating window has the frame its person last gave it (`Workspace.floating`), and that is where it is: no
++layout places, shoves or squeezes it, whatever is docked, closed, hidden or minimized around it, and wherever the camera goes it
++stays, so floating and docked windows may overlap and macOS's order says which is in front. It is moved, sized, raised or hidden
++only by a command that names it. The plan for floating windows (`floatingMoves`) asks `moveKeepingItsFrame`, which knows one
++move: a window that is out of view all the same, and not by any view of Arbor's (a change of displays, an Arbor that died with
++windows in their corners), is put back with the next layout, whatever the camera shows, in one move, and nothing is raised
++(`putBackWhereItWas`). Where to is `whereItWas`: its own frame, unless the displays have changed so that less than half of the
++window would show, or its title bar would be out of reach: then it is fitted into its display, and what is remembered stays
++its own frame (`fittedFrames`), so that it goes back when the displays are as they were.
++`countAsOutOfViewWhatTheDisplaysDisplaced` says which windows a change of displays has displaced.
+ For F61 the Desktop counts as not in use (`roomTerms`), and F18 is off (`soleFloatIsOn`). A command that is about a floating
+ window (`float`, `grow`, `move-to-display`, `undo`) may put it anywhere on the display (`roomToFloat`).
+ 
+diff --git a/docs/GUIDE.md b/docs/GUIDE.md
+index 5bc1b452..c1d0b583 100644
+--- a/docs/GUIDE.md
++++ b/docs/GUIDE.md
+@@ -238,7 +238,7 @@ Frame a rectangle (with [the gestures switched on](#6-on-its-way)): hold **⇧**
+ 
+ Calculator, a Finder window, a note: leave them floating. **⌃⌥D** gives the Desktop, and all of them, the whole screen; ⌃⌥[ returns. Small fixed-size windows can be docked too: they sit in the middle of their place.
+ 
+-A floating window's place and size are yours. Arbor never moves or resizes one that is in view, whatever you dock, close, hide or minimize around it. It takes them out of view when the view leaves the Desktop, and puts each back exactly where it was. Only if the displays have changed meanwhile, so that less than half of a window would show, is it moved: the least that brings all of it into view. If you would rather have floating windows keep clear of docked ones, `arborctl set floatingWindowsMakeWay true`: docked windows then push them aside and squeeze them onto the Desktop, and they go back as room returns.
++A floating window's place and size are yours. Arbor never moves, resizes, raises or hides one, whatever you dock, close, hide or minimize around it, and wherever the view goes: frame a docked window and what floats is still there, behind it. Only if the displays change, so that less than half of a window would show, is it moved: the least that brings all of it into view. If you would rather have floating windows keep clear of docked ones, `arborctl set floatingWindowsMakeWay true`: docked windows then push them aside and squeeze them onto the Desktop, they go back as room returns, and they leave the view with the Desktop and come back with it.
+ 
+ If, with that on, you would also rather see no wallpaper around a window that floats alone, `arborctl set soleFloatTakesDesktop true`: the only floating window then takes the whole Desktop, and has its own size back as soon as a second one floats. Drag it and it is its own size again where you drop it; resize it and it stays as you leave it; `arborctl float` makes it take the Desktop again.
+ 
+@@ -249,7 +249,7 @@ you are looking at, with the keyboard in it; ⌃⌥` again, or a click on anythi
+ 
+ ### A call comes in
+ 
+-A call window should stay put while you look things up, and floating windows go out of view when the view leaves the Desktop. So pin it: with the call window in front, choose **Keep "zoom.us" in View** from the menu. It
++A call window should stay put, and stay to be seen, while you look things up. A floating window stays where it is wherever you zoom, but behind whatever you bring forward. So pin it: with the call window in front, choose **Keep "zoom.us" in View** from the menu. It
+ keeps its place on the display wherever you zoom, and Arbor never gives it the keyboard by itself. Drag it where you like: a pinned window moves and never docks (to dock it, use ⌃⌥⌘ + arrow or Dock Focused Window, or unpin it first). If you clicked in it and then move the view with a shortcut, the keyboard goes to the window that arrives. The same menu item, now with a tick, ends it.
+ 
+ To have every call pinned as it opens, use a rule (below): `{ "app": "us.zoom.xos", "title": "Meeting", "action": "pin" }`. The same goes for a timer, a music player or a reference document. The README's "Pinned windows" has the details and the limits.
+diff --git a/docs/features/F64-a-floating-windows-frame-is-its-persons.md b/docs/features/F64-a-floating-windows-frame-is-its-persons.md
+index a4f60d23..57064d4d 100644
+--- a/docs/features/F64-a-floating-windows-frame-is-its-persons.md
++++ b/docs/features/F64-a-floating-windows-frame-is-its-persons.md
+@@ -11,6 +11,9 @@ Rules of the product direction: 2 (nothing moves that the person did not move),
+ Shipped: everything under Behaviour; the setting `floatingWindowsMakeWay` (false); `Controller+OwnFrames.swift`; `FloatingFrameTests`, at the frames of the hosted day;
+ scenario 67; the rule of the walks (`ChaosInvariants+OwnFrames.swift`: `own-frame`, `own-frame-back`, `own-frame-jolt`, `own-frame-fit`); `expect at` for scenarios.
+ 
++Since Q29, 4 (`feat/a-floating-window-never-leaves-the-view`): **Arbor never takes a floating window out of view.** "Out of view and back" below is withdrawn with the
++setting as it ships, and goes on with it on; `FloatsStayInViewTests`, scenario `I20c`. What is left of putting back is for windows that something other than a view took away.
++
+ Not shipped: nothing on real windows yet (see "How it is proven"). "Gather Floating Windows", a command that moves them onto the Desktop when asked, is an idea for
+ later; the placing it would use is still there, behind the setting.
+ 
+@@ -20,15 +23,17 @@ The first day played with nine real apps on a hosted Mac, at macOS's defaults, s
+ points wide instead of 1324 and moved eight other windows. ⌘M, ⌘H and ⌘Q in a docked window moved seven floating ones each, and unhiding did not undo it. After Frame
+ and Show Everything they came back somewhere else than they had been. All of it followed from one idea: that floating windows are kept on the Desktop.
+ 
+-**Arbor sets a floating window's frame only to take it out of view and to put it back exactly where it was.**
++**Arbor sets a floating window's frame only to take it out of view and to put it back exactly where it was**, said Q20. Q29, 4 withdraws the exception: **it never takes one
++out of view.** A floating window is moved, sized, raised or hidden only by a command that names it.
+ 
+ ## Behaviour
+ 
+ - **A floating window in view is never moved and never resized by Arbor.** Not by a dock, however made; not when a docked window closes, is minimized, hidden or quit, or
+   comes back; not when a gap moves; not by `arrange` or `layout` for the windows they leave floating; not at a start, a quit, Float All or a pause.
+-- **It goes out of view when the view leaves the Desktop, and comes back exactly where it was** when the Desktop is part of the view again, as a tile too: same place,
+-  same size, one move. "Where it was" is where it was on screen when it left, whoever put it there and whether or not Arbor had heard of it.
+-- **The one exception**, because "never lost" outranks "never moved": if the displays have changed meanwhile and that frame would show less than half of the window (or
++- **Wherever the view goes, it stays** (Q29, 4): a docked window framed, another space, the Desktop left behind. It is where it was, behind whatever came forward, and
++  Arbor has not called its app. One that is out of view all the same (an Arbor that died with the setting on, or an earlier build, left it in its corner) comes back
++  with the next layout, whatever the view shows: same place, same size, one move.
++- **The one exception**, because "never lost" outranks "never moved": if the displays have changed and its frame would show less than half of the window (or
+   leave its title bar out of reach), it is fitted: moved the least that brings it wholly into view, made smaller only if it is larger than the display. With its
+   display as it was, a window pushed aside by hand until a strip shows goes back to that strip, if a hand could get hold of it there (24 points of its title bar, as
+   ever). That the display has not changed under a frame Arbor knows only from the note it takes when a hand leaves a window somewhere; the note is not saved. Where
+@@ -72,9 +77,9 @@ it", the Desktop's wish and its turn before the docked windows (F61). `keepPushe
+ ## Acceptance criteria
+ 
+ 1. On the desk of the day (1600 points, the frames in `FloatingFrameTests`): docking Finder left, Safari right and TextEdit right sets the frame of no other window.
+-2. Frame and Show Everything, and every other way out and back: each floating window is where it was, after exactly two moves.
++2. Frame and Show Everything, and every other way out and back: no frame is set on a floating window, none is raised, and each is in view throughout (Q29, 4).
+ 3. ⌘M and back, ⌘H and back, ⌘Q and ⌘W of a docked window set the frame of no floating window.
+-4. A start, a quit, Float All: no frame is set on a floating window in view. Quitting while they are out of view puts them back where they were.
++4. A start, a quit, Float All, with a window framed too: no frame is set on a floating window in view.
+ 5. With `soleFloatTakesDesktop` on and nothing else changed, a lone floating window keeps its frame.
+ 6. Notes (709) and Safari (574) docked on 1440 points with a Calculator floating: both are in view, the Desktop is a tile, the Calculator has not moved.
+ 7. The displays change while a window is out of view: it comes back exactly if half of it shows, else wholly in view, moved the least, no smaller than it must be.

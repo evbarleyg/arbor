@@ -1,0 +1,16 @@
+diff --git a/Sources/ArborTesting/ChaosInvariants+SevenRules.swift b/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
+index 2818270..361d6b1 100644
+--- a/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
++++ b/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
+@@ -268,7 +268,10 @@ extension ChaosRunner {
+       let path = ([moves[0].before] + moves.map(\.after)).map(\.brief).joined(separator: " → ")
+       problems.append(
+         .init(
+-          (timeOnly ? "moved-again" : "moved-twice") + (knew ? "-sizing-again" : refused ? "-sizing" : ""),
++          // LAB ONLY (hunter 4, never pushed): there and back for one thing that happened, and no app refused anything in the step.
++          !refused && moves[0].before.approximatelyEquals(moves[moves.count - 1].after, tolerance: 1)
++            && !seen.contains(where: { abs($0.after.width - $0.requested.width) > 1 || abs($0.after.height - $0.requested.height) > 1 })
++            ? "flipped" : (timeOnly ? "moved-again" : "moved-twice") + (knew ? "-sizing-again" : refused ? "-sizing" : ""),
+           "Arbor moved \(window) \(moves.count) times for one thing that happened: \(path)"))
+     }
+     for move in seen {

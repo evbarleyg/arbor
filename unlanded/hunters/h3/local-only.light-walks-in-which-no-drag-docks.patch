@@ -1,0 +1,16 @@
+diff --git a/Sources/ArborTesting/ChaosGenerator+Ordinary.swift b/Sources/ArborTesting/ChaosGenerator+Ordinary.swift
+index 9c0e1648..bd6d7526 100644
+--- a/Sources/ArborTesting/ChaosGenerator+Ordinary.swift
++++ b/Sources/ArborTesting/ChaosGenerator+Ordinary.swift
+@@ -132,7 +132,10 @@ extension ChaosGenerator {
+   mutating func startOrdinaryWalk() {
+     planned = [.displays(desk.displays, .never)]
+     // At the switches that ship.
+-    if light { planned.append(.settings("{}")) }
++    // LOCAL ONLY, for a count: as near as this commit's switches come to "a plain drag docks nothing".
++    if light {
++      planned.append(.settings(ProcessInfo.processInfo.environment["ARBOR_CHAOS_NO_DRAG_DOCKS"] == nil ? "{}" : "{\"screenEdgeBand\":0,\"windowEdgeFraction\":0}"))
++    }
+     let before = random.int(0...4)
+     for _ in 0..<before { planned.append(.open(ordinaryWindow(on: desk.displays))) }
+     planned.append(.launch)

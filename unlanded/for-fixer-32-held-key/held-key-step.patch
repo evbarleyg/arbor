@@ -1,0 +1,42 @@
+diff --git a/scripts/mac-shell/first-five-minutes.sh b/scripts/mac-shell/first-five-minutes.sh
+index 672234a..2d3d81f 100755
+--- a/scripts/mac-shell/first-five-minutes.sh
++++ b/scripts/mac-shell/first-five-minutes.sh
+@@ -400,6 +400,37 @@ see 34-back
+ check "after the last tick: what to do when the icon cannot be seen" says "Can’t see the icon?"
+ check "macOS's settings have not been touched" all_switches_are "not set"
+ check "and nothing is written down" test ! -e "$ARBOR_HOME/macos-settings-before.json"
++# A key that is held (board 0.27). Held, ⌃⌥Space shows everything for as long as it is down; let go, the view is back where it was. An Arbor that
++# was granted the permission while it waited, as this one was, took the hold for a tap: everything showed AND STAYED. After the four moves, so
++# that no tick of theirs is this step's doing. What tells a hold from a tap is what happens when the key comes up.
++count_in_the_log() { grep -c "$1" "$ARBOR_HOME/arbor.log" 2>/dev/null || true; }
++[ -n "$third" ] && key "$third"
++check "the window fills the screen again" eventually is parked "$FIRST"
++# The fault shows only while another app has the keyboard: with Arbor's own window having it the hold is seen. A real click, and then the pointer
++# stays where it is: letting go lands on whatever is under a pointer that has moved.
++# shellcheck disable=SC2046
++click $(inside_of "$SECOND")
++check "a window of another app has the keyboard" eventually is focused "$SECOND"
++holds=$(count_in_the_log "peek: held") found_up=$(count_in_the_log "peek: the keys were found up")
++key ctrl+opt+space --down
++sleep 1
++shot 36-space-held
++check "while ⌃⌥Space is held everything shows" is on_screen "$FIRST"
++key ctrl+opt+space --up
++sleep 0.7
++shot 37-space-let-go
++if [ "$took" = "a relaunch" ]; then
++  echo "NOT ANSWERED HERE: this Arbor was started with the permission in place, and such a one has always seen a hold as a hold"
++else
++  check "let go, the view is back where it was: in an Arbor that was granted the permission while it waited, a hold is a hold" is parked "$FIRST"
++  check "Arbor's log says that the key was held" test "$(count_in_the_log "peek: held")" = "$((holds + 1))"
++  check "and not that it found the keys up" test "$(count_in_the_log "peek: the keys were found up")" = "$found_up"
++fi
++# Everything again, whichever way that went.
++if is parked "$FIRST" > /dev/null 2>&1; then key "$third"; fi
++check "the other is back" eventually is on_screen "$FIRST"
++sleep 1
++check "the arrangement is back, to the point" test "$(frames)" = "$arranged"
+ # The one way back the window names.
+ make_move_back=$(ax tree 2>/dev/null | grep -o '[^ "]* pauses Arbor' | head -n 1 | sed 's/ pauses Arbor//' \
+   | sed 's/⌃/ctrl+/; s/⌥/opt+/; s/⇧/shift+/; s/⌘/cmd+/; s/⎋/escape/' | tr 'A-Z' 'a-z')

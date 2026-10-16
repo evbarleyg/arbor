@@ -1,0 +1,366 @@
+From d0bb3b35eceaa528349d698fbf0653d13177b135 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 13:31:42 +0000
+Subject: [PATCH] probe: which half of isHolding says that a shortcut which is
+ down is not held, and what brings it about
+
+---
+ .../ArborKit/AX/AXWindowSystem+Input.swift    |   7 +
+ scripts/mac-shell/check-claimed-keys.sh       | 272 +++++-------------
+ scripts/mac-shell/keys.swift                  |  15 +
+ scripts/mac-shell/pointer.swift               |   2 +
+ 4 files changed, 89 insertions(+), 207 deletions(-)
+
+diff --git a/Sources/ArborKit/AX/AXWindowSystem+Input.swift b/Sources/ArborKit/AX/AXWindowSystem+Input.swift
+index 1d56ee5a..54a130fa 100644
+--- a/Sources/ArborKit/AX/AXWindowSystem+Input.swift
++++ b/Sources/ArborKit/AX/AXWindowSystem+Input.swift
+@@ -20,6 +20,13 @@ extension AXWindowSystem {
+   }
+ 
+   public func isHolding(_ chord: KeyChord) -> Bool {
++    let probed = CGKeyCode(truncatingIfNeeded: chord.key.code)
++    var seen = "PROBE isHolding: key combined=\(CGEventSource.keyState(.combinedSessionState, key: probed))"
++    seen += " hid=\(CGEventSource.keyState(.hidSystemState, key: probed))"
++    seen += " ctrl=\(CGEventSource.keyState(.combinedSessionState, key: 59)) opt=\(CGEventSource.keyState(.combinedSessionState, key: 58))"
++    seen += " flags appkit=\(NSEvent.modifierFlags.rawValue) combined=\(CGEventSource.flagsState(.combinedSessionState).rawValue)"
++    seen += " hid=\(CGEventSource.flagsState(.hidSystemState).rawValue)"
++    Log.debug(seen)
+     guard CGEventSource.keyState(.combinedSessionState, key: CGKeyCode(truncatingIfNeeded: chord.key.code)) else {
+       return false
+     }
+diff --git a/scripts/mac-shell/check-claimed-keys.sh b/scripts/mac-shell/check-claimed-keys.sh
+index cac05a15..7d7a5734 100755
+--- a/scripts/mac-shell/check-claimed-keys.sh
++++ b/scripts/mac-shell/check-claimed-keys.sh
+@@ -255,217 +255,75 @@ DOWN=125
+ early() { count "peek: ctrl+opt+down came before the hold counted" "$ARBOR_HOME/arbor.log"; }
+ press "running, no peek: a key that is bound to nothing" ctrl+opt+down $DOWN
+ check "the control: without a peek it is the app's" reached
+-# The tool that presses a key takes half a second to start, give or take, so the two are started a little apart, not one after the other. Whether the arrow
+-# did come before the hold counted is for Arbor's log to say: a round in which it came later would pass on any Arbor. So: several, and one at least early.
+-got=0
+-came=$(early)
+-for wait in 0.1 0.15 0.2 0.25; do
+-  check "the witness has the keyboard" come_forward
+-  downs=$(given down $DOWN)
+-  before=$(early)
+-  key ctrl+opt+space --down &
+-  sleep $wait
+-  key ctrl+opt+down --held
+-  sleep 0.5
+-  REACHED=$(($(given down $DOWN) - downs))
+-  got=$((got + REACHED))
+-  echo "RESULT | ⌃⌥↓ started $wait s after ⌃⌥Space | the app got: $REACHED down | early by Arbor's log: $(($(early) - before))" | tee -a "$RESULTS"
+-  key ctrl+opt+space --up
+-  sleep 0.6
+-done
+-REACHED=$got
+-check "in none of the four did it reach the app" taken
+-check "and in one at least it came before the hold counted, or these rounds prove nothing" test "$(early)" -gt "$came"
+-check "the witness has the keyboard" come_forward
+-downs=$(given down $DOWN)
+-key ctrl+opt+space --down
+-sleep 0.3
+-key ctrl+opt+escape --held
+-sleep 0.3
+-key ctrl+opt+down --held
+-sleep 0.5
+-REACHED=$(($(given down $DOWN) - downs))
+-echo "RESULT | ⌃⌥↓ after ⌃⌥⎋ has called the peek off, ⌃⌥Space still down | the app got: $REACHED down" | tee -a "$RESULTS"
+-check "with the peek called off and its key still down it goes nowhere" taken
+-check "and ⌃⌥⎋ meant the peek: Arbor is not paused" status_starts "running"
+-key ctrl+opt+space --up
+-sleep 0.6
+-press "running, the peek over" ctrl+opt+down $DOWN
+-check "and the app's again once the key is up" reached
+-"$ARBOR_BIN/arborctl" show-all > /dev/null 2>&1
+-
+-step "2. with no event tap, as shipped: every default shortcut in turn"
+-echo "event taps: $("$KEYS" taps "$ARBOR_PID")"
+-"$ARBOR_BIN/arborctl" get pointerGestures 2>&1 | head -n 1
+-leaked=""
+-while read -r chord command; do
+-  case "$command" in
+-    # Its window takes the keyboard and has no key that closes it.
+-    settings-window | "") continue ;;
+-  esac
+-  before=$(count "^[0-9:.]* down code=.* mods=.*ctrl" "$KEYS_LOG")
+-  come_forward > /dev/null
+-  key "$chord"
+-  sleep 0.35
+-  after=$(count "^[0-9:.]* down code=.* mods=.*ctrl" "$KEYS_LOG")
+-  [ "$after" = "$before" ] || leaked="$leaked $chord($command)"
+-  case "$command" in
+-    # A panel that has the keyboard now, or lies over who has it.
+-    ask-name | find | minimap | show-shortcuts) key escape; sleep 0.3 ;;
+-    toggle-pause) "$ARBOR_BIN/arborctl" resume > /dev/null 2>&1 ;;
+-  esac
+-  pressed=$((${pressed:-0} + 1))
+-done << LIST
+-$("$ARBOR_BIN/arborctl" bindings 2>/dev/null | sed -n 's/^\([a-z0-9+]*[^ ]*\) .*→ \(.*\)$/\1 \2/p')
+-LIST
+-echo "RESULT | all defaults, no tap | pressed: ${pressed:-0} | reached the app:${leaked:- none}" | tee -a "$RESULTS"
+-check "none of them reaches the app" test -z "$leaked"
+-"$ARBOR_BIN/arborctl" float-all > /dev/null 2>&1
+-"$ARBOR_BIN/arborctl" show-all > /dev/null 2>&1
+-
+-step "2b. the key held down: its repeats and its release"
+-come_forward
+-before=$(count "code=$Z " "$KEYS_LOG")
+-key ctrl+opt+z --down
+-key ctrl+opt+z --repeat 12
+-key ctrl+opt+z --up
+-sleep 0.5
+-echo "RESULT | held with 12 repeats | the app got: $(($(count "code=$Z " "$KEYS_LOG") - before)) events" | tee -a "$RESULTS"
+-check "neither a repeat nor the release reaches the app" test "$(count "code=$Z " "$KEYS_LOG")" = "$before"
+-
+-step "5. what the person said themselves, and what changes nothing"
+-come_forward
+-key ctrl+opt+escape
+-check "a pause says whose the keys are now" eventually said "Arbor is paused: its keys are the apps’ again"
+-shot 50-paused
+-press "paused"
+-check "in a pause the key is the app's: the person said so" reached
+-"$ARBOR_BIN/arborctl" bindings 2>&1 | tail -n 1
+-ctl resume
+-press "resumed: the control"
+-check "the key is Arbor's again" taken
+-ctl hold
+-press "the view is held"
+-check "a held view keeps the key" taken
+-ctl release
+-ctl hold still
+-press "holding still"
+-check "holding still keeps the key" taken
+-ctl release
+-ctl pass-through "$KEYS_ID" on
+-press "the app is on passThroughApps"
+-check "in an app on the list the key is the app's: the person said so" reached
+-ctl pass-through "$KEYS_ID" off
+-ctl set hotkeysEnabled false
+-press "hotkeysEnabled false"
+-check "with shortcuts off the key is the app's: the person said so" reached
+-ctl set hotkeysEnabled true
+-press "all of it undone: the control"
+-check "the key is Arbor's again" taken
+-
+-step "6. while the hot keys are registered anew"
+-# Another binding each time, so that every change registers all of them again.
+-( for n in $(seq 1 40); do
+-    "$ARBOR_BIN/arborctl" bind ctrl+opt+shift+cmd+f$((n % 2 + 13)) show-all > /dev/null 2>&1
+-    "$ARBOR_BIN/arborctl" unbind ctrl+opt+shift+cmd+f$((n % 2 + 13)) > /dev/null 2>&1
+-  done ) &
+-storm=$!
+-come_forward
+-before=$(count "down code=$Z " "$KEYS_LOG")
+-registrations=$(grep -c "registered [0-9]* shortcuts" "$ARBOR_HOME/arbor.log")
+-for _ in $(seq 1 60); do "$ARBOR_POINTER" key ctrl+opt+z; done
+-kill "$storm" 2>/dev/null
+-sleep 0.5
+-registrations=$(($(grep -c "registered [0-9]* shortcuts" "$ARBOR_HOME/arbor.log") - registrations))
+-echo "RESULT | 60 presses during $registrations registrations | the app got: $(($(count "down code=$Z " "$KEYS_LOG") - before))" | tee -a "$RESULTS"
+-# No check: all the hot keys are let go of and taken again for a millisecond or two at each registration, and whether a press falls in is luck.
+-grep "registered [0-9]* shortcuts" "$ARBOR_HOME/arbor.log" | sed 's/.*registered/registered/' | sort | uniq -c | sort -rn | head -n 5
+-
+-step "4. the key is Arbor's, and the app has roads of its own"
+-# The witness's roads are made for ⌃⌥A.
+-ctl bind ctrl+opt+a show-all
+-leave
+-witness menu,monitor,tap
+-launch ARBOR_NO_PROMPT=1
+-patiently status_starts "running" > /dev/null
+-press "running; the app has a menu item, a global monitor and a listening tap" ctrl+opt+a "$A"
+-grep "road " "$KEYS_LOG" | sed 's/^/  /'
+-leave
+-press "no Arbor; the same app: the control" ctrl+opt+a "$A"
+-grep "road " "$KEYS_LOG" | tail -n 4 | sed 's/^/  /'
+-witness hotkey
+-launch ARBOR_NO_PROMPT=1
+-patiently status_starts "running" > /dev/null
+-grep "already in use\|registered [0-9]* shortcuts" "$ARBOR_HOME/arbor.log" | tail -n 2
+-press "running; the app in front registered ⌃⌥A itself BEFORE Arbor did" ctrl+opt+a "$A"
+-grep "road " "$KEYS_LOG" | sed 's/^/  /'
+-witness hotkey
+-press "running; the app in front registered ⌃⌥A itself AFTER Arbor did" ctrl+opt+a "$A"
+-grep "road " "$KEYS_LOG" | sed 's/^/  /'
+-witness secure
+-press "running; secure input is on" ctrl+opt+a "$A"
+-witness
+-
+-step "3. another program holds the same chord"
+-for how in "" exclusive; do
+-  "$KEYS" claim "$ARBOR_OUT/claim.log" 60 $how &
+-  CLAIM_PID=$!
+-  started "$CLAIM_PID"
++# PROBE (never on a pull request's branch): macOS said of a shortcut that was down that it was not held, 38 ms after the press (2026-10-15). Which half
++# says so, the key or the modifiers; and which of the things that differ from the run in which the hold was seen brings it about.
++probe() {
++  local name=$1 lines
++  shift
++  lines=$(arbor_log_lines)
++  "$KEYS" held 49 3.4 > "$ARBOR_OUT/held.txt" 2>&1 &
++  sleep 0.4
++  "$@"
+   sleep 1
+-  cat "$ARBOR_OUT/claim.log"
+-  press "another program claimed ⌃⌥A AFTER Arbor ${how:-(plain)}" ctrl+opt+a "$A"
+-  leave
+-  launch ARBOR_NO_PROMPT=1
+-  patiently status_starts "running" > /dev/null
+-  grep "already in use\|registered [0-9]* shortcuts" "$ARBOR_HOME/arbor.log" | tail -n 2
+-  "$ARBOR_BIN/arborctl" doctor 2>&1 | grep -i "shortcut" | head -n 4
+-  press "another program claimed ⌃⌥A BEFORE Arbor ${how:-(plain)}" ctrl+opt+a "$A"
+-  kill_started "$CLAIM_PID"
+-  CLAIM_PID=""
+-  rm -f "$ARBOR_OUT/claim.log"
+-  press "that program has gone: the control" ctrl+opt+a "$A"
++  key ctrl+opt+space --up
++  sleep 1.6
++  echo "RESULT | $name | held: $(arbor_log_since "$lines" | grep -c "peek: held") | found up: $(arbor_log_since "$lines" | grep -c "found up") | in front: $("$KEYS" frontmost)" | tee -a "$RESULTS"
++  echo "  Arbor:"
++  arbor_log_since "$lines" | grep "PROBE\|peek\|show-all" | head -n 7 | sed 's/^/    /'
++  echo "  Arbor's looks, the same ones counted:"
++  arbor_log_since "$lines" | grep "PROBE" | sed 's/^.*PROBE isHolding: //' | uniq -c | sed 's/^/    /'
++  echo "  from outside:"
++  sed 's/^/    /' "$ARBOR_OUT/held.txt"
++}
++OTHER="$ARBOR_ROOT/.build/mac-shell/other-presser"
++sed -n "/<<'SWIFT'\$/,/^SWIFT\$/p" "$ARBOR_ROOT/scripts/mac-shell/lib-ears.sh" | sed '1d;$d' > "$OTHER.swift"
++swiftc -O -swift-version 5 "$OTHER.swift" -o "$OTHER" > "$ARBOR_OUT/build-other-presser.log" 2>&1 || {
++  tail -n 5 "$ARBOR_OUT/build-other-presser.log"
++  echo "(THE OTHER PRESSER DID NOT COMPILE: its rounds are left out)"
++  OTHER=""
++}
++plain() { key ctrl+opt+space --down; }
++# Left ⌃ and left ⌥ with the bits by which a keyboard says which, Space, 33 repeats 30 ms apart, and up again: one process, a second. It lets go itself,
++# so `probe`'s own letting go finds the keys up, which does nothing.
++other() { "$OTHER" press 49 lctrl,lopt hid 33 & }
++lingers() { key ctrl+opt+space --down --linger 1.5 & }
++for turn in 1 2; do
++  come_forward
++  probe "$turn a. as it failed: J, then the press, the tool gone" plain
++  probe "$turn b. no J before it" plain
++  echo "  afterwards the witness $(hears && echo "hears" || echo "DOES NOT HEAR")"
++  come_forward
++  sleep 2
++  probe "$turn c. J, two seconds, then the press" plain
++  come_forward
++  probe "$turn d. J, and the tool stays alive through the hold" lingers
++  if [ -n "$OTHER" ]; then
++    come_forward
++    probe "$turn x. J, and another tool presses: a keyboard's own bits, alive, with repeats" other
++  fi
++  "$ARBOR_BIN/arborctl" set shortcuts all 2>&1 | head -n 1
++  sleep 0.5
++  come_forward
++  probe "$turn e. the whole map: nothing is asked for at the press" plain
++  "$ARBOR_BIN/arborctl" set shortcuts core 2>&1 | head -n 1
++  sleep 0.5
+ done
+-
+-step "1c. the permission is taken away while Arbor runs"
+-withdraw
+-check "Arbor notices" patiently status_starts "Arbor's Accessibility permission was taken away"
++open -a Calculator
++sleep 2
++probe "f. another app has the keyboard, no J" plain
++probe "f. the same again" plain
++killall Calculator 2>/dev/null
+ sleep 1
+-shot 13-taken-away
+-check "its item is in the menu bar" item_shows
+-press "the permission was taken away"
+-check "the key is taken all the same" taken
+-check "and the line says why" said "$NEEDS"
+-"$ARBOR_BIN/arborctl" bindings 2>&1 | tail -n 1
+-grant
+-check "Arbor starts again" patiently status_starts "running"
+-press "the permission is back: the control"
+-check "the key is Arbor's again" taken
+-check "and Arbor answers it" answered
+-leave
+-
+-step "1d. a new build over an old grant: the switch in System Settings stays on"
+-requirement=$(codesign -d -r- "$ARBOR_APP" 2>&1 | sed -n 's/^.*designated => //p')
+-echo "this build's requirement begins: $(echo "$requirement" | cut -c 1-24)"
+-echo "$requirement" | csreq -r- -b "$ARBOR_OUT/requirement.bin" || die "csreq could not read the requirement"
+-grant "$(xxd -p "$ARBOR_OUT/requirement.bin" | tr -d '\n')"
+-rm -f "$ARBOR_OUT/requirement.bin"
+-launch ARBOR_NO_PROMPT=1
+-check "the build the grant was made for runs: the control" patiently status_starts "running"
+-press "the build the grant was made for"
+-check "its key is its own" taken
+-leave
+-/usr/libexec/PlistBuddy -c "Add :ArborProbe string another-build" "$ARBOR_APP/Contents/Info.plist"
+-arbor_sign Arbor
+-launch ARBOR_NO_PROMPT=0
+-sleep 3
+-echo "the entry still says: $(tcc "SELECT auth_value FROM access WHERE service = 'kTCCServiceAccessibility' AND client = '$ARBOR_ID';") (2 is allowed)"
+-shot 14-another-build
+-check "the new build waits for a permission it seems to have" status_starts "waiting for Accessibility permission"
+-check "its item is in the menu bar" item_shows
+-press "another ad-hoc build, the old grant still switched on"
+-check "the key is taken all the same" taken
+-check "and the line says why" said "$NEEDS"
++"$ARBOR_BIN/arborctl" welcome 2>&1 | head -n 1
++sleep 1.5
++shot 60-welcome
++probe "g. Arbor's welcome window was asked for, nobody brought forward, no J" plain
++echo "  afterwards the witness $(hears && echo "hears" || echo "DOES NOT HEAR")"
++probe "g. the same again, after a J" plain
+ leave
++come_forward
++probe "h. no Arbor at all: J, then the press" plain
++probe "h. the same, no J" plain
+ 
+ step "the table"
+ cat "$RESULTS"
+diff --git a/scripts/mac-shell/keys.swift b/scripts/mac-shell/keys.swift
+index 464def4a..3e31460c 100644
+--- a/scripts/mac-shell/keys.swift
++++ b/scripts/mac-shell/keys.swift
+@@ -400,6 +400,21 @@ case "repost":
+ case "taps":
+   guard let pid = rest.first.flatMap({ pid_t($0) }) else { fail(usage) }
+   taps(of: pid)
++case "held":
++  guard rest.count == 2, let code = UInt16(rest[0]), let seconds = Double(rest[1]) else { fail(usage) }
++  var last = ""
++  let end = Date().addingTimeInterval(seconds)
++  while Date() < end {
++    var now = "key combined=\(CGEventSource.keyState(.combinedSessionState, key: code)) hid=\(CGEventSource.keyState(.hidSystemState, key: code))"
++    now += " ctrl=\(CGEventSource.keyState(.combinedSessionState, key: 59)) opt=\(CGEventSource.keyState(.combinedSessionState, key: 58))"
++    now += " flags appkit=\(NSEvent.modifierFlags.rawValue) combined=\(CGEventSource.flagsState(.combinedSessionState).rawValue)"
++    now += " hid=\(CGEventSource.flagsState(.hidSystemState).rawValue)"
++    if now != last {
++      print("\(wallClock()) \(now)")
++      last = now
++    }
++    usleep(2000)
++  }
+ case "frontmost":
+   let front = NSWorkspace.shared.frontmostApplication
+   print(front?.bundleIdentifier ?? "[\(front?.localizedName ?? "nobody")]")
+diff --git a/scripts/mac-shell/pointer.swift b/scripts/mac-shell/pointer.swift
+index ba1970ba..514d5850 100644
+--- a/scripts/mac-shell/pointer.swift
++++ b/scripts/mac-shell/pointer.swift
+@@ -617,12 +617,14 @@ struct Pointer {
+       // ---- F51 (peek): keys that stay down from one call of this tool to the next --------------------------
+       let (down, up, held) = (flag("--down"), flag("--up"), flag("--held"))
+       let repeats = option("--repeat").map { max(0, min(200, Int(number($0)))) }
++      let linger = option("--linger").map { max(0, min(5, number($0))) }
+       if down || up || held || repeats != nil {
+         guard let chord = arguments.first else { fail("expected a shortcut, e.g. ctrl+opt+space") }
+         let parsed = parse(chord: chord)
+         if down {
+           hold(parsed.modifiers)
+           if let key = parsed.key { keyboard(key, down: true) }
++          if let linger { rest(linger) }
+           break
+         }
+         // The modifiers were pressed by an earlier `key --down`; every event carries them.
+-- 
+2.43.0
+

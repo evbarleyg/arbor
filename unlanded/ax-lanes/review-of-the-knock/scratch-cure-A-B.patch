@@ -1,0 +1,19 @@
+diff --git a/Sources/ArborKit/AX/AXWindowSystem.swift b/Sources/ArborKit/AX/AXWindowSystem.swift
+index 312efa51..5ab5f434 100644
+--- a/Sources/ArborKit/AX/AXWindowSystem.swift
++++ b/Sources/ArborKit/AX/AXWindowSystem.swift
+@@ -1584,7 +1584,13 @@ public final class AXWindowSystem: WindowSystem {
+     // Nearly all of them make Arbor ask the app something, and whoever has posted a notification may be busy, or hang, by the time it arrives.
+     let arrived = uptime
+     // All but these three may come with a change of who has the keyboard.
+-    if ![kAXMovedNotification, kAXResizedNotification, kAXTitleChangedNotification].contains(notification) { keyboardSaid = nil }
++    // SCRATCH CURE A+B: only the app that was quoted puts its own word in doubt; "focused window changed" names the window, which asks nothing.
++    if ![kAXMovedNotification, kAXResizedNotification, kAXTitleChangedNotification, kAXApplicationActivatedNotification, kAXApplicationDeactivatedNotification].contains(notification),
++      keyboardSaid?.app == element.pid
++    { keyboardSaid = nil }
++    if notification == kAXFocusedWindowChangedNotification || notification == kAXMainWindowChangedNotification, let pid = element.pid,
++      let named = records.first(where: { $0.value.snapshot.pid == pid && CFEqual($0.value.element, element) })?.key
++    { keyboardSaid = (pid, named, uptime) }
+     guard let pid = element.pid, behindTheDoor[pid] != nil || !asksNothing(notification, window: raw, of: pid, at: arrived) else {
+       return act(on: notification, element: element, window: raw, arrived: arrived)
+     }

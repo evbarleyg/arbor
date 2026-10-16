@@ -1,0 +1,147 @@
+diff --git a/Tests/ArborKitTests/LocalDisplayHuntTests.swift b/Tests/ArborKitTests/LocalDisplayHuntTests.swift
+new file mode 100644
+index 0000000000000000000000000000000000000000..7dd8ff147fcba795ed5b2ebd29dbdaa96f0219f1
+--- /dev/null
++++ b/Tests/ArborKitTests/LocalDisplayHuntTests.swift
+@@ -0,0 +1,90 @@
++import ArborCore
++import ArborKit
++import ArborTesting
++import CoreGraphics
++import Foundation
++import Testing
++
++/// A HUNT, not a test for the suite: it takes a minute and a half and prints what it finds (lines that begin with DISPLAYHUNT). Kept on a plain branch.
++/// Run it with: swift test --filter LocalDisplayHunt 2>&1 | grep ^DISPLAYHUNT
++/// On c1adfe81 and on 1ccdffce alike: 18918 states, 255 lines, all one pattern (see LocalOneCaseTests).
++/// The corpus is of one display that never changes. So every real state
++/// (each trace cut before every stimulus) has its display changed under it, and then each way back of the guide is tried ALONE.
++@Suite @MainActor struct LocalDisplayHuntTests {
++  nonisolated static let folder = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
++    .appendingPathComponent("collab/evidence/traces")
++  nonisolated static var names: [String] {
++    ((try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? []).filter { $0.hasSuffix(".jsonl") }.sorted()
++  }
++
++  /// The same display with another size: the menu bar and the Dock keep their heights.
++  func resized(_ display: DisplaySnapshot, to size: CGSize) -> DisplaySnapshot {
++    var changed = display
++    let top = display.visibleFrame.minY - display.frame.minY
++    let bottom = display.frame.maxY - display.visibleFrame.maxY
++    changed.frame.size = size
++    changed.visibleFrame = CGRect(x: display.frame.minX, y: display.frame.minY + top, width: size.width, height: size.height - top - bottom)
++    return changed
++  }
++
++  @Test(arguments: names) func afterTheDisplayChangedEveryWayBackReturnsEveryWindow(name: String) throws {
++    let text = try String(contentsOf: Self.folder.appendingPathComponent(name), encoding: .utf8)
++    let lines = text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
++    var cuts = try Trace(text: text).entries.filter { $0.line.isStimulus && !$0.nested }.map(\.number)
++    cuts.append(lines.count + 1)
++    var states = 0
++    var failures: [String] = []
++    var heard = true
++    for cut in cuts where cut > 2 {
++      let prefix = try Trace(text: lines.prefix(cut - 1).joined(separator: "\n"))
++      var inHand: WindowID?
++      for entry in prefix.entries {
++        switch entry.line {
++        case .dragBegan(let id, _): inHand = id
++        case .dragEnded, .other(.event, "dragCancelled", _, _): inHand = nil
++        default: break
++        }
++      }
++      for change in ["shrinks", "grows", "shrinks and is as it was"] {
++        for way in ["nothing", "home", "show-all", "float-all", "quit", "quit, start, float-all"] {
++          let replayer = TraceReplayer(prefix)
++          replayer.run()
++          let h = replayer.harness
++          guard h.controller.isRunning, let display = h.system.displayList.first else { continue }
++          states += 1
++          let before = Set(h.system.windows.values.map(\.snapshot).filter { $0.isPresent && h.system.isVisible($0.id) }.map(\.id))
++          // In a replay's harness nobody listens to the fake (`events` is nil: the replayer delivers events itself), so the controller is told.
++          func become(_ new: DisplaySnapshot) {
++            h.system.setDisplays([new])
++            h.controller.displaysChanged()
++            h.scheduler.runPending()
++          }
++          become(resized(display, to: change == "grows" ? CGSize(width: 1728, height: 1117) : CGSize(width: 800, height: 600)))
++          if change.hasSuffix("as it was") { become(display) }
++          heard = heard && h.controller.display(display.id)?.frame == h.system.displayList[0].frame
++          switch way {
++          case "nothing": break
++          case "quit": h.controller.shutdown()
++          case "quit, start, float-all":
++            h.controller.shutdown()
++            h.controller.start()
++            h.scheduler.runPending()
++            h.run("float-all")
++          default: h.run(way)
++          }
++          h.scheduler.runPending()
++          // A space too small to show its window is a tile, which stands for it and can be clicked: that window is not lost.
++          let inTiles = Set(["nothing", "home", "show-all"].contains(way) ? (h.layout?.tiles.flatMap(\.windows) ?? []) : [])
++          let lost = h.system.windows.values.map(\.snapshot).filter { $0.isPresent && !h.system.isVisible($0.id) && $0.id != inHand && !inTiles.contains($0.id) }
++          // With nothing done, only what WAS in view counts: Arbor keeps windows out of view on purpose.
++          for window in lost.sorted(by: { $0.id < $1.id }) where way != "nothing" || before.contains(window.id) {
++            failures.append("\(change) | \(way) | line \(cut) | \(window.id) \(window.appName) at \(traceText(window.frame))")
++          }
++        }
++      }
++    }
++    print("DISPLAYHUNT \(name): \(cuts.count) cuts, \(states) states, \(failures.count) failures")
++    #expect(heard, "the controller did not hear of a change")
++    for failure in failures { print("DISPLAYHUNT   \(name) | \(failure)") }
++  }
++}
+diff --git a/Tests/ArborKitTests/LocalOneCaseTests.swift b/Tests/ArborKitTests/LocalOneCaseTests.swift
+new file mode 100644
+index 0000000000000000000000000000000000000000..dbec76d18b19ed73a367d3a6c56a75e823317345
+--- /dev/null
++++ b/Tests/ArborKitTests/LocalOneCaseTests.swift
+@@ -0,0 +1,45 @@
++import ArborCore
++import ArborKit
++import ArborTesting
++import CoreGraphics
++import Foundation
++import Testing
++
++/// The one pattern the hunt found, every way a person has, each alone (lines that begin with WAYS). When a display shrinks so far that the Desktop's
++/// space becomes a tile, a floating window squeezed onto it is not refitted: Arbor makes no call for it. home, show-all, ⌘Tab, focus and reveal do
++/// not fetch it; `desktop`, a click on the Desktop's tile, arrange, float-all and quitting do.
++@Suite @MainActor struct LocalOneCaseTests {
++  @Test func theSqueezedWindowEveryWay() throws {
++    let text = try String(contentsOf: LocalDisplayHuntTests.folder.appendingPathComponent("seam-drag.jsonl"), encoding: .utf8)
++    let id = WindowID(30)
++    for size in [CGSize(width: 800, height: 600), CGSize(width: 960, height: 600), CGSize(width: 900, height: 700)] {
++      for way in ["home", "show-all", "desktop", "click the Desktop's tile", "cmd-tab to it", "reveal 30", "focus 30", "arrange", "zoom 31", "float-all", "quit"] {
++        let replayer = TraceReplayer(try Trace(text: text))
++        replayer.run()
++        let h = replayer.harness
++        var display = h.system.displayList[0]
++        display.frame.size = size
++        display.visibleFrame = CGRect(x: 0, y: 31, width: size.width, height: size.height - 94)
++        h.system.setDisplays([display])
++        h.controller.displaysChanged()
++        h.scheduler.runPending()
++        let after = h.system.frame(of: id)!
++        let desktopIsATile = h.layout?.tiles.contains { $0.kind == .desktop } ?? false
++        var reply = ""
++        switch way {
++        case "quit": h.controller.shutdown()
++        case "cmd-tab to it":
++          h.system.focused = id
++          h.controller.windowFocused(id)
++        case "click the Desktop's tile":
++          if let tile = h.layout?.tiles.first(where: { $0.kind == .desktop }) { h.controller.tileActivated(display: display.id, node: tile.node) } else { reply = "(no tile)" }
++        default: reply = h.run(way).message
++        }
++        h.scheduler.runPending()
++        let frame = h.system.frame(of: id)!
++        let share = frame.fractionInside(display.frame)
++        print("WAYS \(Int(size.width))x\(Int(size.height)) desktop a tile: \(desktopIsATile) | after the change \(traceText(after)) | \(way) | \(traceText(frame)) | in view \((share * 100).rounded())% | \(reply.prefix(60))")
++      }
++    }
++  }
++}

@@ -1,0 +1,47 @@
+From 444b0b177c7458448e3d03b8298c838628a06921 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 05:21:10 +0000
+Subject: [PATCH] fix(mac-shell): the check of arbor-e2e's guardian keeps its
+ note in a file
+
+Its first run on a hosted Mac passed 31 of 31 checks in three endings and then ended at "LAST_HOLDER: unbound variable": the
+number last seen in the lock was kept in a variable set inside a function that `check` runs, and `check` runs what it is given in a
+shell of its own. So the fourth ending and the table of endings did not run there. The note is kept in a file now.
+
+The same on Linux against stand-ins for the runner: 31 and the same line before, 43 of 43 after.
+---
+ scripts/mac-shell/check-e2e-guardian.sh | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/scripts/mac-shell/check-e2e-guardian.sh b/scripts/mac-shell/check-e2e-guardian.sh
+index 85a392e2..a6b8fbad 100755
+--- a/scripts/mac-shell/check-e2e-guardian.sh
++++ b/scripts/mac-shell/check-e2e-guardian.sh
+@@ -42,8 +42,13 @@ none() { [ "$(count "$@")" = 0 ]; }
+ another_arbor() { pgrep -f '/Arbor$' | grep -qvx "$1"; }
+ holder() { cat "$RUN_HOME/arbor.lock" 2> /dev/null; }
+ holder_lives() { local pid; pid=$(holder); [ -n "$pid" ] && kill -0 "$pid" 2> /dev/null; }
+-# Keeps the last number seen in the lock: the file goes with the folder.
+-folder_is_gone() { LAST_HOLDER=$(holder || echo "${LAST_HOLDER:-}"); [ ! -e "$RUN_HOME" ]; }
++# Keeps the last number seen in the lock, which goes with the folder. In a file: what `check` runs, it runs in a shell of its own.
++folder_is_gone() {
++  local pid
++  pid=$(holder)
++  [ -z "$pid" ] || echo "$pid" > "$ARBOR_OUT/last-holder.txt"
++  [ ! -e "$RUN_HOME" ]
++}
+ 
+ # Starts a run, in a process group of its own, and waits until its Arbor has been arranging windows for a while.
+ begin() {
+@@ -98,7 +103,7 @@ kill -9 "$RUNNER"
+ check "the watchdog starts another Arbor" within 10 another_arbor "$first"
+ echo "  after $(since "$from") s"
+ nothing_is_left
+-if [ "$LAST_HOLDER" = "$first" ]; then echo "  that Arbor never had the lock"; else echo "  that Arbor had the lock, and was asked to quit"; fi
++if [ "$(cat "$ARBOR_OUT/last-holder.txt" 2> /dev/null)" = "$first" ]; then echo "  that Arbor never had the lock"; else echo "  that Arbor had the lock, and was asked to quit"; fi
+ 
+ begin "the runner is asked to end (kill -TERM): it cleans up itself" asked
+ kill -TERM "$RUNNER"
+-- 
+2.43.0
+

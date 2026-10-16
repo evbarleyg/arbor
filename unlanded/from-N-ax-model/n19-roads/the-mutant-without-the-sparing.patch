@@ -1,0 +1,13 @@
+diff --git a/Sources/ArborKit/AX/AXWindowSystem.swift b/Sources/ArborKit/AX/AXWindowSystem.swift
+index d0d50315..5e110482 100644
+--- a/Sources/ArborKit/AX/AXWindowSystem.swift
++++ b/Sources/ArborKit/AX/AXWindowSystem.swift
+@@ -327,7 +327,7 @@ public final class AXWindowSystem: WindowSystem {
+       return
+     }
+     AXUIElementPerformAction(record.element, kAXRaiseAction as CFString)
+-    guard NSWorkspace.shared.frontmostApplication?.processIdentifier != pid else { return }
++    // THE JUDGE'S MUTANT: the sparing of activate() is taken out.
+     NSRunningApplication(processIdentifier: pid)?.activate()
+ 
+     // Since macOS 14 activation is cooperative, and a request from an app in the background may be ignored. It has

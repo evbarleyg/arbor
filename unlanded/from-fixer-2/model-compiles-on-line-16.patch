@@ -1,0 +1,32 @@
+diff --git a/scripts/mac-on-linux/retime.py b/scripts/mac-on-linux/retime.py
+index a050fb8e..fe478f6d 100755
+--- a/scripts/mac-on-linux/retime.py
++++ b/scripts/mac-on-linux/retime.py
+@@ -25,6 +25,7 @@ REWRITES = [
+     (re.compile(r"\bDispatchTime\b"), "FakeDispatchTime"),
+     # What the person has set in System Settings is the model's to say.
+     (re.compile(r"\bUserDefaults\(suiteName:"), "FakeMac.defaults(suiteName:"),
++    (re.compile(r"\bUserDefaults\?"), "FakeMac.Defaults?"),
+ ]
+ 
+ # Other threads than the main one, and the main one's waiting for them (stubs/FakeMacOS/Threads.swift). Only where the clock must be the model's: elsewhere a queue is for files.
+diff --git a/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift b/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift
+index cf12ce55..e6328ace 100644
+--- a/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift
++++ b/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift
+@@ -352,6 +352,15 @@ public final class FakeMac: @unchecked Sendable {
+   public struct Defaults {
+     let domain: String
+     public func object(forKey key: String) -> Any? { FakeMac.current.preferences[domain]?[key] }
++    /// As `UserDefaults` reads it: a number that is not 0, or one of the words for yes.
++    public func bool(forKey key: String) -> Bool {
++      switch object(forKey: key) {
++      case let value as Bool: value
++      case let value as Int: value != 0
++      case let value as String: ["yes", "true", "y", "t"].contains(value.lowercased()) || (Int(value) ?? 0) != 0
++      default: false
++      }
++    }
+   }
+   public static func defaults(suiteName: String) -> Defaults? { Defaults(domain: suiteName) }
+ 

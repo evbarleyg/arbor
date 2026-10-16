@@ -1,0 +1,219 @@
+From b0077f542fdf4839a033f498969dc8452004a64f Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 13:03:48 +0000
+Subject: [PATCH 3/5] fix: rotate takes itself back on paper: nobody flies
+ there and back for "not enough room"
+
+`rotate` cannot know how small the apps let their windows get. It turned the group and laid out; a window refused its new slot and was a
+tile; the command took itself back and laid out again: ten moves on an ordinary desk, and nothing had changed.
+
+The layout asks each window where it stands, before anybody moves. At a refusal `rotate` judges again, on paper, and takes itself
+back there (`thinkingAgain`). Nobody changes place. What is left: a window that was asked before the one that refused has been
+narrower or lower for a moment, where it stood.
+
+Its script leaves `ChaosKnownFailures.swift` and lives on in `nobodyChangesPlaceForARefusal`. The entry stays, for the rule still breaks. "A
+docked window becomes a tile, and a moment later the view follows the keyboard onto it" keeps its sentence, over a script from a walk in
+which no neighbour can pay: the fault is alive. The script that stood there has been silent since the window with the keyboard gets
+its room at a neighbour's cost (played to its end: no rule, and not masked: it never becomes a tile), and a list of what fails holds
+what fails: it goes, by the product owner's word. And `desktop`, after which the view follows the keyboard back to the window that
+has just left.
+---
+ .../Controller/Controller+Layout.swift        | 14 ++--
+ .../Controller/Controller+Tiling.swift        | 13 +++-
+ Sources/ArborTesting/ChaosKnownFailures.swift | 31 ++++-----
+ .../OneEventOneLayoutTests.swift              | 65 +++++++++++++++++++
+ 4 files changed, 102 insertions(+), 21 deletions(-)
+
+diff --git a/Sources/ArborKit/Controller/Controller+Layout.swift b/Sources/ArborKit/Controller/Controller+Layout.swift
+index f11752f7..8f5b4f2b 100644
+--- a/Sources/ArborKit/Controller/Controller+Layout.swift
++++ b/Sources/ArborKit/Controller/Controller+Layout.swift
+@@ -54,7 +54,7 @@ extension Controller {
+   /// instead: nobody must see a window jump ahead of the motion that explains it, so they are moved
+   /// here, first of all, once the stage is up.
+   ///
+-  /// One thing that happens is one layout. A command whose arrangement depends on how small a window goes (`shrink`) cannot know
++  /// One thing that happens is one layout. A command whose arrangement depends on how small a window goes (`shrink`, `rotate`) cannot know
+   /// before the window has been asked, which is done here, before anybody is moved. `thinkingAgain` is called whenever one has
+   /// refused the size it was offered, where it stood or in its slot, for as long as gaps still move (see below), and may change
+   /// the arrangement, on paper, to what the command wants now that it knows. `about` is the window on whose answer that
+@@ -83,7 +83,13 @@ extension Controller {
+     // Before anything goes by what is known of the windows' sizes.
+     noteFixedSizes(of: workspaces[displayID]?.tree.allWindows ?? [])
+     let stood = startFromTheGapsThatStood(on: displayID, for: reason)
+-    let before = workspaces[displayID]
++    var before = workspaces[displayID]
++    // What it leaves is the arrangement to start from, from then on.
++    func thinkAgain() {
++      guard let thinkingAgain else { return }
++      thinkingAgain()
++      before = workspaces[displayID]
++    }
+     guard var layout = stood ?? roomyLayout(of: displayID, for: reason) else { return }
+     // Before anything is moved (Controller+Hold.swift). A new node alone is no move of the view: docking a window at the edge of the
+     // view makes a group of the two, with the same things to see, and a rule that waited does that at the very end of a hold.
+@@ -101,7 +107,7 @@ extension Controller {
+     }
+     // Before anybody is moved, so that everybody moves once (Controller+AskFirst.swift).
+     layout = askingFirst(layout, on: displayID, beginningWith: subject) {
+-      thinkingAgain?()
++      thinkAgain()
+       return self.roomyLayout(of: displayID, for: reason, startingFrom: before)
+     }
+     // After the stage has its pictures of the windows where they are.
+@@ -116,7 +122,7 @@ extension Controller {
+     var round = 0
+     while again, round < 4 {
+       round += 1
+-      if round <= 2 { thinkingAgain?() }
++      if round <= 2 { thinkAgain() }
+       guard
+         let retry = round <= 2
+           ? roomyLayout(of: displayID, for: reason, startingFrom: before) : self.layout(of: displayID)
+diff --git a/Sources/ArborKit/Controller/Controller+Tiling.swift b/Sources/ArborKit/Controller/Controller+Tiling.swift
+index 405e4db6..7e7be978 100644
+--- a/Sources/ArborKit/Controller/Controller+Tiling.swift
++++ b/Sources/ArborKit/Controller/Controller+Tiling.swift
+@@ -217,8 +217,17 @@ extension Controller {
+     // Judged as it will be laid out: with room made for windows that need it, if their neighbours can spare it (F61).
+     if let refusal = refusal(roomyLayout(of: display, for: .structure)) { return refusal }
+     workspaces[display] = workspace
+-    relayout(display, reason: .structure)
+-    // How small an app lets its window get is known only once it has been asked.
++    // How small an app lets its window get is known only once it has been asked, which the layout does where each window stands, before
++    // anybody has moved. One will not be as small as its new slot: judged again, on paper, from the gaps as the turn left them. Laid
++    // out first, that window was a tile, and every window flew there and back for "not enough room".
++    var takenBack: CommandResult?
++    relayout(display, reason: .structure) {
++      guard takenBack == nil else { return }
++      self.workspaces[display] = workspace
++      takenBack = refusal(self.layoutToCome(on: display))
++    }
++    if let takenBack { return takenBack }
++    // It took the size where it stood and refuses it in its slot.
+     if let refusal = refusal(layouts[display]) {
+       relayout(display, reason: .structure)
+       return refusal
+diff --git a/Sources/ArborTesting/ChaosKnownFailures.swift b/Sources/ArborTesting/ChaosKnownFailures.swift
+index e9deedff..7f24fe10 100644
+--- a/Sources/ArborTesting/ChaosKnownFailures.swift
++++ b/Sources/ArborTesting/ChaosKnownFailures.swift
+@@ -587,26 +587,27 @@ extension ChaosRunner {
+         """),
+     ChaosKnownFailure(
+       rule: "flashed-out-of-view", owner: "rule 3: one thing that happens is one layout", severity: 2,
+-      story: "One command sends a window out of view and fetches it again. `rotate` turns the group, a window will not be as small as its new slot and is a tile, "
+-        + "and the command takes itself back: every window has gone there and back for \"not enough room\". Also: a docked window becomes a tile, and a moment "
+-        + "later the view follows the keyboard onto it.",
++      story: "One command sends a window out of view and fetches it again. A docked window becomes a tile, and a moment later the view follows the keyboard onto it "
++        + "(here no neighbour can pay: the script that stood here first has been silent since 2026-10-15, when the window with the keyboard began to get its room at a neighbour's cost). "
++        + "Also: `desktop` frames the Desktop, the docked window leaves, and a moment later the view follows the keyboard, which is still in it.",
+       script: """
+-        displays side:0,0,2560,1440:25,0,0,70* windows-never
+-        open 101 Safari pid 1000 at 861 153 972 864 min 574 240
+-        open 102 Notes pid 1001 at 157 794 819 516 min 709 300
+-        open 103 Xcode pid 1004 at 677 463 1188 744 min 1188 685
++        displays main:0,0,1280,800:25,0,70,0* windows-never
++        open 101 Music pid 1006 at 84 27 980 612 min 980 600
+         launch
+-        via shortcut arrange
+-        key down rotate
++        focus 101
++        key down dock right
++        open 107 Xcode pid 1004 at 0 25 1280 705 min 1188 685
++        focus 101
++        key down focus left
++        key down dock left
++        react
+         """,
+       """
+-        open 102 Music pid 1006 at 858 56 882 708 min 680 480
+-        open 103 Xcode pid 1004 at 288 218 1188 856 min 1188 685
++        open 101 Settings pid 1007 at 1224 143 723 650 min 723 470 max 723 2000
+         launch
+-        focus 102
+-        key down dock top
+-        key down focus down
+-        key down dock right
++        focus-nothing
++        via menu arrange
++        key down desktop
+         react
+         """),
+     ChaosKnownFailure(
+diff --git a/Tests/ArborKitTests/OneEventOneLayoutTests.swift b/Tests/ArborKitTests/OneEventOneLayoutTests.swift
+index a1d6fc34..bbd80826 100644
+--- a/Tests/ArborKitTests/OneEventOneLayoutTests.swift
++++ b/Tests/ArborKitTests/OneEventOneLayoutTests.swift
+@@ -1194,3 +1194,68 @@ private let oneLayout: Set<String> = [
+     expectSound(h)
+   }
+ }
++
++/// `rotate` cannot know how small the apps let their windows get. Each is asked where it stands, before anybody moves, and where one refuses
++/// the command takes itself back on paper.
++@Suite @MainActor struct RotateIsOneLayoutTests {
++  /// One above the other they need 1000 points of the display's 875: no room can be made.
++  @Test func whereThereIsNotEnoughRoomNobodyGoesAnywhere() {
++    let h = Harness()
++    let a = h.system.open(app: "A", pid: 1001, frame: CGRect(x: 100, y: 100, width: 400, height: 520), minimumSize: CGSize(width: 300, height: 500))
++    let b = h.system.open(app: "B", pid: 1002, frame: CGRect(x: 300, y: 100, width: 400, height: 520), minimumSize: CGSize(width: 300, height: 500))
++    h.start()
++    runOK(h, "dock \(a.rawValue) left")
++    runOK(h, "dock \(b.rawValue) right")
++    let (before, frames) = (h.workspace, [h.frame(a)!, h.frame(b)!])
++    let roads = Roads(h) { #expect(h.run("rotate").message.hasPrefix("not enough room: rotated, ")) }
++    #expect(roads.roads.values.allSatisfy { FakeWindowSystem.changesOfPlace($0) == 0 }, "\(roads.roads.mapValues { $0.map(\.brief) })")
++    #expect(h.workspace == before && [h.frame(a)!, h.frame(b)!] == frames)
++    expectSound(h)
++  }
++
++  /// Where there is room it turns, and everybody moves once.
++  @Test func whereThereIsRoomEverybodyMovesOnce() {
++    let (h, _) = tilingScenario(["A", "B"], ["dock $0 left", "dock $1 right"])
++    let roads = Roads(h) { runOK(h, "rotate") }
++    roads.expectOneRoadEach()
++    expectSound(h)
++  }
++
++  /// Ordinary apps on ordinary displays. Ten moves, and nothing had changed.
++  @Test(arguments: [
++    """
++    displays side:0,0,1920,1080:25,0,70,0* windows-never
++    launch
++    open 101 Safari pid 1000 at 100 80 1200 800 min 574 240
++    focus 101
++    open 102 Mail pid 1002 at 160 120 1100 700 min 760 400
++    focus 102
++    open 103 Music pid 1006 at 220 160 980 600 min 680 480
++    focus 103
++    via shortcut arrange
++    cursor 5 5
++    key down rotate
++    """,
++    """
++    displays side:0,0,2560,1440:25,0,0,70* windows-never
++    open 101 Safari pid 1000 at 861 153 972 864 min 574 240
++    open 102 Notes pid 1001 at 157 794 819 516 min 709 300
++    open 103 Xcode pid 1004 at 677 463 1188 744 min 1188 685
++    launch
++    via shortcut arrange
++    key down rotate
++    """,
++  ]) func nobodyChangesPlaceForARefusal(_ script: String) {
++    let runner = ChaosRunner()
++    let actions = ChaosAction.script(script)
++    for action in actions.dropLast() { _ = runner.step(action) }
++    let mark = runner.system.moveLog.count
++    let broken = runner.step(actions.last!).map(\.rule)
++    #expect(runner.system.moveLog.count > mark, "the story needs a window that is asked and refuses")
++    for window in Set(runner.system.moveLog[mark...].map(\.window)).sorted() {
++      let road = runner.system.road(of: window, since: mark)
++      #expect(FakeWindowSystem.changesOfPlace(road) == 0, "\(window): \(road.map(\.brief))")
++    }
++    #expect(!broken.contains { $0.hasPrefix("flashed-") || $0.hasPrefix("moved-twice") }, "\(broken)")
++  }
++}
+-- 
+2.43.0
+

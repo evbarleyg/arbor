@@ -1,0 +1,24 @@
+From 8cbe8f3d4af6ff74eb8c83f79098a259a2fc9a69 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 15:45:22 +0000
+Subject: [PATCH] lab: the whole truth about limits (never pushed)
+
+---
+ Sources/ArborTesting/FakeWindowSystem.swift | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/Sources/ArborTesting/FakeWindowSystem.swift b/Sources/ArborTesting/FakeWindowSystem.swift
+index faf78fd2..2cae2694 100644
+--- a/Sources/ArborTesting/FakeWindowSystem.swift
++++ b/Sources/ArborTesting/FakeWindowSystem.swift
+@@ -356,7 +356,6 @@ public final class FakeWindowSystem: WindowSystem {
+       let steps = plan(from: before, to: frame)
+       perform(steps)
+       if let more = FramePlan.makingUp(for: steps, result: isAt, target: frame) { perform(more) }
+-      if fake.limitsGivenSince { isAt.size = Self.accepted(isAt, by: fake).size }
+       applied = whereMacOSPuts(CGRect(origin: frame.origin, size: isAt.size), titleBar: fake.titleBar)
+     }
+     let changed = before != applied
+-- 
+2.43.0
+

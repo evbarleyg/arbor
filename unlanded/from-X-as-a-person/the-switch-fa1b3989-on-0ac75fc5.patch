@@ -1,0 +1,701 @@
+From fa1b3989e568f7dc910c57f0baa28490c07a8712 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 14:34:24 +0000
+Subject: [PATCH] test(mac-shell): every script can start Arbor as a person
+ does
+
+A script's Arbor is the bare binary, a child of the script's shell: it has the Accessibility permission from its first instant and borrows it from
+whoever started the shell. A person opens Arbor.app, which answers for itself. macOS treats them differently: on hosted Macs an app that was given the
+permission while it waited was told that a key which was down was up, at 233 looks of 233; one opened with the permission already there the truth, 314 of
+314, as the shell's child, 288 of 288. So a held key was a tap in an Arbor that people have, and in no script's.
+
+138 of the 159 scripts start the bare binary (scripts/mac-shell/how-started.py counts them), all but two of them through two doors: arbor_launch in lib.sh
+and arbor_start_apps in lib-apps.sh. With `run.sh --as-a-person late|early` (ARBOR_AS_A_PERSON), on GitHub's Macs, both doors open Arbor.app through Launch
+Services with the environment a child would have had.
+
+  late    arbor_start forgets the entry, must see Arbor waiting, and gives it the permission while it waits: a first day, and every update of a build without
+          a certificate. arbor_relaunch finds the entry in place, as on the day after.
+  early   the entry is there before every start: any other day.
+
+Off unless asked for; a rehearsal is not changed by it. Every start now says in the output how Arbor was started, so that a result carries its own witness.
+lib-person.sh, by which two scripts say it for a start of their own, keeps its two names and becomes two lines: there is one way of doing it.
+
+run.sh: the guard against a branch whose lib.sh is older than a switch looked with `git show | grep -q` under pipefail, which fails when grep leaves early and
+more of lib.sh lies behind the match than a pipe holds: on the trunk's lib.sh (67 KB behind it) once in 80, with this change's 5 KB more 39 times of 40 for --release
+and 38 of 40 for this switch. It reads to the end now.
+---
+ .github/workflows/mac-shell.yml               |   8 ++
+ scripts/mac-shell/check-F63.sh                |   2 +
+ scripts/mac-shell/how-started.py              | 130 ++++++++++++++++++
+ scripts/mac-shell/lib-apps.sh                 |  16 ++-
+ scripts/mac-shell/lib-person.sh               | 114 ++-------------
+ scripts/mac-shell/lib.sh                      | 129 ++++++++++++++++-
+ .../probe-the-welcome-after-a-late-grant.sh   |  57 ++++++++
+ scripts/mac-shell/run.sh                      |  27 +++-
+ 8 files changed, 369 insertions(+), 114 deletions(-)
+ create mode 100755 scripts/mac-shell/how-started.py
+ create mode 100755 scripts/mac-shell/probe-the-welcome-after-a-late-grant.sh
+
+diff --git a/.github/workflows/mac-shell.yml b/.github/workflows/mac-shell.yml
+index da5d0b6f..5f09ebd2 100644
+--- a/.github/workflows/mac-shell.yml
++++ b/.github/workflows/mac-shell.yml
+@@ -68,6 +68,12 @@ on:
+         default: debug
+         type: choice
+         options: [debug, release]
++      person:
++        description: The scripts start Arbor as a person does, Arbor.app through Launch Services; the permission comes late (while it waits) or early (before it starts). run.sh --as-a-person
++        required: false
++        default: "no"
++        type: choice
++        options: ["no", late, early]
+ 
+ # A run started again under the same tag (by default: the same scripts for the same branch) replaces the one before, which would
+ # push to the same branch anyway: whoever starts it again after a fix no longer wants the old answer, and somebody is waiting for that Mac.
+@@ -97,6 +103,8 @@ jobs:
+       REF: ${{ inputs.ref }}
+       # For the build below and for lib.sh's arbor_build, which then finds nothing left to do.
+       ARBOR_CONFIGURATION: ${{ inputs.configuration || 'debug' }}
++      # lib.sh, "As a person starts it".
++      ARBOR_AS_A_PERSON: ${{ inputs.person != 'no' && inputs.person || '' }}
+       MAC_SHELL_LIMIT: ${{ inputs.limit || '1200' }}
+     steps:
+       - name: Check the inputs
+diff --git a/scripts/mac-shell/check-F63.sh b/scripts/mac-shell/check-F63.sh
+index 3145f7e8..88a84297 100755
+--- a/scripts/mac-shell/check-F63.sh
++++ b/scripts/mac-shell/check-F63.sh
+@@ -73,6 +73,8 @@ DistributedNotificationCenter.default().postNotificationName(
+   Notification.Name("com.apple.accessibility.api"), object: nil, userInfo: nil, deliverImmediately: true)
+ SWIFT
+ tcc "SELECT count(*) FROM access;" > /dev/null 2>&1 || die "the privacy database cannot be read here"
++# Started as a person starts it (lib.sh), Arbor answers for itself: its own entry is then among those that are switched off and on.
++arbor_as_a_person && arbor_grant
+ ALLOWED_ROWS=$(tcc "SELECT group_concat(rowid) FROM access WHERE service = 'kTCCServiceAccessibility' AND auth_value = 2;")
+ [ -n "$ALLOWED_ROWS" ] || die "nothing has the Accessibility permission here, so there is none to take away"
+ tcc "SELECT rowid, client, auth_value FROM access WHERE service = 'kTCCServiceAccessibility';"
+diff --git a/scripts/mac-shell/how-started.py b/scripts/mac-shell/how-started.py
+new file mode 100755
+index 00000000..f0f9f0ba
+--- /dev/null
++++ b/scripts/mac-shell/how-started.py
+@@ -0,0 +1,130 @@
++#!/usr/bin/env python3
++"""How does each Mac shell script start Arbor? A count, by reading the scripts.
++
++    scripts/mac-shell/how-started.py              the count, and the scripts that are not the common case
++    scripts/mac-shell/how-started.py check-F51.sh shots-minimap.sh      those scripts, a line each
++
++Why anybody asks: an Arbor that is the bare binary and a child of the script's shell has the Accessibility permission from its first
++instant and borrows it from whoever started the shell; macOS tells it things it does not tell the app a person opens (lib.sh, "As a person
++starts it"). `run.sh --as-a-person` changes the start for every script that goes through one of the two doors, arbor_launch in lib.sh and
++arbor_start_apps in lib-apps.sh. This says which scripts those are, and which start Arbor by a call of their own, which the switch does not reach.
++
++It follows what a script reads in (`source`) and hands over to (`exec "$BASH"`), and the functions of the libraries that lead to a door. A name counts
++where a command can stand, not inside a message. On 2026-10-15 a plain grep for the same names gave the same sum.
++"""
++import collections
++import glob
++import os
++import re
++import sys
++
++HERE = os.path.dirname(os.path.abspath(__file__))
++# They start other scripts, or none: no playing of their own.
++HARNESS = {"run.sh", "run-list.sh", "rehearse.sh", "preflight.sh", "compile.sh", "compile-tools.sh"}
++DOORS = {"arbor_launch": "lib.sh", "arbor_start": "lib.sh", "arbor_relaunch": "lib.sh", "arbor_start_apps": "lib-apps.sh"}
++BEFORE_A_COMMAND = (r'(?m)(?:^|[;&|({!]|\bthen|\bdo|\belse|\bif|\bwhile|\buntil|\beventually|\bcheck "[^"\n]*"|\brecorded [\w-]+)[ \t]*'
++                    r'(?:[A-Za-z_]+=(?:"[^"\n]*"|\S*)[ \t]+)*')
++READS_IN = re.compile(r'(?:source|exec "\$BASH"|exec bash|bash)\s+'
++                      r'"\$(?:\(dirname "\$(?:0|\{BASH_SOURCE\[0\]\})"\)|GATE_HERE|folder)/([\w./-]+\.sh)"')
++FUNCTION = re.compile(r"^(\w+)\(\) \{([^\n]*)\}[ \t]*$|^(\w+)\(\) \{[ \t]*\n(.*?)^\}", re.S | re.M)
++
++
++def called(name, text):
++    return re.search(BEFORE_A_COMMAND + name + r"(?![\w-])", text) is not None
++
++
++def read():
++    os.chdir(HERE)
++    source = {}
++    for path in sorted(glob.glob("*.sh") + glob.glob("suite/*.sh")):
++        with open(path, encoding="utf-8") as file:
++            source[path] = "\n".join(line for line in file.read().split("\n") if not line.lstrip().startswith("#"))
++    return source
++
++
++def leading_to_a_door(source, libraries):
++    """Every function of a library but lib.sh that ends at a door. Of lib.sh the doors alone: nothing else in it starts Arbor."""
++    bodies = {}
++    for path in libraries:
++        # lib-person.sh goes through lib.sh's door too, with the switch on for that start: counted by itself below.
++        if path not in ("lib.sh", "lib-person.sh"):
++            for match in FUNCTION.finditer(source[path]):
++                bodies[match.group(1) or match.group(3)] = match.group(2) or match.group(4) or ""
++    lead = {name: {door} for name, door in DOORS.items()}
++    grew = True
++    while grew:
++        grew = False
++        for name, body in bodies.items():
++            for other in list(lead):
++                if other != name and called(other, body) and not lead[other] <= lead.get(name, set()):
++                    lead.setdefault(name, set()).update(lead[other])
++                    grew = True
++    return lead
++
++
++def kin(path, source, seen):
++    for match in READS_IN.finditer(source[path]):
++        other = os.path.normpath(os.path.join(os.path.dirname(path), match.group(1)))
++        if other in source and other not in seen:
++            seen.add(other)
++            kin(other, source, seen)
++    return seen
++
++
++def ways(text, lead):
++    how = set()
++    for name, doors in lead.items():
++        if called(name, text):
++            how |= {"bare, by " + door for door in doors}
++    for pattern, way in (
++        (r"\barbor_(?:start|relaunch)_as_a_person\b", "as a person, said by the script itself"),
++        (r'"\$ARBOR_BIN/Arbor"(?! --)', "bare, by a call of its own"),
++        (r'ARBOR_BUNDLED=1|Contents/MacOS/Arbor" *(?:>|&|\\|$)', "the bundle's binary, the shell's child"),
++        (r"\bARBOR_BUNDLE=", "open, ARBOR_BUNDLE"),
++        (r'open -n [^\n]*(?:\$app\b|\$ARBOR_APP|\$copy|\$bundle)|open -n "\$\{arguments', "open, by a call of its own"),
++        (r'make install|install_here|open "\$download"|open "\$installed"', "open, by make install"),
++        (r"arbor-e2e|make e2e", "arbor-e2e"),
++    ):
++        if re.search(pattern, text, re.M):
++            how.add(way)
++    # Said for the whole script: then the doors are a person's at every start.
++    if re.search(r"(?m)^ARBOR_AS_A_PERSON=(?:late|early)\b", text):
++        how = {way for way in how if not way.startswith("bare, by lib")} | {"as a person, said by the script itself"}
++    return how
++
++
++def main(asked):
++    source = read()
++    libraries = [path for path in source if os.path.basename(path).startswith("lib")]
++    lead = leading_to_a_door(source, libraries)
++    rows = {}
++    for path in source:
++        if path not in libraries and path not in HARNESS:
++            others = [other for other in kin(path, source, set()) if other not in libraries]
++            rows[path] = ways("\n".join([source[path]] + [source[other] for other in others]), lead)
++    if asked:
++        for path in asked:
++            path = path.replace("scripts/mac-shell/", "")
++            print(path + ": " + ("; ".join(sorted(rows[path])) or "starts no Arbor" if path in rows else "no script of this folder"))
++        return
++    bare = {path for path, how in rows.items() if any(way.startswith("bare") for way in how)}
++    opened = {path for path, how in rows.items() if any(way.startswith("open") for way in how)}
++    print(f"{len(rows)} scripts ({len(libraries)} libraries and {len(HARNESS)} tools of the harness aside)")
++    print(f"{len(bare)} start the bare binary as the shell's child at least once")
++    for way, count in sorted(collections.Counter(way for how in rows.values() for way in how).items()):
++        print(f"  {count:4} {way}")
++    print(f"{sum(1 for path in bare if all(way.startswith('bare') for way in rows[path]))} never start it any other way")
++    beyond = sorted(path for path in bare if not any(way.startswith("bare, by lib") for way in rows[path]))
++    print(f"the switch does not reach, no door being used: {' '.join(beyond) or 'none'}")
++    said = sorted(path for path, how in rows.items() if "as a person, said by the script itself" in how)
++    print(f"{len(said)} say for a start of their own that it is a person's (lib-person.sh): {' '.join(said) or 'none'}")
++    print(f"{len(opened)} go through Launch Services by other roads at least once: {' '.join(sorted(opened))}")
++    print(f"  never the bare binary: {' '.join(sorted(opened - bare))}")
++    print(f"start no Arbor of their own: {' '.join(sorted(path for path, how in rows.items() if not how))}")
++
++
++if __name__ == "__main__":
++    try:
++        main(sys.argv[1:])
++    except BrokenPipeError:  # `| head`
++        os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+diff --git a/scripts/mac-shell/lib-apps.sh b/scripts/mac-shell/lib-apps.sh
+index 7a4715e9..7cd9042a 100644
+--- a/scripts/mac-shell/lib-apps.sh
++++ b/scripts/mac-shell/lib-apps.sh
+@@ -344,11 +344,17 @@ arbor_start_apps() {
+   fi
+   ARBOR_SESSION=$((ARBOR_SESSION + 1))
+   # No watchdog: a script that kills Arbor starts the next one itself.
+-  # shellcheck disable=SC2086
+-  # safe anywhere: $limit is ARBOR_ONLY_PIDS=<the processes named>, or, asked for by name just above, no limit
+-  env "$limit" ARBOR_NO_PROMPT=1 ARBOR_DEBUG=1 ARBOR_NO_HOTKEYS=1 ARBOR_NO_STATUS_ITEM=1 ARBOR_NO_WATCHDOG=1 $extra \
+-    "$ARBOR_BIN/Arbor" > "$ARBOR_OUT/$(arbor_log_name arbor-stderr)" 2>&1 5<&- 6>&- 8>&- 9>&- &
+-  ARBOR_PID=$!
++  if arbor_as_a_person; then
++    # shellcheck disable=SC2086
++    arbor_open_as_a_person "$limit" ARBOR_NO_PROMPT=1 ARBOR_DEBUG=1 ARBOR_NO_HOTKEYS=1 ARBOR_NO_STATUS_ITEM=1 ARBOR_NO_WATCHDOG=1 $extra
++  else
++    # shellcheck disable=SC2086
++    # safe anywhere: $limit is ARBOR_ONLY_PIDS=<the processes named>, or, asked for by name just above, no limit
++    env "$limit" ARBOR_NO_PROMPT=1 ARBOR_DEBUG=1 ARBOR_NO_HOTKEYS=1 ARBOR_NO_STATUS_ITEM=1 ARBOR_NO_WATCHDOG=1 $extra \
++      "$ARBOR_BIN/Arbor" > "$ARBOR_OUT/$(arbor_log_name arbor-stderr)" 2>&1 5<&- 6>&- 8>&- 9>&- &
++    ARBOR_PID=$!
++    echo "as no person starts it: the binary, a child of this shell, with the permission from its first instant"
++  fi
+   started "$ARBOR_PID"
+   deadline=$((SECONDS + 20))
+   while [ "$SECONDS" -lt "$deadline" ]; do
+diff --git a/scripts/mac-shell/lib-person.sh b/scripts/mac-shell/lib-person.sh
+index f0fec046..8aeeb0ab 100644
+--- a/scripts/mac-shell/lib-person.sh
++++ b/scripts/mac-shell/lib-person.sh
+@@ -1,111 +1,21 @@
+-# Arbor started as a person starts it, for Mac shell scripts. Source it after lib.sh; do not run it.
++# Arbor started as a person starts it, for a Mac shell script that wants it so whatever the run says. Source it after lib.sh; do not run it.
+ #
+ #   source "$(dirname "$0")/lib.sh"
+ #   source "$(dirname "$0")/lib-person.sh"
+ #   arbor_build
+ #   arbor_start_as_a_person 3 ARBOR_NO_HOTKEYS=0      # whatever arbor_start takes
+ #
+-# arbor_start runs the bare binary as the shell's child. Such an Arbor borrows the permission of the hosted Mac's agent, and has it from before it starts. What
+-# an Arbor meets that is granted its permission while it waits, no such script can see: macOS told one that a key which was down was up, by the session's table,
+-# with another app having the keyboard (2026-10-15: 233 looks of 233 in one process; the shell's child was told the truth at 288 of 288). A hold was a tap.
++# arbor_start runs the bare binary as the shell's child. Such an Arbor borrows the permission of the hosted Mac's agent, and macOS tells it things that it does
++# not tell the app: whether a key is down that another app has the keyboard for, by the session's table (2026-10-15: 288 looks of 288 true in the child, 233 of
++# 233 false in the app that was granted the permission while it waited, the key down in all). A script that starts Arbor as nobody does cannot see what only
++# the app meets.
+ #
+-# Here: a copy of the app under an identifier of its own, opened by Launch Services, WITHOUT the permission; it must be seen waiting; it is granted while it waits.
+-# arbor_relaunch_as_a_person starts the same copy again in the same session, with the grant in place from before it starts: as on any later day.
+-# (A plain arbor_relaunch, or an arbor_start after arbor_stop, is the shell's child again.)
+-# THE START IS A PERSON'S, THE GRANT IS A SCRIPT'S: a row, the daemon restarted, the word posted, in the order in which flag and taps both say yes
+-# (README-permission-probes.md). No script can click the switch in System Settings on a hosted Mac, so whether a person's first day is like this cannot be tried.
+-# It leaves behind: nothing in the permission database; the copy's registration with Launch Services, until the Mac is thrown away.
++# How it is done is lib.sh's, "As a person starts it", which `run.sh --as-a-person late|early` switches on for every script. These two say it for one start:
++# late (the app, through Launch Services, WITHOUT the permission, granted while it waits, as on a first day) unless the run says early.
++# arbor_relaunch_as_a_person starts it again in the same session with the grant in place from before it starts: as on any later day.
++# (A plain arbor_relaunch, or an arbor_start after arbor_stop, is the shell's child again, unless the run says otherwise.)
+ #
+-# Only on GitHub's Macs. Anywhere else, and in a rehearsal, it is arbor_start, and it says so.
++# Only on GitHub's Macs. Anywhere else, and in a rehearsal, it is arbor_start, and the start says so.
+ 
+-ARBOR_PERSON_ID=com.evbarleyg.arbor.as-a-person
+-ARBOR_PERSON_APP=""
+-# safe anywhere: a name; nothing is done with it here
+-ARBOR_PERSON_TCC="/Library/Application Support/com.apple.TCC/TCC.db"
+-
+-# The daemon writes there too, a row of its own when the copy asks: "database is locked", one grant of 21 on hosted Macs (2026-10-15). So: it waits, and tries once more.
+-arbor_person_tcc() {
+-  on_throwaway_mac && sudo sqlite3 -cmd ".timeout 5000" "$ARBOR_PERSON_TCC" "$1" && return 0
+-  sleep 1
+-  on_throwaway_mac && sudo sqlite3 -cmd ".timeout 5000" "$ARBOR_PERSON_TCC" "$1"
+-}
+-# The daemon is left alone: the next script on the same Mac found its copy waiting all the same (2026-10-15).
+-arbor_person_forget() { arbor_person_tcc "DELETE FROM access WHERE client = '$ARBOR_PERSON_ID';"; }
+-arbor_person_manages() {
+-  # shellcheck disable=SC2086
+-  set -- $ARBOR_WINDOW_IDS
+-  "$ARBOR_BIN/arborctl" state 2>/dev/null | python3 "$ARBOR_STATE_PY" ready $# 2>/dev/null
+-}
+-
+-# What System Settings posts when its switch is flicked: a running process learns of a grant through nothing else.
+-arbor_person_builds_the_word() {
+-  swiftc -O -swift-version 5 - -o "$1" > "$ARBOR_OUT/build-word.log" 2>&1 <<'SWIFT' || die "the three lines that announce a change did not compile"
+-import Foundation
+-DistributedNotificationCenter.default().postNotificationName(
+-  Notification.Name("com.apple.accessibility.api"), object: nil, userInfo: nil, deliverImmediately: true)
+-SWIFT
+-}
+-
+-arbor_start_as_a_person() {
+-  local app word hex
+-  if [ -n "${ARBOR_REHEARSAL:-}" ]; then
+-    echo "a rehearsal: started as the shell's child, NOT as a person starts it"
+-    arbor_start "$@"
+-    return
+-  fi
+-  if on_throwaway_mac; then
+-    app="$ARBOR_SESSION_DIR/Arbor.app"
+-    word="$ARBOR_SESSION_DIR/word"
+-    arbor_person_tcc "SELECT count(*) FROM access;" > /dev/null 2>&1 || die "the permission database cannot be read here"
+-    arbor_person_builds_the_word "$word"
+-    mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
+-    cp "$ARBOR_BIN/Arbor" "$app/Contents/MacOS/Arbor"
+-    cp "$ARBOR_ROOT/Resources/Info.plist" "$app/Contents/Info.plist"
+-    /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $ARBOR_PERSON_ID" -c "Delete :CFBundleURLTypes" "$app/Contents/Info.plist" || die "could not edit Info.plist"
+-    # As scripts/sign.sh stamps what it signs without a certificate, which is how this copy is signed on the next line but one.
+-    /usr/libexec/PlistBuddy -c "Add :ArborSignature string adhoc" "$app/Contents/Info.plist" 2>/dev/null \
+-      || /usr/libexec/PlistBuddy -c "Set :ArborSignature adhoc" "$app/Contents/Info.plist"
+-    codesign --force --sign - --identifier "$ARBOR_PERSON_ID" "$app" || die "codesign failed"
+-    arbor_person_forget
+-    at_exit arbor_person_forget
+-
+-    # For this call alone: arbor_stop makes a new folder for the next session, and the copy lies in this one's.
+-    ARBOR_PERSON_APP=$app
+-    ARBOR_BUNDLE=$app ARBOR_MAY_LACK_PERMISSION=1 arbor_start "$@"
+-    case "$("$ARBOR_BIN/arborctl" status 2>&1)" in
+-      waiting*) ;;
+-      *) die "the copy of the app has the permission before anybody gave it: it is not answering for itself" ;;
+-    esac
+-
+-    codesign --display --requirements - "$app" 2>/dev/null | sed -n 's/^\(# \)\{0,1\}designated => //p' | csreq -r- -b "$ARBOR_SESSION_DIR/requirement.bin"
+-    hex=$(xxd -p "$ARBOR_SESSION_DIR/requirement.bin" | tr -d '\n')
+-    [ -n "$hex" ] || die "the copy's code requirement could not be read"
+-    # From an entry that is there, so that it has whatever columns this macOS has. In place of the one macOS wrote when the copy asked and was told no.
+-    arbor_person_tcc "DELETE FROM access WHERE service = 'kTCCServiceAccessibility' AND client = '$ARBOR_PERSON_ID';
+-      CREATE TEMP TABLE one AS SELECT * FROM access WHERE service = 'kTCCServiceAccessibility' AND auth_value = 2 LIMIT 1;
+-      UPDATE one SET client = '$ARBOR_PERSON_ID', client_type = 0, csreq = X'$hex';
+-      INSERT INTO access SELECT * FROM one;" || die "the grant could not be written"
+-    [ "$(arbor_person_tcc "SELECT count(*) FROM access WHERE service = 'kTCCServiceAccessibility' AND client = '$ARBOR_PERSON_ID' AND auth_value = 2;")" = 1 ] \
+-      || die "the grant is not there: this Mac has no allowed entry to make it from"
+-    sudo killall -9 tccd 2>/dev/null
+-    sleep 3
+-    "$word"
+-    eventually arbor_person_manages || eventually arbor_person_manages || eventually arbor_person_manages \
+-      || die "granted while it waited, Arbor did not start managing the test windows"
+-    echo "started as a person starts it: the app, through Launch Services, granted while it waited (pid $ARBOR_PID)"
+-    # As arbor_launch does for an Arbor that is ready at once.
+-    arbor_trace_next "session $ARBOR_SESSION: Arbor has started"
+-    "$ARBOR_BIN/arborctl" status
+-  else
+-    echo "started as the shell's child, NOT as a person starts it: what an Arbor meets that is granted late is not seen here"
+-    arbor_start "$@"
+-  fi
+-}
+-
+-arbor_relaunch_as_a_person() {
+-  if [ -n "$ARBOR_PERSON_APP" ]; then
+-    ARBOR_BUNDLE=$ARBOR_PERSON_APP arbor_relaunch "$@"
+-  else
+-    arbor_relaunch "$@"
+-  fi
+-}
++arbor_start_as_a_person() { ARBOR_AS_A_PERSON=${ARBOR_AS_A_PERSON:-late} arbor_start "$@"; }
++arbor_relaunch_as_a_person() { ARBOR_AS_A_PERSON=${ARBOR_AS_A_PERSON:-late} arbor_relaunch "$@"; }
+diff --git a/scripts/mac-shell/lib.sh b/scripts/mac-shell/lib.sh
+index 996a5447..22d700a6 100644
+--- a/scripts/mac-shell/lib.sh
++++ b/scripts/mac-shell/lib.sh
+@@ -70,6 +70,8 @@
+ #   ARBOR_SHORTCUTS=all             BEFORE sourcing this file, in a script that is no section and presses keys of the whole map: nine ship ("Which Arbor")
+ #   arbor_start [count] [NAME=v…]   test windows W1…Wcount (default 4), then Arbor limited to them. With ARBOR_BUNDLE=<a copy of Arbor.app in
+ #                                     the session's folder> that copy is opened as Finder would: it has no permissions of its own
++#                                   With ARBOR_AS_A_PERSON=late or early (run.sh --as-a-person), on GitHub's Macs: Arbor.app through Launch Services, given
++#                                     the permission while it waits, or before it starts ("As a person starts it", below). arbor_start_apps too
+ #   arbor_stop [name]               quit Arbor, check that every test window is back on screen (and take the
+ #                                     picture <name> of that), close the test windows. ARBOR_AFTER_QUIT=<function>: called before
+ #                                     they close, for a script that wants a look of its own at what quitting left
+@@ -1344,7 +1346,7 @@ reopen_test_windows() {
+ 
+ # Starts Arbor on the session's windows, settings and saved state, and waits until it manages the windows.
+ # Without arguments, with those of the session's last launch.
+-arbor_relaunch() { arbor_launch "$@"; }
++arbor_relaunch() { ARBOR_LATER_DAY=1 arbor_launch "$@"; }
+ # Under names of their own in here, so that a script's own function of the same name changes nothing in this file.
+ arbor_launch() {
+   local argument status="" deadline binary="$ARBOR_BIN/Arbor" expected pids id
+@@ -1387,11 +1389,17 @@ arbor_launch() {
+     # shellcheck disable=SC2086
+     arbor_open_bundle ARBOR_ONLY_PIDS="$pids" ARBOR_NO_PROMPT=1 ARBOR_DEBUG=1 ARBOR_NO_HOTKEYS=1 ARBOR_NO_STATUS_ITEM=1 \
+       ARBOR_NO_WATCHDOG=1 $ARBOR_LAUNCH_ENV
++  elif arbor_as_a_person; then
++    # shellcheck disable=SC2086
++    arbor_open_as_a_person ARBOR_ONLY_PIDS="$pids" ARBOR_NO_PROMPT=1 ARBOR_DEBUG=1 ARBOR_NO_HOTKEYS=1 ARBOR_NO_STATUS_ITEM=1 \
++      ARBOR_NO_WATCHDOG=1 $ARBOR_LAUNCH_ENV
+   else
+     # shellcheck disable=SC2086
+     env ARBOR_ONLY_PIDS="$pids" ARBOR_NO_PROMPT=1 ARBOR_DEBUG=1 ARBOR_NO_HOTKEYS=1 ARBOR_NO_STATUS_ITEM=1 \
+       ARBOR_NO_WATCHDOG=1 $ARBOR_LAUNCH_ENV "$binary" >> "$ARBOR_OUT/$(arbor_log_name arbor-stderr)" 2>&1 3>&- 7>&- 8>&- 9>&- &
+     ARBOR_PID=$!
++    # So that a result carries its own witness wherever it is quoted.
++    echo "as no person starts it: the binary, a child of this shell, with the permission from its first instant"
+   fi
+   started "$ARBOR_PID"
+ 
+@@ -1438,6 +1446,125 @@ arbor_open_bundle() {
+   [ -n "$ARBOR_PID" ] || die "the bundle did not start"
+ }
+ 
++# MARK: As a person starts it
++#
++# A script's Arbor is the bare binary, a child of the shell: it borrows the permission of whoever started the shell, and has it from its first
++# instant. Nobody's Arbor is like that. A person opens Arbor.app, which answers for itself, has no permission, and is given it while it waits.
++# It makes a difference: on hosted Macs (2026-10-15, macOS 26.6.2) an Arbor started so was told by CGEventSource.keyState(.combinedSessionState)
++# that a key which was down was up, at 233 looks of 233; one opened the same way with the permission already there the truth, 314 of 314, as the shell's
++# child, 288 of 288. So a held key was a tap in an Arbor that people have, and in no script's. With ARBOR_AS_A_PERSON set both doors (arbor_launch here,
++# arbor_start_apps in lib-apps.sh) start it the person's way, with the same environment. Only on GitHub's Macs: it writes to the privacy
++# database. In a rehearsal it changes nothing: the fake Mac has neither Launch Services nor a privacy database.
++#
++#   late    arbor_start: the entry is forgotten, Arbor is seen waiting, and is given the permission while it waits: a first day, and every update of a build
++#           without a certificate. arbor_relaunch: the entry is there from before the start, as on the day after.
++#   early   the entry is there before every start: any other day.
++# THE START IS A PERSON'S, THE GRANT IS A SCRIPT'S: no script can flick the switch in System Settings.
++#
++# A script that is itself about the permission says ARBOR_MAY_LACK_PERMISSION=1 at its start: then nothing is forgotten and nothing granted
++# here, the entry is the script's own business (check-F63.sh: `arbor_grant` before it notes which entries allow).
++ARBOR_ID=com.evbarleyg.arbor
++# safe anywhere: a name; nothing is done with it here
++ARBOR_TCC="/Library/Application Support/com.apple.TCC/TCC.db"
++ARBOR_ANNOUNCE="$ARBOR_APPS/announce-accessibility"
++arbor_as_a_person() {
++  case "${ARBOR_AS_A_PERSON:-}" in
++    "") return 1 ;;
++    late | early) ;;
++    *) die "ARBOR_AS_A_PERSON is late or early, not '$ARBOR_AS_A_PERSON'" ;;
++  esac
++  [ -z "${ARBOR_REHEARSAL:-}" ] && on_throwaway_mac
++}
++# The daemon writes there too, a row of its own when an app without one asks: at one grant of 21 on hosted Macs the database was locked (2026-10-15). So it waits
++# for up to five seconds, and tries once more.
++arbor_tcc() {
++  arbor_may "write to the privacy database" || return 1
++  sudo sqlite3 -cmd ".timeout 5000" "$ARBOR_TCC" "$1" && return 0
++  sleep 1
++  sudo sqlite3 -cmd ".timeout 5000" "$ARBOR_TCC" "$1"
++}
++# The switch in System Settings does three things, and so does this, in that order: it writes the entry, the daemon (which answers from memory)
++# learns of it, here by being restarted, and the change is announced, which is how a running process hears of it (check-F63.sh has the measurements).
++arbor_build_announce() {
++  swiftc -O -swift-version 5 - -o "$ARBOR_ANNOUNCE" > "$ARBOR_OUT/build-announce.log" 2>&1 <<'SWIFT' || die "the three lines that announce a change did not compile"
++import Foundation
++DistributedNotificationCenter.default().postNotificationName(
++  Notification.Name("com.apple.accessibility.api"), object: nil, userInfo: nil, deliverImmediately: true)
++SWIFT
++}
++arbor_told() {
++  arbor_may "restart the daemon that keeps the privacy database" || return 1
++  [ -x "$ARBOR_ANNOUNCE" ] || arbor_build_announce
++  sudo killall -9 tccd 2>/dev/null
++  sleep 2
++  "$ARBOR_ANNOUNCE"
++}
++# The bundle's own entry, made from one that is there, so that it has whatever columns this macOS has.
++arbor_grant() {
++  arbor_tcc "DELETE FROM access WHERE service = 'kTCCServiceAccessibility' AND client = '$ARBOR_ID';
++    CREATE TEMP TABLE one AS SELECT * FROM access WHERE service = 'kTCCServiceAccessibility' AND auth_value = 2 LIMIT 1;
++    UPDATE one SET client = '$ARBOR_ID', client_type = 0, csreq = NULL;
++    INSERT INTO access SELECT * FROM one;" || return 1
++  arbor_told
++}
++arbor_forget() {
++  arbor_tcc "DELETE FROM access WHERE service = 'kTCCServiceAccessibility' AND client = '$ARBOR_ID';" || return 1
++  arbor_told
++}
++arbor_is_allowed() {
++  "$ARBOR_BIN/arborctl" state 2>/dev/null | python3 "$ARBOR_STATE_PY" ready 0 2>/dev/null
++  [ $? -ne 3 ]
++}
++# arbor_open_as_a_person NAME=value…: sets ARBOR_PID. What a child of this shell would have inherited of Arbor's variables goes with it, and of a name
++# given twice the last counts, as with `env`.
++arbor_open_as_a_person() {
++  local name all=() arguments=() i j later tries=0 log
++  arbor_as_a_person || die "arbor_open_as_a_person: only with ARBOR_AS_A_PERSON=late or early, on a throwaway Mac"
++  arbor_may "open Arbor.app, which registers it, and write its entry in the privacy database" || return 1
++  [ -x "$ARBOR_APP/Contents/MacOS/Arbor" ] || die "arbor_open_as_a_person: there is no $ARBOR_APP; call arbor_build first"
++  for name in $(compgen -e ARBOR_); do all+=("$name=${!name}"); done
++  all+=("$@")
++  for ((i = 0; i < ${#all[@]}; i++)); do
++    later=""
++    for ((j = i + 1; j < ${#all[@]}; j++)); do [ "${all[j]%%=*}" = "${all[i]%%=*}" ] && later=1; done
++    [ -n "$later" ] || arguments+=(--env "${all[i]}")
++  done
++  if [ -z "${ARBOR_MAY_LACK_PERMISSION:-}${ARBOR_LATER_DAY:-}" ]; then
++    if [ "$ARBOR_AS_A_PERSON" = early ]; then arbor_grant; else arbor_forget; fi || die "the privacy database cannot be written here"
++  fi
++  log="$ARBOR_OUT/$(arbor_log_name arbor-stderr)"
++  : >> "$log"
++  if ! limit 20 open -n --stdout "$log" --stderr "$log" "${arguments[@]}" "$ARBOR_APP"; then
++    echo "NOTE: \`open\` would not connect what Arbor writes to a file; opened without, so there is no $(basename "$log") of this start"
++    limit 20 open -n "${arguments[@]}" "$ARBOR_APP" || die "could not open $ARBOR_APP"
++  fi
++  # The lock names who holds it; one that an Arbor which was killed left behind names nobody that lives.
++  # safe anywhere: it asks whether that process lives, and sends it nothing
++  until "$ARBOR_BIN/arborctl" status > /dev/null 2>&1 && kill -0 "$(cat "$ARBOR_HOME/arbor.lock" 2>/dev/null)" 2>/dev/null; do
++    tries=$((tries + 1))
++    [ "$tries" -lt 100 ] || die "Arbor.app was opened and does not answer on its socket"
++    sleep 0.2
++  done
++  ARBOR_PID=$(cat "$ARBOR_HOME/arbor.lock")
++  echo "as a person starts it: Arbor.app through Launch Services, pid $ARBOR_PID: $("$ARBOR_BIN/arborctl" status 2>&1 | head -n 1 | cut -c 1-70)"
++  [ -z "${ARBOR_MAY_LACK_PERMISSION:-}" ] || return 0
++  if [ -n "${ARBOR_LATER_DAY:-}" ] || [ "$ARBOR_AS_A_PERSON" = early ]; then
++    arbor_is_allowed || die "the entry was there before the start, and Arbor says it has no permission"
++    echo "the permission was there before it started"
++    return 0
++  fi
++  # The premise: one that is allowed before anybody gave it anything is not answering for itself, and the start proves nothing.
++  arbor_is_allowed && die "Arbor.app has the permission before it was given it (or no longer answers): it is not answering for itself"
++  arbor_grant || die "the privacy database cannot be written here"
++  tries=0
++  until arbor_is_allowed; do
++    tries=$((tries + 1))
++    [ "$tries" -lt 75 ] || die "Arbor was given the permission while it waited, and 15 s later still says it has none"
++    sleep 0.2
++  done
++  echo "given the permission while it waited; it knew after $(echo "scale=1; $tries / 5" | bc) s"
++}
++
+ # A drag or a modifier left held (the script was stopped half way through one) would outlive the session: nobody
+ # else is there to let go.
+ arbor_let_go() { "$ARBOR_POINTER" calm 2>/dev/null; }
+diff --git a/scripts/mac-shell/probe-the-welcome-after-a-late-grant.sh b/scripts/mac-shell/probe-the-welcome-after-a-late-grant.sh
+new file mode 100755
+index 00000000..dd09282b
+--- /dev/null
++++ b/scripts/mac-shell/probe-the-welcome-after-a-late-grant.sh
+@@ -0,0 +1,57 @@
++#!/bin/bash
++# What lies on the display after the permission has come late: on a first day, and on a later day (collab/BOARD.md, 1.114). A probe.
++#
++#   scripts/mac-shell/run.sh --as-a-person late --no-preflight "<why>" scripts/mac-shell/probe-the-welcome-after-a-late-grant.sh
++#
++# Every script starts Arbor with ARBOR_NO_PROMPT=1, which no person sets: it keeps the welcome window shut. Read in the source: whoever starts Arbor without the
++# permission gets that window, on any day, before anybody looks whether it has been seen (`welcomed` in state.json). That it opens is right. What follows is the
++# question: whoever had been welcomed before this launch is no newcomer, and at the grant the window has done what it came for.
++#
++# Here, without the variable: a first day (no state.json; the app through Launch Services, seen waiting, granted while it waits), a quit, and a later day that
++# begins the same way, as after every update of a build without a certificate. After each grant: a picture at once, one ten seconds later, and Arbor's own
++# windows as the window server has them.
++#
++# Nothing here is a verdict but its premises: the pictures and the lists are the point, before 1.114 and after it. It cannot be rehearsed: the fake Mac has no Launch Services and no privacy database.
++source "$(dirname "$0")/lib.sh"
++needs_throwaway_mac "write to the privacy database and open Arbor.app"
++# Whatever the run says: this is about the late grant.
++ARBOR_AS_A_PERSON=late
++
++arbor_build
++
++# look <name>: a picture, Arbor's own windows, who is in front, what the file says
++look() {
++  shot "$1"
++  echo "Arbor's own windows (id pid level x y w h on owner):"
++  overlays
++  echo "in front: $(lsappinfo info -only name "$(lsappinfo front)" 2>&1 | tr -d '\n')"
++  echo "state.json says of the welcome: $(grep -o '"welcomed" *: *[a-z]*' "$ARBOR_HOME/state.json" 2>/dev/null || echo "nothing (no file, or no such key)")"
++  "$ARBOR_BIN/arborctl" status | head -n 2
++}
++
++step "a first day: no state.json, the permission comes while Arbor waits"
++arbor_start 3 ARBOR_NO_PROMPT=0 ARBOR_NO_STATUS_ITEM=0 ARBOR_NO_HOTKEYS=0
++look 01-first-day-at-the-grant
++sleep 10
++look 02-first-day-ten-seconds-later
++summary
++check "the first day's launch wrote down that the welcome has been seen" eventually grep -q '"welcomed" *: *true' "$ARBOR_HOME/state.json"
++arbor_quit
++look_file() { grep -o '"welcomed" *: *[a-z]*' "$ARBOR_HOME/state.json"; }
++echo "after the quit: $(look_file)"
++
++step "a later day, the permission late again: a build over an earlier one"
++# arbor_launch and not arbor_relaunch: the entry is forgotten again, and the same home, settings and state.json are there.
++arbor_launch ARBOR_NO_PROMPT=0 ARBOR_NO_STATUS_ITEM=0 ARBOR_NO_HOTKEYS=0
++look 03-later-day-at-the-grant
++sleep 10
++look 04-later-day-ten-seconds-later
++summary
++
++step "a day after that, the permission in place"
++arbor_quit
++arbor_relaunch ARBOR_NO_PROMPT=0 ARBOR_NO_STATUS_ITEM=0 ARBOR_NO_HOTKEYS=0
++sleep 2
++look 05-the-day-after
++grep -iE "welcome|onboard" "$ARBOR_HOME/arbor.log" | cut -c 12- | tail -n 30
++arbor_stop 06-quit
+diff --git a/scripts/mac-shell/run.sh b/scripts/mac-shell/run.sh
+index 4682e3f8..108282fb 100755
+--- a/scripts/mac-shell/run.sh
++++ b/scripts/mac-shell/run.sh
+@@ -1,7 +1,7 @@
+ #!/bin/bash
+ # Runs a script from this repository on a real Mac and brings back what it produced. Or several scripts.
+ #
+-#   scripts/mac-shell/run.sh [--macs N] [--at-once N] [--on macos-15] [--bare] [--release] [--limit S] [--priority N] [--no-preflight "<why>"] <script>… [ref]
++#   scripts/mac-shell/run.sh [--macs N] [--at-once N] [--on macos-15] [--bare] [--release] [--as-a-person late|early] [--limit S] [--priority N] [--no-preflight "<why>"] <script>… [ref]
+ #   scripts/mac-shell/run.sh scripts/mac-shell/shots-demo.sh
+ #   scripts/mac-shell/run.sh scripts/mac-shell/shots-F10.sh scripts/mac-shell/shots-F12.sh scripts/mac-shell/shots-F43.sh
+ #
+@@ -26,6 +26,10 @@
+ #               supervisor for ($ARBOR_TIME_LIMIT, in the script or in a file it reads in). A Mac has eighty minutes for its scripts, so fewer go to one.
+ #   --release   the scripts drive the release build, the program people get (ARBOR_CONFIGURATION=release says the same): for whatever is measured,
+ #               how busy, how long, how smooth. It is built before the first script and kept for the next run, apart from the debug builds.
++#   --as-a-person late|early   the scripts start Arbor the way a person does: Arbor.app through Launch Services, answering for its own permission
++#               (ARBOR_AS_A_PERSON=late says the same). late: it starts without the Accessibility permission and is given it while it waits: a first day, and
++#               every update of a build without a certificate. early: the permission is there before it starts: any other day. Without the option Arbor is
++#               the bare binary, a child of the script's shell. macOS treats the three differently (lib.sh, "As a person starts it").
+ #   --priority N   GitHub hands its Macs out in no particular order, so the order is kept here, before the run is started: waiting
+ #               here costs nobody anything. 1 waits for nobody's ordinary run: a fault on real windows, a merge train. 2 waits while three or
+ #               more jobs are waiting for a Mac. 3 (the default) waits while any is: pictures, features, whatever can wait.
+@@ -74,8 +78,8 @@
+ set -uo pipefail
+ cd "$(dirname "$0")/../.." || exit 97
+ 
+-usage="usage: scripts/mac-shell/run.sh [--macs N] [--at-once N] [--on macos-15] [--bare] [--release] [--limit S] [--priority N] [--no-preflight \"<why>\"] <script>… [ref]"
+-seconds="" longest="" macs="" at_once="" ref="" kind=macos-26 bare=false priority=${ARBOR_MAC_PRIORITY:-3} unchecked="" configuration=${ARBOR_CONFIGURATION:-debug}
++usage="usage: scripts/mac-shell/run.sh [--macs N] [--at-once N] [--on macos-15] [--bare] [--release] [--as-a-person late|early] [--limit S] [--priority N] [--no-preflight \"<why>\"] <script>… [ref]"
++seconds="" longest="" macs="" at_once="" ref="" kind=macos-26 bare=false priority=${ARBOR_MAC_PRIORITY:-3} unchecked="" configuration=${ARBOR_CONFIGURATION:-debug} person=${ARBOR_AS_A_PERSON:-}
+ scripts=()
+ while [ $# -gt 0 ]; do
+   case "$1" in
+@@ -83,6 +87,7 @@ while [ $# -gt 0 ]; do
+     --at-once) at_once=${2:?$usage}; shift ;;
+     --on) kind=${2:?$usage}; shift ;;
+     --release) configuration=release ;;
++    --as-a-person) person=${2:?$usage}; shift ;;
+     --limit) seconds=${2:?$usage}; shift ;;
+     --bare) bare=true ;;
+     --priority) priority=${2:?$usage}; shift ;;
+@@ -101,6 +106,8 @@ case "$seconds" in *[!0-9]* | 0) echo "run.sh: --limit takes seconds, 1 or more"
+ case "$priority" in 1 | 2 | 3) ;; *) echo "run.sh: --priority takes 1, 2 or 3" >&2; exit 97 ;; esac
+ case "$configuration" in debug | release) ;; *) echo "run.sh: ARBOR_CONFIGURATION is debug or release, not '$configuration'" >&2; exit 97 ;; esac
+ [ "$configuration" = debug ] || [ "$bare" = false ] || { echo "run.sh: --bare builds nothing, so there is no release build to drive" >&2; exit 97; }
++case "$person" in "" | late | early) ;; *) echo "run.sh: --as-a-person takes late or early, not '$person'" >&2; exit 97 ;; esac
++[ -z "$person" ] || [ "$bare" = false ] || { echo "run.sh: --bare builds nothing, so there is no Arbor.app to open" >&2; exit 97; }
+ ref=${ref:-$(git rev-parse --abbrev-ref HEAD)}
+ [ "$ref" != HEAD ] || { echo "run.sh: no branch is checked out; name one: run.sh <script> <ref>" >&2; exit 97; }
+ script=${scripts[0]}
+@@ -118,12 +125,18 @@ for each in "${scripts[@]}"; do
+   case "$each" in *[!A-Za-z0-9._/-]*) fail "'$each': a script's path may hold letters, digits, dots, dashes, underscores and slashes" ;; esac
+   git cat-file -e "$remote:$each" 2>/dev/null || fail "GitHub has no file '$each' at $ref (${remote:0:7}); commit and push it first"
+ done
++# (Not `grep -q`, here and below: it leaves at the first match, `git show` then dies of the closed pipe, and under pipefail that is a failure, once more of lib.sh
++# lies behind the match than a pipe holds: with 67 KB behind it "not found" once in 80, with 72 KB 39 times of 40, and the run is refused.)
+ # The workflow is one branch's for everybody, but lib.sh is <ref>'s own. One from before the switch takes no notice of it: the workflow would build release, and the
+ # script then build and drive debug, without a word: a number measured on the wrong program.
+ if [ "$configuration" != debug ] && git cat-file -e "$remote:scripts/mac-shell/lib.sh" 2>/dev/null \
+-  && ! git show "$remote:scripts/mac-shell/lib.sh" | grep -q 'swift build -c "\$ARBOR_CONFIGURATION"'; then
++  && ! git show "$remote:scripts/mac-shell/lib.sh" | grep 'swift build -c "\$ARBOR_CONFIGURATION"' > /dev/null; then
+   fail "$ref's scripts/mac-shell/lib.sh is older than the switch for the $configuration build, and would drive debug whatever is asked: bring the branch up to date first"
+ fi
++if [ -n "$person" ] && git cat-file -e "$remote:scripts/mac-shell/lib.sh" 2>/dev/null \
++  && ! git show "$remote:scripts/mac-shell/lib.sh" | grep '^arbor_as_a_person()' > /dev/null; then
++  fail "$ref's scripts/mac-shell/lib.sh is older than --as-a-person, and would start the bare binary whatever is asked: bring the branch up to date first"
++fi
+ if [ "$ref" = "$(git rev-parse --abbrev-ref HEAD)" ]; then
+   [ "$remote" = "$(git rev-parse HEAD)" ] || fail "$ref is at ${remote:0:7} on GitHub but $(git rev-parse --short HEAD) here; push first"
+   [ -z "$(git status --porcelain -- scripts Sources Package.swift)" ] \
+@@ -198,9 +211,10 @@ name=$(slug "$(basename "$script" .sh)" 16)
+ [ "$kind" = macos-26 ] || name=$(slug "$name" 9)-${kind#macos-}
+ # To be read at a glance: the same script on the other build is another question.
+ [ "$configuration" = debug ] || name=$(slug "$name" 12)-rel
++[ -z "$person" ] || name=$(slug "${name%-rel}" "$([ "$configuration" = debug ] && echo 12 || echo 8)")$([ "$configuration" = debug ] || echo -rel)-$(printf '%s' "$person" | cut -c 1-3)
+ # Names are cut short to fit, and a run started under the tag of one that is under way replaces it: so whatever is cut off has its say in a few
+ # letters at the end. The same scripts for the same ref on the same kind of Mac and the same build get the same tag again, and nothing else does.
+-whole=$(printf '%s\n' "$ref" "$kind" "$configuration" "${scripts[@]}" | git hash-object --stdin | cut -c 1-5)
++whole=$(printf '%s\n' "$ref" "$kind" "$configuration${person:+ as a person, $person}" "${scripts[@]}" | git hash-object --stdin | cut -c 1-5)
+ tag=${MAC_SHELL_TAG:-$(slug "$ref" 15).$name.$whole}
+ 
+ # What Linux can say, it says first.
+@@ -321,6 +335,7 @@ newest=$(api "$runs" --jq '.workflow_runs[0].id // 0') || fail "cannot list the
+ other=()
+ [ "$configuration" = debug ] || other=(-f "inputs[configuration]=$configuration")
+ [ "$seconds" -eq 1200 ] || other+=(-f "inputs[limit]=$seconds")
++[ -z "$person" ] || other+=(-f "inputs[person]=$person")
+ # `script` is for the run's title alone: what runs is in the plan. GitHub cuts a long title, and at its end stand the branch, by which the queue knows whose run it
+ # is, and the tag, by which this script knows its own: with twelve paths in it the run was started, never found, and sent again. So: one script by its path, as ever;
+ # several by their names; of more than four the first three and how many more.
+@@ -336,7 +351,7 @@ api -X POST "repos/$repo/actions/workflows/mac-shell.yml/dispatches" \
+   -f "inputs[at-once]=${at_once:-5}" -f "inputs[runner]=$kind" -F "inputs[bare]=$bare" -f "inputs[unchecked]=$(printf '%s' "$unchecked" | tr -c 'A-Za-z0-9 .,:_/-' ' ' | cut -c 1-80)" \
+   -f "inputs[macs]=$plan" >/dev/null \
+   || fail "could not start the workflow of $home for $ref"
+-echo "started ${scripts[*]} at $ref (${remote:0:7}), tag $tag$([ "$macs" -eq 1 ] || echo ", on $macs Macs")$([ "$configuration" = debug ] || echo ", the $configuration build"); waits ${limit} s at most"
++echo "started ${scripts[*]} at $ref (${remote:0:7}), tag $tag$([ "$macs" -eq 1 ] || echo ", on $macs Macs")$([ "$configuration" = debug ] || echo ", the $configuration build")${person:+, started as a person starts it, the permission $person}; waits ${limit} s at most"
+ # For whoever shares a look at the queue: there is one more waiting now. Costs no call.
+ look 20 python3 scripts/mac-queue.py --repo "$repo" --started "$macs" --for "$ref"
+ 
+-- 
+2.43.0
+

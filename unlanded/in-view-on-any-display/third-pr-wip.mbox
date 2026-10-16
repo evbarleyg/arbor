@@ -1,0 +1,570 @@
+From c8c3220a4710def60216f74abdd3ae7ebb32a2d0 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 09:06:54 +0000
+Subject: [PATCH] wip: heirs, the take-back, whose display the next key means
+
+---
+ .../Controller/Controller+Focus.swift         |  41 +++-
+ .../Controller/Controller+Layout.swift        |   8 +-
+ .../ArborKit/Controller/Controller+Lead.swift |   5 +-
+ .../Controller/Controller+PassThrough.swift   |   1 +
+ .../Controller/Controller+Transitions.swift   |   1 +
+ .../AnHeirNobodyChoseTests.swift              | 142 +++++++++++++
+ .../InViewOnAnyDisplayTests.swift             | 192 ++++++++++++++++++
+ docs/ARCHITECTURE.md                          |   4 +-
+ 8 files changed, 377 insertions(+), 17 deletions(-)
+ create mode 100644 Tests/ArborKitTests/AnHeirNobodyChoseTests.swift
+
+diff --git a/Sources/ArborKit/Controller/Controller+Focus.swift b/Sources/ArborKit/Controller/Controller+Focus.swift
+index c4055cfa..1ff70981 100644
+--- a/Sources/ArborKit/Controller/Controller+Focus.swift
++++ b/Sources/ArborKit/Controller/Controller+Focus.swift
+@@ -109,8 +109,7 @@ extension Controller {
+   /// next window, or to the app used before. If that window is out of view, following it would move the view
+   /// although the user asked for nothing of the kind (and perhaps in front of an audience). So the view
+   /// stays and a window in view gets the keyboard. Only if nothing is in view, on any display, does the view follow,
+-  /// because typing into a window out of view is worse. (A view that has followed already and is taken back still
+-  /// looks at its own display alone.) That the window macOS picked is out of view is Arbor's doing, and this is
++  /// because typing into a window out of view is worse. That the window macOS picked is out of view is Arbor's doing, and this is
+   /// all Arbor does about a going: where macOS picks a window in view, or none, macOS has decided.
+   ///
+   /// macOS was seen to report the new focus a millisecond BEFORE the close or the minimize, and after a hide, and
+@@ -138,6 +137,13 @@ extension Controller {
+     /// no window. Whoever was typing there is still looking there, and the next key that names no display means that one
+     /// (`focusedDisplayID`), wherever the pointer was left.
+     var wentOn: DisplayID?
++    /// The window with the keyboard went away on `from`, and Arbor handed the keyboard to `to`, on another display, because nothing was
++    /// in view on that one. That is not the person going there: while `to` has the keyboard, the next key that names no display
++    /// still means `from` (`focusedDisplayID`). A key for the focused window means `to`. It ends when the person goes elsewhere:
++    /// the keyboard is seen in another window, another app comes forward, the pointer is pressed. Not at what macOS says
++    /// about the hand-over itself: the heir named again, its app coming forward, or whom it named before while the keyboard is
++    /// still on its way.
++    var handedAcross: (to: WindowID, from: DisplayID)?
+     /// The windows that are going to be looked at again (`scheduleFocusCheck`).
+     var secondLooks: Set<WindowID> = []
+     /// `window`, out of view, has taken the keyboard from `holder`, a window of the same app, and the view has not followed yet
+@@ -213,14 +219,16 @@ extension Controller {
+     return reveal
+   }
+ 
+-  /// Whether the view moved just now for the window macOS picked when `id` went, and a layout of where it came from shows something: otherwise
+-  /// it would only have to follow again. (A view with nothing in it shows what is around it, so this is seldom no.)
++  /// Whether the view moved just now for the window macOS picked when `id` went, and a layout of where it came from shows something, or
++  /// another display does: otherwise it would only have to follow again. (A view with nothing in it shows what is around it, so
++  /// this is seldom no.)
+   private func isTheHeirs(_ reveal: KeyboardHandOver.Reveal, after id: WindowID, of app: Int32?) -> Bool {
+     guard reveal.holder == id, now().timeIntervalSince(reveal.time) < Self.handOverTime, app == nil || app == windows[reveal.window]?.pid
+     else { return false }
+     var before = workspaces[reveal.display]
+     guard before?.retractLastMove() == true, let view = before?.camera else { return false }
+     return somethingWouldBeInView(on: reveal.display, at: view)
++      || workspaces.contains { $0.key != reveal.display && somethingWouldBeInView(on: $0.key, at: $0.value.camera) }
+   }
+ 
+   /// Call after `id`, which `hadKeyboard`, closed or stopped taking space, and `display` was laid out without it.
+@@ -255,7 +263,7 @@ extension Controller {
+         relayout(reveal.display, reason: .camera, puttingBack: back)
+         // Only for that layout: should the view have to move on, they go with it like any other.
+         placedOnPurpose.subtract(back.map(\.window))
+-        if !ensureFocusIsVisible(on: reveal.display, alsoFromNothing: false), let heir = system.focusedWindow(), heir != id,
++        if !aWindowInViewGetsTheKeyboard(after: display, picked: reveal.display), let heir = system.focusedWindow(), heir != id,
+           windows[heir]?.isPresent == true
+         {
+           bringIntoView(heir)
+@@ -301,18 +309,29 @@ extension Controller {
+   private func aWindowInViewGetsTheKeyboard(after display: DisplayID, picked: DisplayID) -> Bool {
+     // Each display once: asking costs a question to macOS.
+     var asked: Set<DisplayID> = []
+-    return ([display, picked] + workspaces.keys.sorted())
+-      .first { asked.insert($0).inserted && ensureFocusIsVisible(on: $0, alsoFromNothing: false) } != nil
++    let found = ([display, picked] + workspaces.keys.sorted())
++      .first { asked.insert($0).inserted && ensureFocusIsVisible(on: $0, alsoFromNothing: false, asAnHeir: true) }
++    // After the asking, whose echoes come at once or later and are about the heir.
++    if let found, found != display, let heir = keyboardFocus() { keyboardHandOver.handedAcross = (heir, display) }
++    return found != nil
+   }
+ 
+-  /// Whether a view on `camera` would show a window that can take the focus: a docked one, or a floating one that is in
+-  /// view there (`floatingMoves`).
++  /// Not a window of an app that Arbor pauses for or passes its keys through to. Given the keyboard, its app comes forward: the one
++  /// pauses Arbor, which brings every window on every display into view, the other takes Arbor's keys away. After a
++  /// command that moved the view there a person has asked for that. After a going nobody has.
++  func canBeAnHeir(_ window: WindowID) -> Bool {
++    let app = windows[window]?.bundleID
++    return !settings.pausesFor(app) && !settings.passesThrough(app)
++  }
++
++  /// Whether a view on `camera` would show a window that can be the heir: a docked one, or a floating one that is in
++  /// view there (`floatingMoves`). (The window that is going takes no space any more, so it is in no layout.)
+   private func somethingWouldBeInView(on display: DisplayID, at camera: NodeID) -> Bool {
+     guard let workspace = workspaces[display], let layout = layout(of: display, camera: camera) else { return false }
+-    if !layout.windowFrames.isEmpty { return true }
++    if layout.windowFrames.keys.contains(where: canBeAnHeir) { return true }
+     let showsTheDesktop = workspace.tree.subtree(layout.camera, contains: workspace.tree.desktop)
+     return workspace.floating.keys.contains {
+-      windows[$0]?.isPresent == true && isManaged($0) && !workspace.isStashed($0) && !workspace.staysInView($0)
++      canBeAnHeir($0) && windows[$0]?.isPresent == true && isManaged($0) && !workspace.isStashed($0) && !workspace.staysInView($0)
+         && (showsTheDesktop || hostInView(of: $0, in: workspace, layout: layout) != nil)
+     }
+   }
+diff --git a/Sources/ArborKit/Controller/Controller+Layout.swift b/Sources/ArborKit/Controller/Controller+Layout.swift
+index ce03c594..cdd4ca5a 100644
+--- a/Sources/ArborKit/Controller/Controller+Layout.swift
++++ b/Sources/ArborKit/Controller/Controller+Layout.swift
+@@ -755,7 +755,7 @@ extension Controller {
+   /// given the focus would cover a guest that was used after it.
+   @discardableResult
+   func ensureFocusIsVisible(
+-    on displayID: DisplayID, alsoFromAPinnedWindow: Bool = false, alsoFromNothing: Bool = true
++    on displayID: DisplayID, alsoFromAPinnedWindow: Bool = false, alsoFromNothing: Bool = true, asAnHeir: Bool = false
+   ) -> Bool {
+     // A command that moves the view says where the attention goes, so the keyboard goes along, also out of a
+     // pinned window, which is still in view: keys meant for the window that arrived must not end up in a call.
+@@ -765,12 +765,13 @@ extension Controller {
+         parked.contains($0) || (alsoFromNothing && windows[$0]?.isMinimized == true)
+           || (alsoFromAPinnedWindow && staysInView($0))
+       } ?? alsoFromNothing
+-    return nobody && giveTheKeyboardToTheView(on: displayID)
++    return nobody && giveTheKeyboardToTheView(on: displayID, asAnHeir: asAnHeir)
+   }
+ 
+   /// The choice itself, for a caller that knows the keyboard has to come (a peek that landed beside it).
++  /// `asAnHeir`: nobody moved the view or asked for anything, the window with the keyboard went (`canBeAnHeir`).
+   @discardableResult
+-  func giveTheKeyboardToTheView(on displayID: DisplayID) -> Bool {
++  func giveTheKeyboardToTheView(on displayID: DisplayID, asAnHeir: Bool = false) -> Bool {
+     guard let layout = layouts[displayID], let workspace = workspaces[displayID] else { return false }
+     // The layout can be a moment behind the windows (an app being hidden is laid out once all are reported).
+     var candidates = layout.windowFrames.filter { windows[$0.key]?.isPresent == true }
+@@ -783,6 +784,7 @@ extension Controller {
+     if let window = windowLetBe, workspace.isDocked(window), let snapshot = windows[window], snapshot.isPresent {
+       candidates[window] = snapshot.frame
+     }
++    if asAnHeir { candidates = candidates.filter { canBeAnHeir($0.key) } }
+     // In a fixed order: windows overlap and frames tie, and the choice must not depend on a dictionary's.
+     let ordered = candidates.sorted {
+       ($0.value.minY, $0.value.minX, $0.key.rawValue) < ($1.value.minY, $1.value.minX, $1.key.rawValue)
+diff --git a/Sources/ArborKit/Controller/Controller+Lead.swift b/Sources/ArborKit/Controller/Controller+Lead.swift
+index fb145942..00bf1a0a 100644
+--- a/Sources/ArborKit/Controller/Controller+Lead.swift
++++ b/Sources/ArborKit/Controller/Controller+Lead.swift
+@@ -81,6 +81,7 @@ extension Controller {
+   func noteFocus(_ window: WindowID?) {
+     confirmFocusRequest(at: window)
+     if window != nil { keyboardHandOver.wentOn = nil }
++    if let heir = keyboardHandOver.handedAcross?.to, window != heir, focusRequest?.window != heir { keyboardHandOver.handedAcross = nil }
+     if let focus = following.focus, focus.window == window { return }
+     following.focus = (window, now())
+     following.lead.focusChanged()
+@@ -127,8 +128,10 @@ extension Controller {
+     return pointerDisplayID
+   }
+ 
+-  /// The display the focused window is on: its workspace's, or for a window Arbor does not arrange the one it sits on.
++  /// The display the focused window is on: its workspace's, or for a window Arbor does not arrange the one it sits on. Unless Arbor
++  /// itself sent the keyboard there from another display, where the eyes still are (`KeyboardHandOver.handedAcross`).
+   var focusedDisplayID: DisplayID? {
++    if let across = keyboardHandOver.handedAcross, keyboardFocus() == across.to, workspaces[across.from] != nil { return across.from }
+     if let place = focusedPlace { return place.display }
+     guard let window = system.focusedWindow(), let frame = windows[window]?.frame else {
+       return keyboardHandOver.wentOn.flatMap { workspaces[$0] != nil ? $0 : nil }
+diff --git a/Sources/ArborKit/Controller/Controller+PassThrough.swift b/Sources/ArborKit/Controller/Controller+PassThrough.swift
+index 1ef92f04..84f2b7d2 100644
+--- a/Sources/ArborKit/Controller/Controller+PassThrough.swift
++++ b/Sources/ArborKit/Controller/Controller+PassThrough.swift
+@@ -66,6 +66,7 @@ extension Controller {
+     frontmostApp = app
+     // Somebody has gone elsewhere: to Finder, to an app with no window.
+     keyboardHandOver.wentOn = nil
++    if let heir = keyboardHandOver.handedAcross?.to, app?.bundleID != windows[heir]?.bundleID { keyboardHandOver.handedAcross = nil }
+     holdNotesActivation(of: app)
+     followFrontmostApp(justActivated: true)
+   }
+diff --git a/Sources/ArborKit/Controller/Controller+Transitions.swift b/Sources/ArborKit/Controller/Controller+Transitions.swift
+index 60ffdd5a..3afefc8f 100644
+--- a/Sources/ArborKit/Controller/Controller+Transitions.swift
++++ b/Sources/ArborKit/Controller/Controller+Transitions.swift
+@@ -92,6 +92,7 @@ extension Controller {
+   /// through the stage to whatever is really under the pointer.
+   public func pointerPressed() {
+     guard isRunning else { return }
++    keyboardHandOver.handedAcross = nil
+     overlays.finishAnimations()
+     lookAfterPinnedWindowsAfterAPress()
+     // "Any key or click": the panel itself hears only of clicks in other apps and of losing the keyboard. A press on a gap
+diff --git a/Tests/ArborKitTests/AnHeirNobodyChoseTests.swift b/Tests/ArborKitTests/AnHeirNobodyChoseTests.swift
+new file mode 100644
+index 00000000..1e8a8405
+--- /dev/null
++++ b/Tests/ArborKitTests/AnHeirNobodyChoseTests.swift
+@@ -0,0 +1,142 @@
++import ArborCore
++import ArborKit
++import ArborTesting
++import CoreGraphics
++import Testing
++
++/// The window with the keyboard goes, macOS picks one that Arbor keeps out of view, and Arbor picks an heir among the windows in view.
++/// Not a window of an app that Arbor pauses for, or passes its keys through to: brought forward, the one pauses Arbor, which
++/// brings every window on every display into view, and the other takes Arbor's keys away. Nobody chose either. The product
++/// owner's: such a window is nobody's heir, the next in the order gets the keyboard.
++@Suite @MainActor struct AnHeirNobodyChoseTests {
++  enum List: String, CaseIterable { case pauseFor, passThrough }
++
++  /// Safari docked and out of view, the view on the Desktop. On it a game and, if `withMail`, Mail. A second Safari window has the
++  /// keyboard: beside them, or alone on a second display. Neither of the two was ever used, and the game, top left, would be
++  /// chosen for its place; or both were, the game last. (Not with a pause: what is used in a pause Arbor does not see.)
++  func aGameInView(on list: List, displays: Int, withMail: Bool = true, usedLast: Bool = false)
++    -> (Harness, game: WindowID, mail: WindowID?, safari: WindowID, f: WindowID)
++  {
++    var settings = Settings()
++    if list == .pauseFor { settings.pauseForApps = ["com.example.game"] } else { settings.passThroughApps = ["com.example.game"] }
++    let all = [FakeWindowSystem.standardDisplay, Workload.secondDisplay]
++    let h = Harness(displays: Array(all.prefix(displays)), settings: settings)
++    let game = h.system.open(app: "Game", pid: 21, frame: CGRect(x: 760, y: 100, width: 300, height: 300))
++    let mail = withMail ? h.system.open(app: "Mail", pid: 14, frame: CGRect(x: 1100, y: 100, width: 300, height: 300)) : nil
++    let safari = h.system.open(app: "Safari", pid: 12, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
++    let place = displays == 2 ? InViewOnAnyDisplayTests.place(on: all[1].frame, x: 200) : CGRect(x: 760, y: 500, width: 300, height: 300)
++    let f = h.system.open(app: "Safari", pid: 12, frame: place)
++    h.start()
++    h.run("dock \(safari.rawValue) left")
++    h.run("desktop")
++    if usedLast, let mail {
++      h.system.userFocus(mail)
++      h.system.userFocus(game)
++    }
++    h.system.userFocus(f)
++    h.scheduler.advance(by: 2)
++    #expect(h.system.focused == f && !h.system.isVisible(safari) && h.system.isVisible(game) && !h.controller.isPaused)
++    return (h, game, mail, safari, f)
++  }
++
++  func realMoves(_ h: Harness, since mark: Int) -> [FakeWindowSystem.Move] {
++    h.system.moveLog[mark...].filter { $0.before != $0.after }
++  }
++
++  @Test(arguments: List.allCases, [1, 2]) func theNextInTheOrderGetsTheKeyboard(list: List, displays: Int) {
++    let (h, _, mail, safari, f) = aGameInView(on: list, displays: displays)
++    let mark = h.system.moveLog.count
++    h.system.close(f)
++    h.scheduler.advance(by: 2)
++    #expect(h.system.focused == mail)
++    #expect(!h.controller.isPaused && !h.system.isVisible(safari))
++    #expect(realMoves(h, since: mark).isEmpty, "\(realMoves(h, since: mark))")
++    expectWindowsMatchLayout(h)
++  }
++
++  @Test(arguments: [1, 2]) func thoughItWasUsedLast(displays: Int) {
++    let (h, _, mail, _, f) = aGameInView(on: .passThrough, displays: displays, usedLast: true)
++    let mark = h.system.moveLog.count
++    h.system.close(f)
++    h.scheduler.advance(by: 2)
++    #expect(h.system.focused == mail)
++    #expect(realMoves(h, since: mark).isEmpty, "\(realMoves(h, since: mark))")
++    expectWindowsMatchLayout(h)
++  }
++
++  /// And when nothing says who has the keyboard now.
++  @Test(arguments: List.allCases) func alsoWhenNothingReportsTheNewFocus(list: List) {
++    let (h, _, mail, safari, f) = aGameInView(on: list, displays: 2)
++    h.system.echoes.keyboard = false
++    h.system.close(f)
++    h.system.focused = safari
++    h.scheduler.advance(by: 2)
++    #expect(h.system.focused == mail && !h.controller.isPaused)
++    expectWindowsMatchLayout(h)
++  }
++
++  /// The game's is the only window in view anywhere. Three answers were on offer, and the product owner chose the first.
++  /// (a) The view follows to macOS's pick: "in view" means in view and able to be an heir, so this is "nothing is in view". The person
++  /// closed a window and macOS went on to its sibling, as on a Mac alone: showing it is the least surprise.
++  /// (b) Nothing moves and the keyboard stays where macOS put it: typing into a window nobody sees, the one thing that must not be.
++  /// (c) The keyboard goes to Finder: that is the answer for a held view, where no view may move.
++  @Test(arguments: List.allCases, [1, 2]) func withNoOtherInViewTheViewFollows(list: List, displays: Int) {
++    let (h, _, _, safari, f) = aGameInView(on: list, displays: displays, withMail: false)
++    h.system.close(f)
++    h.scheduler.advance(by: 2)
++    #expect(h.system.focused == safari && h.system.isVisible(safari))
++    #expect(!h.controller.isPaused)
++    expectWindowsMatchLayout(h)
++  }
++
++  /// The going is reported so late that the view has followed. It is not taken back to a view with nobody in it but the game, from
++  /// where it would only have to follow again.
++  @Test(arguments: List.allCases, [1, 2]) func aViewThatHasFollowedIsNotTakenBackToTheGameAlone(list: List, displays: Int) {
++    let (h, _, _, safari, f) = aGameInView(on: list, displays: displays, withMail: false)
++    h.system.userFocus(safari)
++    h.scheduler.advance(by: Controller.timeForAGoing + 0.01)
++    #expect(h.system.isVisible(safari))
++    let mark = h.system.moveLog.count
++    h.system.close(f)
++    h.scheduler.advance(by: 2)
++    #expect(h.system.isVisible(safari) && h.system.focused == safari && !h.controller.isPaused)
++    #expect(realMoves(h, since: mark).isEmpty, "there and back: \(realMoves(h, since: mark))")
++    expectWindowsMatchLayout(h)
++  }
++
++  /// Nor to a docked one. The view was on the game's half, with the keyboard on the other display.
++  @Test func norToADockedGameAlone() {
++    var settings = Settings()
++    settings.passThroughApps = ["com.example.game"]
++    let h = Harness(displays: [FakeWindowSystem.standardDisplay, Workload.secondDisplay], settings: settings)
++    let game = h.system.open(app: "Game", pid: 21, frame: CGRect(x: 100, y: 100, width: 300, height: 300))
++    let safari = h.system.open(app: "Safari", pid: 12, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
++    let f = h.system.open(app: "Safari", pid: 12, frame: InViewOnAnyDisplayTests.place(on: Workload.secondDisplay.frame, x: 200))
++    h.start()
++    h.run("dock \(game.rawValue) left")
++    h.run("dock \(safari.rawValue) right")
++    h.run("zoom \(game.rawValue)")
++    h.system.userFocus(f)
++    h.scheduler.advance(by: 2)
++    #expect(h.system.isVisible(game) && !h.system.isVisible(safari))
++    h.system.userFocus(safari)
++    h.scheduler.advance(by: Controller.timeForAGoing + 0.01)
++    #expect(h.system.isVisible(safari))
++    let mark = h.system.moveLog.count
++    h.system.close(f)
++    h.scheduler.advance(by: 2)
++    #expect(h.system.isVisible(safari) && h.system.focused == safari)
++    #expect(realMoves(h, since: mark).isEmpty, "there and back: \(realMoves(h, since: mark))")
++    expectWindowsMatchLayout(h)
++  }
++
++  /// A person's own command that moves the view takes the keyboard along, to whatever is there: they asked. A control.
++  @Test func aCommandThatMovesTheViewStillTakesTheKeyboardAlong() {
++    let (h, game, _, safari, _) = aGameInView(on: .passThrough, displays: 2, withMail: false)
++    h.run("zoom \(safari.rawValue)")
++    #expect(h.system.focused == safari)
++    h.run("desktop")
++    h.scheduler.advance(by: 2)
++    #expect(h.system.focused == game)
++  }
++}
+diff --git a/Tests/ArborKitTests/InViewOnAnyDisplayTests.swift b/Tests/ArborKitTests/InViewOnAnyDisplayTests.swift
+index 3a5392bb..8c9b8281 100644
+--- a/Tests/ArborKitTests/InViewOnAnyDisplayTests.swift
++++ b/Tests/ArborKitTests/InViewOnAnyDisplayTests.swift
+@@ -164,6 +164,65 @@ import Testing
+     expectWindowsMatchLayout(h)
+   }
+ 
++  /// The going is reported so late that the view has followed macOS's pick. It goes back, and the order is the same.
++  @Test func aGoingReportedLateStillPrefersTheDisplayOfTheWindowThatWent() {
++    let (h, _, safari, f) = aLoneWindowOnTheSecondDisplay(of: "Safari", pid: 12)
++    let beside = h.system.open(app: "Mail", pid: 14, frame: Self.place(on: h.system.displayList[1].frame, x: 800))
++    h.system.userFocus(f)
++    h.scheduler.advance(by: 2)
++    h.system.userFocus(safari)
++    h.scheduler.advance(by: Controller.timeForAGoing + 0.01)
++    #expect(h.system.isVisible(safari))
++    h.system.close(f)
++    h.scheduler.advance(by: 2)
++    #expect(!h.system.isVisible(safari))
++    #expect(h.system.focused == beside)
++    expectWindowsMatchLayout(h)
++  }
++
++  /// Nor does the view stay where it followed to because nothing would be in view on ITS display: Mail is in view on the other.
++  @Test func aGoingReportedLateTakesTheViewBackWhileAWindowIsInViewAnywhere() {
++    let h = Harness(displays: [FakeWindowSystem.standardDisplay, Workload.secondDisplay])
++    let second = h.system.displayList[1].frame
++    let safari = h.system.open(app: "Safari", pid: 12, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
++    let f = h.system.open(app: "Safari", pid: 12, frame: Self.place(on: second, x: 200))
++    let mail = h.system.open(app: "Mail", pid: 14, frame: Self.place(on: second, x: 800))
++    h.start()
++    h.run("dock \(safari.rawValue) left")
++    h.run("desktop")
++    h.system.userFocus(f)
++    h.scheduler.advance(by: 2)
++    #expect(!h.system.isVisible(safari))
++    h.system.userFocus(safari)
++    h.scheduler.advance(by: Controller.timeForAGoing + 0.01)
++    #expect(h.system.isVisible(safari))
++    h.system.close(f)
++    h.scheduler.advance(by: 2)
++    #expect(!h.system.isVisible(safari))
++    #expect(h.system.focused == mail)
++    expectWindowsMatchLayout(h)
++  }
++
++  /// But with nothing else in view anywhere it stays: the window that is going does not count. A control.
++  @Test func aGoingReportedLateLeavesTheViewWhereItFollowedToWithNothingElseInView() {
++    let h = Harness(displays: [FakeWindowSystem.standardDisplay, Workload.secondDisplay])
++    let safari = h.system.open(app: "Safari", pid: 12, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
++    let f = h.system.open(app: "Safari", pid: 12, frame: Self.place(on: h.system.displayList[1].frame, x: 200))
++    h.start()
++    h.run("dock \(safari.rawValue) left")
++    h.run("desktop")
++    h.system.userFocus(f)
++    h.scheduler.advance(by: 2)
++    h.system.userFocus(safari)
++    h.scheduler.advance(by: Controller.timeForAGoing + 0.01)
++    let mark = h.system.moveLog.count
++    h.system.close(f)
++    h.scheduler.advance(by: 2)
++    #expect(h.system.isVisible(safari) && h.system.focused == safari)
++    #expect(realMoves(h, since: mark).isEmpty, "\(realMoves(h, since: mark))")
++    expectWindowsMatchLayout(h)
++  }
++
+   /// ⌘H: macOS brings another app forward, and its window is out of view on the other display.
+   @Test func hidingTheOnlyAppOnADisplayMovesNoViewOnAnother() {
+     let (h, notes, safari, _) = aLoneWindowOnTheSecondDisplay(of: "Preview", pid: 13)
+@@ -177,6 +236,139 @@ import Testing
+     expectWindowsMatchLayout(h)
+   }
+ 
++  /// The same where the window that is going is docked. A control too.
++  @Test func norDoesADockedWindowThatIsGoingCountAsInView() {
++    let h = Harness(displays: [FakeWindowSystem.standardDisplay, Workload.secondDisplay])
++    let safari = h.system.open(app: "Safari", pid: 12, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
++    let f = h.system.open(app: "Safari", pid: 12, frame: Self.place(on: h.system.displayList[1].frame, x: 200))
++    h.start()
++    h.run("dock \(safari.rawValue) left")
++    h.run("desktop")
++    h.run("dock \(f.rawValue) left")
++    h.system.userFocus(f)
++    h.scheduler.advance(by: 2)
++    #expect(!h.system.isVisible(safari) && h.system.isVisible(f))
++    h.system.userFocus(safari)
++    h.scheduler.advance(by: Controller.timeForAGoing + 0.01)
++    let mark = h.system.moveLog.count
++    h.system.close(f)
++    h.scheduler.advance(by: 2)
++    #expect(h.system.isVisible(safari) && h.system.focused == safari)
++    #expect(realMoves(h, since: mark).isEmpty, "\(realMoves(h, since: mark))")
++    expectWindowsMatchLayout(h)
++  }
++
++  // MARK: Whose display the next key means
++
++  /// The keyboard was in `f`, on the second display, with the pointer left on the main one. `f` closes and Notes, on the main
++  /// display, gets the keyboard. macOS's pick is out of view beside Notes, or on the second display, which then shows its wallpaper.
++  func handedAcross(thePickIsOnTheSecondDisplay: Bool, slowly: Bool = false) -> (Harness, notes: WindowID, mail: WindowID) {
++    let h = Harness(displays: [FakeWindowSystem.standardDisplay, Workload.secondDisplay])
++    let second = h.system.displayList[1].frame
++    let notes = h.system.open(app: "Notes", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
++    let mail = h.system.open(app: "Mail", pid: 14, frame: CGRect(x: 200, y: 150, width: 600, height: 400))
++    let there = thePickIsOnTheSecondDisplay ? Self.place(on: second, x: 900) : CGRect(x: 300, y: 200, width: 600, height: 400)
++    let safari = h.system.open(app: "Safari", pid: 12, frame: there)
++    let f = h.system.open(app: "Safari", pid: 12, frame: Self.place(on: second, x: 200))
++    h.start()
++    h.run("dock \(notes.rawValue) left")
++    h.run("dock \(mail.rawValue) right")
++    h.run("dock \(safari.rawValue) \(thePickIsOnTheSecondDisplay ? "left" : "beside \(mail.rawValue) bottom")")
++    if thePickIsOnTheSecondDisplay {
++      h.system.cursor = CGPoint(x: second.midX, y: second.midY)
++      h.run("desktop")
++    }
++    h.system.cursor = CGPoint(x: 300, y: 300)
++    h.run("zoom \(notes.rawValue)")
++    h.scheduler.advance(by: 1)  // the hand leaves the pointer: whichever was touched last leads, and a tie is the pointer's
++    h.system.userFocus(f)
++    h.system.keyDown()
++    h.scheduler.advance(by: 2)
++    #expect(h.system.focused == f && !h.system.isVisible(safari) && !h.system.isVisible(mail) && h.system.isVisible(notes))
++    #expect(h.controller.displayForCommands(from: .shortcut) == Workload.secondDisplay.id)
++    h.system.focusIsSlow = slowly
++    h.system.close(f)
++    if slowly {
++      // macOS has been asked and is not there yet. Something makes Arbor look who has the keyboard: it is still macOS's own pick.
++      #expect(h.system.focused == safari && h.system.slowFocus == notes)
++      h.controller.keyboardFocusMoved()
++      h.system.finishSlowFocus()
++    }
++    h.scheduler.advance(by: 2)
++    #expect(h.system.focused == notes && !h.system.isVisible(safari))
++    return (h, notes, mail)
++  }
++
++  /// The eyes are where the window went. That Arbor handed the keyboard to another display is not the person going there.
++  @Test(arguments: [false, true]) func aKeyThatNamesNoDisplayStillMeansTheDisplayWhereTheWindowWent(thePickIsOnTheSecondDisplay: Bool) {
++    let (h, _, _) = handedAcross(thePickIsOnTheSecondDisplay: thePickIsOnTheSecondDisplay)
++    #expect(h.controller.displayForCommands(from: .shortcut) == Workload.secondDisplay.id)
++    let view = h.controller.workspaces[FakeWindowSystem.standardDisplay.id]?.camera
++    h.run("show-all", from: .shortcut)
++    #expect(h.controller.workspaces[FakeWindowSystem.standardDisplay.id]?.camera == view, "the main display's view is nobody's business")
++    expectWindowsMatchLayout(h)
++  }
++
++  /// What macOS says again about the hand-over itself ends nothing: the heir's app comes forward, the heir is named once more.
++  @Test func norDoTheEchoesOfTheHandOverEndIt() {
++    let (h, notes, _) = handedAcross(thePickIsOnTheSecondDisplay: true)
++    h.system.activate(bundleID: "com.example.notes", name: "Notes")
++    h.controller.windowFocused(notes)
++    h.scheduler.advance(by: 2)
++    #expect(h.controller.displayForCommands(from: .shortcut) == Workload.secondDisplay.id)
++  }
++
++  @Test func norWhomMacOSNamesWhileTheKeyboardIsOnItsWay() {
++    let (h, _, _) = handedAcross(thePickIsOnTheSecondDisplay: true, slowly: true)
++    #expect(h.controller.displayForCommands(from: .shortcut) == Workload.secondDisplay.id)
++  }
++
++  /// The display where the window went is unplugged: there is nothing left to mean.
++  @Test func norDoesItOutliveItsDisplay() {
++    let (h, _, _) = handedAcross(thePickIsOnTheSecondDisplay: false)
++    h.system.unplug(Workload.secondDisplay.id)
++    h.scheduler.advance(by: 5)
++    h.system.keyDown()
++    #expect(h.controller.displayForCommands(from: .shortcut) == FakeWindowSystem.standardDisplay.id)
++  }
++
++  /// A key that acts on the focused window goes on meaning the window that has the keyboard.
++  @Test func aKeyForTheFocusedWindowMeansTheWindowWithTheKeyboard() {
++    let (h, notes, _) = handedAcross(thePickIsOnTheSecondDisplay: true)
++    #expect(h.run("float", from: .shortcut).ok)
++    #expect(h.controller.workspaces[FakeWindowSystem.standardDisplay.id]?.isFloating(notes) == true)
++  }
++
++  /// Gone elsewhere and come back to that very window by themselves, they are there. By way of another app, or of another window of
++  /// the same one, at which no app comes forward.
++  @Test(arguments: [false, true]) func norDoesItComeBackWithTheKeyboard(withinOneApp: Bool) {
++    let (h, notes, mail) = handedAcross(thePickIsOnTheSecondDisplay: true)
++    h.system.userFocus(withinOneApp ? h.system.open(app: "Notes", pid: 11, frame: CGRect(x: 400, y: 300, width: 300, height: 300)) : mail)
++    h.scheduler.advance(by: 1)
++    h.system.userFocus(notes)
++    h.system.keyDown()
++    #expect(h.controller.displayForCommands(from: .shortcut) == FakeWindowSystem.standardDisplay.id)
++  }
++
++  /// The keyboard has moved on and nothing has said so yet: ⌘Tab to an app whose focused window is the same as ever.
++  @Test func norDoesItHoldOnceAnotherWindowHasTheKeyboardUnreported() {
++    let (h, _, mail) = handedAcross(thePickIsOnTheSecondDisplay: true)
++    h.system.focused = mail
++    #expect(h.controller.displayForCommands(from: .shortcut) == FakeWindowSystem.standardDisplay.id)
++  }
++
++  /// Until the person goes elsewhere: to another window, to another app, or with the pointer.
++  @Test(arguments: ["another window", "another app", "a click"]) func untilThePersonGoesElsewhere(by what: String) {
++    let (h, _, mail) = handedAcross(thePickIsOnTheSecondDisplay: true)
++    switch what {
++    case "another window": h.system.userFocus(mail)
++    case "another app": h.system.activate(bundleID: "com.apple.finder", name: "Finder")
++    default: h.controller.pointerPressed()
++    }
++    h.system.keyDown()
++    #expect(h.controller.displayForCommands(from: .shortcut) == FakeWindowSystem.standardDisplay.id)
++  }
++
+   /// Nothing is in view on any display: typing into a window nobody sees is worse than a view that moves. A control too.
+   @Test func withNothingInViewAnywhereTheViewFollows() {
+     let h = Harness(displays: [FakeWindowSystem.standardDisplay, Workload.secondDisplay])
+diff --git a/docs/ARCHITECTURE.md b/docs/ARCHITECTURE.md
+index 8e5241db..86df586f 100644
+--- a/docs/ARCHITECTURE.md
++++ b/docs/ARCHITECTURE.md
+@@ -215,8 +215,8 @@ When the window with the keyboard is closed, minimized or hidden, macOS hands th
+ keyboard on by itself. If it picks a window out of view, the view stays and a window in
+ view gets the keyboard: one on the display of the window that went, else on the display of
+ the window macOS picked, else on any other, and there the one used last. A view follows only
+-if nothing is in view on any of them. (A view that has followed already and is taken
+-back still looks at its own display alone.) macOS reports
++if nothing is in view on any of them. A window of an app that Arbor pauses for or passes its
++keys through to is nobody's heir (`canBeAnHeir`): nobody chose a pause. macOS reports
+ the new focus before a close or a minimize, after a hide, and sometimes not at all.
+ Until the going is reported, a few milliseconds later, a close looks like ⌘`. So a report that takes the keyboard from
+ one window of an app to another that is out of view waits 50 ms (`Controller.timeForAGoing`): if the first window goes
+-- 
+2.43.0
+

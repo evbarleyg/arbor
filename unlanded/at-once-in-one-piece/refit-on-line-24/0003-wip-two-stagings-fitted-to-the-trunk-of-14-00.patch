@@ -1,0 +1,49 @@
+From 394b37c9053283762165b579ed2556e47635edb4 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 14:38:33 +0000
+Subject: [PATCH 3/5] wip: two stagings fitted to the trunk of 14:00
+
+---
+ Tests/ArborKitTests/InOnePieceTests.swift | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/Tests/ArborKitTests/InOnePieceTests.swift b/Tests/ArborKitTests/InOnePieceTests.swift
+index 7238f892..82012f24 100644
+--- a/Tests/ArborKitTests/InOnePieceTests.swift
++++ b/Tests/ArborKitTests/InOnePieceTests.swift
+@@ -327,16 +327,17 @@ private func isHole(_ problem: NotInOnePiece) -> Bool { if case .hole = problem
+     #expect(h.system.waits.count == waits)
+   }
+ 
+-  /// Once for a layout is not once for an act. Out of view a window has made up its mind to be higher than its slot. It comes back beside another, refuses
+-  /// and becomes a tile, and the view goes on to it: two layouts, in each of which something grows and something leaves. Known, and what it costs.
+-  @Test func anActOfTwoLayoutsWaitsTwice() throws {
++  /// Out of view a window has made up its mind to be higher than its slot. It comes back beside another and refuses, and a second round makes a tile of
++  /// it, so it leaves again: one wait, in the first round. In the second nothing grows, the tile keeps its room, so this does not show that
++  /// the later rounds would be silent if something did. Nothing stages that yet.
++  @Test func aWindowThatComesBackRefusesAndLeavesAgainCostsOneWait() {
+     let (h, windows) = arranged(4)
+     h.run("zoom")
+     h.system.setMinimumSize(windows[2], CGSize(width: 300, height: 800))
+     let waits = h.system.waits.count
+     h.run("focus right")
+-    #expect(h.controller.parked == [windows[0], windows[1], windows[3]], "the story: it fills the screen in the end")
+-    #expect(h.system.waits.dropFirst(waits).map { $0.frames.keys.sorted() } == [[windows[2], windows[3]], [windows[2]]])
++    #expect(h.controller.parked == [windows[0], windows[1], windows[2]], "the story: it has left again")
++    #expect(h.system.waits.dropFirst(waits).map { $0.frames.keys.sorted() } == [[windows[2], windows[3]]])
+   }
+ 
+   @Test func whereNobodyLeavesNobodyWaits() {
+@@ -420,7 +421,8 @@ private func isHole(_ problem: NotInOnePiece) -> Bool { if case .hole = problem
+   @Test func withAWindowInTheHandNobodyWaits() {
+     let (h, windows) = arranged(4)
+     h.system.beginDrag(windows[3])
+-    h.run("zoom")
++    // Another than the one in the hand, which is not placed and so would not grow.
++    h.run("zoom \(windows[1].rawValue)")
+     #expect(h.controller.parked == [windows[0], windows[2]], "the story: the others have left, but for the one in the hand")
+     h.system.endDrag()
+     #expect(h.system.waits.isEmpty)
+-- 
+2.43.0
+

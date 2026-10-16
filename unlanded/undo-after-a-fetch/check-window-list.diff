@@ -1,0 +1,44 @@
+diff --git a/scripts/mac-shell/check-window-list.sh b/scripts/mac-shell/check-window-list.sh
+index 7675c6ce..a31b0881 100755
+--- a/scripts/mac-shell/check-window-list.sh
++++ b/scripts/mac-shell/check-window-list.sh
+@@ -36,6 +36,7 @@ below_the_room() {
+   read -r _x sy _w sh <<< "$(screen_of 1)"
+   echo $((${wy%.*} + ${wh%.*} - ${sy%.*} - ${sh%.*}))
+ }
++is_at() { [ "$(real_frame_of "$1")" = "$2" ] || { echo "it is at $(real_frame_of "$1"), not at $2"; return 1; }; }
+ row_of() { "$ARBOR_BIN/arborctl" menu | grep -F -e "$1"; }
+ # As the menu has it: without the tick before it and the mark after it.
+ title_of() { row_of "$1" | head -n 1 | sed 's/^[ ✓]*//; s/  \[.*//'; }
+@@ -83,8 +84,9 @@ click_window "$W1"
+ 
+ claim "the menu's second row opens a list of every open window, by app and title"
+ proves A240
++# Without the letters that are looked for at the end: the harness notes every check in the trace, in the check's own words.
+ for title in zqxalpha zqxbravo zqxcharlie zqxdelta zqxecho zqxfoxtrot zqxgolf; do
+-  check "$title is in the list" eventually row_of "$title"
++  check "${title#zqx} is in the list" eventually row_of "$title"
+ done
+ check "the window with the keyboard is ticked" eventually row_is_ticked zqxalpha
+ check "and first" first_row_is zqxalpha
+@@ -183,6 +185,20 @@ check "it is as wide as it was" width_is "$W5" 300
+ check "and as high" height_is "$W5" 200
+ shot 41-whole
+ 
++claim "⌃⌥Z gives it its place over the corner back, and Redo brings it in again"
++proves A240
++fetched_to=$(real_frame_of "$W5")
++check "the menu offers Undo Move" says "Undo Move" "$ARBOR_BIN/arborctl" menu
++key ctrl+opt+z
++check "it hangs over the corner again, where it was" eventually is_at "$W5" "$((x + w - 60)) $((y + h - 60)) 300 200"
++shot 43-back-over-the-corner
++ctl relayout
++sleep 1
++check "and the next layout leaves it there" is_at "$W5" "$((x + w - 60)) $((y + h - 60)) 300 200"
++# Redo has no key among the nine.
++ctl redo
++check "redone, it is in again" eventually is_at "$W5" "$fetched_to"
++
+ claim "the same out of the Dock: it comes back whole"
+ proves A240
+ tw move "$W5" "$((x + w - 60))" "$((y + h - 60))" 300 200

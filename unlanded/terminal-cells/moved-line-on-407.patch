@@ -1,0 +1,62 @@
+diff --git a/Sources/ArborKit/Controller/Controller+SizeSteps.swift b/Sources/ArborKit/Controller/Controller+SizeSteps.swift
+index ffca55af..4143515b 100644
+--- a/Sources/ArborKit/Controller/Controller+SizeSteps.swift
++++ b/Sources/ArborKit/Controller/Controller+SizeSteps.swift
+@@ -59,9 +59,10 @@ extension Controller {
+     var less = CGSize.zero
+     // By how much it came down, each way, the last time it did; and all it has been asked for.
+     var step = CGSize.zero
+-    var asked = [slot.size, fitted(slot, for: window).size]
+-    // Not the cells it was taken to have: another font.
++    // Not the cells it was taken to have: another font. First of all: what fits by cells it no longer has is nothing it is asked for from
++    // now on, and where it comes down to just that, by cells of its own, it is no app that is a request behind.
+     seenSizes[window]?.cells.see(took.size)
++    var asked = [slot.size, fitted(slot, for: window).size]
+     // An app that takes the nearest step gives way once it is asked for half a step less, one that rounds up once
+     // it is asked for a whole step less. The step is unknown, so what is held back doubles, up to the largest
+     // step there is: a window that was asked for that much less and did not budge has a real minimum.
+diff --git a/Tests/ArborKitTests/CellsTests.swift b/Tests/ArborKitTests/CellsTests.swift
+index ad768e76..c4b941a2 100644
+--- a/Tests/ArborKitTests/CellsTests.swift
++++ b/Tests/ArborKitTests/CellsTests.swift
+@@ -587,6 +587,28 @@ import Testing
+     #expect(h.frame(terminal) == frame)
+   }
+ 
++  /// Another font again, unseen, with both its cells known, and lines that have sizes in common with the old ones: 480 is 32 lines of 15 points
++  /// and 24 of 20. Its width misses and is forgotten; its height is taken as it was asked, so that cell lives on. Offered its slot it
++  /// takes a line too many and comes down to those 480 by its own new lines. That is no app that is a request behind, though 480 is what it
++  /// was asked for a moment ago, by cells it no longer has: offered its slot once more, it took the line too many again and was a tile.
++  @Test(arguments: 0..<60) func comingDownToWhatTheOldCellsGaveIsNoSlowness(higher: Int) throws {
++    let (old, new) = (CGSize(width: 7, height: 15), CGSize(width: 9, height: 20))
++    let (h, terminal, notes) = makeHarness(cell: old, .nearest)
++    h.run("dock \(notes.rawValue) beside \(terminal.rawValue) bottom")
++    // Until its height has shown its cell, and its width.
++    for _ in 0..<6 { h.run("resize \(terminal.rawValue) bottom 4") }
++    for _ in 0..<9 { h.run("resize \(terminal.rawValue) right 1") }
++    h.run("resize \(terminal.rawValue) bottom \(higher)")
++    h.system.setSizeStep(terminal, new)
++    h.run("resize \(terminal.rawValue) right 4")
++    try expectInItsCorner(h, terminal, cell: new)
++    let frame = try #require(h.frame(terminal))
++    h.system.clearFrameLog()
++    for _ in 0..<3 { h.controller.apply(settings: h.controller.settings) }
++    #expect(h.system.frameLog.filter { $0.window == terminal }.isEmpty)
++    #expect(h.frame(terminal) == frame)
++  }
++
+   /// ⌘+ in a real Terminal: it keeps its rows and columns, so the window resizes itself, and is seen between two of its old cells. That is
+   /// told at once: the next thing it is asked for is its slot, not whole cells of a font it no longer has.
+   @Test func aFontChangeThatIsSeenCostsNoWrongRequest() throws {
+diff --git a/collab/parity.json b/collab/parity.json
+index 404aa978..c2c50b33 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -542,6 +542,7 @@
+         "aWindowWhoseMinimumIsALittleOverItsSlotIsStillATile",
+         "anAppThatWasLateOnceHasItsSlotAtOnce",
+         "anotherFontIsSettledAtTheFirstLayout",
++        "comingDownToWhatTheOldCellsGaveIsNoSlowness",
+         "dockingAWindowThatBecomesATileDoesNotZoomOntoIt",
+         "eachReturnIsOneFrameSet",
+         "itIsTalkedDownOnce",

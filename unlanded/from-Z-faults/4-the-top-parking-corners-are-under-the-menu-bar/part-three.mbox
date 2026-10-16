@@ -1,0 +1,77 @@
+From a4eab3a2c4ad7548dbf0098eb681340ab6b5206f Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 07:32:09 +0000
+Subject: [PATCH] wip: asked
+
+---
+ Sources/ArborTesting/FakeWindowSystem.swift   |  5 +++-
+ .../TitleBarAndMenuBarTests.swift             | 25 ++++++++++++++++++-
+ 2 files changed, 28 insertions(+), 2 deletions(-)
+
+diff --git a/Sources/ArborTesting/FakeWindowSystem.swift b/Sources/ArborTesting/FakeWindowSystem.swift
+index 5d1afa04..46cf3203 100644
+--- a/Sources/ArborTesting/FakeWindowSystem.swift
++++ b/Sources/ArborTesting/FakeWindowSystem.swift
+@@ -367,7 +367,7 @@ public final class FakeWindowSystem: WindowSystem {
+       let display = displayList.first(where: { $0.frame.contains(applied.origin) })
+         ?? displayList.min(by: { $0.frame.distance(to: applied.origin) < $1.frame.distance(to: applied.origin) })
+     {
+-      applied.origin.y = min(applied.minY, display.visibleFrame.maxY - titleBar)
++      applied.origin.y = max(min(applied.minY, display.visibleFrame.maxY - titleBar), display.visibleFrame.minY)
+     }
+     if echoes.wholePoints {
+       applied = CGRect(
+@@ -789,6 +789,9 @@ extension FakeWindowSystem {
+     public var wholePoints = true
+     /// A window cannot be moved so low that its title bar is under the Dock or below the display: asked for
+     /// 1023,767 on a display whose visible frame ends at 705, it stops at 1023,677, its title bar's 28 points above (`setTitleBar`).
++    /// Nor so high that it is under the menu bar: asked for 170,0 and for 170,-50 where the visible frame begins at 31, a test window
++    /// went to 170,31 and kept its size, eight times out of eight on one hosted Mac (`mac-shell-out/probe.grow`: the Dock at the
++    /// bottom, at the left and hidden, and beside a second display). No real app was asked, and never with a display above.
+     public var titleBarStaysReachable = true
+     /// For this many seconds after a window leaves the Dock it is still flying: asked for a frame, it answers with the
+     /// one it has and keeps it. 0, the default: not seen on a Mac so far (the report of the un-minimize seems to come
+diff --git a/Tests/ArborKitTests/TitleBarAndMenuBarTests.swift b/Tests/ArborKitTests/TitleBarAndMenuBarTests.swift
+index 95a45695..05cf296a 100644
+--- a/Tests/ArborKitTests/TitleBarAndMenuBarTests.swift
++++ b/Tests/ArborKitTests/TitleBarAndMenuBarTests.swift
+@@ -4,7 +4,8 @@ import ArborTesting
+ import CoreGraphics
+ import Testing
+ 
+-/// A title bar never goes under the menu bar: not in a hand, and not when a window opens. The stand-in stopped a window at the bottom only.
++/// A title bar never goes under the menu bar: not in a hand, not when a window opens, and not when it is asked to. The stand-in stopped a
++/// window at the bottom only.
+ @Suite @MainActor struct TitleBarAndMenuBarTests {
+   /// A display of the recordings: 1600×900, visible from y 31, with a Dock below.
+   static let display = DisplaySnapshot(
+@@ -72,4 +73,26 @@ import Testing
+     let lower = system.open(app: "Notes", frame: CGRect(x: 420, y: 32, width: 480, height: 348))
+     #expect(system.frame(of: lower) == CGRect(x: 420, y: 32, width: 480, height: 348))
+   }
++
++  /// Asked through Accessibility for a place under the menu bar or above the display, a test window went to the top of the visible frame and
++  /// kept its x and its size: the eight recorded calls, by the visible frame they were made in (the Dock at the bottom, at the left, hidden;
++  /// 1920×1080 beside a second display) and the x the window stood at.
++  @Test(arguments: [
++    (CGSize(width: 1024, height: 768), CGRect(x: 0, y: 31, width: 1024, height: 674), 170),
++    (CGSize(width: 1024, height: 768), CGRect(x: 50, y: 31, width: 974, height: 737), 220),
++    (CGSize(width: 1024, height: 768), CGRect(x: 0, y: 31, width: 1024, height: 737), 170),
++    (CGSize(width: 1920, height: 1080), CGRect(x: 0, y: 31, width: 1920, height: 971), 170),
++  ] as [(CGSize, CGRect, CGFloat)], [0, -50] as [CGFloat])
++  func askedToGoUnderTheMenuBarAWindowStopsBelowIt(mac: (size: CGSize, visible: CGRect, x: CGFloat), y: CGFloat) {
++    var displays = [DisplaySnapshot(id: DisplayID("main"), frame: CGRect(origin: .zero, size: mac.size), visibleFrame: mac.visible, isMain: true)]
++    if mac.size.width == 1920 {
++      let beside = CGRect(x: 1920, y: 0, width: 800, height: 600)
++      displays.append(DisplaySnapshot(id: DisplayID("beside"), frame: beside, visibleFrame: beside.divided(atDistance: 31, from: .minYEdge).remainder, isMain: false))
++    }
++    let system = FakeWindowSystem(displays: displays)
++    let window = system.open(app: "Test", frame: CGRect(x: mac.x, y: 220, width: 480, height: 348))
++    let answer = system.setFrame(CGRect(x: mac.x, y: y, width: 480, height: 348), of: window)
++    #expect(answer == CGRect(x: mac.x, y: 31, width: 480, height: 348))
++    #expect(system.frame(of: window) == answer)
++  }
+ }
+-- 
+2.43.0
+

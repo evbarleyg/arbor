@@ -1,0 +1,756 @@
+diff --git a/Sources/ArborKit/Controller/Controller+FoundAtAStart.swift b/Sources/ArborKit/Controller/Controller+FoundAtAStart.swift
+index 08857eb9..ee7692d5 100644
+--- a/Sources/ArborKit/Controller/Controller+FoundAtAStart.swift
++++ b/Sources/ArborKit/Controller/Controller+FoundAtAStart.swift
+@@ -16,9 +16,15 @@ import Foundation
+ /// **A floating window that somebody has touched since Arbor let go of it has the frame it is found at for its own.** Where a window is
+ /// found does not say who put it there. It may be as Arbor had it, squeezed onto a narrow Desktop say: after an accident, without the
+ /// permission, or because its app did not answer, or did not obey, when Arbor let go. Taken for the person's doing, that would be the
+-/// window's own size for good (rule 5). So a quit and a pause write down where they left each window (`leftAt`), and nothing else does.
+-/// Found there, nobody has touched it, and what is remembered stands. Found elsewhere, somebody has. Nothing written: nobody can tell,
+-/// and what is remembered stands.
++/// window's own size for good (rule 5). So a quit and a pause write down where they left each window (`leftAt`), and a file written while
++/// Arbor runs says where it has each floating one (`hadAt`), for a run that ends without either.
++/// Found there, nobody has touched it, and what is remembered stands. Found elsewhere, somebody has. Nothing written, as in an older
++/// Arbor's file: nobody can tell, and what is remembered stands.
++///
++/// (That Arbor as it ships sets a floating window's frame only to take it out of view and bring it back, Q20, does not make `hadAt`
++/// needless. A floating window is found in frames nobody chose all the same: fitted to a display that shrank, and not as asked if its app
++/// refused; cut short by macOS when it grew over an edge; in the shape of the slot it left, if its app hung; in a corner that a larger
++/// display shows; squeezed, by a run that had `floatingWindowsMakeWay` on.)
+ ///
+ /// Docked windows are another matter: a start brings back what was docked, one move each (Q16).
+ extension Controller {
+@@ -95,6 +101,35 @@ extension Controller {
+     }
+   }
+ 
++  /// For `PersistedState.hadAt`.
++  func whereTheFloatingWindowsAre() -> [WindowID: CGRect] {
++    var frames: [WindowID: CGRect] = [:]
++    for window in workspaces.values.flatMap(\.floating.keys) where windows[window]?.isFullScreen == false {
++      frames[window] = windows[window]?.frame
++    }
++    return frames
++  }
++
++  /// Whether the file is behind on something Arbor did: other windows are docked than it says, or a floating window is in a frame that is
++  /// not its own, and not where the file has it. A start that read of a window as floating at its own frame, and found it in the shape of a
++  /// slot, or squeezed, or fitted, would take that for somebody's doing. So this much is handed to the file at once, not half a second
++  /// later (`scheduleSave`). What a person does waits as ever: where they drag a floating window is its own frame as they go.
++  var theFileIsBehindOnWhatArborDid: Bool {
++    // After a quit and in a pause the file says where every window was left, and Arbor does nothing.
++    guard leftAt == nil else { return false }
++    let docked = Set(workspaces.values.flatMap(\.tree.allWindows))
++    guard let file = lastSaved else { return !docked.isEmpty }
++    if docked != Set(file.workspaces.values.flatMap(\.tree.allWindows)) { return true }
++    // Not at every step of a drag that moves a gap: its end is soon enough.
++    guard drag == nil, edgeResize == nil else { return false }
++    return workspaces.values.contains { workspace in
++      workspace.floating.contains { window, own in
++        guard let now = windows[window], !now.isFullScreen, !now.frame.approximatelyEquals(own, tolerance: 1) else { return false }
++        return file.hadAt?[window] != now.frame
++      }
++    }
++  }
++
+   /// What one start found, and where Arbor had left the windows before it, is nothing a later start may go by.
+   func foundAtAStartViolations(_ problems: inout [InvariantViolation]) {
+     if !foundAtThisStart.isEmpty {
+diff --git a/Sources/ArborKit/Controller/Controller+Pause.swift b/Sources/ArborKit/Controller/Controller+Pause.swift
+index 04de5d77..01433e51 100644
+--- a/Sources/ArborKit/Controller/Controller+Pause.swift
++++ b/Sources/ArborKit/Controller/Controller+Pause.swift
+@@ -112,6 +112,7 @@ extension Controller {
+     state.pause = PersistedState.Pause(until: pauseEnd, forApp: isPausedForApp)
+     // Taken before the pause let go, so it does not say.
+     state.leftAt = leftAt
++    state.hadAt = nil
+     resumeState = state
+     guard state != lastSaved else { return }
+     lastSaved = state
+diff --git a/Sources/ArborKit/Controller/Controller.swift b/Sources/ArborKit/Controller/Controller.swift
+index a5b67945..203601ea 100644
+--- a/Sources/ArborKit/Controller/Controller.swift
++++ b/Sources/ArborKit/Controller/Controller.swift
+@@ -528,8 +528,8 @@ public final class Controller {
+       noteHowLoadingWent()
+     }
+     resumeState = nil
+-    // After a quit and a pause. After an accident, or without the permission, the windows are as Arbor had them, and nothing says where.
+-    var leftAt = saved?.leftAt ?? [:]
++    // After a quit and a pause: where Arbor left them. After an accident, or without the permission: where it had those that float.
++    var leftAt = saved?.leftAt ?? saved?.hadAt ?? [:]
+     self.leftAt = nil
+     hints = saved?.hints ?? [:]
+     noteTheWindowsTheFileKnew()
+@@ -834,6 +834,7 @@ public final class Controller {
+   // MARK: Persistence
+ 
+   func scheduleSave() {
++    if theFileIsBehindOnWhatArborDid { saveNow() }
+     scheduler.schedule("save", after: 0.5) { [weak self] in self?.saveNow() }
+   }
+ 
+@@ -857,6 +858,7 @@ public final class Controller {
+     state = state.withEveryLookOver()
+     state = state.written(with: displays)
+     state.leftAt = leftAt
++    if leftAt == nil { state.hadAt = whereTheFloatingWindowsAre() }
+     if isPaused { state.pause = PersistedState.Pause(until: pauseEnd, forApp: isPausedForApp) }
+     return state
+   }
+diff --git a/Sources/ArborKit/Platform/StateStore.swift b/Sources/ArborKit/Platform/StateStore.swift
+index d244636a..4058e022 100644
+--- a/Sources/ArborKit/Platform/StateStore.swift
++++ b/Sources/ArborKit/Platform/StateStore.swift
+@@ -76,6 +76,10 @@ public struct PersistedState: Codable, Equatable, Sendable {
+   /// at the next start was moved by somebody else (Controller+FoundAtAStart.swift). Not in a file written while Arbor runs, nor in
+   /// older ones: after those, nobody can tell. Without the windows that were in full screen, whose frame then is the display's.
+   public var leftAt: [WindowID: CGRect]?
++  /// Where Arbor has each floating window, in a file written while it runs: what `leftAt` is to a quit, for a run that ends without one.
++  /// Mostly the frame remembered as its own, but it may be out of view, fitted to a display that shrank, cut short by macOS, or still in
++  /// the shape of a slot because its app did not answer. Without the windows in full screen. Older files do not have it.
++  public var hadAt: [WindowID: CGRect]?
+   /// The leaves, by display, that were kept open for windows that were not there yet when this was written, in the
+   /// minutes after a login (Controller+KeptRoom.swift). Nearly always absent, and older files do not have it.
+   public var roomKept: [DisplayID: [NodeID]]?
+@@ -117,6 +121,7 @@ public struct PersistedState: Codable, Equatable, Sendable {
+     case hintsShown
+     case origins
+     case leftAt
++    case hadAt
+     case roomKept
+   }
+ 
+@@ -155,6 +160,12 @@ public struct PersistedState: Codable, Equatable, Sendable {
+       leftAt = nil
+       (decoder.userInfo[DecodingNotes.key] as? DecodingNotes)?.add("`leftAt` could not be read", isLoss: false)
+     }
++    do {
++      hadAt = try c.decodeIfPresent([WindowID: CGRect].self, forKey: .hadAt)
++    } catch {
++      hadAt = nil
++      (decoder.userInfo[DecodingNotes.key] as? DecodingNotes)?.add("`hadAt` could not be read", isLoss: false)
++    }
+     // Nor over this: those windows move once more than they had to.
+     roomKept = (try? c.decodeIfPresent(LossyDictionary<DisplayID, [NodeID]>.self, forKey: .roomKept))?.entries
+     for id in dormant.keys where dormant[id]!.origin.map(DormantWorkspace.isPlaceForADisplay) == false {
+@@ -203,7 +214,7 @@ extension PersistedState {
+     // window has gone elsewhere) is the decoders' business, and most are not worth a word.
+     let tables: Set = [
+       "workspaces", "dormant", "hints", "nodes", "floating", "guests", "undockedFrames", "summonFrames", "names",
+-      "savedViews", "hintsShown", "leftAt", "roomKept",
++      "savedViews", "hintsShown", "leftAt", "roomKept", "hadAt",
+     ]
+     guard let file = try? JSONSerialization.jsonObject(with: data),
+       let written = try? JSONSerialization.jsonObject(with: JSONEncoder().encode(state))
+diff --git a/Sources/ArborTesting/ChaosKnownFailures.swift b/Sources/ArborTesting/ChaosKnownFailures.swift
+index a32b974e..420677eb 100644
+--- a/Sources/ArborTesting/ChaosKnownFailures.swift
++++ b/Sources/ArborTesting/ChaosKnownFailures.swift
+@@ -695,32 +695,6 @@ extension ChaosRunner {
+         react
+         advance 1
+         """),
+-    ChaosKnownFailure(
+-      rule: "moved-at-launch-after-a-crash-making-way", owner: "rule 2: nothing moves at a start, after a run that did not quit", severity: 4,
+-      story: "Only with `floatingWindowsMakeWay` on, which ships off (F64). Arbor is killed and nothing starts it again. Its person makes a window that is kept in view smaller, and starts Arbor: the window is blown up to the "
+-        + "size remembered for it. Only a quit and a pause write down where they left each window; after a crash Arbor cannot tell a size its person chose from "
+-        + "one it had squeezed the window to itself. (After a quit or a pause the size is learnt.)",
+-      script: """
+-        settings {"floatingWindowsMakeWay":true}
+-        launch
+-        open 106 Xcode pid 1004 at 300 150 840 440
+-        pin 106
+-        settle
+-        crash
+-        edge 106 300 150 600 440
+-        launch
+-        settle
+-        """,
+-      """
+-        settings {"floatingWindowsMakeWay":true}
+-        launch
+-        open 116 Preview pid 1007 at 2059 599 822 562 min 369 88
+-        pin 116
+-        flush
+-        crash
+-        move 116 326 132 635 221
+-        launch
+-        """),
+     ChaosKnownFailure(
+       rule: "quit-left-out-of-reach", owner: "the ways home: quitting while an app hangs (K003)", severity: 1,
+       story: "Arbor is quit while an app with a window out of view does not answer. The window is still past the corner when the app wakes, and Arbor is gone. "
+diff --git a/Tests/ArborKitTests/BehaviourSwitchScenarioTests.swift b/Tests/ArborKitTests/BehaviourSwitchScenarioTests.swift
+index 693c8914..33feb059 100644
+--- a/Tests/ArborKitTests/BehaviourSwitchScenarioTests.swift
++++ b/Tests/ArborKitTests/BehaviourSwitchScenarioTests.swift
+@@ -835,9 +835,12 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
+     for settings in [Settings(), shrinking] {
+       let (old, a, _, c) = makeDesk(settings)
+       let before = frames(old)
+-      // The state on disk is from before the zoom, so the Desktop is in view at the next launch.
++      // The state on disk is from before the zoom, so the Desktop is in view at the next launch. (What takes a floating window out of
++      // view is handed to the store at once; Arbor dies before the store has written it.)
+       old.controller.saveNow()
++      let file = old.store.saved
+       old.run("zoom \(a.rawValue)")
++      old.store.saved = file
+       let h = relaunchAfterCrash(old, settings: settings, savingFirst: false)
+       #expect(h.workspace.camera == h.workspace.tree.root)
+       #expect(h.frame(c) == before[c])
+diff --git a/Tests/ArborKitTests/FoundAtAStartTests.swift b/Tests/ArborKitTests/FoundAtAStartTests.swift
+index d28f83cd..65de6a70 100644
+--- a/Tests/ArborKitTests/FoundAtAStartTests.swift
++++ b/Tests/ArborKitTests/FoundAtAStartTests.swift
+@@ -478,9 +478,11 @@ private let beside = DisplaySnapshot(
+     #expect(remembered(notes, h)?.size == CGSize(width: 1000, height: 600))
+   }
+ 
+-  /// Docked and sent to the other display, and Arbor is killed before the half second is over after which that is saved. The file has
+-  /// the window floating on the first display; it is found on the second, in the shape of a slot. That is not its own size.
+-  @Test func foundInTheShapeOfASlotTheFileKnowsNothingOfItKeepsItsOwnSize() throws {
++  /// Docked and sent to the other display, and Arbor is killed before the half second is over after which that is saved. An older Arbor's
++  /// file has the window floating on the first display; it is found on the second, in the shape of a slot. That is not its own size.
++  /// (Since then who is docked goes to the file at once, `theFileIsBehindOnWhatArborDid`: the start docks it again.)
++  @Test(arguments: [true, false])
++  func foundInTheShapeOfASlotTheFileKnowsNothingOfItKeepsItsOwnSize(anOlderArborsFile: Bool) throws {
+     let old = Harness(displays: [lap, beside])
+     let own = CGRect(x: 300, y: 200, width: 720, height: 420)
+     let notes = old.system.open(app: "Notes", pid: 1002, frame: own)
+@@ -492,19 +494,29 @@ private let beside = DisplaySnapshot(
+     old.run("move-to-display next")
+     let slot = try #require(old.frame(notes))
+     try #require(beside.frame.contains(slot) && slot.height > own.height, "\(slot)")
+-    old.store.saved = file
++    if anOlderArborsFile {
++      old.store.saved = file
++      old.store.saved?.hadAt = nil
++    }
+     let h = newProcess(after: old)
+     h.start()
+     settle(h)
+-    #expect(remembered(notes, h)?.size == own.size)
++    if anOlderArborsFile {
++      #expect(remembered(notes, h)?.size == own.size)
++    } else {
++      // (On the first display: to which display it was sent is nothing the file has to know at once.)
++      #expect(h.controller.workspaces.values.contains { $0.isDocked(notes) })
++    }
+     h.controller.shutdown()
+     #expect(h.frame(notes)?.size == own.size, "a quit gives it back (rule 5)")
+   }
+ 
+-  /// Killed, and the window is found on the other display, hanging over its edge. Nobody can tell that a hand left it there, so when Arbor
+-  /// next has to place it, it is wholly in view: where in doubt, in view (Q20). That is where floating windows make way. As Arbor ships it
+-  /// places none: more than half of this one shows, so it comes back exactly where it was when it left (F64).
+-  @Test(arguments: [false, true]) func afterARunThatDidNotQuitAnOverhangOnAnotherDisplayIsNobodysChoice(makingWay: Bool) {
++  /// Killed, and the window is found on the other display, hanging over its edge. After an older Arbor's file nobody can tell that a hand left
++  /// it there, so when Arbor next has to place it, it is wholly in view: where in doubt, in view (Q20). That is where floating windows make
++  /// way. As Arbor ships it places none: more than half of this one shows, so it comes back exactly where it was when it left (F64).
++  /// A file that says where Arbor had it leaves no doubt: somebody took it there, and there it hangs, as after a quit.
++  @Test(arguments: [false, true], [true, false])
++  func afterARunThatDidNotQuitAnOverhangOnAnotherDisplayIsNobodysChoice(makingWay: Bool, anOlderArborsFile: Bool) {
+     let old = Harness(displays: [lap, beside], settings: makingWay ? .makingWay : Settings())
+     let editor = old.system.open(app: "Editor", pid: 1001, frame: CGRect(x: 1700, y: 100, width: 700, height: 500))
+     let notes = old.system.open(app: "Notes", pid: 1002, frame: CGRect(x: 300, y: 200, width: 600, height: 420))
+@@ -513,6 +525,7 @@ private let beside = DisplaySnapshot(
+     old.run("dock \(editor.rawValue) left")
+     settle(old)
+     old.controller.saveNow()
++    if anOlderArborsFile { old.store.saved?.hadAt = nil }
+     let h = newProcess(after: old)
+     h.system.place(notes, at: CGRect(x: 3000, y: 300, width: 600, height: 420))
+     h.start()
+@@ -520,7 +533,7 @@ private let beside = DisplaySnapshot(
+     #expect(home(of: notes, h) == beside.id)
+     h.system.cursor = CGPoint(x: 2000, y: 400)
+     frameAndShowEverything(h, editor)
+-    if makingWay {
++    if makingWay, anOlderArborsFile {
+       #expect(h.frame(notes).map { beside.frame.contains($0) } == true, "\(String(describing: h.frame(notes)))")
+     } else {
+       #expect(h.frame(notes) == CGRect(x: 3000, y: 300, width: 600, height: 420))
+@@ -1353,4 +1366,369 @@ private let beside = DisplaySnapshot(
+     #expect(h.frame(notes) == place)
+     #expect(moves(of: notes, h).count == 1, "\(h.system.frameLog)")
+   }
++
++  // MARK: After a run that did not quit
++
++  /// Killed with the file up to date; nothing starts Arbor again. Its person moves the notes and makes them smaller, and then somebody starts
++  /// Arbor. The file says where Arbor had them (`PersistedState.hadAt`), so that somebody has touched them is known, as after a quit.
++  func killedAndTheNotesPlacedMeanwhile(
++    byTheWatchdog: Bool = false, settings: Settings = Settings(), at chosen: CGRect = CGRect(x: 900, y: 500, width: 400, height: 300)
++  ) -> (h: Harness, editor: WindowID, notes: WindowID, chosen: CGRect) {
++    let old = Harness(displays: [lap], settings: settings)
++    let editor = old.system.open(app: "Editor", pid: 1001, frame: CGRect(x: 100, y: 100, width: 700, height: 500))
++    let notes = old.system.open(app: "Notes", pid: 1002, frame: CGRect(x: 780, y: 100, width: 600, height: 420))
++    old.start()
++    old.run("dock \(editor.rawValue) left")
++    settle(old)
++    old.controller.saveNow()
++    let h = newProcess(after: old, byTheWatchdog: byTheWatchdog)
++    h.system.place(notes, at: chosen)
++    h.start()
++    settle(h)
++    return (h, editor, notes, chosen)
++  }
++
++  @Test(arguments: [false, true], [false, true])
++  func afterARunThatDidNotQuitWhereItIsFoundIsItsOwn(byTheWatchdog: Bool, makingWay: Bool) {
++    let (h, editor, notes, chosen) = killedAndTheNotesPlacedMeanwhile(
++      byTheWatchdog: byTheWatchdog, settings: makingWay ? .makingWay : Settings())
++    #expect(moves(of: notes, h).isEmpty, "\(h.system.frameLog)")
++    #expect(remembered(notes, h) == chosen)
++    frameAndShowEverything(h, editor)
++    #expect(h.frame(notes) == chosen, "there and back is nothing")
++  }
++
++  /// The start moved nothing, which is why the net for starts was silent: the frame of the last run came back with the first way out.
++  @Test(arguments: ["float-all", "pause", "quit"])
++  func afterARunThatDidNotQuitNoWayOutThrowsItBack(wayOut: String) {
++    let (h, _, notes, chosen) = killedAndTheNotesPlacedMeanwhile()
++    h.system.clearFrameLog()
++    if wayOut == "quit" { h.controller.shutdown() } else { h.run(wayOut) }
++    settle(h)
++    #expect(moves(of: notes, h).isEmpty, "\(h.system.frameLog)")
++    #expect(h.frame(notes) == chosen)
++  }
++
++  /// The size it goes back to when it is docked and floated again is the one it was found in.
++  @Test func afterARunThatDidNotQuitTheSizeItWasFoundInIsTheOneItFloatsInAgain() {
++    let (h, _, notes, chosen) = killedAndTheNotesPlacedMeanwhile()
++    h.run("dock \(notes.rawValue) right")
++    settle(h)
++    h.run("float \(notes.rawValue)")
++    settle(h)
++    #expect(h.frame(notes)?.size == chosen.size)
++  }
++
++  /// Left hanging over an edge by somebody, it goes on hanging there, as after a quit (`leftHangingOverAnEdgeItComesBackHanging`).
++  @Test func afterARunThatDidNotQuitAStripLeftBySomebodyIsTheirs() {
++    let strip = CGRect(x: 1400, y: 500, width: 400, height: 300)
++    let (h, editor, notes, _) = killedAndTheNotesPlacedMeanwhile(at: strip)
++    #expect(moves(of: notes, h).isEmpty, "\(h.system.frameLog)")
++    frameAndShowEverything(h, editor)
++    #expect(h.frame(notes) == strip)
++  }
++
++  /// A window kept in view is a floating window: made smaller after a run that did not quit, it is not blown up, at the start or on the way out.
++  @Test(arguments: ["float-all", "pause", "quit"])
++  func afterARunThatDidNotQuitAWindowKeptInViewStaysAsItWasFound(wayOut: String) {
++    let (old, _, notes) = editorDockedNotesFloating()
++    old.run("pin \(notes.rawValue)")
++    settle(old)
++    old.controller.saveNow()
++    let h = newProcess(after: old)
++    let chosen = CGRect(x: 900, y: 300, width: 400, height: 300)
++    h.system.place(notes, at: chosen)
++    h.start()
++    settle(h)
++    #expect(h.workspace.isPinned(notes), "still kept in view")
++    if wayOut == "quit" { h.controller.shutdown() } else { h.run(wayOut) }
++    settle(h)
++    #expect(moves(of: notes, h).isEmpty, "\(h.system.frameLog)")
++    #expect(h.frame(notes) == chosen)
++  }
++
++  /// An older Arbor's file says nothing of where it had the windows. Nobody can tell, and what is remembered stands.
++  @Test func afterARunOfAnOlderArborThatDidNotQuitWhatIsRememberedStands() throws {
++    let (old, _, notes) = editorDockedNotesFloating()
++    old.controller.saveNow()
++    let own = try #require(remembered(notes, old))
++    try #require(old.store.saved?.hadAt?[notes] == own)
++    old.store.saved?.hadAt = nil
++    let h = newProcess(after: old)
++    h.system.place(notes, at: CGRect(x: 900, y: 500, width: 400, height: 300))
++    h.start()
++    settle(h)
++    #expect(remembered(notes, h) == own)
++  }
++
++  /// Plays `script`, in which no rule may break, and returns where `window` ends.
++  func played(_ script: String, _ window: UInt32, sourceLocation: SourceLocation = #_sourceLocation) -> CGRect? {
++    let runner = ChaosRunner()
++    for action in ChaosAction.script(script) {
++      let broken = runner.step(action)
++      #expect(broken.isEmpty, "\(action.text): \(broken)", sourceLocation: sourceLocation)
++      #expect(runner.refusals.isEmpty, "\(action.text): \(runner.refusals)", sourceLocation: sourceLocation)
++    }
++    return runner.system.frame(of: WindowID(window))
++  }
++
++  /// The same three ways out as a walk tells them: rule 5's net speaks, not rule 2's.
++  @Test(arguments: ["pause", "quit", "float-all"])
++  func asAWalkMeetsItAfterARunThatDidNotQuit(wayOut: String) {
++    let end = played(
++      """
++      launch
++      open 101 Safari pid 1000 at 100 100 600 400
++      open 102 Notes pid 1001 at 800 300 400 300
++      dock 101 left
++      flush
++      crash
++      move 102 900 500 300 200
++      launch
++      settle
++      \(wayOut)
++      """, 102)
++    #expect(end == CGRect(x: 900, y: 500, width: 300, height: 200))
++  }
++
++  /// Taken to the other display and resized while Arbor was dead: whichever of the two displays comes first in the alphabet.
++  @Test(arguments: [
++    ("open 102 Notes pid 1001 at 800 300 400 300", "move 102 1700 300 600 500"),
++    ("open 102 Notes pid 1001 at 1700 300 400 300", "move 102 700 300 600 500"),
++  ])
++  func afterARunThatDidNotQuitTakenToTheOtherDisplayAndResizedItIsItsOwn(open: String, move: String) {
++    let end = played(
++      """
++      displays main:0,0,1440,900:25,0,0,0* side:1440,0,1920,1080:0,0,0,0 windows-never
++      launch
++      open 101 Safari pid 1000 at 100 100 600 400
++      \(open)
++      dock 101 left
++      flush
++      crash
++      \(move)
++      launch
++      settle
++      quit
++      """, 102)
++    #expect(end?.size == CGSize(width: 600, height: 500))
++  }
++
++  /// **Frames nobody chose**, in which a floating window is found after a run that did not quit, with the file up to date. Each was taken for
++  /// its person's doing by a cut of this that reasoned "as Arbor ships it gives a floating window no frame of its own making" and looked
++  /// no further; a reader with scripts found them. The last line of each is the way out that has to give the window's own size back.
++  @Test(arguments: [
++    // Still in the shape of the slot it left: its app hung when it was floated.
++    (
++      102, CGSize(width: 400, height: 300),
++      """
++      launch
++      open 101 Safari pid 1000 at 100 100 600 400
++      open 102 Notes pid 1001 at 800 300 400 300
++      dock 101 left
++      dock 102 right
++      settle
++      flush
++      hang 1001
++      float 102
++      settle
++      flush
++      crash
++      wake 1001
++      launch
++      settle
++      quit
++      """
++    ),
++    // Fitted to a display that shrank, and not as asked: its app goes no smaller than that.
++    (
++      101, CGSize(width: 2000, height: 1200),
++      """
++      displays main:0,0,2560,1440:25,0,0,0* windows-silent
++      launch
++      open 101 Notes pid 1001 at 300 200 2000 1200 min 1600 1000
++      settle
++      displays main:0,0,1440,900:25,0,0,0* windows-silent
++      settle
++      flush
++      crash
++      launch
++      settle
++      displays main:0,0,2560,1440:25,0,0,0* windows-silent
++      settle
++      quit
++      """
++    ),
++    // Fitted, and the display has grown again by the time somebody starts Arbor.
++    (
++      101, CGSize(width: 2000, height: 1200),
++      """
++      displays main:0,0,2560,1440:25,0,0,0* windows-silent
++      launch
++      open 101 Notes pid 1001 at 300 200 2000 1200
++      settle
++      displays main:0,0,1440,900:25,0,0,0* windows-silent
++      settle
++      flush
++      crash
++      displays main:0,0,2560,1440:25,0,0,0* windows-silent
++      launch
++      settle
++      quit
++      """
++    ),
++    // Squeezed by a run in which floating windows made way; the setting is off when Arbor is started.
++    (
++      102, CGSize(width: 900, height: 400),
++      """
++      settings {"floatingWindowsMakeWay":true}
++      launch
++      open 101 Safari pid 1000 at 100 100 600 400
++      open 102 Notes pid 1001 at 300 300 900 400
++      dock 101 left
++      settle
++      flush
++      crash
++      settings {"floatingWindowsMakeWay":false}
++      launch
++      settle
++      quit
++      """
++    ),
++  ])
++  func foundInAFrameNobodyChoseItsOwnSizeIsStillKnown(window: UInt32, own: CGSize, script: String) {
++    #expect(played(script, window)?.size == own)
++  }
++
++  /// In the corner where Arbor keeps what is out of view, which a larger display shows when somebody starts Arbor. Its place is still known.
++  @Test func foundInACornerThatALargerDisplayShowsItGoesWhereItIsRemembered() {
++    let end = played(
++      """
++      launch
++      open 101 Safari pid 1000 at 100 100 600 400
++      open 102 Notes pid 1001 at 800 300 500 400
++      dock 101 left
++      zoom 101
++      settle
++      flush
++      crash
++      displays main:0,0,1680,1050:25,0,0,0* windows-silent
++      launch
++      settle
++      show-all
++      settle
++      """, 102)
++    #expect(end == CGRect(x: 800, y: 300, width: 500, height: 400))
++  }
++
++  /// Without the permission Arbor stops as it stands, and comes back when the permission does. Nobody has touched anything.
++  @Test func whenThePermissionIsBackWhereArborFittedItIsNotItsOwn() throws {
++    let large = DisplaySnapshot(
++      id: lap.id, frame: CGRect(x: 0, y: 0, width: 2560, height: 1440), visibleFrame: CGRect(x: 0, y: 25, width: 2560, height: 1415), isMain: true)
++    let h = Harness(displays: [large])
++    h.watchAccessibility()
++    let own = CGRect(x: 300, y: 200, width: 2000, height: 1200)
++    let notes = h.system.open(app: "Notes", pid: 1002, frame: own, minimumSize: CGSize(width: 1600, height: 960))
++    h.start()
++    settle(h)
++    h.system.setDisplays([lap])
++    settle(h)
++    try #require(h.frame(notes)?.size == CGSize(width: 1600, height: 960) && remembered(notes, h) == own, "\(String(describing: h.frame(notes)))")
++    h.revokeAccessibility()
++    h.scheduler.advance(by: 5)
++    try #require(!h.controller.isRunning)
++    h.grantAccessibility()
++    h.scheduler.advance(by: 5)
++    try #require(h.controller.isRunning)
++    #expect(remembered(notes, h) == own)
++  }
++
++  // MARK: The file is not behind on what is docked
++
++  /// Docked, and Arbor is killed before the half second is over after which that would have been saved. A file that still had it floating, at
++  /// its own frame, would pass the shape of its slot off as somebody's doing.
++  @Test(arguments: ["quit", "float-all"])
++  func dockedJustBeforeArborWasKilledItsOwnSizeIsStillKnown(wayOut: String) {
++    let end = played(
++      """
++      launch
++      open 101 Safari pid 1000 at 100 100 600 400
++      open 102 Notes pid 1001 at 800 300 400 300
++      dock 101 left
++      flush
++      dock 102 right
++      crash
++      launch
++      settle
++      \(wayOut)
++      """, 102)
++    #expect(end?.size == CGSize(width: 400, height: 300))
++  }
++
++  /// Docked, taken back, made larger, and then Arbor is killed, all within the half second. It floats, and is not docked by the start.
++  @Test func dockedAndTakenBackJustBeforeArborWasKilledItFloats() {
++    let end = played(
++      """
++      launch
++      open 101 Safari pid 1000 at 100 100 600 400
++      open 102 Notes pid 1001 at 800 300 400 300
++      dock 101 left
++      flush
++      dock 102 right
++      undo
++      edge 102 800 300 500 450
++      crash
++      launch
++      settle
++      quit
++      """, 102)
++    #expect(end == CGRect(x: 800, y: 300, width: 500, height: 450))
++  }
++
++  /// Who is docked goes to the file at once, whichever way it changed. Everything else still waits for the half second, a drag's hundred
++  /// reports among it. (Handed over at once: the store writes on a queue of its own.)
++  @Test func whoIsDockedGoesToTheFileAtOnceAndAMoveWaits() throws {
++    let (h, _, notes) = editorDockedNotesFloating()
++    func file() -> Workspace? { h.store.saved?.workspaces[lap.id] }
++    let before = try #require(file()?.floating[notes])
++    h.system.userMove(notes, to: before.offsetBy(dx: 40, dy: 40))
++    #expect(file()?.floating[notes] == before, "a move waits")
++    h.scheduler.advance(by: 0.5)
++    #expect(file()?.floating[notes] == before.offsetBy(dx: 40, dy: 40))
++    h.run("dock \(notes.rawValue) right")
++    #expect(file()?.isDocked(notes) == true)
++    h.run("float \(notes.rawValue)")
++    #expect(file()?.isFloating(notes) == true)
++  }
++
++  /// A process that has written nothing yet does not know what the file says. It may be the last run's, with the window floating.
++  /// (After a quit the start itself writes, to take `leftAt` out of the file.)
++  @Test(arguments: [true, false])
++  func theFirstDockOfARunGoesToTheFileAtOnceToo(afterAQuit: Bool) {
++    let old = Harness(displays: [lap])
++    let notes = old.system.open(app: "Notes", pid: 1002, frame: CGRect(x: 780, y: 100, width: 600, height: 420))
++    old.start()
++    settle(old)
++    if afterAQuit { old.controller.shutdown() } else { old.controller.saveNow() }
++    let h = newProcess(after: old)
++    h.start()
++    #expect(h.store.saved?.workspaces[lap.id]?.isFloating(notes) == true)
++    h.run("dock \(notes.rawValue) left")
++    #expect(h.store.saved?.workspaces[lap.id]?.isDocked(notes) == true)
++  }
++
++  /// A file says one or the other: where a quit or a pause left the windows, or where a running Arbor has those that float.
++  @Test func aFileSaysWhereArborHasTheFloatingWindowsOnlyWhileItRuns() throws {
++    let (h, editor, notes) = editorDockedNotesFloating()
++    h.controller.saveNow()
++    #expect(h.store.saved?.leftAt == nil)
++    #expect(h.store.saved?.hadAt == [notes: try #require(h.frame(notes))], "not the docked one: \(editor)")
++    h.run("pause")
++    #expect(h.store.saved?.leftAt != nil && h.store.saved?.hadAt == nil)
++    h.run("resume")
++    settle(h)
++    #expect(h.store.saved?.leftAt == nil && h.store.saved?.hadAt != nil)
++    h.controller.shutdown()
++    #expect(h.store.saved?.leftAt != nil && h.store.saved?.hadAt == nil)
++  }
+ }
+diff --git a/Tests/ArborKitTests/LifecycleTests.swift b/Tests/ArborKitTests/LifecycleTests.swift
+index 8be4c827..48d65611 100644
+--- a/Tests/ArborKitTests/LifecycleTests.swift
++++ b/Tests/ArborKitTests/LifecycleTests.swift
+@@ -443,10 +443,11 @@ import Testing
+     first.run("dock \(a.rawValue) left")
+     first.run("dock \(b.rawValue) right")
+     first.controller.saveNow()
++    let saved = first.store.saved
+     first.system.close(b)
+     first.system.displayList = [FakeWindowSystem.standardDisplay]
+ 
+-    let h = relaunch(after: first, saved: first.store.saved)
++    let h = relaunch(after: first, saved: saved)
+     h.start()
+     h.system.setTitle(a, "vim")
+     h.system.setTitle(a, "zsh")
+diff --git a/Tests/ArborKitTests/OutOfViewTests.swift b/Tests/ArborKitTests/OutOfViewTests.swift
+index e9dac513..78341953 100644
+--- a/Tests/ArborKitTests/OutOfViewTests.swift
++++ b/Tests/ArborKitTests/OutOfViewTests.swift
+@@ -496,6 +496,8 @@ private let side = DisplaySnapshot(
+     old.controller.saveNow()
+     var saved = old.store.saved!
+     saved.workspaces[old.display]!.moveCamera(to: saved.workspaces[old.display]!.tree.leaf(containing: a)!)
++    // An older Arbor's file, which does not say where the windows were. (One that does: `FoundAtAStartTests`.)
++    saved.hadAt = nil
+ 
+     let h = Harness(settings: makingWay ? .makingWay : Settings(), saved: saved)
+     _ = h.system.open(app: "Safari", frame: old.frame(a)!)
+diff --git a/Tests/ArborKitTests/RestartTests.swift b/Tests/ArborKitTests/RestartTests.swift
+index 4661211d..eec2efc0 100644
+--- a/Tests/ArborKitTests/RestartTests.swift
++++ b/Tests/ArborKitTests/RestartTests.swift
+@@ -72,9 +72,10 @@ private let side = DisplaySnapshot(
+     old.run("back")
+     let slots = old.layout?.windowFrames
+     old.controller.shutdown()
+-    // But for where the quit left the windows, which only a quit's file says.
++    // But for where the quit left the windows, which only a quit's file says. One written while Arbor runs says where it has what floats.
+     var saved = old.store.saved
+     saved?.leftAt = nil
++    saved?.hadAt = [f: old.frame(f)!]
+ 
+     let h = relaunch(old)
+     h.start()
+diff --git a/collab/parity.json b/collab/parity.json
+index 30fb68af..3427c775 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -1018,9 +1018,13 @@
+         "aWindowOnAnotherSpaceAtLaunchKeepsItsSlotForAsLongAsItExists",
+         "aWindowThatWasClosedWhileArborWasNotRunningKeepsNoRoom",
+         "aWindowThatWasSentAwayIsAnOrdinaryWindowAfterALaunch",
++        "afterARunThatDidNotQuitNoWayOutThrowsItBack",
++        "afterARunThatDidNotQuitWhereItIsFoundIsItsOwn",
+         "anAppThatNeverComesGivesItsRoomBackAtTheNextLayoutSomebodyCauses",
+         "anArrangementWhoseDisplayIsBackAtLaunchComesBackShowingEverything",
+         "anArrangementWhoseDisplayIsGoneAtLaunchComesBackShowingEverything",
++        "dockedJustBeforeArborWasKilledItsOwnSizeIsStillKnown",
++        "foundInAFrameNobodyChoseItsOwnSizeIsStillKnown",
+         "inEveryOrderEachWindowIsSetOneFrameItsLast",
+         "movedWhileArborWasNotRunningItComesBackToWhereItWasMovedTo",
+         "nothingIsDrawnInTheHole",
+diff --git a/docs/ARCHITECTURE.md b/docs/ARCHITECTURE.md
+index 20993391..176d24f5 100644
+--- a/docs/ARCHITECTURE.md
++++ b/docs/ARCHITECTURE.md
+@@ -1154,12 +1154,17 @@ Desktop out.
+ **A floating window that somebody has touched since Arbor let go of it has the frame it is found at for its own.** Where a window is found does not say
+ who put it there: it may be as Arbor had it, squeezed onto a narrow Desktop. So `shutdown()` writes down where it left each window
+ (`PersistedState.leftAt`), at a quit and at a pause, and the next start takes that out of the file before it takes the first window; no file written
+-while Arbor runs has it. Found where it was left, nobody has touched the window, and what is remembered stands, whatever became of the attempt to give it
++while Arbor runs has it. Such a file says where Arbor has each floating window instead (`hadAt`), for a run that ends without a quit: the watchdog's
++start, the permission's return and a person's launch after an accident go by that. Found where it was left, or where Arbor had it, nobody has
++touched the window, and what is remembered stands, whatever became of the attempt to give it
+ back (its app did not answer, or did not obey). Found elsewhere, somebody has: a new size is its own; moved only, it keeps its own size to go
+ back to (`frameToRemember`), which is the one remembered when Arbor stopped, not what an earlier display remembers (`sizesOfFloatingWindows`).
+-With nothing written (the watchdog's start, the permission's return, a person's launch after a run that did not quit) nobody can tell, and what is
+-saved stands, as it always did. Only for a window found on another display than the one that remembers it, that display and the place are put
+-right; the size remembered stands there too, for the file can be half a second behind, and the window in the shape of a slot it knows nothing of.
++With nothing written (an older Arbor's file, a window that was in full screen) nobody can tell, and what is saved stands, as it always did. Only for
++a window found on another display than the one that remembers it, that display and the place are put right; the size remembered stands there too.
++`hadAt` is worth what the file is worth, which is written half a second after the last change. So **the file is never behind on what Arbor itself
++did** (`theFileIsBehindOnWhatArborDid`): who is docked, and where a floating window is that is not at its own frame (out of view, fitted,
++squeezed, cut short by macOS, still in the shape of a slot), is handed to the store at once. What a person does waits as ever. Handed over is not
++written: an accident in the middle of a layout, or in the milliseconds until the store's queue has run, still finds the file behind.
+ Neither rule is for a window found in a corner or in full screen, or for one this start itself had to fetch.
+ What was **docked** is docked again, one move each, on a display that is back as well; what was docked on a display that is missing floats where
+ it is found, and goes back with that display.
+diff --git a/scripts/fuzz-launch.py b/scripts/fuzz-launch.py
+index da3030fc..dacb32d3 100755
+--- a/scripts/fuzz-launch.py
++++ b/scripts/fuzz-launch.py
+@@ -51,7 +51,7 @@ BASE_SESSIONS = {
+ # Every key a workspace, a tree, a node or the file can have, so that none goes unfuzzed because no session made one.
+ EXPECTED_KEYS = {"back", "camera", "floating", "forward", "guests", "names", "pinned", "savedViews", "stashed", "summonFrames",
+                  "summoned", "tree", "undockedFrames", "dormant", "hints", "pause", "version", "workspaces", "keeps", "visits",
+-                 "desktopIsOwedRoom", "welcomed", "hintsShown", "leftAt"}
++                 "desktopIsOwedRoom", "welcomed", "hintsShown", "leftAt", "hadAt"}
+ 
+ SETTINGS_SESSION = [
+     "rule add com.example.notes dock left title Inbox", "rule add com.example.maps dock beside com.example.safari right",
+@@ -129,7 +129,7 @@ SETTINGS_STRINGS = ["bind f1 " * 3000 + "desktop", "set gap 1e999", "quit", "res
+                     "layout " + "(" * 5000, "layout " + "[ " * 3000, "go " + "x" * 100000]
+ DELETE, DOUBLE = object(), object()
+ # Fields whose keys are windows, spaces, apps or names rather than fields: reports lump their entries together.
+-TABLES = ("nodes", "floating", "hints", "savedViews", "guests", "names", "undockedFrames", "summonFrames", "hintsShown", "bindings", "leftAt")
++TABLES = ("nodes", "floating", "hints", "savedViews", "guests", "names", "undockedFrames", "summonFrames", "hintsShown", "bindings", "leftAt", "hadAt")
+ 
+ 
+ def places(node, path=()):

@@ -1,0 +1,43 @@
+diff --git a/scripts/mac-on-linux/tests/main.swift b/scripts/mac-on-linux/tests/main.swift
+index 45cb1669..31b33e6f 100644
+--- a/scripts/mac-on-linux/tests/main.swift
++++ b/scripts/mac-on-linux/tests/main.swift
+@@ -152,6 +152,7 @@ tellOfTheJudge(book)
+ tellOfTheJudgesRandomGestures(book)
+ tellOfTheJudgesSecondRound(book)
+ tellOfTheJudgesSecondRandomGestures(book)
++tellOfTheJudgesThirdRound(book)
+ tellOfPlacing(book)
+ tellOfArrangements(book)
+ tellOfSlowApps(book)
+diff --git a/scripts/typecheck-mac/stubs/FakeMacOS/Accessibility.swift b/scripts/typecheck-mac/stubs/FakeMacOS/Accessibility.swift
+index a744b0fd..55b77062 100644
+--- a/scripts/typecheck-mac/stubs/FakeMacOS/Accessibility.swift
++++ b/scripts/typecheck-mac/stubs/FakeMacOS/Accessibility.swift
+@@ -328,7 +328,10 @@ extension FakeMac {
+     guard window.isOpen else { return }
+     let before = window.frame
+     window.frame = frame
+-    if lag > 0 {
++    if lag > 0, let sizeLag = serverListsANewSizeAfter {
++      if before.size != frame.size { send(after: min(sizeLag, lag), from: .system, "") { window.bounds.size = frame.size } }
++      if before.origin != frame.origin { send(after: lag, from: .system, "") { window.bounds.origin = frame.origin } }
++    } else if lag > 0 {
+       send(after: lag, from: .system, "") { if window.frame == frame { window.bounds = frame } }
+     } else {
+       window.bounds = frame
+diff --git a/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift b/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift
+index cf12ce55..5523c06f 100644
+--- a/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift
++++ b/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift
+@@ -80,7 +80,9 @@ public final class FakeMac: @unchecked Sendable {
+   /// The window server lists a frame that was set through Accessibility so much later; Accessibility has it at once. On a hosted Mac (macOS 26, 2026-10-15; 615 calls that changed a frame) the list
+   /// read right after the call still had the frame before it in 475, something older in 94; 62 to 146 ms after calls back to back it had a half-way frame five times; from 200 ms on it was right, 170
+   /// of 170. Half-way frames are not played. What shows on screen meanwhile nobody has looked at.
+-  public var serverListsACallAfter: TimeInterval = 0
++  public var serverListsACallAfter: TimeInterval = Double(ProcessInfo.processInfo.environment["JUDGE_LAG"] ?? "") ?? 0
++  /// THE JUDGE'S, UNCOMMITTED: a new SIZE is listed so long after its call, a new place after `serverListsACallAfter`: half-way frames. Nil: as committed.
++  public var serverListsANewSizeAfter: TimeInterval? = Double(ProcessInfo.processInfo.environment["JUDGE_SIZE_LAG"] ?? "")
+   /// While macOS shows its desktop: where the window server lists each window it swept aside, by number (DesktopShown.swift).
+   public internal(set) var sweptTo: [UInt32: CGRect]?
+   /// How long after the button went down on a strip the window server lists the windows where they are again, with the button still down. 27 ms on a hosted

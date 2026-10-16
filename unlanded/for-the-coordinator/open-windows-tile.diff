@@ -1,0 +1,28 @@
+diff --git a/Tests/ArborKitTests/OpenWindowsTests.swift b/Tests/ArborKitTests/OpenWindowsTests.swift
+index 837f0984..320a8801 100644
+--- a/Tests/ArborKitTests/OpenWindowsTests.swift
++++ b/Tests/ArborKitTests/OpenWindowsTests.swift
+@@ -225,9 +225,11 @@ import Testing
+ 
+   /// A tile is a window too small to show. Whoever looks for it does not see it, and need not know the word.
+   @Test func aTileIsOutOfView() {
+-    let (h, _, notes, _, _) = desk()
++    let (h, safari, notes, _, _) = desk()
+     let xcode = h.system.open(app: "Xcode", frame: CGRect(x: 400, y: 200, width: 700, height: 500))
+     h.system.setMinimumSize(xcode, CGSize(width: 900, height: 600))
++    // The window being typed in is never the tile, if it fits at all: its neighbours would be.
++    h.system.userFocus(safari)
+     h.run("dock \(xcode.rawValue) beside \(notes.rawValue) bottom")
+     #expect(ScenarioExpectation.check(["tile", "\(xcode.rawValue)"], harness: h, lastCommandOK: true) == nil)
+     #expect(row(h, xcode)?.note == "out of view")
+@@ -335,8 +337,9 @@ import Testing
+     case .tile:
+       let xcode = h.system.open(app: "Xcode", frame: CGRect(x: 400, y: 200, width: 700, height: 500))
+       h.system.setMinimumSize(xcode, CGSize(width: 900, height: 600))
+-      h.run("dock \(xcode.rawValue) beside \(notes.rawValue) bottom")
++      // Before the dock: the window being typed in is never the tile, if it fits at all.
+       h.system.userFocus(safari)
++      h.run("dock \(xcode.rawValue) beside \(notes.rawValue) bottom")
+       return (h, xcode)
+     case .floating:
+       return (h, terminal)

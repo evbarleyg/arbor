@@ -1,0 +1,1030 @@
+diff --git a/Sources/ArborCore/LayoutTree+Gaps.swift b/Sources/ArborCore/LayoutTree+Gaps.swift
+new file mode 100644
+index 0000000..4a43c50
+--- /dev/null
++++ b/Sources/ArborCore/LayoutTree+Gaps.swift
+@@ -0,0 +1,14 @@
++// Where the gaps of a tree are, apart from what is in it (Controller+ThereAndBack.swift).
++
++extension LayoutTree {
++  /// Puts the gaps where they are in `other`, a version of this tree with the same nodes: everybody's weight, and the
++  /// ledger of who gave how much of it to whom (LayoutTree+Loans.swift). All else stays: which tab shows, what is kept.
++  /// With other nodes in `other` nothing happens: a weight means something only among the siblings it was given among.
++  public mutating func takeGaps(from other: LayoutTree) {
++    guard nodes.count == other.nodes.count,
++      nodes.allSatisfy({ id, node in other.nodes[id].map { $0.parent == node.parent } ?? false })
++    else { return }
++    for (id, node) in other.nodes { nodes[id]!.weight = node.weight }
++    loans = other.loans
++  }
++}
+diff --git a/Sources/ArborKit/Controller/Controller+Displays.swift b/Sources/ArborKit/Controller/Controller+Displays.swift
+index 3547c18..0617cd3 100644
+--- a/Sources/ArborKit/Controller/Controller+Displays.swift
++++ b/Sources/ArborKit/Controller/Controller+Displays.swift
+@@ -55,6 +55,7 @@ extension Controller {
+     restoreRoles(of: homeless)
+     layouts = layouts.filter { current.contains($0.key) }
+     keyframes = keyframes.filter { current.contains($0.key) }
++    standingGaps = standingGaps.filter { current.contains($0.key) }
+     let arrivingInView = placeArrivingWindows(arriving, parkingLater: true)
+ 
+     // A drag may be over, or have moved windows on, a display that went away or changed shape.
+diff --git a/Sources/ArborKit/Controller/Controller+Layout.swift b/Sources/ArborKit/Controller/Controller+Layout.swift
+index 8af5c9e..bd7e7f9 100644
+--- a/Sources/ArborKit/Controller/Controller+Layout.swift
++++ b/Sources/ArborKit/Controller/Controller+Layout.swift
+@@ -66,9 +66,11 @@ extension Controller {
+     // Not when a window is only put back where it was: that moves nothing else.
+     if reason != .enforce { dropOverdueSlots(on: displayID) }
+     refreshVisibleFrame(of: displayID)
++    // Before anything goes by what is known of the windows' sizes.
++    noteFixedSizes(of: workspaces[displayID]?.tree.allWindows ?? [])
++    let stood = startFromTheGapsThatStood(on: displayID, for: reason)
+     let before = workspaces[displayID]
+-    noteFixedSizes(of: before?.tree.allWindows ?? [])
+-    guard var layout = roomyLayout(of: displayID, for: reason) else { return }
++    guard var layout = stood ?? roomyLayout(of: displayID, for: reason) else { return }
+     // Before anything is moved (Controller+Hold.swift). A new node alone is no move of the view: docking a window at the edge of the
+     // view makes a group of the two, with the same things to see, and a rule that waited does that at the very end of a hold.
+     if reason == .camera, holdLevel != .view, layouts[displayID]?.camera != layout.camera { holdLetsInWhatWaited(on: displayID) }
+@@ -103,6 +105,7 @@ extension Controller {
+       again = apply(layout, on: displayID)
+     }
+     rememberSqueezes(in: layout, on: displayID)
++    noteWhereTheGapsStand(in: layout, on: displayID, for: reason)
+     placeFloatingWindows(on: displayID, layout: layout, reason: reason)
+     layouts[displayID] = layout
+     settleTransition(staged, on: displayID, layout: layout)
+diff --git a/Sources/ArborKit/Controller/Controller+ThereAndBack.swift b/Sources/ArborKit/Controller/Controller+ThereAndBack.swift
+new file mode 100644
+index 0000000..76ac302
+--- /dev/null
++++ b/Sources/ArborKit/Controller/Controller+ThereAndBack.swift
+@@ -0,0 +1,116 @@
++import ArborCore
++import CoreGraphics
++
++/// There and back is nothing: a docked window that is hidden or minimized and comes back, nothing else having changed,
++/// gets its place back and its neighbours their exact sizes.
++///
++/// A window that takes no space keeps its slot and its weight, so a plain layout has always come back to what it was. Room
++/// before tiles (Controller+MakeRoom.swift) did not: it moves the gaps, from where it finds them. While Finder was hidden
++/// Safari could spare what TextEdit had lent it and paid it back; when Finder showed again Safari borrowed afresh, from
++/// the Desktop first, and TextEdit stayed 95 points wider than it had been. Where the gaps were depended on the way there.
++///
++/// So Arbor remembers the gaps as they stood with the docked windows that took space when somebody last changed the
++/// arrangement. Whoever has gone or come since, room is made starting from those gaps: what it looks like depends on who is
++/// away, not on the order they went in, and once the same windows are there again the gaps are exactly those.
++///
++/// Whatever else changes the arrangement meanwhile (a gap moved by hand, a window docked, floated or closed, `arrange`,
++/// `undo`) makes it, as it then stands, the person's: the memory starts again from there. That is found out by comparing
++/// the tree with what Arbor last left, so that no change to a tree, present or future, has to know about this. Moving the
++/// view is no change of the arrangement, nor is a pause. Not saved: after a restart the gaps are as state.json has them.
++///
++/// What it does not know: a change that Arbor tries, lays out and takes back (a `rotate` that is refused) looks like
++/// anybody's, and the memory starts again. And while somebody is away a move of the view goes on from the gaps as they are.
++extension Controller {
++  struct StandingGaps {
++    /// The tree after the layout that followed the last change anybody made, whether the Desktop was owed room in it, that
++    /// layout, and what was known then of how small the docked windows go.
++    var tree: LayoutTree
++    var desktopIsOwedRoom: Bool?
++    var layout: Layout
++    var sizes: [WindowID: CGSize]
++    /// The docked windows that took space then, and those that have come back since.
++    var present: Set<WindowID>
++    /// What Arbor's own layouts have made of the tree since: the same nodes, other weights.
++    var left: LayoutTree
++    /// For which windows room was last made from the gaps that stood. Nil: a layout that was not for whoever was there
++    /// (`isForWhoeverIsThere`) has been at the gaps since.
++    var leftFor: Set<WindowID>?
++  }
++
++  private func dockedWindowsThatTakeSpace(on displayID: DisplayID) -> Set<WindowID> {
++    Set(workspaces[displayID]?.tree.allWindows ?? []).intersection(presentWindowIDs())
++  }
++
++  private func sizesKnownOfDockedWindows(on displayID: DisplayID) -> [WindowID: CGSize] {
++    let docked = Set(workspaces[displayID]?.tree.allWindows ?? [])
++    return minimumSizes.filter { docked.contains($0.key) }
++  }
++
++  /// Whether a layout for `reason` is one for the windows that are there now. Not under a window, an edge or a gap that is in
++  /// somebody's hand, where no gap moves (`roomyLayout`). Nor when a window is only put back where it was, which moves nothing
++  /// else, and can come between the reports that windows have gone or come back and the layout for them
++  /// (Controller+Spaces.swift). The next layout that is one starts from the gaps that stood.
++  private func isForWhoeverIsThere(_ reason: RelayoutReason) -> Bool {
++    reason != .enforce && !gapsInHand && drag == nil && edgeResize == nil
++  }
++
++  /// Before a layout. If all that has happened to the arrangement since the last one is that docked windows have gone or come
++  /// back, the layout starts from the gaps that stood.
++  ///
++  /// Returns the layout that stood if that is what those gaps give now: the same windows are there, and the view, the
++  /// display and what is known of the windows' sizes are what they were. Then it stands, and no room is made. What could be
++  /// made now could have been made before anybody went, and was not: a gap that a hand has moved is not looked at
++  /// again until something changes, and that a window went and came back changes nothing.
++  func startFromTheGapsThatStood(on displayID: DisplayID, for reason: RelayoutReason) -> Layout? {
++    guard var standing = standingGaps[displayID] else { return nil }
++    guard settings.makeRoom, let found = workspaces[displayID], found.tree.hasSameArrangement(as: standing.left) else {
++      standingGaps[displayID] = nil
++      return nil
++    }
++    // What the Desktop is owed can be settled after a layout (an undo, a dock taken back). If that was everybody's, it stands so.
++    if standing.leftFor == standing.present {
++      standing.desktopIsOwedRoom = found.desktopIsOwedRoom
++      standingGaps[displayID] = standing
++    }
++    let present = dockedWindowsThatTakeSpace(on: displayID)
++    guard present != standing.leftFor, isForWhoeverIsThere(reason), display(displayID) != nil else { return nil }
++    if !found.tree.hasSameArrangement(as: standing.tree) {
++      noteThatRoomIsMade(on: displayID)
++      workspaces[displayID]?.tree.takeGaps(from: standing.tree)
++      scheduleSave()
++    }
++    workspaces[displayID]?.desktopIsOwedRoom = standing.desktopIsOwedRoom
++    var stood = layout(of: displayID)
++    if stood != standing.layout || sizesKnownOfDockedWindows(on: displayID) != standing.sizes { stood = nil }
++    // The window somebody is typing in does not leave the view for this: it is the last to become a tile (F61). It may have
++    // room only because another went. Then the gaps go on from where they are, and that is the arrangement from now on.
++    if let keyboard = focusHistory.first, present.contains(keyboard), layouts[displayID]?.windowFrames[keyboard] != nil,
++      (stood ?? layoutToCome(on: displayID, for: reason))?.windowFrames[keyboard] == nil
++    {
++      workspaces[displayID] = found
++      standingGaps[displayID] = nil
++      return nil
++    }
++    return stood
++  }
++
++  /// After a layout, which may have moved the gaps to make room.
++  func noteWhereTheGapsStand(in layout: Layout, on displayID: DisplayID, for reason: RelayoutReason) {
++    guard settings.makeRoom, let workspace = workspaces[displayID] else { return }
++    let present = dockedWindowsThatTakeSpace(on: displayID)
++    var standing =
++      standingGaps[displayID]
++      ?? StandingGaps(
++        tree: workspace.tree, desktopIsOwedRoom: workspace.desktopIsOwedRoom, layout: layout,
++        sizes: sizesKnownOfDockedWindows(on: displayID), present: present, left: workspace.tree, leftFor: present)
++    standing.left = workspace.tree
++    if isForWhoeverIsThere(reason) { standing.leftFor = present } else if standing.leftFor != present { standing.leftFor = nil }
++    // With everybody there, and the gaps theirs, room made now (for a move of the view, say) stands. So it does once windows
++    // are back that were away when somebody last changed the arrangement: from now on they are of the party.
++    if present.isSuperset(of: standing.present), present == standing.leftFor {
++      (standing.tree, standing.desktopIsOwedRoom, standing.present) = (workspace.tree, workspace.desktopIsOwedRoom, present)
++      (standing.layout, standing.sizes) = (layout, sizesKnownOfDockedWindows(on: displayID))
++    }
++    standingGaps[displayID] = standing
++  }
++}
+diff --git a/Sources/ArborKit/Controller/Controller+UndockedFrames.swift b/Sources/ArborKit/Controller/Controller+UndockedFrames.swift
+index a4ddcf0..97fd970 100644
+--- a/Sources/ArborKit/Controller/Controller+UndockedFrames.swift
++++ b/Sources/ArborKit/Controller/Controller+UndockedFrames.swift
+@@ -77,10 +77,10 @@ extension Controller {
+ 
+   /// What `relayout` is about to start from, which is more than `layout(of:)`: the room the window's slot took can go
+   /// to a Desktop that was a tile till now (Controller+MakeRoom.swift). Only a look: the gaps are the layout's to move.
+-  func layoutToCome(on displayID: DisplayID) -> Layout? {
++  func layoutToCome(on displayID: DisplayID, for reason: RelayoutReason = .structure) -> Layout? {
+     let (asItIs, noted) = (workspaces[displayID], treesBeforeRoomWasMade[displayID])
+     defer { (workspaces[displayID], treesBeforeRoomWasMade[displayID]) = (asItIs, noted) }
+-    return roomyLayout(of: displayID, for: .structure)
++    return roomyLayout(of: displayID, for: reason)
+   }
+ 
+   /// A window that starts to float while the Desktop is out of view would be gone at the next move of the view, and
+diff --git a/Sources/ArborKit/Controller/Controller.swift b/Sources/ArborKit/Controller/Controller.swift
+index 2a8f9f6..9ebbb4c 100644
+--- a/Sources/ArborKit/Controller/Controller.swift
++++ b/Sources/ArborKit/Controller/Controller.swift
+@@ -292,6 +292,8 @@ public final class Controller {
+   var leavingView: Set<WindowID> = []
+   /// Each display's tree as it was when Arbor first moved its gaps to make room (F61) during the change being recorded.
+   var treesBeforeRoomWasMade: [DisplayID: LayoutTree] = [:]
++  /// Each display's gaps as they stood when somebody last changed its arrangement (Controller+ThereAndBack.swift).
++  var standingGaps: [DisplayID: StandingGaps] = [:]
+   /// What the menu called the step the last `undo` or `redo` took; nil if it took none.
+   var titleOfTheStepJustTaken: String?
+   /// The palette of "Go to…"; nil while it is closed (Controller+Finder.swift).
+diff --git a/Tests/ArborCoreTests/GapsTests.swift b/Tests/ArborCoreTests/GapsTests.swift
+new file mode 100644
+index 0000000..a672f38
+--- /dev/null
++++ b/Tests/ArborCoreTests/GapsTests.swift
+@@ -0,0 +1,78 @@
++import ArborCore
++import CoreGraphics
++import Testing
++
++private let screen = CGRect(x: 0, y: 25, width: 1440, height: 875)
++private let notes = WindowID(1)
++private let safari = WindowID(2)
++private let mail = WindowID(3)
++private let minimums = [notes: CGSize(width: 709, height: 300), safari: CGSize(width: 574, height: 240)]
++
++/// LayoutTree+Gaps.swift.
++@Suite struct GapsTests {
++  private func serve(_ tree: inout LayoutTree, without absent: WindowID? = nil) {
++    _ = MakeRoom.serve(
++      &tree, camera: tree.root, in: screen, options: LayoutOptions(), isPresent: { $0 != absent },
++      minimumSize: { minimums[$0] }, terms: MakeRoom.Terms(desktopIsInUse: false))
++  }
++
++  /// [Notes | Desktop | Safari], with room made for both.
++  private func served() -> LayoutTree {
++    var tree = LayoutTree()
++    tree.dock(notes, beside: tree.root, edge: .left)
++    tree.dock(safari, beside: tree.root, edge: .right)
++    serve(&tree)
++    #expect(tree.hasLoans)
++    return tree
++  }
++
++  @Test func theWeightsAndWhatIsOwedForThemComeOver() {
++    let stood = served()
++    var tree = stood
++    // With Notes away Safari can spare what it was lent, and gives it back.
++    serve(&tree, without: notes)
++    #expect(tree != stood)
++    tree.takeGaps(from: stood)
++    #expect(tree == stood)
++  }
++
++  @Test func whichTabShowsStays() throws {
++    var stood = served()
++    stood.addToStack(mail, leaf: try #require(stood.leaf(containing: safari)))
++    var tree = stood
++    tree.activate(safari)
++    serve(&tree, without: notes)
++    let showing = tree
++    tree.takeGaps(from: stood)
++    #expect(tree.hasSameArrangement(as: stood))
++    #expect(tree[try #require(tree.leaf(containing: safari))]?.kind == showing[try #require(showing.leaf(containing: safari))]?.kind)
++    #expect(tree != stood)
++  }
++
++  @Test func fromATreeWithOtherNodesNothingIsTaken() {
++    let stood = served()
++    var docked = stood
++    docked.dock(mail, beside: docked.root, edge: .right)
++    let before = docked
++    docked.takeGaps(from: stood)
++    #expect(docked == before)
++
++    var closed = stood
++    closed.remove(notes)
++    let after = closed
++    closed.takeGaps(from: stood)
++    #expect(closed == after)
++  }
++
++  @Test func norFromOneWithAsManyNodesUnderOtherNumbers() {
++    let stood = served()
++    // Notes has left and come again: as many nodes as before, two of them new.
++    var again = stood
++    again.remove(notes)
++    again.dock(notes, beside: again.root, edge: .left)
++    #expect(again.preorder().count == stood.preorder().count)
++    let before = again
++    again.takeGaps(from: stood)
++    #expect(again == before)
++  }
++}
+diff --git a/Tests/ArborKitTests/ThereAndBackTests.swift b/Tests/ArborKitTests/ThereAndBackTests.swift
+new file mode 100644
+index 0000000..879c39a
+--- /dev/null
++++ b/Tests/ArborKitTests/ThereAndBackTests.swift
+@@ -0,0 +1,551 @@
++import ArborCore
++@testable import ArborKit
++import ArborTesting
++import CoreGraphics
++import Testing
++
++/// There and back is nothing: a docked window that is hidden or minimized and comes back, nothing else having changed,
++/// gets its place back and its neighbours their exact sizes (Controller+ThereAndBack.swift).
++@MainActor @Suite struct ThereAndBackTests {
++  /// Finder, Safari and TextEdit docked on a display of 1600 × 900 with a Terminal floating, as on the hosted Mac where it was
++  /// seen. The smallest sizes are the real apps'. Safari has borrowed from the Desktop and from TextEdit.
++  private struct Desk {
++    let h: Harness
++    let finder, safari, textEdit, terminal: WindowID
++    var docked: [WindowID] { [finder, safari, textEdit] }
++
++    @MainActor init(settings: Settings = Settings()) {
++      let h = Harness(
++        displays: [
++          DisplaySnapshot(
++            id: FakeWindowSystem.standardDisplay.id, frame: CGRect(x: 0, y: 0, width: 1600, height: 900),
++            visibleFrame: CGRect(x: 0, y: 31, width: 1600, height: 869), isMain: true)
++        ], settings: settings)
++      func open(_ app: String, _ pid: Int32, _ size: CGSize, atLeast minimum: CGSize = .zero) -> WindowID {
++        h.system.open(app: app, pid: pid, frame: CGRect(origin: CGPoint(x: 140, y: 60), size: size), minimumSize: minimum)
++      }
++      finder = open("Finder", 2001, CGSize(width: 920, height: 436), atLeast: CGSize(width: 501, height: 300))
++      safari = open("Safari", 2002, CGSize(width: 1324, height: 791), atLeast: CGSize(width: 574, height: 240))
++      textEdit = open("TextEdit", 2003, CGSize(width: 673, height: 439), atLeast: CGSize(width: 115, height: 100))
++      terminal = open("Terminal", 2004, CGSize(width: 877, height: 499))
++      self.h = h
++      h.start()
++      h.run("dock \(finder.rawValue) left")
++      h.run("dock \(safari.rawValue) right")
++      h.run("dock \(textEdit.rawValue) right")
++    }
++
++    /// Where the docked windows that take space are, and the Desktop.
++    @MainActor var places: [CGRect?] {
++      docked.map { h.controller.windows[$0]?.isPresent == true ? h.frame($0) : nil } + [h.layout?.nodeFrames[h.workspace.tree.desktop]]
++    }
++
++    @MainActor func hide(_ window: WindowID, _ hidden: Bool = true) {
++      h.system.setHidden(pid: h.system.windows[window]!.snapshot.pid, hidden)
++      h.scheduler.runPending()
++    }
++  }
++
++  @Test func theDeskIsTheOneThatWasSeen() {
++    let desk = Desk()
++    #expect(desk.h.frame(desk.finder) == CGRect(x: 12, y: 43, width: 501, height: 845))
++    #expect(desk.h.frame(desk.safari) == CGRect(x: 712, y: 43, width: 574, height: 845))
++    #expect(desk.h.frame(desk.textEdit) == CGRect(x: 1298, y: 43, width: 290, height: 845))
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  @Test func anAppThatIsHiddenAndShownAgainLeavesItsNeighboursAsWideAsTheyWere() {
++    let desk = Desk()
++    let before = desk.places
++    desk.h.system.userFocus(desk.finder)
++    desk.hide(desk.finder)
++    // The neighbours close up meanwhile.
++    #expect(desk.h.frame(desk.safari)!.width > 574)
++    #expect(desk.h.frame(desk.textEdit)!.width > 290)
++    desk.hide(desk.finder, false)
++    #expect(desk.places == before)
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  @Test func soDoesEachOfThemHiddenOrMinimized() {
++    for index in 0..<3 {
++      for minimizes in [true, false] {
++        let desk = Desk()
++        let (before, tree) = (desk.places, desk.h.workspace.tree)
++        let window = desk.docked[index]
++        for round in 1...3 {
++          if minimizes { desk.h.system.setMinimized(window, true) } else { desk.hide(window) }
++          #expect(desk.places != before)
++          if minimizes { desk.h.system.setMinimized(window, false) } else { desk.hide(window, false) }
++          #expect(desk.places == before, "\(window), \(minimizes ? "minimized" : "hidden"), round \(round)")
++          #expect(desk.h.workspace.tree == tree)
++        }
++        expectWindowsMatchLayout(desk.h)
++      }
++    }
++  }
++
++  @Test func allThreeInEveryOrderThereAndEveryOrderBack() {
++    let orders = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]]
++    for leaving in orders {
++      for returning in orders {
++        let desk = Desk()
++        let before = desk.places
++        for index in leaving { desk.h.system.setMinimized(desk.docked[index], true) }
++        for index in returning { desk.h.system.setMinimized(desk.docked[index], false) }
++        #expect(desk.places == before, "\(leaving) left, \(returning) came back")
++        expectWindowsMatchLayout(desk.h)
++      }
++    }
++  }
++
++  @Test func twoOfThemOneHiddenAndOneMinimized() {
++    for (first, second) in [(0, 1), (1, 0), (0, 2), (2, 0), (1, 2), (2, 1)] {
++      for sameWayBack in [true, false] {
++        let desk = Desk()
++        let before = desk.places
++        desk.hide(desk.docked[first])
++        desk.h.system.setMinimized(desk.docked[second], true)
++        if sameWayBack { desk.h.system.setMinimized(desk.docked[second], false) }
++        desk.hide(desk.docked[first], false)
++        if !sameWayBack { desk.h.system.setMinimized(desk.docked[second], false) }
++        #expect(desk.places == before, "\(first) hidden, \(second) minimized")
++        expectWindowsMatchLayout(desk.h)
++      }
++    }
++  }
++
++  /// What it looks like meanwhile depends on who is away, not on the order in which they went or on who has been away since.
++  @Test func whoIsAwayDecidesWhatItLooksLikeMeanwhile() {
++    let alone = Desk()
++    alone.h.system.setMinimized(alone.safari, true)
++
++    let afterAnother = Desk()
++    afterAnother.hide(afterAnother.finder)
++    afterAnother.h.system.setMinimized(afterAnother.safari, true)
++    afterAnother.hide(afterAnother.finder, false)
++    #expect(afterAnother.places == alone.places)
++    expectWindowsMatchLayout(afterAnother.h)
++  }
++
++  /// Judged by the road (`FakeWindowSystem.detour`): one change of place at most, and no edge goes past where it ends up.
++  @Test func eachWindowMovesOnceOnTheWayThereAndOnceOnTheWayBack() {
++    let desk = Desk()
++    var mark = desk.h.system.moveLog.count
++    func roads() -> [WindowID: [CGRect]] {
++      desk.docked.reduce(into: [:]) { $0[$1] = desk.h.system.road(of: $1, since: mark) }.filter { !$0.value.isEmpty }
++    }
++    desk.hide(desk.finder)
++    #expect(Set(roads().keys) == [desk.safari, desk.textEdit])
++    #expect(roads().values.compactMap(FakeWindowSystem.detour) == [])
++    mark = desk.h.system.moveLog.count
++    desk.hide(desk.finder, false)
++    // Finder shows again where it was, which is its place: nobody has to move it.
++    #expect(Set(roads().keys) == [desk.safari, desk.textEdit])
++    #expect(roads().values.compactMap(FakeWindowSystem.detour) == [])
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  @Test func aSwitchOfSpaceAndBackIsNothingEither() {
++    let desk = Desk()
++    let before = desk.places
++    desk.h.system.setOnActiveSpace(desk.finder, false)
++    desk.h.scheduler.runPending()
++    #expect(desk.places != before)
++    desk.h.system.setOnActiveSpace(desk.finder, true)
++    desk.h.scheduler.runPending()
++    #expect(desk.places == before)
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  @Test func movingTheViewMeanwhileChangesNothing() {
++    let desk = Desk()
++    let before = desk.places
++    desk.hide(desk.finder)
++    desk.h.run("zoom \(desk.safari.rawValue)")
++    desk.h.run("show-all")
++    desk.h.run("desktop")
++    desk.h.run("back")
++    desk.hide(desk.finder, false)
++    desk.h.run("show-all")
++    #expect(desk.places == before)
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  // MARK: Something else has changed
++
++  /// A gap moved by hand while a window is away is the person's. The window that comes back takes its share of the row as
++  /// it stands, and nothing goes back to where it was before the hand.
++  @Test func aGapMovedByHandMeanwhileIsThePersons() {
++    let desk = Desk()
++    let before = desk.places
++    desk.hide(desk.finder)
++    desk.h.run("resize \(desk.textEdit.rawValue) left 100")
++    #expect(desk.h.frame(desk.textEdit)!.width == 674)
++    desk.hide(desk.finder, false)
++    #expect(desk.places != before)
++    #expect(desk.h.frame(desk.finder)!.width == 501)
++    #expect(desk.h.frame(desk.textEdit)!.width > 290)
++    expectWindowsMatchLayout(desk.h)
++    // From here on this is the arrangement that comes back.
++    let standing = desk.places
++    desk.hide(desk.finder)
++    desk.hide(desk.finder, false)
++    #expect(desk.places == standing)
++  }
++
++  @Test func aWindowDockedOrClosedMeanwhileStartsAfresh() {
++    let desk = Desk()
++    desk.hide(desk.finder)
++    desk.h.run("dock \(desk.terminal.rawValue) right")
++    desk.hide(desk.finder, false)
++    expectWindowsMatchLayout(desk.h)
++    let standing = desk.places + [desk.h.frame(desk.terminal)]
++    desk.h.system.setMinimized(desk.safari, true)
++    desk.h.system.setMinimized(desk.safari, false)
++    #expect(desk.places + [desk.h.frame(desk.terminal)] == standing)
++
++    desk.h.system.setMinimized(desk.safari, true)
++    desk.h.system.close(desk.terminal)
++    desk.h.system.setMinimized(desk.safari, false)
++    expectWindowsMatchLayout(desk.h)
++    #expect(desk.docked.allSatisfy { desk.h.layout!.windowFrames[$0] != nil })
++  }
++
++  /// On a smaller display the gaps that stood leave Finder and Safari short, and room is made for them as ever.
++  @Test func aDisplayThatShrankMeanwhileIsAnOccasionToMakeRoom() {
++    let desk = Desk()
++    desk.hide(desk.finder)
++    desk.h.system.setDisplays([
++      DisplaySnapshot(
++        id: FakeWindowSystem.standardDisplay.id, frame: CGRect(x: 0, y: 0, width: 1500, height: 900),
++        visibleFrame: CGRect(x: 0, y: 31, width: 1500, height: 869), isMain: true)
++    ])
++    desk.h.scheduler.advance(by: 2)
++    desk.hide(desk.finder, false)
++    #expect(desk.docked.allSatisfy { desk.h.layout!.windowFrames[$0] != nil })
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  /// Two windows are tiles, and Arbor has never asked how small they go. With another away they show, and of one it learns. That
++  /// is an occasion to make room (F61): when the other is back, that one is not sent back into its tile.
++  @Test func whatArborLearnsMeanwhileIsAnOccasionToMakeRoom() {
++    let h = Harness(displays: [
++      DisplaySnapshot(
++        id: FakeWindowSystem.standardDisplay.id, frame: CGRect(x: 0, y: 0, width: 1280, height: 900),
++        visibleFrame: CGRect(x: 0, y: 25, width: 1280, height: 875), isMain: true)
++    ])
++    let windows = [(501, 100), (0, 240), (501, 0), (574, 0), (334, 240)].enumerated().map {
++      h.system.open(app: "App\($0.offset)", pid: Int32(3000 + $0.offset), minimumSize: CGSize(width: $0.element.0, height: $0.element.1))
++    }
++    h.start()
++    for line in ["dock 101 top", "dock 102 right", "dock 103 beside 101 bottom", "dock 104 top", "dock 105 right"] { h.run(line) }
++    #expect(h.layout!.windowFrames[windows[0]] == nil && h.layout!.windowFrames[windows[2]] == nil)
++    h.system.setMinimized(windows[3], true)
++    #expect(h.layout!.windowFrames[windows[0]] != nil && h.layout!.windowFrames[windows[2]] != nil)
++    h.system.setMinimized(windows[3], false)
++    h.scheduler.advance(by: 2)
++    #expect(h.layout!.windowFrames[windows[0]] != nil)
++    expectWindowsMatchLayout(h)
++  }
++
++  /// Whoever went during a pause is away when Arbor looks again. A window put back in its place then moves nothing else.
++  @Test func aPauseMeanwhileChangesNothing() {
++    let desk = Desk()
++    let before = desk.places
++    desk.h.run("pause")
++    desk.hide(desk.finder)
++    desk.h.run("resume")
++    desk.h.scheduler.advance(by: 2)
++    let found = desk.places
++    #expect(found != before)
++    desk.h.controller.relayout(desk.h.display, reason: .enforce)
++    #expect(desk.places == found)
++    desk.hide(desk.finder, false)
++    #expect(desk.places == before)
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  /// No gap moves under a window that is being dragged, and the drop finds the gaps that these windows have had before.
++  @Test func whoComesAndGoesDuringADragMovesNoGap() {
++    let desk = Desk()
++    desk.hide(desk.finder)
++    let meanwhile = desk.places
++    desk.h.system.beginDrag(desk.terminal)
++    desk.h.system.moveDrag(to: CGPoint(x: 140, y: 500), holding: 0.1)
++    desk.h.system.setMinimized(desk.textEdit, true)
++    desk.h.system.setMinimized(desk.textEdit, false)
++    desk.h.scheduler.advance(by: 2)
++    #expect(desk.places == meanwhile)
++    desk.h.system.endDrag()
++    desk.h.scheduler.advance(by: 2)
++    #expect(desk.places == meanwhile)
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  /// The next layout after the drop is the one for whoever went during the drag: it looks as it would have without a drag.
++  @Test func whoWentDuringADragIsAwayAfterTheDrop() {
++    let plain = Desk()
++    plain.hide(plain.finder)
++    plain.h.system.setMinimized(plain.textEdit, true)
++
++    let desk = Desk()
++    desk.hide(desk.finder)
++    desk.h.system.beginDrag(desk.terminal)
++    desk.h.system.moveDrag(to: CGPoint(x: 140, y: 500), holding: 0.1)
++    desk.h.system.setMinimized(desk.textEdit, true)
++    desk.h.scheduler.advance(by: 2)
++    desk.h.system.endDrag()
++    desk.h.scheduler.advance(by: 2)
++    // A drop that changes nothing lays nothing out, and a window put back in its place moves nothing else.
++    let dropped = desk.places
++    desk.h.controller.relayout(desk.h.display, reason: .enforce)
++    #expect(desk.places == dropped)
++    desk.h.controller.relayout(desk.h.display, reason: .structure)
++    #expect(desk.places == plain.places)
++    #expect(desk.places != dropped)
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  /// An undo settles what the Desktop is owed after it has laid out.
++  @Test func whatTheDesktopIsOwedAfterAnUndoOutlivesThereAndBack() {
++    let h = Harness()
++    let notes = h.system.open(app: "Notes", pid: 2001, minimumSize: CGSize(width: 709, height: 300))
++    let safari = h.system.open(app: "Safari", pid: 2002, minimumSize: CGSize(width: 574, height: 240))
++    h.start()
++    h.run("dock \(notes.rawValue) left")
++    h.run("dock \(safari.rawValue) right")
++    #expect(h.workspace.desktopIsOwedRoom == true)
++    h.run("resize \(notes.rawValue) right -300")
++    h.run("undo")
++    #expect(h.workspace.desktopIsOwedRoom == true)
++    h.system.setHidden(pid: 2002, true)
++    h.scheduler.runPending()
++    h.system.setHidden(pid: 2002, false)
++    h.scheduler.runPending()
++    #expect(h.workspace.desktopIsOwedRoom == true)
++    expectWindowsMatchLayout(h)
++  }
++
++  /// A has room only because C went, and somebody types in it when C comes back by itself (Show All, a Space that returns). The window
++  /// with the keyboard is the last to become a tile (F61): it stays, and the gaps go on from where they are.
++  @Test func theWindowBeingTypedInDoesNotLeaveTheViewForIt() {
++    let h = Harness(displays: [
++      DisplaySnapshot(
++        id: FakeWindowSystem.standardDisplay.id, frame: CGRect(x: 0, y: 0, width: 1280, height: 900),
++        visibleFrame: CGRect(x: 0, y: 25, width: 1280, height: 875), isMain: true)
++    ])
++    let windows = [501, 574, 334].enumerated().map {
++      h.system.open(app: "App\($0.offset)", pid: Int32(3000 + $0.offset), minimumSize: CGSize(width: $0.element, height: 0))
++    }
++    h.start()
++    for line in ["dock 101 left", "dock 102 right", "dock 103 right"] { h.run(line) }
++    #expect(h.layout!.windowFrames[windows[0]] == nil)
++    h.system.setHidden(pid: 3002, true)
++    h.scheduler.runPending()
++    #expect(h.layout!.windowFrames[windows[0]] != nil)
++    h.system.userFocus(windows[0])
++    h.system.setHidden(pid: 3002, false)
++    h.scheduler.advance(by: 2)
++    #expect(h.layout!.windowFrames[windows[0]] != nil)
++    expectWindowsMatchLayout(h)
++  }
++
++  /// A window put back in its place between the report that Finder went and the layout for it sees a wide Desktop, to which
++  /// nothing is owed. That is not what stood.
++  @Test func whatTheDesktopIsOwedOutlivesALayoutThatComesInBetween() {
++    let desk = Desk()
++    #expect(desk.h.workspace.desktopIsOwedRoom == true)
++    let (before, tree) = (desk.places, desk.h.workspace.tree)
++    desk.h.system.setOnActiveSpace(desk.finder, false)
++    desk.h.controller.relayout(desk.h.display, reason: .enforce)
++    desk.h.scheduler.runPending()
++    desk.h.system.setOnActiveSpace(desk.finder, true)
++    desk.h.scheduler.runPending()
++    #expect(desk.places == before)
++    #expect(desk.h.workspace.desktopIsOwedRoom == true)
++
++    // Gone and back before the layout for it: what the put-back made of the gaps is nobody's.
++    desk.h.system.setOnActiveSpace(desk.finder, false)
++    desk.h.controller.relayout(desk.h.display, reason: .enforce)
++    desk.h.system.setOnActiveSpace(desk.finder, true)
++    desk.h.scheduler.runPending()
++    #expect(desk.h.workspace.tree == tree)
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  /// TextEdit is in the Dock when a gap is moved by hand. Once it is back it is of the party: with all three there, that is what comes back.
++  @Test func aWindowThatWasAwayAtTheLastChangeIsOfThePartyOnceItIsBack() {
++    let desk = Desk()
++    desk.h.system.setMinimized(desk.textEdit, true)
++    desk.h.run("resize \(desk.finder.rawValue) right 40")
++    desk.h.system.setMinimized(desk.textEdit, false)
++    desk.h.run("zoom \(desk.safari.rawValue)")
++    desk.h.run("show-all")
++    let (standing, tree) = (desk.places, desk.h.workspace.tree)
++    desk.hide(desk.finder)
++    desk.hide(desk.finder, false)
++    #expect(desk.places == standing)
++    #expect(desk.h.workspace.tree == tree)
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  /// Undo takes back what the person did, with the gaps of that time, whoever has come and gone since.
++  @Test func undoStillTakesBackTheLastDock() {
++    let desk = Desk()
++    desk.hide(desk.finder)
++    desk.hide(desk.finder, false)
++    desk.h.run("undo")
++    #expect(desk.h.workspace.isFloating(desk.textEdit))
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  @Test func withoutRoomBeforeTilesItHeldAllAlong() {
++    var settings = Settings()
++    settings.makeRoom = false
++    let desk = Desk(settings: settings)
++    let before = desk.places
++    desk.hide(desk.finder)
++    desk.hide(desk.finder, false)
++    #expect(desk.places == before)
++    expectWindowsMatchLayout(desk.h)
++  }
++
++  // MARK: The net
++
++  /// Random arrangements of windows with the smallest sizes of real apps, on displays of several sizes, with gaps moved by hand.
++  /// Then windows are hidden, minimized and sent to another Space and come back, in any order. Once all are back the
++  /// arrangement and every docked window's frame are what they were, and nothing moved more than once at any step.
++  @Test(arguments: 0..<8) func anyOrderOverRandomArrangements(block: UInt64) {
++    for seed in (block * 80)..<(block * 80 + 80) {
++      var random = ChaosRandom(seed: seed)
++      let width = random.pick([1280, 1440, 1600, 1920, 2560])!
++      let h = Harness(displays: [
++        DisplaySnapshot(
++          id: FakeWindowSystem.standardDisplay.id, frame: CGRect(x: 0, y: 0, width: width, height: 900),
++          visibleFrame: CGRect(x: 0, y: 25, width: width, height: 875), isMain: true)
++      ])
++      let widths: [CGFloat] = [0, 115, 177, 334, 501, 574, 660, 709, 740]
++      var script: [String] = ["display \(width)"]
++      let windows = (0..<random.int(2...6)).map { index -> WindowID in
++        let minimum = CGSize(width: random.pick(widths)!, height: random.pick([0, 100, 240, 300, 384])!)
++        script.append("open min \(Int(minimum.width))x\(Int(minimum.height))")
++        return h.system.open(app: "App\(index)", pid: Int32(3000 + index), minimumSize: minimum)
++      }
++      h.start()
++      func run(_ line: String) {
++        script.append(line)
++        h.run(line)
++      }
++      var docked: [WindowID] = []
++      for window in windows where docked.isEmpty || random.chance(85) {
++        let edge = random.pick(["left", "right", "top", "bottom"])!
++        if let other = random.pick(docked), random.chance(50) {
++          run("dock \(window.rawValue) beside \(other.rawValue) \(edge)")
++        } else {
++          run("dock \(window.rawValue) \(edge)")
++        }
++        docked.append(window)
++      }
++      // In some walks a window is in the Dock while the gaps are moved by hand.
++      let late = random.chance(25) ? random.pick(docked) : nil
++      if let late {
++        script.append("minimize \(late.rawValue)")
++        h.system.setMinimized(late, true)
++      }
++      for _ in 0..<random.int((late == nil ? 0 : 1)...2) {
++        run("resize \(random.pick(docked)!.rawValue) \(random.pick(["left", "right", "top", "bottom"])!) \(random.pick([-1, 1])! * random.int(20...120))")
++      }
++      if let late {
++        script.append("restore \(late.rawValue)")
++        h.system.setMinimized(late, false)
++      }
++      run("show-all")
++      h.scheduler.advance(by: 2)
++      // Where there is not room for all, the window with the keyboard is served first (F61), so who has it when a layout is made
++      // is part of what the layout depends on. In every other walk it stays in a floating window that stays.
++      let keyboardStays = seed % 2 == 0
++      if keyboardStays {
++        h.system.userFocus(h.system.open(app: "Bystander", pid: 2999, frame: CGRect(x: 40, y: 60, width: 200, height: 120)))
++        h.system.echoes.keyboard = false
++        script.append("the keyboard stays in a floating window")
++      }
++
++      enum Way: CaseIterable { case hidden, minimized, elsewhere }
++      var walk: [(window: WindowID, way: Way, gone: Bool, interrupted: Bool)] = []
++      var away: [WindowID: Way] = [:]
++      for _ in 0..<random.int(1...8) {
++        let window = random.pick(docked)!
++        if let way = away.removeValue(forKey: window) {
++          walk.append((window, way, false, random.chance(20)))
++        } else {
++          away[window] = random.pick(Way.allCases)!
++          walk.append((window, away[window]!, true, random.chance(20)))
++        }
++      }
++      while let window = random.pick(away.keys.sorted()) { walk.append((window, away.removeValue(forKey: window)!, false, false)) }
++      script += walk.map { "\($0.gone ? "away" : "back") \($0.window.rawValue) \($0.way)\($0.interrupted ? ", interrupted" : "")" }
++      let story = Comment(rawValue: "seed \(seed):\n" + script.joined(separator: "\n"))
++
++      /// The window being typed in would have left the view, so the gaps went on from where they were.
++      var startedAfresh = false
++      /// Returns what went wrong on the way. A window took a detour at a step (`FakeWindowSystem.detour`): not where the view moved as well (a
++      /// window that comes back as a tile and has the keyboard is framed, after the layout that gave it its tile), nor
++      /// where Arbor learns how small a window goes (it is asked, refuses, and room is made for it, F61). Or the same
++      /// windows, with the same known of their sizes, did not give the same layout as before. Or a window put back in its
++      /// place afterwards moved something else.
++      func goThereAndBack() -> [String] {
++        var problems: [String] = []
++        var layouts: [String: Layout] = [:]
++        let stood = h.controller.standingGaps[h.display]!
++        for (step, (window, way, gone, interrupted)) in walk.enumerated() {
++          let (view, known, mark) = (h.workspace.camera, h.controller.minimumSizes, h.system.moveLog.count)
++          switch way {
++          case .hidden: h.system.setHidden(pid: h.system.windows[window]!.snapshot.pid, gone)
++          case .minimized: h.system.setMinimized(window, gone)
++          case .elsewhere: h.system.setOnActiveSpace(window, !gone)
++          }
++          // A window put back in its place can come between the report and the layout for it.
++          if interrupted { h.controller.relayout(h.display, reason: .enforce) }
++          // Long enough for all of a step's reports to be in, and for a window that is only just back to be asked again
++          // (Controller+OnTheWayBack.swift).
++          h.scheduler.advance(by: 2)
++          let there = docked.filter { h.controller.windows[$0]!.isPresent }
++          let sizes = h.controller.minimumSizes.sorted { $0.key < $1.key }.map { "\($0.key) \($0.value)" }
++          if keyboardStays, let last = layouts.updateValue(h.layout!, forKey: "\(there) \(sizes)"), last != h.layout {
++            problems.append("step \(step + 1): with \(there) there it was \(last.windowFrames) and is \(h.layout!.windowFrames)")
++          }
++          if h.workspace.camera == view, h.controller.minimumSizes == known, !interrupted {
++            problems += docked.map { h.system.road(of: $0, since: mark) }.filter { !$0.isEmpty }.compactMap(FakeWindowSystem.detour).map { "step \(step + 1): \($0)" }
++          }
++          let stands = h.controller.standingGaps[h.display]!
++          if stands.present != stood.present || !stands.tree.hasSameArrangement(as: stood.tree) { startedAfresh = true }
++          let settled = h.layout
++          h.controller.relayout(h.display, reason: .enforce)
++          if h.layout != settled { problems.append("step \(step + 1): a window put back in its place moved something else") }
++        }
++        h.run("show-all")
++        h.scheduler.advance(by: 2)
++        return problems
++      }
++      // How small a window goes Arbor learns when the window refuses a slot, which takes a second move and is an occasion to
++      // make room (F61). The first time round it may learn; then it knows.
++      _ = goThereAndBack()
++      let (before, tree, owed) = (h.layout!, h.workspace.tree, h.workspace.desktopIsOwedRoom)
++      let frames = Dictionary(uniqueKeysWithValues: docked.map { ($0, h.frame($0)!) })
++      startedAfresh = false
++      #expect(goThereAndBack() == [], story)
++      #expect(h.staleLayouts() == [], story)
++      #expect(!startedAfresh || !keyboardStays, story)
++      if startedAfresh { continue }
++
++      #expect(h.workspace.tree.hasSameArrangement(as: tree), story)
++      #expect(h.layout == before, story)
++      #expect(h.workspace.desktopIsOwedRoom == owed, story)
++      // The slots are the same to the last digit. A window within a point of its slot is left where it is (`Controller.isInPlace`).
++      let moved = docked.filter { before.windowFrames[$0] != nil && !h.frame($0)!.approximatelyEquals(frames[$0]!, tolerance: 1) }
++        .map { "\($0): \(frames[$0]!) became \(h.frame($0)!)" }
++      #expect(moved == [], story)
++    }
++  }
++}
+diff --git a/collab/parity.json b/collab/parity.json
+index 347d3be..47fe55c 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -11,7 +11,7 @@
+     {"id": "T04", "area": "Docking and arrangement", "title": "Unlimited nesting", "trellis": "Spaces nest as deep as you like", "arbor": "Docking across an axis creates a nested space, down to 100 levels, which is as deep as a saved arrangement is read back; one more is refused with the reason", "status": "shipped", "spec": "F01", "priority": 1, "tests": ["dockingAcrossTheAxisWrapsTheTarget", "randomOperationsKeepInvariants", "randomTreesTileEveryDisplayExactly", "theDeepestArrangementThereCanBeComesBackFromAFile", "aDockThatWouldNestDeeperIsRefusedAndChangesNothing", "theCommandSaysWhyAndTheWindowStaysWhereItWas", "aWindowRefusedOnAnotherDisplayStaysDockedOnItsOwn"], "e2e": ["dock the third window below the first"]},
+     {"id": "T05", "area": "Docking and arrangement", "title": "Resize at the seams", "trellis": "Drag the gap between two windows", "arbor": "Drag the gaps (`gapHandles` \"off\" turns that off); `resize <id> <edge> <points>` A handle shows in the gap under the pointer (`gapHandles`: shown, hidden, off); `resize <id> <edge> <points>`", "status": "shipped", "spec": "F01", "priority": 1, "tests": ["seamDragsResizeBothSides", "seamsSitInTheGapsAndConvertPointsToWeights", "aSeamDragMovesNothingButItsTwoNeighbours", "movingABoundaryByPointsMovesItByThosePoints", "theGapAfterTheGroupResizesItsLastWindowAndTheNeighbour", "anySeamMovesOnlyWhatIsBesideIt", "theBoundaryAfterAKeptGroupMovesOnlyTheTwoWindowsBesideIt", "withHandlesOffTheGapsAreNotHandles", "theResizeCommandStillWorksWithHandlesOff", "draggingAWindowsOwnEdgeStillWorksWithHandlesOff", "aHandleStillBeingDraggedWhenHandlesGoOffDoesNothingMore", "turningHandlesOnAgainBringsThemBack", "hiddenHandlesStillWorkButAreNotDrawn", "gapsShowTheirHandleHideItOrAreNoHandlesAtAll", "thePillLiesAlongTheMiddleOfTheSeam"], "e2e": ["drag the gap between two windows"]},
+     {"id": "T06", "area": "Docking and arrangement", "title": "A leaving window's space goes to the whole row", "trellis": "shareRemovedSpace", "arbor": "Weights are relative, so remaining siblings share in proportion; `shareRemovedSpace` false gives the space and its gap to the neighbour before, and nothing else moves. One exception, either way: a window that leaves before anything else in its row has changed gives its room back to the one it took it from", "status": "shipped", "spec": "F01", "priority": 2, "tests": ["aLeavingWindowsSpaceIsSharedByTheWholeRow", "theSpaceAWindowLeavesIsSharedWithTheWholeRow", "afterAnotherArrivalTheRoomGoesToTheWholeRow", "whenTheHostLeavesTheRoomGoesToTheWholeRow", "aVisitLeavesEverythingAsItWas", "visitsLeaveAnyTreeAsItWas", "aWindowThatOpensBesideAnotherAndClosesLeavesItAsWideAsItWas", "byDefaultTheWholeRowSharesTheSpace", "closingAWindowWidensOnlyTheNeighbourBeforeIt", "closingTheFirstWindowWidensTheNeighbourAfterIt", "minimizingAndRestoringReturnsEveryoneToTheirWidths", "hidingAnAppAndSwitchingSpacesDoTheSame", "floatingAWindowWidensOnlyTheNeighbour", "draggingAWindowOutWidensOnlyTheNeighbour", "aRemovedWindowsSpaceAndGapGoToTheNeighbourBefore", "anAbsentWindowsSpaceCountsForTheNeighbourBeforeAndComesBack", "roomIsMadeBesideAMinimizedWindowAsWellAndItsSlotIsLeftAlone", "aWindowBesideAReservedPlaceGivesNoMoreThanItsOwnSlot"], "e2e": ["close a docked window"]},
+-    {"id": "T07", "area": "Docking and arrangement", "title": "Minimized windows come back to their spot", "trellis": "Neighbours take the space; restore returns it", "arbor": "Neighbours take the space, also for hidden apps (⌘H). On real windows un-minimizing a docked window zoomed the camera onto it; fixed in the controller since, not yet seen to work on a Mac", "status": "partial", "spec": "F38", "priority": 1, "tests": ["minimizingGivesTheSpaceToNeighbours", "hidingAnAppGivesItsSpaceAwayAndShowingItBringsItBack", "unMinimizingPutsTheWindowBackAndLeavesTheCameraAlone", "anAbsentWindowComesBackToExactlyWhereItWas"], "e2e": ["hide the app and show it again"]},
++    {"id": "T07", "area": "Docking and arrangement", "title": "Minimized windows come back to their spot", "trellis": "Neighbours take the space; restore returns it", "arbor": "Neighbours take the space, also for hidden apps (⌘H), and have their exact sizes again when it is back, in whatever order several went and came, also where room was made for a window (F61). On real windows un-minimizing a docked window zoomed the camera onto it; fixed in the controller since, not yet seen to work on a Mac", "status": "partial", "spec": "F38", "priority": 1, "tests": ["minimizingGivesTheSpaceToNeighbours", "hidingAnAppGivesItsSpaceAwayAndShowingItBringsItBack", "unMinimizingPutsTheWindowBackAndLeavesTheCameraAlone", "anAbsentWindowComesBackToExactlyWhereItWas", "anAppThatIsHiddenAndShownAgainLeavesItsNeighboursAsWideAsTheyWere", "soDoesEachOfThemHiddenOrMinimized", "allThreeInEveryOrderThereAndEveryOrderBack", "twoOfThemOneHiddenAndOneMinimized", "whoIsAwayDecidesWhatItLooksLikeMeanwhile", "eachWindowMovesOnceOnTheWayThereAndOnceOnTheWayBack", "aSwitchOfSpaceAndBackIsNothingEither", "movingTheViewMeanwhileChangesNothing", "aGapMovedByHandMeanwhileIsThePersons", "aWindowDockedOrClosedMeanwhileStartsAfresh", "aDisplayThatShrankMeanwhileIsAnOccasionToMakeRoom", "whatArborLearnsMeanwhileIsAnOccasionToMakeRoom", "aPauseMeanwhileChangesNothing", "whoComesAndGoesDuringADragMovesNoGap", "whoWentDuringADragIsAwayAfterTheDrop", "whatTheDesktopIsOwedAfterAnUndoOutlivesThereAndBack", "theWindowBeingTypedInDoesNotLeaveTheViewForIt", "whatTheDesktopIsOwedOutlivesALayoutThatComesInBetween", "aWindowThatWasAwayAtTheLastChangeIsOfThePartyOnceItIsBack", "anyOrderOverRandomArrangements"], "e2e": ["hide the app and show it again"]},
+     {"id": "T08", "area": "Docking and arrangement", "title": "Pushed windows stay pushed while dragging", "trellis": "keepPushed", "arbor": "`keepPushed`: floating windows pushed off docked space during a live reflow stay there until the drag ends. Only with `reflowWhileDragging` (T09), which is off; both keys are hidden, so neither is in the settings window. Not tried on real windows", "status": "shipped", "spec": "F09", "priority": 3, "tests": ["dockingPushesOverlappingFloatingWindowsOntoTheDesktop", "pushedFloatingWindowsStayPushedUntilTheDragEnds", "withoutKeepPushedTheyGoBackAsSoonAsTheSpaceIsFree", "aPushThatTheDropConfirmsIsNotMadeTwice"]},
+     {"id": "T09", "area": "Docking and arrangement", "title": "Windows make room live during drags", "trellis": "reflowWhileDragging (hidden, off)", "arbor": "`reflowWhileDragging` (off): the others always show what letting go would do, and the result is the same with it on or off", "status": "shipped", "spec": "F09", "priority": 3, "tests": ["neighboursTakeTheSpaceOfADockedWindowThatLeavesItsSlot", "droppedBackTheNeighboursMakeRoomAgainAndNothingHasChanged", "theOthersMakeRoomAtATargetOnceItIsActive", "leavingAnActiveTargetClosesTheGap", "theGapOpenedForTheWindowIsItsTarget", "theOldSlotStaysClosedWhereNothingCanBeDropped", "aDragCalledOffChangesNothingElse", "targetsAreWhatTheUserSeesOnceTheWindowHasLeft", "everyJourneyEndsAsItDoesWithoutReflow", "aTargetFoundWithoutTheWindowMeansTheSameWithIt"]},
+     {"id": "T10", "area": "Docking and arrangement", "title": "Hold over a target before it activates", "trellis": "Advanced option", "arbor": "`dropDwell` (0.15 s) for windows and tiles; screen edges act at once; ⌘ turns docking off", "status": "shipped", "spec": "F09", "priority": 2, "tests": ["passingQuicklyOverAWindowEdgeDoesNotDock", "aDockedWindowLetGoBeforeTheHoldIsOverGoesBackToItsSlot", "aDockedWindowLetGoWhereNothingIsPreviewedGoesBackToItsSlot", "withoutPreviewsNothingHasToBeHeld", "holdingOverAWindowEdgeDocks", "movingToAnotherTargetStartsTheHoldAgainAndHidesThePreview", "movingWithinATargetKeepsTheHold", "screenEdgesAndTheWindowsOwnSlotDoNotWait", "aDwellOfZeroActivatesEveryTargetAtOnce", "onlyTheTargetThatWasHeldCounts", "onlyWindowsAndTilesHaveToBeHeld", "theDwellSettingStaysBetweenNothingAndTwoSeconds", "withCommandHeldADropOverAnyTargetFloatsTheWindow"]},
+diff --git a/collab/scenarios/66-there-and-back-is-nothing.sim b/collab/scenarios/66-there-and-back-is-nothing.sim
+new file mode 100644
+index 0000000..54ccdf4
+--- /dev/null
++++ b/collab/scenarios/66-there-and-back-is-nothing.sim
+@@ -0,0 +1,75 @@
++# Proposed by the swarm (2026-10-14); the documenter may edit or drop it.
++# Story: on a display 1600 points wide somebody has Finder, Safari and TextEdit docked side by side, with a Terminal
++# floating. Safari will not go under 574 points, so it has borrowed from the Desktop and from TextEdit. They press ⌘H in
++# Finder, look at something, and click Finder's icon in the Dock. Seen with the real apps on a hosted Mac: TextEdit, 290 points
++# wide before, was 385 afterwards and stayed so. There and back is nothing: everybody has the place and the size they had.
++# Reference: T07, F61.
++display-size 1600x900 31
++open Finder 920x436 min 501x300
++open Safari 1324x791 min 574x240
++open TextEdit 673x439 min 115x100
++open Terminal 877x499
++dock 101 left
++dock 102 right
++dock 103 right
++expect size 101 501x845
++expect size 102 574x845
++expect size 103 290x845
++# ⌘H in Finder. The neighbours close up meanwhile.
++focus 101
++hide Finder
++flush
++expect hidden 101
++expect size 102 717x845
++expect size 103 574x845
++unhide Finder
++flush
++expect visible 101
++expect size 101 501x845
++expect size 102 574x845
++expect size 103 290x845
++expect left-of 101 102
++expect left-of 102 103
++# ⌘M in Safari, and back out of the Dock.
++minimize 102
++expect hidden 102
++restore 102
++expect size 101 501x845
++expect size 102 574x845
++expect size 103 290x845
++# Two of them, and the one that went first comes back first. What it looks like meanwhile depends on who is away, not on
++# the order: with Safari alone away it is what it was a moment ago.
++hide Finder
++flush
++minimize 102
++unhide Finder
++flush
++expect size 101 501x845
++expect size 103 467x845
++restore 102
++expect size 101 501x845
++expect size 102 574x845
++expect size 103 290x845
++# Looking around meanwhile changes nothing: the view is not the arrangement.
++minimize 103
++zoom 102
++show-all
++restore 103
++show-all
++expect size 101 501x845
++expect size 102 574x845
++expect size 103 290x845
++# A gap moved by hand meanwhile is the person's. Finder takes its share of the row as it stands, and from then on that is the
++# arrangement that comes back.
++hide Finder
++flush
++resize 103 left 100
++expect size 103 674x845
++unhide Finder
++flush
++expect visible 101
++expect visible 102
++expect size 103 385x845
++minimize 102
++restore 102
++expect size 103 385x845
+diff --git a/docs/ARCHITECTURE.md b/docs/ARCHITECTURE.md
+index e9ea716..3c70991 100644
+--- a/docs/ARCHITECTURE.md
++++ b/docs/ARCHITECTURE.md
+@@ -53,6 +53,17 @@ root  split(horizontal)
+   proportional to weights, which is what lets a gap follow the pointer. Not while the person's own
+   hand is on a gap (`byHand`). A Desktop squeezed into a tile that way takes a usable size back
+   once a window floats on it (`Workspace.desktopIsOwedRoom`).
++- **There and back is nothing** (`Controller+ThereAndBack.swift`): a docked window that is hidden, minimized or on another
++  Space and comes back, nothing else having changed, gets its place back and its neighbours their exact sizes. A plain
++  layout does that by itself, because an absent window keeps its weight. Room before tiles moves weights, from where it
++  finds them, so by itself it depends on the way there. So the controller keeps each display's gaps as they stood, with the docked
++  windows that took space, when somebody last changed the arrangement (`standingGaps`), and the layout after a
++  window has gone or come starts from those: the same windows give the same frames, in whatever order they went. If
++  the windows, the view, the display and what is known of the windows' sizes are what they were, the layout that stood
++  stands and no room is made. Any other change to the tree starts the memory afresh, which is found out by comparing the
++  tree with what Arbor's own layouts last left. No gap moves for it under a hand, nor when a window is only put back
++  in its place: the next layout does it. The window being typed in does not leave the view for it: then the gaps go on
++  from where they are. Not saved.
+ - **Remap**: tree removals delete and merge nodes; `Remap` says where
+   references (camera, history, saved views, drop targets) should point now.
+ 
+@@ -584,7 +595,7 @@ do the same. Scopes nest (the outermost records) and never stay open across even
+ **A layout may change a tree by itself**: it moves gaps to make room for a window that would otherwise be a tile (F61). In the same breath as a
+ change somebody made, that is part of the step. By itself (the view moved, and from further out a column is too narrow) it is not
+ a step: `roomyLayout` calls `noteThatRoomIsMade(on:)` first, and `endUndoStep` passes over a display on which nothing else happened. Whatever
+-else teaches layouts to change a workspace does the same.
++else teaches layouts to change a workspace does the same, as `startFromTheGapsThatStood(on:)` does.
+ 
+ A change is first tried out: if undoing it at once would change nothing (a window that closed stays closed, `exclude`
+ takes windows an undo could not bring back) it is no step. If it changed what is docked all the same, it is kept as a
+diff --git a/docs/FEATURES.md b/docs/FEATURES.md
+index 5d98adc..ba9b776 100644
+--- a/docs/FEATURES.md
++++ b/docs/FEATURES.md
+@@ -27,7 +27,7 @@ Real-window evidence: mac-shell: scripts/mac-shell/proof.sh at ab40b20, macOS 26
+ | T04 | Unlimited nesting | Spaces nest as deep as you like | Docking across an axis creates a nested space, down to 100 levels, which is as deep as a saved arrangement is read back; one more is refused with the reason | tested | tests 7/7, real windows 0/1 | [F01](features/F01-dock-and-zoom.md) |
+ | T05 | Resize at the seams | Drag the gap between two windows | Drag the gaps (`gapHandles` "off" turns that off); `resize <id> <edge> <points>` A handle shows in the gap under the pointer (`gapHandles`: shown, hidden, off); `resize <id> <edge> <points>` | verified | tests 15/15, real windows 1/1 | [F01](features/F01-dock-and-zoom.md) |
+ | T06 | A leaving window's space goes to the whole row | shareRemovedSpace | Weights are relative, so remaining siblings share in proportion; `shareRemovedSpace` false gives the space and its gap to the neighbour before, and nothing else moves. One exception, either way: a window that leaves before anything else in its row has changed gives its room back to the one it took it from | verified | tests 18/18, real windows 1/1 | [F01](features/F01-dock-and-zoom.md) |
+-| T07 | Minimized windows come back to their spot | Neighbours take the space; restore returns it | Neighbours take the space, also for hidden apps (⌘H). On real windows un-minimizing a docked window zoomed the camera onto it; fixed in the controller since, not yet seen to work on a Mac | partial | tests 4/4, real windows 1/1 | [F38](features/F38-focus-as-macos-reports-it.md) |
++| T07 | Minimized windows come back to their spot | Neighbours take the space; restore returns it | Neighbours take the space, also for hidden apps (⌘H), and have their exact sizes again when it is back, in whatever order several went and came, also where room was made for a window (F61). On real windows un-minimizing a docked window zoomed the camera onto it; fixed in the controller since, not yet seen to work on a Mac | partial | tests 24/24, real windows 1/1 | [F38](features/F38-focus-as-macos-reports-it.md) |
+ | T08 | Pushed windows stay pushed while dragging | keepPushed | `keepPushed`: floating windows pushed off docked space during a live reflow stay there until the drag ends. Only with `reflowWhileDragging` (T09), which is off; both keys are hidden, so neither is in the settings window. Not tried on real windows | tested | tests 4/4 | [F09](features/F09-drag-polish.md) |
+ | T09 | Windows make room live during drags | reflowWhileDragging (hidden, off) | `reflowWhileDragging` (off): the others always show what letting go would do, and the result is the same with it on or off | tested | tests 10/10 | [F09](features/F09-drag-polish.md) |
+ | T10 | Hold over a target before it activates | Advanced option | `dropDwell` (0.15 s) for windows and tiles; screen edges act at once; ⌘ turns docking off | tested | tests 13/13 | [F09](features/F09-drag-polish.md) |
+diff --git a/docs/GUIDE.md b/docs/GUIDE.md
+index f2751e7..3fba2ed 100644
+--- a/docs/GUIDE.md
++++ b/docs/GUIDE.md
+@@ -156,6 +156,8 @@ Browser on the left, terminal on the right, chat under the terminal, the Desktop
+ - Drag the chat window onto the lower part of the terminal and let go when the preview covers its bottom half.
+ - Drag the gaps until the proportions suit you.
+ 
++**⌘H and ⌘M work as ever.** A docked window that is hidden or minimized keeps its place; its docked neighbours close up meanwhile, and when it comes back it has its place again and they their exact sizes, in whatever order several went and came. If you change the arrangement yourself meanwhile (a gap, a dock, a window closed), that is the arrangement from then on.
++
+ Arbor remembers the arrangement, per display, across restarts of Arbor and across a login, when apps bring their windows back. Starting Arbor puts what was docked back in its places and shows everything, whatever the view was when you quit, and a window you never docked is not moved. (A docked window too large for its place shows as a tile, as always when everything shows.) The view you quit in is one step back (**⌃⌥[**). An app that you quit and open again while Arbor runs does not get its places back yet: its windows float, and you dock them again.
+ 
+ In a hurry? **⌃⌥A** docks every window on the display in a grid. It replaces whatever arrangement was there.
+diff --git a/docs/features/F61-room-before-tiles.md b/docs/features/F61-room-before-tiles.md
+index b8bf0d2..a74085b 100644
+--- a/docs/features/F61-room-before-tiles.md
++++ b/docs/features/F61-room-before-tiles.md
+@@ -39,6 +39,23 @@ weights change inside the layout that follows the command, so a snapshot taken b
+ 5. A gap moved by hand marks only the slots it made short, or shorter, as squeezed; it cancels what the Desktop is owed only if it is one of the Desktop's own gaps; looking at the Desktop cancels nothing; `layout <line>` starts afresh like `arrange` (all
+    four from the review by R6).
+ 
++## Third round: there and back is nothing (2026-10-14; the decision is the product owner's, `collab/QUESTIONS.md` Q20; this is what was built)
++
++Seen with real apps on a hosted Mac: Finder 501, the Desktop 175, Safari 574 and TextEdit 290 points wide on 1600; ⌘H in Finder and a click on its Dock icon left the Desktop at 80 and TextEdit at 385. While Finder was away Safari could spare what TextEdit had lent it and paid it back (round 2, point 2); on the way
++back it borrowed afresh, from the Desktop first.
++
++Shipped: `Controller+ThereAndBack.swift`, `LayoutTree.takeGaps(from:)`, scenario 66, `ThereAndBackTests`. The gaps and the ledger as they stood after the person's last change to the arrangement are kept, with the docked windows that took space then; the layout for a docked window that has gone or come back
++(hidden, minimized, another macOS Space) starts from them. With the same windows, view, display and known sizes the layout that stood stands, and no room is made. As built:
++
++- A size learned meanwhile, or a display that changed, is an occasion to make room as ever.
++- The window somebody is typing in does not leave the view for this (round 2, point 3): then the gaps go on from where they are, and that is the arrangement from then on.
++- A window that was away at the person's last change belongs, once it is back, to the windows whose gaps come back.
++- No gap moves for this under a hand, nor when a window is only put back in its place: the next layout does it.
++
++Not shipped: kept across a restart (`state.json` has the gaps as they stand). A change that Arbor tries, lays out and takes back (a `rotate` that is refused) counts as somebody's. A drop that changes nothing lays nothing out, so for whoever went during the drag the neighbours close up at the next layout. While somebody is
++away a move of the view goes on from the gaps as they are. A window that comes back as a tile with the keyboard in it is framed after the layout that gave it its tile, so its neighbours move twice. `reveal` and Go to… pick the view for a window on its way back by the gaps as they are, not as they will be. Frame and Show
++Everything, and floating windows, are not this fix's.
++
+ ## Summary
+ 
+ Dock Notes on the left and Safari on the right of a MacBook Air's screen. The result is **two tiles and an empty Desktop**. Nothing is wrong by the rules: the Desktop keeps a column of its own between docked windows (T03), so

@@ -1,0 +1,21 @@
+diff --git a/Sources/arbor-sim/ChaosModes.swift b/Sources/arbor-sim/ChaosModes.swift
+index 92e933b9..4ec6331c 100644
+--- a/Sources/arbor-sim/ChaosModes.swift
++++ b/Sources/arbor-sim/ChaosModes.swift
+@@ -140,6 +140,16 @@ func runChaosMode(_ arguments: [String]) -> Int32? {
+         // Who moved what: Arbor's own moves in this step, in order, then where every window is.
+         for move in runner.system.frameLog[min(mark, runner.system.frameLog.count)...] { say("  arbor: \(move.window) to \(move.frame.brief)") }
+         for (id, fake) in runner.system.windows.sorted(by: { $0.key < $1.key }) { say("  \(id) at \(fake.snapshot.frame.brief)") }
++        // For whoever compares a script with and without Arbor: whom a key or a menu item would be about, and what is Arbor's to place.
++        say("  keyboard: \(runner.system.focused.map { "\($0)" } ?? "nobody")")
++        var arranged = Set<WindowID>()
++        for workspace in runner.harness.controller.workspaces.values {
++          arranged.formUnion(workspace.tree.allWindows)
++          arranged.formUnion(workspace.pinnedWindows)
++          arranged.formUnion(workspace.stashedWindows)
++          if let summoned = workspace.summoned { arranged.insert(summoned.window) }
++        }
++        say("  arranged: " + arranged.sorted().map { "\($0)" }.joined(separator: " "))
+       }
+       if let first = violations.first {
+         say("RULE \(first.rule)")

@@ -1,0 +1,34 @@
+diff --git a/scripts/mac-on-linux/retime.py b/scripts/mac-on-linux/retime.py
+index a050fb8e..fe478f6d 100755
+--- a/scripts/mac-on-linux/retime.py
++++ b/scripts/mac-on-linux/retime.py
+@@ -25,6 +25,7 @@ REWRITES = [
+     (re.compile(r"\bDispatchTime\b"), "FakeDispatchTime"),
+     # What the person has set in System Settings is the model's to say.
+     (re.compile(r"\bUserDefaults\(suiteName:"), "FakeMac.defaults(suiteName:"),
++    (re.compile(r"\bUserDefaults\?"), "FakeMac.Defaults?"),
+ ]
+ 
+ # Other threads than the main one, and the main one's waiting for them (stubs/FakeMacOS/Threads.swift). Only where the clock must be the model's: elsewhere a queue is for files.
+diff --git a/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift b/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift
+index 028f1b6e..a7d15cf3 100644
+--- a/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift
++++ b/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift
+@@ -348,6 +348,17 @@ public final class FakeMac: @unchecked Sendable {
+   public struct Defaults {
+     let domain: String
+     public func object(forKey key: String) -> Any? { FakeMac.current.preferences[domain]?[key] }
++    /// As macOS reads it: a word that was stored without `-bool` counts too.
++    public func bool(forKey key: String) -> Bool {
++      switch object(forKey: key) {
++      case let value as Bool: value
++      case let word as String: ["YES", "TRUE", "1"].contains(word.uppercased())
++      default: false
++      }
++    }
++    public func set(_ value: Bool, forKey key: String) { FakeMac.current.preferences[domain, default: [:]][key] = value }
++    public func removeObject(forKey key: String) { FakeMac.current.preferences[domain]?[key] = nil }
++    @discardableResult public func synchronize() -> Bool { true }
+   }
+   public static func defaults(suiteName: String) -> Defaults? { Defaults(domain: suiteName) }
+ 

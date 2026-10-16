@@ -1,0 +1,174 @@
+From b4a90f49ee0f54fa81ea4d5470e6273b215d86ec Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 08:09:05 +0000
+Subject: [PATCH] wip: the layer activates again while an activation it asked
+ for is on its way (parked)
+
+---
+ Sources/ArborCore/AppAskedForward.swift       | 31 +++++++++++++
+ Sources/ArborKit/AX/AXWindowSystem.swift      | 10 +++-
+ .../RealWindowDecisionTests.swift             | 21 +++++++++
+ scripts/mac-shell/check-there-and-back.sh     | 46 +++++++++++++++++++
+ 4 files changed, 107 insertions(+), 1 deletion(-)
+ create mode 100644 Sources/ArborCore/AppAskedForward.swift
+ create mode 100755 scripts/mac-shell/check-there-and-back.sh
+
+diff --git a/Sources/ArborCore/AppAskedForward.swift b/Sources/ArborCore/AppAskedForward.swift
+new file mode 100644
+index 00000000..3db8d4f0
+--- /dev/null
++++ b/Sources/ArborCore/AppAskedForward.swift
+@@ -0,0 +1,31 @@
++import Foundation
++
++/// Whether giving a window the keyboard has to activate its app.
++///
++/// Not if the app is in front already. But an activation takes a moment to land, 0 to 40 ms as measured on macOS 26.6, and until then macOS
++/// names the old app as the one in front. A request for a window of that app made meanwhile (⌃⌥→ and ⌃⌥← in one roll of the fingers)
++/// activated nobody, and the first activation landed all the same: the request that had been taken back came true, 6 of 6, and the
++/// view went after the keyboard a third time. Activated again, although it is named in front, the old app stays in front: 6 of 6. macOS then
++/// reports both, in the order they were asked for, within a millisecond (collab/evidence/a-request-taken-back.txt).
++///
++/// So the app that was asked forward is remembered until it has come, or for as long as it could still be on its way.
++public struct AppAskedForward: Equatable, Sendable {
++  public var pid: Int32
++  /// When it was asked, in seconds of the same clock as `now` below.
++  public var at: TimeInterval
++
++  public init(pid: Int32, at: TimeInterval) {
++    self.pid = pid
++    self.at = at
++  }
++
++  /// Half a second, over ten times what was measured. An activation that macOS refuses must not count as on its way for ever.
++  public static let patience: TimeInterval = 0.5
++
++  /// `inFront`: the app macOS names as the one in front. `asked`: the last one that was asked forward and has not come.
++  public static func mustActivate(_ pid: Int32, inFront: Int32?, asked: AppAskedForward?, now: TimeInterval) -> Bool {
++    if inFront != pid { return true }
++    guard let asked, asked.pid != pid else { return false }
++    return now - asked.at < patience
++  }
++}
+diff --git a/Sources/ArborKit/AX/AXWindowSystem.swift b/Sources/ArborKit/AX/AXWindowSystem.swift
+index 9ce4dfbc..44fb5729 100644
+--- a/Sources/ArborKit/AX/AXWindowSystem.swift
++++ b/Sources/ArborKit/AX/AXWindowSystem.swift
+@@ -54,6 +54,8 @@ public final class AXWindowSystem: WindowSystem {
+   private var lastReportedFocus: WindowID?
+   /// Counts the apps that came forward, to see whether a request to activate one had any effect.
+   private var activations = 0
++  /// The app `focus` has asked forward, until it has come (`AppAskedForward`).
++  private var askedForward: AppAskedForward?
+   /// The next look at an app that came forward before macOS named it as the one in front.
+   private var lookAtAppThatCameForward: Task<Void, Never>?
+   /// The displays as the controller last heard of them.
+@@ -320,7 +322,12 @@ public final class AXWindowSystem: WindowSystem {
+       return
+     }
+     AXUIElementPerformAction(record.element, kAXRaiseAction as CFString)
+-    guard NSWorkspace.shared.frontmostApplication?.processIdentifier != pid else { return }
++    // Also an app that is in front, while another that was asked forward is still on its way: or that one would arrive after all.
++    guard
++      AppAskedForward.mustActivate(
++        pid, inFront: NSWorkspace.shared.frontmostApplication?.processIdentifier, asked: askedForward, now: uptime)
++    else { return }
++    askedForward = AppAskedForward(pid: pid, at: uptime)
+     NSRunningApplication(processIdentifier: pid)?.activate()
+ 
+     // Since macOS 14 activation is cooperative, and a request from an app in the background may be ignored. It has
+@@ -485,6 +492,7 @@ public final class AXWindowSystem: WindowSystem {
+     // The only sign of ⌘Tab, and it comes before or after what Accessibility says about the focus.
+     recorder?.raw("didActivateApplication pid \(pid)")
+     activations += 1
++    if askedForward?.pid == pid { askedForward = nil }
+     lastReportedFocus = nil
+     if apps[pid] == nil, !waitingToObserve.contains(pid) { observe(pid: pid, announce: true, wasRunning: true) }
+     // Whoever came forward before has been overtaken.
+diff --git a/Tests/ArborCoreTests/RealWindowDecisionTests.swift b/Tests/ArborCoreTests/RealWindowDecisionTests.swift
+index 159d2cfc..5f5f1f36 100644
+--- a/Tests/ArborCoreTests/RealWindowDecisionTests.swift
++++ b/Tests/ArborCoreTests/RealWindowDecisionTests.swift
+@@ -432,6 +432,27 @@ extension Box where Value == EchoFilter {
+   }
+ }
+ 
++@Suite struct AppAskedForwardTests {
++  @Test func anAppThatIsNotInFrontIsActivated() {
++    #expect(AppAskedForward.mustActivate(7, inFront: 3, asked: nil, now: 10))
++    #expect(AppAskedForward.mustActivate(7, inFront: nil, asked: nil, now: 10))
++    #expect(AppAskedForward.mustActivate(7, inFront: 3, asked: AppAskedForward(pid: 7, at: 9.99), now: 10), "asked again, it is asked again")
++  }
++
++  @Test func theAppInFrontIsLeftAlone() {
++    #expect(!AppAskedForward.mustActivate(3, inFront: 3, asked: nil, now: 10))
++    #expect(!AppAskedForward.mustActivate(3, inFront: 3, asked: AppAskedForward(pid: 3, at: 9.99), now: 10), "it was itself the last to be asked")
++  }
++
++  /// There and back in one roll of the fingers.
++  @Test func unlessAnotherIsStillOnItsWay() {
++    let asked = AppAskedForward(pid: 7, at: 10)
++    #expect(AppAskedForward.mustActivate(3, inFront: 3, asked: asked, now: 10.005))
++    #expect(AppAskedForward.mustActivate(3, inFront: 3, asked: asked, now: 10.04), "the longest an activation was seen to take")
++    #expect(!AppAskedForward.mustActivate(3, inFront: 3, asked: asked, now: 10 + AppAskedForward.patience), "macOS has refused it")
++  }
++}
++
+ @Suite struct AppThatCameForwardTests {
+   @Test func anAppThatMacOSNamesIsReportedAtOnce() {
+     #expect(AppThatCameForward.verdict(isNamedInFront: true, earlierLooks: 0) == .report)
+diff --git a/scripts/mac-shell/check-there-and-back.sh b/scripts/mac-shell/check-there-and-back.sh
+new file mode 100755
+index 00000000..69817f70
+--- /dev/null
++++ b/scripts/mac-shell/check-there-and-back.sh
+@@ -0,0 +1,46 @@
++#!/bin/bash
++# There and back in one breath, between two framed neighbours of different apps: who has the keyboard in the end, and how often did the view move?
++#
++#   scripts/mac-shell/run.sh scripts/mac-shell/check-there-and-back.sh
++#
++# macOS alone, measured (probe-taken-back.sh): an activation lands 0 to 40 ms after it was asked for, and until then the old app is named as the one in front. A request for
++# a window of that app made meanwhile activates nobody, and the first activation lands all the same: the request that was taken back comes true, 6 of 6.
++# Does that happen with Arbor? Its second command lays out before it looks who has the keyboard, which takes time. Three ways there and back, ten rounds each, the second
++# command sent as soon as the first is answered (`arborctl a , b`). W1 is one app's window, V1 another's.
++#
++# On somebody's own Mac it touches only its test windows and the keyboard focus.
++ARBOR_RECORD=1
++source "$(dirname "$0")/lib.sh"
++
++arbor_build
++ARBOR_TEST_WINDOWS_ARGS="--regular"
++ARBOR_SECOND_APP=1
++ARBOR_SECOND_APP_ARGS="--regular"
++arbor_start 1
++ctl dock "$W1" left
++ctl dock "$V1" right
++tw activate "$W1"
++ctl zoom "$W1"
++check "W1 is framed, V1 is out of view" eventually is parked "$V1"
++
++
++there_and_back() {
++  local name=$1 round
++  shift
++  step "$name"
++  for round in 1 2 3 4 5 6 7 8 9 10; do
++    eventually is focused "$W1" > /dev/null 2>&1 || { tw activate "$W1"; ctl zoom "$W1" > /dev/null; sleep 1; }
++    echo "> arborctl $*"
++    "$ARBOR_BIN/arborctl" "$@" > /dev/null
++    sleep 1.5
++    check "$name, round $round: W1 has the keyboard" is focused "$W1"
++    check "$name, round $round: its app is in front" front_is "$ARBOR_WINDOWS_PID"
++    check "$name, round $round: the view is on W1" camera_on "$W1"
++  done
++}
++
++there_and_back "the view goes to the neighbour and back" neighbor right , neighbor left
++there_and_back "the keyboard goes right and left" focus right , focus left
++there_and_back "V1 is framed by its number, then W1" zoom "$V1" , zoom "$W1"
++
++arbor_stop
+-- 
+2.43.0
+

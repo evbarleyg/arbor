@@ -1,0 +1,1089 @@
+diff --git a/Sources/ArborCore/ArborEvent.swift b/Sources/ArborCore/ArborEvent.swift
+index 86941b5..f5630fe 100644
+--- a/Sources/ArborCore/ArborEvent.swift
++++ b/Sources/ArborCore/ArborEvent.swift
+@@ -35,9 +35,11 @@ public enum ArborEvent: Equatable, Sendable {
+   case paused
+   /// The pause is over. The state follows as ordinary events, as after `started`.
+   case resumed
++  /// The view is held now, held otherwise, or no longer held (F58).
++  case hold(Hold)
+ 
+   public enum Kind: String, Codable, Sendable, CaseIterable, Comparable {
+-    case hello, displays, window, layout, view, focus, settings, started, quitting, paused, resumed
++    case hello, displays, window, layout, view, focus, settings, started, quitting, paused, resumed, hold
+ 
+     /// Whether Arbor is there and listening at all is news for every client, whatever else it asked for: a status bar
+     /// that watches only the view must not go on showing it through a pause.
+@@ -62,6 +64,7 @@ public enum ArborEvent: Equatable, Sendable {
+     case .quitting: .quitting
+     case .paused: .paused
+     case .resumed: .resumed
++    case .hold: .hold
+     }
+   }
+ 
+@@ -331,6 +334,20 @@ public enum ArborEvent: Equatable, Sendable {
+     }
+   }
+ 
++  /// Every field is missing when the view is not held.
++  public struct Hold: Codable, Equatable, Sendable {
++    /// `view`: nothing moves the view until it is released (a shared screen). `still`: only its user does (a call).
++    public var level: HoldLevel?
++    /// Why Arbor holds still by itself, in words that follow "while": "the camera is on", "Zoom is open". Left out when its
++    /// user asked for the hold.
++    public var reason: String?
++
++    public init(level: HoldLevel? = nil, reason: String? = nil) {
++      self.level = level
++      self.reason = reason
++    }
++  }
++
+   // MARK: The state behind the events
+ 
+   /// Everything events report, at one moment: `hello` carries it, and the difference between two of
+@@ -352,6 +369,7 @@ public enum ArborEvent: Equatable, Sendable {
+     /// One per display, in the order of `displays`.
+     public var views: [View] = []
+     public var focus = Focus()
++    public var hold = Hold()
+ 
+     public init(running: Bool, accessibility: Bool) {
+       self.running = running
+@@ -401,6 +419,7 @@ public enum ArborEvent: Equatable, Sendable {
+     for layout in new.layouts where !old.layouts.contains(layout) { events.append(.layout(layout)) }
+     for view in new.views where !old.views.contains(view) { events.append(.view(view)) }
+     if old.focus != new.focus { events.append(.focus(new.focus)) }
++    if old.hold != new.hold { events.append(.hold(new.hold)) }
+     return events
+   }
+ 
+@@ -428,6 +447,7 @@ public enum ArborEvent: Equatable, Sendable {
+     case .layout(let arrangement): arrangement
+     case .view(let view): view
+     case .focus(let focus): focus
++    case .hold(let hold): hold
+     case .settings(let changed): ChangedKeys(changed: changed)
+     case .started, .quitting, .paused, .resumed: nil
+     }
+@@ -469,6 +489,7 @@ extension ArborEvent: Codable {
+     case .quitting: self = .quitting
+     case .paused: self = .paused
+     case .resumed: self = .resumed
++    case .hold: self = .hold(try Hold(from: decoder))
+     }
+   }
+ }
+diff --git a/Sources/ArborCore/DisplayOptions.swift b/Sources/ArborCore/DisplayOptions.swift
+index 363ff8b..0032cd6 100644
+--- a/Sources/ArborCore/DisplayOptions.swift
++++ b/Sources/ArborCore/DisplayOptions.swift
+@@ -74,12 +74,45 @@ public struct DisplayOptions: Codable, Equatable, Sendable {
+     }
+   }
+ 
++  /// Why an entry changes nothing on any of `displays`, by its place in `entries`; entries that do change something are not
++  /// listed. Nothing need be wrong: the display may be at the office. But a name that is misspelt looks the same
++  /// from the outside as one that is right, so `displays` says it.
++  public static func idle(among entries: [DisplayOptions], on displays: [DisplayTraits]) -> [(index: Int, why: String)] {
++    entries.indices.compactMap { index in
++      let entry = entries[index]
++      let set = keys.filter { entry[keyPath: $0.value] != nil }
++      if set.isEmpty { return (index, "sets nothing") }
++      let matched = displays.filter { entry.match.matches($0) }
++      if matched.isEmpty { return (index, "matches no display that is connected") }
++      let isFirst = matched.contains { display in
++        set.contains { key in
++          !entries[..<index].contains { $0.match.matches(display) && $0[keyPath: key.value] != nil }
++        }
++      }
++      return isFirst ? nil : (index, "entries before it set the same keys")
++    }
++  }
++
+   // MARK: Codable
+ 
+-  private enum CodingKeys: String, CodingKey {
++  private enum CodingKeys: String, CodingKey, CaseIterable {
+     case match, gap, minimumUsableWidth, minimumUsableHeight, screenEdgeBand
+   }
+ 
++  /// The keys of an entry in the file that this version does not read, sorted: a slip of the finger (`gapp`), a setting that
++  /// no display can have of its own, or a later Arbor's. The entry counts without them.
++  static func keysNotRead(in decoder: any Decoder) -> [String] {
++    struct AnyKey: CodingKey {
++      var stringValue: String
++      var intValue: Int? { nil }
++      init?(stringValue: String) { self.stringValue = stringValue }
++      init?(intValue: Int) { nil }
++    }
++    let known = Set(CodingKeys.allCases.map(\.rawValue))
++    let found = (try? decoder.container(keyedBy: AnyKey.self))?.allKeys.map(\.stringValue) ?? []
++    return found.filter { !known.contains($0) }.sorted()
++  }
++
+   public init(from decoder: any Decoder) throws {
+     let c = try decoder.container(keyedBy: CodingKeys.self)
+     /// A number within the bounds a layout can live with. A gap of a million points would leave no room
+@@ -101,7 +134,8 @@ public struct DisplayOptions: Codable, Equatable, Sendable {
+ 
+   /// A short, readable reason why an entry in settings.json could not be read.
+   static func reason(for error: any Error) -> String {
+-    guard let error = error as? DecodingError else { return "\(error)" }
++    // What else a decoder throws is written for programmers (`numberIsNotRepresentableInSwift(parsed: "1e400")`).
++    guard let error = error as? DecodingError else { return "cannot be read" }
+     switch error {
+     case .keyNotFound(let key, _):
+       return "`\(key.stringValue)` is missing"
+@@ -112,9 +146,11 @@ public struct DisplayOptions: Codable, Equatable, Sendable {
+       }
+       return #"expected an object such as {"match": "builtin", "gap": 8}"#
+     case .dataCorrupted(let context):
+-      return context.debugDescription
++      // Arbor's own reasons begin with what they are about. Foundation's differ from one system to the next.
++      if context.debugDescription.hasPrefix("`") { return context.debugDescription }
++      return context.codingPath.last { $0.intValue == nil }.map { "`\($0.stringValue)` cannot be read" } ?? "cannot be read"
+     @unknown default:
+-      return "\(error)"
++      return "cannot be read"
+     }
+   }
+ }
+@@ -244,6 +280,8 @@ struct DisplayOptionsList: Decodable {
+   /// One line per skipped entry, numbered by its place in the file: "entry 2 (>=wide): …".
+   var skipped: [String] = []
+   var skippedNumbers: [Int] = []
++  /// One line per entry that was read without some of its keys: "entry 3 (builtin): `gapp` is not read".
++  var notRead: [String] = []
+ 
+   init() {}
+ 
+@@ -255,7 +293,12 @@ struct DisplayOptionsList: Decodable {
+     while !list.isAtEnd {
+       let number = list.currentIndex + 1
+       do {
+-        entries.append(try list.decode(DisplayOptions.self))
++        let entry = try list.decode(Entry.self)
++        entries.append(entry.options)
++        if !entry.keysNotRead.isEmpty {
++          let keys = entry.keysNotRead.map { "`\($0)`" }.joined(separator: ", ")
++          notRead.append("entry \(number) (\(entry.options.match)): \(keys) \(entry.keysNotRead.count == 1 ? "is" : "are") not read")
++        }
+       } catch {
+         // A failed decode leaves the container on the same entry. Step over it, keeping its `match`
+         // (if it has one) so the message says which it is.
+@@ -269,6 +312,17 @@ struct DisplayOptionsList: Decodable {
+     }
+   }
+ 
++  /// An entry, and what else was in it.
++  private struct Entry: Decodable {
++    var options: DisplayOptions
++    var keysNotRead: [String]
++
++    init(from decoder: any Decoder) throws {
++      options = try DisplayOptions(from: decoder)
++      keysNotRead = DisplayOptions.keysNotRead(in: decoder)
++    }
++  }
++
+   /// Any JSON value; keeps the `match` text of an object that has one.
+   private struct SkippedEntry: Decodable {
+     var match: String?
+diff --git a/Sources/ArborCore/Settings.swift b/Sources/ArborCore/Settings.swift
+index 0d702f2..d44f4b5 100644
+--- a/Sources/ArborCore/Settings.swift
++++ b/Sources/ArborCore/Settings.swift
+@@ -156,6 +156,8 @@ public struct Settings: Codable, Equatable, Sendable {
+   public internal(set) var skippedDisplays: [String] = []
+   /// Their places in the file, counted from 1, for the log. Empty if `displays` is not a list at all.
+   public internal(set) var skippedDisplayNumbers: [Int] = []
++  /// Entries of `displays` that were read without some of their keys, e.g. "entry 3 (builtin): `gapp` is not read".
++  public internal(set) var displayKeysNotRead: [String] = []
+   /// How much Arbor says in a line on screen after a shortcut, a gesture or a menu item: `helpful` (what went
+   /// wrong, what changed unseen, and a few hints for newcomers), `all` (every reply) or `off`. See HeadsUp.swift.
+   public var messages: String = "helpful"
+@@ -366,6 +368,7 @@ public struct Settings: Codable, Equatable, Sendable {
+     displays = displayList.entries
+     skippedDisplays = displayList.skipped
+     skippedDisplayNumbers = displayList.skippedNumbers
++    displayKeysNotRead = displayList.notRead
+     try read(.messages, into: &messages)
+     try read(.dimBehindArranged, into: &dimBehindArranged)
+     try read(.blurBehindArranged, into: &blurBehindArranged)
+diff --git a/Sources/ArborKit/Controller/Controller+DisplayOptions.swift b/Sources/ArborKit/Controller/Controller+DisplayOptions.swift
+index 7c3f8e4..9df703d 100644
+--- a/Sources/ArborKit/Controller/Controller+DisplayOptions.swift
++++ b/Sources/ArborKit/Controller/Controller+DisplayOptions.swift
+@@ -61,6 +61,15 @@ extension Controller {
+       lines.append("Skipped entries of \"displays\" in settings.json:")
+       lines += settings.skippedDisplays.map { "  \($0)" }
+     }
++    if !settings.displayKeysNotRead.isEmpty {
++      lines.append("Keys that no display can have of its own:")
++      lines += settings.displayKeysNotRead.map { "  \($0)" }
++    }
++    let idle = DisplayOptions.idle(among: settings.displays, on: displays.map(\.traits))
++    if !idle.isEmpty {
++      lines.append("Entries that change nothing at the moment:")
++      lines += idle.map { "  \"\(settings.displays[$0.index].match)\": \($0.why)" }
++    }
+     return CommandResult(ok: true, message: "\(displays.count) display(s)", text: lines.joined(separator: "\n"))
+   }
+ 
+diff --git a/Sources/ArborKit/Controller/Controller+EventSummary.swift b/Sources/ArborKit/Controller/Controller+EventSummary.swift
+index 33bf4c3..a9e7491 100644
+--- a/Sources/ArborKit/Controller/Controller+EventSummary.swift
++++ b/Sources/ArborKit/Controller/Controller+EventSummary.swift
+@@ -53,6 +53,10 @@ extension Controller {
+     let arranged = Set(summary.windows.map(\.id))
+     summary.notArranged = windows.keys.filter { !arranged.contains($0) }.sorted()
+ 
++    if let level = holdLevel {
++      summary.hold = ArborEvent.Hold(level: level, reason: hold.chosen == nil ? hold.caller : nil)
++    }
++
+     if let focused, let snapshot = windows[focused] {
+       summary.focus = ArborEvent.Focus(
+         window: focused, app: snapshot.appName, bundleID: snapshot.bundleID,
+diff --git a/Sources/ArborKit/Controller/Controller+Settings.swift b/Sources/ArborKit/Controller/Controller+Settings.swift
+index cfe948b..d4dfc7e 100644
+--- a/Sources/ArborKit/Controller/Controller+Settings.swift
++++ b/Sources/ArborKit/Controller/Controller+Settings.swift
+@@ -418,8 +418,9 @@ extension Controller {
+   func reloadSettings() -> CommandResult {
+     switch takeInSettingsFile(evenIfUnchanged: true) {
+     case .applied, .unchanged:
+-      let problems = settings.valueProblems.count + settings.skippedRules.count + settings.skippedDisplays.count
+-      let places = settings.skippedDisplays.isEmpty ? "`settings` and `rules`" : "`settings`, `rules` and `displays`"
++      let inDisplays = settings.skippedDisplays.count + settings.displayKeysNotRead.count
++      let problems = settings.valueProblems.count + settings.skippedRules.count + inDisplays
++      let places = inDisplays == 0 ? "`settings` and `rules`" : "`settings`, `rules` and `displays`"
+       return .success("settings reloaded" + (problems == 0 ? "" : "; \(problems) problem(s), see \(places)"))
+     case .missing:
+       // As at launch: with no file, start from the defaults and write them so there is a file to edit.
+diff --git a/Sources/ArborKit/Controller/EventFeed.swift b/Sources/ArborKit/Controller/EventFeed.swift
+index 1115abf..69996fe 100644
+--- a/Sources/ArborKit/Controller/EventFeed.swift
++++ b/Sources/ArborKit/Controller/EventFeed.swift
+@@ -88,7 +88,7 @@ public final class EventFeed {
+       if !subscribers.isEmpty {
+         controller.scheduler.schedule("events-focus", after: Self.secondLookAtFocus) { [weak self] in
+           self?.focusMayHaveMoved = true
+-          self?.flush()
++          self?.flushWhenSettled()
+         }
+       }
+     case .lifecycle:
+@@ -111,17 +111,15 @@ public final class EventFeed {
+ 
+   private func scheduleFlush(after seconds: Double) {
+     flushIsScheduled = true
+-    controller.scheduler.schedule("events", after: seconds) { [weak self] in
+-      guard let self else { return }
+-      // macOS reports a switch of its Spaces window by window, and the controller lays out once it has heard them all.
+-      // Until then the layout is of windows that have left, so look again in a moment. (Not at once: the layout waits
+-      // for as long as a window is being dragged, and this must not keep the main loop busy meanwhile.)
+-      guard self.controller.postponedRelayouts.isEmpty else {
+-        self.scheduleFlush(after: Self.waitForLayout)
+-        return
+-      }
+-      self.flush()
+-    }
++    controller.scheduler.schedule("events", after: seconds) { [weak self] in self?.flushWhenSettled() }
++  }
++
++  /// macOS reports a switch of its Spaces window by window, and the controller lays out once it has heard them all.
++  /// Until then the layout is of windows that have left, so look again in a moment. (Not at once: the layout waits
++  /// for as long as a window is being dragged, and this must not keep the main loop busy meanwhile.)
++  private func flushWhenSettled() {
++    guard controller.postponedRelayouts.isEmpty else { return scheduleFlush(after: Self.waitForLayout) }
++    flush()
+   }
+ 
+   /// Sends whatever has changed since the last time.
+diff --git a/Tests/ArborCoreTests/ArborEventTests.swift b/Tests/ArborCoreTests/ArborEventTests.swift
+index 7e39619..acd7cf6 100644
+--- a/Tests/ArborCoreTests/ArborEventTests.swift
++++ b/Tests/ArborCoreTests/ArborEventTests.swift
+@@ -67,6 +67,7 @@ private let samples: [ArborEvent] = [
+   .quitting,
+   .paused,
+   .resumed,
++  .hold(ArborEvent.Hold(level: .still, reason: "the camera is on")),
+ ]
+ 
+ @Suite struct ArborEventLineTests {
+@@ -84,12 +85,13 @@ private let samples: [ArborEvent] = [
+         #"{"event":"quitting"}"#,
+         #"{"event":"paused"}"#,
+         #"{"event":"resumed"}"#,
++        #"{"event":"hold","level":"still","reason":"the camera is on"}"#,
+       ])
+     #expect(
+       samples[0].line
+         == #"{"event":"hello","protocol":1,"snapshot":{"accessibility":true,"#
+         + #""displays":[{"builtIn":true,"displayID":"main","frame":{"height":900,"width":1440,"x":0,"y":0},"main":true,"name":"Built-in Display"}],"#
+-        + #""focus":{"app":"Safari","bundleID":"com.example.safari","displayID":"main","title":"Apple","window":101},"#
++        + #""focus":{"app":"Safari","bundleID":"com.example.safari","displayID":"main","title":"Apple","window":101},"hold":{},"#
+         + #""layouts":[{"displayID":"main","dockedCount":1,"floatingCount":0,"frames":{"101":{"height":851,"width":702,"x":12,"y":37}},"tileCount":0}],"#
+         + #""notArranged":[7],"paused":false,"running":true,"#
+         + #""views":[{"apps":[],"canGoBack":false,"canGoForward":false,"depth":0,"displayID":"main","kind":"everything","label":"everything","node":2,"outOfView":0,"windows":[]}],"#
+@@ -99,7 +101,7 @@ private let samples: [ArborEvent] = [
+ 
+   @Test func theWordsAreTheGlossarys() {
+     #expect(ArborEvent.Kind.allCases.map(\.rawValue) == [
+-      "hello", "displays", "window", "layout", "view", "focus", "settings", "started", "quitting", "paused", "resumed",
++      "hello", "displays", "window", "layout", "view", "focus", "settings", "started", "quitting", "paused", "resumed", "hold",
+     ])
+     #expect([ArborEvent.View.Kind.everything, .desktop, .window, .group].map(\.rawValue) == ["everything", "desktop", "window", "group"])
+     #expect(
+@@ -169,6 +171,18 @@ private let samples: [ArborEvent] = [
+       ])
+   }
+ 
++  @Test func aHoldIsAnEventOfItsOwn() {
++    var held = full
++    held.hold = ArborEvent.Hold(level: .view)
++    #expect(ArborEvent.changes(from: full, to: held) == [.hold(ArborEvent.Hold(level: .view))])
++    #expect(ArborEvent.hold(held.hold).line == #"{"event":"hold","level":"view"}"#)
++    var still = full
++    still.hold = ArborEvent.Hold(level: .still, reason: "Zoom is open")
++    #expect(ArborEvent.changes(from: held, to: still) == [.hold(still.hold)])
++    #expect(ArborEvent.changes(from: still, to: full) == [.hold(ArborEvent.Hold())])
++    #expect(ArborEvent.hold(ArborEvent.Hold()).line == #"{"event":"hold"}"#, "released")
++  }
++
+   @Test func aWindowThatOpensDockedIsReportedAsBoth() {
+     var new = running()
+     new.windows = [window(101, docked: true)]
+diff --git a/Tests/ArborCoreTests/DisplayOptionsTests.swift b/Tests/ArborCoreTests/DisplayOptionsTests.swift
+index ded5a7f..3f0f455 100644
+--- a/Tests/ArborCoreTests/DisplayOptionsTests.swift
++++ b/Tests/ArborCoreTests/DisplayOptionsTests.swift
+@@ -151,6 +151,51 @@ private func decode(_ json: String) throws -> Settings {
+     #expect(settings.skippedDisplays.isEmpty)
+   }
+ 
++  @Test func aReasonWrittenForProgrammersIsNotShown() throws {
++    let settings = try decode(#"{"displays": [{"match": "main", "gap": 1e400}, {"match": "main", "gap": 7}]}"#)
++    #expect(settings.displays == [DisplayOptions(match: .main, gap: 7)])
++    let reason = try #require(settings.skippedDisplays.first)
++    #expect(["entry 1 (main): cannot be read", "entry 1 (main): `gap` cannot be read"].contains(reason))
++  }
++
++  @Test func anEntryCountsWithoutTheKeysThatAreNotReadAndSaysWhich() throws {
++    let settings = try decode(
++      """
++      {"displays": [
++         {"match": "main", "gap": 7},
++         {"match": "builtin", "gapp": 5, "screenEdgeBand": 20},
++         {"match": ">=2500", "gap": 5, "cornerRadius": 3, "animationDuration": 0}
++       ]}
++      """)
++    #expect(settings.displays.count == 3, "a later Arbor's file still loads")
++    #expect(settings.displays[1] == DisplayOptions(match: .builtIn, screenEdgeBand: 20))
++    #expect(settings.skippedDisplays.isEmpty)
++    #expect(
++      settings.displayKeysNotRead == [
++        "entry 2 (builtin): `gapp` is not read",
++        "entry 3 (>=2500): `animationDuration`, `cornerRadius` are not read",
++      ])
++  }
++
++  @Test func entriesThatChangeNothingSayWhy() throws {
++    let entries = try decode(
++      """
++      {"displays": [
++         {"match": "builtin", "gap": 7},
++         {"match": "Studoi Display", "gap": 5},
++         {"match": "main"},
++         {"match": "main", "gap": 9},
++         {"match": "main", "gap": 9, "screenEdgeBand": 20}
++       ]}
++      """
++    ).displays
++    let idle = DisplayOptions.idle(among: entries, on: [laptop])
++    #expect(idle.map(\.index) == [1, 2, 3])
++    #expect(idle.map(\.why) == ["matches no display that is connected", "sets nothing", "entries before it set the same keys"])
++    #expect(DisplayOptions.idle(among: entries, on: []).map(\.index) == [0, 1, 2, 3, 4])
++    #expect(DisplayOptions.idle(among: [], on: [laptop]).isEmpty)
++  }
++
+   @Test func badEntriesAreSkippedWithAReasonAndTheOthersStillApply() throws {
+     let settings = try decode(
+       """
+diff --git a/Tests/ArborKitTests/DisplayOptionsEquivalenceTests.swift b/Tests/ArborKitTests/DisplayOptionsEquivalenceTests.swift
+new file mode 100644
+index 0000000..4bef365
+--- /dev/null
++++ b/Tests/ArborKitTests/DisplayOptionsEquivalenceTests.swift
+@@ -0,0 +1,68 @@
++import ArborCore
++import ArborKit
++import ArborTesting
++import CoreGraphics
++import Foundation
++import Testing
++
++/// Per-display options (docs/features/F25-per-display-options.md): a value a display has from an entry of `displays` must do
++/// exactly what the same value does as a general setting. `nothingInTheControllerReadsAPerDisplayOptionFromTheGeneralSettings` reads the
++/// controller's sources for readers that go past `options(for:)`; this finds them by what they do, wherever they are.
++@Suite @MainActor struct DisplayOptionsEquivalenceTests {
++  func harness(_ settings: Settings, _ dice: inout RandomJourney.Dice) -> Harness {
++    let h = Harness(displays: [FakeWindowSystem.standardDisplay, RandomJourney.side], settings: settings)
++    for app in ["Safari", "Mail", "Notes", "Terminal"] {
++      h.system.open(app: app, frame: CGRect(x: 100 + CGFloat(dice.roll(2600)), y: 100, width: 500, height: 400))
++    }
++    h.start()
++    return h
++  }
++
++  @Test(arguments: 1...40)
++  func aValueFromAnEntryDoesWhatTheGeneralSettingDoes(seed: Int) throws {
++    // An odd seed has gaps thinner than the focus ring, an even one wide gaps.
++    let gap: Double = seed.isMultiple(of: 2) ? 26 : 2
++    var general = Settings()
++    general.reflowWhileDragging = true
++    general.gap = gap
++    general.minimumUsableWidth = 420
++    general.minimumUsableHeight = 300
++    general.screenEdgeBand = 44
++    // The same values, from two entries that between them match every display; the general ones stay the defaults.
++    var byEntry = Settings()
++    byEntry.reflowWhileDragging = true
++    byEntry.displays = [
++      DisplayOptions(match: .main, gap: gap, minimumUsableWidth: 420),
++      DisplayOptions(match: .named("Side"), gap: gap, screenEdgeBand: 44),
++      DisplayOptions(match: .width(.atLeast, 100), minimumUsableWidth: 420, minimumUsableHeight: 300, screenEdgeBand: 44),
++    ]
++    var first = RandomJourney.Dice(state: UInt64(seed) &* 104_729)
++    var second = first
++    let a = harness(general, &first)
++    let b = harness(byEntry, &second)
++    var history: [String] = []
++    for step in 1...120 {
++      history.append(RandomJourney.step(a, &first, settings: false))
++      _ = RandomJourney.step(b, &second, settings: false)
++      a.scheduler.advance(by: 1)
++      b.scheduler.advance(by: 1)
++      let framesA = Dictionary(uniqueKeysWithValues: a.system.allWindows().map { ($0.id, $0.frame) })
++      let framesB = Dictionary(uniqueKeysWithValues: b.system.allWindows().map { ($0.id, $0.frame) })
++      guard framesA == framesB, a.controller.workspaces == b.controller.workspaces, a.overlays.scenes == b.overlays.scenes,
++        a.overlays.preview == b.overlays.preview, a.overlays.transitions == b.overlays.transitions
++      else {
++        let differing = framesA.keys.sorted().filter { framesA[$0] != framesB[$0] }
++        Issue.record(
++          """
++          seed \(seed), step \(step): after \(history.suffix(5).joined(separator: "; "))
++          \(differing.map { "\($0): \(framesA[$0]!) as a general setting, \(framesB[$0].map { "\($0)" } ?? "gone") from an entry" }.joined(separator: "\n"))
++          \(a.controller.workspaces == b.controller.workspaces ? "" : "the arrangements differ")
++          \(a.overlays.scenes == b.overlays.scenes ? "" : "what is drawn at rest differs")
++          \(a.overlays.preview == b.overlays.preview ? "" : "the drop preview differs: \(a.overlays.preview as Any), \(b.overlays.preview as Any)")
++          \(a.overlays.transitions == b.overlays.transitions ? "" : "the motions differ")
++          """)
++        return
++      }
++    }
++  }
++}
+diff --git a/Tests/ArborKitTests/DisplayOptionsScenarioTests.swift b/Tests/ArborKitTests/DisplayOptionsScenarioTests.swift
+index 0cddba7..57b3744 100644
+--- a/Tests/ArborKitTests/DisplayOptionsScenarioTests.swift
++++ b/Tests/ArborKitTests/DisplayOptionsScenarioTests.swift
+@@ -291,6 +291,32 @@ private let studio = DisplaySnapshot(
+         """)
+   }
+ 
++  @Test func theDisplaysQuerySaysWhichEntriesChangeNothingAndWhichKeysAreNotRead() throws {
++    let json = """
++      {"displays": [{"match": "builtin", "gap": 6, "gapp": 7}, {"match": "Studoi", "gap": 20}, {"match": "main", "gap": 8}]}
++      """
++    let h = Harness(displays: [laptop], settings: try JSONDecoder().decode(Settings.self, from: Data(json.utf8)))
++    h.start()
++    #expect(
++      h.run("displays").text == """
++        1. Built-in Retina Display, 1440×900, main, built-in
++           id main
++           gap 6, from the entry "builtin"
++           minimumUsableWidth 240
++           minimumUsableHeight 160
++           screenEdgeBand 12
++        Keys that no display can have of its own:
++          entry 1 (builtin): `gapp` is not read
++        Entries that change nothing at the moment:
++          "Studoi": matches no display that is connected
++          "main": entries before it set the same keys
++        """)
++    // A slip is something to put right. An entry for a display that is elsewhere is not.
++    let read = h.controller.settings
++    h.controller.loadSettings = { read }
++    #expect(h.run("reload-settings").message == "settings reloaded; 1 problem(s), see `settings`, `rules` and `displays`")
++  }
++
+   @Test func theDisplaysQuerySaysWhenNothingIsSet() {
+     let h = Harness()
+     h.start()
+diff --git a/Tests/ArborKitTests/EventFeedTests.swift b/Tests/ArborKitTests/EventFeedTests.swift
+index 0785563..0d23e5a 100644
+--- a/Tests/ArborKitTests/EventFeedTests.swift
++++ b/Tests/ArborKitTests/EventFeedTests.swift
+@@ -179,6 +179,27 @@ private final class Listener {
+     #expect(try #require(try listener.takeView()).name == nil)
+   }
+ 
++  @Test func holdingAndReleasingAreReported() throws {
++    let (h, feed, a, _, _) = makeHarness()
++    let listener = try Listener(feed, "watch hold view")
++    guard case .hello(let hello)? = try listener.take().first else { return }
++    #expect(hello.snapshot.hold == ArborEvent.Hold())
++    #expect(h.run("hold").ok)
++    turn(h)
++    #expect(try listener.take() == [.hold(ArborEvent.Hold(level: .view))])
++    #expect(!h.run("zoom \(a.rawValue)").ok)
++    turn(h)
++    #expect(try listener.take().isEmpty, "a held view does not move, so there is nothing to say")
++    #expect(h.run("hold still").ok)
++    turn(h)
++    #expect(try listener.take() == [.hold(ArborEvent.Hold(level: .still))])
++    guard case .hello(let late)? = try Listener(feed, "watch hold").take().first else { return }
++    #expect(late.snapshot.hold == ArborEvent.Hold(level: .still), "a newcomer is told")
++    #expect(h.run("release").ok)
++    turn(h)
++    #expect(try listener.take() == [.hold(ArborEvent.Hold())])
++  }
++
+   @Test func aSavedViewShowsItsNumberWhileTheViewIsThere() throws {
+     let (h, feed, a, _, _) = makeHarness()
+     h.run("zoom \(a.rawValue)")
+@@ -576,7 +597,8 @@ private final class Listener {
+     let listener = try Listener(feed, "watch window layout")
+     _ = try listener.take()
+     func states() throws -> [WindowID: ArborEvent.Window.State] {
+-      turn(h)
++      // A moment, not a turn: while the controller has a layout put off, the feed looks again a twentieth of a second later.
++      h.scheduler.advance(by: 0.1)
+       let changes = try listener.takeChanges()
+       #expect(changes.allSatisfy { $0.change == .state })
+       return Dictionary(uniqueKeysWithValues: changes.map { ($0.window.id, $0.window.state) })
+@@ -642,6 +664,24 @@ private final class Listener {
+     #expect(try listener.takeChanges().contains { $0.window.id == a && $0.window.state == .otherSpace })
+   }
+ 
++  /// Taking a window by its title bar gives it the keyboard, so the feed's second look at the keyboard falls into the drag.
++  @Test func theSecondLookAtTheKeyboardWaitsForALayoutThatIsPutOffAsWell() throws {
++    let (h, feed, a, b, _) = makeHarness()
++    let listener = try Listener(feed, "watch window")
++    _ = try listener.take()
++    let grab = CGPoint(x: h.frame(b)!.midX, y: h.frame(b)!.minY + 10)
++    h.system.userFocus(b)
++    h.system.mouseDown = true
++    h.controller.dragBegan(b, at: grab)
++    h.system.setOnActiveSpace(a, false)
++    h.scheduler.advance(by: 1)
++    #expect(try listener.take().isEmpty, "still being dragged")
++    h.system.mouseDown = false
++    h.controller.dragEnded(b, at: grab)
++    h.scheduler.advance(by: 1)
++    #expect(try listener.takeChanges().contains { $0.window.id == a && $0.window.state == .otherSpace })
++  }
++
+   @Test func aSpaceOfWhichNothingCanBeSeenIsStillNamedInWords() throws {
+     let (h, feed, a, _, _) = makeHarness()
+     h.run("zoom \(a.rawValue)")
+diff --git a/Tests/ArborKitTests/EventMirrorTests.swift b/Tests/ArborKitTests/EventMirrorTests.swift
+index fbf2903..f8c3f4c 100644
+--- a/Tests/ArborKitTests/EventMirrorTests.swift
++++ b/Tests/ArborKitTests/EventMirrorTests.swift
+@@ -36,6 +36,8 @@ private struct Mirror {
+       state.views.append(view)
+     case .focus(let focus):
+       state.focus = focus
++    case .hold(let hold):
++      state.hold = hold
+     case .paused:
+       state = ArborEvent.Summary(running: false, accessibility: state.accessibility)
+       state.paused = true
+@@ -60,128 +62,11 @@ private struct Mirror {
+   }
+ }
+ 
+-private struct Dice {
+-  var state: UInt64
+-
+-  mutating func next() -> UInt64 {
+-    state &+= 0x9E37_79B9_7F4A_7C15
+-    var z = state
+-    z = (z ^ (z >> 30)) &* 0xBF58_476D_1CE4_E5B9
+-    z = (z ^ (z >> 27)) &* 0x94D0_49BB_1331_11EB
+-    return z ^ (z >> 31)
+-  }
+-
+-  mutating func roll(_ sides: Int) -> Int { Int(next() % UInt64(max(sides, 1))) }
+-  mutating func pick<Element>(_ list: [Element]) -> Element? { list.isEmpty ? nil : list[roll(list.count)] }
+-}
+-
+ /// The promise behind `arborctl watch`: whoever follows the events knows what a newcomer is told.
+ @Suite @MainActor struct EventMirrorTests {
+-  static let side = DisplaySnapshot(
+-    id: DisplayID("side"), frame: CGRect(x: 1440, y: 0, width: 1920, height: 1080),
+-    visibleFrame: CGRect(x: 1440, y: 0, width: 1920, height: 1080), isMain: false, name: "Side Display")
+-
+-  /// One thing a person, an app or a script does. Returns what it was, for the message of a failure.
+-  fileprivate func act(_ h: Harness, _ dice: inout Dice) -> String {
+-    let windows = h.system.allWindows().map(\.id).sorted()
+-    let window = dice.pick(windows)?.rawValue ?? 0
+-    let other = dice.pick(windows)?.rawValue ?? 0
+-    let edge = dice.pick(["left", "right", "top", "bottom"])!
+-    let apps = ["Safari", "Mail", "Notes", "Terminal", "Xcode"]
+-    func run(_ text: String) -> String {
+-      h.run(text)
+-      return text
+-    }
+-    switch dice.roll(44) {
+-    case 0, 1:
+-      guard windows.count < 9 else { return run("show-all") }
+-      let app = dice.pick(apps)!
+-      let x = CGFloat(dice.roll(h.system.displays().count > 1 ? 2800 : 900))
+-      h.system.open(app: app, frame: CGRect(x: x, y: CGFloat(60 + dice.roll(300)), width: 500, height: 400))
+-      return "open \(app) at \(x)"
+-    case 2:
+-      guard let id = dice.pick(windows) else { return "nothing" }
+-      h.system.close(id)
+-      return "close \(id)"
+-    case 3, 4, 5: return run("dock \(window) \(edge)")
+-    case 6: return run("dock \(window) beside \(other) \(edge)")
+-    case 7: return run("float \(window)")
+-    case 8, 9: return run("zoom \(window)")
+-    case 10: return run("out")
+-    case 11: return run("in")
+-    case 12: return run("show-all")
+-    case 13: return run("back")
+-    case 14: return run("forward")
+-    case 15: return run("desktop")
+-    case 16: return run("neighbor \(edge == "top" ? "up" : edge == "bottom" ? "down" : edge)")
+-    case 17: return run("arrange")
+-    case 18: return run("float-all")
+-    case 19: return run("toggle-pin \(window)")
+-    case 20: return run("summon \(dice.pick(apps)!)")
+-    case 21: return run("name Space\(dice.roll(3))")
+-    case 22: return run("unname")
+-    case 23: return run("save-view \(1 + dice.roll(3))")
+-    case 24: return run("view \(1 + dice.roll(3))")
+-    case 25: return run("home")
+-    case 26: return run(h.controller.isPaused ? "resume" : "pause")
+-    case 27: return run("exclude com.example.\(dice.pick(apps)!.lowercased())")
+-    case 28: return run("include com.example.\(dice.pick(apps)!.lowercased())")
+-    case 29: return run("set gap \(4 + dice.roll(30))")
+-    case 30: return run("resize \(window) \(edge) \(dice.roll(200) - 100)")
+-    case 31:
+-      guard let id = dice.pick(windows), let snapshot = h.system.allWindows().first(where: { $0.id == id }) else { return "nothing" }
+-      h.system.setMinimized(id, !snapshot.isMinimized)
+-      return "minimize or restore \(id)"
+-    case 32:
+-      guard let snapshot = dice.pick(h.system.allWindows()) else { return "nothing" }
+-      h.system.setHidden(pid: snapshot.pid, !snapshot.isHidden)
+-      return "hide or show pid \(snapshot.pid)"
+-    case 33:
+-      guard let snapshot = dice.pick(h.system.allWindows()) else { return "nothing" }
+-      h.system.setFullScreen(snapshot.id, !snapshot.isFullScreen)
+-      return "full screen on or off \(snapshot.id)"
+-    case 34:
+-      guard let snapshot = dice.pick(h.system.allWindows()) else { return "nothing" }
+-      h.system.setOnActiveSpace(snapshot.id, !snapshot.isOnActiveSpace)
+-      return "another Space, or back \(snapshot.id)"
+-    case 35, 36:
+-      guard let id = dice.pick(windows) else { return "nothing" }
+-      h.system.userFocus(id)
+-      return "click \(id)"
+-    case 37:
+-      h.system.userFocusesNothing()
+-      return "click the wallpaper"
+-    case 38:
+-      guard let id = dice.pick(windows) else { return "nothing" }
+-      h.system.setTitle(id, "Title \(dice.roll(5))")
+-      return "a new title for \(id)"
+-    case 39:
+-      let two = h.system.displays().count > 1
+-      h.system.setDisplays(two ? [FakeWindowSystem.standardDisplay] : [FakeWindowSystem.standardDisplay, Self.side])
+-      return two ? "unplug" : "plug in"
+-    case 40:
+-      guard let id = dice.pick(windows), let frame = h.frame(id) else { return "nothing" }
+-      let wide = h.system.displays().count > 1 ? 3300 : 1400
+-      let point = CGPoint(x: CGFloat(20 + dice.roll(wide)), y: CGFloat(40 + dice.roll(800)))
+-      h.system.drag(id, through: [CGPoint(x: frame.midX, y: frame.minY + 10), frame.center, point])
+-      return "drag \(id) to \(point)"
+-    case 41:
+-      guard let snapshot = dice.pick(h.system.allWindows()) else { return "nothing" }
+-      h.system.quit(pid: snapshot.pid)
+-      return "quit pid \(snapshot.pid)"
+-    case 42:
+-      guard let id = dice.pick(windows) else { return "nothing" }
+-      h.system.backgroundFocus(id)
+-      return "a report from the background, \(id)"
+-    default:
+-      h.scheduler.advance(by: Double(dice.roll(30)) / 10)
+-      return "time passes"
+-    }
+-  }
+-
+   @Test(arguments: 1...40)
+   func whoeverFollowsTheEventsKnowsWhatANewcomerIsTold(seed: Int) throws {
+-    var dice = Dice(state: UInt64(seed))
++    var dice = RandomJourney.Dice(state: UInt64(seed))
+     let h = Harness()
+     for app in ["Safari", "Mail", "Notes"] {
+       h.system.open(app: app, frame: CGRect(x: 100 + CGFloat(dice.roll(600)), y: 100, width: 500, height: 400))
+@@ -196,7 +81,7 @@ private struct Dice {
+     var history: [String] = []
+ 
+     for step in 1...150 {
+-      history.append(act(h, &dice))
++      history.append(RandomJourney.step(h, &dice))
+       // Long enough for whatever the controller puts off, and for the feed's second look at the keyboard.
+       h.scheduler.advance(by: 3)
+       for line in lines { mirror.take(try ArborEvent(line: line)) }
+@@ -242,7 +127,8 @@ private struct Dice {
+       if view.label.isEmpty || view.label.wholeMatch(of: /n[0-9]+/) != nil { return "the label of \(view.display) is \"\(view.label)\"" }
+       // Not the other way round: with every docked window minimized or hidden, the Desktop is all there is to see.
+       if view.kind == .everything, view.depth != 0 { return "\(view.display): everything at depth \(view.depth)" }
+-      if view.depth == 0, view.outOfView > 0, !here.contains(where: { $0.state == .outOfView && !$0.docked }) {
++      // A held view does not widen by itself: when its last window goes, the display shows the wallpaper until `release`.
++      if state.hold.level == nil, view.depth == 0, view.outOfView > 0, !here.contains(where: { $0.state == .outOfView && !$0.docked }) {
+         return "\(view.display): \(view.outOfView) docked out of view, and no step out"
+       }
+     }
+@@ -268,7 +154,7 @@ private struct Dice {
+   /// The same journeys, looked at whenever the main loop comes round and at every tenth of a second after it.
+   @Test(arguments: 1...40)
+   func whatHasBeenSaidSoFarNeverContradictsItself(seed: Int) throws {
+-    var dice = Dice(state: UInt64(seed) &* 7919)
++    var dice = RandomJourney.Dice(state: UInt64(seed) &* 7919)
+     let h = Harness()
+     for app in ["Safari", "Mail", "Notes"] {
+       h.system.open(app: app, frame: CGRect(x: 100 + CGFloat(dice.roll(600)), y: 100, width: 500, height: 400))
+@@ -280,7 +166,7 @@ private struct Dice {
+     var mirror = Mirror(state: ArborEvent.Summary(running: false, accessibility: true))
+     var history: [String] = []
+     for step in 1...150 {
+-      history.append(act(h, &dice))
++      history.append(RandomJourney.step(h, &dice))
+       for tick in 0..<8 {
+         h.scheduler.advance(by: tick == 0 ? 0 : 0.1)
+         guard !lines.isEmpty else { continue }
+diff --git a/Tests/ArborKitTests/RandomJourney.swift b/Tests/ArborKitTests/RandomJourney.swift
+new file mode 100644
+index 0000000..569ad61
+--- /dev/null
++++ b/Tests/ArborKitTests/RandomJourney.swift
+@@ -0,0 +1,177 @@
++import ArborCore
++import ArborKit
++import ArborTesting
++import CoreGraphics
++import Foundation
++
++/// Seeded journeys through everything a person, an app or a script can do to the controller, for tests that hold a property
++/// rather than a scenario.
++@MainActor enum RandomJourney {
++  /// Numbers that are the same in every run with the same seed.
++  struct Dice {
++    var state: UInt64
++
++    mutating func next() -> UInt64 {
++      state &+= 0x9E37_79B9_7F4A_7C15
++      var z = state
++      z = (z ^ (z >> 30)) &* 0xBF58_476D_1CE4_E5B9
++      z = (z ^ (z >> 27)) &* 0x94D0_49BB_1331_11EB
++      return z ^ (z >> 31)
++    }
++
++    mutating func roll(_ sides: Int) -> Int { Int(next() % UInt64(max(sides, 1))) }
++    mutating func pick<Element>(_ list: [Element]) -> Element? { list.isEmpty ? nil : list[roll(list.count)] }
++  }
++
++  static let side = DisplaySnapshot(
++    id: DisplayID("side"), frame: CGRect(x: 1440, y: 0, width: 1920, height: 1080),
++    visibleFrame: CGRect(x: 1440, y: 0, width: 1920, height: 1080), isMain: false, name: "Side Display")
++
++  /// One thing a person, an app or a script does. Returns what it was, for the message of a failure.
++  /// - Parameter settings: false leaves out the steps that change settings.
++  static func step(_ h: Harness, _ dice: inout Dice, settings: Bool = true) -> String {
++    let windows = h.system.allWindows().map(\.id).sorted()
++    let window = dice.pick(windows)?.rawValue ?? 0
++    let other = dice.pick(windows)?.rawValue ?? 0
++    let edge = dice.pick(["left", "right", "top", "bottom"])!
++    let apps = ["Safari", "Mail", "Notes", "Terminal", "Xcode"]
++    func run(_ text: String) -> String {
++      h.run(text)
++      return text
++    }
++    // With a window in hand a person carries it on or lets it go; apps go on doing what they do. (Commands for the very window
++    // that is being dragged leave the controller's books in a state of their own: K1830 in collab/BACKLOG.md.)
++    let busy = [47, 47, 47, 48, 49, 49, 0, 2, 31, 38, 42, 51]
++    switch h.system.isMouseButtonDown() ? dice.pick(busy)! : dice.roll(65) {
++    case 0, 1:
++      guard windows.count < 9 else { return run("show-all") }
++      let app = dice.pick(apps)!
++      let x = CGFloat(dice.roll(h.system.displays().count > 1 ? 2800 : 900))
++      h.system.open(app: app, frame: CGRect(x: x, y: CGFloat(60 + dice.roll(300)), width: 500, height: 400))
++      return "open \(app) at \(x)"
++    case 2:
++      guard let id = dice.pick(windows) else { return "nothing" }
++      h.system.close(id)
++      return "close \(id)"
++    case 3, 4, 5: return run("dock \(window) \(edge)")
++    case 6: return run("dock \(window) beside \(other) \(edge)")
++    case 7: return run("float \(window)")
++    case 8, 9: return run("zoom \(window)")
++    case 10: return run("out")
++    case 11: return run("in")
++    case 12: return run("show-all")
++    case 13: return run("back")
++    case 14: return run("forward")
++    case 15: return run("desktop")
++    case 16: return run("neighbor \(edge == "top" ? "up" : edge == "bottom" ? "down" : edge)")
++    case 17: return run("arrange")
++    case 18: return run("float-all")
++    case 19: return run("toggle-pin \(window)")
++    case 20: return run("summon \(dice.pick(apps)!)")
++    case 21: return run("name Space\(dice.roll(3))")
++    case 22: return run("unname")
++    case 23: return run("save-view \(1 + dice.roll(3))")
++    case 24: return run("view \(1 + dice.roll(3))")
++    case 25: return run("home")
++    case 26: return run(h.controller.isPaused ? "resume" : "pause")
++    case 27: return run("exclude com.example.\(dice.pick(apps)!.lowercased())")
++    case 28: return run("include com.example.\(dice.pick(apps)!.lowercased())")
++    case 29: return settings ? run("set gap \(4 + dice.roll(30))") : run("relayout")
++    case 30: return run("resize \(window) \(edge) \(dice.roll(200) - 100)")
++    case 31:
++      guard let id = dice.pick(windows), let snapshot = h.system.allWindows().first(where: { $0.id == id }) else { return "nothing" }
++      h.system.setMinimized(id, !snapshot.isMinimized)
++      return "minimize or restore \(id)"
++    case 32:
++      guard let snapshot = dice.pick(h.system.allWindows()) else { return "nothing" }
++      h.system.setHidden(pid: snapshot.pid, !snapshot.isHidden)
++      return "hide or show pid \(snapshot.pid)"
++    case 33:
++      guard let snapshot = dice.pick(h.system.allWindows()) else { return "nothing" }
++      h.system.setFullScreen(snapshot.id, !snapshot.isFullScreen)
++      return "full screen on or off \(snapshot.id)"
++    case 34:
++      guard let snapshot = dice.pick(h.system.allWindows()) else { return "nothing" }
++      h.system.setOnActiveSpace(snapshot.id, !snapshot.isOnActiveSpace)
++      return "another Space, or back \(snapshot.id)"
++    case 35, 36:
++      guard let id = dice.pick(windows) else { return "nothing" }
++      h.system.userFocus(id)
++      return "click \(id)"
++    case 37:
++      h.system.userFocusesNothing()
++      return "click the wallpaper"
++    case 38:
++      guard let id = dice.pick(windows) else { return "nothing" }
++      h.system.setTitle(id, "Title \(dice.roll(5))")
++      return "a new title for \(id)"
++    case 39:
++      let two = h.system.displays().count > 1
++      h.system.setDisplays(two ? [FakeWindowSystem.standardDisplay] : [FakeWindowSystem.standardDisplay, Self.side])
++      return two ? "unplug" : "plug in"
++    case 40:
++      guard let id = dice.pick(windows), let frame = h.frame(id) else { return "nothing" }
++      let wide = h.system.displays().count > 1 ? 3300 : 1400
++      let point = CGPoint(x: CGFloat(20 + dice.roll(wide)), y: CGFloat(40 + dice.roll(800)))
++      h.system.drag(id, through: [CGPoint(x: frame.midX, y: frame.minY + 10), frame.center, point])
++      return "drag \(id) to \(point)"
++    case 41:
++      guard let snapshot = dice.pick(h.system.allWindows()) else { return "nothing" }
++      h.system.quit(pid: snapshot.pid)
++      return "quit pid \(snapshot.pid)"
++    case 42:
++      guard let id = dice.pick(windows) else { return "nothing" }
++      h.system.backgroundFocus(id)
++      return "a report from the background, \(id)"
++    case 43:
++      guard let id = dice.pick(windows) else { return "nothing" }
++      let size = CGSize(width: CGFloat(200 + dice.roll(700)), height: CGFloat(150 + dice.roll(500)))
++      h.system.setMinimumSize(id, size)
++      return "\(id) refuses to be smaller than \(size)"
++    case 44, 45: return run("dock \(edge)")
++    case 46:
++      // A drag in three steps, so that whoever compares something after every step sees it under way.
++      guard !h.system.isMouseButtonDown(), let id = dice.pick(windows) else { return "nothing" }
++      h.system.beginDrag(id)
++      return "take \(id) by its title bar"
++    case 47, 48:
++      guard h.system.isMouseButtonDown() else { return "nothing" }
++      let wide = h.system.displays().count > 1 ? 3300 : 1400
++      let point = CGPoint(x: CGFloat(20 + dice.roll(wide)), y: CGFloat(40 + dice.roll(800)))
++      h.system.moveDrag(to: point, holding: Double(dice.roll(8)) / 10)
++      return "carry it to \(point)"
++    case 49:
++      guard h.system.isMouseButtonDown() else { return "nothing" }
++      h.system.endDrag()
++      return "let it go"
++    case 50:
++      let tiles = h.overlays.tiles.sorted { $0.key < $1.key }.flatMap { display, tiles in tiles.map { (display, $0.node) } }
++      guard let (display, node) = dice.pick(tiles) else { return "nothing" }
++      h.controller.tileActivated(display: display, node: node)
++      return "click the tile of \(node) on \(display)"
++    case 52:
++      let names = Array(Set(h.system.allWindows().map(\.appName))).sorted()
++      guard names.count > 1 else { return "nothing" }
++      return run("layout " + names.prefix(2 + dice.roll(3)).joined(separator: dice.roll(2) == 0 ? " | " : " / "))
++    case 54: return run("hold")
++    case 55: return run("hold still")
++    case 56, 57: return run("release")
++    case 62: return run("minimap")
++    case 63: return run("show-shortcuts")
++    case 64: return run("find")
++    case 60:
++      h.controller.callSignalsChanged(CallSignals(cameraIsOn: true))
++      return "a camera goes on"
++    case 61:
++      h.controller.callSignalsChanged(CallSignals())
++      return "the camera goes off"
++    case 53:
++      // Longer than anything Arbor puts off, tiles that are asked again included.
++      h.scheduler.advance(by: 700)
++      return "a long time passes"
++    default:
++      h.scheduler.advance(by: Double(dice.roll(30)) / 10)
++      return "time passes"
++    }
++  }
++}
+diff --git a/Tests/ArborKitTests/ReviewSettingsTests.swift b/Tests/ArborKitTests/ReviewSettingsTests.swift
+index 7236eb5..c1d2b78 100644
+--- a/Tests/ArborKitTests/ReviewSettingsTests.swift
++++ b/Tests/ArborKitTests/ReviewSettingsTests.swift
+@@ -166,7 +166,9 @@ import Testing
+   /// A stored property of `Settings` that is in no `CodingKeys` is never saved, never read and in no list, and no other
+   /// test would notice: they all start from the keys that are encoded.
+   @Test func everyStoredPropertyIsSavedReadAndDescribed() throws {
+-    let reports: Set = ["unreadableBindings", "skippedRules", "valueProblems", "skippedDisplays", "skippedDisplayNumbers"]
++    let reports: Set = [
++      "unreadableBindings", "skippedRules", "valueProblems", "skippedDisplays", "skippedDisplayNumbers", "displayKeysNotRead",
++    ]
+     let stored = Set(Mirror(reflecting: Settings()).children.compactMap(\.label)).subtracting(reports)
+     let described = Set(SettingsSchema.entries.map(\.key))
+     #expect(stored.subtracting(described).isEmpty, "not in the schema")
+diff --git a/collab/QUESTIONS.md b/collab/QUESTIONS.md
+index 2435ff6..0b26329 100644
+--- a/collab/QUESTIONS.md
++++ b/collab/QUESTIONS.md
+@@ -517,6 +517,7 @@ One line per product decision made while building, newest last.
+ - F24: `view.label` is `Controller+Words.name(of:on:)` without the number in brackets; `view.depth` is how often `out` can be run; `view.outOfView` counts the display's windows whose state is `out-of-view`.
+ - F24 (product owner): `view.name`, the name a person gave a space (F20), is sent to every watcher, with or without `--titles`, and never logged: it was typed to be shown and the socket is the user's own; titles are different because the user did not write them and cannot foresee them. `label` stays Arbor's own words ("Safari and Mail") for a named space too.
+ - F24: while the controller has a layout put off (macOS reports a switch of its Spaces window by window; a window is being carried to another Space) nothing is sent; the feed looks again every 0.05 s. A space of which nothing can be seen just now is labelled by the apps it holds, never by its number alone.
++- F24 with F58: a hold is an event of its own (`hold`: `level`, `reason`), never a `change` of a window or a field of `view`; released is the event without `level`. While a view is held and empty, `view` keeps the camera's `kind` and `depth`: the guide says what that means rather than a new value being made up.
+ - F24: `view.windows` lists the docked windows in view only (not windows tiles stand in for, not floating ones); `view.node` is the space that really fills the display, which is wider than the camera's own node while that has nothing to show.
+ - F24: with nothing docked the Desktop is the whole arrangement, and `kind` is `everything`.
+ - F24: `canGoBack` and `canGoForward` say whether the command would do anything (as F10's `Workspace.canGoBack` does), not whether the history is non-empty.
+@@ -641,6 +642,7 @@ One line per product decision made while building, newest last.
+ - F25: options follow what a display is now (`main`, its size), not which display it was when Arbor started.
+ - F25: `displays` is a query like `rules`: text for people, answered before Arbor has started, refused from URLs. F50's `displays` (pointer, focus, JSON) can extend it.
+ - F25 (bug bash 1): a display's name is never logged, as the product owner ruled for events. Replies that quote one ("…; Studio Display keeps 20") are scrubbed on their way to the log as the names of spaces are, F12's own line about a change goes without the note, and a skipped entry of `displays` is logged by its number (its `match` may be a name).
++- F25: a key of an entry that this version does not read does not make the entry fail (a later Arbor's file must load); it is said in `displays` and counted at `reload-settings`. An entry that changes nothing is said in `displays` and is no problem: the display may be at the office.
+ - F48, F40 (the product owner's decision): a pause does not touch what is in view, so that someone framed on a virtual machine cannot see it. Only windows out of view are moved: back on screen, not raised, at the frame they floated at if F48 remembers one, otherwise in their slot with everything shown. Neither "as on quit" (two reshuffles, to frames that may be days old, and the window the person paused for shrinks) nor "show everything" (the same shrink).
+ - F48, F40 (the product owner's decision): quitting during a pause starts the window system once more, puts windows back where they floated, and stops, with no layout in between. (B6:) only windows that are still where the pause left them; one that somebody has moved meanwhile is theirs.
+ - F48: excluding an app puts its docked windows back where they floated (a floating one that was out of view goes back to where it floated, not to the middle of the display).
+diff --git a/collab/parity.json b/collab/parity.json
+index d61b5cf..0d2840c 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -129,8 +129,8 @@
+     {"id": "A58", "area": "Arbor only", "title": "Hold the view on a shared screen", "trellis": "", "arbor": "Hold This View; `hold [minutes]`, `release`, `toggle-hold`: nothing moves the view, windows out of view stay there, rules wait; it never widens by itself, its end moves nothing, and ⌃⌥⎋ releases", "status": "shipped", "spec": "F58", "priority": 1, "tests": ["aWindowOutOfViewThatTakesTheKeyboardStaysThereAndTheKeyboardGoesBack", "theKeyboardGoesBackToTheWindowThatHadItNotJustAnyWindowInView", "everyCameraCommandFailsAndChangesNothing", "releaseRestoresEveryCameraCommand", "aClickOnATileDoesNothing", "aDockRulesWindowFloatsWhileHeldAndDocksOnRelease", "whenTheOnlyWindowInViewClosesTheViewStaysHeldAndEmpty", "aMinimizedWindowIsAwayAndComesBackToTheSameView", "aHiddenAppIsAwayAsWell", "eachDisplaysViewStaysHeldWhenItEmpties", "aRuleThatWouldMoveTheViewIsNotAppliedOnReleaseAndTheReplySaysSo", "theSameWhenTheTimeIsUpWithNobodyTouchingAnything", "theSameWhenTheTimeIsUpWhileAnotherMacOSSpaceShows", "aRuleThatWouldNarrowWhatShowsIsNotAppliedEither", "aWindowTheUserHasMovedMeanwhileStaysWhereTheyPutIt", "theKeyThatPausesReleasesAHeldViewAndMovesNothing", "keptDownTheKeyDoesNotGoOnToPause", "theKeyThatFloatsEverythingIsRefusedLikeTheOthers", "fromTheMenuAndTheTerminalBothAreStillWaysOut", "pauseWorksWhileHeldAndEndsTheHold", "floatAllWorksWhileHeldAndEndsTheHold", "quittingWorksWhileHeldAndTheHoldIsNotKept", "aTimedHoldReleasesByItself", "theViewIsHeldOnEveryDisplay", "aHeldGroupCanBeTurnedTheOtherWayAndNothingElseComesIn", "dockingOneOfTwoBesideTheOtherStaysInsideTheHeldView", "aWindowThatClosesNeverWidensTheView", "aHeldWindowThatGoesFullScreenIsAwayNotGone", "nothingThatWasOutOfViewEverShowsWhileTheViewIsHeld", "duringAHoldItStaysOutOfViewAndIsNotLost", "itIsKeptOffADesktopThatIsInViewUntilTheViewMoves", "nothingComesInWhenTheTimeIsUpOrTheCallIsOver", "dialogsThatOpenOutOfViewWaitOnAHeldViewUntilTheViewMoves", "aDockClickOnAnAppBlockedOnADialogBringsThatDialogIn", "statusCountsTheDialogsThatWait", "aSecondWindowOfAnAppThatIsOutOfViewWaitsUntilTheViewMoves", "aCommandThatMovesNoViewLetsNothingIn", "aWindowWithNoWindowOfItsAppOutOfViewIsBroughtInAsEver", "aWindowThatTakesTheKeyboardJustAfterItWasAskedBackIsTurnedAwayOnASecondLook", "whatIsSeenIsWhatIsHeldThoughTheViewIsOnAWindowThatIsAway", "aWindowThatARulePinsIsNotKeptOut", "carryingTheFramedWindowToAnotherDisplayShowsNothingOfItsOwnMeanwhile"]},
+     {"id": "A59", "area": "Arbor only", "title": "Hold still during calls", "trellis": "", "arbor": "Hold Still; `hold still [minutes]`: the view moves only when asked, and what is turned away is said on screen. By itself while a camera or a microphone is on or a window in `holdStillFor` is open, if switched on: all three ship off until seen at work on a Mac", "status": "shipped", "spec": "F58", "priority": 1, "tests": ["outOfTheBoxNothingStartsAHoldByItself", "whatHoldingStillTurnsAwayIsSaidOnceForEachAppAndHold", "holdingStillGoToReachesAWindowOnAnotherMacOSSpace", "andTheViewFollowsItThere", "holdingStillTheUsersOwnMovesWork", "holdingStillAnAppThatComesForwardByItselfStaysOutOfView", "holdingStillTheViewFollowsAWindowTheUserSwitchedTo", "onlyAFocusChangeRightAfterAClickOrAModifierKeyCountsAsAsked", "holdingStillRulesWaitAsWell", "arborHoldsStillWhileACallsWindowIsOpen", "releaseDuringACallLastsUntilTheCallIsOver", "releasingAHeldViewDuringACallFallsBackToHoldingStill", "arborHoldsStillWhileACameraIsOnWhicheverAppTheCallIsIn", "theSameForAMicrophone", "aMicrophoneDoesNotCountUnlessSwitchedOn", "aMicrophoneThatDoesNotCountDoesNotCutTheWaitShort", "theSameWhenTheCallIsOver", "holdingStillTheKeyboardGoesBackToTheWindowJustSwitchedTo", "holdingStillASummonedWindowReachedByCommandTabIsNotSentAway", "aCallIsReplayed", "changingDevicesInTheMiddleOfACallDoesNotEndIt", "holdingStillAWindowTheUserOpenedIsDockedByItsRuleAtOnce"]},
+     {"id": "A27", "area": "Arbor only", "title": "Go to…: find any window, named space or saved view by typing", "trellis": "", "arbor": "⌃⌥G; `find [text]`, `reveal [window]`. Most recently used first; brings back minimised, hidden and tabbed windows. The palette has come and gone on a Mac; no key pressed in it, no picture looked at yet", "status": "shipped", "spec": "F27", "priority": 1, "tests": ["theListIsMostRecentlyFocusedFirstWithTheFocusedWindowAfterTheOthers", "returnOnAnEmptyQueryGoesBackAndForthBetweenTwoWindows", "fromAGroupChoosingAWindowOutOfViewMovesTheCameraJustFarEnoughAndFocusesIt", "fromAFramedWindowChoosingAWindowFramesTheChosenOne", "choosingAHiddenTabShowsIt", "aMinimizedWindowIsRestoredAndBroughtIntoView", "aWindowOfAHiddenAppComesBackWithItsApp", "theResultDoesNotDependOnWhenMacOSReports", "aWindowOnAnotherSpaceIsOnlyFocusedAndTheCameraFollowsWhenItsSpaceShows", "aWindowOnTheOtherDisplayIsRevealedThereAndThisDisplayStaysAsItIs", "shortcutsFollowToTheDisplayThePickerWentTo", "namedSpacesAreListedAfterTheWindowsAndBeforeTheSavedViews", "theVeryNameOfASpaceComesBeforeEverythingElse", "aStashedWindowIsSummonedWhenChosen", "whileHoldingStillTheViewStillGoesWhereItIsAsked", "everyShortcutClosesIt", "windowsArborLeavesAloneAreListedAndOnlyFocused", "itClosesWhenAnotherWindowTakesTheKeyboard", "choosingAWindowThatHasClosedSaysSoAndKeepsThePaletteOpenWithAFreshList", "choosingASavedViewMovesTheCameraThere", "findWithTextGoesStraightToTheBestMatch", "findWithNoMatchFailsAndSaysSo", "neitherTitlesNorQueriesAreLogged", "wordStartsBeatTheMiddleOfWords", "accentsAreIgnoredBothWays", "theTableFindsTheBestAlignment", "hugeInputsCostNoMoreThanLongOnes", "movingGoesRoundAtBothEnds", "staysOnItsDisplay"], "e2e": ["find a window by its title", "open Go to…", "close Go to…", "bring the minimised window back", "bring a window of the hidden app back"]},
+-    {"id": "A19", "area": "Arbor only", "title": "Options per display", "trellis": "", "arbor": "`displays` in settings.json: a display's own gap, tile size and screen edge band, by name, UUID, width, `main` or `builtin`; `arborctl displays`", "status": "shipped", "spec": "F25", "priority": 3, "tests": ["eachDisplayIsLaidOutWithItsOwnGap", "framingAWindowLeavesTheDisplaysOwnGapAroundIt", "tilesStartAtTheDisplaysOwnSize", "theDropPreviewIsTheResultOnEitherDisplay", "aWindowDraggedToTheOtherDisplayTakesThatDisplaysGap", "theScreenEdgeBandIsTheDisplaysOwn", "floatAllAndQuittingUseTheDisplaysOwnGap", "reloadingSettingsLaysEachDisplayOutAgain", "optionsFollowWhatADisplayIsNotWhichOneItWas", "theFirstMatchingEntryThatSetsAKeyGivesIt", "aParticularEntryGoesBeforeAGeneralOneAndNeedNotRepeatIt", "aDisplaysNumberIsRefusedInWords", "badEntriesAreSkippedWithAReasonAndTheOthersStillApply", "widthsAreComparedInPoints", "anythingElseIsAUUIDOrPartOfAName", "oldSettingsFilesHaveNoDisplayOptions", "displayOptionsSurviveBeingSavedAndLoaded", "aCommandThatSavesAnotherSettingLeavesTheListAsItWasWritten", "setChangesTheGeneralValueAndLeavesTheEntriesAlone", "theDisplaysQueryListsEachDisplayAndItsOptions", "aDisplaysNameIsNeverLogged"]},
+-    {"id": "A26", "area": "Arbor only", "title": "Events for scripts and status bars", "trellis": "", "arbor": "`arborctl watch` streams the view (in words too), layout, focus, windows and their state, displays, settings, pause and resume as lines of JSON; titles only on request; `docs/SCRIPTING.md`", "status": "shipped", "spec": "F24", "priority": 2, "tests": ["helloComesFirstAndCarriesTheWholeState", "aMoveOfTheViewSaysWhereItIsAndWhatIsInView", "aSavedViewShowsItsNumberWhileTheViewIsThere", "draggingAGapReportsTheNewFrames", "windowsOpenDockFloatAndClose", "aRelayoutThatChangesNothingSendsNothing", "aBurstIsReportedAsTheDifferenceItMade", "nothingIsSentUntilTheMainLoopComesRound", "aFilterLetsThroughOnlyWhatWasAskedFor", "titlesReachOnlyThoseWhoAskedForThem", "aListenerFromBeforeArborStartsHearsStartedAndThenTheState", "quittingComesFromTheAppOnceAndIsTheLastWord", "atMostSixteenCanWatch", "theSeventeenthWatcherIsRefusedAndAPlaceGivenUpCanBeTaken", "aWatcherThatStopsReadingIsDroppedAndNeverWaitedFor", "aWatcherThatLeavesIsNoticedWithoutAnythingBeingSent", "watchPrintsEventsAsTheyHappenAndExitsWithZeroWhenArborQuits", "aLostConnectionExitsWithThree", "anUnknownEventExitsWithOneAndSaysWhy", "withoutArborWatchExitsWithTwo", "everyEventKeepsItsFieldNames", "theSamplesInTheScriptingGuideAreExactlyWhatArborSends", "linesComeOutWhateverPiecesTheBytesArriveIn", "aReaderThatFallsTooFarBehindIsRefusedTheNextLine", "aPauseSaysPausedAtOnceAndResumingBringsTheStateBack", "aPauseDoesNotEndTheWatch", "aWindowsStateSaysWhereItIs", "aSwitchOfSpacesIsReportedOnceItHasBeenLaidOut", "aSpaceOfWhichNothingCanBeSeenIsStillNamedInWords", "anAppThatIsNoLongerArrangedIsReleasedNotClosedAndLaterAdoptedNotOpened", "settingsAreNewsOnlyWhenTheyChangeAndSayWhichKeysDid", "focusIsWhoHasTheKeyboardNotWhoReportedLast", "aSpaceOfSeveralWindowsIsAGroupNamedInWords", "theWordsAreTheGlossarys"], "e2e": ["start watching events", "what the watcher heard", "the watcher is told that Arbor quit"]},
++    {"id": "A19", "area": "Arbor only", "title": "Options per display", "trellis": "", "arbor": "`displays` in settings.json: a display's own gap, tile size and screen edge band, by name, UUID, width, `main` or `builtin`; `arborctl displays`", "status": "shipped", "spec": "F25", "priority": 3, "tests": ["eachDisplayIsLaidOutWithItsOwnGap", "framingAWindowLeavesTheDisplaysOwnGapAroundIt", "tilesStartAtTheDisplaysOwnSize", "theDropPreviewIsTheResultOnEitherDisplay", "aWindowDraggedToTheOtherDisplayTakesThatDisplaysGap", "theScreenEdgeBandIsTheDisplaysOwn", "floatAllAndQuittingUseTheDisplaysOwnGap", "reloadingSettingsLaysEachDisplayOutAgain", "optionsFollowWhatADisplayIsNotWhichOneItWas", "theFirstMatchingEntryThatSetsAKeyGivesIt", "aParticularEntryGoesBeforeAGeneralOneAndNeedNotRepeatIt", "aDisplaysNumberIsRefusedInWords", "badEntriesAreSkippedWithAReasonAndTheOthersStillApply", "widthsAreComparedInPoints", "anythingElseIsAUUIDOrPartOfAName", "oldSettingsFilesHaveNoDisplayOptions", "displayOptionsSurviveBeingSavedAndLoaded", "aCommandThatSavesAnotherSettingLeavesTheListAsItWasWritten", "setChangesTheGeneralValueAndLeavesTheEntriesAlone", "theDisplaysQueryListsEachDisplayAndItsOptions", "aDisplaysNameIsNeverLogged", "aValueFromAnEntryDoesWhatTheGeneralSettingDoes", "anEntryCountsWithoutTheKeysThatAreNotReadAndSaysWhich", "entriesThatChangeNothingSayWhy", "aReasonWrittenForProgrammersIsNotShown", "theDisplaysQuerySaysWhichEntriesChangeNothingAndWhichKeysAreNotRead"]},
++    {"id": "A26", "area": "Arbor only", "title": "Events for scripts and status bars", "trellis": "", "arbor": "`arborctl watch` streams the view (in words too), layout, focus, windows and their state, displays, settings, pause and resume as lines of JSON; titles only on request; `docs/SCRIPTING.md`", "status": "shipped", "spec": "F24", "priority": 2, "tests": ["helloComesFirstAndCarriesTheWholeState", "aMoveOfTheViewSaysWhereItIsAndWhatIsInView", "aSavedViewShowsItsNumberWhileTheViewIsThere", "draggingAGapReportsTheNewFrames", "windowsOpenDockFloatAndClose", "aRelayoutThatChangesNothingSendsNothing", "aBurstIsReportedAsTheDifferenceItMade", "nothingIsSentUntilTheMainLoopComesRound", "aFilterLetsThroughOnlyWhatWasAskedFor", "titlesReachOnlyThoseWhoAskedForThem", "aListenerFromBeforeArborStartsHearsStartedAndThenTheState", "quittingComesFromTheAppOnceAndIsTheLastWord", "atMostSixteenCanWatch", "theSeventeenthWatcherIsRefusedAndAPlaceGivenUpCanBeTaken", "aWatcherThatStopsReadingIsDroppedAndNeverWaitedFor", "aWatcherThatLeavesIsNoticedWithoutAnythingBeingSent", "watchPrintsEventsAsTheyHappenAndExitsWithZeroWhenArborQuits", "aLostConnectionExitsWithThree", "anUnknownEventExitsWithOneAndSaysWhy", "withoutArborWatchExitsWithTwo", "everyEventKeepsItsFieldNames", "theSamplesInTheScriptingGuideAreExactlyWhatArborSends", "linesComeOutWhateverPiecesTheBytesArriveIn", "aReaderThatFallsTooFarBehindIsRefusedTheNextLine", "aPauseSaysPausedAtOnceAndResumingBringsTheStateBack", "aPauseDoesNotEndTheWatch", "aWindowsStateSaysWhereItIs", "aSwitchOfSpacesIsReportedOnceItHasBeenLaidOut", "aSpaceOfWhichNothingCanBeSeenIsStillNamedInWords", "anAppThatIsNoLongerArrangedIsReleasedNotClosedAndLaterAdoptedNotOpened", "settingsAreNewsOnlyWhenTheyChangeAndSayWhichKeysDid", "focusIsWhoHasTheKeyboardNotWhoReportedLast", "aSpaceOfSeveralWindowsIsAGroupNamedInWords", "theWordsAreTheGlossarys", "theNameOfASpaceGoesToEveryWatcher", "whoeverFollowsTheEventsKnowsWhatANewcomerIsTold", "whatHasBeenSaidSoFarNeverContradictsItself", "holdingAndReleasingAreReported", "aHoldIsAnEventOfItsOwn", "theSecondLookAtTheKeyboardWaitsForALayoutThatIsPutOffAsWell"], "e2e": ["start watching events", "what the watcher heard", "the watcher is told that Arbor quit"]},
+     {"id": "A18", "area": "Arbor only", "title": "Shortcuts that macOS uses as well are pointed out", "trellis": "", "arbor": "`bindings` and the log list each shortcut macOS has ticked for itself (⌃⌥Space with several input sources), by key, on any layout, and say where to change either", "status": "shipped", "spec": "F42", "priority": 3, "tests": ["aTickedShortcutOnTheSameKeyAndModifiersIsAUse", "anUntickedOneIsNot", "nextInputSourceCountsOnlyWithTwoOrMoreToSwitchBetween", "aShortcutWithTheGlobeKeyOnALetterIsNobodysBusiness", "withTwoKeyboardsShowEverythingIsAlsoNextInputSource", "bindingsListsThemAndCountsThemAlsoBeforeArborStarts", "whereNobodyCanTellNothingIsSaid", "onAnotherKeyboardLayoutItIsTheKeyThatCounts", "macOSIsAskedEachTimeSoAChangeInSystemSettingsShowsWithoutARestart", "macOSListsItsOwnShortcuts"]},
+     {"id": "A30", "area": "Arbor only", "title": "Says on screen what happened", "trellis": "", "arbor": "A line low on the display after a shortcut, gesture or menu item: why nothing happened, what changed unseen, three hints for newcomers three times each; `messages`: helpful, all, off", "status": "shipped", "spec": "F43", "priority": 1, "tests": ["aFailingShortcutIsExplainedOnTheDisplayItActedOn", "theSameCommandFromAScriptIsAnsweredOnlyInItsReply", "gesturesAndTheMenuAreAnsweredLikeShortcuts", "aCommandOnAWindowIsAnsweredOnTheWindowsDisplay", "routineSuccessesStaySilent", "whatChangedUnseenIsSaid", "offSaysNothing", "allSaysEveryReply", "theLineGoesWhenItsTimeIsUp", "theNextLineReplacesTheLastAtOnceAndStaysItsFullTime", "thereIsOneLineAtATimeAcrossDisplays", "pausingClearsTheScreenAndThenSaysSo", "quittingTakesBothPanelsAway", "theFirstDockTheFirstWindowsOutOfViewAndTheFirstTileAreExplained", "eachHintIsShownThreeTimesAndNeverAgain", "theCountSurvivesARestart", "aDropAndAClickOnATileTeachToo", "whatAScriptDoesTeachesNobodyAndIsNotBlamedOnTheNextEvent", "whatArborRestoresAtLaunchIsNotAMoment", "aReboundShortcutIsNamedByTheUsersKeys", "aRemovedShortcutIsLeftOutOfTheSentence", "windowTitlesNeverAppear", "quotedCommandsBecomeTheKeysInEffect", "adviceForATerminalIsLeftOut", "theLineSitsDirectlyAboveAnotherPanelAtTheBottom", "messagesIsHelpfulUnlessTheFileSaysOtherwise", "aSuccessThatLeftEverythingAsItWasIsSaidBecauseItLooksLikeADeadKey", "theFrameShortcutOnAFloatingWindowSaysWhatToDoFirst", "anAppArborDoesNotArrangeIsCalledThatAndByItsName", "landingInSuchAnAppByArborsOwnCommandSaysThatItsKeysEndHere", "resumedIsSaidWherePausedWas", "appsAreCalledByTheirNamesNotTheirBundleIds", "namingASpaceAndTakingTheNameOffAreConfirmed", "theNameFieldIsItsOwnAnswer", "aWindowSentAwayBySummonIsNotTakenForOneThatSeemsToHaveGone", "theLogGetsTheLineWithoutTheNamesOfSpaces", "theLogGetsNoWordOfTheReplyToACommandThatChangesSettings", "lettingGoOfAPeekTeachesNothingAndUsesNoHintUp", "aDisplayThatIsUnpluggedTakesTheLineAndThePanelAlong", "aNameThatReadsLikeArborsShorthandIsSaidAsItWasWritten", "aHoldTakesAwayWhatWasSaidBeforeItBegan", "aKeyThatAHeldViewRefusesIsExplainedInFewWords", "lettingGoOfAHoldIsConfirmedAndItsBeginningIsNot", "goToIsItsOwnAnswerAndGoingSomewhereIsNot", "whatWasLostComesBeforeAnyHintAndIsSaidToAnOldHandToo", "aPinLostByDockingIsSaidAndUndoBringsItBack", "theDesktopWithNothingOnItIsNotTheFirstTile", "aPlaceThatAutomaticDockingTriesAndTakesBackTeachesNothing", "whatHoldingStillTurnsAwayIsSaidOncePerAppAndHold", "aHeldViewTurnsAwayInSilenceAndSoDoesWhoeverSwitchedTheLineOff", "theLogGetsNoWordOfWhatGoToWasAskedForInVain"]},
+     {"id": "A66", "area": "Arbor only", "title": "The shortcuts on screen", "trellis": "", "arbor": "⌃⌥⇧/; `show-shortcuts`; Keyboard Shortcuts… in the menu: the shortcuts in effect by name, grouped as the help is; any key, click or command puts them away", "status": "shipped", "spec": "F43", "priority": 2, "tests": ["theDefaultShortcutIsTheOneTheKeyboardMapSetsAside", "itShowsTheShortcutsInEffectOnTheDisplayUnderThePointer", "everyDefaultShortcutIsInThePanelUnderAHeadingOfTheHelp", "theUsersOwnShortcutsStandInPlaceOfTheDefaults", "theSameKeysPutItAway", "anyKeyOrClickPutsItAway", "anyCommandPutsItAwayButAQuestionDoesNot", "withShortcutsSwitchedOffOrAllRemovedItSaysSoInstead", "sectionsAreTheHelpsGroupsInTheHelpsOrder", "nineViewsAreOneRow", "aFamilyWithAMemberMissingOrMovedIsListedSingly", "aLongerListIsTwoColumnsOfAboutTheSameHeight", "gesturesThatAreSwitchedOffAreNotListed", "thePointersPartFollowsTheSettings", "titlesUseTheGlossarysWords", "soDoTheTitlesOfNamesSummonAndLayout", "anArrangementsTitleLeavesOutThePartsOfWindowTitles", "groupsAreTheHelps", "thePanelAndTheNameFieldNeverHaveTheKeyboardTogether", "anEndlessTitleIsCutSoThatThePanelNeedNotShrinkForIt"], "e2e": ["show the shortcuts on screen", "put the shortcuts away"]}
+diff --git a/docs/SCRIPTING.md b/docs/SCRIPTING.md
+index 8aeceed..6d08a7b 100644
+--- a/docs/SCRIPTING.md
++++ b/docs/SCRIPTING.md
+@@ -134,7 +134,7 @@ arborctl watch focus --titles       # with window titles
+   per display; something that changed and changed back in the same breath is never mentioned.
+ - **No repeats.** A line is sent only if something in it differs from the last line of its kind (for that display, or window).
+ - **One order**, when several things change together: `settings`, `started` or `resumed`, `displays`, `window`, `layout`,
+-  `view`, `focus`. A window is announced before anything mentions its number.
++  `view`, `focus`, `hold`. A window is announced before anything mentions its number.
+ - **A filter** names the kinds you want. `hello`, `paused`, `resumed` and `quitting` come whatever the filter: whether Arbor is
+   there at all is news for everyone.
+ - **Titles are private.** They are sent only to a client that asked with `--titles`, and are never logged. The name you gave a space (`name` in `view`) goes to
+@@ -175,7 +175,7 @@ Always first. `version` is Arbor's ("dev" for a build outside the app bundle); `
+ `ignore` rule). While Arbor is not `running` (it is waiting for Accessibility permission, or `paused`) the lists are empty.
+ 
+ ```json
+-{"event":"hello","protocol":1,"snapshot":{"accessibility":true,"displays":[{"builtIn":true,"displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","frame":{"height":982,"width":1512,"x":0,"y":0},"main":true,"name":"Built-in Retina Display"}],"focus":{"app":"Notes","bundleID":"com.apple.Notes","displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","window":388},"layouts":[{"displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","dockedCount":2,"floatingCount":1,"frames":{"388":{"height":925,"width":488,"x":1012,"y":45},"412":{"height":925,"width":488,"x":12,"y":45}},"tileCount":0}],"notArranged":[207],"paused":false,"running":true,"views":[{"apps":["Safari","Notes"],"canGoBack":false,"canGoForward":false,"depth":0,"displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","kind":"everything","label":"everything","node":2,"outOfView":0,"windows":[412,388]}],"windows":[{"app":"Notes","bundleID":"com.apple.Notes","displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","docked":true,"state":"in-view","window":388},{"app":"Safari","bundleID":"com.apple.Safari","displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","docked":true,"state":"in-view","window":412},{"app":"Mail","bundleID":"com.apple.mail","displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","docked":false,"state":"in-view","window":431}]},"version":"0.1.0"}
++{"event":"hello","protocol":1,"snapshot":{"accessibility":true,"displays":[{"builtIn":true,"displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","frame":{"height":982,"width":1512,"x":0,"y":0},"main":true,"name":"Built-in Retina Display"}],"focus":{"app":"Notes","bundleID":"com.apple.Notes","displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","window":388},"hold":{},"layouts":[{"displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","dockedCount":2,"floatingCount":1,"frames":{"388":{"height":925,"width":488,"x":1012,"y":45},"412":{"height":925,"width":488,"x":12,"y":45}},"tileCount":0}],"notArranged":[207],"paused":false,"running":true,"views":[{"apps":["Safari","Notes"],"canGoBack":false,"canGoForward":false,"depth":0,"displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","kind":"everything","label":"everything","node":2,"outOfView":0,"windows":[412,388]}],"windows":[{"app":"Notes","bundleID":"com.apple.Notes","displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","docked":true,"state":"in-view","window":388},{"app":"Safari","bundleID":"com.apple.Safari","displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","docked":true,"state":"in-view","window":412},{"app":"Mail","bundleID":"com.apple.mail","displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","docked":false,"state":"in-view","window":431}]},"version":"0.1.0"}
+ ```
+ 
+ #### view
+@@ -278,6 +278,23 @@ The settings changed (Reload Settings with an edited file, Don't Arrange…): `c
+ {"event":"settings","changed":["gap","rules"]}
+ ```
+ 
++#### hold
++
++The view is held, held otherwise, or no longer held (Hold This View and Hold Still, for shared screens and calls). While `level` is `view` nothing
++moves the view, and it does not widen by itself either: when the last window in it closes, is minimized or hidden, a `view` event comes with no `windows`,
++`outOfView` counts the rest, and `kind` and `depth` say where the view would be, not what is on the screen.
++
++```json
++{"event":"hold","level":"view"}
++{"event":"hold","level":"still","reason":"the camera is on"}
++{"event":"hold"}
++```
++
++| Field | |
++|---|---|
++| `level` | `view`: nothing moves the view until it is released. `still`: only you do. Left out when the view is no longer held |
++| `reason` | Why Arbor holds still by itself, in words that follow "while": "the camera is on", "Zoom is open". Left out when you asked for the hold |
++
+ #### started, paused, resumed, quitting
+ 
+ ```json
+diff --git a/docs/features/F24-events.md b/docs/features/F24-events.md
+index 01d93de..d5f051a 100644
+--- a/docs/features/F24-events.md
++++ b/docs/features/F24-events.md
+@@ -18,7 +18,7 @@ must hold.
+ ## Behaviour
+ 
+ - `watch [events…] [--titles]`, over the control socket. `arborctl watch` prints each line as it arrives.
+-- Events: `hello`, `displays`, `window`, `layout`, `view`, `focus`, `settings`, `started`, `quitting`, `paused`, `resumed`. One JSON
++- Events: `hello`, `displays`, `window`, `layout`, `view`, `focus`, `settings`, `started`, `quitting`, `paused`, `resumed`, `hold`. One JSON
+   object per line, `event` first, the other keys sorted, fields with nothing to say left out, rectangles as
+   `{"x", "y", "width", "height"}`. The names are the glossary's, not the code's.
+ - The first line is `hello`: Arbor's version, the protocol number (1), and the whole state in the events' own words.
+@@ -29,6 +29,7 @@ must hold.
+ - `window` is one line per window and change: `opened`, `closed`, `adopted`, `released`, `docked`, `floated`, `state`, `title`. Every window has a `state`:
+   `in-view`, `out-of-view`, `tile`, `minimized`, `hidden`, `full-screen`, `other-space`.
+ - `settings` names the keys that changed.
++- `hold` says how the view is held (F58): `level` is `view` or `still`, left out when it is released; `reason` says why Arbor holds still by itself. An event of its own, never a `change` of a window, so that `released` keeps one meaning.
+ - Event names after `watch` are a filter. `hello`, `paused`, `resumed` and `quitting` are always sent.
+ - Window titles are sent only to a client that asked with `--titles`. They are never logged.
+ - `name` in `view` is the name a person gave the space (F20); `label` stays Arbor's own words for it. The name goes to every client (it was typed to be shown, and the socket is its owner's alone) and is never logged.
+diff --git a/docs/features/F25-per-display-options.md b/docs/features/F25-per-display-options.md
+index 5915413..a61f0e5 100644
+--- a/docs/features/F25-per-display-options.md
++++ b/docs/features/F25-per-display-options.md
+@@ -74,6 +74,9 @@ first entry that matches the display and sets that key.
+ 
+ - Everything above. Tests: `ArborCoreTests/DisplayOptionsTests.swift` (matching, decoding, skipped entries, round trips) and
+   `ArborKitTests/DisplayOptionsScenarioTests.swift` (a 1440×900 built-in display beside a 2560×1440 one; one or more scenarios per criterion).
++- Second round (K1830): `displays` also lists the keys of an entry that are not read (`gapp`; the entry counts without them, and `reload-settings` counts them among its problems) and the entries that
++  change nothing at the moment, with the reason: no connected display matches, entries before it set the same keys, or it sets nothing. `DisplayOptionsEquivalenceTests`: over seeded journeys a value
++  from an entry does exactly what the general setting of that value does (frames, arrangements, what is drawn, motions).
+ 
+ ## Not shipped
+ 

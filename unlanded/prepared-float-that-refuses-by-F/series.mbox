@@ -1,0 +1,265 @@
+From 97221432ece074f6c42438b827e63f5393a1adf6 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Wed, 14 Oct 2026 23:55:26 +0000
+Subject: [PATCH] wip float
+
+---
+ .../Controller/Controller+Layout.swift        |  31 ++--
+ .../Controller+LayoutNotation.swift           |  17 ++-
+ Tests/ArborKitTests/LayoutCommandTests.swift  | 137 +++++++++++++++++-
+ 3 files changed, 166 insertions(+), 19 deletions(-)
+
+diff --git a/Sources/ArborKit/Controller/Controller+Layout.swift b/Sources/ArborKit/Controller/Controller+Layout.swift
+index 056ed89..d07bef2 100644
+--- a/Sources/ArborKit/Controller/Controller+Layout.swift
++++ b/Sources/ArborKit/Controller/Controller+Layout.swift
+@@ -326,13 +326,15 @@ extension Controller {
+   /// showing. A change of the arrangement (something else minimized, a seam, a dock) can turn the Desktop into
+   /// a tile and back, and must not make the window someone is typing in shrink or vanish. Nor must a command that
+   /// leaves the camera where it is (`home` at home, `back` to the same space): it changes nothing a person can see.
+-  func placeFloatingWindows(on displayID: DisplayID, layout: Layout, reason: RelayoutReason) {
++  func placeFloatingWindows(
++    on displayID: DisplayID, layout: Layout, reason: RelayoutReason, moves: [(window: WindowID, move: FloatingMove)]? = nil
++  ) {
+     workspaces[displayID]?.dropGuestsThatLeft()
+     guard let workspace = workspaces[displayID], let display = display(displayID) else { return }
+     letGoOfWindowsNoLongerInHand(on: displayID)
+     // Paid with this layout, or owed again because the app has stopped answering again (`unplaced`).
+     defer { owedMoves = owedMoves.filter { !workspace.contains($0) } }
+-    for (window, move) in floatingMoves(on: displayID, layout: layout, reason: reason) {
++    for (window, move) in moves ?? floatingMoves(on: displayID, layout: layout, reason: reason) {
+       if case .fill(let desktop) = move {
+         fill(desktop, with: window, on: display)
+         continue
+@@ -475,14 +477,7 @@ extension Controller {
+             || (reason != .enforce && (wasOnDesktop || desktopCameIntoView)),
+           drag?.window != window
+         else { continue }
+-        // Where its user left it hanging over the edge of the screen, it may go on doing so. That is known, not guessed:
+-        // every other frame is fitted.
+-        let leftThere = !whereItsAppPutIt && wasLeftThereByItsUser(preferred, of: window, on: display)
+-        let room = leftThere ? reach(of: desktop, for: preferred, on: display) : desktop
+-        var frame = floatingFrame(preferred, on: room, of: display, minimum: minimumSizes[window])
+-        // However the remembered frame came to lie there (a display that moved, an app that took its window away):
+-        // where no display would show it is no place to send a window that is meant to be in view.
+-        if showsOnlyASliver(frame) { frame = frame.fitted(into: desktop.intersection(display.visibleFrame)) }
++        let (frame, room) = placeOnDesktop(of: window, floatingAt: preferred, desktop: desktop, on: display)
+         // It could not take this frame and is still where that attempt left it. Asking again at every layout, which
+         // is every step of a dragged gap, is a round trip to its app each time for the same answer (as in `apply`).
+         // Not if that left it where nothing of it shows.
+@@ -512,6 +507,22 @@ extension Controller {
+     return moves
+   }
+ 
++  /// Where a window that lives on the Desktop goes, and the room it has to fit. `desktop` is the Desktop as floating windows have it
++  /// (`floatingRegion`). One rule for whoever places one, so that no layout moves what the last one placed.
++  func placeOnDesktop(
++    of window: WindowID, floatingAt preferred: CGRect, desktop: CGRect, on display: DisplaySnapshot
++  ) -> (frame: CGRect, room: CGRect) {
++    // Where its user left it hanging over the edge of the screen, it may go on doing so. That is known, not guessed:
++    // every other frame is fitted. (Where its app opened it is not a place anybody chose.)
++    let leftThere = appPlacedFrames[window] != preferred && wasLeftThereByItsUser(preferred, of: window, on: display)
++    let room = leftThere ? reach(of: desktop, for: preferred, on: display) : desktop
++    var frame = floatingFrame(preferred, on: room, of: display, minimum: minimumSizes[window])
++    // However the remembered frame came to lie there (a display that moved, an app that took its window away):
++    // where no display would show it is no place to send a window that is meant to be in view.
++    if showsOnlyASliver(frame) { frame = frame.fitted(into: desktop.intersection(display.visibleFrame)) }
++    return (frame, room)
++  }
++
+   /// Where floating windows may be: the Desktop, out to the edge of the screen on the sides where nothing is docked
+   /// beside it. The gap there is a margin for docked windows, not one the Desktop has to keep free.
+   func floatingRegion(_ desktop: CGRect, on display: DisplaySnapshot) -> CGRect {
+diff --git a/Sources/ArborKit/Controller/Controller+LayoutNotation.swift b/Sources/ArborKit/Controller/Controller+LayoutNotation.swift
+index c6dffb4..45f2b25 100644
+--- a/Sources/ArborKit/Controller/Controller+LayoutNotation.swift
++++ b/Sources/ArborKit/Controller/Controller+LayoutNotation.swift
+@@ -206,17 +206,22 @@ extension Controller {
+       }
+       return
+     }
+-    for (window, preferred) in floating.sorted(by: { $0.key < $1.key }) where !parked.contains(window) {
++    // Where every layout from now on would have them, and put there as every layout does it (`placeFloatingWindows`): a window whose
++    // app will not make it as small as the Desktop is placed once more as a window of that size, which is remembered, and in front
++    // of what it hangs over. Otherwise the next layout would move it again, with nothing changed.
++    let region = floatingRegion(desktop, on: display)
++    let alone = windowThatTakesDesktop(of: displayID)
++    var moves: [(window: WindowID, move: FloatingMove)] = []
++    for (window, preferred) in floating.sorted(by: { $0.key < $1.key }) where !parked.contains(window) && window != alone {
+       // A pinned window keeps its place over whatever the view shows (Controller+Pin.swift).
+       guard workspaces[displayID]?.isPinned(window) != true else { continue }
+       guard let current = windows[window], current.isPresent, isManaged(window),
+-        !desktop.contains(current.frame) || (undocked.contains(window) && current.frame.size != preferred.size),
+-        let actual = system.setFrame(
+-          floatingFrame(preferred, on: desktop, of: display, minimum: minimumSizes[window]), of: window)
++        !region.contains(current.frame) || (undocked.contains(window) && current.frame.size != preferred.size)
+       else { continue }
+-      windows[window]?.frame = actual
+-      settled[window] = actual
++      let (frame, room) = placeOnDesktop(of: window, floatingAt: preferred, desktop: region, on: display)
++      moves.append((window, .place(frame, fitting: room)))
+     }
++    if let layout = layouts[displayID] { placeFloatingWindows(on: displayID, layout: layout, reason: .structure, moves: moves) }
+   }
+ 
+   /// What was asked for and not found: "no window of Mail or Notes", "only 1 window of Safari", "opening Slack".
+diff --git a/Tests/ArborKitTests/LayoutCommandTests.swift b/Tests/ArborKitTests/LayoutCommandTests.swift
+index 224ef8e..f6d0f4d 100644
+--- a/Tests/ArborKitTests/LayoutCommandTests.swift
++++ b/Tests/ArborKitTests/LayoutCommandTests.swift
+@@ -253,10 +253,9 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
+     #expect(h.workspace.tree.allWindows.count == 4)
+     let result = h.run("layout Safari | Desktop | Mail")
+     #expect(result.message == "arranged 2 windows, floated 2")
+-    let desktop = try #require(h.layout?.desktopFrame)
+     for window in [w(103), w(104)] {
+       #expect(h.workspace.isFloating(window))
+-      #expect(desktop.contains(try #require(h.frame(window))), "\(window)")
++      try expectOnTheDesktopToStay(h, window)
+     }
+     expectNothingLost(h)
+   }
+@@ -264,7 +263,139 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
+   @Test func windowsThatFloatedAlreadyMoveOffTheDockedOnes() throws {
+     let h = harness("Safari", "Mail", "Notes")
+     #expect(h.run("layout Safari | Mail | Desktop").ok)
+-    #expect(try #require(h.layout?.desktopFrame).contains(try #require(h.frame(w(103)))))
++    try expectOnTheDesktopToStay(h, w(103))
++  }
++
++  // MARK: Floating windows that will not be as small as the Desktop
++
++  /// After `command`, and after each layout that follows with nothing changed: where `window` is, which is one place.
++  func placeThatHolds(_ h: Harness, _ window: WindowID, sourceLocation: SourceLocation = #_sourceLocation) throws -> CGRect {
++    let frame = try #require(h.frame(window), sourceLocation: sourceLocation)
++    h.system.clearFrameLog()
++    // (Not `relayout`, which forgets on purpose what windows have refused, and asks them all again.)
++    for command in ["home", "show-all", "home"] {
++      h.run(command)
++      h.scheduler.runPending()
++    }
++    let moved = h.system.frameLog.filter { $0.window == window }.map(\.frame)
++    #expect(moved.isEmpty, "it was at \(frame) and then went to \(moved)", sourceLocation: sourceLocation)
++    return frame
++  }
++
++  /// On the Desktop, over no docked window, and there to stay. To a floating window the Desktop reaches to the edge of the screen where
++  /// nothing is docked beside it: the gap there is a margin for docked windows (`floatingRegion`). Every layout places by that, so
++  /// a window that `layout` fitted between the gaps was made 12 points wider by the next `home`.
++  func expectOnTheDesktopToStay(_ h: Harness, _ window: WindowID, sourceLocation: SourceLocation = #_sourceLocation) throws {
++    let frame = try placeThatHolds(h, window, sourceLocation: sourceLocation)
++    let gap = CGFloat(Settings().gap)
++    let desktop = try #require(h.layout?.desktopFrame, sourceLocation: sourceLocation)
++    #expect(h.visibleFrame.contains(frame), "\(window) at \(frame)", sourceLocation: sourceLocation)
++    #expect(desktop.insetBy(dx: -gap, dy: -gap).contains(frame), "\(window) at \(frame)", sourceLocation: sourceLocation)
++    for docked in h.workspace.tree.allWindows {
++      #expect(!frame.overlaps(try #require(h.frame(docked))), "\(window) at \(frame) lies over \(docked)", sourceLocation: sourceLocation)
++    }
++  }
++
++  /// Arbor has never asked Xcode to be smaller, so it does not know that Xcode will not fit on the Desktop that is left. Xcode
++  /// refuses, and where it was to begin it would hang over the edge of the screen by half.
++  @Test func aFloatingWindowThatWillNotBeAsSmallAsTheDesktopIsPlacedOnceMore() throws {
++    let h = Harness()
++    let size = CGSize(width: 1181, height: 697)
++    let terminal = h.system.open(
++      app: "Terminal", frame: CGRect(origin: CGPoint(x: -164, y: 507), size: size), minimumSize: size)
++    let safari = h.system.open(
++      app: "Safari", frame: CGRect(x: 33, y: 60, width: 484, height: 296), minimumSize: CGSize(width: 484, height: 296))
++    h.start()
++    h.run("zoom \(terminal.rawValue)")
++    h.run("toggle-float")
++    let own = CGSize(width: 977, height: 621)
++    let xcode = h.system.open(app: "Xcode", frame: CGRect(origin: CGPoint(x: 811, y: 404), size: own), minimumSize: own)
++    #expect(h.run("layout Notes | Safari").ok)
++    #expect(h.workspace.isDocked(safari))
++    // What it has learnt it knows: the next layout does not send Xcode over the edge again to fetch it back.
++    let frame = try placeThatHolds(h, xcode)
++    #expect(frame.size == own)
++    #expect(h.visibleFrame.contains(frame), "\(frame)")
++    _ = try placeThatHolds(h, terminal)
++    expectWindowsMatchLayout(h)
++  }
++
++  /// The same, but it is a person who left Xcode hanging over the edge of the screen, and there it may go on hanging: every layout
++  /// says so. `layout` fetched it, and the next `home` sent it back.
++  @Test func oneThatItsUserLeftHangingOverTheEdgeIsNotFetchedToBeSentBack() throws {
++    let h = harness("Safari")
++    let own = CGSize(width: 977, height: 621)
++    let xcode = h.system.open(app: "Xcode", frame: CGRect(origin: CGPoint(x: 300, y: 200), size: own), minimumSize: own)
++    let left = CGRect(origin: CGPoint(x: 811, y: 404), size: own)
++    h.system.userMove(xcode, to: left)
++    h.scheduler.runPending()
++    #expect(h.run("layout Notes | Safari").ok)
++    #expect(try placeThatHolds(h, xcode) == left)
++  }
++
++  /// Safari and Mail docked, and `size` the least that Xcode, which floats, will be.
++  func besideXcode(atLeast size: CGSize, frame: CGRect = CGRect(x: 300, y: 200, width: 700, height: 500)) -> (Harness, WindowID) {
++    let h = harness("Safari", "Mail")
++    let xcode = h.system.open(app: "Xcode", frame: frame, minimumSize: size)
++    return (h, xcode)
++  }
++
++  /// It has to hang over a docked window, and a window that hangs over another from behind is half a window.
++  @Test func itHangsOverTheDockedWindowsFromTheFront() throws {
++    let (h, xcode) = besideXcode(atLeast: CGSize(width: 600, height: 500))
++    h.system.userFocus(w(102))
++    h.system.userFocus(w(101))
++    let raised = h.system.raiseLog.count
++    #expect(h.run("layout Safari | Mail").ok)
++    #expect(h.system.raiseLog.dropFirst(raised).contains(xcode))
++    let frame = try placeThatHolds(h, xcode)
++    #expect(h.visibleFrame.contains(frame), "\(frame)")
++    #expect(try #require(h.frame(w(102))).overlaps(frame), "there is no room for it beside Mail")
++  }
++
++  /// The size it floated at is then no size to go back to.
++  @Test func oneWhoseAppHasRaisedItsMinimumSinceItFloatedDoesNotHangOverTheEdgeEither() throws {
++    let (h, xcode) = besideXcode(atLeast: .zero)
++    h.system.userMove(xcode, to: CGRect(x: 300, y: 200, width: 700, height: 500))
++    h.system.setMinimumSize(xcode, CGSize(width: 977, height: 621))
++    #expect(h.run("layout Safari | Mail").ok)
++    let frame = try placeThatHolds(h, xcode)
++    #expect(frame.size == CGSize(width: 977, height: 621))
++    #expect(h.visibleFrame.contains(frame), "\(frame)")
++  }
++
++  /// All of it is on the screen wherever it begins, so nothing but its size says that it refused.
++  @Test func onADesktopInTheMiddleItHangsOverBothNeighboursAlike() throws {
++    let (h, xcode) = besideXcode(atLeast: CGSize(width: 700, height: 500))
++    #expect(h.run("layout Safari | Desktop:0.6 | Mail").ok)
++    let desktop = try #require(h.layout?.desktopFrame)
++    #expect(desktop.width < 700)
++    let frame = try placeThatHolds(h, xcode)
++    #expect(abs(frame.midX - desktop.midX) <= 1, "\(frame) on \(desktop)")
++  }
++
++  /// A terminal takes whole character cells: a few points more than it was asked for are not a refusal.
++  @Test func aWindowThatComesInStepsIsAskedForOneStepLess() throws {
++    let h = harness("Safari", "Mail")
++    let terminal = h.system.open(app: "Terminal", frame: CGRect(x: 300, y: 100, width: 720, height: 720))
++    h.system.setSizeStep(terminal, CGSize(width: 36, height: 36))
++    #expect(h.run("layout Safari | Mail").ok)
++    let frame = try placeThatHolds(h, terminal)
++    #expect(h.visibleFrame.contains(frame), "\(frame)")
++    #expect(!frame.overlaps(try #require(h.frame(w(102)))), "\(frame) reaches over Mail")
++  }
++
++  /// With `soleFloatTakesDesktop` the layout has just given it all of the Desktop.
++  @Test func theWindowThatHasTheDesktopToItselfKeepsIt() throws {
++    var settings = Settings()
++    settings.soleFloatTakesDesktop = true
++    let h = harness("Safari", "Mail", settings: settings)
++    h.run("arrange")
++    h.system.clearFrameLog()
++    #expect(h.run("layout Safari").ok)
++    let moves = h.system.frameLog.filter { $0.window == w(102) }.map(\.frame)
++    #expect(moves.count == 1, "\(moves)")
++    #expect(try placeThatHolds(h, w(102)) == h.layout?.desktopFrame)
+   }
+ 
+   @Test func aPinnedWindowKeepsItsPlaceUnlessTheLineNamesIt() throws {
+-- 
+2.43.0
+

@@ -1,0 +1,220 @@
+From bcb43b271933e38011785dec6a8572b0102427d8 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Wed, 14 Oct 2026 22:03:15 +0000
+Subject: [PATCH] fix: a launch and a resume move each window once, to where it
+ ends up
+
+---
+ .../Controller/Controller+Focus.swift         |  31 ++++
+ Sources/ArborKit/Controller/Controller.swift  |   1 +
+ .../AStartMovesEachWindowOnceTests.swift      | 144 ++++++++++++++++++
+ 3 files changed, 176 insertions(+)
+ create mode 100644 Tests/ArborKitTests/AStartMovesEachWindowOnceTests.swift
+
+diff --git a/Sources/ArborKit/Controller/Controller+Focus.swift b/Sources/ArborKit/Controller/Controller+Focus.swift
+index 67662ea..68b295b 100644
+--- a/Sources/ArborKit/Controller/Controller+Focus.swift
++++ b/Sources/ArborKit/Controller/Controller+Focus.swift
+@@ -155,6 +155,37 @@ extension Controller {
+     return workspaces[display]?.isDocked(id) == true && layouts[display]?.windowFrames[id] == nil
+   }
+ 
++  // MARK: A start
++
++  /// Called by `start()` before anything is laid out. Nobody told Arbor where the keyboard went while it was not running, and the view
++  /// that comes back may not include that window. A start ends with it in view (`start()`, `resume()`), and where the
++  /// view has to go for that is known now. Laying out the saved view first moved every window twice: one filled the display only to leave it
++  /// again, and the window being typed in went out of view and came back.
++  ///
++  /// The view is the one `bringIntoView` picks, and Back leads to the saved one as after any switch to a window out of view. What is not
++  /// settled by a move of the view (a tab behind another, a window that was sent away) is left to it.
++  func turnTheViewToTheKeyboard() {
++    guard let id = system.focusedWindow(), isManaged(id), windows[id]?.isPresent == true,
++      let display = workspaceID(containing: id), let workspace = workspaces[display], let saved = layout(of: display)
++    else { return }
++    let (tree, camera) = (workspace.tree, workspace.camera)
++    let view: NodeID
++    if let leaf = tree.leaf(containing: id) {
++      guard tree.activeWindow(of: leaf) == id, saved.windowFrames[id] == nil else { return }
++      let common = Navigation.commonAncestor(camera, leaf, in: tree)
++      let showsIt = !isFramedOnOneSpace(workspace) && layout(of: display, camera: common)?.windowFrames[id] != nil
++      view = showsIt ? common : leaf
++    } else {
++      guard workspace.role(of: id) == nil, !tree.subtree(saved.camera, contains: tree.desktop),
++        hostInView(of: id, in: workspace, layout: saved) == nil
++      else { return }
++      view =
++        workspace.guests?[id]
++        ?? (isFramedOnOneSpace(workspace) ? tree.desktop : Navigation.commonAncestor(camera, tree.desktop, in: tree))
++    }
++    workspaces[display]!.moveCamera(to: view)
++  }
++
+   // MARK: What waits
+ 
+   /// The look after a loss and the second looks at reported windows wait under keys of their own, one for each window. Under
+diff --git a/Sources/ArborKit/Controller/Controller.swift b/Sources/ArborKit/Controller/Controller.swift
+index d7e2a41..359283b 100644
+--- a/Sources/ArborKit/Controller/Controller.swift
++++ b/Sources/ArborKit/Controller/Controller.swift
+@@ -495,6 +495,7 @@ public final class Controller {
+     treatStrandedWindowsAsParked()
+     isRunning = true
+     Log.info("started: \(displays.count) display(s), \(managedWindowIDs.count) managed window(s)")
++    turnTheViewToTheKeyboard()
+     relayoutAll(reason: .camera, motion: .instant)
+     placedOnPurpose.removeAll()
+     refreshHoldCaller()
+diff --git a/Tests/ArborKitTests/AStartMovesEachWindowOnceTests.swift b/Tests/ArborKitTests/AStartMovesEachWindowOnceTests.swift
+new file mode 100644
+index 0000000..8bfa71f
+--- /dev/null
++++ b/Tests/ArborKitTests/AStartMovesEachWindowOnceTests.swift
+@@ -0,0 +1,144 @@
++import ArborCore
++import ArborKit
++import ArborTesting
++import CoreGraphics
++import Testing
++
++/// A launch and a `resume` end with the window that has the keyboard in view. The view that was saved may not include it:
++/// Arbor was not looking when the keyboard went there. Where the view has to go is known before anything is moved, so each window moves
++/// once, to where it ends up: nothing fills the display only to leave it again, and the window being typed in does not go out of view and come back.
++@Suite @MainActor struct AStartMovesEachWindowOnceTests {
++  let safariFrame = CGRect(x: 100, y: 100, width: 600, height: 400)
++  let notesFrame = CGRect(x: 700, y: 300, width: 500, height: 300)
++  let mailFrame = CGRect(x: 400, y: 350, width: 520, height: 340)
++
++  /// Safari left and Notes right, Mail floating, the view framed on Safari.
++  func desk() -> (h: Harness, safari: WindowID, notes: WindowID, mail: WindowID) {
++    let h = Harness()
++    let safari = h.system.open(app: "Safari", pid: 1001, frame: safariFrame)
++    let notes = h.system.open(app: "Notes", pid: 1002, frame: notesFrame)
++    let mail = h.system.open(app: "Mail", pid: 1003, frame: mailFrame)
++    h.start()
++    h.run("dock \(safari.rawValue) left")
++    h.run("dock \(notes.rawValue) right")
++    h.run("zoom \(safari.rawValue)")
++    h.scheduler.runPending()
++    return (h, safari, notes, mail)
++  }
++
++  /// How often Arbor really moved each window since the log was `mark` long.
++  func moves(_ h: Harness, since mark: Int) -> [WindowID: Int] {
++    var counts: [WindowID: Int] = [:]
++    for move in h.system.moveLog[mark...] where move.before != move.after { counts[move.window, default: 0] += 1 }
++    return counts
++  }
++
++  /// Quits, lets the person click `window`, and starts Arbor again on the same Mac.
++  func relaunch(_ old: Harness, afterAClickOn window: WindowID) -> (h: Harness, mark: Int) {
++    old.controller.shutdown()
++    old.system.events = nil
++    old.system.userFocus(window)
++    let h = Harness(saved: old.store.saved, system: old.system)
++    let mark = h.system.moveLog.count
++    h.start()
++    h.system.deliverEchoes()
++    h.scheduler.runPending()
++    return (h, mark)
++  }
++
++  @Test func aLaunchWithTheKeyboardInADockedWindowOutsideTheSavedView() {
++    let (old, safari, notes, _) = desk()
++    let (h, mark) = relaunch(old, afterAClickOn: notes)
++    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: notes), "framed stays framed, on the window in use")
++    #expect(h.system.isVisible(notes))
++    #expect(!h.system.isVisible(safari))
++    #expect(moves(h, since: mark).values.allSatisfy { $0 == 1 }, "\(h.system.moveLog[mark...].map { "\($0.window) \($0.after)" })")
++    #expect(h.system.focused == notes)
++    // Back leads to the view that was saved, as after any switch to a window out of view.
++    h.run("back")
++    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: safari))
++    expectWindowsMatchLayout(h)
++  }
++
++  @Test func aLaunchWithTheKeyboardInAFloatingWindowOutsideTheSavedView() {
++    let (old, safari, _, mail) = desk()
++    let (h, mark) = relaunch(old, afterAClickOn: mail)
++    #expect(h.workspace.camera == h.workspace.tree.desktop)
++    #expect(h.frame(mail) == mailFrame, "it has not been touched")
++    #expect(moves(h, since: mark)[mail] == nil, "\(h.system.moveLog[mark...].map { "\($0.window) \($0.after)" })")
++    #expect(moves(h, since: mark).values.allSatisfy { $0 == 1 })
++    #expect(!h.system.isVisible(safari))
++    expectWindowsMatchLayout(h)
++  }
++
++  @Test func aLaunchWithTheKeyboardInTheSavedViewComesBackToIt() {
++    let (old, safari, notes, _) = desk()
++    let (h, mark) = relaunch(old, afterAClickOn: safari)
++    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: safari))
++    #expect(h.workspace.back == old.workspace.back, "nothing was added to the way back")
++    #expect(moves(h, since: mark).values.allSatisfy { $0 == 1 })
++    #expect(!h.system.isVisible(notes))
++    expectWindowsMatchLayout(h)
++  }
++
++  /// From a group the view steps out just far enough to show both, as it does for ⌘Tab.
++  @Test func aLaunchFromAViewOnAGroupStepsOutJustFarEnough() throws {
++    let (old, safari, notes, mail) = desk()
++    old.run("dock \(mail.rawValue) beside \(notes.rawValue) bottom")
++    old.run("zoom \(notes.rawValue)")
++    old.run("out")
++    let group = old.workspace.camera
++    #expect(old.workspace.tree.windows(under: group).sorted() == [notes, mail].sorted())
++    let (h, mark) = relaunch(old, afterAClickOn: safari)
++    #expect(h.workspace.camera == h.workspace.tree.root)
++    for window in [safari, notes, mail] { #expect(h.system.isVisible(window)) }
++    #expect(moves(h, since: mark).values.allSatisfy { $0 == 1 }, "\(h.system.moveLog[mark...].map { "\($0.window) \($0.after)" })")
++    expectWindowsMatchLayout(h)
++  }
++
++  @Test func aResumeWithTheKeyboardInADockedWindowOutsideTheView() {
++    let (h, safari, notes, _) = desk()
++    h.run("pause")
++    h.system.userFocus(notes)
++    let mark = h.system.moveLog.count
++    h.run("resume")
++    h.scheduler.runPending()
++    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: notes))
++    #expect(h.system.isVisible(notes))
++    #expect(!h.system.isVisible(safari))
++    #expect(moves(h, since: mark).values.allSatisfy { $0 == 1 }, "\(h.system.moveLog[mark...].map { "\($0.window) \($0.after)" })")
++    expectWindowsMatchLayout(h)
++  }
++
++  @Test func aResumeWithTheKeyboardInAFloatingWindowOutsideTheView() {
++    let (h, _, _, mail) = desk()
++    h.run("pause")
++    #expect(h.frame(mail) == mailFrame, "the pause brought it back")
++    h.system.userFocus(mail)
++    let mark = h.system.moveLog.count
++    h.run("resume")
++    h.scheduler.runPending()
++    #expect(h.workspace.camera == h.workspace.tree.desktop)
++    #expect(moves(h, since: mark)[mail] == nil, "\(h.system.moveLog[mark...].map { "\($0.window) \($0.after)" })")
++    #expect(moves(h, since: mark).values.allSatisfy { $0 == 1 })
++    expectWindowsMatchLayout(h)
++  }
++
++  /// After a crash the windows are where the last view left them.
++  @Test func aLaunchAfterACrashWithTheKeyboardInAWindowOutOfView() {
++    let (old, safari, notes, _) = desk()
++    old.controller.saveNow()
++    old.system.events = nil
++    old.system.userFocus(notes)
++    let h = Harness(saved: old.store.saved, system: old.system)
++    let mark = h.system.moveLog.count
++    h.start()
++    h.system.deliverEchoes()
++    h.scheduler.runPending()
++    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: notes))
++    #expect(h.system.isVisible(notes))
++    #expect(!h.system.isVisible(safari))
++    #expect(moves(h, since: mark).values.allSatisfy { $0 == 1 }, "\(h.system.moveLog[mark...].map { "\($0.window) \($0.after)" })")
++    expectWindowsMatchLayout(h)
++  }
++}
+-- 
+2.43.0
+

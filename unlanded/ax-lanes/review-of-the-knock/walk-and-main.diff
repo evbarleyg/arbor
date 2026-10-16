@@ -1,0 +1,79 @@
+diff --git a/scripts/mac-on-linux/tests/Walk.swift b/scripts/mac-on-linux/tests/Walk.swift
+index 6b34fa87..12bf66c0 100644
+--- a/scripts/mac-on-linux/tests/Walk.swift
++++ b/scripts/mac-on-linux/tests/Walk.swift
+@@ -46,10 +46,13 @@ struct WalkManners: Equatable {
+ 
+ /// One thing that happens. `a` and `b` pick whom it happens to and how, by remainder, among what is there at the time: a script stays a script when steps are
+ /// taken out of it.
++let reviewBusy = ProcessInfo.processInfo.environment["REVIEW_BUSY"] != nil
+ struct WalkStep: Equatable {
+   enum Kind: String, CaseIterable {
+     case launch, quit, dies, open, dialog, close, putAway, reopen, click, activate, minimize, restore, hide, move, rename
+     case drag, dragLost, resize, hang, wake, space, tab, chooseTab, arborMoves, arborFocuses, arborMinimizes
++    // SCRATCH (review): only drawn with REVIEW_BUSY set.
++    case busy, asks
+   }
+   var kind: Kind
+   var a: Int
+@@ -63,7 +66,7 @@ struct WalkStep: Equatable {
+   var isByHand: Bool {
+     switch kind {
+     case .click, .activate, .minimize, .restore, .hide, .drag, .dragLost, .resize, .space, .tab, .chooseTab, .close, .putAway, .reopen, .launch, .quit: true
+-    case .dies, .open, .dialog, .move, .rename, .hang, .wake, .arborMoves, .arborFocuses, .arborMinimizes: false
++    case .dies, .open, .dialog, .move, .rename, .hang, .wake, .arborMoves, .arborFocuses, .arborMinimizes, .busy, .asks: false
+     }
+   }
+ 
+@@ -82,11 +85,12 @@ struct WalkStep: Equatable {
+ 
+   static func script(seed: UInt64, steps: Int) -> [WalkStep] {
+     var random = ChaosRandom(seed: seed)
+-    let weights: [(weight: Int, value: Kind)] = [
++    var weights: [(weight: Int, value: Kind)] = [
+       (3, .launch), (2, .quit), (1, .dies), (10, .open), (2, .dialog), (7, .close), (2, .putAway), (3, .reopen), (10, .click), (9, .activate), (5, .minimize),
+       (6, .restore), (4, .hide), (5, .move), (2, .rename), (6, .drag), (2, .dragLost), (4, .resize), (3, .hang), (6, .wake), (6, .space), (3, .tab), (3, .chooseTab),
+       (6, .arborMoves), (5, .arborFocuses), (2, .arborMinimizes),
+     ]
++    if reviewBusy { weights += [(12, .busy), (8, .asks)] }
+     return (0..<steps).map { _ in
+       WalkStep(
+         kind: random.pick(weighted: weights) ?? .open, a: random.int(0...99), b: random.int(0...99),
+@@ -348,6 +352,8 @@ final class Walk {
+     case .arborMoves: if let id = pick(layer.allWindows().map(\.id), a) { _ = layer.setFrame(frame(b), of: id) }
+     case .arborFocuses: if let id = pick(layer.allWindows().filter(\.isPresent).map(\.id), a) { layer.focus(id) }
+     case .arborMinimizes: if let window = pick(layer.allWindows(), a) { layer.setMinimized(window.id, !window.isMinimized) }
++    case .busy: if let app = pick(awake, a) { mac.keepsBusy(app, work: [0.2, 0.7, 0.95][b % 3], attention: 0.03, for: 1.9) }
++    case .asks: _ = layer.focusedWindow()
+     }
+   }
+ 
+@@ -485,7 +491,7 @@ enum Walker {
+         let next = index + 1 < script.count ? script[index + 1] : nil
+         walk.mac.pass(step.isByHand && next?.isByHand == true ? max(gap, 0.25) : gap)
+       } else {
+-        settle(2)
++        settle(reviewBusy ? 5 : 2)
+         if let found = look(index) { return found }
+         if isSpoilt {
+           walk.startAfresh()
+@@ -569,6 +575,7 @@ func tellOfTheWalk(_ book: Book) {
+         var broken: Set<String> = []
+         while let found = Walker.run(script, manners: manners, seed: seed, ignoring: broken) {
+           broken.insert(found.breach.rule)
++          print("SEED \(manners.name) \(seed): \(found.breach.rule)")
+           counts[found.breach.rule, default: 0] += 1
+           if first[found.breach.rule] == nil {
+             first[found.breach.rule] = Walker.Finding(manners: manners, seed: seed, script: Array(script.prefix(found.after)), breach: found.breach)
+diff --git a/scripts/mac-on-linux/tests/main.swift b/scripts/mac-on-linux/tests/main.swift
+index b2904b75..bfacb4ba 100644
+--- a/scripts/mac-on-linux/tests/main.swift
++++ b/scripts/mac-on-linux/tests/main.swift
+@@ -156,6 +156,7 @@ tellOfPlacing(book)
+ tellOfArrangements(book)
+ tellOfSlowApps(book)
+ tellOfBusyApps(book)
++tellOfTheReview(book)
+ tellOfTheWalk(book)
+ if let replay = book.options.replay { exit(replayWalk(replay)) }
+ exit(book.tellAll())

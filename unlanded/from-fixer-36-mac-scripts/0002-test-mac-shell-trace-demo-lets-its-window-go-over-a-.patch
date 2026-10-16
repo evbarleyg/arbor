@@ -1,0 +1,30 @@
+From fafbd00edfe2f0528982cdf5f6be44676e77517a Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 17:03:22 +0000
+Subject: [PATCH 2/2] test(mac-shell): trace-demo lets its window go over a
+ Desktop that has room
+
+The two docked windows have taken all there was, so the drag "out onto the
+Desktop" went to 0 0 and the window stayed docked. A layout line that names the
+Desktop gives it room, as Arbor ships.
+---
+ scripts/mac-shell/trace-demo.sh | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/scripts/mac-shell/trace-demo.sh b/scripts/mac-shell/trace-demo.sh
+index 1bcbdf0f..f200571b 100755
+--- a/scripts/mac-shell/trace-demo.sh
++++ b/scripts/mac-shell/trace-demo.sh
+@@ -168,6 +168,9 @@ fi
+ 
+ tw front "$W3"
+ if pressable "$W3"; then
++  # The two docked windows have taken all there was. A layout line that names the Desktop gives it room, as Arbor ships: a place to let a window go over.
++  ctl layout "$W3 | Desktop | $W2"
++  sleep 0.5
+   read -r x y <<< "$(titlebar_of "$W3")"
+   read -r dx dy dw dh <<< "$(arbor_ask desktop)"
+   trace_on drag-out "a docked window is dragged by its title bar out onto the Desktop and released"
+-- 
+2.43.0
+

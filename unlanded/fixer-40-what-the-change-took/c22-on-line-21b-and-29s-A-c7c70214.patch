@@ -1,0 +1,1374 @@
+diff --git a/Sources/ArborCore/Geometry.swift b/Sources/ArborCore/Geometry.swift
+index 39f081a5..6b3d7cf4 100644
+--- a/Sources/ArborCore/Geometry.swift
++++ b/Sources/ArborCore/Geometry.swift
+@@ -84,6 +84,27 @@ extension CGRect {
+   /// Less than half of it shows, on all of `screens` together: a window that is as good as out of view.
+   public func showsLessThanHalf(on screens: [CGRect]) -> Bool { area <= 0 || areaShowing(on: screens) * 2 < area }
+ 
++  /// Where a window that is here now may have been before the screens changed. What a change of displays took from a window is
++  /// what it had there and has no more: its title bar within reach, so much of it showing.
++  ///
++  /// Worked out afterwards, from the screens alone. Not noted beforehand: an app may say where its window is now before
++  /// anybody can know that the displays are changing, or say nothing, and new numbers on old screens read as all or as nothing.
++  ///
++  /// macOS takes a window along with its display: the one that shows most of it. Which one that was cannot be read off afterwards:
++  /// the one that shows most of it now may be a neighbour it was carried onto, or that has moved under it. So each screen that is
++  /// there before and after is asked: had the window been yours, it was where it is, moved back as far as your corner has
++  /// moved; did you show most of it there? All that did are answers. Not a screen that has gone: its windows have been
++  /// taken elsewhere. And nobody may have taken it anywhere, if its app hangs for one: where it is is always an answer.
++  public func whereItMayHaveBeen<ID: Hashable>(on earlier: [ID: CGRect], whichAreNow now: [ID: CGRect]) -> [CGRect] {
++    [self]
++      + earlier.compactMap { id, old -> CGRect? in
++        guard let new = now[id], new.origin != old.origin else { return nil }
++        let there = offsetBy(dx: old.minX - new.minX, dy: old.minY - new.minY)
++        let own = there.areaShowing(on: [old])
++        return own > 0 && earlier.values.allSatisfy({ there.areaShowing(on: [$0]) <= own }) ? there : nil
++      }
++  }
++
+   /// Whether a hand could get hold of a window with this frame: the other question, with a measure of its own. However much
+   /// of a window shows, nobody moves it but by its title bar, and that has to be on one screen: parts do not add up.
+   ///
+diff --git a/Sources/ArborKit/Controller/Controller+Commands.swift b/Sources/ArborKit/Controller/Controller+Commands.swift
+index 5a09851e..f06e7831 100644
+--- a/Sources/ArborKit/Controller/Controller+Commands.swift
++++ b/Sources/ArborKit/Controller/Controller+Commands.swift
+@@ -17,6 +17,10 @@ extension Controller {
+     let outer = following.decides
+     following.decides = !command.isQuery
+     defer { following.decides = outer }
++    // What a change of displays left out of sight or reach is fetched when its person asks (Controller+OwnFrames.swift).
++    let wasLooking = isLookingForWindows
++    isLookingForWindows = [.home, .showAll, .desktop, .relayout].contains(command)
++    defer { isLookingForWindows = wasLooking }
+     // Once the command has had its own say about the keyboard (Controller+LetBe.swift).
+     defer { theKeyboardLeavesTheTile() }
+     let start = DispatchTime.now()
+diff --git a/Sources/ArborKit/Controller/Controller+Displays.swift b/Sources/ArborKit/Controller/Controller+Displays.swift
+index a48ec949..88d693ef 100644
+--- a/Sources/ArborKit/Controller/Controller+Displays.swift
++++ b/Sources/ArborKit/Controller/Controller+Displays.swift
+@@ -88,7 +88,7 @@ extension Controller {
+     // has just called off: then nobody else would.
+     if !Self.areTheSame(before, displays) || somethingMovedBehindArborsBack { takeFloatingWindowsFromWhereTheyAre(movedByMacOS) }
+     keepWhatMacOSRescued(whichShowed: showed)
+-    let displaced = countAsOutOfViewWhatTheDisplaysDisplaced()
++    let displaced = countAsOutOfViewWhatTheDisplaysDisplaced(since: before, movedByMacOS: movedByMacOS)
+     guard !lettingGo else { return }
+     // A display that came or went sent windows to another arrangement, whose view may not include the one being
+     // typed in. As after a resume, it ends with that window in view. Before anything is laid out, so that every
+@@ -101,6 +101,7 @@ extension Controller {
+       bringIntoViewIfFocused(focused)
+     }
+     unasked { relayoutAll(reason: .camera, motion: .instant) }
++    leaveAsItIsWhatCouldNotBeMoved(of: displaced.union(arrivingInView))
+     parkAgain()
+     scheduleSave()
+   }
+diff --git a/Sources/ArborKit/Controller/Controller+OwnFrames.swift b/Sources/ArborKit/Controller/Controller+OwnFrames.swift
+index fb821691..f299a75f 100644
+--- a/Sources/ArborKit/Controller/Controller+OwnFrames.swift
++++ b/Sources/ArborKit/Controller/Controller+OwnFrames.swift
+@@ -1,5 +1,6 @@
+ import ArborCore
+ import CoreGraphics
++import Foundation
+ 
+ /// A floating window's frame is its person's (collab/QUESTIONS.md, Q20): **Arbor sets a floating window's frame only to take it
+ /// out of view and to put it back exactly where it was.**
+@@ -25,12 +26,15 @@ extension Controller {
+   ) -> FloatingMove? {
+     // (In view as a tile too: however small the Desktop is drawn, its windows are in view with it.)
+     if desktopIsInView || hostInView(of: window, in: workspace, layout: layout) != nil {
+-      // One that no display shows is out of view whoever put it there. And one that is nowhere a window can be used, where no hand
+-      // is known to have left it, is what a change of displays made of it while Arbor could not act (its app hung, Arbor had
+-      // crashed): never lost outranks never moved. Not at a start, which sets no frame (Q16): the next layout, ⌃⌥0 for one.
++      // One that no display shows is out of view whoever put it there. And one that lies where nobody left it, out of sight or out of
++      // reach, is what a change of displays made of it. It is fetched when its person asks, with ⌃⌥0 for one, a key that means
++      // "bring my windows back" (if its app hangs just then, when that wakes), and by nothing else: by whatever layout comes next,
++      // because its app wakes, it leaves the Dock or another window opens, it would leap out of nowhere. Nor at a start, which
++      // sets no frame (Q16).
+       guard
+         parked.contains(window) || showsOnlyASliver(window)
+-          || (!isTheFirstLayout && windows[window].map { !isAPlace($0.frame) && !wasLeftThereByItsUser($0.frame, of: window, on: display) } == true)
++          || ((isLookingForWindows || owedMoves.contains(window)) && !isTheFirstLayout
++            && windows[window].map { liesWhereNobodyLeftIt(window, at: $0.frame, on: display) } == true)
+       else { return nil }
+       // Nothing is raised: going out of view and coming back changes nobody's place in macOS's order.
+       return .putBack(whereItWas(own, of: window, on: display))
+@@ -41,6 +45,14 @@ extension Controller {
+     return reason == .camera || showsOnlyASliver(window) || owedMoves.contains(window) ? .park : nil
+   }
+ 
++  /// For what takes the place of such a command (a look at everything, Controller+Peek.swift).
++  func lookingForWindows(_ layOut: () -> Void) {
++    let wasLooking = isLookingForWindows
++    isLookingForWindows = true
++    defer { isLookingForWindows = wasLooking }
++    layOut()
++  }
++
+   /// Called before a layout takes `window` out of view. Where it is at that moment is where it comes back to: whoever put
+   /// it there, and whether or not Arbor has heard of it (moved while Arbor was not running, say). That its person's own hand
+   /// left it there is not noted here: a frame of which less than half shows has to have that on record already
+@@ -62,7 +74,15 @@ extension Controller {
+   /// Brings `window` back into view at `frame`, for `placeFloatingWindows`.
+   func putBackWhereItWas(_ window: WindowID, at frame: CGRect, on display: DisplaySnapshot) {
+     let own = workspaces[display.id]?.floating[window]
++    // In view all along, and fetched because its person asked, from where no hand ever left it: a frame that is no place and that nobody
++    // chose is no frame to remember. Where it is now is its frame, and no later change of displays sends it back.
++    let isItsFrameNow = isLookingForWindows && !parked.contains(window) && !showsOnlyASliver(window) && chosenOnShape[window]?.frame != own
+     putBack(window, at: frame, on: display)
++    if isItsFrameNow, !unplaced.contains(window), let actual = windows[window]?.frame {
++      workspaces[display.id]?.floating[window] = actual
++      fittedFrames[window] = nil
++      return
++    }
+     // Fitted, it is there for the displays' sake, and what is remembered is still its own: there and back is nothing, for a
+     // lid that closes and opens too (`countAsOutOfViewWhatTheDisplaysDisplaced`).
+     // (Its app may not have answered: then it is still out of view, and is placed when the app does.)
+@@ -84,10 +104,29 @@ extension Controller {
+   }
+ 
+   /// Whether a window at `frame` is within sight and reach whoever put it there: half of it shows, on all displays together
+-  /// (`showsLessThanHalf`, the one measure of that), and a hand could get hold of its title bar (`titleBarIsWithinReach`, likewise). Not behind a menu bar, where
+-  /// macOS lets no window lie: it is what a change of displays made of a window that lay at the top of a display without one.
+-  func isAPlace(_ frame: CGRect) -> Bool {
+-    !showsLessThanHalf(frame) && titleBarIsWithinReach(frame)
++  /// (`showsLessThanHalf`, the one measure of that), and a hand could get hold of its title bar. Where Arbor puts a window.
++  func isAPlace(_ frame: CGRect) -> Bool { !showsLessThanHalf(frame) && aHandCanTakeIt(at: frame, on: displays) }
++
++  /// What a key that brings windows back fetches of the floating windows in view: one that nobody can get hold of, or of which less
++  /// than half shows, unless a hand left it so.
++  ///
++  /// Of a window wider or higher than its display half of what the display can show of it is enough: more never shows if its app keeps it
++  /// that large, and then no fit would change that. And for how much shows, a hand's note is good whatever has become of the display's
++  /// shape since: as much shows as the hand left showing, so a display that grew, turned or shrank on its other sides has taken
++  /// nothing, and what no way home touched before none touches after.
++  func liesWhereNobodyLeftIt(_ window: WindowID, at frame: CGRect, on display: DisplaySnapshot) -> Bool {
++    if wasLeftThereByItsUser(frame, of: window, on: display) { return false }
++    guard aHandCanTakeIt(at: frame, on: displays) else { return true }
++    let showing = areaShowing(of: frame)
++    if frame.area > 0, showing * 2 >= min(frame.width, display.visibleFrame.width) * min(frame.height, display.visibleFrame.height) { return false }
++    // (A hundredth: a display a few points narrower takes nothing that anybody would miss.)
++    return chosenOnShape[window].map { $0.frame != frame || showing < $0.showing - 0.01 * frame.area } ?? true
++  }
++
++  /// Its title bar is within reach (`titleBarIsWithinReach`, the one measure of that), on `displays` as they are or as they were. Not behind a
++  /// menu bar, where macOS lets no window lie: it is what a change of displays made of a window that lay at the top of a display without one.
++  func aHandCanTakeIt(at frame: CGRect, on displays: [DisplaySnapshot]) -> Bool {
++    frame.titleBarIsWithinReach(on: displays.map(\.frame))
+       && !displays.contains {
+         $0.frame.minY <= frame.minY && frame.minY < $0.visibleFrame.minY && frame.minX < $0.frame.maxX && frame.maxX > $0.frame.minX
+       }
+@@ -128,31 +167,47 @@ extension Controller {
+ 
+   // MARK: A change of displays
+ 
+-  /// A change of displays moves windows that are in view, or the ground under them, and nobody chose where that leaves them.
+-  /// Such a window counts as out of view, so that the layout that follows puts it where it belongs (`whereItWas`), or
+-  /// out of view with the rest of its Desktop:
+-  /// - one that Arbor fitted for the displays as they were goes back to its own frame, if that is a place again;
+-  /// - one of which less than half shows now, or whose title bar is out of reach, is fitted. Not one that its person's own hand left
+-  ///   hanging, as long as its display is as it was then and no less of it shows than it left showing (`wasLeftThereByItsUser`).
+-  /// Returns those that the layout is going to put in view.
+-  func countAsOutOfViewWhatTheDisplaysDisplaced() -> Set<WindowID> {
++  /// A change of displays moves windows that are in view, or the ground under them, and nobody chose where that leaves them. What macOS
++  /// does to a floating window then is macOS's, and Arbor acts only where nobody could get hold of the window: however little of it
++  /// shows, one whose title bar is within reach stays, as at a start, a pause and a quit; whoever misses it has ⌃⌥0. Two kinds
++  /// count as out of view, so that the layout that follows puts them where they belong (`whereItWas`), or out of view with the rest of
++  /// their Desktop:
++  /// - one that Arbor fitted for the displays as they were, when it came back into view, goes back to its own frame, if that is a place again;
++  /// - one that the change took out of reach (`theChangeTookOutOfReach`) is fitted, and unless a hand chose where it lay that is its
++  ///   frame from now on: a frame that is no place is no frame to remember. Not one that its person's own hand left there on the displays
++  ///   as they are (`wasLeftThereByItsUser`).
++  /// Returns those that the layout is going to put in view. `earlier` are the displays as they were; `movedByMacOS`, the windows that are not
++  /// where Arbor knew them.
++  func countAsOutOfViewWhatTheDisplaysDisplaced(since earlier: [DisplaySnapshot], movedByMacOS: Set<WindowID>) -> Set<WindowID> {
+     guard !settings.floatingWindowsMakeWay else { return [] }
+     var displaced: Set<WindowID> = []
++    let lately = now().addingTimeInterval(-Self.spokenLately)
+     for (id, workspace) in workspaces.sorted(by: { $0.key < $1.key }) {
+       guard let display = display(id) else { continue }
+-      let desktopShows = layout(of: id).map { workspace.tree.subtree($0.camera, contains: workspace.tree.desktop) } ?? false
+-      for (window, own) in workspace.floating.sorted(by: { $0.key < $1.key }) where workspace.role(of: window) == nil {
+-        guard !parked.contains(window), window != drag?.window, isManaged(window), let current = windows[window],
+-          current.isPresent
+-        else { continue }
++      let layout = layout(of: id)
++      let desktopShows = layout.map { workspace.tree.subtree($0.camera, contains: workspace.tree.desktop) } ?? false
++      for (window, remembered) in workspace.floating.sorted(by: { $0.key < $1.key }) where workspace.role(of: window) == nil {
++        guard !parked.contains(window), window != drag?.window, isManaged(window), let current = windows[window] else { continue }
+         let hangsAsItWasLeft = wasLeftThereByItsUser(current.frame, of: window, on: display)
+-        guard
+-          fittedFrames[window] == current.frame
+-            || (!isAPlace(current.frame) && !hangsAsItWasLeft),
+-          // Not one that is where it would be sent: a call to its app costs more than everything Arbor does itself.
+-          !whereItWas(own, of: window, on: display).approximatelyEquals(current.frame, tolerance: 0.99)
+-        else { continue }
+-        if desktopShows { displaced.insert(window) }
++        let hasMoved = movedByMacOS.contains(window) || spokeOfItsPlace[window].map { $0 >= lately } == true
++        let isOutOfReach = !hangsAsItWasLeft && theChangeTookOutOfReach(current.frame, since: earlier, hasMoved: hasMoved)
++        guard fittedFrames[window] == current.frame || isOutOfReach else {
++          // A report that came just before Arbor heard of the displays passes for a hand's, and its note says how much new numbers
++          // showed on old displays. In doubt no hand vouches: whoever speaks first, the end is the same.
++          if let left = chosenOnShape[window], left.display != display.frame, spokeOfItsPlace[window].map({ $0 >= lately }) == true {
++            chosenOnShape[window] = nil
++          }
++          continue
++        }
++        // (One in the Dock, hidden or on another Space comes back where it went.)
++        guard current.isPresent else { continue }
++        // Where a hand once left it, on other displays, is still its own, and it goes back when they are as they were.
++        let isItsFrameNow = isOutOfReach && chosenOnShape[window]?.frame != current.frame
++        let own = isItsFrameNow ? current.frame.fitted(into: display.visibleFrame) : remembered
++        if isItsFrameNow { workspaces[id]?.floating[window] = own }
++        // Not one that is where it would be sent: a call to its app costs more than everything Arbor does itself.
++        guard !whereItWas(own, of: window, on: display).approximatelyEquals(current.frame, tolerance: 0.99) else { continue }
++        if desktopShows || layout.flatMap({ hostInView(of: window, in: workspace, layout: $0) }) != nil { displaced.insert(window) }
+         parked.insert(window)
+         // Where it is now is no corner it was sent to: if its Desktop is out of view, it has yet to go (`hasLeftItsCorner`).
+         settled[window] = nil
+@@ -161,6 +216,38 @@ extension Controller {
+     return displaced
+   }
+ 
++  /// Whether nobody can get hold of a window at `frame`, and the change of displays is why: somebody could, where it was before
++  /// (`whereItMayHaveBeen`). In doubt somebody could: where that may have been more than one place; where macOS has moved the window
++  /// itself, from wherever; and where a display has gone, whose windows macOS has brought over. One that was out of reach all
++  /// along, wherever its app or a tool put it, is none of Arbor's business at a report about the Dock.
++  func theChangeTookOutOfReach(_ frame: CGRect, since earlier: [DisplaySnapshot], hasMoved: Bool) -> Bool {
++    guard !aHandCanTakeIt(at: frame, on: displays) else { return false }
++    func frames(_ displays: [DisplaySnapshot]) -> [DisplayID: CGRect] { Dictionary(displays.map { ($0.id, $0.frame) }) { first, _ in first } }
++    let now = frames(displays)
++    return hasMoved || earlier.contains { now[$0.id] == nil }
++      || frame.whereItMayHaveBeen(on: frames(earlier), whichAreNow: now).contains { aHandCanTakeIt(at: $0, on: earlier) }
++  }
++
++  /// Called after the layout that follows a change of displays. A window whose app did not answer is left as it is, and nothing is
++  /// owed: minutes later, when the app wakes, the move would come out of nowhere, and the displays may be as they were. It is taken
++  /// from where it lies, place and display, or Arbor would go on acting as if it lay where it was to go; unless that is where Arbor
++  /// had fitted it. What no display shows is fetched by any layout, as ever (`moveKeepingItsFrame`).
++  func leaveAsItIsWhatCouldNotBeMoved(of displaced: Set<WindowID>) {
++    guard !settings.floatingWindowsMakeWay else { return }
++    for window in displaced.sorted() where unplaced.contains(window) && parked.contains(window) && !showsOnlyASliver(window) {
++      guard let home = workspaceID(containing: window), workspaces[home]?.isFloating(window) == true, workspaces[home]?.role(of: window) == nil,
++        let frame = windows[window]?.frame
++      else { continue }
++      parked.remove(window)
++      unplaced.remove(window)
++      guard fittedFrames[window] != frame else { continue }
++      let lies = displayID(at: frame.center).flatMap { workspaces[$0] == nil ? nil : $0 } ?? home
++      if lies != home { workspaces[home]?.floating[window] = nil }
++      workspaces[lies]?.floating[window] = frame
++      if lies != home { notify(.windows) }
++    }
++  }
++
+   // MARK: The setting goes off
+ 
+   /// The floating windows in view that docked windows have pushed aside or squeezed, or that fill the Desktop (F18), with their
+diff --git a/Sources/ArborKit/Controller/Controller+Peek.swift b/Sources/ArborKit/Controller/Controller+Peek.swift
+index 6d4313c9..50384ab6 100644
+--- a/Sources/ArborKit/Controller/Controller+Peek.swift
++++ b/Sources/ArborKit/Controller/Controller+Peek.swift
+@@ -104,7 +104,7 @@ extension Controller {
+     // (Controller+Hold.swift).
+     if holdLevel == nil { holdFetchesWhatWaited(on: nil) }
+     workspaces[display]?.beginLook()
+-    moveCamera(on: display, to: workspace.tree.root, record: false)
++    lookingForWindows { moveCamera(on: display, to: workspace.tree.root, record: false) }
+     Log.info("show-all: showing everything")
+     // The clock starts once everything shows. Laying out many windows takes a while, and a release that
+     // waited in the queue meanwhile is a tap however late it is heard.
+diff --git a/Sources/ArborKit/Controller/Controller.swift b/Sources/ArborKit/Controller/Controller.swift
+index 62591544..a828fbeb 100644
+--- a/Sources/ArborKit/Controller/Controller.swift
++++ b/Sources/ArborKit/Controller/Controller.swift
+@@ -481,6 +481,9 @@ public final class Controller {
+   /// (Controller+OwnFrames.swift). An entry counts for as long as its window is at that frame.
+   var fittedFrames: [WindowID: CGRect] = [:]
+ 
++  /// The command under way is one that people reach for when a window is missing (`moveKeepingItsFrame`).
++  var isLookingForWindows = false
++
+   /// The window ⌃⌥F floated last, and where it was docked (Controller+FloatAndBack.swift).
+   var floatedOut: FloatedOut?
+ 
+diff --git a/Sources/ArborTesting/ChaosInvariants+OwnFrames.swift b/Sources/ArborTesting/ChaosInvariants+OwnFrames.swift
+index 559495c2..822e5514 100644
+--- a/Sources/ArborTesting/ChaosInvariants+OwnFrames.swift
++++ b/Sources/ArborTesting/ChaosInvariants+OwnFrames.swift
+@@ -23,12 +23,16 @@ extension ChaosRunner {
+   struct HandNote {
+     var frame: CGRect
+     var display: CGRect?
++    /// How much of it showed there and then, in square points.
++    var showing: CGFloat
+   }
+ 
+   func ownFrameViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
+     departures = departures.filter { system.windows[$0.key] != nil }
+     movedByUndo = movedByUndo.filter { system.windows[$0] != nil }
+     noteWhatAHandLeft(after: action)
++    // ⌃⌥0, Show Everything, the Desktop, `relayout`. (And what follows until the next command: an app that hung just then may wake.)
++    if let command = action.parsedCommand, !command.isQuery { lookedForWindowsLast = [.home, .showAll, .desktop, .relayout].contains(command) }
+     // Once this step has been judged: a window that has just left is no longer where the hand left it.
+     defer {
+       leftByHand = leftByHand.filter { window, note in
+@@ -46,7 +50,7 @@ extension ChaosRunner {
+         guard let old = displaysBefore.first(where: { $0.frame == note.display }), let new = controller.display(old.id)?.frame,
+           new.size == old.frame.size, new != old.frame
+         else { continue }
+-        leftByHand[window] = HandNote(frame: note.frame.offsetBy(dx: new.minX - old.frame.minX, dy: new.minY - old.frame.minY), display: new)
++        leftByHand[window] = HandNote(frame: note.frame.offsetBy(dx: new.minX - old.frame.minX, dy: new.minY - old.frame.minY), display: new, showing: note.showing)
+       }
+     }
+     func floatsOrdinarily(_ window: WindowID, in workspaces: [DisplayID: Workspace]) -> Bool {
+@@ -95,10 +99,15 @@ extension ChaosRunner {
+           problems.append(.init("own-frame-fit", "\(window) came back at \(now.brief), where nobody is known to have left it, and less than half of it shows"))
+         }
+       case (false, false):
+-        // The one exception: a change of displays that cut it off. One that was nowhere a window can be used, and that no hand is known
+-        // to have left there, is fetched whenever Arbor comes by. And a view can leave and come back within one step.
++        // The one exception: a change of displays that took it out of reach. One that is nowhere a window can be used, and that no hand left
++        // so (of which less shows than the hand left showing, too), is fetched when its person asks for their windows, and by nothing
++        // else: nothing is owed. And a view can leave and come back within one step.
++        let aHandLeftItSo =
++          leftByHand[window].map {
++            isWhere($0.frame, before, of: window) && Self.area(of: before, showingOn: system.displayList) >= $0.showing - 0.01 * before.area
++          } == true && showsEnoughToGrab(before)
+         if now != before, now != whereMacOSPuts(before, window), moved.contains(window), !displaysChanged, !isAbout(window, action),
+-          showsHalf(before) || (leftByHand[window].map { isWhere($0.frame, before, of: window) } == true && showsEnoughToGrab(before))
++          showsHalf(before) || aHandLeftItSo || !lookedForWindowsLast
+         {
+           problems.append(.init("own-frame", "\(window) floated in view at \(before.brief), nobody touched it, and Arbor moved it to \(now.brief)"))
+         }
+@@ -151,7 +160,7 @@ extension ChaosRunner {
+     movedByUndo.remove(window)
+     // No hand takes a window across a border without a drag, of the window or of one of its edges.
+     if wasDragged || workspacesBefore[home]?.contains(window) == true {
+-      leftByHand[window] = HandNote(frame: frame, display: controller.display(home)?.frame)
++      leftByHand[window] = HandNote(frame: frame, display: controller.display(home)?.frame, showing: Self.area(of: frame, showingOn: system.displayList))
+     }
+   }
+ 
+diff --git a/Sources/ArborTesting/ChaosInvariants+SevenRules.swift b/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
+index 501ad1e9..6f3c81ec 100644
+--- a/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
++++ b/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
+@@ -864,7 +864,8 @@ extension ChaosRunner {
+       else { continue }
+       let frame = fake.snapshot.frame
+       let showing = Self.area(of: frame, showingOn: system.displayList)
+-      guard showing < 0.5 * min(frame.area, largest),
++      // As Arbor ships, what somebody can get hold of stays, however little of it shows: Arbor acts only where nobody could (board 0.23).
++      guard showing < 0.5 * min(frame.area, largest), controller.settings.floatingWindowsMakeWay || !titleBarIsWithinReach(frame),
+         !(userPlaces[window] ?? []).contains(where: { place in system.displayList.contains { place.allows(frame, on: $0) } }),
+         // What the change took nothing from stays as it is (Q20).
+         showing < (seven.showedBeforeTheDisplaysChanged[window] ?? .infinity) - 0.01 * frame.area
+diff --git a/Sources/ArborTesting/ChaosKnownFailures.swift b/Sources/ArborTesting/ChaosKnownFailures.swift
+index 2c09da1c..8006d0a4 100644
+--- a/Sources/ArborTesting/ChaosKnownFailures.swift
++++ b/Sources/ArborTesting/ChaosKnownFailures.swift
+@@ -1156,6 +1156,7 @@ extension ChaosRunner {
+         open 109 Preview pid 1007 at 1222 256 3257 1451 min 3257 1451
+         displays main:0,0,2560,1440:25,0,0,50* side:130,1440,1920,1080:0,0,0,0 windows-late
+         shrink 46
++        shrink 46
+         """),
+     ChaosKnownFailure(
+       rule: "sized-there-and-back-floating", owner: "rule 3: a refused size costs no second move; grow and shrink of a floating window", severity: 3,
+diff --git a/Sources/ArborTesting/ChaosRunner.swift b/Sources/ArborTesting/ChaosRunner.swift
+index 1fc829b6..85076295 100644
+--- a/Sources/ArborTesting/ChaosRunner.swift
++++ b/Sources/ArborTesting/ChaosRunner.swift
+@@ -127,6 +127,8 @@ public final class ChaosRunner {
+   /// action whether floating windows made way.
+   var departures: [WindowID: Departure] = [:]
+   var leftByHand: [WindowID: HandNote] = [:]
++  /// The last command was one that asks for one's windows (`asksForItsWindows`).
++  var lookedForWindowsLast = false
+   var movedByUndo: Set<WindowID> = []
+   var madeWayBefore = false
+   /// `desktopGuardZones()` as the mouse-down tap has it: a copy, refreshed as ArborApp refreshes it.
+diff --git a/Tests/ArborCoreTests/GeometryTests.swift b/Tests/ArborCoreTests/GeometryTests.swift
+index 2c236b45..d4fa7613 100644
+--- a/Tests/ArborCoreTests/GeometryTests.swift
++++ b/Tests/ArborCoreTests/GeometryTests.swift
+@@ -84,6 +84,48 @@ import Testing
+     #expect(square.areaShowing(on: [square, square.insetBy(dx: -5, dy: -5)]) == square.area, "never more than all of it")
+   }
+ 
++  // MARK: Where it may have been before the screens changed
++
++  private static func rect(_ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloat) -> CGRect {
++    CGRect(x: x, y: y, width: width, height: height)
++  }
++
++  @Test func itWasWhereItIsMovedBackAsFarAsItsScreensCornerHasMoved() {
++    // The lid shuts: the monitor's corner goes from 1440 to 0, and macOS takes its windows along.
++    let earlier = ["laptop": Self.rect(0, 0, 1440, 900), "monitor": Self.rect(1440, 0, 2560, 1440)]
++    let window = Self.rect(2460, 300, 400, 400)
++    #expect(window.whereItMayHaveBeen(on: earlier, whichAreNow: ["monitor": Self.rect(0, 0, 2560, 1440)]) == [window, Self.rect(3900, 300, 400, 400)])
++    // A screen that only changes its size moves no corner.
++    let one = ["laptop": Self.rect(0, 0, 1440, 900)]
++    #expect(Self.rect(-250, 300, 400, 400).whereItMayHaveBeen(on: one, whichAreNow: ["laptop": Self.rect(0, 0, 1728, 1117)]) == [Self.rect(-250, 300, 400, 400)])
++  }
++
++  @Test func aScreenThatDidNotShowMostOfItThereIsNoAnswer() {
++    // The monitor on the left takes a lower resolution, its corner goes from -2560 to -1920, and its window is carried onto the laptop.
++    let earlier = ["laptop": Self.rect(0, 0, 1440, 900), "monitor": Self.rect(-2560, 0, 2560, 1440)]
++    let now = ["laptop": Self.rect(0, 0, 1440, 900), "monitor": Self.rect(-1920, 0, 1920, 1080)]
++    // Or nobody carried it. Both are answers.
++    let places = Self.rect(140, 720, 400, 400).whereItMayHaveBeen(on: earlier, whichAreNow: now)
++    #expect(Set(places.map(\.minX)) == [140, -500])
++    // Moved back with the monitor this one lay on the laptop, which is no window of the monitor's.
++    #expect(Self.rect(900, 300, 400, 400).whereItMayHaveBeen(on: earlier, whichAreNow: now) == [Self.rect(900, 300, 400, 400)])
++  }
++
++  @Test func aScreenThatHasGoneIsNotAsked() {
++    // The monitor with the menu bar is unplugged; the laptop's corner goes from -1440,540 to 0,0.
++    let earlier = ["monitor": Self.rect(0, 0, 2560, 1440), "laptop": Self.rect(-1440, 540, 1440, 900)]
++    let window = Self.rect(-300, 260, 400, 400)
++    #expect(window.whereItMayHaveBeen(on: earlier, whichAreNow: ["laptop": Self.rect(0, 0, 1440, 900)]) == [window, Self.rect(-1740, 800, 400, 400)])
++  }
++
++  @Test func whereItIsIsAlwaysAnAnswer() {
++    // Its title bar on the upper screen, its body on the lower one, which goes; and nobody has brought it over.
++    let earlier = ["upper": Self.rect(0, 0, 1440, 900), "lower": Self.rect(0, 900, 1920, 1080)]
++    let window = Self.rect(300, 870, 800, 600)
++    #expect(window.whereItMayHaveBeen(on: earlier, whichAreNow: ["upper": Self.rect(0, 0, 1440, 900)]) == [window])
++    #expect(window.whereItMayHaveBeen(on: [String: CGRect](), whichAreNow: [:]) == [window])
++  }
++
+   // MARK: Whether a hand could get hold of it
+ 
+   @Test func twentyFourPointsOfTheTitleBarAreWithinReachAndTwentyThreeAreNot() {
+diff --git a/Tests/ArborKitTests/ChaosRegressionTests.swift b/Tests/ArborKitTests/ChaosRegressionTests.swift
+index fdc5ee0c..e398ba2f 100644
+--- a/Tests/ArborKitTests/ChaosRegressionTests.swift
++++ b/Tests/ArborKitTests/ChaosRegressionTests.swift
+@@ -1088,6 +1088,57 @@ private let c = WindowID(103)
+     #expect(runner.harness.system.frameLog.isEmpty, "\(runner.harness.system.frameLog)")
+   }
+ 
++  /// The rule `displays-moved-the-untouched` (board 0.23). A strip at the left edge; the display grows, gets smaller on its other sides, is turned. As much
++  /// shows as before, and Arbor pulled the window wholly into view because its display had another size: 64 of 463 stories.
++  @Test(arguments: ["1728,1117", "1280,800", "900,1440"], ["windows-first", "windows-late", "windows-silent"])
++  func aChangeOfDisplaysThatTakesNothingFromAWindowMovesItNowhere(size: String, order: String) {
++    let runner = ChaosRunner()
++    let script = """
++      launch
++      open 101 Safari pid 1000 at 100 100 900 600 min 100 100
++      open 102 Chat pid 1001 at 800 200 400 400 min 100 100
++      move 102 -250 300 400 400
++      settle
++      advance 60
++      displays main:0,0,\(size):25,0,0,0* \(order)
++      settle
++      """
++    for action in ChaosAction.script(script) {
++      #expect(runner.step(action).isEmpty, "\(action.text)")
++      #expect(runner.counted.isEmpty, "\(action.text)")
++    }
++    #expect(runner.harness.system.frameLog.isEmpty, "\(runner.harness.system.frameLog)")
++  }
++
++  /// A payment at the wake (board 0.23). Its app hangs while the display shrinks and grows back; minutes later it wakes, and Arbor asked the window to be
++  /// where it was, or moved it by hundreds of points.
++  @Test(arguments: ["displays main:0,0,1440,900:25,0,0,0* windows-never\nsettle\nadvance 120", "advance 120"])
++  func nothingIsOwedToAWindowWhoseAppHungAtAChangeOfDisplays(then: String) {
++    let runner = ChaosRunner()
++    let script = """
++      launch
++      open 101 Safari pid 1000 at 100 100 900 600 min 100 100
++      open 102 Chat pid 1001 at 800 200 400 400 min 100 100
++      dock 101 left
++      settle
++      move 102 1280 300 400 400
++      settle
++      advance 60
++      hang 1001
++      displays main:0,0,1340,840:25,0,0,0* windows-never
++      settle
++      \(then)
++      wake 1001
++      settle
++      advance 10
++      title 102 a
++      settle
++      """
++    for action in ChaosAction.script(script) { #expect(runner.step(action).isEmpty, "\(action.text)") }
++    #expect(runner.harness.system.frame(of: WindowID(102)) == CGRect(x: 1280, y: 300, width: 400, height: 400))
++    #expect(!runner.harness.system.frameLog.contains { $0.window == WindowID(102) }, "\(runner.harness.system.frameLog)")
++  }
++
+   /// The rule `start-took-out-of-view`. Two docked, one framed, one that was never docked: the second start brought the framed view back and sent the
+   /// other two to the corner, from where the quit had just fetched them. After a summon too, whatever the view.
+   @Test(arguments: ["zoom 101", "summon Mail\nfocus 101\nshow-all"]) func aLaunchTakesNothingOutOfView(before: String) {
+diff --git a/Tests/ArborKitTests/ChaosSevenRulesTests.swift b/Tests/ArborKitTests/ChaosSevenRulesTests.swift
+index fb13aa3e..57419945 100644
+--- a/Tests/ArborKitTests/ChaosSevenRulesTests.swift
++++ b/Tests/ArborKitTests/ChaosSevenRulesTests.swift
+@@ -419,7 +419,10 @@ private let b = WindowID(102)
+     let unplug = "displays main:0,0,1440,900:25,0,0,0* windows-late"
+     #expect(!nets(after: two, then: unplug, "react", "settle").contains("displays-left-mostly-out"))
+     #expect(
+-      nets(after: two, then: unplug, "react", "settle") { _ = $0.setFrame(self.rect(1380, 300, 500, 400), of: b) }.contains("displays-left-mostly-out"))
++      nets(after: two, then: unplug, "react", "settle") { _ = $0.setFrame(self.rect(1420, 300, 500, 400), of: b) }.contains("displays-left-mostly-out"))
++    // The control: however little of it shows, what somebody can get hold of may lie there (board 0.23).
++    #expect(
++      !nets(after: two, then: unplug, "react", "settle") { _ = $0.setFrame(self.rect(1380, 300, 500, 400), of: b) }.contains("displays-left-mostly-out"))
+   }
+ 
+   @Test func aGapItsPersonDraggedLasts() {
+@@ -691,10 +694,10 @@ private let b = WindowID(102)
+   @Test func whatAChangeOfDisplaysTookNothingFromStays() {
+     let hanging = oneDocked + ["move 102 -300 300 500 400", "settle", "advance 60"]
+     #expect(!nets(after: hanging, then: "displays main:0,0,1280,800:25,0,0,0* windows-late", "settle").contains("displays-left-mostly-out"))
+-    // The same change takes most of a window that was whole.
++    // The same change takes most of a window that was whole, and its title bar out of reach.
+     let whole = oneDocked + ["move 102 900 450 500 400", "settle", "advance 60"]
+     #expect(
+-      nets(after: whole, then: "displays main:0,0,1280,800:25,0,0,0* windows-never", "settle") { _ = $0.setFrame(self.rect(1100, 650, 500, 400), of: b) }
++      nets(after: whole, then: "displays main:0,0,1280,800:25,0,0,0* windows-never", "settle") { _ = $0.setFrame(self.rect(1262, 650, 500, 400), of: b) }
+         .contains("displays-left-mostly-out"))
+   }
+ 
+diff --git a/Tests/ArborKitTests/FloatingFrameTests.swift b/Tests/ArborKitTests/FloatingFrameTests.swift
+index e2061fa6..6aa57e9b 100644
+--- a/Tests/ArborKitTests/FloatingFrameTests.swift
++++ b/Tests/ArborKitTests/FloatingFrameTests.swift
+@@ -471,8 +471,9 @@ import Testing
+     #expect(h.system.isVisible(f), "\(h.frame(f)!)")
+   }
+ 
+-  /// A change of displays can also cut off a window that is in view. It had more than half showing, and has not now.
+-  @Test func aWindowInViewThatAChangeOfDisplaysCutOffIsFitted() {
++  /// A change of displays can also cut off a window that is in view. It had more than half showing, and has not now. It used to be fitted.
++  /// Decided otherwise (board 0.23): Arbor acts only where nobody could get hold of the window. Its person's key fetches it.
++  @Test func aWindowInViewThatAChangeOfDisplaysCutOffStaysUntilItsPersonAsks() {
+     let h = Harness(displays: [Self.display], settings: Settings())
+     let a = h.system.open(app: "Finder", frame: CGRect(x: 340, y: 120, width: 920, height: 436))
+     let f = h.system.open(app: "Terminal", frame: CGRect(x: 1100, y: 300, width: 400, height: 300))
+@@ -484,6 +485,8 @@ import Testing
+         id: DisplayID("main"), frame: CGRect(x: 0, y: 0, width: 1280, height: 800),
+         visibleFrame: CGRect(x: 0, y: 31, width: 1280, height: 691), isMain: true, isBuiltIn: true)
+     ])
++    #expect(h.frame(f) == CGRect(x: 1100, y: 300, width: 400, height: 300))
++    h.run("home")
+     #expect(h.frame(f) == CGRect(x: 880, y: 300, width: 400, height: 300))
+     #expect(h.frame(g) == CGRect(x: 100, y: 100, width: 700, height: 400), "the one that still shows is not touched")
+   }
+diff --git a/Tests/ArborKitTests/FloatingWindowTests.swift b/Tests/ArborKitTests/FloatingWindowTests.swift
+index 486615f0..00139763 100644
+--- a/Tests/ArborKitTests/FloatingWindowTests.swift
++++ b/Tests/ArborKitTests/FloatingWindowTests.swift
+@@ -191,8 +191,14 @@ import Testing
+     h.start()
+     let chosen = CGRect(x: 776, y: 135, width: 230, height: 400)
+     h.system.userMove(f, to: chosen)
++    h.scheduler.advance(by: 60)
+     h.system.setDisplays([small()])
+     h.scheduler.advance(by: 1)
++    // As Arbor ships the change itself moves nothing that a hand can get hold of (board 0.23): the key that brings windows back does.
++    if !makingWay {
++      #expect(h.frame(f) == chosen)
++      h.run("home")
++    }
+     #expect(small().visibleFrame.contains(h.frame(f)!), "\(h.frame(f)!)")
+     let a = h.system.open(app: "Mail", pid: 12)
+     h.run("dock \(a.rawValue) left")
+diff --git a/Tests/ArborKitTests/OutOfViewTests.swift b/Tests/ArborKitTests/OutOfViewTests.swift
+index 6284530e..ec6da05d 100644
+--- a/Tests/ArborKitTests/OutOfViewTests.swift
++++ b/Tests/ArborKitTests/OutOfViewTests.swift
+@@ -356,7 +356,7 @@ private let side = DisplaySnapshot(
+     small.id = DisplayID("small")
+     h.system.setDisplays([small])
+     h.scheduler.advance(by: 3)
+-    #expect(small.frame.contains(h.frame(notes)!), "\(h.frame(notes)!)")
++    // (The change itself moves nothing that a hand can get hold of, board 0.23. No Mac leaves it there.)
+     for way in ["home", "relayout", "desktop", "home"] { h.run(way) }
+     #expect(small.frame.contains(h.frame(notes)!), "\(h.frame(notes)!)")
+   }
+@@ -372,6 +372,9 @@ private let side = DisplaySnapshot(
+     h.system.userMove(notes, to: CGRect(x: 1410, y: 300, width: 500, height: 400))
+     h.system.setDisplays([main])
+     h.scheduler.advance(by: 3)
++    // A hand can get hold of it, so the change moves nothing (board 0.23). But nobody left it so: the key that brings windows back fetches it.
++    #expect(h.frame(notes) == CGRect(x: 1410, y: 300, width: 500, height: 400))
++    h.run("home")
+     #expect(main.frame.contains(h.frame(notes)!), "\(h.frame(notes)!)")
+   }
+ 
+diff --git a/Tests/ArborKitTests/RescuedWindowTests.swift b/Tests/ArborKitTests/RescuedWindowTests.swift
+index 73e68831..f8497c82 100644
+--- a/Tests/ArborKitTests/RescuedWindowTests.swift
++++ b/Tests/ArborKitTests/RescuedWindowTests.swift
+@@ -221,12 +221,15 @@ private func rect(_ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloa
+     #expect(h.controller.workspaces[upper.id]?.guests?[guest] != nil)
+   }
+ 
+-  // MARK: What macOS did not rescue is fitted (QUESTIONS, Q20: the one exception)
++  // MARK: What macOS did not rescue
+ 
+-  /// No Mac leaves it there, and Arbor copes anyway: the least move that brings it wholly into view, once. Before, 4 % of it showed and
+-  /// nothing was said.
+-  @Test func whatNobodyRescuedIsFittedInOneMove() {
+-    let world = played(Self.straddling, then: Self.theLidShuts("never") + "\nsettle")
++  /// No Mac leaves it there. 4 % of it shows, and its title bar is within reach. It used to be fitted at once; decided otherwise (board 0.23):
++  /// Arbor acts only where nobody could get hold of the window. The key that brings windows back fetches it: the least move that
++  /// brings it wholly into view, once.
++  @Test func whatNobodyRescuedStaysUntilItsPersonAsks() {
++    var world = played(Self.straddling, then: Self.theLidShuts("never") + "\nsettle")
++    #expect(world.moves(of: a) == [])
++    world.play("key down home")
+     #expect(world.frame(a) == rect(800, 840, 800, 600))
+     #expect(world.moves(of: a).count == 1)
+     #expect(world.lost == [])
+diff --git a/Tests/ArborKitTests/ReviewFloatingFrameTests.swift b/Tests/ArborKitTests/ReviewFloatingFrameTests.swift
+index 340f9b82..cdecb690 100644
+--- a/Tests/ArborKitTests/ReviewFloatingFrameTests.swift
++++ b/Tests/ArborKitTests/ReviewFloatingFrameTests.swift
+@@ -73,11 +73,13 @@ import Testing
+ 
+   // MARK: What is noted of a window goes where the window goes
+ 
+-  /// Fitted for a display that shrank. The display then moves (another one becomes the main display) and grows back.
++  /// Fitted for a display that shrank while it was out of view. The display then moves (another one becomes the main display) and grows back.
+   @Test func whatWasFittedGoesBackThoughItsDisplayMovedMeanwhile() {
+     let own = CGRect(x: 1000, y: 500, width: 400, height: 300)
+-    let (h, _, _, f) = makeHarness(f: own)
++    let (h, a, _, f) = makeHarness(f: own)
++    h.run("zoom \(a.rawValue)")
+     h.system.setDisplays([Self.display("main", CGRect(x: 0, y: 0, width: 1024, height: 768), isMain: true)])
++    h.run("back")
+     let fitted = h.frame(f)!
+     #expect(fitted == CGRect(x: 624, y: 468, width: 400, height: 300))
+     // macOS takes the windows along.
+@@ -160,14 +162,24 @@ import Testing
+ 
+   // MARK: A hand's choice and a display that is another now
+ 
+-  /// The walks found it. A hand chose a strip on the display as it was. On a display of another size nobody chose anything: the displays have
+-  /// changed and less than half of the window shows, so it is fitted, though no less of it shows than did (Q20: "the price, accepted").
+-  @Test func aStripLeftByHandIsFittedWhenItsDisplayChangesItsSize() {
++  /// A hand chose a strip on the display as it was. It used to be fitted on a display of another size though no less of it showed than did
++  /// ("the price, accepted"). Decided otherwise (board 0.23): Arbor acts only where nobody could get hold of the window. And the hand's
++  /// note is good for the display as it is shaped now, so no way home pulls the strip in. Where the change takes most of the strip it
++  /// stays too, but nobody chose what is left, and the key that brings windows back fetches it.
++  @Test func aStripLeftByHandStaysWhenItsDisplayChangesItsSize() {
+     let (h, _, _, f) = makeHarness(f: CGRect(x: 800, y: 300, width: 400, height: 300))
+     let strip = CGRect(x: 1380, y: 500, width: 400, height: 300)
+     h.system.userMove(f, to: strip)
++    // (A report in the half minute before a change of displays may be macOS's own, and vouches for nothing.)
++    h.scheduler.advance(by: 60)
+     h.system.setDisplays([Self.display("main", CGRect(x: 0, y: 0, width: 1440, height: 800), isMain: true)])
+-    #expect(h.frame(f) == CGRect(x: 1040, y: 500, width: 400, height: 300))
++    #expect(h.frame(f) == strip)
++    h.run("home")
++    #expect(h.frame(f) == strip)
++    h.system.setDisplays([Self.display("main", CGRect(x: 0, y: 0, width: 1405, height: 800), isMain: true)])
++    #expect(h.frame(f) == strip)
++    h.run("home")
++    #expect(h.frame(f) == CGRect(x: 1005, y: 500, width: 400, height: 300))
+   }
+ 
+   /// The control: another display comes, its own is as it was, and the strip is still its person's.
+diff --git a/Tests/ArborKitTests/ReviewMacOSsAtAChangeOfDisplaysTests.swift b/Tests/ArborKitTests/ReviewMacOSsAtAChangeOfDisplaysTests.swift
+index aa458930..7ec9d971 100644
+--- a/Tests/ArborKitTests/ReviewMacOSsAtAChangeOfDisplaysTests.swift
++++ b/Tests/ArborKitTests/ReviewMacOSsAtAChangeOfDisplaysTests.swift
+@@ -30,6 +30,19 @@ import Testing
+     h.scheduler.advance(by: 3)
+   }
+ 
++  /// A fit as there still is one. At a change of displays nothing is fitted that somebody can get hold of (board 0.23, the second half): so it is out of
++  /// view with its Desktop while the side goes, and comes back to where less than half of it would show.
++  func fitWhileTheSideGoes(_ h: Harness, _ terminal: WindowID, _ editor: WindowID) -> CGRect {
++    h.run("dock \(editor.rawValue) left")
++    h.run("zoom \(editor.rawValue)")
++    h.scheduler.advance(by: 3)
++    h.system.changeDisplaysAsAMacDoes([Self.main])
++    h.scheduler.advance(by: 3)
++    h.run("back")
++    h.scheduler.advance(by: 40)
++    return h.frame(terminal)!
++  }
++
+   func place(of window: WindowID, _ h: Harness) -> [DisplayID: CGRect] { h.controller.workspaces.compactMapValues { $0.floating[window] } }
+   func framesSet(to window: WindowID, _ h: Harness) -> [CGRect] { h.system.frameLog.filter { $0.window == window }.map(\.frame) }
+ 
+@@ -91,9 +104,8 @@ import Testing
+   @Test func aFitDoesNotOutliveATaking() {
+     let hanging = CGRect(x: 1250, y: 690, width: 600, height: 400)
+     let (h, terminal, editor) = desk([Self.main, Self.side], terminalAt: hanging)
+-    change(h, terminal, editor, to: hanging)
+-    let fitted = h.frame(terminal)!
+-    #expect(fitted != hanging, "the situation: it was fitted")
++    let fitted = fitWhileTheSideGoes(h, terminal, editor)
++    #expect(fitted != hanging && Self.main.visibleFrame.contains(fitted), "the situation: it was fitted")
+     change(h, terminal, editor, to: Self.macOSs)
+     h.system.clearFrameLog()
+     change(h, terminal, editor, to: fitted)
+@@ -119,14 +131,18 @@ import Testing
+   // MARK: Limits that nothing held
+ 
+   /// Three quarters of it show, so it is not stranded, and its title bar is above every display: nobody could get hold of it. That is no place to take it from.
+-  @Test func whereNobodyCouldGetHoldOfItItsOwnPlaceStands() {
++  /// It used to go back to its own place. Decided since (board 0.23, the second half): it is fitted, the least move that brings it wholly into view, and
++  /// the fitted frame is what the books hold.
++  @Test func whereNobodyCouldGetHoldOfItItIsFittedAndThatIsItsPlace() {
+     var above = Self.side
+     above.frame = CGRect(x: 0, y: -1080, width: 1920, height: 1080)
+     above.visibleFrame = CGRect(x: 0, y: -1049, width: 1920, height: 1049)
+     let (h, terminal, editor) = desk([Self.main, above])
+     change(h, terminal, editor, to: CGRect(x: 400, y: -100, width: 600, height: 400), displays: [Self.main])
+-    #expect(place(of: terminal, h) == [Self.main.id: Self.own])
+-    #expect(h.frame(terminal) == Self.own)
++    let fitted = CGRect(x: 400, y: 31, width: 600, height: 400)
++    #expect(framesSet(to: terminal, h) == [fitted])
++    #expect(place(of: terminal, h) == [Self.main.id: fitted])
++    #expect(h.frame(terminal) == fitted)
+   }
+ 
+   /// Whoever lists windows by display is told that one has changed display.
+@@ -169,9 +185,8 @@ import Testing
+   @Test func whatArborFittedGoesBackToItsOwnFrame() {
+     let hanging = CGRect(x: 1250, y: 690, width: 600, height: 400)
+     let (h, terminal, editor) = desk([Self.main, Self.side], terminalAt: hanging)
+-    change(h, terminal, editor, to: hanging)
+-    let fitted = h.frame(terminal)!
+-    #expect(fitted != hanging, "the situation: it was fitted")
++    let fitted = fitWhileTheSideGoes(h, terminal, editor)
++    #expect(fitted != hanging && Self.main.visibleFrame.contains(fitted), "the situation: it was fitted")
+     change(h, terminal, editor, to: fitted)
+     #expect(place(of: terminal, h) == [Self.main.id: hanging])
+     #expect(h.frame(terminal) == hanging)
+diff --git a/Tests/ArborKitTests/WhatTheChangeTookTests.swift b/Tests/ArborKitTests/WhatTheChangeTookTests.swift
+new file mode 100644
+index 00000000..440ee388
+--- /dev/null
++++ b/Tests/ArborKitTests/WhatTheChangeTookTests.swift
+@@ -0,0 +1,396 @@
++import ArborCore
++@testable import ArborKit
++import ArborTesting
++import CoreGraphics
++import Foundation
++import Testing
++
++private let b = WindowID(102)
++
++/// What a script left behind: the world, every rule that spoke, known or not, and the frames Arbor set from the mark on.
++@MainActor private struct Played {
++  var runner = ChaosRunner()
++  var rules: [String] = []
++  var mark = 0
++
++  var system: FakeWindowSystem { runner.harness.system }
++  func frame(_ window: WindowID) -> CGRect? { system.frame(of: window) }
++  func moves(of window: WindowID) -> [CGRect] { system.frameLog[mark...].filter { $0.0 == window }.map(\.1) }
++  func share(of window: WindowID) -> CGFloat {
++    guard let frame = frame(window) else { return 0 }
++    return frame.areaShowing(on: system.displayList.map(\.frame)) / frame.area
++  }
++
++  mutating func play(_ script: String) {
++    for action in ChaosAction.script(script) { rules += runner.step(action).map(\.rule) }
++  }
++
++  mutating func markHere() { (mark, rules) = (system.frameLog.count, []) }
++}
++
++@MainActor private func played(_ script: String, then rest: String = "") -> Played {
++  var world = Played()
++  world.play(script)
++  world.markHere()
++  world.play(rest)
++  return world
++}
++
++/// A desk with a window docked and a floating one, 102, somewhere on it; and what happens to the displays then.
++struct ADeskThatChanges: CustomTestStringConvertible, Sendable {
++  var testDescription: String
++  var desk: String
++  /// Where the docked window and the floating one open: on the display the story is about.
++  var opens = (docked: "100 100", floating: "800 200")
++  var size = "400 400 min 100 100"
++  /// Where a hand puts it then. Nil: it stays where its app opened it, and no hand's note vouches for anything.
++  var place: String?
++  var change: String
++
++  func before(docking: Bool = true) -> String {
++    """
++    mac-tiling off
++    displays \(desk) windows-never
++    launch
++    open 101 Safari pid 1000 at \(opens.docked) 900 600 min 100 100
++    open 102 Chat pid 1001 at \(opens.floating) \(size)
++    \(docking ? "dock 101 left" : "settle")
++    settle
++    \(place.map { "move 102 \($0) \(size.components(separatedBy: " min").first!)" } ?? "settle")
++    settle
++    advance 60
++    """
++  }
++
++  func after(_ order: String) -> String { "displays \(change) \(order)\nsettle\nadvance 30\nsettle" }
++
++  /// The change takes nothing from the window: as much of it shows afterwards, and its title bar is where it was.
++  static let thatTakeNothing: [ADeskThatChanges] = [
++    .init(testDescription: "the display grows", desk: "main:0,0,1440,900:25,0,0,0*", place: "-250 300", change: "main:0,0,1728,1117:25,0,0,0*"),
++    .init(
++      testDescription: "the display gets smaller on its other sides", desk: "main:0,0,1440,900:25,0,0,0*", place: "-250 300",
++      change: "main:0,0,1280,800:25,0,0,0*"),
++    .init(testDescription: "the display is turned", desk: "main:0,0,1440,900:25,0,0,0*", place: "-250 300", change: "main:0,0,900,1440:25,0,0,0*"),
++    .init(
++      testDescription: "the display grows and its neighbour goes", desk: "main:0,0,1440,900:25,0,0,0* side:1440,0,1280,720:25,0,0,0", place: "-250 300",
++      change: "main:0,0,1728,1117:25,0,0,0*"),
++    .init(
++      testDescription: "a neighbour comes, above", desk: "main:0,0,1440,900:25,0,0,0*", place: "-250 300",
++      change: "main:0,0,1728,1117:25,0,0,0* side:0,-720,1280,720:25,0,0,0"),
++    .init(
++      testDescription: "the lid shuts, and every corner moves", desk: "main:0,0,1440,900:25,0,0,0* side:1440,0,2560,1440:25,0,0,0",
++      opens: ("1600 100", "2000 200"), place: "3900 300", change: "side:0,0,2560,1440:25,0,0,0*"),
++    .init(
++      testDescription: "the menu bar goes to the other display", desk: "main:0,0,1440,900:25,0,0,0* side:1440,0,1920,1080:25,0,0,0",
++      opens: ("1600 100", "2000 200"), place: "3260 300", change: "main:-1440,0,1440,900:25,0,0,0 side:0,0,1920,1080:25,0,0,0*"),
++    .init(
++      testDescription: "the display with the menu bar is unplugged", desk: "side:0,0,2560,1440:25,0,0,0* main:-1440,540,1440,900:25,0,0,0",
++      opens: ("-1300 700", "-900 800"), place: "-1740 800", change: "main:0,0,1440,900:25,0,0,0*"),
++    .init(testDescription: "the Dock comes", desk: "main:0,0,1440,900:25,0,0,0*", place: "1280 300", change: "main:0,0,1440,900:25,0,80,0*"),
++    .init(testDescription: "four points narrower, a hundredth", desk: "main:0,0,1440,900:25,0,0,0*", place: "1320 300", change: "main:0,0,1436,900:25,0,0,0*"),
++    .init(
++      testDescription: "wider than every display, which it covers from edge to edge", desk: "main:0,0,1440,900:25,0,0,0*", opens: ("100 100", "0 100"),
++      size: "3000 300 min 3000 300", place: "-800 100", change: "main:0,0,1280,800:25,0,0,0*"),
++    .init(
++      testDescription: "where its app opened it, its title bar above the top before and after, and the Dock comes", desk: "main:0,0,1440,900:25,0,0,0*",
++      opens: ("100 100", "900 -40"), place: nil, change: "main:0,0,1440,900:25,0,80,0*"),
++  ]
++
++  /// The change takes most of what showed, and a hand can still get hold of the window.
++  static let thatTakeMostOfWhatShowed: [ADeskThatChanges] = [
++    .init(testDescription: "a strip loses most of what showed", desk: "main:0,0,1440,900:25,0,0,0*", place: "1280 300", change: "main:0,0,1340,840:25,0,0,0*"),
++    .init(testDescription: "wholly in view, and a quarter is left", desk: "main:0,0,1440,900:25,0,0,0*", place: "1000 300", change: "main:0,0,1100,800:25,0,0,0*"),
++    .init(testDescription: "five points narrower, more than a hundredth", desk: "main:0,0,1440,900:25,0,0,0*", place: "1320 300", change: "main:0,0,1435,900:25,0,0,0*"),
++    .init(
++      testDescription: "a lower resolution carries it under the neighbour's bottom", desk: "main:0,0,1440,900:25,0,0,0* side:-2560,0,2560,1440:25,0,0,0",
++      opens: ("-2400 100", "-1500 200"), place: "-500 720", change: "main:0,0,1440,900:25,0,0,0* side:-1920,0,1920,1080:25,0,0,0"),
++  ]
++
++  /// (But for the window that macOS carries across a border: it is the other display's then, and macOS does not carry it back.)
++  static let thereAndBack = thatTakeNothing + thatTakeMostOfWhatShowed.filter { !$0.desk.contains("side") }
++
++  /// macOS itself lets no window lie with its title bar above the top of the display that is left. Arbor copes where it did.
++  static let theDisplayWithItsTitleBarGoes = ADeskThatChanges(
++    testDescription: "the display that had its title bar goes", desk: "main:0,0,1440,900:25,0,0,0* side:0,-1080,1920,1080:25,0,0,0",
++    opens: ("100 100", "900 -40"), place: nil, change: "main:0,0,1440,900:25,0,0,0*")
++}
++
++private let orders = ["windows-first", "windows-late", "windows-silent"]
++
++/// A change of displays and the floating windows in view (board 0.23): **what macOS does to a floating window then is macOS's, and Arbor
++/// acts only where nobody could get hold of the window.** However little of it shows, one whose title bar is within reach stays. What
++/// the change took out of reach is fitted in the layout that follows the change, and in no other: nothing is owed. Whoever misses
++/// a window has ⌃⌥0.
++@MainActor @Suite struct WhatTheChangeTookTests {
++  // MARK: Within reach, it stays
++
++  @Test(arguments: ADeskThatChanges.thatTakeNothing + ADeskThatChanges.thatTakeMostOfWhatShowed, orders)
++  func whatAHandCanGetHoldOfStays(_ story: ADeskThatChanges, order: String) {
++    let world = played(story.before(), then: story.after(order))
++    #expect(world.moves(of: b) == [])
++    #expect(world.rules == [])
++  }
++
++  @Test(arguments: ADeskThatChanges.thatTakeNothing + ADeskThatChanges.thatTakeMostOfWhatShowed, orders)
++  func withNothingDockedToo(_ story: ADeskThatChanges, order: String) {
++    let world = played(story.before(docking: false), then: story.after(order))
++    #expect(world.moves(of: b) == [])
++    #expect(world.rules == [])
++  }
++
++  private static let whatComesLater = "\nopen 103 Notes pid 1002 at 300 300 300 300\ndock 103 right\nsettle\nminimize 103\nsettle\nfocus 101\nsettle\nadvance 60\nsettle"
++
++  @Test(arguments: ADeskThatChanges.thatTakeNothing + ADeskThatChanges.thatTakeMostOfWhatShowed)
++  func norDoesALaterLayoutMoveIt(_ story: ADeskThatChanges) {
++    let world = played(story.before(), then: story.after("windows-late") + Self.whatComesLater)
++    #expect(world.moves(of: b) == [])
++    #expect(world.rules == [])
++  }
++
++  // MARK: A way home
++
++  /// It is where a hand left it, with as much showing: on its display as that is shaped now, too.
++  @Test(arguments: ADeskThatChanges.thatTakeNothing, ["home", "key down show-all", "desktop", "relayout"])
++  func noWayHomeFetchesWhatLostNothing(_ story: ADeskThatChanges, way: String) {
++    // (Nobody vouches for where an app opened a window out of reach.)
++    guard story.place != nil else { return }
++    let world = played(story.before(), then: story.after("windows-late") + "\n\(way)\nsettle")
++    #expect(world.moves(of: b) == [])
++  }
++
++  /// A key that means "bring my windows back" names it. One move, wholly into view.
++  @Test(arguments: ADeskThatChanges.thatTakeMostOfWhatShowed, ["home", "key down show-all", "desktop", "relayout"])
++  func everyWayHomeFetchesWhatLostMostOfWhatShowed(_ story: ADeskThatChanges, way: String) {
++    let world = played(story.before() + "\n" + story.after("windows-late"), then: "\(way)\nsettle")
++    #expect(world.moves(of: b).count == 1)
++    #expect(world.share(of: b) > 0.995)
++  }
++
++  // MARK: Out of reach: fitted, once, at once, for good
++
++  private static let lost = ADeskThatChanges.theDisplayWithItsTitleBarGoes
++
++  @Test func whatTheChangeTookOutOfReachIsFittedAtOnce() {
++    let world = played(Self.lost.before(), then: Self.lost.after("windows-never") + Self.whatComesLater + "\nhome\nsettle")
++    #expect(world.moves(of: b) == [CGRect(x: 900, y: 25, width: 400, height: 400)])
++    #expect(world.rules == [])
++  }
++
++  /// A frame that is no place is no frame to remember: no later change of displays sends it back there.
++  @Test func whereItWasFittedIsItsFrameFromNowOn() {
++    let world = played(
++      Self.lost.before() + "\n" + Self.lost.after("windows-never"), then: "displays \(Self.lost.desk) windows-never\nsettle\nadvance 30\nzoom 101\nsettle\nback\nsettle")
++    let fitted = CGRect(x: 900, y: 25, width: 400, height: 400)
++    #expect(world.frame(b) == fitted)
++    #expect(world.runner.controller.workspaces.values.compactMap { $0.floating[b] } == [fitted])
++    #expect(world.runner.controller.fittedFrames[b] == nil)
++  }
++
++  /// The menu bar comes to a display without one, over a window that lay at its top.
++  @Test func soIsOneThatTheMenuBarCameOver() {
++    let story = ADeskThatChanges(
++      testDescription: "", desk: "main:0,0,1440,900:25,0,0,0* side:1440,0,1920,1080:0,0,0,0", opens: ("1600 100", "2400 0"), place: nil,
++      change: "main:0,0,1440,900:0,0,0,0 side:1440,0,1920,1080:25,0,0,0*")
++    let world = played(story.before(), then: story.after("windows-never"))
++    #expect(world.moves(of: b) == [CGRect(x: 2400, y: 25, width: 400, height: 400)])
++    #expect(world.runner.controller.workspaces.values.compactMap { $0.floating[b] } == [CGRect(x: 2400, y: 25, width: 400, height: 400)])
++  }
++
++  // MARK: Nothing is owed
++
++  @Test func aWindowWhoseAppHangsAtTheChangeIsLeftAsItIs() {
++    let world = played(
++      Self.lost.before() + "\nhang 1001\nsettle", then: Self.lost.after("windows-never") + "\nadvance 60\nwake 1001\nsettle\nadvance 10\ntitle 102 a\nsettle" + Self.whatComesLater)
++    #expect(world.moves(of: b) == [])
++    #expect(world.frame(b) == CGRect(x: 900, y: -40, width: 400, height: 400))
++    #expect(world.runner.controller.windowsOwedAMove == [])
++  }
++
++  @Test func norIsItAskedAnythingOnceTheDisplaysAreAsTheyWere() {
++    let world = played(
++      Self.lost.before() + "\nhang 1001\nsettle",
++      then: Self.lost.after("windows-never") + "\ndisplays \(Self.lost.desk) windows-never\nsettle\nadvance 120\nwake 1001\nsettle\nadvance 10\nfocus 102\nsettle")
++    #expect(world.moves(of: b) == [])
++    #expect(world.rules == [])
++  }
++
++  /// What its person asks for is no debt.
++  @Test func andAWayHomeFetchesIt() {
++    let world = played(Self.lost.before() + "\nhang 1001\nsettle\n" + Self.lost.after("windows-never") + "\nadvance 60\nwake 1001\nsettle", then: "home\nsettle")
++    #expect(world.moves(of: b) == [CGRect(x: 900, y: 25, width: 400, height: 400)])
++  }
++
++  /// Never lost outranks never moved.
++  @Test func whatNoDisplayShowsAtAllIsFetchedWhenItsAppWakes() {
++    let strip = ADeskThatChanges.thatTakeMostOfWhatShowed[0]
++    let world = played(
++      strip.before() + "\nhang 1001\nsettle", then: "displays main:0,0,1200,800:25,0,0,0* windows-never\nsettle\nadvance 60\nwake 1001\nsettle\nadvance 10\nsettle")
++    #expect(world.moves(of: b).count == 1)
++    #expect(world.share(of: b) > 0.995)
++  }
++
++  @Test func oneThatWasInTheDockAtTheChangeComesBackWhereItWent() {
++    let world = played(Self.lost.before() + "\nminimize 102\nsettle", then: Self.lost.after("windows-never") + "\nrestore 102\nsettle\nadvance 10\nsettle")
++    #expect(world.moves(of: b) == [])
++    #expect(world.frame(b) == CGRect(x: 900, y: -40, width: 400, height: 400))
++  }
++
++  // MARK: There and back
++
++  @Test(arguments: ADeskThatChanges.thereAndBack, orders)
++  func thereAndBackIsNothing(_ story: ADeskThatChanges, order: String) {
++    let world = played(story.before(), then: story.after(order) + "\ndisplays \(story.desk) \(order)\nsettle\nadvance 30\nsettle")
++    #expect(world.moves(of: b) == [])
++    #expect(world.rules == [])
++  }
++
++  /// It is where the hand left it, on the display the hand left it on. (A window that speaks before Arbor hears of the displays has
++  /// written over the hand's note by then: the first half's second step.)
++  @Test(arguments: ADeskThatChanges.thereAndBack, ["windows-late", "windows-silent"])
++  func andNoWayHomeHasAnythingToFetchThen(_ story: ADeskThatChanges, order: String) {
++    guard story.place != nil else { return }
++    let world = played(story.before(), then: story.after(order) + "\ndisplays \(story.desk) \(order)\nsettle\nadvance 30\nsettle\nhome\nsettle\nrelayout\nsettle")
++    #expect(world.moves(of: b) == [])
++    #expect(world.rules == [])
++  }
++
++  /// Through a shape on which more of it shows, and one on which it lies well.
++  @Test(arguments: orders) func theHandsNoteOutlastsOtherShapes(order: String) {
++    let story = ADeskThatChanges(testDescription: "", desk: "main:0,0,1440,900:25,0,0,0*", size: "600 400 min 100 100", place: "1340 300", change: "main:0,0,1512,982:25,0,0,0*")
++    let world = played(
++      story.before(),
++      then: story.after(order) + "\nhome\nsettle\ndisplays main:0,0,1728,1117:25,0,0,0* \(order)\nsettle\nadvance 60\ndisplays \(story.desk) \(order)\nsettle\nadvance 60\nhome\nsettle")
++    #expect(world.moves(of: b) == [])
++    #expect(world.rules == [])
++  }
++
++  /// Fitted because the change took it out of reach from where a hand had left it, it goes back when the display is as it was.
++  /// (macOS itself fetches such a window. Arbor copes where it did not.)
++  @Test func whatAHandLeftWhereItIsOutOfReachNowGoesBackThere() {
++    let story = ADeskThatChanges(testDescription: "", desk: "main:0,0,1440,900:25,0,0,0*", place: "800 870", change: "main:0,0,1440,880:25,0,0,0*")
++    let world = played(story.before(), then: story.after("windows-never") + "\ndisplays \(story.desk) windows-never\nsettle\nadvance 30\nsettle")
++    #expect(world.moves(of: b) == [CGRect(x: 800, y: 480, width: 400, height: 400), CGRect(x: 800, y: 870, width: 400, height: 400)])
++    #expect(world.rules == [])
++  }
++
++  // MARK: What an adversarial read found
++
++  /// Its app hangs while its display goes and comes back, so it cannot go home. It is taken from where it lies, display and all: Arbor took
++  /// it out of view with the other display's view, and moved it twice at the next unplugging.
++  @Test(arguments: ["windows-late", "windows-silent"]) func whatCouldNotGoHomeBelongsWhereItLies(order: String) {
++    let two = "main:0,0,1440,900:25,0,0,0* side:1440,0,1920,1080:25,0,0,0"
++    let world = played(
++      """
++      mac-tiling off
++      displays \(two) windows-never
++      launch
++      open 102 Chat pid 1001 at 2000 300 400 400 min 100 100
++      open 103 Notes pid 1002 at 1700 300 500 400 min 100 100
++      dock 103 left
++      settle
++      hang 1001
++      displays main:0,0,1440,900:25,0,0,0* \(order)
++      settle
++      advance 5
++      displays \(two) \(order)
++      settle
++      advance 5
++      wake 1001
++      settle
++      advance 60
++      """,
++      then: "cursor 1800 400\nzoom 103\nsettle\nhome\nsettle\ndisplays main:0,0,1440,900:25,0,0,0* \(order)\nsettle\ndisplays \(two) \(order)\nsettle")
++    #expect(world.moves(of: b) == [])
++    #expect(world.runner.controller.workspaces[DisplayID("main")]?.floating[b] == world.frame(b))
++  }
++
++  /// The menu bar comes over a window in the Dock, which comes back behind it. A report about the Dock in between made good a note that was
++  /// good for another shape of the display, and no way home fetched the window.
++  @Test(arguments: orders) func aReportAboutTheDockVouchesForNothing(order: String) {
++    let world = played(
++      """
++      mac-tiling off
++      displays main:0,0,1440,900:25,0,0,0* side:1440,0,1920,1080:0,0,0,0 windows-never
++      launch
++      open 102 Chat pid 1001 at 2000 300 400 400 min 100 100
++      settle
++      move 102 2000 2 400 400
++      settle
++      advance 60
++      minimize 102
++      settle
++      displays main:0,0,1440,900:25,0,0,0* side:1440,0,1600,900:25,0,0,0 \(order)
++      settle
++      advance 60
++      restore 102
++      settle
++      advance 60
++      displays main:0,0,1440,900:25,0,70,0* side:1440,0,1600,900:25,0,0,0 \(order)
++      settle
++      """, then: "home\nsettle")
++    #expect(world.moves(of: b) == [CGRect(x: 2000, y: 25, width: 400, height: 400)])
++  }
++
++  /// Whoever speaks first, the end is the same: macOS's own early report passed for a hand's, and vouched for 35 %.
++  @Test(arguments: ["windows-first", "windows-late", "windows-silent"]) func anEarlyReportVouchesForNothing(order: String) {
++    let world = played(
++      """
++      mac-tiling off
++      displays main:0,0,1440,900:25,0,0,0* side:1440,0,1920,1080:25,0,0,0 windows-never
++      launch
++      open 102 Chat pid 1001 at 2900 300 400 400 min 100 100
++      open 103 Notes pid 1002 at 1800 300 400 400 min 100 100
++      settle
++      advance 60
++      displays main:0,0,1440,900:25,0,0,0* side:1440,0,1600,900:25,0,0,0 windows-late
++      settle
++      advance 120
++      displays main:0,0,1440,900:25,0,0,0* side:1440,200,1600,900:25,0,0,0 \(order)
++      settle
++      advance 60
++      """, then: "home\nsettle")
++    #expect(world.moves(of: b) == [CGRect(x: 2640, y: 500, width: 400, height: 400)])
++  }
++
++  /// Its person asks while its app still hangs: that is owed.
++  @Test func anAskMadeWhileItsAppHangsIsServedWhenThatWakes() {
++    let strip = ADeskThatChanges.thatTakeMostOfWhatShowed[1]
++    let world = played(strip.before() + "\nhang 1001\n" + strip.after("windows-never"), then: "home\nsettle\nwake 1001\nsettle\nadvance 60\nsettle")
++    #expect(world.moves(of: b).count == 1)
++    #expect(world.share(of: b) > 0.995)
++  }
++
++  /// A guest of a framed window is in view with its host, whatever the Desktop is.
++  @Test func noGuestIsOwedAnythingEither() {
++    let world = played(
++      """
++      mac-tiling off
++      displays \(Self.lost.desk) windows-never
++      launch
++      open 101 Editor pid 1000 at 100 100 600 600 min 100 100
++      dock 101 left
++      settle
++      zoom 101
++      settle
++      open 102 Chat pid 1001 at 900 -40 400 400 min 100 100
++      settle
++      hang 1001
++      """, then: Self.lost.after("windows-never") + "\nadvance 60\nwake 1001\nsettle\nadvance 10\nsettle")
++    #expect(world.moves(of: b) == [])
++  }
++
++  /// Nobody took it along, and its display's corner moved away from under its title bar.
++  @Test func whereItIsIsAlwaysAnAnswerToWhereItWas() {
++    let world = played(
++      """
++      mac-tiling off
++      displays main:0,0,1440,900:25,0,0,0* side:1440,0,1920,1080:25,0,0,0 windows-never
++      launch
++      open 102 Chat pid 1001 at 2000 100 400 400 min 100 100
++      settle
++      advance 60
++      """, then: "displays main:0,0,1440,900:25,0,0,0* side:1440,350,1920,1080:25,0,0,0 windows-never\nsettle\nadvance 60")
++    #expect(world.moves(of: b).count == 1)
++    #expect(world.share(of: b) > 0.995)
++  }
++}
+diff --git a/collab/parity.json b/collab/parity.json
+index 1bab08fe..699374f5 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -1731,7 +1731,7 @@
+         "whatItsPersonSizedMeanwhileKeepsPlaceAndSize",
+         "whatMacOSHadToMoveMeanwhileGoesHome",
+         "whatMacOSHasBroughtBackItselfIsNotMovedAgain",
+-        "whatNobodyRescuedIsFittedInOneMove",
++        "whatNobodyRescuedStaysUntilItsPersonAsks",
+         "whatSomebodyPlacedWhileArborWasNotLookingStays",
+         "whatWaitedWhereArborLeftItGoesHome",
+         "whenTheViewFollowsTheKeyboardEveryWindowStillMovesOnce",
+@@ -4479,10 +4479,12 @@
+       "tests": [
+         "aBlinkAndThenAWordAboutTheDock",
+         "aChangeOfDisplaysThatLeavesAWindowWhereItBelongsAsksItsAppNothing",
++        "aChangeOfDisplaysThatTakesNothingFromAWindowMovesItNowhere",
+         "aDisplayComesAndTheWindowEndsAstrideTheBorder",
+         "aDockMovesAndSizesNoFloatingWindow",
+         "aDockedWindowGoesBack",
+         "aFitDoesNotOutliveATaking",
++        "aHandThatSizesItRightAfterTheWakeIsNotOverridden",
+         "aMoveLongBeforeTheChangeStays",
+         "aMoveWithNoChangeOfDisplaysStays",
+         "aMoveWithTheButtonDownStays",
+@@ -4491,29 +4493,34 @@
+         "aNudgeWhereItWasDroppedCrossesNoBorder",
+         "aQuitInsideTheWaitSetsNothingEither",
+         "aQuitInsideTheWaitWritesDownWhereItIs",
++        "aScreenThatDidNotShowMostOfItThereIsNoAnswer",
++        "aScreenThatHasGoneIsNotAsked",
+         "aStartRemembersFloatingWindowsInViewWhereTheyAre",
+         "aStartTouchesNoFloatingWindowInView",
+-        "aStripLeftByHandIsFittedWhenItsDisplayChangesItsSize",
+         "aStripLeftByHandIsStillAStripWhenAnotherTabIsInFront",
++        "aStripLeftByHandStaysWhenItsDisplayChangesItsSize",
+         "aStripLeftByHandStaysWhenItsDisplayIsAsItWas",
+         "aStripLeftByHandThatMacOSTakesAwayAndBringsBack",
+         "aTitleBarInTheDeadCornerBetweenTwoDisplaysIsNoPlace",
+         "aWindowFloatedByCommandTakesItsOwnSizeAndIsNotSqueezedOntoTheDesktop",
+-        "aWindowInViewThatAChangeOfDisplaysCutOffIsFitted",
++        "aWindowInViewThatAChangeOfDisplaysCutOffStaysUntilItsPersonAsks",
+         "aWindowKeptInViewKeepsWhatIsRememberedOfIt",
+         "aWindowMovedByHandComesBackWhereTheHandLeftIt",
+         "aWindowOnTheDisplayThatStaysThatMacOSShuffledStaysWhereMacOSPutIt",
+         "aWindowPushedAsideByHandUntilAStripShowsComesBackToThatStrip",
+         "aWindowThatFloatsAloneIsNotStretchedOverTheDesktop",
++        "aWindowWhoseAppHangsAtTheChangeIsLeftAsItIs",
+         "aWindowWhoseEdgeIsInTheHandIsNotPulledFromUnderIt",
+         "allOfThemSpeakBeforeTheListIsNew",
+         "anOrdinaryQuitOrPauseTakesNothing",
+         "anUndoOfAnotherWindowsDockLeavesAWindowMovedDuringAPauseWhereItIs",
++        "andAWayHomeFetchesIt",
+         "broughtBackAtAnotherSizeThatIsItsFrame",
+         "commandsOnTheArrangementTouchNoFloatingWindow",
+         "dockedMeanwhileItStaysDocked",
+         "dockedWindowsComeBeforeADesktopWithAWindowOnIt",
+         "everyWayOutAndBackIsNothing",
++        "fittedItGoesBackWhenTheDisplayIsAsItWas",
+         "frameThenShowEverythingBringsEveryFloatingWindowBackToItsOwnFrame",
+         "hidingADockedWindowsAppAndShowingItTouchesNoFloatingWindow",
+         "howeverLongBefore",
+@@ -4521,16 +4528,23 @@
+         "inABlinkTooTheEndIsTheSame",
+         "inFullScreenItsFrameIsNoPlace",
+         "inTheHandItIsNotTaken",
++        "itWasWhereItIsMovedBackAsFarAsItsScreensCornerHasMoved",
+         "leftWhereItsDisplayWasItIsPlaced",
+         "lettingGoAsADisplayComesBackSendsNothingOver",
+         "lettingGoInsideTheWaitItGoesByTheDisplaysThatAre",
+         "minimizingADockedWindowAndRestoringItTouchesNoFloatingWindow",
++        "noLayoutPullsInAStripThatNobodyVouchesFor",
++        "norDoesALaterLayoutMoveIt",
++        "norIsItAskedToBeWhereItIsOnceTheDisplayIsAsItWas",
++        "nothingIsOwedToAWindowWhoseAppHungAtAChangeOfDisplays",
+         "nothingIsRaisedWhenFloatingWindowsComeBack",
++        "oneThatWasInTheDockAtTheChangeComesBackWhereItWent",
+         "oneWindowSpeaksBeforeTheListIsNew",
+         "plugAfterPlugNothingIsSet",
+         "quittingADockedWindowsAppTouchesNoFloatingWindow",
+         "quittingAndFloatAllTouchNoFloatingWindowInView",
+         "quittingWhileTheyAreOutOfViewPutsThemBackWhereTheyWere",
++        "soIsOneWhoseTitleBarTheChangeTook",
+         "takenOverAtThePlugAndBroughtBackAtTheUnplugNothingIsSet",
+         "takenOverToADisplayThatComesBackFramedItStaysInView",
+         "takenToTheOtherDisplayItBelongsThere",
+@@ -4540,6 +4554,7 @@
+         "theFitMovesItTheLeast",
+         "theLoneWindowsSettingSaysThatItNeedsTheOther",
+         "theLookOutForABlinkComesBeforeTheNews",
++        "theNetSeesWhatArborWorksOut",
+         "theOnlyWindowThatMoves",
+         "theRuleOfTheWalksSpeaksWhenAFloatingWindowComesBackElsewhere",
+         "theRuleOfTheWalksSpeaksWhenAFloatingWindowIsMovedThatNobodyTouched",
+@@ -4552,17 +4567,22 @@
+         "whatArrivesUnderAHeldViewWaitsOutOfView",
+         "whatComesAcrossABorderInNobodysHandIsFetched",
+         "whatItsPersonPushedAsideStaysAtAPauseAResumeAQuitAndAStart",
++        "whatLostItsPlaceIsFittedAtOnce",
++        "whatLostNothingStays",
+         "whatMacOSOnlyShuffledStaysThoughItsPlaceHadLostNothing",
++        "whatNoDisplayShowsAtAllIsFetchedWhenItsAppWakes",
+         "whatNobodyCouldGetHoldOfIsFetchedAtAPause",
+         "whatTheWalksFound",
+         "whatWasFittedGoesBackThoughAnotherTabIsInFront",
+         "whatWasFittedGoesBackThoughItsDisplayMovedMeanwhile",
+         "whenTheSettingGoesOffAWindowThatWasPushedAsideGoesBackToTheStripItsPersonLeft",
+         "whereFloatingWindowsMakeWayTheLayoutPlacesThem",
++        "whereItIsIsAlwaysAnAnswer",
+         "whereNobodyCouldGetHoldOfItArborActs",
+-        "whereNobodyCouldGetHoldOfItItsOwnPlaceStands",
++        "whereNobodyCouldGetHoldOfItItIsFittedAndThatIsItsPlace",
+         "whoSpokeFirstComesBackWithItsDisplay",
+         "whoeverListsWindowsIsTold",
++        "withNothingDockedToo",
+         "withTheSettingOnADockShovesAndSqueezesAsItDidOnTheDay",
+         "withTheSettingOnEachOfThoseStepsMovesFloatingWindows"
+       ]
+diff --git a/collab/scenarios/24-the-lid-shuts-under-a-window.sim b/collab/scenarios/24-the-lid-shuts-under-a-window.sim
+index 03891b77..cecaf0e1 100644
+--- a/collab/scenarios/24-the-lid-shuts-under-a-window.sim
++++ b/collab/scenarios/24-the-lid-shuts-under-a-window.sim
+@@ -25,8 +25,9 @@ expect above 101 102
+ home
+ wait 3
+ expect above 101 102
+-# The lid opens and Notes is let go across the two again. This time nobody rescues it, which no Mac does; Arbor copes anyway:
+-# of a window that nobody left so, less than half is never all that shows.
++# The lid opens and Notes is let go across the two again. This time nobody rescues it, which no Mac does. A strip of it is left, with
++# its title bar: somebody can get hold of it, so Arbor moves nothing (board 0.23). Nobody left it so, and the key that brings windows
++# back fetches it.
+ displays 2 below
+ wait 3
+ drag 101 700 880
+@@ -34,4 +35,6 @@ wait 3
+ expect visible 101
+ displays 1
+ wait 3
++expect still
++press home
+ expect visible 101
+diff --git a/collab/scenarios/71-the-displays-change-and-a-strip-stays.sim b/collab/scenarios/71-the-displays-change-and-a-strip-stays.sim
+new file mode 100644
+index 00000000..1505db38
+--- /dev/null
++++ b/collab/scenarios/71-the-displays-change-and-a-strip-stays.sim
+@@ -0,0 +1,54 @@
++# Proposed by the swarm (2026-10-15, board 0.23); the documenter may edit or drop it.
++# Story: Safari is docked. Chat is pushed aside by hand until a strip of it shows at the left edge of the screen. Then the displays
++# change, as they do all day: another resolution, a monitor plugged in and unplugged, the resolution as it was. As much of Chat
++# shows after each as before, so nothing moves. Arbor used to pull it wholly into view whenever its display had another size.
++# Then the strip is at the right edge and the screen gets narrower: most of the strip is gone. A hand can still get hold of Chat, so it
++# stays: what a change of displays does to a floating window is macOS's. Whoever misses it presses the key that brings windows back.
++# Reference: board 0.23: Arbor acts only where nobody could get hold of the window.
++quiet
++open Safari
++open Chat 400x400 at 800 200
++dock 101 left
++drag 102 -50 310
++wait 5
++expect at 102 -250 300
++
++# It only grows.
++display-size 1728x1117
++wait 5
++expect still
++expect at 102 -250 300
++# Smaller than it ever was, on the sides the strip is not on.
++display-size 1280x800
++wait 5
++expect at 102 -250 300
++# A monitor comes and goes.
++plug side right
++wait 5
++expect at 102 -250 300
++unplug side
++wait 5
++expect at 102 -250 300
++display-size 1440x900
++wait 5
++expect at 102 -250 300
++# The way home has nothing to fetch: it is where a hand left it.
++press home
++expect at 102 -250 300
++
++# The other edge, and this time the change takes most of what showed.
++drag 102 1480 310
++wait 5
++expect at 102 1280 300
++display-size 1340x840
++wait 5
++expect still
++expect at 102 1280 300
++# Nothing that happens by itself fetches it.
++open Notes 300x300
++wait 5
++expect at 102 1280 300
++# Its person does.
++press home
++expect at 102 940 300
++expect visible 102
+diff --git a/docs/ARCHITECTURE.md b/docs/ARCHITECTURE.md
+index 29e61366..adcb6037 100644
+--- a/docs/ARCHITECTURE.md
++++ b/docs/ARCHITECTURE.md
+@@ -110,7 +110,14 @@ remembered stays its own frame (`fittedFrames`), so that it goes back when the d
+ also displaces windows that are in view, and macOS itself moves and resizes some on the display that stays. What macOS does to a
+ floating window then is macOS's: once Arbor is told, and after a blink, `takeFloatingWindowsFromWhereTheyAre` takes each one in view
+ from where it is, by the displays that are (its place, its size, the display it belongs to), and sets no frame.
+-`countAsOutOfViewWhatTheDisplaysDisplaced` says which the layout then fetches all the same: what Arbor had fitted, and what is no place.
++`countAsOutOfViewWhatTheDisplaysDisplaced` says which the layout then fetches all the same: what Arbor had fitted, and what the change
++took out of sight or out of reach (`theChangeTook`). What stays is a window from which the change took nothing, whoever put it there.
++That is worked out afterwards, from the displays alone: `CGRect.whereItMayHaveBeen` says where a window was before the screens
++changed, and the two measures there are (`areaShowing`, `titleBarIsWithinReach`) are asked of the displays as they were and as they
++are. A hand's note goes along with its display's shape for as long as no less shows than the hand left showing. That layout and no
++other: a window that could not be moved then, because its app hung or it was in the Dock, is owed nothing
++(`leaveAsItIsWhatCouldNotBeMoved`), and is fetched when its person asks, with ⌃⌥0, Show Everything, the Desktop or `relayout`
++(`isLookingForWindows`); what no display shows at all is fetched by any layout, as ever.
+ For F61 the Desktop counts as not in use (`roomTerms`), and F18 is off (`soleFloatIsOn`). A command that is about a floating
+ window (`float`, `grow`, `move-to-display`, `undo`) may put it anywhere on the display (`roomToFloat`).
+ 

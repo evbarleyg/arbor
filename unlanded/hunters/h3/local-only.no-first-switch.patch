@@ -1,0 +1,15 @@
+diff --git a/Sources/ArborTesting/ChaosGenerator+Ordinary.swift b/Sources/ArborTesting/ChaosGenerator+Ordinary.swift
+index 748bea3..69f9cd3 100644
+--- a/Sources/ArborTesting/ChaosGenerator+Ordinary.swift
++++ b/Sources/ArborTesting/ChaosGenerator+Ordinary.swift
+@@ -270,7 +270,9 @@ extension ChaosGenerator {
+     case .displays:
+       desk.plugged = random.pick(Desk.Plugged.allCases.filter { $0 != desk.plugged })!
+       thenAMoment([.settle])
+-      return .displays(desk.displays, random.pick([.late, .silent, .first])!)
++      // LOCAL, for a hunt only: `ARBOR_CHAOS_NO_FIRST=1` leaves out the order that nobody has measured on a Mac.
++      let orders: [ChaosAction.WindowsFollow] = ProcessInfo.processInfo.environment["ARBOR_CHAOS_NO_FIRST"] == "1" ? [.late, .silent] : [.late, .silent, .first]
++      return .displays(desk.displays, random.pick(orders)!)
+     case .cursor: return .cursor(point(in: world))
+     }
+   }

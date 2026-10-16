@@ -1,0 +1,662 @@
+From 36096ace87fea3c206d8323431f433ae9245cc41 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 13:24:15 +0000
+Subject: [PATCH] test: the stand-in's Dock makes room for a window that goes
+ into it, as hosted Macs were recorded
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+On a Mac a Dock that is full gets smaller when a window goes into it and larger when one leaves, and the visible frame changes with it. The
+stand-in's minimize said nothing of the displays. From 826 recordings, 164 minimizes and restores that stand alone:
+
+- A Dock lower than 78 points changed its size at every one that could be seen: 100 of 100 on 1024×768, 4 of 4 on 1600×900. One of 78, its
+  full size, at 8 of 56.
+- By 2 points at the bottom, by 1 at a side; in one step, with one word of macOS's about its screens, at which its list is new. The restore
+  undid it to the point, 50 of 50.
+- A window that goes in mostly speaks while macOS still has the old list (36 of 54), one that comes out under the new (50 of 58). The other
+  order can be asked for: both were recorded within one script.
+- Arbor is told as the Accessibility layer tells it, 0.35 s after the word in the middle. No time passes at the act: the news comes later, on
+  the harness's clock, and the wait is let go at every further word, as the real one is.
+
+It is played where the main display has a Dock lower than 78, which the stand-in's own display has not. That such a Dock is full is a guess
+where a person has made it small. It is switched off in the chaos lab, where no old seed is to walk another way, in the fake Mac of
+the rehearsals, whose display is a constant so far, and in the replay of a trace, which has what the Dock did. So for now it plays
+in its own tests and for whoever gives a harness such a display.
+
+`changeDisplaysAsAMacDoes`, `setDisplays` and `stop` let go of news that is on its way.
+
+What Arbor makes of it is pinned as it is: the docked neighbour of a window that goes into the Dock takes the room at once, by the visible frame
+macOS still had, and gets 2 points more when Arbor hears of the Dock: 23 of the 42 recorded minimizes at which a neighbour moved. By
+the project's measures 2 points are no move. Decided: known, and left (board 1.61).
+---
+ Sources/ArborTesting/ChaosRunner.swift        |   2 +
+ .../ArborTesting/FakeWindowSystem+Chaos.swift |   1 +
+ .../FakeWindowSystem+Displays.swift           |  70 ++++
+ Sources/ArborTesting/FakeWindowSystem.swift   |  28 ++
+ Sources/ArborTesting/Harness.swift            |   1 +
+ Sources/ArborTesting/TraceReplayer.swift      |   2 +
+ Sources/arbor-fakemac/World.swift             |   2 +
+ .../ArborKitTests/TheDockMakesRoomTests.swift | 354 ++++++++++++++++++
+ 8 files changed, 460 insertions(+)
+ create mode 100644 Tests/ArborKitTests/TheDockMakesRoomTests.swift
+
+diff --git a/Sources/ArborTesting/ChaosRunner.swift b/Sources/ArborTesting/ChaosRunner.swift
+index ec0747bd..82bdc920 100644
+--- a/Sources/ArborTesting/ChaosRunner.swift
++++ b/Sources/ArborTesting/ChaosRunner.swift
+@@ -140,6 +140,8 @@ public final class ChaosRunner {
+ 
+   public init() {
+     system.holdsEchoes = true
++    // Not in the lab yet: no old seed is to walk another way, and its nets would have to know of news that is on its way.
++    system.echoes.dockMakesRoom = false
+     harness = Harness(settings: Settings(), system: system)
+     system.events = nil  // nothing is observed until `launch`
+     displayIDsSeen = Set(system.displayList.map(\.id))
+diff --git a/Sources/ArborTesting/FakeWindowSystem+Chaos.swift b/Sources/ArborTesting/FakeWindowSystem+Chaos.swift
+index c7a117d1..293a28aa 100644
+--- a/Sources/ArborTesting/FakeWindowSystem+Chaos.swift
++++ b/Sources/ArborTesting/FakeWindowSystem+Chaos.swift
+@@ -149,6 +149,7 @@ extension FakeWindowSystem {
+     windows[new] = fake
+     nextID = max(nextID, new.rawValue &+ 1)
+     if focused == window { focused = new }
++    roomTheDockMade[new] = roomTheDockMade.removeValue(forKey: window)
+   }
+ 
+   /// `renumber(_:as:)` with the next number, which no window has had. Returns it.
+diff --git a/Sources/ArborTesting/FakeWindowSystem+Displays.swift b/Sources/ArborTesting/FakeWindowSystem+Displays.swift
+index 003798a6..2d085d3d 100644
+--- a/Sources/ArborTesting/FakeWindowSystem+Displays.swift
++++ b/Sources/ArborTesting/FakeWindowSystem+Displays.swift
+@@ -60,6 +60,8 @@ extension FakeWindowSystem {
+       passTime?(ahead)
+     }
+     displayList = displays
++    // macOS's word about its screens, at which the layer lets go of whatever it was waiting to tell. Its new wait is played below.
++    later?(Self.newsOfTheScreens, 0, nil)
+     // Not the first again: what macOS makes of a window that Arbor has set meanwhile nobody has recorded.
+     for move in moves where move.window != first { moveSilently(move.window, to: move.frame) }
+     var (pauses, passed) = ([0.03, 0.05][...], 0.0)
+@@ -129,3 +131,71 @@ extension FakeWindowSystem {
+     return list.filter(\.isMain) + list.filter { !$0.isMain }
+   }
+ }
++
++// MARK: The Dock makes room
++
++extension FakeWindowSystem {
++  /// What is `later` is called while Arbor has not been told yet of a list that macOS has already.
++  static let newsOfTheScreens = "macOS has spoken of its screens"
++
++  /// A window goes into the Dock. From 826 recordings of hosted Macs (all but one macOS 26.6), 164 minimizes and restores that stand alone, all of test windows
++  /// where the display is the small one:
++  ///
++  /// - A Dock lower than 78 points, or narrower at a side, changed its size at every one that could be seen: 100 of 100 on 1024×768, where it was 58 to 63 high or 50
++  ///   wide, and 4 of 4 on 1600×900, where it was 73 and 75 high. One of 78, on 1600×900 and 1920×1080, at 8 of 56: that is its full size, it has
++  ///   room, and what parts the 8 from the 48 looks like one more app in it. (The 48 rest on macOS's silence: no word, no news, one value all
++  ///   through 22 recordings.) So a Dock lower than 78 is taken to be squeezed, and full. A person can make a Dock small that has
++  ///   room: nobody has recorded one, and there this is a guess. `dockIsFull` says otherwise.
++  /// - It is the main display's, and the Dock's side of it alone. At the bottom the height grew by 2 at a minimize (43 times; by 1 five times, further up the
++  ///   ladder, which is not played); at a side the width by 1 (2 and 2, in two runs). The restore of the same window undid it to the
++  ///   point, 50 of the 50 that had something to undo.
++  /// - In one step. Of the 112 that have a word of macOS's about its screens at all each has one, and macOS's list is new at that word: no look before
++  ///   it had the new list, the nearest 6 ms before, and none after it the old, the nearest 1 ms after.
++  /// - Arbor is told as the Accessibility layer tells it (`macOSSpeaksOfItsScreens`): 0.35 s after the word in the middle. No time passes here: that
++  ///   comes `later`. Between a window's report and the word no timer of Arbor's ran that lays anything out.
++  ///
++  /// A display without a Dock, as `standardDisplay` is, was never recorded: nothing happens there. Not played either: what an app does that joins or leaves the
++  /// Dock (674 to 677, once); several windows at once (four in 1.2 s: three words, +1 +3 +1), against which each counts alike here; a window that
++  /// fills the visible frame and that macOS itself makes higher with it (once); a Dock that is hidden or on another display; news that came
++  /// late or never because Arbor was busy.
++  ///
++  /// A list of displays that a caller gives while a window is in the Dock is taken to be the list with that window in it: when it leaves, the Dock takes its 2 points
++  /// from that list.
++  func theDockTakes(_ window: WindowID) {
++    guard echoes.dockMakesRoom, roomTheDockMade[window] == nil, let main = displayList.firstIndex(where: \.isMain) else { return }
++    let (frame, visible) = (displayList[main].frame, displayList[main].visibleFrame)
++    let (bottom, left, right) = (frame.maxY - visible.maxY, visible.minX - frame.minX, frame.maxX - visible.maxX)
++    let dock = max(bottom, left, right)
++    guard dock > 2, dockIsFull ?? (dock < 78) else { return }
++    let change =
++      dock == bottom ? CGRect(x: 0, y: 0, width: 0, height: 2) : CGRect(x: dock == left ? -1 : 0, y: 0, width: 1, height: 0)
++    roomTheDockMade[window] = (displayList[main].id, change)
++    theVisibleFrame(of: displayList[main].id, changesBy: change, 1)
++  }
++
++  /// A window leaves the Dock, which takes back what it gave up for that window, on the display where it gave it. Nothing, for one that was in it from the beginning.
++  func theDockLetsGo(of window: WindowID) {
++    guard let made = roomTheDockMade.removeValue(forKey: window) else { return }
++    theVisibleFrame(of: made.display, changesBy: made.change, -1)
++  }
++
++  private func theVisibleFrame(of display: DisplayID, changesBy change: CGRect, _ sign: CGFloat) {
++    guard let index = displayList.firstIndex(where: { $0.id == display }) else { return }
++    let visible = displayList[index].visibleFrame
++    displayList[index].visibleFrame = CGRect(
++      x: visible.minX + sign * change.minX, y: visible.minY, width: visible.width + sign * change.width, height: visible.height + sign * change.height)
++    macOSSpeaksOfItsScreens()
++  }
++
++  /// What the Accessibility layer does at a word of macOS's about its screens (`AXWindowSystem.screensChanged`): it lets go of what it was waiting for, waits anew if the
++  /// list is another than Arbor was last told, and looks again when the time has come.
++  func macOSSpeaksOfItsScreens() {
++    later?(Self.newsOfTheScreens, 0, nil)
++    guard started, let quiet = DisplayChange.settleTime(from: displaysLastTold, to: displayList) else { return }
++    let tell: @MainActor () -> Void = { [weak self] in
++      guard let self, started, DisplayChange.settleTime(from: displaysLastTold, to: displayList) != nil else { return }
++      setDisplays(displayList)
++    }
++    if let later { later(Self.newsOfTheScreens, quiet + 0.05, tell) } else { tell() }
++  }
++}
+diff --git a/Sources/ArborTesting/FakeWindowSystem.swift b/Sources/ArborTesting/FakeWindowSystem.swift
+index a55a23c1..b63896e4 100644
+--- a/Sources/ArborTesting/FakeWindowSystem.swift
++++ b/Sources/ArborTesting/FakeWindowSystem.swift
+@@ -245,6 +245,9 @@ public final class FakeWindowSystem: WindowSystem {
+   public private(set) var focusedWindowReads = 0
+   /// Lets simulated time pass while a drag rests at a point. `Harness` points it at its scheduler.
+   public var passTime: ((Double) -> Void)?
++  /// Does something later, without any time passing now; asked again under the same name, it forgets the first; given nothing to do, it only
++  /// forgets. `Harness` points it at its scheduler. Without it, what would come later comes at once.
++  public var later: ((String, Double, (@MainActor () -> Void)?) -> Void)?
+   /// The window being dragged by its title bar, from `beginDrag` to `endDrag`: where it was and
+   /// where on it the pointer took hold.
+   var inHand: (window: WindowID, start: CGRect, grab: CGPoint)?
+@@ -272,10 +275,18 @@ public final class FakeWindowSystem: WindowSystem {
+   }
+   /// The displays Arbor was last told of, or found at its start: what the real layer holds a change against (`changeDisplaysAsAMacDoes`).
+   public internal(set) var displaysLastTold: [DisplaySnapshot] = []
++  /// Whether the Dock has no room left, so that it changes its size with what is in it (`theDockTakes`). Nil: it is told by its size.
++  public var dockIsFull: Bool?
++  /// What the Dock gave up for each window that is in it, and on which display: that is what it takes back.
++  var roomTheDockMade: [WindowID: (display: DisplayID, change: CGRect)] = [:]
++  /// The order that was recorded less often: the Dock makes room before a window that enters it has spoken (18 of 54), and after one that
++  /// leaves it has (8 of 58). Both orders were recorded within one script.
++  public var theDockSpeaksTheOtherWay = false
+   /// The real one lets go of every app, so what the apps were about to report of Arbor's last moves is never heard.
+   public func stop() {
+     started = false
+     undelivered.removeAll()
++    later?(Self.newsOfTheScreens, 0, nil)
+   }
+   /// How often it was started: each start of the real one asks every running app for its windows.
+   public private(set) var starts = 0
+@@ -615,6 +626,8 @@ public final class FakeWindowSystem: WindowSystem {
+   }
+ 
+   public func close(_ window: WindowID) {
++    // A guess: nobody has recorded a window that closes in the Dock.
++    theDockLetsGo(of: window)
+     // Nobody hears of a window that closes where the Accessibility API never saw it.
+     if unlisted.removeValue(forKey: window) != nil { return }
+     guard windows[window] != nil else { return }
+@@ -633,8 +646,13 @@ public final class FakeWindowSystem: WindowSystem {
+       landInTheDock(window)
+       return reportTheLanding()
+     }
++    // Mostly the Dock has taken its room back by the time a window that leaves it speaks.
++    let theDockIsFirst = !theDockSpeaksTheOtherWay || restoresLate
++    // Unless Arbor has had it in again in answer to its report.
++    defer { if !theDockIsFirst, windows[window]?.snapshot.isMinimized == false { theDockLetsGo(of: window) } }
+     // The focus report comes first: of the window flying out of the Dock.
+     if echoes.keyboard { giveKeyboard(to: window) }
++    if theDockIsFirst { theDockLetsGo(of: window) }
+     windows[window]!.snapshot.isMinimized = false
+     landings[window] = echoes.flightFromTheDock > 0 ? clock() + echoes.flightFromTheDock : nil
+     if restoresLate { return lateRestores.append(window) }
+@@ -645,6 +663,7 @@ public final class FakeWindowSystem: WindowSystem {
+   /// Raised, a window comes out of the Dock, whether it has been there for an hour or has only just landed. Returns whether it did.
+   func comesOutOfTheDockIfRaised(_ window: WindowID) -> Bool {
+     guard windows[window]?.snapshot.isMinimized == true else { return false }
++    theDockLetsGo(of: window)
+     windows[window]!.snapshot.isMinimized = false
+     landings[window] = echoes.flightFromTheDock > 0 ? clock() + echoes.flightFromTheDock : nil
+     return true
+@@ -669,6 +688,9 @@ public final class FakeWindowSystem: WindowSystem {
+     unreportedLanding = nil
+     guard let fake = windows[window] else { return }
+     if !fake.snapshot.isMinimized { deliverEchoes() }
++    // Mostly the Dock makes room after the window that has entered it has spoken. Not for one that has been fetched out again, by now or in answer to the report.
++    if theDockSpeaksTheOtherWay, fake.snapshot.isMinimized { theDockTakes(window) }
++    defer { if !theDockSpeaksTheOtherWay, windows[window]?.snapshot.isMinimized == true { theDockTakes(window) } }
+     events?.windowChanged(windows[window]!.snapshot, userInitiated: true)
+     deliverEchoes()
+   }
+@@ -822,6 +844,7 @@ public final class FakeWindowSystem: WindowSystem {
+     displayList = displays
+     for id in windows.keys { windows[id]!.placeIsArborsDoing = true }
+     if events != nil { displaysLastTold = displays }
++    later?(Self.newsOfTheScreens, 0, nil)
+     events?.displaysChanged()
+   }
+ 
+@@ -1008,6 +1031,9 @@ extension FakeWindowSystem {
+     /// Measured without Arbor: read right after Accessibility's answer, the list was behind in 143 results of 170; after 62 to 146 ms it
+     /// had caught up in 165, after 200 ms in all.
+     public var listIsBehind = 0.15
++    /// A Dock that is full gets smaller when a window goes into it and larger when one leaves, and the visible frame changes with it
++    /// (`theDockTakes`).
++    public var dockMakesRoom = true
+ 
+     public init() {}
+     /// Nothing happens that a test did not ask for.
+@@ -1016,6 +1042,7 @@ extension FakeWindowSystem {
+       (echoes.focus, echoes.frames, echoes.keyboard, echoes.wholePoints) = (false, false, false, false)
+       (echoes.titleBarStaysReachable, echoes.growsNoFurtherThanTheScreen) = (false, false)
+       echoes.listIsBehind = 0
++      echoes.dockMakesRoom = false
+       return echoes
+     }
+   }
+@@ -1302,6 +1329,7 @@ extension FakeWindowSystem {
+     backgroundTabs[front] = old
+     windows[tab] = fake
+     if focused == front { focused = tab }
++    roomTheDockMade[tab] = roomTheDockMade.removeValue(forKey: front)
+     events?.windowReplaced(front, by: fake.snapshot)
+   }
+ 
+diff --git a/Sources/ArborTesting/Harness.swift b/Sources/ArborTesting/Harness.swift
+index ba6d3e63..887e30ee 100644
+--- a/Sources/ArborTesting/Harness.swift
++++ b/Sources/ArborTesting/Harness.swift
+@@ -82,6 +82,7 @@ public final class Harness {
+     mac.didChange = { [unowned mac, unowned system] in system.tiling = MacTiling(mac.on) }
+     // Time also passes while a simulated drag rests at a point.
+     system.passTime = { [scheduler] in scheduler.advance(by: $0) }
++    system.later = { [scheduler] name, seconds, work in if let work { scheduler.schedule(name, after: seconds, work) } else { scheduler.cancel(name) } }
+     firstMark = system.moveLog.count
+   }
+ 
+diff --git a/Sources/ArborTesting/TraceReplayer.swift b/Sources/ArborTesting/TraceReplayer.swift
+index 9d51ed49..ad58acc6 100644
+--- a/Sources/ArborTesting/TraceReplayer.swift
++++ b/Sources/ArborTesting/TraceReplayer.swift
+@@ -253,6 +253,8 @@ public final class TraceReplayer {
+       interpose: { fake in
+         bridge.fake = fake
+         fake.framePlan = header.framePlan
++        // What the Dock did is in the recording.
++        fake.echoes.dockMakesRoom = false
+         return bridge
+       })
+     bridge.replayer = self
+diff --git a/Sources/arbor-fakemac/World.swift b/Sources/arbor-fakemac/World.swift
+index a741c46c..00259d88 100644
+--- a/Sources/arbor-fakemac/World.swift
++++ b/Sources/arbor-fakemac/World.swift
+@@ -196,6 +196,8 @@ final class World {
+     self.socket = socket
+     self.display = display
+     system = FakeWindowSystem(displays: [display])
++    // The fake Mac's Dock keeps its size so far: `display` is a constant that much here goes by, and the news would have to come on the world's clock.
++    system.echoes.dockMakesRoom = false
+     system.cursor = CGPoint(x: 10, y: 10)
+     // How long the pointer and the keyboard have been still is counted on the world's clock.
+     system.clock = { [unowned self] in elapsed }
+diff --git a/Tests/ArborKitTests/TheDockMakesRoomTests.swift b/Tests/ArborKitTests/TheDockMakesRoomTests.swift
+new file mode 100644
+index 00000000..3a480931
+--- /dev/null
++++ b/Tests/ArborKitTests/TheDockMakesRoomTests.swift
+@@ -0,0 +1,354 @@
++import ArborCore
++@testable import ArborKit
++import ArborTesting
++import CoreGraphics
++import Testing
++
++/// What is heard of the stand-in: of a window whether it is in the Dock, and of the displays that they changed, each with the main display's visible frame as macOS
++/// has it at that moment.
++@MainActor
++private final class Heard: WindowSystemEvents {
++  unowned let system: FakeWindowSystem
++  var lines: [String] = []
++  init(_ system: FakeWindowSystem) { self.system = system }
++
++  var visible: String {
++    let frame = system.displays()[0].visibleFrame
++    return "\(Int(frame.minX)),\(Int(frame.minY)) \(Int(frame.width))×\(Int(frame.height))"
++  }
++  func windowChanged(_ window: WindowSnapshot, userInitiated: Bool) { lines.append("\(window.isMinimized ? "in the Dock" : "out of it"), \(visible)") }
++  func displaysChanged() { lines.append("told, \(visible)") }
++  func windowAppeared(_ window: WindowSnapshot) {}
++  func windowDestroyed(_ id: WindowID) { lines.append("gone, \(visible)") }
++  func windowFocused(_ id: WindowID) {}
++  func applicationActivated(_ app: FrontmostApp?) {}
++  func accessibilityWasRefused() {}
++  func dragBegan(_ id: WindowID, at point: CGPoint) {}
++  func dragMoved(_ id: WindowID, to point: CGPoint) {}
++  func dragEnded(_ id: WindowID, at point: CGPoint) {}
++  func resizeBegan(_ id: WindowID) {}
++  func resizeEnded(_ id: WindowID) {}
++  func keyboardFocusMoved() {}
++  func dragCancelled(_ id: WindowID) {}
++  func windowReplaced(_ old: WindowID, by window: WindowSnapshot) {}
++  func pointerPressed() {}
++}
++
++/// A Dock that is full changes its size with what is in it, and the visible frame with it (`FakeWindowSystem.theDockTakes`).
++@Suite @MainActor struct TheDockMakesRoomTests {
++  static func display(_ size: CGSize, visible: CGRect) -> DisplaySnapshot {
++    DisplaySnapshot(id: DisplayID("main"), frame: CGRect(origin: .zero, size: size), visibleFrame: visible, isMain: true)
++  }
++  /// Displays of the recordings. The small one's Dock is full, the wide one's has room.
++  static let small = display(CGSize(width: 1024, height: 768), visible: CGRect(x: 0, y: 31, width: 1024, height: 674))
++  static let wide = display(CGSize(width: 1600, height: 900), visible: CGRect(x: 0, y: 31, width: 1600, height: 791))
++
++  /// The stand-in with one window and somebody who listens. What comes later is kept, with the seconds, until `tell` is called.
++  fileprivate func listening(on display: DisplaySnapshot) -> (FakeWindowSystem, WindowID, Heard, later: () -> [Double], tell: () -> Void) {
++    let system = FakeWindowSystem(displays: [display])
++    let window = system.open(app: "Notes", pid: 11, frame: CGRect(x: 100, y: 100, width: 400, height: 300))
++    let heard = Heard(system)
++    system.events = heard
++    system.start()
++    final class Kept { var work: [String: (Double, @MainActor () -> Void)] = [:] }
++    let kept = Kept()
++    system.later = { name, seconds, work in kept.work[name] = work.map { (seconds, $0) } }
++    return (
++      system, window, heard, { kept.work.values.map { ($0.0 * 100).rounded() / 100 } },
++      {
++        let work = kept.work.values.map(\.1)
++        kept.work = [:]
++        for piece in work { piece() }
++      }
++    )
++  }
++
++  /// As it was recorded most often. A window that goes into the Dock speaks while macOS still has the old list, 36 times of 54; then the list is new. One that leaves it
++  /// speaks under the new list, 50 times of 58. Arbor is told a third of a second after each, and the restore undoes the minimize to the point, 50 of 50.
++  @Test func intoTheDockAndOutOfIt() {
++    let (system, window, heard, later, tell) = listening(on: Self.small)
++    system.setMinimized(window, true)
++    #expect(heard.lines == ["in the Dock, 0,31 1024×674"])
++    #expect(system.displays() == [Self.display(CGSize(width: 1024, height: 768), visible: CGRect(x: 0, y: 31, width: 1024, height: 676))])
++    #expect(later() == [0.35])
++    tell()
++    #expect(heard.lines == ["in the Dock, 0,31 1024×674", "told, 0,31 1024×676"])
++
++    heard.lines = []
++    system.setMinimized(window, false)
++    #expect(heard.lines == ["out of it, 0,31 1024×674"])
++    #expect(system.displays() == [Self.small])
++    #expect(later() == [0.35])
++    tell()
++    #expect(heard.lines == ["out of it, 0,31 1024×674", "told, 0,31 1024×674"])
++  }
++
++  /// The other order, which was recorded in the same scripts: 18 of 54 and 8 of 58.
++  @Test func theOtherWayRound() {
++    let (system, window, heard, _, tell) = listening(on: Self.small)
++    system.theDockSpeaksTheOtherWay = true
++    system.setMinimized(window, true)
++    tell()
++    system.setMinimized(window, false)
++    tell()
++    #expect(heard.lines == ["in the Dock, 0,31 1024×676", "told, 0,31 1024×676", "out of it, 0,31 1024×676", "told, 0,31 1024×674"])
++  }
++
++  /// At a side it is the width, by a point: two minimizes and two restores were recorded with the Dock at the left, as many with it at the right.
++  @Test(arguments: [
++    (CGRect(x: 50, y: 31, width: 974, height: 737), CGRect(x: 49, y: 31, width: 975, height: 737)),
++    (CGRect(x: 0, y: 31, width: 974, height: 737), CGRect(x: 0, y: 31, width: 975, height: 737)),
++  ]) func atASide(visible: CGRect, withOneInIt: CGRect) {
++    let (system, window, _, _, _) = listening(on: Self.display(CGSize(width: 1024, height: 768), visible: visible))
++    system.setMinimized(window, true)
++    #expect(system.displays()[0].visibleFrame == withOneInIt)
++    system.setMinimized(window, false)
++    #expect(system.displays()[0].visibleFrame == visible)
++  }
++
++  /// A Dock at its full size has room, keeps its size, and macOS says nothing: 48 of the 56 that were recorded so. In the other 8, where it looks to have held one app more, the
++  /// height went from 791 to 793 and back. A lower one on the same display changed 4 times of 4.
++  @Test func aDockWithRoom() {
++    let (system, window, heard, later, _) = listening(on: Self.wide)
++    system.setMinimized(window, true)
++    system.setMinimized(window, false)
++    #expect(heard.lines == ["in the Dock, 0,31 1600×791", "out of it, 0,31 1600×791"])
++    #expect(later().isEmpty)
++
++    system.dockIsFull = true
++    system.setMinimized(window, true)
++    #expect(system.displays()[0].visibleFrame.height == 793)
++    system.setMinimized(window, false)
++    #expect(system.displays() == [Self.wide])
++
++    let (lower, its, _, _, _) = listening(on: Self.display(CGSize(width: 1600, height: 900), visible: CGRect(x: 0, y: 31, width: 1600, height: 794)))
++    lower.setMinimized(its, true)
++    #expect(lower.displays()[0].visibleFrame.height == 796)
++
++    // And a small one that is said to have room.
++    let (other, one, _, nothing, _) = listening(on: Self.small)
++    other.dockIsFull = false
++    other.setMinimized(one, true)
++    #expect(other.displays() == [Self.small] && nothing().isEmpty)
++  }
++
++  /// Where there is no Dock there is nothing to make room, on the way in or on the way out. Nor does the silent stand-in do what no test asked for.
++  @Test func noDock() {
++    let (system, window, _, later, _) = listening(on: FakeWindowSystem.standardDisplay)
++    for minimized in [true, false, true, false] {
++      system.setMinimized(window, minimized)
++      #expect(system.displays() == [FakeWindowSystem.standardDisplay])
++    }
++    #expect(later().isEmpty)
++
++    let (silent, one, _, nothing, _) = listening(on: Self.small)
++    silent.echoes = .none
++    silent.setMinimized(one, true)
++    #expect(silent.displays() == [Self.small] && nothing().isEmpty)
++  }
++
++  /// Said twice, it is one window in the Dock all the same.
++  @Test func saidTwice() {
++    let (system, window, _, _, _) = listening(on: Self.small)
++    system.setMinimized(window, true)
++    system.setMinimized(window, true)
++    #expect(system.displays()[0].visibleFrame.height == 676)
++    system.setMinimized(window, false)
++    system.setMinimized(window, false)
++    #expect(system.displays() == [Self.small])
++  }
++
++  /// In and out again before the layer has spoken. At the second word all is as Arbor was last told, so the layer lets go of its wait, and Arbor hears nothing.
++  @Test func inAndOutAgainAtOnce() {
++    let (system, window, heard, later, tell) = listening(on: Self.small)
++    system.setMinimized(window, true)
++    #expect(later() == [0.35])
++    system.setMinimized(window, false)
++    #expect(later().isEmpty)
++    tell()
++    #expect(heard.lines == ["in the Dock, 0,31 1024×674", "out of it, 0,31 1024×674"])
++  }
++
++  /// What the Dock gave up for a window it takes back for that window, and one that has nothing to give takes nothing back: nothing drifts.
++  @Test(arguments: [63, 3, 2, 1] as [CGFloat]) func nothingDrifts(dock: CGFloat) {
++    let display = Self.display(CGSize(width: 1024, height: 768), visible: CGRect(x: 0, y: 31, width: 1024, height: 737 - dock))
++    let (system, window, _, _, _) = listening(on: display)
++    for _ in 1...3 {
++      system.setMinimized(window, true)
++      #expect(system.displays()[0].visibleFrame.height == 737 - dock + (dock > 2 ? 2 : 0))
++      system.setMinimized(window, false)
++      #expect(system.displays() == [display])
++    }
++  }
++
++  /// Under another number, as after its app was started again, or as another tab of the same window, it is the same thumbnail in the Dock.
++  @Test func underAnotherNumber() {
++    let (system, window, _, _, _) = listening(on: Self.small)
++    system.setMinimized(window, true)
++    let new = system.renumber(window)!
++    system.setMinimized(new, false)
++    #expect(system.displays() == [Self.small])
++  }
++
++  /// Given the keyboard or raised, a window comes out of the Dock, which takes its room back. A guess as to the order: no recording has that road.
++  @Test(arguments: [true, false]) func fetchedOutOfTheDock(byTheKeyboard: Bool) {
++    let (system, window, _, _, _) = listening(on: Self.small)
++    system.setMinimized(window, true)
++    #expect(system.displays()[0].visibleFrame.height == 676)
++    if byTheKeyboard { system.focus(window) } else { system.raise(window) }
++    #expect(system.windows[window]?.snapshot.isMinimized == false, "or this proves nothing")
++    #expect(system.displays() == [Self.small])
++  }
++
++  /// Fetched out again between its landing and its report, it is no longer there when the Dock would have made room for it.
++  @Test(arguments: [false, true]) func fetchedBeforeItHasSpoken(theOtherWay: Bool) {
++    let (system, window, _, later, _) = listening(on: Self.small)
++    system.theDockSpeaksTheOtherWay = theOtherWay
++    system.landInTheDock(window)
++    system.focus(window)
++    system.reportTheLanding()
++    #expect(system.displays() == [Self.small])
++    #expect(later().isEmpty)
++  }
++
++  /// A list that is given while a window is in the Dock is the list with that window in it.
++  @Test func aListGivenMeanwhile() {
++    let (system, window, _, _, _) = listening(on: Self.small)
++    system.setMinimized(window, true)
++    system.setDisplays([Self.small])
++    system.setMinimized(window, false)
++    #expect(system.displays()[0].visibleFrame.height == 672)
++  }
++
++  /// A window that was in the Dock from the beginning took nothing that is known of, and gives nothing back. One whose display has gone meanwhile neither.
++  @Test func whatIsNotKnownOfIsNotGivenBack() {
++    let system = FakeWindowSystem(displays: [Self.small])
++    let window = system.open(app: "Notes", pid: 11, frame: CGRect(x: 100, y: 100, width: 400, height: 300))
++    system.echoes.dockMakesRoom = false
++    system.setMinimized(window, true)
++    system.echoes.dockMakesRoom = true
++    system.start()
++    system.setMinimized(window, false)
++    #expect(system.displays() == [Self.small])
++
++    system.setMinimized(window, true)
++    let other = DisplaySnapshot(id: DisplayID("other"), frame: Self.small.frame, visibleFrame: Self.small.visibleFrame, isMain: true)
++    system.setDisplays([other])
++    system.setMinimized(window, false)
++    #expect(system.displays() == [other])
++  }
++
++  /// Whoever has stopped listening is told nothing, and macOS has its list all the same.
++  @Test func nobodyListens() {
++    let (system, window, heard, later, tell) = listening(on: Self.small)
++    system.setMinimized(window, true)
++    system.stop()
++    tell()
++    #expect(heard.lines == ["in the Dock, 0,31 1024×674"])
++    system.setMinimized(window, false)
++    #expect(system.displays() == [Self.small] && later().isEmpty)
++  }
++
++  /// A guess, which nobody has recorded: a window that closes in the Dock leaves it.
++  @Test func closedInTheDock() {
++    let (system, window, heard, _, tell) = listening(on: Self.small)
++    system.setMinimized(window, true)
++    tell()
++    heard.lines = []
++    system.close(window)
++    tell()
++    #expect(heard.lines == ["gone, 0,31 1024×674", "told, 0,31 1024×674"])
++
++    // Also one that the Accessibility API no longer lists, of which nobody hears.
++    let hidden = system.open(app: "Mail", pid: 12, frame: CGRect(x: 100, y: 100, width: 400, height: 300))
++    system.setMinimized(hidden, true)
++    system.setListed(hidden, false)
++    system.close(hidden)
++    #expect(system.displays() == [Self.small])
++  }
++
++  /// Without a clock what would come later comes at once.
++  @Test func withoutAClock() {
++    let (system, window, heard, _, _) = listening(on: Self.small)
++    system.later = nil
++    system.setMinimized(window, true)
++    #expect(heard.lines == ["in the Dock, 0,31 1024×674", "told, 0,31 1024×676"])
++  }
++
++  // MARK: What Arbor makes of it
++
++  /// Two windows docked one above the other on the small display, and a third that floats.
++  func desk() -> (Harness, a: WindowID, b: WindowID, c: WindowID) {
++    let h = Harness(displays: [Self.small], settings: Settings())
++    let a = h.system.open(app: "Notes", pid: 11, frame: CGRect(x: 100, y: 100, width: 400, height: 300))
++    let b = h.system.open(app: "Mail", pid: 12, frame: CGRect(x: 200, y: 150, width: 400, height: 300))
++    let c = h.system.open(app: "Safari", pid: 13, frame: CGRect(x: 300, y: 200, width: 400, height: 300))
++    h.start()
++    h.run("dock \(a.rawValue) left")
++    h.run("dock \(b.rawValue) beside \(a.rawValue) bottom")
++    h.scheduler.advance(by: 2)
++    return (h, a, b, c)
++  }
++
++  /// In a harness the news comes by its clock: Arbor goes by the old visible frame for a third of a second, as on a Mac, and then by the new one.
++  @Test func arborHearsOfItAThirdOfASecondLater() {
++    let (h, _, _, c) = desk()
++    h.system.setMinimized(c, true)
++    #expect(h.system.displays()[0].visibleFrame.height == 676)
++    h.scheduler.advance(by: 0.34)
++    #expect(h.system.displaysLastTold == [Self.small])
++    h.scheduler.advance(by: 0.02)
++    #expect(h.system.displaysLastTold == h.system.displays())
++    #expect(h.controller.displays == h.system.displays())
++  }
++
++  /// Each word begins the wait anew: of two windows that go into the Dock a fifth of a second apart Arbor hears once, a third of a second after the second.
++  @Test func twoOneAfterTheOther() {
++    let (h, _, b, c) = desk()
++    h.system.setMinimized(c, true)
++    h.scheduler.advance(by: 0.2)
++    h.system.setMinimized(b, true)
++    h.scheduler.advance(by: 0.34)
++    #expect(h.system.displaysLastTold == [Self.small], "0.54 s after the first")
++    h.scheduler.advance(by: 0.02)
++    #expect(h.system.displaysLastTold[0].visibleFrame.height == 678)
++  }
++
++  /// A display is plugged in while the news of the Dock is on its way. At macOS's word the layer lets go of that wait, and Arbor hears of both when it would have heard
++  /// of the display: not a third of a second after the minimize.
++  @Test func aDisplayComesWhileTheNewsIsOnItsWay() {
++    let (h, _, _, c) = desk()
++    h.system.setMinimized(c, true)
++    let side = DisplaySnapshot(
++      id: DisplayID("side"), frame: CGRect(x: 1024, y: 0, width: 1280, height: 800), visibleFrame: CGRect(x: 1024, y: 31, width: 1280, height: 769),
++      isMain: false)
++    var toldAfterASecond: [DisplaySnapshot] = []
++    h.scheduler.schedule("a look", after: 1) { toldAfterASecond = h.system.displaysLastTold }
++    h.system.changeDisplaysAsAMacDoes(h.system.displays() + [side])
++    #expect(toldAfterASecond == [Self.small])
++    #expect(h.system.displaysLastTold.map(\.visibleFrame.height) == [676, 769])
++  }
++
++  /// What Arbor makes of it today, as 23 minimizes in 17 recordings have it: a docked window goes into the Dock, its neighbour takes the room at once, by the visible frame macOS still had,
++  /// and gets 2 points of height more when Arbor hears of the Dock. Two points are no move by the measures of docs/VIABLE.md. Where macOS's list was new
++  /// at the act, as mostly at a restore, there is one layout.
++  @Test func aNeighbourIsLaidOutAtTheActAndAgainAtTheNews() {
++    let (h, a, b, _) = desk()
++    var set: [(frame: CGRect, after: Double)] = []
++    var began = h.scheduler.now
++    h.system.willSetFrame = { window, frame in if window == a { set.append((frame, ((h.scheduler.now - began) * 100).rounded() / 100)) } }
++    let before = h.frame(a)!
++    h.system.setMinimized(b, true)
++    h.scheduler.advance(by: 1)
++    #expect(set.map(\.after) == [0, 0.35])
++    #expect(set[0].frame.height > before.height, "it takes the room")
++    #expect(set[1].frame == CGRect(x: set[0].frame.minX, y: set[0].frame.minY, width: set[0].frame.width, height: set[0].frame.height + 2))
++
++    (set, began) = ([], h.scheduler.now)
++    h.system.setMinimized(b, false)
++    h.scheduler.advance(by: 1)
++    #expect(set.map(\.after) == [0])
++    #expect(h.frame(a) == before)
++    expectWindowsMatchLayout(h)
++  }
++}
+-- 
+2.43.0
+

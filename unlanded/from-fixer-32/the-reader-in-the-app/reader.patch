@@ -1,0 +1,1025 @@
+diff --git a/Sources/ArborCore/KeyLayout.swift b/Sources/ArborCore/KeyLayout.swift
+index 30c6a170..d36ff188 100644
+--- a/Sources/ArborCore/KeyLayout.swift
++++ b/Sources/ArborCore/KeyLayout.swift
+@@ -121,6 +121,15 @@ public struct KeyLayout: Equatable, Sendable {
+     String(character).lowercased().first.flatMap { codes[$0] }
+   }
+ 
++  /// The key that types `character` with ⇧ held, if one does. A layout that says nothing about ⇧ (`us`) goes by what ⇧ makes of a sign on a
++  /// US keyboard.
++  public func code(typingWithShift character: Character) -> UInt32? {
++    guard let lowered = String(character).lowercased().first else { return nil }
++    if let code = shiftedCodes[lowered] { return code }
++    guard shifted.isEmpty else { return nil }
++    return Self.shiftedSigns.first { $0.value == lowered }.flatMap { codes[$0.key] }
++  }
++
+   /// What the key with this code types, in lower case, alone or with ⇧; nil if nothing visible.
+   public func character(at code: UInt32, shifted withShift: Bool = false) -> Character? {
+     (withShift ? shifted : plain)[code]
+diff --git a/Sources/ArborCore/MenuShortcut.swift b/Sources/ArborCore/MenuShortcut.swift
+new file mode 100644
+index 00000000..2b33ac87
+--- /dev/null
++++ b/Sources/ArborCore/MenuShortcut.swift
+@@ -0,0 +1,75 @@
++/// A shortcut in an app's menu bar, as Accessibility tells it (collab/IDEAS.md, I16).
++///
++/// A global shortcut is taken from every app, so an app that has the same keys in a menu loses them while Arbor holds them, and gets them
++/// back, with whatever it does on them, the moment Arbor does not: paused, quit, crashed. The fingers do not know the difference. So that a
++/// clash is found before a person meets it, Arbor reads the menu bar of the app in front when somebody asks (`bindings`, `doctor`, `bind`) and
++/// lists each of its own keys that the app has too.
++///
++/// What the attributes hold was read from 62 menu bars on a hosted Mac (macOS 26, 2026-10-15; collab/evidence/menu-keys):
++/// - `AXMenuItemCmdChar`: a letter in CAPITALS, whatever ⇧ says; a digit or a sign as it is typed, so that ⌃⌥: comes as `:` with no ⇧ among the
++///   modifiers; for the keys below a control character or one from the private-use area, which is passed over here.
++/// - `AXMenuItemCmdVirtualKey`: the key code, for arrows, ↩, Space, ⎋, ⇥, ⌫, Page Up and the like, and the F-keys. Never for a letter, digit or sign.
++/// - `AXMenuItemCmdModifiers`: 1 is ⇧, 2 is ⌥, 4 is ⌃, 8 is **no** ⌘, and 16, which no header mentions, is fn (the Globe key): macOS's own
++///   Window → Move & Resize is full of it.
++///
++/// Only numbers and one character are read. **Never an item's title**: it can hold a person's words (a document, a conversation, a bookmark).
++public struct MenuShortcut: Hashable, Sendable, Codable {
++  public var modifiers: Int
++  public var character: String?
++  public var virtualKey: Int?
++
++  public init(modifiers: Int, character: String? = nil, virtualKey: Int? = nil) {
++    self.modifiers = modifiers
++    self.character = character
++    self.virtualKey = virtualKey
++  }
++
++  /// A key and the modifiers held with it: what a hot key is registered for, and what is compared.
++  public struct Press: Hashable, Sendable {
++    public var keyCode: UInt32
++    public var modifiers: KeyChord.Modifiers
++
++    public init(keyCode: UInt32, modifiers: KeyChord.Modifiers) {
++      self.keyCode = keyCode
++      self.modifiers = modifiers
++    }
++  }
++
++  /// What has to be pressed for it on `layout`. Nil if that cannot be a shortcut of Arbor's (it needs fn), or cannot be told (a character
++  /// the layout does not type).
++  public func press(on layout: KeyLayout) -> Press? {
++    guard modifiers >= 0, modifiers & 16 == 0 else { return nil }
++    var held: KeyChord.Modifiers = []
++    if modifiers & 1 != 0 { held.insert(.shift) }
++    if modifiers & 2 != 0 { held.insert(.option) }
++    if modifiers & 4 != 0 { held.insert(.control) }
++    if modifiers & 8 == 0 { held.insert(.command) }
++    if let virtualKey { return UInt32(exactly: virtualKey).map { Press(keyCode: $0, modifiers: held) } }
++    guard let character, character.count == 1, let typed = character.first else { return nil }
++    if let code = layout.code(typing: typed) { return Press(keyCode: code, modifiers: held) }
++    // ⌃⌥: is pressed as ⌃⌥⇧; where ⇧; types the colon.
++    return layout.code(typingWithShift: typed).map { Press(keyCode: $0, modifiers: held.union(.shift)) }
++  }
++}
++
++/// The shortcuts of one app's menu bar, as far as they were read.
++public struct MenuBarReading: Equatable, Sendable, Codable {
++  /// Nil for a program that is not in a bundle.
++  public var bundleID: String?
++  /// What people call the app, for replies. The log gets the bundle id.
++  public var appName: String
++  public var shortcuts: [MenuShortcut]
++  /// False if the time allowed ran out, or the app stopped answering, before the end: a menu bar has hundreds of items, and an app
++  /// takes between a tenth of a second and three seconds over them.
++  public var isComplete: Bool
++
++  public init(bundleID: String?, appName: String, shortcuts: [MenuShortcut], isComplete: Bool = true) {
++    self.bundleID = bundleID
++    self.appName = appName
++    self.shortcuts = shortcuts
++    self.isComplete = isComplete
++  }
++
++  /// Everything in it that can be pressed on `layout`.
++  public func presses(on layout: KeyLayout) -> Set<MenuShortcut.Press> { Set(shortcuts.compactMap { $0.press(on: layout) }) }
++}
+diff --git a/Sources/ArborKit/App/ArborApp.swift b/Sources/ArborKit/App/ArborApp.swift
+index 4e615d25..0de89f19 100644
+--- a/Sources/ArborKit/App/ArborApp.swift
++++ b/Sources/ArborKit/App/ArborApp.swift
+@@ -76,6 +76,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
+     controller.saveSettings = { try SettingsFile.update(from: $0, to: $1) }
+     controller.loadSettings = { try SettingsFile.read() }
+     controller.systemShortcuts = { SystemShortcutReader.read() }
++    controller.menuBarOfTheAppInFront = { MenuBarReader.read() }
+     controller.onTemporaryShortcuts = { [weak self] in self?.hotKeys?.setTemporary($0) }
+     controller.replaceSettingsFile = { try SettingsFile.replace(with: $0) }
+     controller.keepCopyOfSettingsFile = { try SettingsFile.keepCopy() }
+diff --git a/Sources/ArborKit/Controller/Controller+AppShortcuts.swift b/Sources/ArborKit/Controller/Controller+AppShortcuts.swift
+new file mode 100644
+index 00000000..aa721e44
+--- /dev/null
++++ b/Sources/ArborKit/Controller/Controller+AppShortcuts.swift
+@@ -0,0 +1,80 @@
++import ArborCore
++
++/// The shortcuts of Arbor's that the app in front has in its own menu bar (`MenuShortcut`; collab/IDEAS.md, I16).
++///
++/// While Arbor holds a key the app does not get it. The moment Arbor does not (paused, quit, crashed) the same fingers reach the app, which does
++/// with the key whatever it does. So a clash is worth knowing before anybody meets it.
++///
++/// **Arbor reads a menu bar only when a person asks** (QUESTIONS Q29): `bindings`, `doctor`, and `bind`, which is an asking too. Not when an app
++/// comes to the front: hundreds of calls into every app a person opens, unasked and unseen, is Arbor doing something by itself. What guards the
++/// defaults is the census on hosted Macs (docs/KEYBOARD.md).
++///
++/// What this cannot see, and says so: a shortcut that an app takes without showing it in a menu, as a web page in an app's window can, and a
++/// global hot key of another program's, which macOS tells nobody about.
++public struct AppShortcutClashes: Equatable, Sendable {
++  public let reading: MenuBarReading
++  /// Arbor's shortcuts that are in the app's menu bar too, sorted as `bindings` lists them.
++  public let bindings: [KeyBinding]
++
++  /// What cannot be seen, in one sentence, wherever the list is shown: a short list must not pass for a clean bill.
++  public static let limit = "Only what an app shows in its menus can be seen: not a shortcut it takes in a page, nor another program’s global one."
++
++  /// For `bindings` and `doctor`: one line for each, or one that says there is none.
++  public var sentences: [String] {
++    let partly = reading.isComplete ? "" : " (as far as it could be read: \(reading.appName) was slow to answer)"
++    guard !bindings.isEmpty else { return ["\(reading.appName) has none of Arbor’s shortcuts in its menu bar\(partly)."] }
++    return bindings.map { "\($0.label) is in \(reading.appName)’s menu bar too: Arbor takes it for `\($0.command.text)`, and paused or quit it is \(reading.appName)’s." }
++      + (partly.isEmpty ? [] : ["There may be more\(partly)."])
++  }
++
++  /// For the log: the bundle id and the keys, and nothing else. Never a title, which is not even read, nor the command of a person's own shortcut.
++  public var logged: String {
++    let app = reading.bundleID ?? "an app without a bundle id"
++    let partly = reading.isComplete ? "" : ", read in part"
++    return bindings.isEmpty
++      ? "shortcuts: \(app) has none of Arbor's in its menu bar (\(reading.shortcuts.count) read\(partly))"
++      : "shortcuts: \(app) has \(bindings.map(\.label).joined(separator: " ")) in its menu bar too (\(reading.shortcuts.count) read\(partly))"
++  }
++}
++
++extension Controller {
++  /// Reads the menu bar of the app in front, now, and holds the shortcuts in effect against it. Nil where nobody can tell: `menuBarOfTheAppInFront`
++  /// is not set, there is no such app, it has no menu bar, Arbor lacks the permission; or with Arbor's shortcuts off, when there is nothing to clash.
++  /// Writes what it found to the log. Takes as long as the app takes to answer, up to the reader's limit: only for when somebody asks.
++  func askAboutAppShortcuts() -> AppShortcutClashes? {
++    guard let reading = readMenuBar() else { return nil }
++    let clashes = appShortcutClashes(of: effectiveBindings.bindings, with: reading)
++    Log.info(clashes.logged)
++    return clashes
++  }
++
++  /// It does not go through a protocol in Platform/, so it sees to its own line in a trace: numbers, a character each, the app. No title is read.
++  private func readMenuBar() -> MenuBarReading? {
++    guard settings.hotkeysEnabled, accessibilityGranted, let read = menuBarOfTheAppInFront else { return nil }
++    return traceRecorder?.read("menuBarOfTheAppInFront") { read() } ?? read()
++  }
++
++  func appShortcutClashes(of bindings: [KeyBinding], with reading: MenuBarReading) -> AppShortcutClashes {
++    let presses = reading.presses(on: layoutInEffect)
++    return AppShortcutClashes(
++      reading: reading,
++      bindings: bindings.filter { presses.contains(MenuShortcut.Press(keyCode: $0.keyCode, modifiers: $0.modifiers)) }
++        .sorted { ($0.command.text, $0.chord.text) < ($1.command.text, $1.chord.text) })
++  }
++
++  /// What `bind` adds to its reply about a shortcut that was just made, or nil.
++  func cautionAboutTheAppInFront(_ chord: KeyChord, running command: Command) -> String? {
++    guard let reading = readMenuBar() else { return nil }
++    let clashes = appShortcutClashes(of: [KeyBinding(chord, command, layout: layoutInEffect)], with: reading)
++    guard let binding = clashes.bindings.first else { return nil }
++    Log.info(clashes.logged)
++    return "\(binding.label) is in \(reading.appName)’s menu bar too"
++  }
++}
++
++extension Controller {
++  /// The shortcuts in effect held against a menu bar that was read some other time, as the census does (`MenuKeyCensusTests`). It only asks.
++  public func appShortcutClashes(with reading: MenuBarReading) -> AppShortcutClashes {
++    appShortcutClashes(of: effectiveBindings.bindings, with: reading)
++  }
++}
+diff --git a/Sources/ArborKit/Controller/Controller+Bindings.swift b/Sources/ArborKit/Controller/Controller+Bindings.swift
+index bc8fec4b..b876f1e1 100644
+--- a/Sources/ArborKit/Controller/Controller+Bindings.swift
++++ b/Sources/ArborKit/Controller/Controller+Bindings.swift
+@@ -3,7 +3,7 @@ import ArborCore
+ extension Controller {
+   /// `bindings`: the shortcuts in effect, one `chord → command` per line sorted by command text,
+   /// then the entries of settings.json's `bindings` that were skipped and why, and the shortcuts
+-  /// that macOS uses as well (Controller+SystemShortcuts.swift). A shortcut whose key
++  /// that macOS uses as well (Controller+SystemShortcuts.swift) or the app in front has in its menu bar (Controller+AppShortcuts.swift). A shortcut whose key
+   /// is labelled otherwise on the keyboard layout in use says so: `ctrl+opt+[ (⌃⌥Ü) → back`. A query, so it
+   /// works before `start()`.
+   func listBindings() -> CommandResult {
+@@ -28,6 +28,12 @@ extension Controller {
+       lines.append("")
+       lines += clashes.map(\.sentence)
+     }
++    let inTheApp = askAboutAppShortcuts()
++    if let inTheApp {
++      lines.append("")
++      lines += inTheApp.sentences
++      lines.append(AppShortcutClashes.limit)
++    }
+     let suggestions = passThroughSuggestions
+     if !suggestions.isEmpty {
+       lines.append("")
+@@ -65,6 +71,7 @@ extension Controller {
+     }
+     if !problems.isEmpty { message += ", \(problems.count) skipped" }
+     if !clashes.isEmpty { message += ", \(clashes.count) also macOS's" }
++    if let inTheApp, !inTheApp.bindings.isEmpty { message += ", \(inTheApp.bindings.count) also \(inTheApp.reading.appName)'s" }
+     return CommandResult(ok: true, message: message, text: lines.joined(separator: "\n"))
+   }
+ }
+diff --git a/Sources/ArborKit/Controller/Controller+Doctor.swift b/Sources/ArborKit/Controller/Controller+Doctor.swift
+index aea63687..1c7bea7f 100644
+--- a/Sources/ArborKit/Controller/Controller+Doctor.swift
++++ b/Sources/ArborKit/Controller/Controller+Doctor.swift
+@@ -49,13 +49,15 @@ extension Controller {
+   /// `doctor`. A query, so it works before `start()`, which is when it is needed most. It fails
+   /// (and `arborctl doctor` exits with 1) when a check found a problem.
+   func doctor() -> CommandResult {
+-    let report = doctorReport()
++    let report = doctorReport(forSomebodyWhoAsked: true)
+     let count = report.problems
+     return CommandResult(
+       ok: count == 0, message: count == 0 ? "no problems" : "\(count) problem(s)", text: report.text)
+   }
+ 
+-  public func doctorReport() -> DoctorReport {
++  /// - Parameter forSomebodyWhoAsked: `doctor` itself. Arbor also goes through the checks by itself, at every start, for the log; then it reads nobody's
++  ///   menu bar (Controller+AppShortcuts.swift).
++  public func doctorReport(forSomebodyWhoAsked asked: Bool = false) -> DoctorReport {
+     let facts = systemFacts?()
+     var report = DoctorReport()
+     if isPaused, accessibilityGranted {
+@@ -66,6 +68,7 @@ extension Controller {
+     checkEventTaps(facts, into: &report)
+     checkShortcuts(facts, into: &report)
+     checkKeyboard(facts, into: &report)
++    if asked { checkAppShortcuts(facts, into: &report) }
+     checkSettings(into: &report)
+     checkMenuBarItem(into: &report)
+ 
+@@ -241,6 +244,14 @@ extension Controller {
+     }
+   }
+ 
++  /// Arbor's shortcuts that the app in front has in its menu bar too (Controller+AppShortcuts.swift).
++  private func checkAppShortcuts(_ facts: SystemFacts?, into report: inout DoctorReport) {
++    guard facts?.inputDisabled != true, let clashes = askAboutAppShortcuts() else { return }
++    report.add(
++      clashes.bindings.isEmpty ? .ok : .note, "Shortcuts of the app in front",
++      (clashes.sentences + [AppShortcutClashes.limit]).joined(separator: " "))
++  }
++
+   /// The keyboard layout the shortcuts are made for (F44), and the apps that want ⌃⌥ for themselves (F41).
+   private func checkKeyboard(_ facts: SystemFacts?, into report: inout DoctorReport) {
+     guard settings.hotkeysEnabled, facts?.inputDisabled != true else { return }
+diff --git a/Sources/ArborKit/Controller/Controller+Settings.swift b/Sources/ArborKit/Controller/Controller+Settings.swift
+index c95ca7fa..28be4125 100644
+--- a/Sources/ArborKit/Controller/Controller+Settings.swift
++++ b/Sources/ArborKit/Controller/Controller+Settings.swift
+@@ -160,6 +160,8 @@ extension Controller {
+     let message =
+       "\(chord.text) runs `\(command.text)`" + (before.map { " (it ran `\($0.text)`)" } ?? "")
+       + (chord.caution.map { "; mind that \($0)" } ?? "")
++      // Making a shortcut is asking about it (Controller+AppShortcuts.swift).
++      + (cautionAboutTheAppInFront(chord, running: command).map { "; mind that \($0)" } ?? "")
+     // The command is left out of the log: it can be `rule add …` with part of a window title in it.
+     return change(message: message, log: "bound \(chord.text)") { updated in
+       updated.removeBindings(for: chord)
+diff --git a/Sources/ArborKit/Controller/Controller.swift b/Sources/ArborKit/Controller/Controller.swift
+index adbed873..90791c79 100644
+--- a/Sources/ArborKit/Controller/Controller.swift
++++ b/Sources/ArborKit/Controller/Controller.swift
+@@ -379,6 +379,9 @@ public final class Controller {
+   public var systemShortcuts: (() -> SystemShortcuts?)?
+   var loggedSystemShortcutClashes: [String] = []
+   var bindingsHeldAgainstMacOS: [KeyBinding]?
++  /// Reads the shortcuts in the menu bar of the app in front, through Accessibility. Set by the app; without it nobody knows
++  /// (Controller+AppShortcuts.swift). It takes up to a second or two, so it is called only when a person asks.
++  public var menuBarOfTheAppInFront: (() -> MenuBarReading?)?
+ 
+   /// The keyboard layout macOS has selected, as last reported (Controller+KeyboardLayout.swift).
+   public internal(set) var keyboardLayout: KeyLayout = .us
+diff --git a/Sources/ArborKit/Input/MenuBarReader.swift b/Sources/ArborKit/Input/MenuBarReader.swift
+new file mode 100644
+index 00000000..517003db
+--- /dev/null
++++ b/Sources/ArborKit/Input/MenuBarReader.swift
+@@ -0,0 +1,59 @@
++import AppKit
++import ApplicationServices
++import ArborCore
++
++/// Reads the shortcuts in the menu bar of the app in front as the list `MenuShortcut` decides with. No decisions here.
++///
++/// Three numbers and one character of each item, and its children. Never a title. A menu bar has 150 to 750 items, and on a hosted Mac an app took
++/// between a tenth of a second and three seconds over them at four calls an item; here it is one call an item. It runs on the main thread, because
++/// whoever asked is waiting for the answer, so it gives up at `limit`, and says that it did.
++@MainActor
++enum MenuBarReader {
++  /// How long a person who asked may be kept waiting, in seconds.
++  static let limit = 1.5
++  /// And how long any one answer may take: an app that hangs costs this once, not for every item.
++  private static let patience: Float = 0.3
++  private static let attributes =
++    ["AXChildren", "AXMenuItemCmdChar", "AXMenuItemCmdVirtualKey", "AXMenuItemCmdModifiers"] as CFArray
++
++  /// Nil if no app owns the menu bar, or it does not say what is in it.
++  static func read() -> MenuBarReading? {
++    // Not the frontmost app: that is Arbor itself while one of its windows has the keyboard, and the menu bar stays the other's.
++    guard let app = NSWorkspace.shared.menuBarOwningApplication else { return nil }
++    let element = AXUIElementCreateApplication(app.processIdentifier)
++    AXUIElementSetMessagingTimeout(element, patience)
++    var value: CFTypeRef?
++    guard AXUIElementCopyAttributeValue(element, "AXMenuBar" as CFString, &value) == .success, let value,
++      CFGetTypeID(value) == AXUIElementGetTypeID()
++    else { return nil }
++    var reading = MenuBarReading(
++      bundleID: app.bundleIdentifier, appName: app.localizedName ?? app.bundleIdentifier ?? "the app in front", shortcuts: [])
++    let deadline = DispatchTime.now().uptimeNanoseconds + UInt64(limit * 1_000_000_000)
++    walk(value as! AXUIElement, depth: 0, until: deadline, into: &reading)
++    return reading
++  }
++
++  private static func walk(_ element: AXUIElement, depth: Int, until deadline: UInt64, into reading: inout MenuBarReading) {
++    // Deeper than any menu goes: an app that answers with a loop must not keep this busy until the time is up.
++    guard depth < 8, reading.isComplete else { return }
++    guard DispatchTime.now().uptimeNanoseconds < deadline else {
++      reading.isComplete = false
++      return
++    }
++    AXUIElementSetMessagingTimeout(element, patience)
++    var answer: CFArray?
++    guard AXUIElementCopyMultipleAttributeValues(element, attributes, AXCopyMultipleAttributeOptions(), &answer) == .success,
++      let values = answer as? [Any], values.count == 4
++    else {
++      reading.isComplete = false
++      return
++    }
++    // An attribute the item does not have comes as an error wrapped in a value, which is none of these types.
++    let character = (values[1] as? String).flatMap { $0.isEmpty ? nil : $0 }
++    let key = values[2] as? Int
++    if character != nil || key != nil {
++      reading.shortcuts.append(MenuShortcut(modifiers: values[3] as? Int ?? 0, character: character, virtualKey: key))
++    }
++    for child in values[0] as? [AXUIElement] ?? [] { walk(child, depth: depth + 1, until: deadline, into: &reading) }
++  }
++}
+diff --git a/Sources/ArborTesting/FakeWindowSystem.swift b/Sources/ArborTesting/FakeWindowSystem.swift
+index 25e35817..33ab251b 100644
+--- a/Sources/ArborTesting/FakeWindowSystem.swift
++++ b/Sources/ArborTesting/FakeWindowSystem.swift
+@@ -146,6 +146,17 @@ public final class FakeWindowSystem: WindowSystem {
+   private var heldKeys: Set<KeyChord.Key> = []
+   /// The app in front, as last announced by `activate`.
+   public private(set) var frontmost: FrontmostApp?
++  /// The shortcuts each app has in its menu bar, by the app's name. An app that is not here has a menu bar nobody can read.
++  public var menuBars: [String: [MenuShortcut]] = [:]
++  /// How often somebody read a menu bar: hundreds of calls into an app each time, so only when a person asked.
++  public private(set) var menuBarsRead = 0
++
++  /// What `MenuBarReader.read` answers on a Mac.
++  public func menuBarOfTheAppInFront() -> MenuBarReading? {
++    guard !isDenied, let app = frontmost, let shortcuts = menuBars[app.name] else { return nil }
++    menuBarsRead += 1
++    return MenuBarReading(bundleID: app.bundleID, appName: app.name, shortcuts: shortcuts)
++  }
+   /// Windows that were brought to the front, most recently first (see `windowsFrontToBack`).
+   var raised: [WindowID] = []
+   /// Every window Arbor raised without focusing it, in order.
+diff --git a/Sources/ArborTesting/Harness.swift b/Sources/ArborTesting/Harness.swift
+index 64fd430e..87a0fed8 100644
+--- a/Sources/ArborTesting/Harness.swift
++++ b/Sources/ArborTesting/Harness.swift
+@@ -55,6 +55,7 @@ public final class Harness {
+     scheduler.afterEach = { [system] in system.deliverEchoes() }
+     system.afterEvents = { [scheduler] in scheduler.advance(by: 0) }
+     system.clock = { [scheduler] in scheduler.now }
++    controller.menuBarOfTheAppInFront = { [system] in system.menuBarOfTheAppInFront() }
+     controller.releaseFeed = releases
+     controller.loginItem = loginItem
+     // Time also passes while a simulated drag rests at a point.
+diff --git a/Sources/ArborTesting/MenuShortcut+Chord.swift b/Sources/ArborTesting/MenuShortcut+Chord.swift
+new file mode 100644
+index 00000000..b1c80988
+--- /dev/null
++++ b/Sources/ArborTesting/MenuShortcut+Chord.swift
+@@ -0,0 +1,18 @@
++import ArborCore
++
++extension MenuShortcut {
++  /// What Accessibility says of a menu item that shows `chord`, on a US keyboard: a letter in capitals, a key that types nothing by its code
++  /// (`MenuShortcut`'s header has what was read from real menu bars). For stand-ins' menu bars.
++  public init(showing chord: KeyChord) {
++    var modifiers = 0
++    if chord.modifiers.contains(.shift) { modifiers |= 1 }
++    if chord.modifiers.contains(.option) { modifiers |= 2 }
++    if chord.modifiers.contains(.control) { modifiers |= 4 }
++    if !chord.modifiers.contains(.command) { modifiers |= 8 }
++    if let character = chord.key.character {
++      self.init(modifiers: modifiers, character: String(character).uppercased())
++    } else {
++      self.init(modifiers: modifiers, virtualKey: Int(chord.key.code))
++    }
++  }
++}
+diff --git a/Sources/ArborTesting/TraceReplayer.swift b/Sources/ArborTesting/TraceReplayer.swift
+index e68864d0..f8b305af 100644
+--- a/Sources/ArborTesting/TraceReplayer.swift
++++ b/Sources/ArborTesting/TraceReplayer.swift
+@@ -315,6 +315,10 @@ public final class TraceReplayer {
+     if wasWatching {
+       harness.controller.accessibilityProbe = { [weak self] _ in self?.answer(read: "mayUseAccessibility") ?? true }
+     }
++    // What it read in an app's menu bar when somebody asked (Controller+AppShortcuts.swift) is in the trace too.
++    harness.controller.menuBarOfTheAppInFront = { [weak self] in
++      self?.answer(read: "menuBarOfTheAppInFront", as: MenuBarReading?.self) ?? nil
++    }
+     harness.start()
+ 
+     let seconds = entries.last.map { String(format: "%.1f", $0.t) } ?? "0"
+diff --git a/Sources/arbor-sim/Hands.swift b/Sources/arbor-sim/Hands.swift
+index e5da8a65..845bc116 100644
+--- a/Sources/arbor-sim/Hands.swift
++++ b/Sources/arbor-sim/Hands.swift
+@@ -32,6 +32,12 @@ func simulateHands(_ words: [String], harness: Harness) -> (String, Bool)? {
+       return ("pressed \(words[1]): Arbor does not hold it, so the app in front gets it", true)
+     }
+     return result.map(report) ?? ("pressed \(words[1])", true)
++  case "menu-key":
++    guard words.count == 3, let chord = try? KeyChord(text: words[2]) else {
++      return ("usage: menu-key <app> <shortcut>, e.g. menu-key Chat ctrl+opt+z", false)
++    }
++    harness.system.menuBars[words[1], default: []].append(MenuShortcut(showing: chord))
++    return ("\(words[1]) has \(chord.label) in its menu bar", true)
+   case "mouse":
+     guard words.count == 2, ["down", "up"].contains(words[1]) else { return ("usage: mouse down|up", false) }
+     harness.system.mouseDown = words[1] == "down"
+diff --git a/Sources/arbor-sim/main.swift b/Sources/arbor-sim/main.swift
+index b4ec4911..f6f52fa8 100644
+--- a/Sources/arbor-sim/main.swift
++++ b/Sources/arbor-sim/main.swift
+@@ -20,6 +20,7 @@ import Foundation
+ //   press <command>              press and release a shortcut bound to that command
+ //   from <source> <command>      run it as a shortcut, menu, gesture, script or url would (plain commands: script)
+ //   keydown | keyup | key <shortcut>   a shortcut by its keys (ctrl+opt+space): press and hold, let go, or both
++//   menu-key <app> <shortcut>    that app has the shortcut in its own menu bar, where `bindings`, `doctor` and `bind` find it while it is in front
+ //   mouse down|up                press or release the mouse button where the pointer is
+ //   type                         type a few characters into the focused window
+ //   wait <seconds>               let that much time pass, running the scheduled work that falls due
+diff --git a/Tests/ArborCoreTests/MenuShortcutTests.swift b/Tests/ArborCoreTests/MenuShortcutTests.swift
+new file mode 100644
+index 00000000..4be1c6f7
+--- /dev/null
++++ b/Tests/ArborCoreTests/MenuShortcutTests.swift
+@@ -0,0 +1,69 @@
++import ArborCore
++import Testing
++
++/// What Accessibility says of a menu item's shortcut, and what has to be pressed for it. Every row is as a hosted Mac gave it (macOS 26, 2026-10-15;
++/// collab/evidence/menu-keys).
++@Suite struct MenuShortcutTests {
++  typealias Press = MenuShortcut.Press
++
++  @Test func aLetterComesInCapitalsAndMeansTheKeyAlone() {
++    // ⌘Q, ⇧⌘Q and ⌃⌥⌘S.
++    #expect(MenuShortcut(modifiers: 0, character: "Q").press(on: .us) == Press(keyCode: 12, modifiers: [.command]))
++    #expect(MenuShortcut(modifiers: 1, character: "Q").press(on: .us) == Press(keyCode: 12, modifiers: [.command, .shift]))
++    #expect(MenuShortcut(modifiers: 6, character: "S").press(on: .us) == Press(keyCode: 1, modifiers: [.command, .control, .option]))
++  }
++
++  @Test func eightMeansWithoutCommand() {
++    #expect(MenuShortcut(modifiers: 14, character: "A").press(on: .us) == Press(keyCode: 0, modifiers: [.control, .option]))
++    #expect(MenuShortcut(modifiers: 15, character: "A").press(on: .us) == Press(keyCode: 0, modifiers: [.control, .option, .shift]))
++    #expect(MenuShortcut(modifiers: 8, character: "A").press(on: .us) == Press(keyCode: 0, modifiers: []))
++  }
++
++  /// An editor's ⌃⌥; and ⌃⌥: come as 14 with `;` and 14 with `:`.
++  @Test func aSignTypedWithShiftComesAsThatSignWithoutTheShift() {
++    #expect(MenuShortcut(modifiers: 14, character: ";").press(on: .us) == Press(keyCode: 41, modifiers: [.control, .option]))
++    #expect(MenuShortcut(modifiers: 14, character: ":").press(on: .us) == Press(keyCode: 41, modifiers: [.control, .option, .shift]))
++    #expect(MenuShortcut(modifiers: 0, character: "?").press(on: .us) == Press(keyCode: 44, modifiers: [.command, .shift]))
++  }
++
++  /// Arrows come with a character from the private-use area beside the key code, and macOS's own Move & Resize with the code alone.
++  @Test func aVirtualKeyIsTheKeyWhateverTheCharacterSays() {
++    #expect(
++      MenuShortcut(modifiers: 6, character: "\u{F702}", virtualKey: 123).press(on: .us)
++        == Press(keyCode: 123, modifiers: [.command, .control, .option]))
++    #expect(MenuShortcut(modifiers: 12, virtualKey: 36).press(on: .us) == Press(keyCode: 36, modifiers: [.control]))
++    #expect(MenuShortcut(modifiers: 2, character: "\u{238B}", virtualKey: 53).press(on: .us) == Press(keyCode: 53, modifiers: [.command, .option]))
++  }
++
++  /// 16 is fn, which no header mentions. No shortcut of Arbor's has it, and fn⌃← is not ⌃←.
++  @Test func whatNeedsTheGlobeKeyIsNoShortcutOfArbors() {
++    for modifiers in [20, 24, 28, 29, 31] { #expect(MenuShortcut(modifiers: modifiers, virtualKey: 123).press(on: .us) == nil) }
++  }
++
++  @Test func whatCannotBeToldIsLeftOut() {
++    #expect(MenuShortcut(modifiers: 0).press(on: .us) == nil)
++    #expect(MenuShortcut(modifiers: 0, character: "").press(on: .us) == nil)
++    #expect(MenuShortcut(modifiers: 0, character: "AB").press(on: .us) == nil)
++    #expect(MenuShortcut(modifiers: 0, character: "ü").press(on: .us) == nil, "this keyboard does not type it")
++    #expect(MenuShortcut(modifiers: -1, character: "A").press(on: .us) == nil)
++    #expect(MenuShortcut(modifiers: 0, virtualKey: -3).press(on: .us) == nil)
++  }
++
++  /// A menu's letter means the key that types it, as a shortcut of Arbor's does (F44).
++  @Test func theLetterFollowsTheKeyboardLayout() {
++    let german = KeyLayout(name: "German", plain: [6: "y", 16: "z", 41: "ö", 43: ","], shifted: [43: ";"])
++    #expect(MenuShortcut(modifiers: 14, character: "Z").press(on: german) == Press(keyCode: 16, modifiers: [.control, .option]))
++    #expect(MenuShortcut(modifiers: 14, character: ";").press(on: german) == Press(keyCode: 43, modifiers: [.control, .option, .shift]))
++    #expect(MenuShortcut(modifiers: 14, character: ":").press(on: german) == nil, "nothing is guessed from a US keyboard on another")
++  }
++
++  @Test func aReadingIsTheSetOfWhatCanBePressed() {
++    let reading = MenuBarReading(
++      bundleID: "com.example.editor", appName: "Editor",
++      shortcuts: [
++        MenuShortcut(modifiers: 0, character: "Q"), MenuShortcut(modifiers: 0, character: "Q"), MenuShortcut(modifiers: 28, virtualKey: 123),
++      ])
++    #expect(reading.presses(on: .us) == [Press(keyCode: 12, modifiers: [.command])])
++    #expect(reading.isComplete)
++  }
++}
+diff --git a/Tests/ArborKitTests/AppShortcutTests.swift b/Tests/ArborKitTests/AppShortcutTests.swift
+new file mode 100644
+index 00000000..a4e1f627
+--- /dev/null
++++ b/Tests/ArborKitTests/AppShortcutTests.swift
+@@ -0,0 +1,177 @@
++import ArborCore
++import ArborKit
++import ArborTesting
++import Foundation
++import Testing
++
++/// Arbor's shortcuts that the app in front has in its own menu bar (Controller+AppShortcuts.swift; collab/IDEAS.md, I16).
++@Suite @MainActor struct AppShortcutTests {
++  /// An app whose menu bar has ⌘Q, ⌃⌥Z, ⌃⌥⇧/ written as ⌃⌥?, ⌃⌥⌘←, and fn⌃⌥⇧←, which is nobody's business.
++  static let chat = MenuBarReading(
++    bundleID: "com.example.chat", appName: "Chat",
++    shortcuts: [
++      MenuShortcut(modifiers: 0, character: "Q"), MenuShortcut(modifiers: 14, character: "Z"), MenuShortcut(modifiers: 14, character: "?"),
++      MenuShortcut(modifiers: 6, character: "\u{F702}", virtualKey: 123), MenuShortcut(modifiers: 31, virtualKey: 123),
++    ])
++
++  final class Asked { var times = 0 }
++
++  func makeHarness(_ reading: MenuBarReading? = chat, settings: Settings = Settings()) -> (Harness, Asked) {
++    let h = Harness(settings: settings)
++    let asked = Asked()
++    h.controller.menuBarOfTheAppInFront = {
++      asked.times += 1
++      return reading
++    }
++    h.system.open(app: "Chat", bundleID: "com.example.chat")
++    h.start()
++    return (h, asked)
++  }
++
++  @Test func bindingsListsEachKeyTheAppHasToo() {
++    let (h, _) = makeHarness()
++    let reply = h.run("bindings")
++    #expect(reply.message.hasSuffix(", 3 also Chat's"), "\(reply.message)")
++    let text = reply.text ?? ""
++    #expect(text.contains("⌃⌥Z is in Chat’s menu bar too: Arbor takes it for `undo`, and paused or quit it is Chat’s."))
++    #expect(text.contains("⌃⌥⇧/ is in Chat’s menu bar too: Arbor takes it for `show-shortcuts`"), "the menu writes it ⌃⌥?: \(text)")
++    #expect(text.contains("⌃⌥⌘← is in Chat’s menu bar too: Arbor takes it for `dock left`"))
++    #expect(!text.contains("⌃⌥⇧← is in"), "what needs the Globe key is another shortcut")
++    #expect(text.contains(AppShortcutClashes.limit), "a list must not pass for a clean bill")
++  }
++
++  @Test func anAppWithNoneOfThemIsSaidToo() {
++    let (h, _) = makeHarness(MenuBarReading(bundleID: "com.example.notes", appName: "Notes", shortcuts: [MenuShortcut(modifiers: 0, character: "N")]))
++    let reply = h.run("bindings")
++    #expect(!reply.message.contains("also Notes"))
++    #expect(reply.text?.contains("Notes has none of Arbor’s shortcuts in its menu bar.") == true)
++    #expect(reply.text?.contains(AppShortcutClashes.limit) == true)
++  }
++
++  @Test func aMenuBarReadInPartSaysSo() {
++    var slow = Self.chat
++    slow.isComplete = false
++    let (h, _) = makeHarness(slow)
++    #expect(h.run("bindings").text?.contains("There may be more (as far as it could be read: Chat was slow to answer).") == true)
++    slow.shortcuts = []
++    let (other, _) = makeHarness(slow)
++    #expect(
++      other.run("bindings").text?.contains("Chat has none of Arbor’s shortcuts in its menu bar (as far as it could be read: Chat was slow to answer).") == true)
++  }
++
++  @Test func doctorHasARowForIt() {
++    let (h, _) = makeHarness()
++    let text = h.run("doctor").text ?? ""
++    #expect(text.contains("Shortcuts of the app in front: ⌃⌥⌘← is in Chat’s menu bar too"), "\(text)")
++    #expect(text.contains(AppShortcutClashes.limit))
++  }
++
++  /// Making a shortcut is asking about it.
++  @Test func bindSaysThatTheAppInFrontHasTheKey() {
++    let reading = MenuBarReading(bundleID: "com.example.chat", appName: "Chat", shortcuts: [MenuShortcut(modifiers: 14, character: "X")])
++    let (h, _) = makeHarness(reading)
++    #expect(h.run("bind ctrl+opt+x show-all").message.hasSuffix("; mind that ⌃⌥X is in Chat’s menu bar too"))
++    #expect(!h.run("bind ctrl+opt+y show-all").message.contains("menu bar"))
++  }
++
++  /// Hundreds of calls into every app a person opens, unasked and unseen, would be Arbor doing something by itself (QUESTIONS Q29).
++  @Test func nobodyReadsAMenuBarUnasked() {
++    let (h, asked) = makeHarness()
++    let notes = h.system.open(app: "Notes")
++    h.system.userFocus(notes)
++    h.run("dock \(notes.rawValue) left")
++    h.key("ctrl+opt+space")
++    h.run("status")
++    h.run("pause")
++    h.run("resume")
++    h.scheduler.advance(by: 600)
++    // What the app does at every start, for the log.
++    h.controller.logSetupProblems()
++    #expect(asked.times == 0)
++    h.run("bindings")
++    #expect(asked.times == 1)
++  }
++
++  @Test func whereNobodyCanTellNothingIsSaid() {
++    let (silent, _) = makeHarness(nil)
++    #expect(silent.run("bindings").text?.contains("menu bar") == false)
++    var off = Settings()
++    off.hotkeysEnabled = false
++    let (h, asked) = makeHarness(settings: off)
++    #expect(h.run("bindings").text?.contains("menu bar") == false)
++    #expect(asked.times == 0, "with no shortcut of Arbor's there is nothing to clash")
++  }
++
++  /// Without the permission Accessibility answers nothing, and asking would only take time.
++  @Test func withoutThePermissionNobodyAsks() {
++    let (h, asked) = makeHarness()
++    h.watchAccessibility()
++    h.controller.accessibilityGranted = false
++    h.run("bindings")
++    h.run("doctor")
++    #expect(asked.times == 0)
++  }
++
++  /// The log gets the bundle id and the keys. Not the app's name, not the command of a person's own shortcut, which can hold a name they gave.
++  @Test func theLogHoldsTheBundleIDAndTheKeysAndNothingElse() {
++    let (h, _) = makeHarness()
++    h.run("bind ctrl+opt+z go Letters to Anna")
++    let clashes = h.controller.appShortcutClashes(with: Self.chat)
++    #expect(clashes.logged == "shortcuts: com.example.chat has ⌃⌥⌘← ⌃⌥Z ⌃⌥⇧/ in its menu bar too (5 read)", "\(clashes.logged)")
++    #expect(!clashes.logged.contains("Anna") && !clashes.logged.contains("Chat"))
++  }
++
++  @Test func theLetterIsTheOneTheKeyboardTypes() {
++    let (h, _) = makeHarness(MenuBarReading(bundleID: nil, appName: "Chat", shortcuts: [MenuShortcut(modifiers: 14, character: "Z")]))
++    h.controller.keyboardLayoutChanged(SampleKeyLayouts.byName["german"]!)
++    #expect(h.run("bindings").text?.contains("⌃⌥Z is in Chat’s menu bar too: Arbor takes it for `undo`") == true)
++  }
++}
++
++/// The census: Arbor's defaults held against the menu bars of the apps on a hosted Mac (collab/evidence/menu-keys; docs/KEYBOARD.md has the table).
++/// So that a default that an app also uses is found here, before a person meets it.
++@Suite @MainActor struct MenuKeyCensusTests {
++  static let folder = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
++    .appendingPathComponent("collab/evidence/menu-keys")
++
++  /// Bundle id to what its menu bar held: a line is modifiers, the character's scalars in hex or `-`, the virtual key or `-`.
++  static func readings() throws -> [MenuBarReading] {
++    try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil).filter { $0.pathExtension == "tsv" }
++      .sorted { $0.path < $1.path }
++      .map { file in
++        let shortcuts = try String(contentsOf: file, encoding: .utf8).split(separator: "\n").compactMap { line -> MenuShortcut? in
++          let fields = line.split(separator: "\t").map(String.init)
++          guard fields.count == 3, let modifiers = Int(fields[0]) else { return nil }
++          let scalars = fields[1] == "-" ? [] : fields[1].split(separator: ",").compactMap { UInt32($0, radix: 16).flatMap(Unicode.Scalar.init) }
++          return MenuShortcut(
++            modifiers: modifiers, character: scalars.isEmpty ? nil : String(String.UnicodeScalarView(scalars)), virtualKey: Int(fields[2]))
++        }
++        let name = file.deletingPathExtension().lastPathComponent
++        return MenuBarReading(bundleID: name, appName: name, shortcuts: shortcuts)
++      }
++  }
++
++  func clashes() throws -> [String] {
++    let h = Harness()
++    return try Self.readings().flatMap { reading in
++      h.controller.appShortcutClashes(with: reading).bindings.map { "\($0.chord.text) \(reading.appName)" }
++    }
++  }
++
++  @Test func theCensusIsThere() throws {
++    let readings = try Self.readings()
++    #expect(readings.count >= 60)
++    #expect(readings.allSatisfy { $0.shortcuts.count >= 20 }, "every app has at least the Apple menu's and its own ⌘Q, ⌘H, ⌘W")
++  }
++
++  /// The core of the map: ⌃⌥ and one key. None of them is in any menu bar that was read.
++  @Test func noDefaultOnControlOptionAndOneKeyIsInAnyMenuBar() throws {
++    #expect(try clashes().filter { !$0.contains("cmd") && !$0.contains("shift") } == [])
++  }
++
++  /// Whoever adds a default that an app has too hears of it here, and either chooses another key or writes the clash into docs/KEYBOARD.md and this list.
++  @Test func theWholeMapClashesOnlyWhereTheTableSaysSo() throws {
++    let known: Set<String> = ["ctrl+opt+cmd+left com.apple.dt.Xcode", "ctrl+opt+cmd+right com.apple.dt.Xcode"]
++    #expect(Set(try clashes()).subtracting(known) == [])
++  }
++}
+diff --git a/Tests/ArborKitTests/TraceForwardingTests.swift b/Tests/ArborKitTests/TraceForwardingTests.swift
+index cf841422..ba295193 100644
+--- a/Tests/ArborKitTests/TraceForwardingTests.swift
++++ b/Tests/ArborKitTests/TraceForwardingTests.swift
+@@ -238,6 +238,8 @@ import Testing
+       // What the presenter is told ahead of a motion is said again. No window, view or layout depends on it, and its scheduled work (`rehearsal`)
+       // only tells the presenter.
+       "rehearseAfresh",
++      // Arbor's shortcuts held against a menu bar that somebody read: it asks. What `bindings`, `doctor` and `bind` read themselves is in the trace as a read.
++      "appShortcutClashes",
+     ]
+     /// Everything they do, they do by calling `perform`. A gesture that moves the view by itself (F16) will have to be recorded.
+     let endAsCommands: Set = ["gesture"]
+diff --git a/collab/scenarios/I16-the-keys-the-app-in-front-also-uses.sim b/collab/scenarios/I16-the-keys-the-app-in-front-also-uses.sim
+new file mode 100644
+index 00000000..f3f27f32
+--- /dev/null
++++ b/collab/scenarios/I16-the-keys-the-app-in-front-also-uses.sim
+@@ -0,0 +1,23 @@
++# Story: a chat app has a shortcut of its own on ⌃⌥Z, in its menu bar. While Arbor runs the key is Arbor's; paused or quit, the same fingers reach the
++# app. So that the clash is found before a person meets it, Arbor reads the menu bar of the app in front when somebody asks, and lists each of
++# its own keys that the app has too (IDEAS I16; QUESTIONS Q29, 2; board 0.1). Only then: it reads nothing by itself.
++open Chat
++open Notes
++menu-key Chat ctrl+opt+z
++menu-key Chat cmd+q
++menu-key Notes cmd+n
++focus 101
++bindings
++expect replied ⌃⌥Z is in Chat’s menu bar too: Arbor takes it for `undo`, and paused or quit it is Chat’s.
++# A short list must not pass for a clean bill.
++expect replied Only what an app shows in its menus can be seen
++doctor
++expect replied Shortcuts of the app in front: ⌃⌥Z is in Chat’s menu bar too
++# Another app in front, another answer.
++focus 102
++bindings
++expect replied Notes has none of Arbor’s shortcuts in its menu bar.
++# Making a shortcut is asking about it.
++menu-key Notes ctrl+opt+x
++bind ctrl+opt+x show-all
++expect replied mind that ⌃⌥X is in Notes’s menu bar too
+diff --git a/scripts/mac-shell/check-app-shortcuts.sh b/scripts/mac-shell/check-app-shortcuts.sh
+new file mode 100755
+index 00000000..1b2d61ce
+--- /dev/null
++++ b/scripts/mac-shell/check-app-shortcuts.sh
+@@ -0,0 +1,104 @@
++#!/bin/bash
++# Arbor lists each of its own shortcuts that the app in front has in its menu bar too (collab/IDEAS.md, I16; Controller+AppShortcuts.swift). On real menu bars:
++#
++#   scripts/mac-shell/run.sh scripts/mac-shell/check-app-shortcuts.sh
++#
++# THE QUESTIONS ONLY A MAC CAN ANSWER: does Input/MenuBarReader.swift, which asks for an item's four attributes in ONE call, read what menukeys.swift reads in
++# four; how long does it keep whoever asked waiting, with a small app and with one of 300 items in front; does it read the menu bar of the app a
++# person is in while a window of Arbor's own has the keyboard; and is it true that nothing is read unasked.
++#
++# The witness (keys.swift) has ⌃⌥A in its menu bar. TextEdit has none of Arbor's keys and some three hundred items.
++#
++# Only on GitHub's Macs: it opens and quits TextEdit, and brings apps to the front.
++source "$(dirname "$0")/lib-apps.sh"
++needs_throwaway_mac "open and quit TextEdit, and bring apps to the front"
++
++KEYS="$ARBOR_ROOT/.build/mac-shell/keys"
++KEYS_APP="$ARBOR_ROOT/.build/mac-shell/ArborKeys.app"
++KEYS_ID=dev.arbor.test.keys
++KEYS_LOG="$ARBOR_OUT/keys.log"
++KEYS_PID=""
++
++front_is() { [ "$("$KEYS" frontmost)" = "$1" ]; }
++now_ms() { perl -MTime::HiRes=time -e 'printf "%d", time * 1000'; }
++reads() { grep -c "in its menu bar" "$ARBOR_HOME/arbor.log" 2>/dev/null || true; }
++# ask <command…>: the reply in $REPLY_TEXT, how long it took in $TOOK.
++ask() {
++  local began
++  began=$(now_ms)
++  REPLY_TEXT=$("$ARBOR_BIN/arborctl" "$@" 2>&1)
++  TOOK=$(($(now_ms) - began))
++  echo "> $* ($TOOK ms)"
++}
++replied() { printf '%s\n' "$REPLY_TEXT" | grep -qF "$1"; }
++quick() { [ "$TOOK" -lt 2500 ]; }
++
++apps_build
++swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/keys.swift" -o "$KEYS" > "$ARBOR_OUT/build-keys.log" 2>&1 || {
++  cat "$ARBOR_OUT/build-keys.log"
++  die "scripts/mac-shell/keys.swift did not compile"
++}
++rm -rf "$KEYS_APP"
++mkdir -p "$KEYS_APP/Contents/MacOS"
++cp "$KEYS" "$KEYS_APP/Contents/MacOS/keys"
++cat > "$KEYS_APP/Contents/Info.plist" <<PLIST
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
++<plist version="1.0"><dict>
++  <key>CFBundleIdentifier</key><string>$KEYS_ID</string>
++  <key>CFBundleExecutable</key><string>keys</string>
++  <key>CFBundleName</key><string>ArborKeys</string>
++  <key>CFBundlePackageType</key><string>APPL</string>
++</dict></plist>
++PLIST
++at_exit 'kill_started $KEYS_PID; rm -rf "$KEYS_APP"'
++
++step "Arbor, and an app in front that has ⌃⌥A in its menu bar"
++arbor_start 1 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0
++ctl bind ctrl+opt+a show-all
++KEYS_ROADS=menu "$KEYS_APP/Contents/MacOS/keys" app "$KEYS_LOG" 20 520 260 160 9>&- &
++KEYS_PID=$!
++started "$KEYS_PID"
++keys_ready() { grep -q "ready pid=$KEYS_PID " "$KEYS_LOG" 2>/dev/null; }
++eventually keys_ready || die "the witness did not start"
++click 150 620
++eventually front_is "$KEYS_ID"
++sleep 3
++check "nothing was read unasked: not at the start, not when the app came forward" test "$(reads)" = 0
++
++step "bindings, doctor, bind"
++ask bindings
++printf '%s\n' "$REPLY_TEXT" | grep -i "menu" | sed 's/^/  /'
++check "bindings lists the key" replied "⌃⌥A is in ArborKeys’s menu bar too: Arbor takes it for \`show-all\`"
++check "and says what cannot be seen" replied "Only what an app shows in its menus can be seen"
++check "nobody waited long" quick
++check "the log has the bundle id and the key" grep -q "shortcuts: $KEYS_ID has ⌃⌥A in its menu bar too" "$ARBOR_HOME/arbor.log"
++check "and not the app's name" test "$(grep -c "ArborKeys" "$ARBOR_HOME/arbor.log")" = 0
++ask doctor
++check "doctor has the row" replied "Shortcuts of the app in front: ⌃⌥A is in ArborKeys’s menu bar too"
++ctl unbind ctrl+opt+a
++ask bind ctrl+opt+a show-all
++check "bind says so of the key it makes" replied "mind that ⌃⌥A is in ArborKeys’s menu bar too"
++
++step "with a window of Arbor's own in front it is still the person's app that is read"
++ctl settings-window
++sleep 1
++ask bindings
++check "the app whose menu bar it is" replied "⌃⌥A is in ArborKeys’s menu bar too"
++ctl settings-window close
++shot 10-asked
++
++step "an app with some three hundred items"
++apps_scratch
++app_open com.apple.TextEdit "$APPS_SCRATCH/oak.txt"
++apptool activate "$APP_PID"
++eventually front_is com.apple.TextEdit
++ask bindings
++printf '%s\n' "$REPLY_TEXT" | grep -i "menu bar" | sed 's/^/  /'
++check "TextEdit has none of them" replied "TextEdit has none of Arbor’s shortcuts in its menu bar."
++check "nobody waited long" quick
++grep "in its menu bar" "$ARBOR_HOME/arbor.log" | tail -n 1 | sed 's/.*shortcuts:/  shortcuts:/'
++ask bindings
++echo "  a second time: $TOOK ms"
++app_quit "$APP_PID"
++arbor_stop
+diff --git a/scripts/mac-shell/probe-claimed-keys-electron.sh b/scripts/mac-shell/probe-claimed-keys-electron.sh
+new file mode 100755
+index 00000000..1c81c421
+--- /dev/null
++++ b/scripts/mac-shell/probe-claimed-keys-electron.sh
+@@ -0,0 +1,137 @@
++#!/bin/bash
++# Does an app built on Electron hear a key that is Arbor's hot key? (collab/IDEAS.md, I16; the companion of check-claimed-keys.sh.)
++#
++#   scripts/mac-shell/run.sh --priority 1 scripts/mac-shell/probe-claimed-keys-electron.sh
++#
++# Many widely used desktop apps are web pages in Electron, and take their shortcuts in ways of their own: an accelerator in the menu, a listener in
++# the page, a listener before the page, a "global shortcut". The witness here is such an app, made on the spot, that has ⌃⌥A in all four ways and writes
++# down which of them ran.
++#
++# THE QUESTION ONLY A MAC CAN ANSWER: with ⌃⌥A registered by Arbor, does any of the four hear it? If one does, both act, and taking the key is not enough.
++# The controls: without Arbor, and with Arbor paused, the first three must run.
++#
++# Only on GitHub's Macs: it downloads Electron from the package registry and types into whatever has the keyboard.
++source "$(dirname "$0")/lib-apps.sh"
++needs_throwaway_mac "download Electron, and press keys that land in whichever app has the keyboard"
++
++scratch_dir electron WORK
++LOG="$ARBOR_OUT/electron-keys.log"
++RESULTS="$ARBOR_OUT/results-electron.txt"
++WITNESS_PID=""
++X=180
++Y=560
++: > "$RESULTS"
++
++apps_build
++cd "$WORK" || die "no scratch folder"
++cat > package.json <<'JSON'
++{ "name": "witness", "version": "1.0.0", "main": "main.js" }
++JSON
++cat > index.html <<'HTML'
++<!doctype html><body><input id="field" autofocus>
++<script>
++  const { ipcRenderer } = require('electron')
++  for (const kind of ['keydown', 'keyup']) {
++    document.addEventListener(kind, event =>
++      ipcRenderer.send('heard', `page ${kind} code=${event.code} ctrl=${event.ctrlKey} alt=${event.altKey} repeat=${event.repeat}`), true)
++  }
++</script></body>
++HTML
++cat > main.js <<'JS'
++const { app, BrowserWindow, Menu, globalShortcut, ipcMain } = require('electron')
++const fs = require('fs')
++const write = text => fs.appendFileSync(process.env.WITNESS_LOG, new Date().toISOString().slice(11, 23) + ' ' + text + '\n')
++ipcMain.on('heard', (event, text) => write(text))
++app.whenReady().then(() => {
++  Menu.setApplicationMenu(Menu.buildFromTemplate([
++    { label: 'Witness', submenu: [{ label: 'Witness', accelerator: 'Ctrl+Alt+A', click: () => write('menu accelerator ran') }, { role: 'quit' }] },
++  ]))
++  const window = new BrowserWindow({
++    x: 20, y: 440, width: 320, height: 240, webPreferences: { nodeIntegration: true, contextIsolation: false },
++  })
++  window.webContents.on('before-input-event', (event, input) =>
++    write(`before-input ${input.type} code=${input.code} ctrl=${input.control} alt=${input.alt}`))
++  if (process.env.WITNESS_GLOBAL) {
++    write('globalShortcut registered: ' + globalShortcut.register('Ctrl+Alt+A', () => write('globalShortcut ran')))
++  }
++  window.loadFile('index.html').then(() => write('ready pid=' + process.pid + ' electron=' + process.versions.electron))
++})
++JS
++step "Electron, from the package registry"
++limit 300 npm install --no-audit --no-fund --loglevel=error electron > "$ARBOR_OUT/npm.log" 2>&1 || { tail -n 20 "$ARBOR_OUT/npm.log"; die "Electron did not install"; }
++ELECTRON="$WORK/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron"
++# The package fetches the app itself in a step of its own, which the registry's client does not run everywhere (a hosted Mac, 2026-10-15: 13 packages, no app).
++[ -x "$ELECTRON" ] || limit 300 node node_modules/electron/install.js >> "$ARBOR_OUT/npm.log" 2>&1 || tail -n 20 "$ARBOR_OUT/npm.log"
++[ -x "$ELECTRON" ] || die "there is no $ELECTRON"
++at_exit 'kill_started $WITNESS_PID'
++
++count() { grep -c "$1" "$LOG" 2>/dev/null || true; }
++witness() {
++  [ -n "$WITNESS_PID" ] && { kill_started "$WITNESS_PID"; WITNESS_PID=""; sleep 1; }
++  rm -f "$LOG"
++  WITNESS_LOG="$LOG" WITNESS_GLOBAL="${1:-}" "$ELECTRON" "$WORK" > "$ARBOR_OUT/electron-stderr.log" 2>&1 9>&- &
++  WITNESS_PID=$!
++  started "$WITNESS_PID"
++  ready() { grep -q "ready pid=" "$LOG" 2>/dev/null; }
++  eventually ready || eventually ready || eventually ready || die "the Electron app did not start"
++  grep "ready\|registered" "$LOG" | sed 's/^/  /'
++}
++HEARD=0
++press() {
++  local before lines
++  # `arrange` lays the test window over everything.
++  apptool activate "$WITNESS_PID"
++  sleep 0.4
++  click "$X" "$Y"
++  sleep 0.4
++  before=$(wc -l < "$LOG" | tr -d ' ')
++  lines=$(arbor_log_lines)
++  key ctrl+opt+a
++  sleep 1
++  HEARD=$(tail -n "+$((before + 1))" "$LOG" | grep -c "KeyA\|ran")
++  echo "RESULT | $1 | in front: $("$ARBOR_POINTER" front 2>/dev/null) (the witness: $WITNESS_PID) | the app heard: $HEARD | lines in Arbor's log: $(arbor_log_since "$lines" | grep -c "arrange")" \
++    | tee -a "$RESULTS"
++  tail -n "+$((before + 1))" "$LOG" | grep "KeyA\|ran" | sed 's/^/    /'
++}
++heard() { [ "$HEARD" -gt 0 ]; }
++nothing() { [ "$HEARD" -eq 0 ]; }
++
++step "0. the control: no Arbor"
++witness
++shot 00-the-electron-witness
++press "no Arbor"
++check "with nobody to take it, the app hears ⌃⌥A: the witness works" heard
++
++step "1. Arbor runs and holds ⌃⌥A"
++arbor_start 1 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0
++press "Arbor running"
++check "the app hears nothing" nothing
++press "Arbor running, a second time"
++apptool activate "$WITNESS_PID"
++sleep 0.4
++click "$X" "$Y"
++before=$(wc -l < "$LOG" | tr -d ' ')
++key ctrl+opt+a --down
++key ctrl+opt+a --repeat 12
++key ctrl+opt+a --up
++sleep 0.6
++echo "RESULT | Arbor running, the key held with 12 repeats | the app heard: $(tail -n "+$((before + 1))" "$LOG" | grep -c "KeyA\|ran")" | tee -a "$RESULTS"
++
++step "2. Arbor is paused: the second control"
++ctl pause
++press "Arbor paused"
++ctl resume
++
++step "3. the app has a global shortcut on the same chord, registered after Arbor's"
++witness 1
++press "Arbor running; the app's globalShortcut came second"
++
++step "4. and registered before Arbor's"
++arbor_quit
++arbor_relaunch
++press "Arbor running; the app's globalShortcut came first"
++grep "already in use\|registered [0-9]* shortcuts" "$ARBOR_HOME/arbor.log" | tail -n 2
++
++step "the table"
++cat "$RESULTS"
++arbor_stop

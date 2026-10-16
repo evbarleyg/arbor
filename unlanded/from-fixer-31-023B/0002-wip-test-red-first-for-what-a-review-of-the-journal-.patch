@@ -1,0 +1,186 @@
+From 33f262126a3a3537d4a0422434bd5458591d334d Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 15:57:05 +0000
+Subject: [PATCH 2/2] wip(test): red first, for what a review of the journal
+ found: a late timer, staggered speakers, a second report after a command,
+ what was owed, a pause and a resume
+
+---
+ Tests/ArborKitTests/SpokeAheadTests.swift | 147 ++++++++++++++++++++++
+ 1 file changed, 147 insertions(+)
+
+diff --git a/Tests/ArborKitTests/SpokeAheadTests.swift b/Tests/ArborKitTests/SpokeAheadTests.swift
+index 40597b92..f9391fd1 100644
+--- a/Tests/ArborKitTests/SpokeAheadTests.swift
++++ b/Tests/ArborKitTests/SpokeAheadTests.swift
+@@ -567,6 +567,58 @@ import Testing
+     }
+   }
+ 
++  /// Nor is it lost where the second ends early: a hand takes the window, or it closes.
++  @Test(arguments: ["a hand takes its edge", "it closes"])
++  func whatWasOwedIsLaidOutWhereTheMomentEndsEarly(_ what: String) {
++    var settings = Settings.makingWay
++    settings.soleFloatTakesDesktop = true
++    let h = make(settings)
++    #expect(h.run("dock 102 left").ok && h.run("dock 105 left").ok)
++    h.system.close(WindowID(106))
++    h.scheduler.advance(by: 5)
++    // 101 and 103 share the laptop's Desktop, 104 has the side's. A tool takes 103 over to the side.
++    let shared = h.frame(WindowID(101))!
++    h.system.userMove(WindowID(103), to: CGRect(x: 2600, y: 300, width: 480, height: 348))
++    h.scheduler.advance(by: 0.1)
++    if what == "it closes" {
++      h.system.close(WindowID(103))
++    } else {
++      h.system.userResize(WindowID(103), to: CGRect(x: 2600, y: 300, width: 520, height: 348))
++    }
++    h.scheduler.advance(by: 0.5)
++    #expect(h.frame(WindowID(101)) != shared, "alone on the laptop's Desktop, it takes it")
++    expectWindowsMatchLayout(h)
++  }
++
++  /// In its user's hand long before, taken over to the laptop by macOS, and a word about the Dock lays everything out in between.
++  @Test func inHandBeforeAndALayoutInBetween() {
++    var settings = Settings.makingWay
++    settings.soleFloatTakesDesktop = true
++    var withDock = Self.laptop
++    withDock.visibleFrame.size.height -= 60
++    func play(early: Bool) -> Harness {
++      let h = make(settings)
++      leaveOneOnEachDesktop(h)
++      h.system.userMove(WindowID(104), to: CGRect(x: 2500, y: 200, width: 480, height: 348))
++      h.scheduler.advance(by: 5)
++      let over = h.frame(WindowID(104))!.offsetBy(dx: -1740, dy: 0)
++      if early { h.system.userMove(WindowID(104), to: over) }
++      h.scheduler.advance(by: 0.1)
++      h.system.setDisplays([withDock, Self.side])
++      h.scheduler.advance(by: 0.2)
++      h.system.displayList = [withDock]
++      if !early { h.system.userMove(WindowID(104), to: over) }
++      h.system.userMove(WindowID(105), to: h.frame(WindowID(105))!.offsetBy(dx: -1440, dy: 0))
++      h.scheduler.advance(by: DisplayChange.comingAndGoing)
++      h.system.setDisplays([withDock])
++      h.scheduler.advance(by: 5)
++      h.system.setDisplays([withDock, Self.side])
++      h.scheduler.advance(by: 5)
++      return h
++    }
++    expectTheSameEnd(play(early: true), play(early: false), "in hand, and back")
++  }
++
+   /// A move on its own Desktop counts at once, as it did: a layout within the second does not stretch the window over the Desktop again.
+   @Test func aMoveOnItsOwnDesktopCountsAtOnce() {
+     var settings = Settings.makingWay
+@@ -596,6 +648,57 @@ import Testing
+     #expect(play(waiting: 0.1) == play(waiting: 2))
+   }
+ 
++  /// A timer on a Mac that is busy changing its displays comes late. The entry lasts as long as its timer.
++  @Test func theLookOutComesLate() {
++    let (early, late) = (make(), make())
++    for h in [early, late] {
++      for window in [WindowID(105), WindowID(106)] { h.system.close(window) }
++      h.scheduler.advance(by: 2)
++    }
++    let (displays, moves) = plan(.theSideGoes, early)
++    early.system.userMove(moves[0].0, to: moves[0].1)
++    early.scheduler.advance(by: 0.3)
++    early.system.displayList = displays
++    early.scheduler.advance(to: early.scheduler.now + 1, holding: { key, _ in key.hasPrefix("spoke-ahead") })
++    for key in early.scheduler.pendingKeys where key.hasPrefix("spoke-ahead") { early.scheduler.fire(key) }
++    early.scheduler.advance(by: DisplayChange.comingAndGoing - 1)
++    early.system.setDisplays(displays)
++    early.scheduler.advance(by: 5)
++    play(.theSideGoes, ahead: [], on: late)
++    expectTheSameEnd(early, late, "a late timer")
++  }
++
++  /// Two speak one after the other, the list is new, and nobody speaks after that.
++  @Test func oneAfterTheOtherAndThenNobody() {
++    func play(early: Bool) -> Harness {
++      let h = make()
++      h.system.close(WindowID(106))
++      h.scheduler.advance(by: 2)
++      let (displays, moves) = plan(.theSideGoes, h)
++      if early { h.system.userMove(moves[0].0, to: moves[0].1) }
++      h.scheduler.advance(by: 0.3)
++      if early { h.system.userMove(moves[1].0, to: moves[1].1) }
++      h.scheduler.advance(by: 0.2)
++      h.system.displayList = displays
++      if !early { for (window, frame) in moves { h.system.userMove(window, to: frame) } }
++      h.scheduler.advance(by: DisplayChange.comingAndGoing)
++      h.system.setDisplays(displays)
++      h.scheduler.advance(by: 5)
++      return h
++    }
++    expectTheSameEnd(play(early: true), play(early: false), "one after the other")
++  }
++
++  /// A key that is refused because macOS has other displays is a sign of them too.
++  @Test func aRefusedKeyIsASign() {
++    let h = make()
++    h.system.userMove(WindowID(105), to: h.frame(WindowID(105))!.offsetBy(dx: -1440, dy: 0))
++    h.scheduler.advance(by: 0.3)
++    h.system.displayList = [Self.laptop]
++    #expect(!h.run("show-all").ok, "the story needs a key that is refused")
++    #expect(h.controller.workspaces[Self.side.id]?.isFloating(WindowID(105)) == true)
++  }
++
+   /// The second ends by the clock, with nobody speaking, and leaves nothing behind.
+   @Test func theMomentEndsByTheClock() {
+     let h = make()
+@@ -762,6 +865,50 @@ import Testing
+     #expect(!h.scheduler.pendingKeys.contains("spoke-ahead"))
+   }
+ 
++  /// The window speaks again after the command, settling: what the command wrote still stands.
++  @Test func itSpeaksAgainAfterACommand() {
++    let h = make()
++    h.system.userMove(WindowID(105), to: CGRect(x: 1700, y: 300, width: 480, height: 348))
++    h.scheduler.advance(by: 0.1)
++    #expect(h.run("move-to-display next 105").ok)
++    h.scheduler.advance(by: 0.1)
++    let there = h.frame(WindowID(105))!.offsetBy(dx: 3, dy: 3)
++    h.system.userMove(WindowID(105), to: there)
++    #expect(h.workspace.floating[WindowID(105)] == there, "the story needs it on the laptop")
++    h.scheduler.advance(by: 0.1)
++    h.system.displayList = [Self.laptop]
++    for window in [WindowID(104), WindowID(106)] { h.system.userMove(window, to: h.frame(window)!.offsetBy(dx: -1440, dy: 0)) }
++    h.scheduler.advance(by: DisplayChange.comingAndGoing)
++    h.system.setDisplays([Self.laptop])
++    h.scheduler.advance(by: 5)
++    #expect(h.controller.dormant[Self.side.id]?.workspace.floating[WindowID(105)] == nil)
++    #expect(h.workspace.floating[WindowID(105)] == there)
++  }
++
++  /// Whoever has just clicked or pressed a modifier key has asked for it: a tool's shortcut, the Window menu. And the reports that trail a hand.
++  @Test(arguments: ["a key or a click", "a hand just now"])
++  func whatFollowsThePersonsOwnActBeginsNoMoment(_ what: String) {
++    let h = make()
++    if what == "a hand just now" {
++      h.system.drag(WindowID(105), through: [CGPoint(x: 1900, y: 170), CGPoint(x: 2000, y: 310)], holding: 0)
++    } else {
++      h.system.secondsSinceInput = 0.4
++    }
++    h.system.userMove(WindowID(105), to: h.frame(WindowID(105))!.offsetBy(dx: 5, dy: 5))
++    #expect(!h.scheduler.pendingKeys.contains { $0.hasPrefix("spoke-ahead") })
++  }
++
++  /// Arbor pauses in that second, the window goes, and Arbor is back before the second is over.
++  @Test func aPauseAndAResumeWithinTheMoment() {
++    let h = make()
++    h.system.userMove(WindowID(105), to: CGRect(x: 300, y: 200, width: 480, height: 348))
++    #expect(h.run("pause").ok)
++    h.system.close(WindowID(105))
++    #expect(h.run("resume").ok)
++    #expect(h.controller.invariantViolations().isEmpty, "\(h.controller.invariantViolations())")
++    #expect(!h.scheduler.pendingKeys.contains { $0.hasPrefix("spoke-ahead") })
++  }
++
+   /// What Arbor itself does to a window is no report of a move: nothing is kept for it.
+   @Test func arborsOwnMoveBeginsNoMoment() {
+     let h = make()
+-- 
+2.43.0
+

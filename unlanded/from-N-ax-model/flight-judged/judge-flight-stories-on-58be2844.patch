@@ -1,0 +1,798 @@
+diff --git a/scripts/mac-on-linux/build.sh b/scripts/mac-on-linux/build.sh
+index bae6744f..c56b67a2 100755
+--- a/scripts/mac-on-linux/build.sh
++++ b/scripts/mac-on-linux/build.sh
+@@ -58,6 +58,8 @@ fi
+ jobs=$(nproc)
+ flags=(-swift-version 6 -Onone -I modules -no-color-diagnostics -diagnostic-style llvm -module-cache-path "$work/module-cache")
+ for headers in "$typecheck"/stubs/*/include; do flags+=(-I "$headers"); done
++# The judge's: stories that call the new member of WindowSystem itself are compiled only where the sources have it (tests/FlightJudged.swift).
++grep -q isInTheDockOrGone "$sources/ArborKit/Platform/WindowSystem.swift" && flags+=(-D HAS_THE_CURE)
+ report() { grep -E "^[^ ].*:[0-9]+:[0-9]+: error:|^error:|^<unknown>:0: error:" | sed -e "s#^$root/##" -e 's#^src/#Sources/#' | sort -u | head -40; }
+ 
+ # --- The stand-ins change seldom: compile them again only when they, or the compiler, have.
+diff --git a/scripts/mac-on-linux/tests/Flight.swift b/scripts/mac-on-linux/tests/Flight.swift
+index 920f99e3..27fdbf3b 100644
+--- a/scripts/mac-on-linux/tests/Flight.swift
++++ b/scripts/mac-on-linux/tests/Flight.swift
+@@ -120,9 +120,12 @@ func tellOfTheFlightToTheDock(_ book: Book) {
+       two.mac.minimize(a)
+       two.mac.pass(gap)
+       let (began, stoodStill) = (two.mac.now, two.mac.secondsTheMainThreadWaited)
++      let callsBefore = two.mac.calls
++      two.mac.keepsAccountOfCalls = true
+       story.check("the command is taken", two.run("zoom \(mine.number)", then: 0).ok)
+       story.check("and answered by the end of the flight", two.mac.now - began < flight + 0.05 - gap, "\(two.mac.now - began) s")
+       two.mac.pass(3)
++      print("  · (the judge's) the main thread stood still \(two.mac.secondsTheMainThreadWaited - stoodStill) s; the check allows \(flight + 0.05 - gap) s; \(two.mac.calls - callsBefore) calls")
+       story.check("in all, Arbor's main thread has stood still for the rest of the flight at most", two.mac.secondsTheMainThreadWaited - stoodStill < flight + 0.05 - gap, "\(two.mac.secondsTheMainThreadWaited - stoodStill) s")
+       story.check("the window that was asked for fills the view", mine.frame.width > 900, two.whereabouts(mine))
+       story.check("the sibling is out of view", two.isOutOfView(b), two.whereabouts(b))
+diff --git a/scripts/mac-on-linux/tests/FlightJudged.swift b/scripts/mac-on-linux/tests/FlightJudged.swift
+new file mode 100644
+index 00000000..0de89aae
+--- /dev/null
++++ b/scripts/mac-on-linux/tests/FlightJudged.swift
+@@ -0,0 +1,619 @@
++import ArborCore
++@testable import ArborKit
++import CoreGraphics
++import FakeMacOS
++import Foundation
++
++// The judge's stories about the cure of board 1.63 ("ask the window first, whether it is in the Dock"). They compile against Arbor with the cure and without it, so that each can be told of both; what calls the new
++// member of `WindowSystem` itself is behind HAS_THE_CURE, which build.sh sets when the sources have it.
++// Lines that begin with "·" are measurements, printed whether the checks pass or not.
++
++extension FakeMac {
++  /// Arbor's calls of one kind about one window since `since`.
++  func calls(_ verb: String, _ name: String, of window: Window, since: TimeInterval) -> [Call] {
++    account.filter { $0.time >= since && $0.verb == verb && $0.name == name && $0.window == window.number }
++  }
++  /// The reads of `AXMinimized` that are a question of their own. When a window is reported changed the layer reads title, position, size, minimized and full screen in a row (`refresh`): those are not counted.
++  func questionsWhetherItIsMinimized(_ window: Window?, since: TimeInterval) -> [Call] {
++    account.indices.filter { index in
++      let call = account[index]
++      guard call.time >= since, call.verb == "read", call.name == "AXMinimized", window == nil || call.window == window?.number else { return false }
++      return !(index > 0 && account[index - 1].verb == "read" && account[index - 1].name == "AXSize" && account[index - 1].window == call.window)
++    }.map { account[$0] }
++  }
++  /// What was asked of one window since `since`, in short: when, and how long it took. Of the reads only the question whether it is minimized; what sets a place or a size is counted.
++  func told(of window: Window, since: TimeInterval) -> String {
++    let questions = Set(questionsWhetherItIsMinimized(window, since: since).map(\.time))
++    let mine = account.filter { $0.time >= since && $0.window == window.number }
++    let frames = mine.filter { $0.verb == "write" && ($0.name == "AXPosition" || $0.name == "AXSize") }.count
++    let lines = mine.filter { ($0.verb != "read" && $0.name != "AXPosition" && $0.name != "AXSize") || ($0.name == "AXMinimized" && questions.contains($0.time)) }
++      .map { "\($0.verb) \($0.name) at \(String(format: "%.3f", $0.time - since)) took \(String(format: "%.3f", $0.took)) \($0.answer)" }
++    return "[" + (lines + (frames > 0 ? ["\(frames) places or sizes set"] : [])).joined(separator: "; ") + "]"
++  }
++  /// Whether the window server has `one` in front of `other`. False if either does not show.
++  func has(_ one: Window, inFrontOf other: Window) -> Bool {
++    let numbers = (windowList(onScreenOnly: true, withoutDesktop: true, only: nil) ?? []).map(\.number)
++    guard let a = numbers.firstIndex(of: one.number), let b = numbers.firstIndex(of: other.number) else { return false }
++    return a < b
++  }
++}
++
++private func measured(_ text: String) { print("  · \(text)") }
++private func seconds(_ value: TimeInterval) -> String { String(format: "%.3f s", value) }
++
++@MainActor
++func tellOfTheFlightJudged(_ book: Book) {
++  // MARK: 3. The calls in the story of the fault
++
++  for held in [true, false] {
++    book.story("judged: the calls while the window that fills the view flies to the Dock\(held ? ", the view held" : "")") { story in
++      var a: FakeMac.Window!, b: FakeMac.Window!, mine: FakeMac.Window!
++      let two = StoreyTwo(story) { mac in
++        let app = mac.launch("Notes")
++        b = mac.open("b", in: app, frame: CGRect(x: 560, y: 60, width: 400, height: 300))
++        a = mac.open("a", in: app, frame: CGRect(x: 40, y: 60, width: 400, height: 300))
++        mine = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 60, y: 400, width: 400, height: 250))
++      }
++      two.run("arrange")
++      two.mac.click(a)
++      two.mac.pass(1)
++      two.run("zoom \(a.number)")
++      if held { two.run("hold") }
++      two.mac.keepsAccountOfCalls = true
++      let (began, stoodStill, calls) = (two.mac.now, two.mac.secondsTheMainThreadWaited, two.mac.calls)
++      two.mac.minimize(a)
++      two.mac.pass(4)
++      let alone = two.mac.questionsWhetherItIsMinimized(a, since: began)
++      measured("asked whether it is minimized, as a question of its own: \(alone.map { String(format: "%.4f", $0.time - began) + " s" }.joined(separator: ", "))")
++      measured("asked the same of others: \(two.mac.questionsWhetherItIsMinimized(nil, since: began).filter { $0.window != a.number }.map { "w\($0.window ?? 0) at " + String(format: "%.4f", $0.time - began) + " s" }.joined(separator: ", "))")
++      measured("asked of w\(a.number), the window that flew: \(two.mac.told(of: a, since: began))")
++      measured("\(two.mac.calls - calls) calls in all; the main thread stood still \(seconds(two.mac.secondsTheMainThreadWaited - stoodStill))")
++      story.check("it is in the Dock", a.isMinimized)
++      story.check("it was asked once at most whether it is minimized", alone.count <= 1, "\(alone.count) times")
++      story.check("nobody made it the main window", two.mac.calls("write", "AXMain", of: a, since: began).isEmpty)
++      story.check("nobody raised it", two.mac.calls("perform", "AXRaise", of: a, since: began).isEmpty)
++      story.check("the main thread stood still for a hundredth of a second at most", two.mac.secondsTheMainThreadWaited - stoodStill < 0.01, seconds(two.mac.secondsTheMainThreadWaited - stoodStill))
++      story.check("the window with the keyboard is in view", two.mac.keyWindow.map { two.isInView($0) } ?? false, "w\(two.mac.keyWindow?.number ?? 0); \(two.whereabouts(b)); \(two.whereabouts(mine))")
++    }
++  }
++
++  // MARK: 4a. A window kept in view
++
++  /// Two docked windows of two apps, and a window of a third app, with a sibling or without, kept in view over them.
++  @MainActor
++  final class Pinned {
++    var left: FakeMac.Window!, right: FakeMac.Window!, pin: FakeMac.Window!, sibling: FakeMac.Window?
++    let two: StoreyTwo
++    init(_ story: Story, sibling withSibling: Bool) {
++      var left: FakeMac.Window!, right: FakeMac.Window!, pin: FakeMac.Window!, sibling: FakeMac.Window?
++      two = StoreyTwo(story) { mac in
++        left = mac.open("left", in: mac.launch("Notes"), frame: CGRect(x: 40, y: 60, width: 400, height: 300))
++        right = mac.open("right", in: mac.launch("Mine"), frame: CGRect(x: 560, y: 60, width: 400, height: 300))
++        let call = mac.launch("Call")
++        if withSibling { sibling = mac.open("sibling", in: call, frame: CGRect(x: 100, y: 420, width: 300, height: 200)) }
++        pin = mac.open("pin", in: call, frame: CGRect(x: 380, y: 200, width: 300, height: 220))
++      }
++      (self.left, self.right, self.pin, self.sibling) = (left, right, pin, sibling)
++      story.check("two windows are docked", two.run("dock \(left.number) left").ok && two.run("dock \(right.number) right").ok)
++      story.check("one is kept in view", two.run("pin \(pin.number)").ok, two.whereabouts(pin))
++      // Docking has pushed it onto the Desktop between the two. Its person wants it over the right one.
++      two.mac.drag(from: CGPoint(x: pin.bounds.midX, y: pin.bounds.minY + 10), to: CGPoint(x: pin.bounds.midX + 200, y: pin.bounds.minY + 10))
++      two.mac.release()
++      two.mac.pass(2)
++      story.check("it lies over part of the right one, in front of it", pin.bounds.intersects(right.bounds) && two.mac.has(pin, inFrontOf: right) && pin.bounds.maxX < right.bounds.maxX - 60, "\(two.whereabouts(pin)); \(two.whereabouts(right))")
++    }
++  }
++
++  // The look that falls between the landing and the report: 0.2, 0.4 and 0.6 s after the press, so it depends on how long the button is held.
++  for sibling in [false, true] {
++    for hasTheKeyboard in [false, true] {
++      for held in [0.040, 0.046, 0.048, 0.050, 0.052, 0.080, 0.250] {
++        book.story("judged: a window kept in view\(sibling ? ", which has a sibling," : "")\(hasTheKeyboard ? " with the keyboard" : "") goes to the Dock by its yellow button, held \(Int(held * 1000)) ms") { story in
++          let set = Pinned(story, sibling: sibling)
++          let (two, pin) = (set.two, set.pin!)
++          two.mac.click(hasTheKeyboard ? pin : set.left)
++          two.mac.pass(2)
++          two.mac.keepsAccountOfCalls = true
++          let (began, stoodStill) = (two.mac.now, two.mac.secondsTheMainThreadWaited)
++          two.mac.clickYellowButton(of: pin, heldFor: held)
++          two.mac.pass(4)
++          measured("asked of the window: \(two.mac.told(of: pin, since: began)); the main thread stood still \(seconds(two.mac.secondsTheMainThreadWaited - stoodStill))")
++          story.check("it is in the Dock, and stays there", pin.isMinimized, "it is out again: \(two.whereabouts(pin))")
++          story.check("nobody raised it", two.mac.calls("perform", "AXRaise", of: pin, since: began).isEmpty)
++          story.check("the main thread stood still for a tenth of a second at most", two.mac.secondsTheMainThreadWaited - stoodStill < 0.1, seconds(two.mac.secondsTheMainThreadWaited - stoodStill))
++        }
++      }
++    }
++  }
++
++  // Covered in mid-flight: the person sends the call to the Dock and goes on working in the window beneath.
++  for fetches in [false, true] {
++    for gap in [0.1, 0.3, 0.5, 0.56] {
++      book.story("judged: a window kept in view flies to the Dock, and \(gap) s later the window beneath it is clicked\(fetches ? " (a raise that waited fetches)" : "")") { story in
++        let set = Pinned(story, sibling: false)
++        let (two, pin) = (set.two, set.pin!)
++        two.mac.aRaiseThatWaitedFetches = fetches
++        two.mac.click(set.left)
++        two.mac.pass(2)
++        two.mac.keepsAccountOfCalls = true
++        let (began, stoodStill) = (two.mac.now, two.mac.secondsTheMainThreadWaited)
++        two.mac.clickYellowButton(of: pin, heldFor: 0)
++        two.mac.pass(gap)
++        // Beside the window kept in view, which lies over part of it.
++        two.mac.press(at: CGPoint(x: set.right.bounds.maxX - 40, y: 300))
++        two.mac.pass(0.08)
++        two.mac.release()
++        two.mac.pass(4)
++        measured("asked of the window: \(two.mac.told(of: pin, since: began)); the main thread stood still \(seconds(two.mac.secondsTheMainThreadWaited - stoodStill))")
++        story.check("it is in the Dock, and stays there", pin.isMinimized, "it is out again: \(two.whereabouts(pin))")
++        story.check("the window that was clicked has the keyboard", two.mac.keyWindow === set.right, "w\(two.mac.keyWindow?.number ?? 0)")
++        story.check("the main thread stood still for a tenth of a second at most", two.mac.secondsTheMainThreadWaited - stoodStill < 0.1, seconds(two.mac.secondsTheMainThreadWaited - stoodStill))
++      }
++    }
++  }
++
++  book.story("judged: a window kept in view that another covers is still raised") { story in
++    let set = Pinned(story, sibling: false)
++    let (two, pin) = (set.two, set.pin!)
++    two.mac.keepsAccountOfCalls = true
++    let (began, calls) = (two.mac.now, two.mac.calls)
++    two.mac.press(at: CGPoint(x: set.right.bounds.maxX - 40, y: 300))
++    two.mac.pass(0.08)
++    two.mac.release()
++    two.mac.pass(2)
++    measured("asked of the window: \(two.mac.told(of: pin, since: began)); \(two.mac.calls - calls) calls in all")
++    story.check("it is in front of the window that was clicked", two.mac.has(pin, inFrontOf: set.right))
++    story.check("which has the keyboard", two.mac.keyWindow === set.right, "w\(two.mac.keyWindow?.number ?? 0)")
++  }
++
++  // MARK: 4b. Asked for by name
++
++  for command in ["reveal", "zoom", "focus"] {
++    for kept in [false, true] {
++      book.story("judged: \(command) of a \(kept ? "window kept in view" : "docked window") that lies in the Dock") { story in
++        var a: FakeMac.Window!, b: FakeMac.Window!, mine: FakeMac.Window!
++        let two = StoreyTwo(story) { mac in
++          let app = mac.launch("Notes")
++          b = mac.open("b", in: app, frame: CGRect(x: 560, y: 60, width: 400, height: 300))
++          a = mac.open("a", in: app, frame: CGRect(x: 40, y: 60, width: 400, height: 300))
++          mine = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 60, y: 400, width: 400, height: 250))
++        }
++        two.run("arrange")
++        if kept { story.check("it is kept in view", two.run("pin \(a.number)").ok) }
++        two.mac.click(a)
++        two.mac.pass(1)
++        two.mac.minimize(a)
++        two.mac.pass(3)
++        two.mac.click(mine)
++        two.mac.pass(1)
++        story.check("it lies in the Dock", a.isMinimized)
++        two.mac.keepsAccountOfCalls = true
++        let (began, stoodStill) = (two.mac.now, two.mac.secondsTheMainThreadWaited)
++        let result = two.run("\(command) \(a.number)", then: 3)
++        measured("\(command): \(result.ok ? "ok" : "refused"): \(result.message)")
++        measured("asked of the window: \(two.mac.told(of: a, since: began)); the main thread stood still \(seconds(two.mac.secondsTheMainThreadWaited - stoodStill))")
++        story.check("it is out of the Dock", !a.isMinimized)
++        story.check("in view", two.isInView(a), two.whereabouts(a))
++        story.check("with the keyboard", two.mac.keyWindow === a, "w\(two.mac.keyWindow?.number ?? 0)")
++      }
++    }
++  }
++
++  // MARK: 4c. While its sibling is being laid out
++
++  for (gap, flight) in [(0.0, 0.55), (0.1, 0.55), (0.4, 0.55), (0.54, 0.55), (0.1, 0.66)] {
++    for command in ["swap-siblings", "dock-sibling", "dock-itself", "show-all"] {
++      book.story("judged: \(gap) s into a docked window's flight of \(flight) s to the Dock: \(command)") { story in
++        var a: FakeMac.Window!, b: FakeMac.Window!, mine: FakeMac.Window!
++        let two = StoreyTwo(story) { mac in
++          let app = mac.launch("Notes")
++          b = mac.open("b", in: app, frame: CGRect(x: 560, y: 60, width: 400, height: 300))
++          a = mac.open("a", in: app, frame: CGRect(x: 40, y: 60, width: 400, height: 300))
++          mine = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 60, y: 400, width: 400, height: 250))
++        }
++        two.run("arrange")
++        two.mac.click(a)
++        two.mac.pass(1)
++        if command == "show-all" { two.run("zoom \(a.number)") }
++        two.mac.timing.minimizing = flight
++        two.mac.keepsAccountOfCalls = true
++        let (began, stoodStill) = (two.mac.now, two.mac.secondsTheMainThreadWaited)
++        two.mac.minimize(a)
++        two.mac.pass(gap)
++        let text =
++          switch command {
++          case "swap-siblings": "swap \(b.number) \(mine.number)"
++          case "dock-sibling": "dock \(b.number) left"
++          case "dock-itself": "dock \(a.number) left"
++          default: "show-all"
++          }
++        let result = two.run(text, then: 4)
++        measured("\(text): \(result.ok ? "ok" : "refused"): \(result.message)")
++        measured("asked of the window that flew: \(two.mac.told(of: a, since: began)); the main thread stood still \(seconds(two.mac.secondsTheMainThreadWaited - stoodStill))")
++        story.check("the window is in the Dock, and stays there", a.isMinimized, "it is out again: \(two.whereabouts(a))")
++        story.check("the main thread stood still for the rest of the flight at most", two.mac.secondsTheMainThreadWaited - stoodStill < flight + 0.05 - gap, seconds(two.mac.secondsTheMainThreadWaited - stoodStill))
++        story.check("the two that are left are in view, side by side", two.isInView(b) && two.isInView(mine) && !b.frame.intersects(mine.frame), "\(two.whereabouts(b)); \(two.whereabouts(mine))")
++        story.check("the window with the keyboard is in view", two.mac.keyWindow.map { two.isInView($0) } ?? false, "w\(two.mac.keyWindow?.number ?? 0)")
++        story.check("the app is not written off: its window still takes a frame", two.run("swap \(b.number) \(mine.number)", then: 2).ok && two.isInView(b) && !b.frame.intersects(mine.frame), "\(two.whereabouts(b)); \(two.whereabouts(mine))")
++      }
++    }
++  }
++
++  // MARK: 4d. To the Dock by hand, and out again by hand
++
++  for held in [false, true] {
++    for gap in [0.3, 0.551, 0.56, 0.7, 1.0] {
++      book.story("judged: the window that fills the view goes to the Dock by hand and is fetched by hand \(gap) s later\(held ? ", the view held" : "")") { story in
++        var a: FakeMac.Window!, b: FakeMac.Window!, mine: FakeMac.Window!
++        let two = StoreyTwo(story) { mac in
++          let app = mac.launch("Notes")
++          b = mac.open("b", in: app, frame: CGRect(x: 560, y: 60, width: 400, height: 300))
++          a = mac.open("a", in: app, frame: CGRect(x: 40, y: 60, width: 400, height: 300))
++          mine = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 60, y: 400, width: 400, height: 250))
++        }
++        two.run("arrange")
++        two.mac.click(a)
++        two.mac.pass(1)
++        two.run("zoom \(a.number)")
++        let filled = a.frame
++        if held { two.run("hold") }
++        two.mac.keepsAccountOfCalls = true
++        let (began, stoodStill) = (two.mac.now, two.mac.secondsTheMainThreadWaited)
++        two.mac.minimize(a)
++        two.mac.pass(gap)
++        let wasInFlight = a.isInFlight
++        two.mac.restore(a, byHand: true)
++        two.mac.pass(5)
++        measured("asked of the window: \(two.mac.told(of: a, since: began)); the main thread stood still \(seconds(two.mac.secondsTheMainThreadWaited - stoodStill))")
++        _ = (b, mine)
++        if wasInFlight {
++          // There is nothing in the Dock to click yet: the model takes no notice. Not a story about Arbor.
++          story.check("(in flight the model lets nobody fetch it) it is in the Dock", a.isMinimized)
++        } else {
++          story.check("it is out of the Dock", !a.isMinimized)
++          story.check("it fills the view as before", two.isInView(a) && a.frame == filled, "\(two.whereabouts(a)), it was at \(filled.text)")
++          story.check("it has the keyboard", two.mac.keyWindow === a, "w\(two.mac.keyWindow?.number ?? 0)")
++        }
++        story.check("Arbor has raised nothing and sent nothing to the Dock or out of it", two.mac.calls("perform", "AXRaise", of: a, since: began).isEmpty && two.mac.calls("write", "AXMinimized", of: a, since: began).isEmpty)
++        story.check("the main thread stood still for a tenth of a second at most", two.mac.secondsTheMainThreadWaited - stoodStill < 0.1, seconds(two.mac.secondsTheMainThreadWaited - stoodStill))
++      }
++    }
++  }
++
++  // MARK: 4e. The question itself falls into the deaf half second, or is put to an app that hangs
++
++  #if HAS_THE_CURE
++    for flight in [0.55, 0.66, 1.2] {
++      book.story("judged: the layer is asked in mid-flight whether a window is in the Dock, a flight of \(flight) s") { story in
++        var a: FakeMac.Window!, b: FakeMac.Window!
++        let one = StoreyOne(story) { mac in
++          let app = mac.launch("Notes")
++          b = mac.open("b", in: app, frame: CGRect(x: 560, y: 60, width: 400, height: 300))
++          a = mac.open("a", in: app, frame: CGRect(x: 40, y: 60, width: 400, height: 300))
++        }
++        one.mac.timing.minimizing = flight
++        one.mac.minimize(a)
++        one.mac.pass(0.1)
++        var stoodStill = one.mac.secondsTheMainThreadWaited
++        let ofItself = one.layer.isInTheDockOrGone(WindowID(a.number))
++        measured("the window that flies: \(ofItself ? "in the Dock or gone" : "there"), after \(seconds(one.mac.secondsTheMainThreadWaited - stoodStill))")
++        story.check("the window that flies counts as in the Dock", ofItself)
++        stoodStill = one.mac.secondsTheMainThreadWaited
++        let ofItsSibling = one.layer.isInTheDockOrGone(WindowID(b.number))
++        measured("its sibling, asked next: \(ofItsSibling ? "in the Dock or gone" : "there"), after \(seconds(one.mac.secondsTheMainThreadWaited - stoodStill))")
++        story.check("its sibling counts as being there", !ofItsSibling)
++        one.mac.pass(3)
++        story.check("three seconds later the sibling counts as being there", !one.layer.isInTheDockOrGone(WindowID(b.number)))
++      }
++    }
++
++    book.story("judged: the layer is asked whether the window of an app that hangs is in the Dock") { story in
++      var a: FakeMac.Window!
++      var app: FakeMac.App!
++      let one = StoreyOne(story) { mac in
++        app = mac.launch("Notes")
++        a = mac.open("a", in: app, frame: CGRect(x: 40, y: 60, width: 400, height: 300))
++      }
++      one.mac.hang(app)
++      for turn in 1...3 {
++        let stoodStill = one.mac.secondsTheMainThreadWaited
++        let answer = one.layer.isInTheDockOrGone(WindowID(a.number))
++        measured("asked for the \(turn). time: \(answer ? "in the Dock or gone" : "there"), after \(seconds(one.mac.secondsTheMainThreadWaited - stoodStill))")
++        if turn == 1 { story.check("it counts as in the Dock or gone, which it is not", answer) }
++        one.mac.pass(0.2)
++      }
++      one.mac.wake(app)
++      one.mac.pass(1)
++      story.check("a second after the app has woken it counts as being there", !one.layer.isInTheDockOrGone(WindowID(a.number)))
++    }
++  #endif
++
++  // What a person sees of it. The app hangs for three seconds; meanwhile its window is asked for.
++  for inFront in [false, true] {
++    for command in ["reveal", "zoom", "focus", "dock"] {
++      book.story("judged: \(command) of a window whose app, \(inFront ? "in front" : "in the background"), hangs for three seconds") { story in
++        var a: FakeMac.Window!, b: FakeMac.Window!, mine: FakeMac.Window!
++        var notes: FakeMac.App!
++        let two = StoreyTwo(story) { mac in
++          notes = mac.launch("Notes")
++          b = mac.open("b", in: notes, frame: CGRect(x: 560, y: 60, width: 400, height: 300))
++          a = mac.open("a", in: notes, frame: CGRect(x: 40, y: 60, width: 400, height: 300))
++          mine = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 60, y: 400, width: 400, height: 250))
++        }
++        two.run("arrange")
++        two.mac.click(inFront ? b : mine)
++        two.mac.pass(1)
++        two.mac.keepsAccountOfCalls = true
++        two.mac.hang(notes, for: 3)
++        let (began, stoodStill) = (two.mac.now, two.mac.secondsTheMainThreadWaited)
++        let result = two.run(command == "dock" ? "dock \(a.number) left" : "\(command) \(a.number)", then: 8)
++        measured("\(command): \(result.ok ? "ok" : "refused"): \(result.message)")
++        measured("asked of the window: \(two.mac.told(of: a, since: began)); the main thread stood still \(seconds(two.mac.secondsTheMainThreadWaited - stoodStill))")
++        story.check("once the app has woken the window that was asked for has the keyboard", two.mac.keyWindow === a, "w\(two.mac.keyWindow?.number ?? 0) has it")
++        story.check("the window with the keyboard is in view", two.mac.keyWindow.map { two.isInView($0) } ?? false, "w\(two.mac.keyWindow?.number ?? 0)")
++        story.check("the main thread stood still for a good second at most", two.mac.secondsTheMainThreadWaited - stoodStill < 1.2, seconds(two.mac.secondsTheMainThreadWaited - stoodStill))
++      }
++    }
++  }
++
++  for hang in [3.0, 0.3] {
++    book.story("judged: a window kept in view, of an app that hangs for \(hang) s, is covered by a click on the window beneath") { story in
++      let set = Pinned(story, sibling: false)
++      let (two, pin) = (set.two, set.pin!)
++      two.mac.click(set.left)
++      two.mac.pass(2)
++      two.mac.keepsAccountOfCalls = true
++      two.mac.hang(pin.app, for: hang)
++      let (began, stoodStill) = (two.mac.now, two.mac.secondsTheMainThreadWaited)
++      two.mac.press(at: CGPoint(x: set.right.bounds.maxX - 40, y: 300))
++      two.mac.pass(0.08)
++      two.mac.release()
++      two.mac.pass(10)
++      measured("asked of the window: \(two.mac.told(of: pin, since: began)); the main thread stood still \(seconds(two.mac.secondsTheMainThreadWaited - stoodStill))")
++      story.check("once its app has woken it is in front of the window that was clicked", two.mac.has(pin, inFrontOf: set.right))
++      two.mac.pass(60)
++      story.check("at the latest a minute later", two.mac.has(pin, inFrontOf: set.right))
++      two.mac.press(at: CGPoint(x: set.right.bounds.maxX - 40, y: 320))
++      two.mac.pass(0.08)
++      two.mac.release()
++      two.mac.pass(2)
++      story.check("at the latest after the next click", two.mac.has(pin, inFrontOf: set.right))
++      story.check("the main thread stood still for a good second at most", two.mac.secondsTheMainThreadWaited - stoodStill < 1.2, seconds(two.mac.secondsTheMainThreadWaited - stoodStill))
++    }
++  }
++
++  // Arbor looks for somebody in view to give the keyboard to, and the one used last belongs to an app that hangs: who gets it, and for how long does Arbor stand still?
++  for hung in [1, 2] {
++    book.story("judged: the window with the keyboard closes, its app's last, and the app\(hung == 1 ? "" : "s") of the \(hung == 1 ? "one" : "two") used before it hang\(hung == 1 ? "s" : "")") { story in
++      var a: FakeMac.Window!, b: FakeMac.Window!, c: FakeMac.Window!, mine: FakeMac.Window!
++      let two = StoreyTwo(story) { mac in
++        a = mac.open("a", in: mac.launch("A"), frame: CGRect(x: 40, y: 60, width: 300, height: 300))
++        b = mac.open("b", in: mac.launch("B"), frame: CGRect(x: 360, y: 60, width: 300, height: 300))
++        c = mac.open("c", in: mac.launch("C"), frame: CGRect(x: 680, y: 60, width: 300, height: 300))
++        mine = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 60, y: 400, width: 400, height: 250))
++      }
++      two.run("arrange")
++      for window in [c!, b!, a!, mine!] {
++        two.mac.click(window)
++        two.mac.pass(1)
++      }
++      two.mac.hang(a.app, for: 6)
++      if hung == 2 { two.mac.hang(b.app, for: 6) }
++      two.mac.keepsAccountOfCalls = true
++      let (began, stoodStill) = (two.mac.now, two.mac.secondsTheMainThreadWaited)
++      two.mac.close(mine)
++      two.mac.pass(3)
++      measured("asked of a: \(two.mac.told(of: a, since: began))")
++      measured("asked of b: \(two.mac.told(of: b, since: began))")
++      measured("asked of c: \(two.mac.told(of: c, since: began))")
++      measured("w\(two.mac.keyWindow?.number ?? 0) has the keyboard (a is w\(a.number)); the main thread stood still \(seconds(two.mac.secondsTheMainThreadWaited - stoodStill))")
++      story.check("a window in view has the keyboard", two.mac.keyWindow.map { two.isInView($0) } ?? false, "w\(two.mac.keyWindow?.number ?? 0)")
++    }
++  }
++
++  // MARK: 4f. It closes instead of flying
++
++  for atOnce in [false, true] {
++    for held in [false, true] {
++      book.story("judged: the window that fills the view closes\(atOnce ? ", dropped by its app at once" : "")\(held ? ", the view held" : "")") { story in
++        var a: FakeMac.Window!, b: FakeMac.Window!, mine: FakeMac.Window!
++        let two = StoreyTwo(story) { mac in
++          let app = mac.launch("Notes")
++          app.dropsAClosingWindowAtOnce = atOnce
++          b = mac.open("b", in: app, frame: CGRect(x: 560, y: 60, width: 400, height: 300))
++          a = mac.open("a", in: app, frame: CGRect(x: 40, y: 60, width: 400, height: 300))
++          mine = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 60, y: 400, width: 400, height: 250))
++        }
++        two.run("arrange")
++        two.mac.click(a)
++        two.mac.pass(1)
++        two.run("zoom \(a.number)")
++        if held { two.run("hold") }
++        two.mac.keepsAccountOfCalls = true
++        let (began, stoodStill) = (two.mac.now, two.mac.secondsTheMainThreadWaited)
++        two.mac.close(a)
++        two.mac.pass(4)
++        measured("asked of the window that closed: \(two.mac.told(of: a, since: began)); the main thread stood still \(seconds(two.mac.secondsTheMainThreadWaited - stoodStill))")
++        measured("w\(two.mac.keyWindow?.number ?? 0) has the keyboard; \(two.whereabouts(b)); \(two.whereabouts(mine))")
++        story.check("the window with the keyboard is in view", two.mac.keyWindow.map { two.isInView($0) } ?? false, "w\(two.mac.keyWindow?.number ?? 0): \(two.whereabouts(b)); \(two.whereabouts(mine))")
++        story.check("the main thread stood still for a tenth of a second at most", two.mac.secondsTheMainThreadWaited - stoodStill < 0.1, seconds(two.mac.secondsTheMainThreadWaited - stoodStill))
++      }
++    }
++  }
++
++  // MARK: The held view that empties: where does the keyboard go?
++
++  for how in ["minimized", "closed"] {
++    for level in ["hold", "hold still"] {
++      for displays in [1, 2] {
++        book.story("judged: \(level), \(displays) display\(displays == 1 ? "" : "s"): the window that fills the view is \(how)") { story in
++          var a: FakeMac.Window!, b: FakeMac.Window!, mine: FakeMac.Window!, other: FakeMac.Window?
++          let two = StoreyTwo(story) { mac in
++            if displays == 2 {
++              mac.setScreens([.hostedMac, FakeMac.Screen(id: 2, name: "Second", frame: CGRect(x: 1024, y: 0, width: 1920, height: 1080), visibleFrame: CGRect(x: 1024, y: 25, width: 1920, height: 1055))])
++              other = mac.open("other", in: mac.launch("Other"), frame: CGRect(x: 1200, y: 100, width: 600, height: 400))
++            }
++            let app = mac.launch("Notes")
++            b = mac.open("b", in: app, frame: CGRect(x: 560, y: 60, width: 400, height: 300))
++            a = mac.open("a", in: app, frame: CGRect(x: 40, y: 60, width: 400, height: 300))
++            mine = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 60, y: 400, width: 400, height: 250))
++          }
++          two.mac.moveMouse(to: CGPoint(x: 500, y: 400))
++          two.run("arrange all")
++          two.mac.click(a)
++          two.mac.pass(1)
++          two.run("zoom \(a.number)")
++          story.check("the view is held", two.run(level).ok)
++          two.mac.pass(2)
++          two.mac.keepsAccountOfCalls = true
++          let (began, stoodStill) = (two.mac.now, two.mac.secondsTheMainThreadWaited)
++          if how == "minimized" { two.mac.minimize(a) } else { two.mac.close(a) }
++          two.mac.pass(5)
++          measured("asked of the window: \(two.mac.told(of: a, since: began)); the main thread stood still \(seconds(two.mac.secondsTheMainThreadWaited - stoodStill))")
++          measured("w\(two.mac.keyWindow?.number ?? 0) has the keyboard; \(two.whereabouts(b)); \(two.whereabouts(mine))\(other.map { "; " + two.whereabouts($0) } ?? "")")
++          measured("the focus ring is around \(two.ring.map { "w\($0)" } ?? "nothing")")
++          story.check("the focus ring is around no window that is gone or out of view", two.ring.flatMap { two.mac.window($0) }.map { two.isInView($0) } ?? (two.ring == nil), "w\(two.ring ?? 0)")
++          if how == "minimized" { story.check("it is in the Dock, and stays there", a.isMinimized) }
++          story.check("the window with the keyboard is in view", two.mac.keyWindow.map { $0.isOpen && two.isInView($0) } ?? false, "w\(two.mac.keyWindow?.number ?? 0)")
++        }
++      }
++    }
++  }
++
++  // MARK: The reports come late, or find Arbor busy
++
++  for (what, late, busy) in [("its app's reports come 0.1 s late", 0.1, 0.0), ("its app's reports come 0.55 s late", 0.55, 0.0), ("Arbor is busy for 0.3 s as it lands", 0.0, 0.3)] {
++    for kept in [false, true] {
++      book.story("judged: \(kept ? "a window kept in view goes to the Dock" : "the window that fills a held view goes to the Dock"), and \(what)") { story in
++        var a: FakeMac.Window!, b: FakeMac.Window!, mine: FakeMac.Window!
++        let two = StoreyTwo(story) { mac in
++          let app = mac.launch("Notes")
++          b = mac.open("b", in: app, frame: CGRect(x: 560, y: 60, width: 400, height: 300))
++          a = mac.open("a", in: app, frame: CGRect(x: 40, y: 60, width: 400, height: 300))
++          mine = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 60, y: 400, width: 400, height: 250))
++        }
++        two.run("arrange")
++        if kept { two.run("pin \(a.number)") }
++        two.mac.click(a)
++        two.mac.pass(1)
++        if !kept {
++          two.run("zoom \(a.number)")
++          two.run("hold")
++        }
++        a.app.reportsLateBy = late
++        two.mac.keepsAccountOfCalls = true
++        let (began, stoodStill) = (two.mac.now, two.mac.secondsTheMainThreadWaited)
++        two.mac.minimize(a)
++        if busy > 0 {
++          two.mac.pass(0.5)
++          two.mac.arborIsBusy(for: busy)
++        }
++        // The person goes on working meanwhile.
++        two.mac.pass(0.6 - (busy > 0 ? 0.5 : 0))
++        if kept { two.mac.click(mine) }
++        two.mac.pass(4)
++        _ = b
++        measured("asked of the window: \(two.mac.told(of: a, since: began)); the main thread stood still \(seconds(two.mac.secondsTheMainThreadWaited - stoodStill))")
++        story.check("it is in the Dock, and stays there", a.isMinimized, "it is out again: \(two.whereabouts(a))")
++      }
++    }
++  }
++
++  // MARK: The moment of the look, swept
++
++  // Whatever makes Arbor look for somebody to give the keyboard to, or at what is kept in view, at any moment of the flight and just after it: a command every 25 ms, and every millisecond around the landing.
++  for command in ["zoom-itself", "reveal-itself", "show-all", "dock-itself"] {
++    book.story("judged: swept over the flight and the landing: \(command)") { story in
++      // One Mac after the other: each is put away before the next is made.
++      var undone: [String] = [], longest = 0.0, longestAt = 0.0, told = 0
++      let moments = stride(from: 0.0, to: 0.54, by: 0.025).map { $0 } + stride(from: 0.540, to: 0.575, by: 0.001).map { $0 } + [0.6, 0.7, 1.0]
++      for moment in moments {
++        let inner = Story(name: "\(story.name) at \(moment)", book: Book())
++        var a: FakeMac.Window!, mine: FakeMac.Window!
++        let two = StoreyTwo(inner) { mac in
++          let app = mac.launch("Notes")
++          mac.open("b", in: app, frame: CGRect(x: 560, y: 60, width: 400, height: 300))
++          a = mac.open("a", in: app, frame: CGRect(x: 40, y: 60, width: 400, height: 300))
++          mine = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 60, y: 400, width: 400, height: 250))
++        }
++        two.mac.keepsJournal = false
++        two.run("arrange")
++        two.mac.click(a)
++        two.mac.pass(1)
++        if command == "show-all" { two.run("zoom \(a.number)") }
++        _ = mine
++        let stoodStill = two.mac.secondsTheMainThreadWaited
++        two.mac.minimize(a)
++        two.mac.pass(moment)
++        // Does Arbor know by now? Then whoever asks for the window by its number wants it out, and that is no fault.
++        let known = two.controller.windows[WindowID(a.number)]?.isMinimized == true
++        switch command {
++        case "zoom-itself": two.run("zoom \(a.number)", then: 4)
++        case "reveal-itself": two.run("reveal \(a.number)", then: 4)
++        case "dock-itself": two.run("dock \(a.number) left", then: 4)
++        default: two.run("show-all", then: 4)
++        }
++        told += 1
++        if !a.isMinimized, !known { undone.append(String(format: "%.3f", moment)) }
++        let cost = two.mac.secondsTheMainThreadWaited - stoodStill - max(0, 0.55 - moment)
++        if !known, cost > longest { (longest, longestAt) = (cost, moment) }
++        inner.finish()
++      }
++      measured("\(told) moments; out of the Dock again, though Arbor had not heard that it was there: \(undone.isEmpty ? "never" : undone.joined(separator: ", "))")
++      measured("beyond the rest of the flight the main thread stood still \(seconds(longest)) at most (at \(longestAt) s)")
++      story.check("a command that falls into the flight, or between the landing and the report, never undoes it", undone.isEmpty, "\(undone.count) of \(told): \(undone.joined(separator: ", "))")
++    }
++  }
++
++  // MARK: 5. The roads that do not ask
++
++  for gap in [0.2, 0.552] {
++    book.story("judged: a docked window goes to the Dock by its yellow button, and \(gap) s later the person presses `focus left`, towards it") { story in
++      var a: FakeMac.Window!, mine: FakeMac.Window!
++      let two = StoreyTwo(story) { mac in
++        a = mac.open("a", in: mac.launch("Notes"), frame: CGRect(x: 40, y: 60, width: 400, height: 300))
++        mine = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 560, y: 60, width: 400, height: 300))
++      }
++      story.check("two windows side by side", two.run("dock \(a.number) left").ok && two.run("dock \(mine.number) right").ok)
++      two.mac.click(mine)
++      two.mac.pass(1)
++      two.mac.keepsAccountOfCalls = true
++      let (began, stoodStill) = (two.mac.now, two.mac.secondsTheMainThreadWaited)
++      two.mac.clickYellowButton(of: a, heldFor: 0)
++      two.mac.pass(gap)
++      let result = two.run("focus left", then: 4)
++      measured("focus left: \(result.ok ? "ok" : "refused"): \(result.message)")
++      measured("asked of the window: \(two.mac.told(of: a, since: began)); the main thread stood still \(seconds(two.mac.secondsTheMainThreadWaited - stoodStill))")
++      story.check("it is in the Dock, and stays there", a.isMinimized, "it is out again: \(two.whereabouts(a))")
++    }
++  }
++
++  // MARK: 5. What a command costs
++
++  book.story("judged: how many Accessibility calls a command makes") { story in
++    var a: FakeMac.Window!, b: FakeMac.Window!, mine: FakeMac.Window!
++    let two = StoreyTwo(story) { mac in
++      let app = mac.launch("Notes")
++      b = mac.open("b", in: app, frame: CGRect(x: 560, y: 60, width: 400, height: 300))
++      a = mac.open("a", in: app, frame: CGRect(x: 40, y: 60, width: 400, height: 300))
++      mine = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 60, y: 400, width: 400, height: 250))
++    }
++    two.run("arrange")
++    two.mac.click(a)
++    two.mac.pass(1)
++    two.mac.keepsAccountOfCalls = true
++    var sum = 0
++    for text in [
++      "zoom \(mine.number)", "show-all", "zoom \(a.number)", "back", "focus right", "focus left", "focus next", "focus \(mine.number)", "swap \(a.number) \(b.number)", "dock \(mine.number) left",
++      "reveal \(b.number)", "float \(b.number)", "pin \(b.number)", "zoom \(a.number)", "show-all", "unpin \(b.number)", "arrange",
++    ] {
++      let (began, calls, stoodStill) = (two.mac.now, two.mac.calls, two.mac.secondsTheMainThreadWaited)
++      let result = two.run(text, then: 2)
++      let asked = two.mac.questionsWhetherItIsMinimized(nil, since: began).count
++      sum += asked
++      measured("\(text): \(result.ok ? "ok" : "refused"); \(two.mac.calls - calls) calls, of them \(asked) questions whether a window is minimized; \(seconds(two.mac.secondsTheMainThreadWaited - stoodStill))")
++    }
++    measured("\(sum) such questions in all")
++    story.check("told", true)
++  }
++}
+diff --git a/scripts/mac-on-linux/tests/main.swift b/scripts/mac-on-linux/tests/main.swift
+index 5e199a17..3e5450e1 100644
+--- a/scripts/mac-on-linux/tests/main.swift
++++ b/scripts/mac-on-linux/tests/main.swift
+@@ -150,6 +150,7 @@ tellOfPlacing(book)
+ tellOfArrangements(book)
+ tellOfSlowApps(book)
+ tellOfTheFlightToTheDock(book)
++tellOfTheFlightJudged(book)
+ tellOfWhatTheWalkFoundUpstairs(book)
+ tellOfTheWalk(book)
+ if let replay = book.options.replay { exit(replayWalk(replay)) }
+diff --git a/scripts/typecheck-mac/stubs/FakeMacOS/Accessibility.swift b/scripts/typecheck-mac/stubs/FakeMacOS/Accessibility.swift
+index a16caa24..55ad52ed 100644
+--- a/scripts/typecheck-mac/stubs/FakeMacOS/Accessibility.swift
++++ b/scripts/typecheck-mac/stubs/FakeMacOS/Accessibility.swift
+@@ -74,6 +74,21 @@ extension FakeMac {
+   // MARK: Reading
+ 
+   public func read(_ attribute: String, of element: Element, timeout: TimeInterval?) -> (answer: Answer, value: Value?) {
++    accounted("read", attribute, element, { $0.answer }) { readUncounted(attribute, of: element, timeout: timeout) }
++  }
++
++  /// JUDGE'S OWN: writes a call down (`Call`).
++  private func accounted<T>(_ verb: String, _ name: String, _ element: Element, _ answer: (T) -> Answer, _ call: () -> T) -> T {
++    guard keepsAccountOfCalls, let pid = element.pid else { return call() }
++    let (began, isMain) = (now, Worker.holder == nil && !Pump.isOffTheMainThread)
++    let result = call()
++    let number = window(for: element)?.number
++    account.append(Call(time: began, took: now - began, verb: verb, name: name, window: number, pid: pid, answer: answer(result), onTheMainThread: isMain))
++    note("    [call] \(verb) \(name) of \(number.map { "w\($0)" } ?? "pid \(pid)"): \(answer(result)), \(String(format: "%.4f", now - began)) s\(isMain ? "" : " (off the main thread)")")
++    return result
++  }
++
++  private func readUncounted(_ attribute: String, of element: Element, timeout: TimeInterval?) -> (answer: Answer, value: Value?) {
+     guard let pid = element.pid else { return (isTrusted ? .attributeUnsupported : .apiDisabled, nil) }
+     if let refusal = refusal(by: pid, timeout: timeout) { return (refusal, nil) }
+     return answer(to: attribute, of: element)
+@@ -144,6 +159,10 @@ extension FakeMac {
+ 
+   /// `AXUIElementCopyMultipleAttributeValues`: one message, one wait. As many answers as questions; nil for an attribute the element has not got.
+   public func read(_ attributes: [String], of element: Element, timeout: TimeInterval?) -> (answer: Answer, values: [Value?]) {
++    accounted("read", attributes.joined(separator: "+"), element, { $0.answer }) { readUncounted(attributes, of: element, timeout: timeout) }
++  }
++
++  private func readUncounted(_ attributes: [String], of element: Element, timeout: TimeInterval?) -> (answer: Answer, values: [Value?]) {
+     guard let pid = element.pid else { return (isTrusted ? .illegalArgument : .apiDisabled, []) }
+     if let refusal = refusal(by: pid, timeout: timeout) { return (refusal, []) }
+     if case .window = element {
+@@ -175,6 +194,10 @@ extension FakeMac {
+   // MARK: Writing
+ 
+   public func write(_ value: Value, to attribute: String, of element: Element, timeout: TimeInterval?) -> Answer {
++    accounted("write", attribute, element, { $0 }) { writeUncounted(value, to: attribute, of: element, timeout: timeout) }
++  }
++
++  private func writeUncounted(_ value: Value, to attribute: String, of element: Element, timeout: TimeInterval?) -> Answer {
+     guard let pid = element.pid else { return .illegalArgument }
+     if let app = app(pid), reaches(app) {
+       // The message is in the app's queue from the moment it is sent, and is read when the app wakes, though the caller has given up by then. Not if the caller is no more (`arborIsGone`).
+@@ -251,15 +274,24 @@ extension FakeMac {
+   }
+ 
+   public func perform(_ action: String, on element: Element, timeout: TimeInterval?) -> Answer {
++    accounted("perform", action, element, { $0 }) { performUncounted(action, on: element, timeout: timeout) }
++  }
++
++  /// JUDGE'S OWN: what an app does with a raise it finds in its queue (`aRaiseThatWaitedFetches`).
++  private func serveARaiseThatWaited(_ window: Window) {
++    if aRaiseThatWaitedFetches, window.isOpen, window.isMinimized { restore(window) } else { raise(window) }
++  }
++
++  private func performUncounted(_ action: String, on element: Element, timeout: TimeInterval?) -> Answer {
+     guard let pid = element.pid else { return .illegalArgument }
+     if let app = app(pid), reaches(app), action == "AXRaise", let window = window(for: element) {
+-      app.backlog.append(("what was asked of it while it hung: AXRaise", .waiting, { [self] in raise(window) }))
++      app.backlog.append(("what was asked of it while it hung: AXRaise", .waiting, { [self] in serveARaiseThatWaited(window) }))
+       return refusal(by: pid, timeout: timeout) ?? .success
+     }
+     if let refusal = refusal(by: pid, timeout: timeout) {
+       // It began to hang at this very call.
+       if refusal == .cannotComplete, let app = app(pid), app.isHung, action == "AXRaise", let window = window(for: element) {
+-        app.backlog.append(("what was asked of it while it hung: AXRaise", app.hangsInTheMiddleOfThatCall ? .underWay : .waiting, { [self] in raise(window) }))
++        app.backlog.append(("what was asked of it while it hung: AXRaise", app.hangsInTheMiddleOfThatCall ? .underWay : .waiting, { [self] in serveARaiseThatWaited(window) }))
+       }
+       return refusal
+     }
+diff --git a/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift b/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift
+index 9d66a7ef..6bbca47b 100644
+--- a/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift
++++ b/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift
+@@ -99,6 +99,24 @@ public final class FakeMac: @unchecked Sendable {
+   public internal(set) var longestWaitForOneHang: TimeInterval = 0
+   /// How long Arbor's main thread has stood still in all: in calls to apps, answered or not, and waiting for its own other threads.
+   public internal(set) var secondsTheMainThreadWaited: TimeInterval = 0
++  /// JUDGE'S OWN (not the keeper's): one Accessibility call of Arbor's, for a story that wants to count them. Off unless `keepsAccountOfCalls`; then each also has a line in the journal.
++  public struct Call: Sendable {
++    public let time: TimeInterval
++    public let took: TimeInterval
++    /// "read", "write", "perform".
++    public let verb: String
++    public let name: String
++    /// The window's number, or nil for a call to the app's own element.
++    public let window: UInt32?
++    public let pid: pid_t
++    public let answer: Answer
++    public let onTheMainThread: Bool
++  }
++  public var keepsAccountOfCalls = false
++  public internal(set) var account: [Call] = []
++  /// JUDGE'S OWN. An `AXRaise` that was sent while the window flew to the Dock lies in its app's queue and is served after the landing. Served, does it fetch the window out, as a raise sent a moment AFTER the landing does
++  /// (16 of 16 in the probe)? NOBODY HAS MEASURED IT. Off: it only restacks, which is what the model of 58be2844 does. On: it fetches. A GUESS either way; stories that depend on it are told both ways.
++  public var aRaiseThatWaitedFetches = false
+   var workers: [Worker] = []
+   /// What is put on Arbor's main dispatch queue has its turn so much later. To the run loop the queue is one source among others.
+   public var mainQueueIsLateBy: TimeInterval = 0
+diff --git a/scripts/typecheck-mac/stubs/FakeMacOS/Mouse.swift b/scripts/typecheck-mac/stubs/FakeMacOS/Mouse.swift
+index 16cb367f..3152df12 100644
+--- a/scripts/typecheck-mac/stubs/FakeMacOS/Mouse.swift
++++ b/scripts/typecheck-mac/stubs/FakeMacOS/Mouse.swift
+@@ -336,6 +336,22 @@ extension FakeMac {
+     release()
+   }
+ 
++  /// JUDGE'S OWN. A click on a window's yellow button: the monitors hear a press and a release like any other, and at the release the window sets off for the Dock. The three buttons work in a window that is not in front
++  /// without bringing it forward: common knowledge about macOS, in no trace, so a GUESS here. (`press(at:)` would raise the window and give it the keyboard first.)
++  public func clickYellowButton(of window: Window, heldFor seconds: TimeInterval = 0.08) {
++    let point = CGPoint(x: window.bounds.minX + 34, y: window.bounds.minY + 14)
++    mouse.location = point
++    mouse.previousLocation = point
++    mouse.locationByAppKit = point
++    note("the button goes down at \(Int(point.x)),\(Int(point.y)): the yellow button of w\(window.number)")
++    setButton(true)
++    tellMonitors(.leftMouseDown, toArbor: false, after: mouseDownIsLateBy)
++    mouse.grab = Grab(kind: .nothing, window: nil, pressedAt: point, frameAtPress: .zero, time: now)
++    pass(seconds)
++    release()
++    minimize(window)
++  }
++
+   /// Presses at `start`, rests for `rest`, moves to `end` in `steps` steps `interval` apart, and holds. The traces' pointer rested 0.18 to 0.23 s and moved
+   /// every 0.05 to 0.1 s.
+   public func drag(from start: CGPoint, to end: CGPoint, steps: Int = 10, interval: TimeInterval = 0.08, rest: TimeInterval = 0.15) {

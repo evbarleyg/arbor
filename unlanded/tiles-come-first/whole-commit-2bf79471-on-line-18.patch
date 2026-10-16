@@ -1,0 +1,861 @@
+From 2bf79471cbf06e5eddc97b1e9c35617ab7692279 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 10:16:45 +0000
+Subject: [PATCH] fix: at once, and in one piece: no hole where windows leave,
+ no empty desk where tiles come
+
+Without motion a display shows every state between the first asking of an act and the last.
+
+No hole. Windows were sent out of view first, so the desk showed through until the one that fills the screen had grown. Now
+what arrives or grows is asked first, what shrinks next, and what leaves goes last, from behind what has grown. Those who leave
+are foretold by themselves, when those who stay have their frames: side by side with them they would be gone first every time,
+since to leave is one call for a place and to grow is a resize.
+
+No empty desk. Where windows become tiles they were gone before the tiles were there. Now the tiles are put up first, behind the
+windows, which leave from on top of them; without motion a tile does not fade in; and the icons tiles are drawn from are
+fetched when a window is docked, not when the first tile is drawn.
+
+A net reads both off the fake's log of moves, each asking taken apart as the Accessibility layer takes it apart: no window
+within neither its old frame nor its new one, no ground bare that is covered before and after. The fake can carry out what is
+foretold as apps do that work side by side.
+---
+ .../Controller/Controller+Appearance.swift    |   3 +-
+ .../Controller/Controller+InOnePiece.swift    |  35 ++
+ .../Controller/Controller+Layout.swift        |  32 +-
+ .../Controller/Controller+Rehearsal.swift     |  14 +-
+ .../Controller/Controller+Together.swift      |  22 +-
+ Sources/ArborKit/Controller/Controller.swift  |   2 +
+ Sources/ArborKit/UI/AppKitOverlays.swift      |   9 +-
+ Sources/ArborKit/UI/StageDirector.swift       |   5 +-
+ Sources/ArborKit/UI/Wardrobe.swift            |   3 +
+ Sources/ArborTesting/FakeWindowSystem.swift   |  20 +-
+ Sources/ArborTesting/InOnePiece.swift         |  97 +++++
+ Tests/ArborKitTests/InOnePieceTests.swift     | 355 ++++++++++++++++++
+ Tests/ArborKitTests/RehearsalTests.swift      |  12 +-
+ 13 files changed, 578 insertions(+), 31 deletions(-)
+ create mode 100644 Sources/ArborKit/Controller/Controller+InOnePiece.swift
+ create mode 100644 Sources/ArborTesting/InOnePiece.swift
+ create mode 100644 Tests/ArborKitTests/InOnePieceTests.swift
+
+diff --git a/Sources/ArborKit/Controller/Controller+Appearance.swift b/Sources/ArborKit/Controller/Controller+Appearance.swift
+index 66eb1e5b..67d7fe08 100644
+--- a/Sources/ArborKit/Controller/Controller+Appearance.swift
++++ b/Sources/ArborKit/Controller/Controller+Appearance.swift
+@@ -15,7 +15,8 @@ extension Controller {
+     // Without seams in the scene there is nothing to drag.
+     if options.gapHandles == .off { scene.seams = [] }
+     scene.showsSeamHandles = options.gapHandles == .shown
+-    scene.tileFade = options.tileFade
++    // Without motion a tile comes at once, like the windows: while it faded in, with no stage in front, the desk was empty (Controller+InOnePiece.swift).
++    scene.tileFade = settings.motionDuration > 0 ? options.tileFade : 0
+     scene.backdrop = backdrop(for: layout, on: displayID, options: options)
+   }
+ 
+diff --git a/Sources/ArborKit/Controller/Controller+InOnePiece.swift b/Sources/ArborKit/Controller/Controller+InOnePiece.swift
+new file mode 100644
+index 00000000..9a434e74
+--- /dev/null
++++ b/Sources/ArborKit/Controller/Controller+InOnePiece.swift
+@@ -0,0 +1,35 @@
++import ArborCore
++import CoreGraphics
++
++/// At once, and in one piece (collab/BOARD.md, 0.18).
++///
++/// Windows are asked one after another, and without motion a display shows every state in between. So the order is chosen for what is to
++/// be seen on the way: ground that windows cover before and after is not bare meanwhile. What arrives or grows comes first, over what is
++/// still there; what shrinks comes next, and uncovers what has arrived; what leaves goes last, from behind what has grown. Within one
++/// window the same holds of size and place (`FramePlan`).
++///
++/// `apply` asks in this order and `movesInSight` foretells in it. A window system that moves windows together keeps the order within an app;
++/// apps work side by side, which shortens what is bare where windows cross to the slowest answer. So the one order that must hold between
++/// apps is kept by two forecasts: those who stay, and, when they have their frames, those who leave (`leavesInSight`).
++extension Controller {
++  /// No empty desk: what stands in for a window is on the display before the window leaves. Tiles lie behind every window, so they are put up
++  /// unseen, and the windows leave from on top of them. Called by `relayout` before anything is foretold or moved. Not with a stage up, which
++  /// covers all this and lifts on the tiles; and only for tiles that are not there yet, since every update moves and orders panels.
++  func tilesComeFirst(in layout: Layout, on displayID: DisplayID, behindAStage: Bool) {
++    guard !behindAStage, !layout.tiles.isEmpty, layout.tiles != tilesPutUp[displayID] else { return }
++    tilesPutUp[displayID] = layout.tiles
++    overlays.update(display: displayID, scene: overlayScene(for: layout, on: displayID))
++  }
++
++  /// The docked windows a layout shows, with their slots, in the order in which they are asked.
++  func inOnePiece(_ slots: [WindowID: CGRect]) -> [(window: WindowID, slot: CGRect)] {
++    func turn(_ window: WindowID, _ slot: CGRect) -> Int {
++      // Out of view, it arrives.
++      guard let frame = windows[window]?.frame, !parked.contains(window) else { return 0 }
++      if slot.insetBy(dx: -1, dy: -1).contains(frame) { return 0 }
++      return frame.insetBy(dx: -1, dy: -1).contains(slot) ? 2 : 1
++    }
++    return slots.map { (window: $0.key, slot: $0.value, turn: turn($0.key, $0.value)) }
++      .sorted { ($0.turn, $0.window) < ($1.turn, $1.window) }.map { ($0.window, $0.slot) }
++  }
++}
+diff --git a/Sources/ArborKit/Controller/Controller+Layout.swift b/Sources/ArborKit/Controller/Controller+Layout.swift
+index ce03c594..9d9e5bff 100644
+--- a/Sources/ArborKit/Controller/Controller+Layout.swift
++++ b/Sources/ArborKit/Controller/Controller+Layout.swift
+@@ -52,7 +52,7 @@ extension Controller {
+   ///
+   /// A command that puts windows back itself (`putBack`) and then lays out hands them over as `puttingBack`
+   /// instead: nobody must see a window jump ahead of the motion that explains it, so they are moved
+-  /// here, first of all, once the stage is up.
++  /// here, once the stage is up and the docked windows are in their slots.
+   func relayout(
+     _ displayID: DisplayID, reason: RelayoutReason, motion: Motion = .animated,
+     puttingBack handedOver: [(window: WindowID, frame: CGRect)] = []
+@@ -85,7 +85,6 @@ extension Controller {
+     // What a window does after Arbor has given it a frame is its answer to that, not to a double-click before it.
+     if reason != .enforce { appsDoubleClick = nil }
+     let staged = stageTransition(on: displayID, to: layout, reason: reason, motion: motion, puttingBack: waiting)
+-    putBackWhatWaits()
+     // Once the stage is up, like everything that moves a window.
+     if askBeforeTheyLeave(layout, on: displayID),
+       let known = roomyLayout(of: displayID, for: reason, startingFrom: before)
+@@ -94,6 +93,8 @@ extension Controller {
+     }
+     // Before anybody is moved, so that everybody moves once (Controller+AskFirst.swift).
+     layout = askingFirst(layout, on: displayID) { self.roomyLayout(of: displayID, for: reason, startingFrom: before) }
++    tilesPutUp[displayID] = layouts[displayID]?.tiles
++    tilesComeFirst(in: layout, on: displayID, behindAStage: staged != nil)
+     // After the stage has its pictures of the windows where they are.
+     system.moveTogether(movesInSight(for: layout, on: displayID, reason: reason))
+     // A window refused its slot after all: lay out again so that room is made for it, or it becomes a tile. Or one that is
+@@ -111,12 +112,15 @@ extension Controller {
+           ? roomyLayout(of: displayID, for: reason, startingFrom: before) : self.layout(of: displayID)
+       else { break }
+       layout = retry
++      tilesComeFirst(in: layout, on: displayID, behindAStage: staged != nil)
+       again = apply(layout, on: displayID)
+     }
+     // The last rounds do not make room, and do not say what it costs.
+     if keptRoom[displayID] != nil, layoutAndWhoIsLate(of: displayID)?.atAWindowsCost == true {
+       giveUpRoom(on: displayID)
+     }
++    // What leaves its slot goes when its neighbours have grown into it (Controller+InOnePiece.swift). The stage, if there is one, has long been up.
++    putBackWhatWaits()
+     rememberSqueezes(in: layout, on: displayID)
+     noteWhereTheGapsStand(in: layout, on: displayID, for: reason)
+     placeFloatingWindows(on: displayID, layout: layout, reason: reason)
+@@ -153,8 +157,13 @@ extension Controller {
+     // Of some that are out of view nobody knows whether they can grow as far as their slot, and where they go depends on it
+     // (Controller+AskFirst.swift).
+     var unknown: [(window: WindowID, slot: CGRect, question: CGRect)] = []
++    // Looked at before anybody moves. One window needs no company, if it is the only one the layout moves.
++    let leaves = leavesInSight(for: layout, on: displayID)
++    let othersMove = layout.windowFrames.contains { window, slot in
++      window != drag?.window && windows[window].map { isStillToBePlaced($0, in: slot) } == true
++    }
+     // A window being dragged stays in the user's hand whatever happens to the layout meanwhile.
+-    for (window, target) in layout.windowFrames.sorted(by: { $0.key < $1.key }) where window != drag?.window {
++    for (window, target) in inOnePiece(layout.windowFrames) where window != drag?.window {
+       if let current = windows[window], isStillToBePlaced(current, in: target),
+         let question = questionBeforePlacing(current, in: target, on: displayID)
+       {
+@@ -163,13 +172,7 @@ extension Controller {
+         learnedMinimum = true
+       }
+     }
+-    if let display = display(displayID) {
+-      for window in layout.hiddenWindows.sorted()
+-      where window != drag?.window && !isLetBe(window) && (!parked.contains(window) || hasLeftItsCorner(window)) {
+-        park(window, on: display)
+-      }
+-    }
+-    // They come last, so that each stands at its old place in its new size no longer than the others' answers take.
++    // They come after the others, so that each stands at its old place in its new size no longer than the others' answers take.
+     for (window, _, question) in unknown {
+       if ask(window, question, on: displayID) { learnedMinimum = true }
+     }
+@@ -182,6 +185,15 @@ extension Controller {
+     for (window, slot, _) in unknown {
+       if place(window, in: slot, on: displayID) { learnedMinimum = true }
+     }
++    // What leaves goes last, from behind what has grown (Controller+InOnePiece.swift), and is foretold only now: all that was foretold before has
++    // been asked for, so no answer is lost, and those who stay have their frames.
++    if leaves.count + (othersMove ? 1 : 0) > 1 { system.moveTogether(leaves) }
++    if let display = display(displayID) {
++      for window in layout.hiddenWindows.sorted()
++      where window != drag?.window && !isLetBe(window) && (!parked.contains(window) || hasLeftItsCorner(window)) {
++        park(window, on: display)
++      }
++    }
+     return learnedMinimum
+   }
+ 
+diff --git a/Sources/ArborKit/Controller/Controller+Rehearsal.swift b/Sources/ArborKit/Controller/Controller+Rehearsal.swift
+index c1fe9575..fc6b21e1 100644
+--- a/Sources/ArborKit/Controller/Controller+Rehearsal.swift
++++ b/Sources/ArborKit/Controller/Controller+Rehearsal.swift
+@@ -29,11 +29,15 @@ extension Controller {
+   public static let pauseBetweenPieces = 0.01
+ 
+   func rehearseNextMotion() {
+-    // Without motion there is nothing to be ready for, and it is not paid for.
+-    guard isRunning, settings.motionDuration > 0 else { return }
+-    let displays = Set(displays.map(\.id))
+-    // Also of windows that are minimized or hidden: coming back is a motion, and they are in it.
+-    let apps = Set(windows.values.map { Rehearsal.App(pid: $0.pid, bundleID: $0.bundleID) })
++    guard isRunning else { return }
++    let moves = settings.motionDuration > 0
++    // Without motion there is no stage to be ready.
++    let displays = moves ? Set(displays.map(\.id)) : []
++    // Also of windows that are minimized or hidden: coming back is a motion, and they are in it. Without motion there are still tiles, which
++    // are drawn from the app's icon and come at once or leave the desk empty (Controller+InOnePiece.swift). Only a docked window can
++    // become one, so nothing is paid for before the person docks something.
++    let docked = moves ? [] : Set(workspaces.values.flatMap(\.tree.allWindows))
++    let apps = Set(windows.values.filter { moves || docked.contains($0.id) }.map { Rehearsal.App(pid: $0.pid, bundleID: $0.bundleID) })
+     guard displays != rehearsed.displays || apps != rehearsed.apps else { return }
+     let news =
+       displays.subtracting(rehearsed.displays).sorted().map { Rehearsal(displays: [$0], apps: []) }
+diff --git a/Sources/ArborKit/Controller/Controller+Together.swift b/Sources/ArborKit/Controller/Controller+Together.swift
+index efc77dc2..ac17f9fa 100644
+--- a/Sources/ArborKit/Controller/Controller+Together.swift
++++ b/Sources/ArborKit/Controller/Controller+Together.swift
+@@ -16,10 +16,10 @@ extension Controller {
+   func movesInSight(
+     for layout: Layout, on displayID: DisplayID, reason: RelayoutReason
+   ) -> [(window: WindowID, frame: CGRect)] {
+-    guard reason != .enforce, let display = display(displayID) else { return [] }
++    guard reason != .enforce, display(displayID) != nil else { return [] }
+     var moves: [(window: WindowID, frame: CGRect)] = []
+     // The window in the user's hand stays there (F09): foretold, it would be pulled out of it, and nobody would claim the move.
+-    for (window, target) in layout.windowFrames.sorted(by: { $0.key < $1.key }) where window != drag?.window {
++    for (window, target) in inOnePiece(layout.windowFrames) where window != drag?.window {
+       guard let current = windows[window] else { continue }
+       if !parked.contains(window), current.frame.approximatelyEquals(target, tolerance: 1) || misfits[window] != nil {
+         continue
+@@ -27,15 +27,21 @@ extension Controller {
+       // The first frame `apply` asks for.
+       moves.append((window, questionBeforePlacing(current, in: target, on: displayID) ?? request(for: current, in: target)))
+     }
++    // What leaves is not among them: it has a forecast of its own, which `apply` makes when these have their frames (`leavesInSight`).
++    // One window needs no company, if it is the only one the layout moves.
++    return moves.count + leavesInSight(for: layout, on: displayID).count > 1 ? moves : []
++  }
++
++  /// The docked windows `apply` is about to send out of view, which it does last, and foretells by themselves. Side by side with those who
++  /// stay they would be gone first, every time: to leave is one call for a place, about a millisecond, and to grow is a resize, which takes an
++  /// app 4 to 150. The desk would show through for as long as the slowest resize takes (Controller+InOnePiece.swift).
++  func leavesInSight(for layout: Layout, on displayID: DisplayID) -> [(window: WindowID, frame: CGRect)] {
+     // With `shrinkOutOfView` a window is parked at another size, which `parkingSize` works out and remembers in one
+     // go: not for a forecast. Those moves wait on their own.
+-    for window in layout.hiddenWindows.sorted()
+-    where !parked.contains(window) && window != drag?.window && !isLetBe(window) && !settings.shrinkOutOfView {
++    guard let display = display(displayID), !settings.shrinkOutOfView else { return [] }
++    return layout.hiddenWindows.sorted().filter { !parked.contains($0) && $0 != drag?.window && !isLetBe($0) }.compactMap { window in
+       // The frame `park` asks for.
+-      guard let size = windows[window]?.frame.size else { continue }
+-      moves.append((window, CGRect(origin: parkingOrigin(for: size, of: window, on: display), size: size)))
++      windows[window].map { (window, CGRect(origin: parkingOrigin(for: $0.frame.size, of: window, on: display), size: $0.frame.size)) }
+     }
+-    // One window needs no company.
+-    return moves.count > 1 ? moves : []
+   }
+ }
+diff --git a/Sources/ArborKit/Controller/Controller.swift b/Sources/ArborKit/Controller/Controller.swift
+index 07b102f5..cc666dc2 100644
+--- a/Sources/ArborKit/Controller/Controller.swift
++++ b/Sources/ArborKit/Controller/Controller.swift
+@@ -237,6 +237,8 @@ public final class Controller {
+   var seenSizes: [WindowID: SeenSizes] = [:]
+   /// The windows asked for a size during the layout under way that have yet to go to their place: what each was offered.
+   var justAnswered: [WindowID: CGSize] = [:]
++  /// The tiles the presenter has been given for each display in the layout under way (Controller+InOnePiece.swift).
++  var tilesPutUp: [DisplayID: [Tile]] = [:]
+   /// The windows whose size Accessibility said cannot be changed, once that has been written down.
+   var fixedSizesNoted: Set<WindowID> = []
+   /// Making room before making tiles (Controller+MakeRoom.swift): true while the layout follows the person's own hand on a
+diff --git a/Sources/ArborKit/UI/AppKitOverlays.swift b/Sources/ArborKit/UI/AppKitOverlays.swift
+index 8f6fff3f..fb7545de 100644
+--- a/Sources/ArborKit/UI/AppKitOverlays.swift
++++ b/Sources/ArborKit/UI/AppKitOverlays.swift
+@@ -460,10 +460,17 @@ private final class SeamView: NSView {
+ enum AppAppearance {
+   private static var colours: [String: RGBA] = [:]
+ 
++  private static var icons: [Int32: NSImage] = [:]
++
++  /// The one that was fetched ahead of time, if it was. macOS takes long to hand out an icon nobody has asked for yet, and whoever asks here is being
++  /// drawn: a tile's first drawing waited for it on the main thread, with nothing on the display meanwhile.
+   static func icon(pid: Int32) -> NSImage? {
+-    NSRunningApplication(processIdentifier: pid)?.icon
++    icons[pid] ?? NSRunningApplication(processIdentifier: pid)?.icon
+   }
+ 
++  /// An icon that was fetched elsewhere (`Wardrobe`), as a picture that needs nothing more of macOS. A number that gets a new owner gets a new one.
++  static func remember(icon: CGImage, pid: Int32) { icons[pid] = NSImage(cgImage: icon, size: NSSize(width: icon.width, height: icon.height)) }
++
+   /// The colour of the app's icon as a plain fill, darkened a little so white captions stay readable.
+   static func colour(pid: Int32, bundleID: String?) -> NSColor {
+     rgba(pid: pid, bundleID: bundleID).map(fill) ?? .systemGray
+diff --git a/Sources/ArborKit/UI/StageDirector.swift b/Sources/ArborKit/UI/StageDirector.swift
+index 5c6040af..dc4f3441 100644
+--- a/Sources/ArborKit/UI/StageDirector.swift
++++ b/Sources/ArborKit/UI/StageDirector.swift
+@@ -156,8 +156,9 @@ final class StageDirector {
+   /// the picture behind it. An app's colour and icon are ordered (`Wardrobe`). All of it is kept, and what is there already is
+   /// skipped. The controller hands out one display or one app at a time (Controller+Rehearsal.swift).
+   func rehearse(_ rehearsal: Rehearsal) {
+-    guard !Self.rehearsalIsSwitchedOff, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
+-    for display in rehearsal.displays {
++    guard !Self.rehearsalIsSwitchedOff else { return }
++    // With Reduce Motion there is no stage to get ready. There are tiles, which are drawn from what the wardrobe fetches.
++    for display in rehearsal.displays where !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+       guard let screen = ScreenGeometry.screen(for: display) else { continue }
+       var marks = [uptime]
+       // Kept once read, and let go of when Arbor stops and when pictures are switched off. With pictures a sweep brings the
+diff --git a/Sources/ArborKit/UI/Wardrobe.swift b/Sources/ArborKit/UI/Wardrobe.swift
+index 7dc50f3c..25f24d19 100644
+--- a/Sources/ArborKit/UI/Wardrobe.swift
++++ b/Sources/ArborKit/UI/Wardrobe.swift
+@@ -39,6 +39,8 @@ final class Wardrobe {
+   /// A process without a bundle identifier goes by its number, and numbers get new owners: `again` makes its cover anew.
+   func order(_ app: Rehearsal.App, again: Bool = false) {
+     let key = AppAppearance.key(pid: app.pid, bundleID: app.bundleID)
++    // The app has been started again: the same cover, under a new number.
++    if !again, let icon = covers[key]?.icon { AppAppearance.remember(icon: icon, pid: app.pid) }
+     guard again || covers[key] == nil, ordered.insert(key).inserted else { return }
+     Self.workshop.async {
+       let began = ProcessInfo.processInfo.systemUptime
+@@ -55,6 +57,7 @@ final class Wardrobe {
+           self.covers[key] = cover
+           // Tiles and the minimap are tinted with it, and ask while they wait to be drawn.
+           if let colour = made.colour { AppAppearance.remember(colour, pid: app.pid, bundleID: app.bundleID) }
++          if let icon = made.icon { AppAppearance.remember(icon: icon, pid: app.pid) }
+           Log.debug("got ready the costume of \(app.bundleID ?? "pid \(app.pid)") in \(took) ms")
+           self.onCover?(app, cover)
+         }
+diff --git a/Sources/ArborTesting/FakeWindowSystem.swift b/Sources/ArborTesting/FakeWindowSystem.swift
+index 55a3d028..8fef133d 100644
+--- a/Sources/ArborTesting/FakeWindowSystem.swift
++++ b/Sources/ArborTesting/FakeWindowSystem.swift
+@@ -234,6 +234,11 @@ public final class FakeWindowSystem: WindowSystem {
+   var inHand: (window: WindowID, start: CGRect, grab: CGPoint)?
+   /// A window system is free to ignore `moveTogether`. Nothing but the cost may differ.
+   public var ignoresMoveTogether = false
++  /// What is announced with `moveTogether` is carried out as apps carry it out that work side by side: each app its own windows in the order
++  /// they were named, and between apps whoever is done first. A place alone takes about a millisecond, a size 4 to 150 (hosted Macs, test
++  /// windows and real apps), so a window that only moves is there before any that is resized, whoever was named first. Off, the default:
++  /// in the order named, which is what a window system does that asks one window after another.
++  public var appsWorkSideBySide = false
+   /// What came of the moves announced with `moveTogether`, until `setFrame` asks for it.
+   public private(set) var answersAhead: [WindowID: (requested: CGRect, answer: CGRect?)] = [:]
+ 
+@@ -285,7 +290,20 @@ public final class FakeWindowSystem: WindowSystem {
+     for window in unclaimed {
+       if let snapshot = windows[window]?.snapshot { events?.windowChanged(snapshot, userInitiated: false) }
+     }
+-    for (window, frame) in frames { answersAhead[window] = (frame, move(window, to: frame, together: true)) }
++    for (window, frame) in appsWorkSideBySide ? sideBySide(frames) : frames {
++      answersAhead[window] = (frame, move(window, to: frame, together: true))
++    }
++  }
++
++  /// In the order in which they are done (`appsWorkSideBySide`): a resize counts for ten moves.
++  private func sideBySide(_ frames: [(window: WindowID, frame: CGRect)]) -> [(window: WindowID, frame: CGRect)] {
++    var busyUntil: [Int32: Int] = [:]
++    let done = frames.enumerated().map { index, asked -> (at: Int, index: Int) in
++      guard let has = windows[asked.window]?.snapshot else { return (0, index) }
++      busyUntil[has.pid, default: 0] += has.frame.size == asked.frame.size ? 1 : 10
++      return (busyUntil[has.pid] ?? 0, index)
++    }
++    return done.sorted { ($0.at, $0.index) < ($1.at, $1.index) }.map { frames[$0.index] }
+   }
+ 
+   private func move(_ window: WindowID, to frame: CGRect, together: Bool) -> CGRect? {
+diff --git a/Sources/ArborTesting/InOnePiece.swift b/Sources/ArborTesting/InOnePiece.swift
+new file mode 100644
+index 00000000..d3120a20
+--- /dev/null
++++ b/Sources/ArborTesting/InOnePiece.swift
+@@ -0,0 +1,97 @@
++import ArborCore
++import ArborKit
++import CoreGraphics
++
++/// "At once, and in one piece" (collab/BOARD.md, 0.18), read off the fake's `moveLog`.
++///
++/// Without motion nothing hides the road: windows are asked one after another, size and place are two askings, and a display shows every state
++/// in between for a frame or more. Filmed on a hosted Mac, that was a window at its new size in its old place, over the others, and holes in
++/// the arrangement where windows had left before the one that fills the screen had grown. Two things must not be seen between the first
++/// asking of an act and the last:
++/// - **a stray**: a window that lies neither within the frame it had nor within the frame it ends with, so that it covers what neither covers;
++/// - **a hole**: ground that windows cover before the act and after it, and that nothing covers once one window has its frame and the next has not
++///   been asked.
++///
++/// Each asking is taken apart as the Accessibility layer takes it apart (`FramePlan`), so the states are the ones a Mac would show.
++///
++/// One asking is let off, by the predicate the layer itself goes by (`FramePlan.growsWhereItCannot`): a window that grows into a frame that lies
++/// within no display, as a person's own floating window may. macOS cuts what grows at the display's edge, so it is sized first, at its old
++/// place: a size lost for good is worse than a frame seen for a moment (the ruling's exception). What is let off are the states between the calls of
++/// that one asking. Where it leaves the window is judged like any other: an asking that only makes a window grow where it stands gets nothing by it.
++public enum NotInOnePiece: Equatable, Sendable, CustomStringConvertible {
++  case stray(window: WindowID, from: CGRect, at: CGRect, to: CGRect)
++  case hole(CGRect, afterAsking: WindowID)
++
++  public var description: String {
++    switch self {
++    case .stray(let window, let from, let at, let to):
++      "\(window) was at \(at.brief) on its way from \(from.brief) to \(to.brief), within neither"
++    case .hole(let ground, let window): "\(ground.brief) was bare once \(window) had been asked, and is covered before and after"
++    }
++  }
++}
++
++extension FakeWindowSystem {
++  /// What was to be seen that should not have been, among the moves Arbor has made since the move log was `mark` long.
++  public func notInOnePiece(since mark: Int) -> [NotInOnePiece] {
++    let moves = moveLog[min(mark, moveLog.count)...].filter { $0.before != $0.after }
++    guard !moves.isEmpty else { return [] }
++    // Where everything was when the act began: where it is now, with Arbor's moves undone.
++    var frames: [WindowID: CGRect] = [:]
++    for (id, fake) in windows where fake.snapshot.isPresent { frames[id] = fake.snapshot.frame }
++    let after = frames
++    for move in moves.reversed() where frames[move.window] != nil { frames[move.window] = move.before }
++    let before = frames
++
++    var found: [NotInOnePiece] = []
++    func note(_ problem: NotInOnePiece) { if !found.contains(problem) { found.append(problem) } }
++    let ground = Self.cells(of: Array(before.values) + Array(after.values) + moves.flatMap { [$0.before, $0.after] }, on: displayList)
++      .filter { cell in before.values.contains { $0.contains(cell) } && after.values.contains { $0.contains(cell) } }
++
++    let rooms = displayList.map { FramePlan.room(onDisplay: $0.frame, visible: $0.visibleFrame) }
++    for (index, move) in moves.enumerated() where frames[move.window] != nil {
++      let isLetOff = FramePlan.growsWhereItCannot(from: move.before, to: move.requested, rooms: rooms)
++      for state in Self.states(of: move, rooms: rooms) {
++        frames[move.window] = state
++        guard let from = before[move.window], let to = after[move.window] else { continue }
++        // What no display shows is seen by nobody.
++        let shown = displayList.map { state.intersection($0.frame) }.filter { !$0.isNull && $0.width > 2 && $0.height > 2 }
++        if !(isLetOff && state != move.after), !shown.allSatisfy({ from.insetBy(dx: -1, dy: -1).contains($0) || to.insetBy(dx: -1, dy: -1).contains($0) }) {
++          note(.stray(window: move.window, from: from, at: state, to: to))
++        }
++        // Between the two askings of one window its own ground may be bare: one that grows is moved first, and has left where it was. It cannot both
++        // lie within its frames and go on covering its old place, and lying over what neither frame covers is the worse of the two (the ruling).
++        // So holes are looked for when a window has its frame. The last one's is the end of the act.
++        guard state == move.after, index < moves.count - 1 else { continue }
++        // One hole for a state, however many pieces it is in: the rectangle around all that is bare.
++        let bare = ground.filter { cell in !frames.values.contains { $0.contains(cell) } }
++        if let first = bare.first { note(.hole(bare.dropFirst().reduce(first) { $0.union($1) }, afterAsking: move.window)) }
++      }
++    }
++    return found
++  }
++
++  /// The frames a window has, one after another, while the Accessibility layer gives it a frame: after each attribute it sets. The plan is made for
++  /// the frame that was asked for, as the layer makes it. They are the states of a window that does as it is asked; the last is what it took.
++  public static func states(of move: Move, rooms: [CGRect]) -> [CGRect] {
++    var states: [CGRect] = []
++    let plan = FramePlan.steps(from: move.before, to: move.requested, rooms: rooms)
++    for state in FramePlan.states(from: move.before, after: plan).dropLast() where state != states.last ?? move.before { states.append(state) }
++    return states + [move.after]
++  }
++
++  /// The displays cut along every edge of `frames`: within one cell everything is covered alike. Slivers, which are gaps and rounding, are left out.
++  private static func cells(of frames: [CGRect], on displays: [DisplaySnapshot]) -> [CGRect] {
++    var cells: [CGRect] = []
++    for display in displays.map(\.frame) {
++      let xs = Set(frames.flatMap { [$0.minX, $0.maxX] } + [display.minX, display.maxX]).filter { $0 >= display.minX && $0 <= display.maxX }.sorted()
++      let ys = Set(frames.flatMap { [$0.minY, $0.maxY] } + [display.minY, display.maxY]).filter { $0 >= display.minY && $0 <= display.maxY }.sorted()
++      for (left, right) in zip(xs, xs.dropFirst()) where right - left > 4 {
++        for (top, bottom) in zip(ys, ys.dropFirst()) where bottom - top > 4 {
++          cells.append(CGRect(x: left, y: top, width: right - left, height: bottom - top))
++        }
++      }
++    }
++    return cells
++  }
++}
+diff --git a/Tests/ArborKitTests/InOnePieceTests.swift b/Tests/ArborKitTests/InOnePieceTests.swift
+new file mode 100644
+index 00000000..2cbee329
+--- /dev/null
++++ b/Tests/ArborKitTests/InOnePieceTests.swift
+@@ -0,0 +1,355 @@
++import ArborCore
++import ArborKit
++import ArborTesting
++import CoreGraphics
++import Foundation
++import Testing
++
++/// "At once, and in one piece" (collab/BOARD.md, 0.18): without motion every state between the first asking of an act and the last is on the
++/// display for a frame or more. What must not be among them: `NotInOnePiece`.
++
++/// As the second build ships: no motion, so no stage that hides the road.
++private var light: Settings {
++  var settings = Settings()
++  settings.animationDuration = 0
++  settings.focusRing = false
++  return settings
++}
++
++/// So many windows, each of an app of its own, floating in a pile.
++@MainActor
++private func pile(_ count: Int) -> (Harness, [WindowID]) {
++  let h = Harness(settings: light)
++  let windows = (0..<count).map { index in
++    h.system.open(
++      app: "App\(index + 1)", pid: Int32(1001 + index),
++      frame: CGRect(x: 120 + 40 * CGFloat(index), y: 90 + 30 * CGFloat(index), width: 520, height: 380))
++  }
++  h.start()
++  return (h, windows)
++}
++
++/// Plays one act and says what was to be seen that should not have been.
++@MainActor
++private func seen(_ h: Harness, _ act: () -> Void) -> [NotInOnePiece] {
++  let mark = h.system.moveLog.count
++  act()
++  h.scheduler.runPending()
++  return h.system.notInOnePiece(since: mark)
++}
++
++@MainActor
++private func expectInOnePiece(_ h: Harness, _ name: String, sourceLocation: SourceLocation = #_sourceLocation, _ act: () -> Void) {
++  for problem in seen(h, act) { Issue.record("\(name): \(problem)", sourceLocation: sourceLocation) }
++}
++
++/// For an act in which windows cross: each goes to ground that another has yet to leave, and none contains where it is going. No order of
++/// askings closes those holes, only all frames in one breath, which is another row's (the board, 0.18, its fourth part). What is ruled holds here too: no stray.
++@MainActor
++private func expectNoStray(_ h: Harness, _ name: String, sourceLocation: SourceLocation = #_sourceLocation, _ act: () -> Void) {
++  let problems = seen(h, act)
++  for problem in problems.filter(isStray) { Issue.record("\(name): \(problem)", sourceLocation: sourceLocation) }
++  withKnownIssue("\(name): windows cross, one after another", isIntermittent: true) {
++    for problem in problems.filter(isHole) { Issue.record("\(name): \(problem)", sourceLocation: sourceLocation) }
++  }
++}
++
++private func isStray(_ problem: NotInOnePiece) -> Bool { if case .stray = problem { true } else { false } }
++private func isHole(_ problem: NotInOnePiece) -> Bool { if case .hole = problem { true } else { false } }
++
++/// The net itself, on orders whose truth is known: the window system is asked directly.
++@MainActor
++@Suite struct InOnePieceNetTests {
++  let left = CGRect(x: 0, y: 25, width: 720, height: 875)
++  let right = CGRect(x: 720, y: 25, width: 720, height: 875)
++  let all = CGRect(x: 0, y: 25, width: 1440, height: 875)
++  let corner = CGRect(x: 1439, y: 843, width: 720, height: 875)
++
++  private func two() -> (FakeWindowSystem, WindowID, WindowID) {
++    let system = FakeWindowSystem()
++    return (system, system.open(app: "A", pid: 1, frame: left), system.open(app: "B", pid: 2, frame: right))
++  }
++
++  /// After whose asking there was a hole, all of it where the window on the right is before and after.
++  private func holes(_ system: FakeWindowSystem) -> [WindowID] {
++    system.notInOnePiece(since: 0).compactMap {
++      guard case .hole(let ground, let window) = $0, right.contains(ground), ground.width > 700, ground.height > 800 else { return nil }
++      return window
++    }
++  }
++
++  @Test func theOneThatLeavesFirstLeavesAHole() {
++    let (system, a, b) = two()
++    _ = system.setFrame(corner, of: b)
++    _ = system.setFrame(all, of: a)
++    #expect(holes(system) == [b])
++  }
++
++  @Test func theOneThatGrowsFirstLeavesNone() {
++    let (system, a, b) = two()
++    _ = system.setFrame(all, of: a)
++    _ = system.setFrame(corner, of: b)
++    #expect(system.notInOnePiece(since: 0).isEmpty)
++  }
++
++  @Test func theOneThatShrinksBeforeTheOtherIsBackLeavesAHole() {
++    let system = FakeWindowSystem()
++    let (a, b) = (system.open(app: "A", pid: 1, frame: all), system.open(app: "B", pid: 2, frame: corner))
++    _ = system.setFrame(left, of: a)
++    _ = system.setFrame(right, of: b)
++    #expect(holes(system) == [a])
++  }
++
++  @Test func groundThatIsBareBeforeOrAfterIsNoHole() {
++    let (system, _, b) = two()
++    _ = system.setFrame(corner, of: b)
++    #expect(system.notInOnePiece(since: 0).isEmpty)
++  }
++
++  @Test func aStateWithinNeitherFrameIsAStray() {
++    let system = FakeWindowSystem()
++    let a = system.open(app: "A", pid: 1, frame: CGRect(x: 800, y: 500, width: 300, height: 200))
++    // By hand, as two askings: the new size at the old place. That it hangs over the edge there lets nothing off: it is where the asking ends.
++    _ = system.setFrame(CGRect(x: 800, y: 500, width: 720, height: 875), of: a)
++    _ = system.setFrame(left, of: a)
++    #expect(system.notInOnePiece(since: 0).contains(where: isStray))
++  }
++
++  /// The ruling's exception: it cannot grow once it hangs over the edge, so it is sized where it is, and that is let off.
++  @Test func growingIntoAFrameThatHangsOverTheEdgeIsLetOffTheStateBetween() {
++    let system = FakeWindowSystem()
++    let a = system.open(app: "A", pid: 1, frame: CGRect(x: 100, y: 100, width: 300, height: 200))
++    let over = CGRect(x: 1200, y: 100, width: 400, height: 300)
++    #expect(system.setFrame(over, of: a) == over, "whole")
++    #expect(FakeWindowSystem.states(of: system.moveLog[0], rooms: [CGRect(x: 0, y: 0, width: 1440, height: 900)]).first == CGRect(x: 100, y: 100, width: 400, height: 300))
++    #expect(system.notInOnePiece(since: 0).isEmpty)
++  }
++
++  /// The knob by itself: named last, the window that only moves is there first; two windows of one app keep their order.
++  @Test func sideBySideAPlaceAloneIsDoneBeforeAResize() {
++    let system = FakeWindowSystem()
++    system.appsWorkSideBySide = true
++    let a = system.open(app: "A", pid: 1, frame: CGRect(x: 0, y: 25, width: 300, height: 200))
++    let b = system.open(app: "B", pid: 2, frame: CGRect(x: 400, y: 25, width: 300, height: 200))
++    let c = system.open(app: "A", pid: 1, frame: CGRect(x: 800, y: 25, width: 300, height: 200))
++    system.moveTogether([
++      (a, CGRect(x: 0, y: 25, width: 350, height: 200)), (c, CGRect(x: 800, y: 300, width: 300, height: 200)),
++      (b, CGRect(x: 400, y: 300, width: 300, height: 200)),
++    ])
++    #expect(system.moveLog.map(\.window) == [b, a, c])
++  }
++
++  @Test func statesWithinTheOldFrameOrTheNewOneAreNot() {
++    let system = FakeWindowSystem()
++    let a = system.open(app: "A", pid: 1, frame: CGRect(x: 100, y: 100, width: 300, height: 200))
++    // Moved first, then grown.
++    _ = system.setFrame(CGRect(x: 0, y: 25, width: 300, height: 200), of: a)
++    _ = system.setFrame(left, of: a)
++    #expect(!system.notInOnePiece(since: 0).contains(where: isStray))
++  }
++
++  @Test func whatNoDisplayShowsIsSeenByNobody() {
++    let system = FakeWindowSystem()
++    let a = system.open(app: "A", pid: 1, frame: corner)
++    _ = system.setFrame(CGRect(x: 1439, y: 843, width: 300, height: 200), of: a)
++    _ = system.setFrame(CGRect(x: 1439, y: 843, width: 900, height: 700), of: a)
++    #expect(system.notInOnePiece(since: 0).isEmpty)
++  }
++}
++
++/// The acts that were filmed, with four windows and with eight.
++@MainActor
++@Suite struct InOnePieceTests {
++  @Test(arguments: [4, 8]) func arrangeWindows(_ count: Int) {
++    let (h, _) = pile(count)
++    expectNoStray(h, "arrange") { h.run("arrange") }
++  }
++
++  @Test(arguments: [4, 8]) func fillEverythingAndBack(_ count: Int) {
++    let (h, windows) = pile(count)
++    h.run("arrange")
++    h.system.userFocus(windows[1])
++    expectInOnePiece(h, "fill, the first time") { h.run("zoom") }
++    expectInOnePiece(h, "everything") { h.run("show-all") }
++    expectInOnePiece(h, "back") { h.run("back") }
++    expectInOnePiece(h, "fill again: back to everything") { h.run("zoom") }
++    expectInOnePiece(h, "fill, the second time") { h.run("zoom") }
++  }
++
++  /// A window system that moves windows together lets apps work side by side, and to leave is a place alone: foretold with the one that
++  /// grows, those who leave would be gone first, every time, and the desk show through until it has grown. So they are foretold by themselves.
++  @Test(arguments: [4, 8]) func withAppsSideBySideWhatLeavesStillGoesLast(_ count: Int) {
++    let (h, windows) = pile(count)
++    h.system.appsWorkSideBySide = true
++    h.run("arrange")
++    h.system.userFocus(windows[1])
++    expectInOnePiece(h, "fill, the first time") { h.run("zoom") }
++    expectInOnePiece(h, "everything") { h.run("show-all") }
++    expectInOnePiece(h, "fill, the second time") { h.run("zoom") }
++    expectWindowsMatchLayout(h)
++  }
++
++  /// Two forecasts, and still nobody waits unannounced, however few are in one: with two windows one fills the screen and one leaves.
++  @Test func oneThatStaysAndOneThatLeavesAreBothForetold() {
++    let (h, windows) = pile(2)
++    h.run("arrange")
++    h.system.userFocus(windows[0])
++    let mark = h.system.moveLog.count
++    h.run("zoom")
++    let moves = Array(h.system.moveLog[mark...])
++    let (moved, unannounced) = (moves.map { $0.window }, moves.filter { !$0.together }.map { $0.window })
++    #expect(moved == [windows[0], windows[1]], "the one that grows, then the one that leaves")
++    #expect(unannounced == [])
++    #expect(h.system.answersAhead.isEmpty, "and every answer was claimed")
++  }
++
++  @Test func eachDock() {
++    let (h, windows) = pile(4)
++    for (index, window) in windows.enumerated() {
++      h.system.userFocus(window)
++      expectNoStray(h, "dock \(index + 1)") { h.run(index % 2 == 0 ? "dock left" : "dock right") }
++    }
++  }
++
++  @Test func floatAndUndo() {
++    let (h, windows) = pile(4)
++    h.run("arrange")
++    h.system.userFocus(windows[0])
++    expectInOnePiece(h, "float") { h.run("float") }
++    expectInOnePiece(h, "undo") { h.run("undo") }
++  }
++
++  @Test func pauseAndResume() {
++    let (h, _) = pile(4)
++    h.run("arrange")
++    expectNoStray(h, "pause") { h.run("pause") }
++    expectNoStray(h, "resume") { h.run("resume") }
++  }
++
++  @Test func quit() {
++    let (h, _) = pile(4)
++    h.run("arrange")
++    expectNoStray(h, "quit") { h.controller.shutdown() }
++  }
++
++  @Test func aDockedWindowCloses() {
++    let (h, windows) = pile(4)
++    h.run("arrange")
++    expectInOnePiece(h, "close") { h.system.close(windows[2]) }
++  }
++}
++
++/// No empty desk: filmed, a dock that turned every window into a tile left nothing at all on the display for half a second, and then tiles faded in.
++@MainActor
++@Suite struct NoEmptyDeskTests {
++  /// Four windows side by side, and a least width that none of their slots will have once there is a fourth.
++  private func threeDockedAndAFourth(_ settings: Settings) -> (Harness, [WindowID]) {
++    var settings = settings
++    settings.minimumUsableWidth = 300
++    let h = Harness(settings: settings)
++    let windows = (0..<4).map { index in
++      h.system.open(app: "App\(index + 1)", pid: Int32(1001 + index), frame: CGRect(x: 120 + 40 * CGFloat(index), y: 90, width: 520, height: 380))
++    }
++    h.start()
++    for window in windows.dropLast() { h.run("dock \(window.rawValue) right") }
++    #expect(h.layout?.tiles.isEmpty == true)
++    return (h, windows)
++  }
++
++  @Test func aTileIsThereBeforeItsWindowLeaves() {
++    let (h, windows) = threeDockedAndAFourth(light)
++    // At the moment a window is sent out of view, is what stands in for it on the display already?
++    var left: [WindowID: Bool] = [:]
++    h.system.willSetFrame = { window, frame in
++      guard !h.system.displayList.contains(where: { frame.fractionInside($0.frame) > 0.5 }), left[window] == nil else { return }
++      left[window] = h.overlays.tiles[h.display]?.contains { $0.items.contains { $0.window == window } } == true
++    }
++    h.run("dock \(windows[3].rawValue) right")
++    h.system.willSetFrame = nil
++    #expect(h.layout?.tiles.isEmpty == false)
++    #expect(!left.isEmpty)
++    for (window, tileWasThere) in left.sorted(by: { $0.key < $1.key }) {
++      #expect(tileWasThere, "\(window) left before its tile was there")
++    }
++  }
++
++  /// Every update moves and orders a panel per tile. Tiles that are there are not put up again: a layout that keeps them costs what it cost.
++  @Test func tilesThatAreThereAreNotPutUpAgain() {
++    let (h, windows) = threeDockedAndAFourth(light)
++    h.run("dock \(windows[3].rawValue) right")
++    let tiles = h.layout?.tiles
++    #expect(tiles?.isEmpty == false)
++    let budget = h.measure { h.run("show-all") }
++    #expect(h.layout?.tiles == tiles, "the story: everything shows already, so no tile changes")
++    #expect(budget.overlayUpdates == 1, "laid out again, and one update as ever: \(budget)")
++  }
++
++  /// With motion a stage covers the road and lifts on the tiles: nothing is put up behind it beforehand.
++  @Test func behindAStageNothingIsPutUpFirst() {
++    var moving = light
++    moving.animationDuration = 0.46
++    let (h, windows) = threeDockedAndAFourth(moving)
++    var calls: [String] = []
++    h.overlays.onCall = { call in
++      switch call {
++      case .update(_, let scene) where !scene.tiles.isEmpty: calls.append("tiles")
++      case .animate: calls.append("stage")
++      default: break
++      }
++    }
++    h.run("dock \(windows[3].rawValue) right")
++    h.overlays.onCall = nil
++    #expect(calls == ["stage", "tiles"], "the stage goes up, and the tiles are put up once, for when it lifts")
++  }
++
++  @Test func withoutMotionATileDoesNotFade() {
++    let (h, windows) = threeDockedAndAFourth(light)
++    h.run("dock \(windows[3].rawValue) right")
++    #expect(h.overlays.scenes[h.display]?.tiles.isEmpty == false)
++    #expect(h.overlays.scenes[h.display]?.tileFade == 0)
++  }
++
++  @Test func withMotionItFadesAsItDid() {
++    var moving = light
++    moving.animationDuration = 0.46
++    let (h, windows) = threeDockedAndAFourth(moving)
++    h.run("dock \(windows[3].rawValue) right")
++    #expect(h.overlays.scenes[h.display]?.tileFade == 0.2)
++  }
++}
++
++/// A tile is drawn from its app's icon, which macOS takes seconds to hand out the first time. With motion the rehearsal has fetched it. Without, nothing had, and
++/// the first tiles of a day were waited for with the desk empty.
++@MainActor
++@Suite struct TilesAreGotReadyTests {
++  private func apps(_ h: Harness) -> Set<Int32> { Set(h.overlays.rehearsals.flatMap(\.apps).map(\.pid)) }
++
++  @Test func withoutMotionTheAppsOfDockedWindowsAreGotReadyAndNoStage() {
++    let (h, windows) = pile(4)
++    h.scheduler.advance(by: 1)
++    // Nothing is paid for before the person docks something.
++    #expect(h.overlays.rehearsals.isEmpty)
++    h.run("dock \(windows[0].rawValue) left")
++    h.run("dock \(windows[2].rawValue) right")
++    h.scheduler.advance(by: 1)
++    #expect(apps(h) == [1001, 1003])
++    #expect(h.overlays.rehearsals.allSatisfy { $0.displays.isEmpty })
++    // Once each.
++    h.run("zoom \(windows[0].rawValue)")
++    h.run("show-all")
++    h.scheduler.advance(by: 1)
++    #expect(h.overlays.rehearsals.count == 2)
++  }
++
++  @Test func withMotionEverythingIsAsItWas() {
++    var moving = light
++    moving.animationDuration = 0.46
++    let h = Harness(settings: moving)
++    _ = h.system.open(app: "App1", pid: 1001)
++    _ = h.system.open(app: "App2", pid: 1002)
++    h.start()
++    h.scheduler.advance(by: 1)
++    #expect(apps(h) == [1001, 1002])
++    #expect(h.overlays.rehearsals.contains { !$0.displays.isEmpty })
++  }
++}
+diff --git a/Tests/ArborKitTests/RehearsalTests.swift b/Tests/ArborKitTests/RehearsalTests.swift
+index 1c41a46e..95ba5596 100644
+--- a/Tests/ArborKitTests/RehearsalTests.swift
++++ b/Tests/ArborKitTests/RehearsalTests.swift
+@@ -179,13 +179,19 @@ import Testing
+     #expect(h.overlays.madeInTheMotion == [])
+   }
+ 
+-  /// What is not shown is not paid for.
+-  @Test func withoutMotionNothingIsGotReady() {
++  /// What is not shown is not paid for: no stage, and no app's cover but that of a docked window, which can become a tile and is then
++  /// drawn from it at once (InOnePieceTests.swift).
++  @Test func withoutMotionNothingIsGotReadyButWhatATileIsDrawnFrom() {
+     var settings = Settings()
+     settings.animationDuration = 0
+     let (h, windows) = desk(settings: settings)
+-    h.run("dock \(windows[0].rawValue) left")
++    h.scheduler.advance(by: 1)
+     #expect(h.overlays.rehearsals.isEmpty && !h.scheduler.pendingKeys.contains("rehearsal"))
++    h.run("dock \(windows[0].rawValue) left")
++    h.scheduler.advance(by: 1)
++    let docked = h.controller.windows[windows[0]]!
++    #expect(h.overlays.rehearsals == [Rehearsal(displays: [], apps: [.init(pid: docked.pid, bundleID: docked.bundleID)])])
++    #expect(!h.scheduler.pendingKeys.contains("rehearsal"))
+ 
+     settings.animationDuration = 0.3
+     h.controller.apply(settings: settings)
+-- 
+2.43.0
+

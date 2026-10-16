@@ -1,0 +1,185 @@
+From 5f48dba44b955acba5da4ed78f9587a1d437441a Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 15:30:14 +0000
+Subject: [PATCH] docs(ledger): macOS may undo its own tile when the displays
+ change; Notes and Mail stop at one of two sizes
+
+Two facts about Macs, read out of hosted Macs' recordings.
+
+- At some changes of displays macOS gives a window it had tiled the frame
+  from the moment before the tile. After a drag to an edge that frame hangs
+  over the edge. Seven windows in one journey, with Arbor and without.
+- Asked for less, Notes stops at 300 or at 320 high and Mail at 881 or at
+  871 wide, and the two go together: five runs of five. The stand-ins'
+  table keeps 320 with 871, a pair that was seen together.
+---
+ collab/reality.json | 41 +++++++++++++++++++++++++++++++++++++++++
+ docs/REALITY.md     | 38 ++++++++++++++++++++++++++++++++------
+ 2 files changed, 73 insertions(+), 6 deletions(-)
+
+diff --git a/collab/reality.json b/collab/reality.json
+index ea2bfbc0..e41592c8 100644
+--- a/collab/reality.json
++++ b/collab/reality.json
+@@ -8081,6 +8081,28 @@
+    ],
+    "certainty": "suspected"
+   },
++  {
++   "id": "macos-may-undo-its-own-tile-when-the-displays-change",
++   "kind": "second-actor",
++   "layer": "at the seam",
++   "expected": "A window that macOS has tiled stays as it is when a display is plugged in or unplugged, or comes to the display that is left in the size it had.",
++   "happened": "At some changes of displays macOS gives a window it had tiled the frame from the moment before the tile, place and size, to the point (once a point off) and mostly in one step. After a drag to an edge that frame hangs over the edge, where the hand held the window. In one journey, played three times: Calendar, let go at the right edge at 1284,300 937×600 and tiled to 800,32 801×791, was back at 1284,300 937×600 at the next plug, standing on the main display, with a third of its width in view; without Arbor the same at 1266,355 and at 1277,438. Mail without Arbor: 1069,270 1120×630 before the tile, back there when the display went that macOS had taken it to; in the other playing 1040,270, at an unplug, on the main display. Terminal without Arbor: 1165,398 863×499. Preview with Arbor: docked at 12,433 1576×377, dragged at that size to the left edge, last at -768,438, tiled to -1,31 804×791, sent across by Arbor at 2159,160 802×791; when that display went it was back at -768,438 1576×377, 49 % of it off the left edge and in the size of an Arbor slot, and it stayed so through `home` and Quit. Arbor set it no frame. Not at every change: Preview kept its tile through an unplug and a plug before that, and through three changes in each playing without Arbor. What decides is not known. With a docked window dragged to an edge it is `macos-remembers-a-tile-arbor-has-undone` set off by something else, and the place comes back as well.",
++   "found": "A journey with a second, virtual display played without Arbor, with it and without it again on one hosted Mac, macOS 26.6.2, on 2026-10-15: seven windows' roads read out of the three playings' samples, and Arbor's trace, in which no request asks for any of those frames. Counted by three readers apart.",
++   "modelled": "no",
++   "knobs": [
++    "FakeWindowSystem.takeSizeBeforeTile"
++   ],
++   "guards": [],
++   "copes": "open",
++   "hurt": 2,
++   "touches": [
++    "size-lost"
++   ],
++   "sources": [
++    "scripts/mac-shell/lib-walk.sh",
++    "scripts/mac-shell/jolts.py"
++   ]
++  },
+   {
+    "id": "macos-moves-a-window-at-its-menu-its-keys-and-the-green-button",
+    "kind": "second-actor",
+@@ -8876,6 +8898,25 @@
+     "M1609"
+    ]
+   },
++  {
++   "id": "notes-and-mail-stop-at-one-of-two-sizes-and-go-together",
++   "kind": "geometry",
++   "layer": "at the seam",
++   "expected": "An app has one smallest size, so that one measurement is enough for a table or a store.",
++   "happened": "Asked for less, Notes stopped at 300 high in some runs and at 320 in others, and Mail at 881 wide or at 871. In the five runs that asked both they went together: 320 with 871 twice, 300 with 881 three times. In one of those three the same window of Notes answered 300 and, 23 seconds later, asked for exactly 709×300, answered 709×320, twice. A survey that asked every app once got 709×300 from Notes and no answer from Mail. What sets the state is not known. A rehearsal with the table at 320 differed from a Mac that answered 300 in one slot of nine after `arrange`, by 20 points, at six acts of fifty.",
++   "found": "Every request for a frame and its answer in 161 recordings of hosted Macs, macOS 26.6.2, between 23:21 UTC on 2026-10-14 and 14:34 UTC on 2026-10-15; counted twice, by two readers apart.",
++   "modelled": "partly",
++   "knobs": [
++    "RealApp.minimum"
++   ],
++   "guards": [],
++   "copes": "Sources/ArborTesting/RealApps.swift has 709×320 and 871×236, a pair that was seen together. Arbor itself asks and goes by the answer; a size that is kept from one day for another can be 20 or 10 points off.",
++   "hurt": 4,
++   "sources": [
++    "Sources/ArborTesting/RealApps.swift",
++    "scripts/mac-shell/walk-diff.py"
++   ]
++  },
+   {
+    "id": "nothing-announces-a-change-of-permission",
+    "kind": "missing-report",
+diff --git a/docs/REALITY.md b/docs/REALITY.md
+index b40fdcbf..f0ac9095 100644
+--- a/docs/REALITY.md
++++ b/docs/REALITY.md
+@@ -58,8 +58,8 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
+ | [missing-report](#missing-report) | 44 | 7 | 14 | 7 | 4 | 19 | 25 | 1 | 5 | 13 | 10 |
+ | [extra-report](#extra-report) | 10 | 0 | 4 | 3 | 1 | 2 | 6 | 0 | 0 | 4 | 1 |
+ | [late-or-partial-answer](#late-or-partial-answer) | 46 | 9 | 12 | 15 | 6 | 13 | 29 | 0 | 6 | 11 | 14 |
+-| [second-actor](#second-actor) | 60 | 8 | 25 | 19 | 9 | 7 | 40 | 0 | 4 | 16 | 11 |
+-| [geometry](#geometry) | 43 | 2 | 18 | 15 | 8 | 2 | 32 | 1 | 2 | 8 | 7 |
++| [second-actor](#second-actor) | 61 | 8 | 25 | 19 | 10 | 7 | 40 | 0 | 4 | 17 | 12 |
++| [geometry](#geometry) | 44 | 2 | 18 | 16 | 8 | 2 | 32 | 1 | 2 | 9 | 7 |
+ | [identity](#identity) | 32 | 4 | 7 | 7 | 7 | 11 | 14 | 1 | 4 | 13 | 8 |
+ | [permissions](#permissions) | 23 | 7 | 5 | 4 | 3 | 11 | 12 | 2 | 3 | 6 | 4 |
+ | [timing](#timing) | 56 | 7 | 9 | 14 | 11 | 22 | 33 | 4 | 6 | 13 | 9 |
+@@ -67,14 +67,14 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
+ | [looks](#looks) | 21 | 0 | 1 | 0 | 0 | 20 | 3 | 2 | 3 | 13 | 5 |
+ | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
+ | [toolchain](#toolchain) | 52 | 1 | 0 | 2 | 4 | 46 | 28 | 1 | 2 | 21 | 10 |
+-| **all** | 490 | 63 | 113 | 124 | 70 | 183 | 265 | 19 | 60 | 146 | 108 |
++| **all** | 492 | 63 | 113 | 125 | 71 | 183 | 265 | 19 | 60 | 148 | 109 |
+ 
+ **Where the difference bit**
+ 
+ | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
+ |---|---|---|---|---|---|---|---|
+ | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 145 | 90 | 48 | 13 | 33 | 51 |
+-| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 177 | 104 | 139 | 0 | 10 | 28 |
++| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 179 | 105 | 139 | 0 | 10 | 30 |
+ | controller | in the controller or the core, given reports that were right | 31 | 16 | 19 | 0 | 1 | 11 |
+ | test | in a test, a script or a harness that expected the wrong thing | 89 | 0 | 32 | 5 | 12 | 40 |
+ | machine | in the machine, the toolchain or the way things are built and installed | 48 | 3 | 27 | 1 | 4 | 16 |
+@@ -110,6 +110,7 @@ A fault that is known and open.
+ | [behind-a-locked-screen-arbor-takes-no-window](#behind-a-locked-screen-arbor-takes-no-window) | 2 | below the seam | cannot | not guarded |
+ | [docking-into-a-slot-too-small-took-seven-to-twelve-seconds](#docking-into-a-slot-too-small-took-seven-to-twelve-seconds) | 2 | at the seam | no | not guarded |
+ | [macos-does-not-tile-every-window-at-the-top-edge](#macos-does-not-tile-every-window-at-the-top-edge) | 2 | at the seam | no | not guarded |
++| [macos-may-undo-its-own-tile-when-the-displays-change](#macos-may-undo-its-own-tile-when-the-displays-change) | 2 | at the seam | no | not guarded |
+ | [macoss-last-word-about-the-screens-comes-before-most-of-the-windows-reports](#macoss-last-word-about-the-screens-comes-before-most-of-the-windows-reports) | 2 | at the seam | no | not guarded |
+ | [one-shrink-moves-a-window-that-will-not-shrink-four-times](#one-shrink-moves-a-window-that-will-not-shrink-four-times) | 2 | controller | yes | not guarded |
+ | [real-apps-are-reported-gone-before-their-sibling-has-the-keyboard](#real-apps-are-reported-gone-before-their-sibling-has-the-keyboard) | 2 | at the seam | no | not guarded |
+@@ -201,6 +202,7 @@ So no test on Linux can meet it. (Those they play partly are not listed: see eac
+ | [arbor-stopped-swallows-its-keys-and-runs-them-all-at-once-when-woken](#arbor-stopped-swallows-its-keys-and-runs-them-all-at-once-when-woken) | 2 | below the seam | no | not guarded |
+ | [docking-into-a-slot-too-small-took-seven-to-twelve-seconds](#docking-into-a-slot-too-small-took-seven-to-twelve-seconds) | 2 | at the seam | no | not guarded |
+ | [macos-does-not-tile-every-window-at-the-top-edge](#macos-does-not-tile-every-window-at-the-top-edge) | 2 | at the seam | no | not guarded |
++| [macos-may-undo-its-own-tile-when-the-displays-change](#macos-may-undo-its-own-tile-when-the-displays-change) | 2 | at the seam | no | not guarded |
+ | [macoss-last-word-about-the-screens-comes-before-most-of-the-windows-reports](#macoss-last-word-about-the-screens-comes-before-most-of-the-windows-reports) | 2 | at the seam | no | not guarded |
+ | [real-apps-are-reported-gone-before-their-sibling-has-the-keyboard](#real-apps-are-reported-gone-before-their-sibling-has-the-keyboard) | 2 | at the seam | no | not guarded |
+ | [twins-and-displays-without-a-uuid-share-one-name](#twins-and-displays-without-a-uuid-share-one-name) | 2 | at the seam | no | not guarded |
+@@ -215,7 +217,7 @@ So no test on Linux can meet it. (Those they play partly are not listed: see eac
+ 
+ ## Ring 2: what the walks on Linux cannot vouch for
+ 
+-The viable gate (`docs/VIABLE.md`, section 2) asks of this ledger that no open row touches one of the detectors of its section 5: with such a row open, ten thousand clean walks against the stand-ins say nothing about that detector. Each case says which detectors a person's trouble would set off (*touches*). It counts here when Arbor does not cope with it yet or nobody knows (**bold**), or when it crosses the seam and the stand-ins play it only partly or not at all. 121 cases count, each once, however many detectors it touches: that is the number `scripts/reality-ledger.py --rings` hands to the gate.
++The viable gate (`docs/VIABLE.md`, section 2) asks of this ledger that no open row touches one of the detectors of its section 5: with such a row open, ten thousand clean walks against the stand-ins say nothing about that detector. Each case says which detectors a person's trouble would set off (*touches*). It counts here when Arbor does not cope with it yet or nobody knows (**bold**), or when it crosses the seam and the stand-ins play it only partly or not at all. 122 cases count, each once, however many detectors it touches: that is the number `scripts/reality-ledger.py --rings` hands to the gate.
+ 
+ | Detector | Cases | Open or unplayed cases that touch it |
+ |---|---|---|
+@@ -228,7 +230,7 @@ The viable gate (`docs/VIABLE.md`, section 2) asks of this ledger that no open r
+ | `stuck` | 9 | **[stage-manager-rearranges-windows-on-its-own](#stage-manager-rearranges-windows-on-its-own)**, **[a-flick-is-over-before-arbor-hears-of-the-press](#a-flick-is-over-before-arbor-hears-of-the-press)**, **[a-size-call-right-after-a-change-of-display-is-judged-by-the-old-display](#a-size-call-right-after-a-change-of-display-is-judged-by-the-old-display)**, **[the-fakes-announce-a-drag-without-asking-the-judge](#the-fakes-announce-a-drag-without-asking-the-judge)**, [a-drag-is-heard-of-a-third-of-a-second-late](#a-drag-is-heard-of-a-third-of-a-second-late), [the-app-learns-of-a-drag-later-than-the-window-server](#the-app-learns-of-a-drag-later-than-the-window-server), [macos-holds-a-dragged-window-back-where-edges-meet](#macos-holds-a-dragged-window-back-where-edges-meet), [a-title-bar-let-go-behind-the-dock-is-pulled-up](#a-title-bar-let-go-behind-the-dock-is-pulled-up), [a-window-dragged-off-a-tile-of-macos-lies-under-the-pointer-as-it-was-held](#a-window-dragged-off-a-tile-of-macos-lies-under-the-pointer-as-it-was-held) |
+ | `behind` | 7 | **[f53-no-real-apps-window-has-been-summoned](#f53-no-real-apps-window-has-been-summoned)**, **[f49-no-pin-has-been-seen-in-front-after-a-real-click-under-it](#f49-no-pin-has-been-seen-in-front-after-a-real-click-under-it)**, **[raise-does-not-lift-a-window-over-the-active-apps-key-window](#raise-does-not-lift-a-window-over-the-active-apps-key-window)**, [a-clicked-window-takes-the-keyboard-first-and-comes-forward-afterwards](#a-clicked-window-takes-the-keyboard-first-and-comes-forward-afterwards), [raising-a-window-can-make-its-app-report-a-focus-change](#raising-a-window-can-make-its-app-report-a-focus-change), [a-command-click-raises-nothing-and-the-three-buttons-work-from-behind](#a-command-click-raises-nothing-and-the-three-buttons-work-from-behind), [a-press-on-a-title-bar-brings-the-window-forward-before-it-moves](#a-press-on-a-title-bar-brings-the-window-forward-before-it-moves) |
+ | `focus` | 22 | **[an-app-that-is-busy-as-it-is-switched-to-is-never-reported-focused](#an-app-that-is-busy-as-it-is-switched-to-is-never-reported-focused)**, **[f58-no-held-view-has-been-empty-and-no-audience-has-looked](#f58-no-held-view-has-been-empty-and-no-audience-has-looked)**, **[the-keyboard-stays-in-a-window-that-went-out-of-view](#the-keyboard-stays-in-a-window-that-went-out-of-view)**, **[f20-no-click-elsewhere-has-closed-the-name-field](#f20-no-click-elsewhere-has-closed-the-name-field)**, **[f27-go-to-has-not-been-closed-by-a-click-with-a-witness-looking-on](#f27-go-to-has-not-been-closed-by-a-click-with-a-witness-looking-on)**, **[f49-no-pin-has-been-seen-in-front-after-a-real-click-under-it](#f49-no-pin-has-been-seen-in-front-after-a-real-click-under-it)**, **[no-focused-window-that-arbor-knows-is-taken-for-nobody-at-the-keyboard](#no-focused-window-that-arbor-knows-is-taken-for-nobody-at-the-keyboard)**, **[nobody-has-the-keyboard-also-means-a-launcher-has-it](#nobody-has-the-keyboard-also-means-a-launcher-has-it)**, **[the-key-that-fills-the-screen-pressed-again-fills-it-with-another-apps-window](#the-key-that-fills-the-screen-pressed-again-fills-it-with-another-apps-window)**, **[after-cmd-m-on-its-only-window-an-app-stays-in-front-with-nobody-at-the-keyboard](#after-cmd-m-on-its-only-window-an-app-stays-in-front-with-nobody-at-the-keyboard)**, **[go-to-opened-straight-after-a-move-of-the-focus-closes-when-the-keyboard-arrives](#go-to-opened-straight-after-a-move-of-the-focus-closes-when-the-keyboard-arrives)**, **[the-labs-switch-app-is-not-command-tab](#the-labs-switch-app-is-not-command-tab)**, [a-new-window-has-the-keyboard-before-arbor-hears-of-it](#a-new-window-has-the-keyboard-before-arbor-hears-of-it), [a-space-switch-brings-an-app-forward-before-or-after-its-windows-are-known](#a-space-switch-brings-an-app-forward-before-or-after-its-windows-are-known), [one-focus-change-is-reported-two-to-four-times](#one-focus-change-is-reported-two-to-four-times), [raising-a-window-can-make-its-app-report-a-focus-change](#raising-a-window-can-make-its-app-report-a-focus-change), [the-window-and-its-app-report-in-either-order](#the-window-and-its-app-report-in-either-order), [an-app-that-comes-forward-says-the-keyboard-moved-up-to-three-times](#an-app-that-comes-forward-says-the-keyboard-moved-up-to-three-times), [hiding-an-app-brings-finder-forward-first](#hiding-an-app-brings-finder-forward-first), [a-press-on-a-title-bar-brings-the-window-forward-before-it-moves](#a-press-on-a-title-bar-brings-the-window-forward-before-it-moves), [the-keyboard-arbor-gives-a-window-brings-its-app-forward](#the-keyboard-arbor-gives-a-window-brings-its-app-forward), [what-a-background-app-does-with-its-focus-is-not-passed-on](#what-a-background-app-does-with-its-focus-is-not-passed-on) |
+-| `size-lost` | 13 | **[quitting-while-an-app-hangs-strands-its-windows](#quitting-while-an-app-hangs-strands-its-windows)**, **[a-move-that-a-hang-swallows-is-never-read-again](#a-move-that-a-hang-swallows-is-never-read-again)**, **[a-stale-read-back-makes-arbors-own-move-the-persons](#a-stale-read-back-makes-arbors-own-move-the-persons)**, **[f49-no-pin-has-been-seen-in-front-after-a-real-click-under-it](#f49-no-pin-has-been-seen-in-front-after-a-real-click-under-it)**, **[macos-remembers-a-tile-arbor-has-undone](#macos-remembers-a-tile-arbor-has-undone)**, **[a-window-that-travels-with-another](#a-window-that-travels-with-another)**, **[an-app-settles-its-size-after-the-mouse-is-up](#an-app-settles-its-size-after-the-mouse-is-up)**, [a-position-call-cuts-the-height-of-a-window-taller-than-the-display-it-is-sent-to](#a-position-call-cuts-the-height-of-a-window-taller-than-the-display-it-is-sent-to), [every-setframe-is-echoed-after-the-call-returns](#every-setframe-is-echoed-after-the-call-returns), [terminal-snaps-to-whole-cells-late](#terminal-snaps-to-whole-cells-late), [the-app-learns-of-a-drag-later-than-the-window-server](#the-app-learns-of-a-drag-later-than-the-window-server), [a-stopped-layer-is-deaf-and-the-fake-goes-on-talking](#a-stopped-layer-is-deaf-and-the-fake-goes-on-talking), [a-window-below-its-minimum-stays-so-while-it-is-only-moved](#a-window-below-its-minimum-stays-so-while-it-is-only-moved) |
++| `size-lost` | 14 | **[quitting-while-an-app-hangs-strands-its-windows](#quitting-while-an-app-hangs-strands-its-windows)**, **[a-move-that-a-hang-swallows-is-never-read-again](#a-move-that-a-hang-swallows-is-never-read-again)**, **[a-stale-read-back-makes-arbors-own-move-the-persons](#a-stale-read-back-makes-arbors-own-move-the-persons)**, **[f49-no-pin-has-been-seen-in-front-after-a-real-click-under-it](#f49-no-pin-has-been-seen-in-front-after-a-real-click-under-it)**, **[macos-may-undo-its-own-tile-when-the-displays-change](#macos-may-undo-its-own-tile-when-the-displays-change)**, **[macos-remembers-a-tile-arbor-has-undone](#macos-remembers-a-tile-arbor-has-undone)**, **[a-window-that-travels-with-another](#a-window-that-travels-with-another)**, **[an-app-settles-its-size-after-the-mouse-is-up](#an-app-settles-its-size-after-the-mouse-is-up)**, [a-position-call-cuts-the-height-of-a-window-taller-than-the-display-it-is-sent-to](#a-position-call-cuts-the-height-of-a-window-taller-than-the-display-it-is-sent-to), [every-setframe-is-echoed-after-the-call-returns](#every-setframe-is-echoed-after-the-call-returns), [terminal-snaps-to-whole-cells-late](#terminal-snaps-to-whole-cells-late), [the-app-learns-of-a-drag-later-than-the-window-server](#the-app-learns-of-a-drag-later-than-the-window-server), [a-stopped-layer-is-deaf-and-the-fake-goes-on-talking](#a-stopped-layer-is-deaf-and-the-fake-goes-on-talking), [a-window-below-its-minimum-stays-so-while-it-is-only-moved](#a-window-below-its-minimum-stays-so-while-it-is-only-moved) |
+ | `input-held` | 10 | **[all-input-is-dropped-from-the-loss-of-the-permission-until-arbors-taps-are-gone](#all-input-is-dropped-from-the-loss-of-the-permission-until-arbors-taps-are-gone)**, **[f05-no-hand-has-drawn-the-rectangle](#f05-no-hand-has-drawn-the-rectangle)**, **[f55-no-wheel-and-no-trackpad-has-scrolled](#f55-no-wheel-and-no-trackpad-has-scrolled)**, **[f63-nothing-has-been-pressed-while-the-permission-is-gone](#f63-nothing-has-been-pressed-while-the-permission-is-gone)**, **[a-click-then-drag-arrives-as-a-double-click](#a-click-then-drag-arrives-as-a-double-click)**, **[f26-no-click-outside-the-minimap-while-it-takes-clicks](#f26-no-click-outside-the-minimap-while-it-takes-clicks)**, **[f41-no-key-has-been-pressed-in-the-moment-of-the-switch](#f41-no-key-has-been-pressed-in-the-moment-of-the-switch)**, **[voiceover-and-other-window-managers-use-control-option-too](#voiceover-and-other-window-managers-use-control-option-too)**, **[a-press-reaches-the-tap-before-its-app-comes-forward](#a-press-reaches-the-tap-before-its-app-comes-forward)**, **[a-title-bar-an-app-draws-itself-answers-with-bare-groups](#a-title-bar-an-app-draws-itself-answers-with-bare-groups)** |
+ | `slow` | 10 | **[arbor-starts-while-an-app-hangs-and-each-try-to-observe-it-waits-a-second](#arbor-starts-while-an-app-hangs-and-each-try-to-observe-it-waits-a-second)**, **[arbor-stopped-swallows-its-keys-and-runs-them-all-at-once-when-woken](#arbor-stopped-swallows-its-keys-and-runs-them-all-at-once-when-woken)**, **[docking-into-a-slot-too-small-took-seven-to-twelve-seconds](#docking-into-a-slot-too-small-took-seven-to-twelve-seconds)**, **[each-notice-on-its-way-when-an-app-hangs-costs-the-main-thread-a-second](#each-notice-on-its-way-when-an-app-hangs-costs-the-main-thread-a-second)**, **[picture-sweeps-hold-the-main-actor](#picture-sweeps-hold-the-main-actor)**, [app-nap-delays-an-accessory-apps-timers](#app-nap-delays-an-accessory-apps-timers), [starting-asks-every-running-app](#starting-asks-every-running-app), [during-a-pause-each-try-for-a-hung-apps-window-waits-for-the-app-itself](#during-a-pause-each-try-for-a-hung-apps-window-waits-for-the-app-itself), [every-call-is-a-round-trip-to-another-process](#every-call-is-a-round-trip-to-another-process), [the-first-dock-after-a-start-takes-seconds](#the-first-dock-after-a-start-takes-seconds) |
+ | `crash` | 2 | **[docking-into-a-slot-too-small-took-seven-to-twelve-seconds](#docking-into-a-slot-too-small-took-seven-to-twelve-seconds)**, **[each-notice-on-its-way-when-an-app-hangs-costs-the-main-thread-a-second](#each-notice-on-its-way-when-an-app-hangs-costs-the-main-thread-a-second)** |
+@@ -2072,6 +2074,18 @@ A second actor: macOS, an app or another tool moves things too.
+ - **Arbor copes:** **not yet**
+ - **Read in:** `Sources/ArborTesting/FakeWindowSystem.swift`
+ 
++### macos-may-undo-its-own-tile-when-the-displays-change
++
++*hurt 2 · at the seam · touches `size-lost`*
++
++- **Expected:** A window that macOS has tiled stays as it is when a display is plugged in or unplugged, or comes to the display that is left in the size it had.
++- **Happened:** At some changes of displays macOS gives a window it had tiled the frame from the moment before the tile, place and size, to the point (once a point off) and mostly in one step. After a drag to an edge that frame hangs over the edge, where the hand held the window. In one journey, played three times: Calendar, let go at the right edge at 1284,300 937×600 and tiled to 800,32 801×791, was back at 1284,300 937×600 at the next plug, standing on the main display, with a third of its width in view; without Arbor the same at 1266,355 and at 1277,438. Mail without Arbor: 1069,270 1120×630 before the tile, back there when the display went that macOS had taken it to; in the other playing 1040,270, at an unplug, on the main display. Terminal without Arbor: 1165,398 863×499. Preview with Arbor: docked at 12,433 1576×377, dragged at that size to the left edge, last at -768,438, tiled to -1,31 804×791, sent across by Arbor at 2159,160 802×791; when that display went it was back at -768,438 1576×377, 49 % of it off the left edge and in the size of an Arbor slot, and it stayed so through `home` and Quit. Arbor set it no frame. Not at every change: Preview kept its tile through an unplug and a plug before that, and through three changes in each playing without Arbor. What decides is not known. With a docked window dragged to an edge it is `macos-remembers-a-tile-arbor-has-undone` set off by something else, and the place comes back as well.
++- **Found by:** A journey with a second, virtual display played without Arbor, with it and without it again on one hosted Mac, macOS 26.6.2, on 2026-10-15: seven windows' roads read out of the three playings' samples, and Arbor's trace, in which no request asks for any of those frames. Counted by three readers apart.
++- **Stand-ins play it:** **no** (`FakeWindowSystem.takeSizeBeforeTile`)
++- **Guard:** **none**
++- **Arbor copes:** **not yet**
++- **Read in:** `scripts/mac-shell/lib-walk.sh`, `scripts/mac-shell/jolts.py`
++
+ ### macos-never-refused-a-shortcut-that-another-process-holds
+ 
+ *hurt 2 · below the seam*
+@@ -2952,6 +2966,18 @@ Geometry: displays, bars, sizes and coordinates that are not what was assumed.
+ - **Arbor copes:** MacTiling.claim says where macOS takes a window that is let go, and there Arbor sets no frame, so a point is nothing to it: the window floats where macOS left it, comes back to that very point from out of view, and the ways out leave it there.
+ - **Read in:** `Sources/ArborTesting/FakeWindowSystem.swift`, `Tests/ArborKitTests/MacTilingTests.swift`, `Sources/ArborCore/MacTiling.swift`, `scripts/mac-shell/e2e-drag.sh`
+ 
++### notes-and-mail-stop-at-one-of-two-sizes-and-go-together
++
++*hurt 4 · at the seam*
++
++- **Expected:** An app has one smallest size, so that one measurement is enough for a table or a store.
++- **Happened:** Asked for less, Notes stopped at 300 high in some runs and at 320 in others, and Mail at 881 wide or at 871. In the five runs that asked both they went together: 320 with 871 twice, 300 with 881 three times. In one of those three the same window of Notes answered 300 and, 23 seconds later, asked for exactly 709×300, answered 709×320, twice. A survey that asked every app once got 709×300 from Notes and no answer from Mail. What sets the state is not known. A rehearsal with the table at 320 differed from a Mac that answered 300 in one slot of nine after `arrange`, by 20 points, at six acts of fifty.
++- **Found by:** Every request for a frame and its answer in 161 recordings of hosted Macs, macOS 26.6.2, between 23:21 UTC on 2026-10-14 and 14:34 UTC on 2026-10-15; counted twice, by two readers apart.
++- **Stand-ins play it:** partly (`RealApp.minimum`)
++- **Guard:** **none**
++- **Arbor copes:** Sources/ArborTesting/RealApps.swift has 709×320 and 871×236, a pair that was seen together. Arbor itself asks and goes by the answer; a size that is kept from one day for another can be 20 or 10 points off.
++- **Read in:** `Sources/ArborTesting/RealApps.swift`, `scripts/mac-shell/walk-diff.py`
++
+ ### on-a-retina-display-frames-come-in-half-points
+ 
+ *hurt 4 · at the seam*
+-- 
+2.43.0
+

@@ -1,0 +1,1033 @@
+diff --git a/Sources/ArborCore/ScreenLines.swift b/Sources/ArborCore/ScreenLines.swift
+index 849dfaf3..8e9ff7a4 100644
+--- a/Sources/ArborCore/ScreenLines.swift
++++ b/Sources/ArborCore/ScreenLines.swift
+@@ -1,9 +1,9 @@
+ import CoreGraphics
+ 
+-/// How far macOS lets a window grow where it stands.
++/// How far macOS lets a window grow where it stands, and how far it lets one shrink that hangs off its display.
+ ///
+-/// A call that sets a window's size makes it grow no further than to two lines of its display, from where it stands at that moment. A
+-/// call that sets its position is not held back so. Measured call by call on hosted Macs, macOS 26, with a plain test window and
++/// A call that sets a window's size makes it grow no further than to two lines of its display, from where it stands at that moment, and puts no
++/// edge into the Dock's strip. A call that sets its position is not held back so. Measured call by call on hosted Macs, macOS 26, with a plain test window and
+ /// with real apps alike (`collab/reality.json`: a-window-asked-to-grow-stops-at-the-dock). Arbor reckons with it, and the stand-ins play it.
+ ///
+ /// Which display that is, of a window that lies astride two, is for whoever asks. Arbor and the fake go by the window's corner; the one
+@@ -15,8 +15,8 @@ public struct ScreenLines: Equatable, Sendable {
+   /// display's bottom.
+   public var bottom: CGFloat
+   /// The display's right edge and its bottom. Between a line and these, in the Dock's strip, a window's edge is held as it is; past them it is
+-  /// free. At the right edge that was seen to the point. Below, a foot at 729 was held and one at 900 free, on a display 768 high, so that it
+-  /// turns at the display's bottom is a guess. So is the strip of a Dock at the right, by likeness.
++  /// free to go further out. At the right edge that was seen to the point. Below, a foot at 729 was held and one at 900 free, on a display
++  /// 768 high; then at 768 held and at 769 free. The strip of a Dock at the right does as the one below.
+   public var end: CGPoint
+ 
+   public init(frame: CGRect, visibleFrame: CGRect) {
+@@ -25,12 +25,31 @@ public struct ScreenLines: Equatable, Sendable {
+     bottom = visibleFrame.maxY - (visibleFrame.maxY < frame.maxY ? 1 : 0)
+   }
+ 
+-  /// What macOS passes on of a `size` asked of a window that stands at `standing`. Each side by itself. Nobody is made smaller by it, and a
+-  /// side that is off the display already is free. Its app has its say afterwards.
++  /// What macOS passes on of a `size` asked of a window that stands at `standing`. Each side by itself. Its app has its say afterwards.
+   public func allows(_ size: CGSize, to standing: CGRect) -> CGSize {
+     CGSize(
+-      width: standing.maxX > end.x ? size.width : min(size.width, max(standing.width, right - standing.minX)),
+-      height: standing.maxY > end.y ? size.height : min(size.height, max(standing.height, bottom - standing.minY)))
++      width: Self.allows(size.width, from: standing.minX, has: standing.width, line: right, end: end.x),
++      height: Self.allows(size.height, from: standing.minY, has: standing.height, line: bottom, end: end.y))
++  }
++
++  /// One side, which begins at `start` and is `has` long.
++  ///
++  /// A size call leaves no edge inside the Dock's strip. 150 bare calls on a hosted Mac, a test window and a real editor, the Dock below and at the
++  /// right, each ask 6 times of 6 (`collab/reality.json`: no-size-call-leaves-an-edge-in-the-docks-strip); and Arbor's own requests before them.
++  /// - Its edge on the screen: it grows as far as the line, and shrinks as it is asked to.
++  /// - Its edge off the display, by a point or more: free, outwards, and inwards right across the strip. Asked to end IN the strip it comes in no
++  ///   further than the display's edge, so it is LONGER than asked: 650 high at y 408 of 768, asked to be 348, it became 360.
++  /// - Its edge in the strip, or on the display's very edge: held, for more, and for less that would still end in the strip. Asked to end on the
++  ///   screen it does.
++  /// Not seen: an edge that comes in and is asked exactly to the visible frame's. That counts as on the screen, as it did before anybody looked: slots
++  /// without a gap end there, and so does what is fitted onto the screen.
++  private static func allows(_ asked: CGFloat, from start: CGFloat, has: CGFloat, line: CGFloat, end: CGFloat) -> CGFloat {
++    let (edge, wanted) = (start + has, start + asked)
++    // The line that stops growth lies a point short of the visible frame's edge, where the strip begins.
++    let endsInTheStrip = line < end && wanted > line + 1 && wanted <= end
++    if edge > end { return endsInTheStrip ? end - start : asked }
++    if edge > line { return wanted > edge || endsInTheStrip ? has : asked }
++    return min(asked, max(has, line - start))
+   }
+ 
+   /// What a window that stands at `standing` has of `target`'s size after the calls one request is made of (`FramePlan.steps`), if its app takes
+diff --git a/Sources/ArborKit/Controller/Controller+AskFirst.swift b/Sources/ArborKit/Controller/Controller+AskFirst.swift
+index cd345ad1..1c7032eb 100644
+--- a/Sources/ArborKit/Controller/Controller+AskFirst.swift
++++ b/Sources/ArborKit/Controller/Controller+AskFirst.swift
+@@ -116,9 +116,15 @@ extension Controller {
+     let has = window.frame
+     let growsAsAsked =
+       parked.contains(window.id) && stopper(of: has.origin).map { has.maxX > $0.frame.maxX && has.maxY > $0.frame.maxY } == true
+-    let question = CGRect(
++    var question = CGRect(
+       origin: has.origin,
+       size: growsAsAsked ? size : CGSize(width: min(size.width, has.width), height: min(size.height, has.height)))
++    // Nor is everybody let shrink where it stands: with its foot in the Dock's strip, as when a Dock has appeared under it, a window is held, and
++    // that is no answer of its app's. So that side is not asked.
++    if let allowed = stopper(of: has.origin)?.lines.allows(question.size, to: has) {
++      if allowed.width > question.width { question.size.width = has.width }
++      if allowed.height > question.height { question.size.height = has.height }
++    }
+     guard abs(question.width - has.width) > 1 || abs(question.height - has.height) > 1 else { return nil }
+     guard parked.contains(window.id) else {
+       let staysThere = whereItStops(question.origin, titleBar: titleBars[window.id] ?? Self.guessedTitleBar) == question.origin
+@@ -127,11 +133,11 @@ extension Controller {
+     return isOutOfView(question.union(has)) && displays.contains { question.overlaps($0.frame) } ? question : nil
+   }
+ 
+-  /// Whether it may have been the screen that kept a window from growing to `asked` while it stood at `origin`: it `took` as much as macOS lets
+-  /// a window have there (`sidesTheScreenKept`). A point or two short is nobody's refusal.
++  /// Whether it may have been the screen that kept a window from growing to `asked` while it stood at `origin`, or from shrinking to it: it `took` as
++  /// much as macOS lets a window have there, or as little (`sidesTheScreenKept`). A point or two is nobody's refusal.
+   func mayHaveBeenStoppedByTheScreen(_ took: CGSize, shortOf asked: CGSize, at origin: CGPoint) -> Bool {
+     let kept = sidesTheScreenKept(of: took, shortOf: asked, at: [origin])
+-    return kept.height && took.height < asked.height - 2 || kept.width && took.width < asked.width - 2
++    return kept.height && abs(took.height - asked.height) > 2 || kept.width && abs(took.width - asked.width) > 2
+   }
+ 
+   /// Puts a question. Returns true if the window refused to be that small (a new minimum size was learned).
+diff --git a/Sources/ArborKit/Controller/Controller+Layout.swift b/Sources/ArborKit/Controller/Controller+Layout.swift
+index 399e5c63..02d1d7a3 100644
+--- a/Sources/ArborKit/Controller/Controller+Layout.swift
++++ b/Sources/ArborKit/Controller/Controller+Layout.swift
+@@ -218,12 +218,11 @@ extension Controller {
+     let hasHeard = !actual.approximatelyEquals(current.frame, tolerance: 1)
+     // One that was only moved, at the size it has, has been through this where it stood.
+     let isOnlyMoved = asked.size == current.frame.size
+-    // Where it was asked, not by way of the slot's corner.
+-    if !isOnlyMoved { actual = askForLess(window, slot: asked, took: actual) }
+     // An answer the screen may have given is no refusal (`mayHaveBeenStoppedByTheScreen`). It can be, anywhere but in the slot, which
+     // lies on the screen: where the window stood, if its app carries out a move late and was still there when it was asked for the
+     // size; and where it answers from, if it was not expected to grow, was asked lower than its slot begins, and has grown. Not
+-    // the answer that was expected: a window known not to grow may happen to have stood on the line.
++    // the answer that was expected: a window known not to grow may happen to have stood on the line. Nor is it one if it is the larger:
++    // what shrinks is sized where it stands, and with its foot in the Dock's strip, as when a Dock has appeared under it, it is held there.
+     func mayBeTheScreens(_ answer: CGRect, whichStoodAt stood: CGPoint) -> Bool {
+       guard abs(answer.width - expected.width) > 2 || abs(answer.height - expected.height) > 2 else { return false }
+       return [stood, answer.origin].contains { place in
+@@ -231,9 +230,14 @@ extension Controller {
+           && mayHaveBeenStoppedByTheScreen(answer.size, shortOf: target.size, at: place)
+       }
+     }
++    // Only one that shrinks both ways or not at all: what grows is sized last, in its slot, and that answer is its app's.
++    let wasHeld = !isOnlyMoved && asked.width <= current.frame.width && asked.height <= current.frame.height
++      && (actual.width > asked.width + 2 || actual.height > asked.height + 2) && mayBeTheScreens(actual, whichStoodAt: current.frame.origin)
++    // Where it was asked, not by way of the slot's corner. Not of one the screen held: it would take the less, in its slot.
++    if !isOnlyMoved, !wasHeld { actual = askForLess(window, slot: asked, took: actual) }
+     // So it is asked once more, in the slot.
+     var saysNothing = false
+-    if !isOnlyMoved, mayBeTheScreens(actual, whichStoodAt: current.frame.origin) {
++    if !isOnlyMoved, wasHeld || mayBeTheScreens(actual, whichStoodAt: current.frame.origin) {
+       let stood = actual.origin
+       actual = system.setFrame(target, of: window) ?? actual
+       actual = askForLess(window, slot: target, took: actual)
+@@ -253,10 +257,10 @@ extension Controller {
+     windows[window]?.frame = actual
+     settled[window] = actual
+     misfits[window] = saysNothing || actual.approximatelyEquals(target, tolerance: 1) ? nil : (target, actual)
+-    // Still not in its slot when it was asked there: of the sides that fell short nothing is known, as if they had been offered no more. It is
++    // Still not in its slot when it was asked there: of the sides that came out otherwise nothing is known, as if they had been offered just that. It is
+     // asked again at the next layout, which the report of its late move brings.
+     var offered = target.size
+-    if saysNothing { offered = CGSize(width: min(offered.width, max(actual.width, 1)), height: min(offered.height, max(actual.height, 1))) }
++    if saysNothing { offered = CGSize(width: max(actual.width, 1), height: max(actual.height, 1)) }
+     // Only just back, it may not be ready to take a frame (Controller+OnTheWayBack.swift).
+     if misfits[window] != nil, postponesJudgement(of: window, on: displayID) {
+       // Where it stopped growing only says where it is sent next, still asked for the whole size. Without that it would go by way of
+diff --git a/Sources/ArborKit/Controller/Controller+TheScreensAnswer.swift b/Sources/ArborKit/Controller/Controller+TheScreensAnswer.swift
+index 5548042b..abf87eb2 100644
+--- a/Sources/ArborKit/Controller/Controller+TheScreensAnswer.swift
++++ b/Sources/ArborKit/Controller/Controller+TheScreensAnswer.swift
+@@ -11,6 +11,10 @@ import CoreGraphics
+ ///
+ /// Into such a frame a window is sent with three calls, size, position, size (`FramePlan`), so one request will do wherever the size fits
+ /// where the window stands. Where it does not, the window is **sized where the size fits, and then only moved**.
++///
++/// The screen's answer can be the larger one as well. No size call puts a window's foot into the Dock's strip: one that hangs off the display, as a
++/// window as high as its slot does when it is dragged out and let go low, comes in no further than the display's bottom, and once it has been
++/// moved up, with its foot in the strip, it is held. 480×360 for a window of 480×348; written down, and 12 to 41 points more at every such drop.
+ extension Controller {
+   /// What came of giving a window a frame.
+   struct Given: Equatable {
+@@ -26,13 +30,14 @@ extension Controller {
+   /// For a frame that lies on the screen this is `setFrame`. A docked window's slot does, and `place` sees to its own.
+   func give(_ frame: CGRect, to window: WindowID) -> Given? {
+     let standing = windows[window]?.frame
+-    if let standing, whereItHasToBeSized(for: frame, from: standing) != nil {
++    if let standing, whereItHasToBeSized(for: frame, from: standing) != nil || whereItCanShrink(to: frame, from: standing) != nil {
+       lookAtTheDock(under: frame.origin)
+       if let place = whereItHasToBeSized(for: frame, from: standing) { return size(window, at: place, for: frame, from: standing) }
++      if let place = whereItCanShrink(to: frame, from: standing) { return shrink(window, at: place, to: frame, from: standing) }
+     }
+     guard let actual = system.setFrame(frame, of: window) else { return nil }
+     windows[window]?.frame = actual
+-    guard actual.width < frame.width || actual.height < frame.height else { return Given(frame: actual, own: actual) }
++    guard actual.size != frame.size else { return Given(frame: actual, own: actual) }
+     lookAtTheDock(under: actual.origin)
+     // Judged where it was asked: there, and where it stood before, for an app may carry a move out late.
+     let kept = sidesTheScreenKept(of: actual.size, shortOf: frame.size, at: [standing?.origin, actual.origin].compactMap { $0 })
+@@ -41,39 +46,56 @@ extension Controller {
+     // Dock's strip a window has whatever size it came with, which may as well be all its app allows, and a hop would be for nothing.
+     guard kept.endsOnALine else { return given }
+     if let place = whereItHasToBeSized(for: frame, from: actual) { return size(window, at: place, for: frame, from: actual) }
++    if let place = whereItCanShrink(to: frame, from: actual) { return shrink(window, at: place, to: frame, from: actual) }
+     guard let again = system.setFrame(frame, of: window) else { return nil }
+     windows[window]?.frame = again
+-    return Given(frame: again, own: ownFrame(of: again, askedFor: frame.size))
++    return Given(frame: again, own: CGRect(origin: again.origin, size: sidesTheScreenKept(of: again.size, shortOf: frame.size, at: [again.origin]).own))
+   }
+ 
+   private func size(_ window: WindowID, at place: CGPoint, for frame: CGRect, from standing: CGRect) -> Given? {
+     guard let sized = system.setFrame(CGRect(origin: place, size: frame.size), of: window) else { return nil }
+     windows[window]?.frame = sized
+     // Judged here, where it was sized, and where it stood. Short of what was asked where there was room for it, that is its app's answer.
+-    let own = sidesTheScreenKept(of: sized.size, shortOf: frame.size, at: [standing.origin, sized.origin]).own
++    let own = sidesTheScreenKept(of: sized.size, shortOf: frame.size, at: [standing.origin, sized.origin], longerToo: false).own
+     // If its app has stopped answering half-way, it is not where it belongs, and whoever asked has to know. Where it is, is on record.
+     guard let moved = system.setFrame(CGRect(origin: frame.origin, size: sized.size), of: window) else { return nil }
+     windows[window]?.frame = moved
+     return Given(frame: moved, own: CGRect(origin: moved.origin, size: moved.size == sized.size ? own : moved.size))
+   }
+ 
++  /// The other way round for a window that is to shrink: it is moved as it is to where it can, and from there one request does it, which sizes what
++  /// shrinks first, where it stands, and then moves it (`FramePlan`). Sent there with its new size it would be sized where it stands now, which
++  /// is what does not work, and a window that only shrinks is not sized again after the move.
++  private func shrink(_ window: WindowID, at place: CGPoint, to frame: CGRect, from standing: CGRect) -> Given? {
++    guard let moved = system.setFrame(CGRect(origin: place, size: standing.size), of: window) else { return nil }
++    windows[window]?.frame = moved
++    guard let actual = system.setFrame(frame, of: window) else { return nil }
++    windows[window]?.frame = actual
++    // Judged where it was sized. Larger than was asked there, where the screen holds nothing, that is its app's answer.
++    let own = sidesTheScreenKept(of: actual.size, shortOf: frame.size, at: [moved.origin]).own
++    return Given(frame: actual, own: CGRect(origin: actual.origin, size: own))
++  }
++
+   /// macOS does not say when the Dock has grown or shrunk, so a layout looks before it reckons (`refreshVisibleFrame`). So does whoever
+   /// reckons with the Dock's line between two layouts.
+   private func lookAtTheDock(under origin: CGPoint) {
+     if let display = stopper(of: origin) { refreshVisibleFrame(of: display.id) }
+   }
+ 
+-  /// What to write down as the own frame of a window that was asked for `size` where it stands and has `actual`.
++  /// What to write down as the own frame of a window that was asked for `size` where it stands and has `actual`. Also for a size that is only
++  /// remembered, so a side that is longer is believed: nobody may have asked for less, and its person may have made it so.
+   func ownFrame(of actual: CGRect, askedFor size: CGSize) -> CGRect {
+-    CGRect(origin: actual.origin, size: sidesTheScreenKept(of: actual.size, shortOf: size, at: [actual.origin]).own)
++    CGRect(origin: actual.origin, size: sidesTheScreenKept(of: actual.size, shortOf: size, at: [actual.origin], longerToo: false).own)
+   }
+ 
+-  /// Which sides of a window that `took` less than it was `asked` for the screen may have kept short: with its corner at one of `origins`, macOS
+-  /// lets it be no larger than it is. Each side by itself, and by as little as the point that is missing above a Dock. `own`: what it took, but
+-  /// for those sides, which have what was asked. `endsOnALine`: one of them is short by more than a point or two and ends where growth
+-  /// stops, which is what a cut looks like; not merely somewhere in the Dock's strip, where a window keeps whatever height it has.
++  /// Which sides of a window that `took` another size than it was `asked` for the screen may have kept so: with its corner at one of `origins`,
++  /// macOS lets it be no larger than it is, or no smaller. Each side by itself, and by as little as the point that is missing above a Dock. `own`:
++  /// what it took, but for those sides, which have what was asked. `endsOnALine`: one of them is short by more than a point or two and ends
++  /// where growth stops, which is what a cut looks like; not merely somewhere in the Dock's strip, where a window keeps whatever height it
++  /// has. Or it is longer by more than that, which in the strip is what being held looks like: no app answers a smaller size with a larger one there
++  /// and takes it elsewhere.
+   func sidesTheScreenKept(
+-    of took: CGSize, shortOf asked: CGSize, at origins: [CGPoint]
++    of took: CGSize, shortOf asked: CGSize, at origins: [CGPoint], longerToo: Bool = true
+   ) -> (width: Bool, height: Bool, own: CGSize, endsOnALine: Bool) {
+     var (width, height, endsOnALine) = (false, false, false)
+     for origin in origins {
+@@ -84,10 +106,18 @@ extension Controller {
+         width = true
+         if took.width < asked.width - 2, origin.x + took.width <= display.visibleFrame.maxX + play { endsOnALine = true }
+       }
++      if longerToo, took.width > asked.width, allowed.width > asked.width, allowed.width >= took.width - play {
++        width = true
++        if took.width > asked.width + 2 { endsOnALine = true }
++      }
+       if took.height < asked.height, allowed.height < asked.height, allowed.height <= took.height + Self.theDocksPlay {
+         height = true
+         if took.height < asked.height - 2, origin.y + took.height <= display.visibleFrame.maxY + Self.theDocksPlay { endsOnALine = true }
+       }
++      if longerToo, took.height > asked.height, allowed.height > asked.height, allowed.height >= took.height - Self.theDocksPlay {
++        height = true
++        if took.height > asked.height + 2 { endsOnALine = true }
++      }
+     }
+     return (width, height, CGSize(width: width ? asked.width : took.width, height: height ? asked.height : took.height), endsOnALine)
+   }
+@@ -115,6 +145,30 @@ extension Controller {
+   }
+ }
+ 
++extension Controller {
++  /// Where a window that stands at `standing` has to be moved, as it is, to be able to shrink to the size of `frame`. Nil if it need not be moved
++  /// for that: one request leaves it no larger than asked, to a point. As near to where it is going as the size fits, straight above it or
++  /// beside it: whether its edge is off the display there, in the strip or on the screen, asked to end on the screen it does.
++  func whereItCanShrink(to frame: CGRect, from standing: CGRect) -> CGPoint? {
++    let rooms = displays.map { FramePlan.room(onDisplay: $0.frame, visible: $0.visibleFrame) }
++    func after(_ from: CGRect) -> CGSize {
++      ScreenLines.sizeAfterOneRequest(for: frame, from: from, rooms: rooms) { stopper(of: $0)?.lines }
++    }
++    let last = after(standing)
++    let (wide, high) = (last.width > frame.width + 1, last.height > frame.height + 1)
++    guard wide || high, let display = stopper(of: frame.origin) else { return nil }
++    let (visible, whole) = (display.visibleFrame, display.frame)
++    let place = CGPoint(
++      x: wide && frame.maxX > visible.maxX ? max(whole.minX, visible.maxX - Self.theDocksPlay - frame.width) : frame.minX,
++      y: high && frame.maxY > visible.maxY ? max(visible.minY, visible.maxY - Self.theDocksPlay - frame.height) : frame.minY)
++    // Where it is going its size fits: then it goes there as anybody does, too large by what the screen held, and is asked once more (`give`): on
++    // the way it covers less so than at its old size. And nothing is to be had there that is not to be had where it stands.
++    let there = after(CGRect(origin: place, size: standing.size))
++    guard place != frame.origin, stopper(of: place)?.id == display.id, there.width <= frame.width + 1, there.height <= frame.height + 1 else { return nil }
++    return place
++  }
++}
++
+ extension DisplaySnapshot {
+   /// How far a window with its corner on this display can be made to grow.
+   var lines: ScreenLines { ScreenLines(frame: frame, visibleFrame: visibleFrame) }
+diff --git a/Sources/ArborTesting/FakeWindowSystem.swift b/Sources/ArborTesting/FakeWindowSystem.swift
+index a55a23c1..99bc9bd4 100644
+--- a/Sources/ArborTesting/FakeWindowSystem.swift
++++ b/Sources/ArborTesting/FakeWindowSystem.swift
+@@ -468,10 +468,31 @@ public final class FakeWindowSystem: WindowSystem {
+   /// frame it ends at: that hangs over a line, and there was no room for the size where the window stood either
+   /// (Controller+TheScreensAnswer.swift). It went no further out of its way than it had to: straight above or beside where it ends up, up
+   /// against the line. Those who count a window's moves count these two as one.
++  ///
++  /// Or the other way round: **moved as it is to where it can shrink, and sized from there**, because one request would have left it larger than it was
++  /// to be: it hung off the display, and its new size would have ended in the Dock's strip.
+   public func isSizedWhereItFits(_ move: Move, then next: Move) -> Bool {
+     let (asked, via, end) = (move.requested, move.after, next.after)
+     // To a point: half points are rounded on the way.
+     func same(_ a: CGFloat, _ b: CGFloat) -> Bool { abs(a - b) <= 1 }
++    // Where its size fits at the goal there is nowhere else to go: it arrives as large as the screen held it where it hung, and is asked once more.
++    if same(via.minX, end.minX), same(via.minY, end.minY), via.size != end.size, move.requested == next.requested {
++      let last = ScreenLines.sizeAfterOneRequest(
++        for: move.requested, from: move.before, rooms: displayList.map { FramePlan.room(onDisplay: $0.frame, visible: $0.visibleFrame) }, lines: lines(at:))
++      return next.before == via && end.approximatelyEquals(next.requested, tolerance: 1) && same(last.width, via.width) && same(last.height, via.height)
++        && (last.width > end.width + 1 || last.height > end.height + 1) && last.width >= end.width - 1 && last.height >= end.height - 1
++    }
++    if via.size == move.before.size, via.size != end.size {
++      guard via.approximatelyEquals(asked, tolerance: 1), next.before == via, end.approximatelyEquals(next.requested, tolerance: 1),
++        let display = display(stopping: end.origin)
++      else { return false }
++      let last = ScreenLines.sizeAfterOneRequest(
++        for: end, from: move.before, rooms: displayList.map { FramePlan.room(onDisplay: $0.frame, visible: $0.visibleFrame) }, lines: lines(at:))
++      let (wide, high) = (last.width > end.width + 1, last.height > end.height + 1)
++      return (wide || high)
++        && (wide ? abs(display.visibleFrame.maxX - (via.minX + end.width)) <= 5 && via.minX < end.minX : same(via.minX, end.minX))
++        && (high ? abs(display.visibleFrame.maxY - (via.minY + end.height)) <= 5 && via.minY < end.minY : same(via.minY, end.minY))
++    }
+     guard same(via.minX, asked.minX), same(via.minY, asked.minY), next.before == via, end.approximatelyEquals(next.requested, tolerance: 1),
+       end.size == via.size, let display = display(stopping: end.origin),
+       // It took what it was asked for, or, from the very edge of the display, all there is room for.
+diff --git a/Tests/ArborCoreTests/ScreenLinesTests.swift b/Tests/ArborCoreTests/ScreenLinesTests.swift
+index 1cdaab92..694ca4dd 100644
+--- a/Tests/ArborCoreTests/ScreenLinesTests.swift
++++ b/Tests/ArborCoreTests/ScreenLinesTests.swift
+@@ -45,6 +45,48 @@ import Testing
+     #expect(aboveADock.allows(size(1000, 650), to: rect(1023, 677, 480, 348)) == size(1000, 650), "where Arbor parks windows")
+   }
+ 
++  /// A hosted Mac's answers, call for call as far as a request's end tells: a window whose foot is off the display comes in no further than the
++  /// display's bottom if it is asked to end in the Dock's strip; right across the strip it comes as asked; and off the display it is free.
++  @Test func noFootIsPutIntoTheDocksStrip() {
++    #expect(aboveADock.allows(size(325, 348), to: rect(314, 408, 325, 650)) == size(325, 360), "768 less 408")
++    #expect(aboveADock.allows(size(325, 348), to: rect(544, 389, 325, 650)) == size(325, 379), "768 less 389, by a fast drag")
++    let higherDock = ScreenLines(frame: Self.frame, visibleFrame: CGRect(x: 0, y: 31, width: 1024, height: 677))
++    #expect(higherDock.allows(size(495, 439), to: rect(249, 298, 495, 654)) == size(495, 470), "768 less 298")
++    #expect(higherDock.allows(size(494, 470), to: rect(260, 288, 494, 653)) == size(494, 480), "768 less 288")
++    #expect(higherDock.allows(size(494, 470), to: rect(260, 138, 494, 653)) == size(494, 470), "from 791 to 608, right across")
++    #expect(aboveADock.allows(size(325, 360), to: rect(326, 410, 325, 650)) == size(325, 360), "to 770: off the display before and after")
++    #expect(aboveADock.allows(size(325, 297), to: rect(314, 408, 325, 650)) == size(325, 297), "onto the visible frame's bottom itself: not seen, and as before")
++    #expect(aboveADock.allows(size(325, 298), to: rect(314, 408, 325, 650)) == size(325, 360), "a point past it")
++    #expect(noDockBelow.allows(size(325, 348), to: rect(314, 408, 325, 650)) == size(325, 348), "no Dock below, no strip")
++  }
++
++  /// There it is held, for less as for more, as long as it would end there.
++  @Test func inTheStripAFootIsHeldForLessToo() {
++    #expect(aboveADock.allows(size(480, 348), to: rect(220, 392, 325, 360)) == size(480, 360), "the width is free")
++    #expect(aboveADock.allows(size(480, 314), to: rect(220, 392, 480, 360)).height == 360, "to 706")
++    #expect(aboveADock.allows(size(480, 313), to: rect(220, 392, 480, 360)).height == 313, "to 705, the visible frame's bottom")
++    #expect(aboveADock.allows(size(480, 300), to: rect(220, 392, 480, 360)).height == 300, "out of the strip, onto the screen")
++    #expect(aboveADock.allows(size(480, 348), to: rect(220, 408, 480, 360)).height == 360, "its foot on the display's bottom")
++  }
++
++  /// The bare calls, with the visible frame of their day: it ended at 708 with the Dock below, at 975 with the Dock at the right.
++  @Test func theBareCallsOfTheShrinkingSide() {
++    let below = ScreenLines(frame: Self.frame, visibleFrame: CGRect(x: 0, y: 31, width: 1024, height: 677))
++    #expect(below.allows(size(322, 439), to: rect(344, 288, 322, 653)).height == 480, "from off the display into the strip: the display's bottom")
++    #expect(below.allows(size(322, 300), to: rect(344, 288, 322, 653)).height == 300, "right across")
++    #expect(below.allows(size(400, 439), to: rect(300, 272, 400, 480)).height == 480, "in the strip, and still in it: kept")
++    #expect(below.allows(size(400, 400), to: rect(300, 272, 400, 480)).height == 400, "out of it, onto the screen")
++    #expect(noDockBelow.allows(size(322, 439), to: rect(344, 288, 322, 653)).height == 439, "no strip below")
++    let atTheRight = ScreenLines(frame: Self.frame, visibleFrame: CGRect(x: 0, y: 31, width: 975, height: 737))
++    #expect(atTheRight.allows(size(371, 300), to: rect(624, 100, 700, 300)).width == 400, "the display's right edge")
++    #expect(atTheRight.allows(size(320, 300), to: rect(624, 100, 700, 300)).width == 320)
++    #expect(atTheRight.allows(size(361, 300), to: rect(624, 100, 381, 300)).width == 381)
++    #expect(atTheRight.allows(size(320, 300), to: rect(624, 100, 381, 300)).width == 320)
++    for (foot, grows) in [(743, false), (768, false), (769, true), (800, true), (850, true)] as [(CGFloat, Bool)] {
++      #expect(below.allows(size(320, 400), to: rect(100, foot - 300, 320, 300)).height == (grows ? 400 : 300), "its foot at \(foot), asked for 100 more")
++    }
++  }
++
+   @Test func oneRequestIsPlayedCallByCall() {
+     func after(_ target: CGRect, from standing: CGRect) -> CGSize {
+       ScreenLines.sizeAfterOneRequest(
+@@ -56,5 +98,7 @@ import Testing
+     #expect(after(rect(560, 386, 400, 600), from: rect(12, 374, 494, 319)) == size(400, 330), "room at neither end")
+     #expect(after(rect(700, 60, 600, 300), from: rect(687, 43, 325, 650)) == size(600, 300), "as wide as the first call made it, it is off the display at its goal")
+     #expect(after(rect(500, 60, 600, 300), from: rect(687, 43, 325, 650)) == size(524, 300))
++    #expect(after(rect(220, 392, 480, 348), from: rect(314, 408, 325, 650)) == size(480, 360), "as a hosted Mac answered: too high by 12")
++    #expect(after(rect(220, 392, 300, 348), from: rect(314, 408, 325, 650)) == size(300, 360), "and if it only shrinks")
+   }
+ }
+diff --git a/Tests/ArborKitTests/BudgetTests.swift b/Tests/ArborKitTests/BudgetTests.swift
+index 768e1168..359ea070 100644
+--- a/Tests/ArborKitTests/BudgetTests.swift
++++ b/Tests/ArborKitTests/BudgetTests.swift
+@@ -19,6 +19,7 @@ import Testing
+     "dock focused": "the docked window is focused although it has the focus",
+     "shutdown": "windows that are in place are placed again",
+     "quit app": "a layout per window that closes, so a window that stays can move more than once",
++    "displays: Dock grows": "with its foot in the Dock's strip a window is not let shrink where it stands, so one that moves up as well is asked again in its slot",
+   ]
+ 
+   @Test(arguments: sizes) func nothingIsDoneTwiceOrForNothing(windows: Int) {
+@@ -65,7 +66,9 @@ import Testing
+   /// A change on one display leaves the windows and overlays of the other alone.
+   @Test(arguments: sizes) func aChangeOnOneDisplayLeavesTheOtherAlone(windows: Int) {
+     let budget = BenchmarkCase.named("displays: Dock grows").run(windows: windows).budget
+-    #expect(budget.moves - budget.questions == 3 && budget.overlayUpdates - budget.idleOverlayUpdates == 1, "\(budget)")
++    // Three windows. Two of them are asked twice: the Dock has grown under them by more than the gap, what shrinks is sized where it stands, and there
++    // macOS holds it. That answer is the screen's: nothing is learnt from it, and the window is asked once more in its slot (collab/BOARD.md, 0.22).
++    #expect(budget.moves - budget.questions == 5 && budget.repeatMoves == 2 && budget.overlayUpdates - budget.idleOverlayUpdates == 1, "\(budget)")
+   }
+ 
+   @Test func terminalsThatRoundTheirSizeAreNotAskedAgain() {
+diff --git a/Tests/ArborKitTests/ChaosSevenRulesTests.swift b/Tests/ArborKitTests/ChaosSevenRulesTests.swift
+index 66bb70fe..1c5ca259 100644
+--- a/Tests/ArborKitTests/ChaosSevenRulesTests.swift
++++ b/Tests/ArborKitTests/ChaosSevenRulesTests.swift
+@@ -255,6 +255,31 @@ private let b = WindowID(102)
+       }.isEmpty, "twice")
+   }
+ 
++  /// Nor can anybody shrink into a frame that ends in the Dock's strip from where it hangs off the display: it is moved as it is to where it can, and
++  /// sized from there. Only that way, and only where one request would have left it too large.
++  @Test func onlyTheWayByWhereItCanShrinkIsLetPass() {
++    let dock = "displays main:0,0,1440,900:25,0,70,0* windows-never"
++    // It hangs off the display, 650 high at 500 of 900; the Dock begins at 830.
++    let hanging = [dock, "launch", "open 101 Notes pid 1001 at 100 100 500 400", "open 102 Mail pid 1002 at 800 100 500 650", "settle", "grab 102", "carry 1000 520", "release", "settle"]
++    let end = rect(800, 500, 500, 350)
++    func hop(by via: CGRect) -> (FakeWindowSystem) -> Void {
++      {
++        _ = $0.setFrame(via, of: b)
++        _ = $0.setFrame(end, of: b)
++      }
++    }
++    func jolts(after lines: [String], _ fault: @escaping (FakeWindowSystem) -> Void) -> Set<String> {
++      nets(after: lines, then: "cursor 10 10", fault: fault).filter { $0.hasPrefix("moved-twice") || $0.hasPrefix("sized-") || $0.hasPrefix("strayed") }
++    }
++    let stands = ChaosRunner()
++    for line in hanging { _ = stands.step(ChaosAction(text: line)) }
++    let standing = stands.system.frame(of: b) ?? .zero
++    #expect(standing.maxY > 900 && standing.height == 650, "the case: \(standing)")
++    #expect(jolts(after: hanging, hop(by: rect(800, 476, 500, 650))).isEmpty, "the hop itself")
++    #expect(!jolts(after: hanging, hop(by: rect(800, 300, 500, 650))).isEmpty, "further up than it takes")
++    #expect(!jolts(after: hanging, hop(by: rect(700, 476, 500, 650))).isEmpty, "and sideways")
++  }
++
+   /// A terminal is a few points short of any slot, and that it is set right in it has a name and an owner of its own.
+   @Test func aTerminalSetRightInItsSlotHasAName() {
+     let terminal = ["launch", "open 101 Terminal pid 1001 at 100 100 500 400", "behave 101 grid", "open 102 Mail pid 1002 at 800 300 500 400", "settle"]
+diff --git a/Tests/ArborKitTests/TheScreensAnswerIsTallerTests.swift b/Tests/ArborKitTests/TheScreensAnswerIsTallerTests.swift
+new file mode 100644
+index 00000000..cfdd8eb3
+--- /dev/null
++++ b/Tests/ArborKitTests/TheScreensAnswerIsTallerTests.swift
+@@ -0,0 +1,190 @@
++import ArborCore
++@testable import ArborKit
++import ArborTesting
++import CoreGraphics
++import Testing
++
++/// The screen's answer is not the window's, also when it is the larger one (Controller+TheScreensAnswer.swift). No size call puts a window's foot into
++/// the Dock's strip: a window that hangs off the display comes in no further than the display's bottom, and with its foot in the strip it is
++/// held. Seen on a hosted Mac, each to the point: 480×360 for 480×348, 673×470 for 673×439, and at the next drop 673×480 for 673×470.
++@Suite @MainActor struct TheScreensAnswerIsTallerTests {
++  /// The display of the recordings: 1024×768, a Dock at the bottom.
++  static let withADock = TheScreensAnswerTests.withADock
++  static let own = CGSize(width: 480, height: 348)
++
++  /// `w`, whose own size is 480×348, is docked at the left, in a slot as high as the screen allows; the rest is the Desktop.
++  func deskWithAWindowInAHighSlot(own: CGSize = Self.own) throws -> (h: Harness, w: WindowID, slot: CGRect) {
++    let h = Harness(displays: [Self.withADock])
++    let w = h.system.open(app: "W", frame: CGRect(origin: CGPoint(x: 170, y: 100), size: own))
++    h.start()
++    h.run("dock \(w.rawValue) left")
++    let slot = try #require(h.layout?.windowFrames[w])
++    try #require(slot.height > 600 && h.frame(w) == slot, "\(slot)")
++    return (h, w, slot)
++  }
++
++  /// Taken by its title bar and let go with the pointer at `y`.
++  func letGo(_ h: Harness, _ w: WindowID, outOf slot: CGRect, at y: CGFloat) {
++    h.system.drag(w, through: [CGPoint(x: slot.midX, y: slot.minY + 12), CGPoint(x: 600, y: (slot.minY + y) / 2), CGPoint(x: 760, y: y)])
++  }
++
++  /// Wherever it is let go: high up, where its foot comes right across the strip; where its own size ends in the strip; and so low that it hangs off the
++  /// display before and after.
++  @Test(arguments: [150, 300, 380, 400, 420, 440, 460, 520, 600] as [CGFloat]) func draggedOutOfAHighSlotItHasItsOwnSizeWhereverItIsLetGo(y: CGFloat) throws {
++    let (h, w, slot) = try deskWithAWindowInAHighSlot()
++    letGo(h, w, outOf: slot, at: y)
++    try #require(h.workspace.isFloating(w), "it floats")
++    let frame = try #require(h.frame(w))
++    #expect(frame.size == Self.own, "\(frame)")
++    #expect(frame.minY <= y && y <= frame.minY + 28 && frame.minX <= 760 && 760 <= frame.maxX, "its title bar is where it was let go: \(frame)")
++    #expect(h.workspace.floating[w] == frame)
++  }
++
++  /// The case itself: let go at 420 its own size would end at 740, between the Dock's line at 705 and the display's bottom.
++  @Test func itIsMovedWhereItCanShrinkAndSizedThere() throws {
++    let (h, w, slot) = try deskWithAWindowInAHighSlot()
++    let mark = h.system.moveLog.count
++    letGo(h, w, outOf: slot, at: 420)
++    let moves = h.system.moveLog[mark...].filter { $0.window == w }
++    #expect(h.frame(w) == CGRect(x: h.frame(w)!.minX, y: 392, width: 480, height: 348))
++    #expect(moves.count == 2, "\(moves.map(\.after))")
++    let via = try #require(moves.first?.after)
++    #expect(via.size == slot.size && via.minY + 348 <= 701 && via.minY + 348 >= 696, "as it is, straight above, no further than it takes: \(via)")
++  }
++
++  /// Where its own size fits at the place it is let go, but ends in the strip from where it hangs, there is nowhere else to size it: it goes there, as high
++  /// as the screen held it, and is asked once more.
++  @Test func whereItsSizeFitsAtTheGoalItIsAskedOnceMoreThere() throws {
++    let (h, w, slot) = try deskWithAWindowInAHighSlot()
++    let mark = h.system.moveLog.count
++    letGo(h, w, outOf: slot, at: 380)
++    let moves = h.system.moveLog[mark...].filter { $0.window == w }.map(\.after)
++    #expect(moves.count == 2 && moves.first?.origin == moves.last?.origin && moves.last?.size == Self.own, "\(moves)")
++    #expect((moves.last?.maxY ?? 0) <= 705 && (moves.first?.height ?? 0) < 420, "\(moves)")
++  }
++
++  private func play(_ lines: [String]) -> ChaosRunner {
++    let runner = ChaosRunner()
++    for line in lines { _ = runner.step(ChaosAction(text: line)) }
++    return runner
++  }
++  private static let found = [
++    "displays main:0,0,1024,768:31,0,63,0* windows-never", "launch", "open 101 Notes pid 1001 at 520 392 480 348",
++    "open 102 Mail pid 1002 at 200 100 480 300", "settle", "dock 102 left", "settle", "crash", "move 101 520 392 480 370", "launch", "settle",
++  ]
++
++  /// Nobody asked it for less: a window that is higher than is remembered of it, with its foot in the strip, was made so by its person.
++  @Test(arguments: [["zoom 102", "settle", "home", "settle"], ["pin 101", "settle", "unpin 101", "settle", "float-all", "settle"]])
++  func whatIsOnlyRememberedIsNotHeldAgainstAWindowThatIsHigher(then: [String]) {
++    #expect(play(Self.found + then).system.frame(of: WindowID(101))?.size == CGSize(width: 480, height: 370))
++  }
++
++  /// Slots without a gap end on the visible frame's bottom, which is on the screen.
++  @Test func withoutAGapADockThatAppearsTeachesNothingEither() {
++    let runner = play([
++      "displays main:0,0,1024,768:31,0,0,0* windows-never", "settings {\"gap\":0}", "launch", "open 101 Notes pid 1001 at 100 100 480 300",
++      "open 102 Mail pid 1002 at 200 100 480 300", "settle", "dock 101 left", "dock 102 right", "settle",
++      "displays main:0,0,1024,768:31,0,60,0* windows-never", "settle",
++    ])
++    #expect(runner.controller.minimumSizes.isEmpty && runner.controller.parked.isEmpty)
++    #expect(runner.system.frame(of: WindowID(101))?.maxY == 708 && runner.system.frame(of: WindowID(102))?.maxY == 708)
++  }
++
++  /// A low window that waits out of view, hanging off the display, is given back by way of nothing larger than the screen made it.
++  @Test func aLowWindowComesBackFromTheCornerWithoutShowingItsOldSize() {
++    let runner = play([
++      "displays main:0,0,1024,768:31,0,63,0* windows-never", "launch", "open 101 Player pid 1001 at 100 100 300 60", "open 102 Mail pid 1002 at 200 100 480 300",
++      "settle", "dock 101 left", "dock 102 right", "settle", "zoom 102", "settle",
++    ])
++    let mark = runner.system.moveLog.count
++    _ = runner.step(ChaosAction(text: "float-all"))
++    let moves = runner.system.moveLog[mark...].filter { $0.window == WindowID(101) }.map(\.after)
++    #expect(moves.last == CGRect(x: 100, y: 100, width: 300, height: 60) && moves.allSatisfy { $0.height <= 100 }, "\(moves)")
++  }
++
++  /// It crept: what the screen had made of it was written down, and the next drop added to it. Quit gave the grown one.
++  @Test func dropAfterDropItGrowsByNothing() throws {
++    let (h, w, _) = try deskWithAWindowInAHighSlot()
++    for y in [420, 410, 430, 420] as [CGFloat] {
++      let slot = try #require(h.layout?.windowFrames[w])
++      letGo(h, w, outOf: slot, at: y)
++      #expect(h.frame(w)?.size == Self.own, "let go at \(y): \(h.frame(w) as Any)")
++      h.run("dock \(w.rawValue) left")
++      h.scheduler.advance(by: 1)
++    }
++    h.controller.shutdown()
++    #expect(h.frame(w)?.size == Self.own, "\(h.frame(w) as Any)")
++  }
++
++  /// It does not stand where Arbor believes, so nobody foresaw it. An answer that is larger than was asked, of a window with its foot in the strip,
++  /// is not written down, and is made good the same way, once.
++  @Test func tallerAfterAllItIsNotWrittenDownAndMadeGood() throws {
++    let left = CGRect(origin: CGPoint(x: 220, y: 392), size: Self.own)
++    let h = Harness(displays: [Self.withADock])
++    let w = h.system.open(app: "W", frame: CGRect(origin: CGPoint(x: 170, y: 100), size: Self.own))
++    h.start()
++    h.system.userMove(w, to: left)
++    h.scheduler.advance(by: 2)
++    h.run("dock \(w.rawValue) left")
++    let listener = h.system.events
++    h.system.events = nil
++    h.system.userMove(w, to: CGRect(x: 314, y: 408, width: 325, height: 650))
++    h.system.events = listener
++    let mark = h.system.moveLog.count
++    h.run("float-all")
++    #expect(h.frame(w) == left, "\(h.system.moveLog[mark...].map(\.after))")
++    #expect(h.workspace.floating[w] == left)
++    #expect(h.system.moveLog[mark...].filter { $0.window == w }.count == 3, "no more than once more: \(h.system.moveLog[mark...].map(\.after))")
++  }
++
++  /// A window that will not be as small as it once was, for reasons of its own, is believed: judged where it was sized, where the screen holds nothing.
++  @Test func anAppsOwnLimitIsStillItsOwn() throws {
++    let (h, w, slot) = try deskWithAWindowInAHighSlot()
++    h.system.setMinimumSize(w, CGSize(width: 480, height: 380))
++    letGo(h, w, outOf: slot, at: 400)
++    #expect(h.frame(w)?.size == CGSize(width: 480, height: 380), "\(h.frame(w) as Any)")
++    #expect(h.workspace.floating[w]?.size == CGSize(width: 480, height: 380), "\(h.workspace.floating[w] as Any)")
++  }
++
++  /// A Dock appears under two rows of docked windows, or grows by more than the gap. Their feet stand in its strip. The lower row, which shrinks and moves
++  /// up, is sized where it stands and held there; it came to its slot too high, Arbor took that for its app's smallest height and made room for
++  /// it, and the upper row paid. It is the screen's answer: nothing is learnt, and it is asked once more in its slot. Nor is anybody asked
++  /// for a size in place where the screen would answer.
++  @Test func aDockThatAppearsUnderDockedWindowsTeachesNothing() throws {
++    var display = DisplaySnapshot(
++      id: DisplayID("the-dock-comes"), frame: CGRect(x: 0, y: 0, width: 1024, height: 768),
++      visibleFrame: CGRect(x: 0, y: 31, width: 1024, height: 737), isMain: true)
++    let h = Harness(displays: [display])
++    let a = h.system.open(app: "A", frame: CGRect(x: 100, y: 100, width: 480, height: 300))
++    let b = h.system.open(app: "B", frame: CGRect(x: 200, y: 100, width: 480, height: 300))
++    h.start()
++    h.run("dock \(a.rawValue) left")
++    h.run("dock \(b.rawValue) beside \(a.rawValue) bottom")
++    let before = h.workspace
++    display.visibleFrame.size.height = 674
++    let mark = h.system.moveLog.count
++    h.system.setDisplays([display])
++    h.scheduler.advance(by: 2)
++    #expect(h.workspace == before, "the arrangement is what it was")
++    #expect(h.controller.minimumSizes.isEmpty, "\(h.controller.minimumSizes)")
++    expectWindowsMatchLayout(h)
++    #expect(abs((h.frame(a)?.height ?? 0) - (h.frame(b)?.height ?? 0)) <= 1, "\(h.frame(a) as Any), \(h.frame(b) as Any)")
++    #expect(h.system.moveLog[mark...].filter { $0.window == a }.count == 1 && h.system.moveLog[mark...].filter { $0.window == b }.count == 2)
++  }
++
++  /// Without a Dock below there is no strip, and one request does it.
++  @Test func withoutADockBelowOneRequestWillDo() throws {
++    let display = DisplaySnapshot(
++      id: DisplayID("no-dock-below"), frame: CGRect(x: 0, y: 0, width: 1024, height: 768),
++      visibleFrame: CGRect(x: 0, y: 31, width: 1024, height: 737), isMain: true)
++    let h = Harness(displays: [display])
++    let w = h.system.open(app: "W", frame: CGRect(origin: CGPoint(x: 170, y: 100), size: Self.own))
++    h.start()
++    h.run("dock \(w.rawValue) left")
++    let slot = try #require(h.layout?.windowFrames[w])
++    let mark = h.system.moveLog.count
++    letGo(h, w, outOf: slot, at: 420)
++    #expect(h.frame(w)?.size == Self.own)
++    #expect(h.system.moveLog[mark...].filter { $0.window == w }.count == 1)
++  }
++}
+diff --git a/collab/parity.json b/collab/parity.json
+index 5858ea55..4a84eb5d 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -3457,6 +3457,7 @@
+       "spec": "F48",
+       "priority": 1,
+       "tests": [
++        "aDockThatAppearsUnderDockedWindowsTeachesNothing",
+         "aDockedWindowDraggedOutAndLetGoLowHasItsOwnSize",
+         "aDroppedWindowStaysUnderThePointerThoughTheDesktopMovesAway",
+         "aFloatedWindowTakesItsOldSizeCentredOnItsSlot",
+@@ -3485,7 +3486,9 @@
+         "anOldStateFileLoadsAndItsWindowsKeepTheirSlotsSize",
+         "asHighAsTheVisibleFrameItIsSizedAtTheTop",
+         "cutAfterAllItIsSizedWhereItFits",
++        "draggedOutOfAHighSlotItHasItsOwnSizeWhereverItIsLetGo",
+         "draggedOutOfItsSlotOnTheSmallerDisplayOntoTheLargerOneItHasItsOwnSize",
++        "dropAfterDropItGrowsByNothing",
+         "floatAllPutsEveryWindowBackExactlyWhereItWas",
+         "floatingAFramedWindowShowsTheDesktop",
+         "givenTheFittedSizeByAHandItKeepsIt",
+diff --git a/collab/reality.json b/collab/reality.json
+index 915802b0..502658b0 100644
+--- a/collab/reality.json
++++ b/collab/reality.json
+@@ -8792,6 +8792,49 @@
+     "scripts/mac-on-linux/mutants.py"
+    ]
+   },
++  {
++   "id": "no-size-call-leaves-an-edge-in-the-docks-strip",
++   "kind": "geometry",
++   "layer": "at the seam",
++   "expected": "A window that is asked to be smaller becomes smaller, unless its app refuses. The rule for growth (a-window-asked-to-grow-stops-at-the-dock) said so in as many words: it only holds growth back, nobody is made larger by it, and an edge that is off the display is free. The stand-ins played that.",
++   "happened": "A size call leaves no edge inside the Dock's strip, between the visible frame's edge and the display's. Asked to end there, an edge that comes in from off the display stops at the display's end, so the window is LARGER than asked: 650 high at y 408 of 768 and asked to be 348, it became 360; 654 at 298 asked 439: 470; 653 at 288 asked 470: 480; 650 at 389 asked 348: 379. An edge that stands in the strip, or on the display's very end, stays where it is, for more and for less that would still end in the strip. Asked to end on the screen, from the strip or right across it, it does; a point past the display's end it is free. The same sideways with the Dock at the right. With the Dock hidden or elsewhere there is no strip, and the same call is taken whole. A call that was not obeyed brings no report. Arbor sizes what shrinks where it stands, so a window as high as its slot, dragged out and let go low, came out 12 to 41 points too high, also where its own size fitted on the screen; that was written down as its own, and the next drop added to it; Quit gave the grown one back. And when a Dock appeared under two rows of docked windows, the lower row came to its slot too high, Arbor learnt that as its app's smallest height and made room for it, and the upper row paid.",
++   "found": "Four requests of Arbor's own in the traces of three runs on hosted Macs (a test window and a real editor; a slow drag, a fast one, a drop off a tile of macOS's own), each to the point. Then 150 bare Accessibility calls with no Arbor running, one hosted Mac, macOS 26.6.2, 1024×768, a test window and a real editor, the Dock below, at the right, at the left and hidden: every ask gave one answer, 6 times of 6, and all 54 controls came whole. Not varied: one display at scale 1, windows at rest, one call. Not seen: an edge asked exactly to the visible frame's, or exactly to the display's end; both sides past their lines at once; a second display beyond the edge. The Dock that appears was found by the stand-in once it told the truth: three old tests fell.",
++   "modelled": "yes",
++   "knobs": [
++    "Echoes.growsNoFurtherThanTheScreen"
++   ],
++   "guards": [
++    "test: noFootIsPutIntoTheDocksStrip",
++    "test: inTheStripAFootIsHeldForLessToo",
++    "test: theBareCallsOfTheShrinkingSide",
++    "test: draggedOutOfAHighSlotItHasItsOwnSizeWhereverItIsLetGo",
++    "test: itIsMovedWhereItCanShrinkAndSizedThere",
++    "test: whereItsSizeFitsAtTheGoalItIsAskedOnceMoreThere",
++    "test: dropAfterDropItGrowsByNothing",
++    "test: tallerAfterAllItIsNotWrittenDownAndMadeGood",
++    "test: whatIsOnlyRememberedIsNotHeldAgainstAWindowThatIsHigher",
++    "test: aDockThatAppearsUnderDockedWindowsTeachesNothing",
++    "test: withoutAGapADockThatAppearsTeachesNothingEither",
++    "test: aLowWindowComesBackFromTheCornerWithoutShowingItsOldSize",
++    "test: onlyTheWayByWhereItCanShrinkIsLetPass"
++   ],
++   "copes": "ScreenLines.allows plays it, for the controller, the fake and the nets alike. Controller.give plays one request beforehand: where it would leave the window larger than asked and the frame ends in the strip, the window is moved as it is to where its size fits, straight above or beside, and one request from there sizes it first and then moves it; where the size fits at the goal, it goes there like anybody and is asked once more. An answer nobody foresaw that is larger, of a window the screen holds, is not written down and is made good the same way, once. An app's own limit is still its own: judged where it was sized. What is only remembered is not held against a window that is larger: nobody asked it for less. Controller.place takes such an answer for the screen's too: nothing is learnt, no less is asked for, and the window is asked once more in its slot: two requests at a Dock's appearance, by a ruling of the product owner's, who would not have the order of calls touched for it. Nobody is asked for a size in place on a side the screen would answer for. Not cured: a window that must grow one way over a line and shrink the other way into the strip stays too high on the screen, though not in the books. The model of a Mac behind make mac-on-linux does not play it yet.",
++   "hurt": 2,
++   "touches": [
++    "size-lost",
++    "jolt"
++   ],
++   "sources": [
++    "Sources/ArborCore/ScreenLines.swift",
++    "Sources/ArborKit/Controller/Controller+TheScreensAnswer.swift",
++    "Sources/ArborKit/Controller/Controller+Layout.swift",
++    "Sources/ArborKit/Controller/Controller+AskFirst.swift",
++    "Sources/ArborTesting/FakeWindowSystem.swift",
++    "scripts/mac-shell/check-let-go-low.sh",
++    "scripts/mac-shell/check-own-size.sh",
++    "scripts/mac-shell/check-a-dock-appears.sh"
++   ]
++  },
+   {
+    "id": "no-two-runs-on-a-hosted-mac-begin-alike",
+    "kind": "second-actor",
+diff --git a/docs/REALITY.md b/docs/REALITY.md
+index 448adef6..7b1a1404 100644
+--- a/docs/REALITY.md
++++ b/docs/REALITY.md
+@@ -59,7 +59,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
+ | [extra-report](#extra-report) | 10 | 0 | 4 | 3 | 1 | 2 | 6 | 0 | 0 | 4 | 1 |
+ | [late-or-partial-answer](#late-or-partial-answer) | 46 | 9 | 12 | 15 | 6 | 13 | 29 | 0 | 6 | 11 | 14 |
+ | [second-actor](#second-actor) | 60 | 8 | 25 | 19 | 9 | 7 | 40 | 0 | 4 | 16 | 11 |
+-| [geometry](#geometry) | 42 | 2 | 18 | 14 | 8 | 2 | 31 | 1 | 2 | 8 | 7 |
++| [geometry](#geometry) | 43 | 2 | 19 | 14 | 8 | 2 | 32 | 1 | 2 | 8 | 7 |
+ | [identity](#identity) | 32 | 4 | 7 | 7 | 7 | 11 | 14 | 1 | 4 | 13 | 8 |
+ | [permissions](#permissions) | 23 | 7 | 5 | 4 | 3 | 11 | 12 | 2 | 3 | 6 | 4 |
+ | [timing](#timing) | 56 | 7 | 9 | 14 | 11 | 22 | 33 | 4 | 6 | 13 | 9 |
+@@ -67,14 +67,14 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
+ | [looks](#looks) | 21 | 0 | 1 | 0 | 0 | 20 | 3 | 2 | 3 | 13 | 5 |
+ | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
+ | [toolchain](#toolchain) | 52 | 1 | 0 | 2 | 4 | 46 | 28 | 1 | 2 | 21 | 10 |
+-| **all** | 489 | 63 | 113 | 123 | 70 | 183 | 264 | 19 | 60 | 146 | 108 |
++| **all** | 490 | 63 | 114 | 123 | 70 | 183 | 265 | 19 | 60 | 146 | 108 |
+ 
+ **Where the difference bit**
+ 
+ | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
+ |---|---|---|---|---|---|---|---|
+ | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 145 | 90 | 48 | 13 | 33 | 51 |
+-| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 176 | 104 | 138 | 0 | 10 | 28 |
++| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 177 | 105 | 139 | 0 | 10 | 28 |
+ | controller | in the controller or the core, given reports that were right | 31 | 16 | 19 | 0 | 1 | 11 |
+ | test | in a test, a script or a harness that expected the wrong thing | 89 | 0 | 32 | 5 | 12 | 40 |
+ | machine | in the machine, the toolchain or the way things are built and installed | 48 | 3 | 27 | 1 | 4 | 16 |
+@@ -2616,6 +2616,18 @@ Geometry: displays, bars, sizes and coordinates that are not what was assumed.
+ - **Arbor copes:** MacTiling.claim holds the places as they were measured: the first and the last point of the display's width and the menu bar are where macOS acts. Short of them, in the band that Arbor leaves to macOS while its switches are on, nobody acts.
+ - **Read in:** `docs/TESTING.md`, `scripts/mac-shell/e2e-drag.sh`, `Sources/arbor-fakemac/main.swift`, `docs/features/F42-setup-check.md`, `collab/BACKLOG.md`, `Sources/ArborCore/MacTiling.swift`
+ 
++### no-size-call-leaves-an-edge-in-the-docks-strip
++
++*hurt 2 · at the seam · touches `size-lost`, `jolt`*
++
++- **Expected:** A window that is asked to be smaller becomes smaller, unless its app refuses. The rule for growth (a-window-asked-to-grow-stops-at-the-dock) said so in as many words: it only holds growth back, nobody is made larger by it, and an edge that is off the display is free. The stand-ins played that.
++- **Happened:** A size call leaves no edge inside the Dock's strip, between the visible frame's edge and the display's. Asked to end there, an edge that comes in from off the display stops at the display's end, so the window is LARGER than asked: 650 high at y 408 of 768 and asked to be 348, it became 360; 654 at 298 asked 439: 470; 653 at 288 asked 470: 480; 650 at 389 asked 348: 379. An edge that stands in the strip, or on the display's very end, stays where it is, for more and for less that would still end in the strip. Asked to end on the screen, from the strip or right across it, it does; a point past the display's end it is free. The same sideways with the Dock at the right. With the Dock hidden or elsewhere there is no strip, and the same call is taken whole. A call that was not obeyed brings no report. Arbor sizes what shrinks where it stands, so a window as high as its slot, dragged out and let go low, came out 12 to 41 points too high, also where its own size fitted on the screen; that was written down as its own, and the next drop added to it; Quit gave the grown one back. And when a Dock appeared under two rows of docked windows, the lower row came to its slot too high, Arbor learnt that as its app's smallest height and made room for it, and the upper row paid.
++- **Found by:** Four requests of Arbor's own in the traces of three runs on hosted Macs (a test window and a real editor; a slow drag, a fast one, a drop off a tile of macOS's own), each to the point. Then 150 bare Accessibility calls with no Arbor running, one hosted Mac, macOS 26.6.2, 1024×768, a test window and a real editor, the Dock below, at the right, at the left and hidden: every ask gave one answer, 6 times of 6, and all 54 controls came whole. Not varied: one display at scale 1, windows at rest, one call. Not seen: an edge asked exactly to the visible frame's, or exactly to the display's end; both sides past their lines at once; a second display beyond the edge. The Dock that appears was found by the stand-in once it told the truth: three old tests fell.
++- **Stand-ins play it:** yes (`Echoes.growsNoFurtherThanTheScreen`)
++- **Guard:** `test: noFootIsPutIntoTheDocksStrip`; `test: inTheStripAFootIsHeldForLessToo`; `test: theBareCallsOfTheShrinkingSide`; `test: draggedOutOfAHighSlotItHasItsOwnSizeWhereverItIsLetGo`; `test: itIsMovedWhereItCanShrinkAndSizedThere`; `test: whereItsSizeFitsAtTheGoalItIsAskedOnceMoreThere`; `test: dropAfterDropItGrowsByNothing`; `test: tallerAfterAllItIsNotWrittenDownAndMadeGood`; `test: whatIsOnlyRememberedIsNotHeldAgainstAWindowThatIsHigher`; `test: aDockThatAppearsUnderDockedWindowsTeachesNothing`; `test: withoutAGapADockThatAppearsTeachesNothingEither`; `test: aLowWindowComesBackFromTheCornerWithoutShowingItsOldSize`; `test: onlyTheWayByWhereItCanShrinkIsLetPass`
++- **Arbor copes:** ScreenLines.allows plays it, for the controller, the fake and the nets alike. Controller.give plays one request beforehand: where it would leave the window larger than asked and the frame ends in the strip, the window is moved as it is to where its size fits, straight above or beside, and one request from there sizes it first and then moves it; where the size fits at the goal, it goes there like anybody and is asked once more. An answer nobody foresaw that is larger, of a window the screen holds, is not written down and is made good the same way, once. An app's own limit is still its own: judged where it was sized. What is only remembered is not held against a window that is larger: nobody asked it for less. Controller.place takes such an answer for the screen's too: nothing is learnt, no less is asked for, and the window is asked once more in its slot: two requests at a Dock's appearance, by a ruling of the product owner's, who would not have the order of calls touched for it. Nobody is asked for a size in place on a side the screen would answer for. Not cured: a window that must grow one way over a line and shrink the other way into the strip stays too high on the screen, though not in the books. The model of a Mac behind make mac-on-linux does not play it yet.
++- **Read in:** `Sources/ArborCore/ScreenLines.swift`, `Sources/ArborKit/Controller/Controller+TheScreensAnswer.swift`, `Sources/ArborKit/Controller/Controller+Layout.swift`, `Sources/ArborKit/Controller/Controller+AskFirst.swift`, `Sources/ArborTesting/FakeWindowSystem.swift`, `scripts/mac-shell/check-let-go-low.sh`, `scripts/mac-shell/check-own-size.sh`, `scripts/mac-shell/check-a-dock-appears.sh`
++
+ ### real-apps-are-wider-than-a-column
+ 
+ *hurt 2 · at the seam · K234 · K1781 · touches `lost`*
+diff --git a/scripts/mac-shell/check-a-dock-appears.sh b/scripts/mac-shell/check-a-dock-appears.sh
+new file mode 100755
+index 00000000..40840295
+--- /dev/null
++++ b/scripts/mac-shell/check-a-dock-appears.sh
+@@ -0,0 +1,65 @@
++#!/bin/bash
++# A Dock appears under two rows of docked windows: is anybody's smallest height learnt from it, and is the arrangement what it was?
++#
++#   scripts/mac-shell/run.sh --no-preflight "<why>" scripts/mac-shell/check-a-dock-appears.sh
++#
++# Why no pre-flight: the fake Mac has no stand-in for showing and hiding the Dock.
++#
++# With the Dock hidden the lower row ends a gap above the display's bottom. Shown, the Dock lies under it: the windows' feet stand in its strip, where a size
++# call that would still end in the strip is not obeyed (Sources/ArborCore/ScreenLines.swift). The lower row is sized where it stands and then moved, so
++# it came to its slot too tall, and Arbor took that for its app's smallest height and made room for it: the upper row paid. Now that answer is
++# the screen's: nothing is learnt from it, and the window is asked once more in its slot.
++#
++# Only on GitHub's Macs: it hides and shows the Dock, and puts it back as it was.
++source "$(dirname "$0")/lib.sh"
++needs_throwaway_mac "hide and show the Dock"
++
++whole() { awk '{ for (i = 1; i <= NF; i++) printf "%d ", $i + 0.5 }' | sed 's/ $//'; }
++now_at() { real_frame_of "$1" | whole; }
++height() { now_at "$1" | cut -d' ' -f4; }
++as_high_as_each_other() {
++  local a b
++  a=$(height "$W1") b=$(height "$W2")
++  [ $((a - b)) -le 2 ] && [ $((b - a)) -le 2 ] || { echo "    the upper is $a high, the lower $b"; return 1; }
++}
++asked_of() { arbor_log_since "$ARBOR_STEP_MARK" | grep -E "w$1\b" | tail -n 8 | sed 's/^.*DEBUG /    (/; s/$/)/' || true; }
++
++HIDDEN_WAS="$(defaults read com.apple.dock autohide 2> /dev/null || echo 0)"
++dock_hidden() {
++  defaults write com.apple.dock autohide -bool "$1"
++  killall Dock
++  sleep 5 # the Dock comes back, and the visible frame follows a moment later
++  echo "> the Dock hidden: $1"
++}
++at_exit "dock_hidden $([ "$HIDDEN_WAS" = 1 ] && echo true || echo false)"
++
++arbor_build
++dock_hidden true
++arbor_start 2
++take "sx sy sw sh" screen_of 1
++echo "with the Dock hidden the visible frame is $sx $sy $sw $sh"
++ctl dock "$W1" left
++ctl dock "$W2" beside "$W1" bottom
++check "two rows are docked" eventually is in_slot "$W2"
++check "as high as each other" as_high_as_each_other
++echo "    the upper at $(now_at "$W1"), the lower at $(now_at "$W2")"
++
++claim "the Dock appears under them"
++dock_hidden false
++# macOS does not always say that the Dock has changed; a layout looks.
++ctl home > /dev/null
++sleep 2
++take "tx ty tw th" screen_of 1
++echo "with the Dock shown the visible frame is $tx $ty $tw $th"
++check "the visible frame is lower by more than the gap" test "$((sh - th))" -gt 12
++check "the upper row is in its slot" eventually is in_slot "$W1"
++check "the lower row is in its slot" eventually is in_slot "$W2"
++check "they are as high as each other still: nobody's smallest height was learnt" as_high_as_each_other
++check "and stay so" stays as_high_as_each_other
++echo "    the upper at $(now_at "$W1"), the lower at $(now_at "$W2")"
++summary
++asked_of "$W1"
++asked_of "$W2"
++shot the-dock-has-appeared
++
++arbor_stop
+diff --git a/scripts/mac-shell/check-let-go-low.sh b/scripts/mac-shell/check-let-go-low.sh
+new file mode 100755
+index 00000000..4dbabb72
+--- /dev/null
++++ b/scripts/mac-shell/check-let-go-low.sh
+@@ -0,0 +1,114 @@
++#!/bin/bash
++# A docked window is dragged out and let go lower and lower, so that its own frame ends in the Dock's strip (board 0.22's rest), with a test
++# window and then with real TextEdit beside Safari. The window leaves by the ordinary road, which gives it its own size at the drop.
++# check-own-size.sh has the same drop with a test window, three times over, by a fast drag and before a Quit; this one has the heights and the real app.
++#
++# What only a Mac can say: what a window answers to a size whose foot would land in the strip. Seen: from a foot off the display it stops on
++# the display's bottom, taller than asked. The script holds Arbor to two things:
++#   on the screen: its own size, at every height (a ✘ low down says how much too tall it stands, and is for whoever reads it to weigh);
++#   in the books:  its own size never creeps: after each low drop it is docked again and let go at 150, where nothing is in the way, and
++#                  has the size it had when the script began.
++# KEY=cmd (the default): ⌘ held takes a docked window out, as before "a plain drag only moves a window". KEY=plain: nothing held, as after it.
++# What was asked and what was answered, call by call, is in the trace that comes back (mac-shell/traces/): both sessions are recorded.
++source "$(dirname "$0")/lib-apps.sh"
++export ARBOR_RECORD=1
++KEY=${KEY:-cmd}
++
++size_of() { real_frame_of "$1" | awk '{ printf "%d %d", $3 + 0.5, $4 + 0.5 }'; }
++same_size() { local a b c d; read -r a b <<< "$1"; read -r c d <<< "$2"; about "$a" "$c" && about "$b" "$d"; }
++has_size() { same_size "$(size_of "$1")" "$2"; }
++
++# grab <window>: a point of its title bar that can be pressed, into GX GY.
++grab() {
++  local role
++  if [ "$KIND" = test ]; then
++    take "GX GY" titlebar_of "$1"
++    return 0
++  fi
++  read -r GX GY role <<< "$(apptool grab "$1" 2> /dev/null)"
++  if [ -z "${GX:-}" ]; then
++    apptool raise "$1"
++    sleep 0.3
++    read -r GX GY role <<< "$(apptool grab "$1" 2> /dev/null)"
++  fi
++  [ -n "${GX:-}" ]
++}
++
++# Not inside `check`, which runs what it is given in a shell of its own.
++take_hold() {
++  GX="" GY=""
++  grab "$1"
++  check "its title bar can be grabbed" test -n "$GX"
++}
++
++both_docked() {
++  ctl float-all > /dev/null
++  sleep 1
++  ctl dock "$A" left
++  ctl dock "$B" right
++  # Room is made for a wide window a moment after it is docked.
++  eventually in_view "$A" || true
++  eventually in_view "$B" || true
++  sleep 1.5
++}
++
++# out <window> <y>: docked, dragged out and let go at 512,<y>.
++out() {
++  both_docked
++  take_hold "$1"
++  if [ "$KEY" = plain ]; then drag "$GX" "$GY" 512 "$2" --hold 0.8; else drag "$GX" "$GY" 512 "$2" --hold 0.8 --mods "$KEY"; fi
++  sleep 2
++}
++
++# low <name> <window>
++low() {
++  local name=$1 window=$2 y own
++  ctl float-all > /dev/null
++  sleep 1
++  own=$(size_of "$window")
++  echo "== $name: w$window, its own size $own"
++  for y in 150 300 320 420; do
++    claim "$name, docked, is dragged out and let go at 512,$y"
++    out "$window" "$y"
++    check "$name at $y: it is out of the arrangement" is floating "$window"
++    echo "$name at $y: own $own; it is at $(real_frame_of "$window")"
++    check "$name at $y: on the screen it has its own size, $own" has_size "$window" "$own"
++    claim "$name is docked again and let go at 512,150, where nothing is in the way"
++    out "$window" 150
++    echo "$name at 150 after $y: own $own; it is at $(real_frame_of "$window")"
++    check "$name at 150 after $y: its own size has not crept: $own" has_size "$window" "$own"
++  done
++}
++
++arbor_build
++macos_tiling on > /dev/null
++echo "macOS's own tiling: $(macos_tiling); the key: $KEY"
++
++step "Test windows"
++KIND=test
++arbor_start 2
++A=$W1 B=$W2
++low "a test window" "$W1"
++arbor_stop
++
++[ -z "${ARBOR_REHEARSAL:-}" ] || { echo; echo "the real apps are skipped: a rehearsal has none"; exit 0; }
++
++step "TextEdit beside Safari"
++KIND=app
++apps_build
++apps_scratch
++apps_watchdog 600
++app_open com.apple.TextEdit "$APPS_SCRATCH/oak.txt"
++TEXTEDIT_PID=$APP_PID A=$APP_WINDOW
++app_open com.apple.Safari "$APPS_SCRATCH/page.html"
++SAFARI_PID=$APP_PID B=$APP_WINDOW
++app_dismiss "$SAFARI_PID"
++check "TextEdit and Safari each have a window" test -n "$A" -a -n "$B"
++arbor_start_apps "$TEXTEDIT_PID" "$SAFARI_PID"
++# arbor_start records by itself; this start does not.
++ctl trace on check-let-go-low-apps > /dev/null 2>&1 || echo "note: the apps' session is not recorded"
++low TextEdit "$A"
++arbor_quit
++arbor_ended
++app_quit "$TEXTEDIT_PID"
++app_quit "$SAFARI_PID"
+diff --git a/scripts/mac-shell/check-own-size.sh b/scripts/mac-shell/check-own-size.sh
+index ccd5c83a..3effe9a8 100755
+--- a/scripts/mac-shell/check-own-size.sh
++++ b/scripts/mac-shell/check-own-size.sh
+@@ -13,6 +13,10 @@
+ #     Quit: whole, and where it was?
+ #   - as high as the visible frame: a point short and no more?
+ #   - let be at a start, ten points over the right edge: as wide as it stood?
++# And the other way round: no size call puts a window's foot into the Dock's strip. A window as high as its slot, dragged out and let go low, hangs off the
++# display, and asked for its own size it came in no further than the display's bottom: 480×360 for 480×348, written down, and more at every such drop.
++# Now it is moved, as it is, to where it can shrink, and sized from there.
++#   - out of a slot as high as the screen, let go where its own size ends in the strip: its own size? Drop after drop? By a fast drag? After Quit?
+ # How it got there is printed from arbor.log after each: how many frames Arbor asked for.
+ #
+ # Safe on a person's Mac: it changes no setting, touches only windows it opened, and moves the pointer.
+@@ -72,6 +76,41 @@ check "docked and floated again it is no more than a point short of it" eventual
+ ctl float-all > /dev/null
+ sleep 1
+ 
++own="480 348"
++# Where the pointer has to be let go for a window of that height to end 35 points below the visible frame, in the Dock's strip.
++low=$((bottom - 348 + 35 + 28))
++left_at "$((sx + 300)) $((sy + 30)) $own"
++for round in 1 2 3; do
++  claim "out of a slot as high as the screen, let go where its own size ends in the Dock's strip: its own size (drop $round)"
++  ctl dock "$W2" left
++  check "it is docked, as high as the screen" eventually taller_than "$W2" "$((sh - 40))"
++  take "tx ty" titlebar_of "$W2"
++  drag "$tx" "$ty" "$((sx + sw * 3 / 4))" "$low" --steps 24 --duration 0.8
++  check "it floats" eventually is floating "$W2"
++  check "at its own size" eventually has_size "$W2" "$own"
++  check "and stays so" stays has_size "$W2" "$own"
++  echo "    it is at $(now_at "$W2"): its foot at $(now_at "$W2" | awk '{ print $2 + $4 }'), the visible frame ends at $bottom, the display at $((fy + fh))"
++  asked_of "$W2"
++  shot "let-go-in-the-strip-$round"
++done
++
++claim "the same by a fast drag, let go without a pause"
++ctl dock "$W2" left
++check "it is docked, as high as the screen" eventually taller_than "$W2" "$((sh - 40))"
++take "tx ty" titlebar_of "$W2"
++drag "$tx" "$ty" "$((sx + sw * 3 / 5))" "$low" --duration 0.25 --steps 12 --hold 0
++check "it floats" eventually is floating "$W2"
++check "at its own size" eventually has_size "$W2" "$own"
++check "and stays so" stays has_size "$W2" "$own"
++asked_of "$W2"
++ctl dock "$W2" left
++sleep 1
++arbor_quit
++check "docked again, Quit gives it its own size" eventually has_size "$W2" "$own"
++arbor_relaunch
++ctl float-all > /dev/null
++sleep 1
++
+ for way in float-all pause quit; do
+   claim "left hanging over the bottom, docked in a low slot, given back by $way: whole, where it was"
+   hanging="$((sx + 560)) $((bottom - 325)) $tall"
+@@ -114,8 +153,9 @@ asked_of "$W2"
+ sleep 1
+ 
+ claim "let be at a start, ten points over the right edge, it is as wide as it stood"
+-# Too wide for half the display, so that it would be a tile; with the keyboard in it, it is let be where it stands.
+-tw min-size "$W2" "$((fw - 124))" 300
++# Too wide for half the display, so that it would be a tile; with the keyboard in it, it is let be where it stands. (Since two docks are two halves, with no
++# column for the Desktop between them, room was found for one that leaves its neighbour 88 points: so it leaves 48.)
++tw min-size "$W2" "$((fw - 84))" 300
+ wide="$((fx + 84)) $((sy + 70)) $((fw - 74)) 400"
+ left_at "$wide"
+ click_window "$W2"

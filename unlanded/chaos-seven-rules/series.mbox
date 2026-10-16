@@ -1,0 +1,2432 @@
+From 1b10e1f60cf7436ff815d27f667e16988d8a7a70 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Wed, 14 Oct 2026 22:40:56 +0000
+Subject: [PATCH 1/2] test: the chaos lab's placement rules, walks about desks,
+ and replays that say what was refused
+
+Where Arbor puts a window is judged at the step of the move: placed-out-of-reach, placed-partly-out,
+placed-mostly-out, grown-while-hanging, docked-partly-out, left-its-place, moved-for-nothing.
+New: windows-silent, replay --go-on with REFUSED lines, hunt --pass, and the walks ARBOR_CHAOS_DESKS,
+WINDOWS_FIRST, TWO_DISPLAYS and HOLDS. The squeezed window its user nudged is a plain regression test:
+the fault is mended.
+---
+ .../Controller/Controller+Invariants.swift    |   3 +
+ Sources/ArborTesting/Chaos.swift              |   2 +
+ Sources/ArborTesting/ChaosGenerator.swift     |  45 +++++-
+ Sources/ArborTesting/ChaosInvariants.swift    |  95 +++++++++++-
+ Sources/ArborTesting/ChaosKnownFailures.swift |  89 +++++++++++-
+ Sources/ArborTesting/ChaosRunner.swift        | 137 ++++++++++++++++--
+ .../ArborTesting/FakeWindowSystem+Chaos.swift |   4 +
+ Sources/arbor-sim/ChaosModes.swift            |  14 +-
+ .../ArborKitTests/ChaosRegressionTests.swift  |  33 +++++
+ Tests/ArborKitTests/ChaosTests.swift          |  46 +++++-
+ collab/parity.json                            |   2 +-
+ docs/FEATURES.md                              |   2 +-
+ docs/TESTING.md                               |  16 ++
+ 13 files changed, 460 insertions(+), 28 deletions(-)
+
+diff --git a/Sources/ArborKit/Controller/Controller+Invariants.swift b/Sources/ArborKit/Controller/Controller+Invariants.swift
+index 153ff20..ef23edb 100644
+--- a/Sources/ArborKit/Controller/Controller+Invariants.swift
++++ b/Sources/ArborKit/Controller/Controller+Invariants.swift
+@@ -284,6 +284,9 @@ extension Controller {
+   /// Docked windows Arbor no longer puts back, because something kept moving them (Controller+Hardening.swift).
+   public var windowsLeftToTheirApps: Set<WindowID> { enforcement.givenUp }
+ 
++  /// Whether a key that may become a peek is down, held long enough yet or not (F51).
++  public var aPeekIsUnderWay: Bool { peeking != nil }
++
+   /// Windows whose app did not answer when they were to be moved, and have not been moved since.
+   public var windowsOwedAMove: Set<WindowID> { unplaced.union(owedMoves) }
+ 
+diff --git a/Sources/ArborTesting/Chaos.swift b/Sources/ArborTesting/Chaos.swift
+index 1abf644..50d2aff 100644
+--- a/Sources/ArborTesting/Chaos.swift
++++ b/Sources/ArborTesting/Chaos.swift
+@@ -202,6 +202,8 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
+     case first
+     /// Arbor hears about the displays first.
+     case late
++    /// The windows have moved with their displays by the time Arbor hears about the displays, and no app ever says so.
++    case silent
+     /// The windows stay at their old coordinates, which no Mac does; Arbor must cope anyway.
+     case never
+   }
+diff --git a/Sources/ArborTesting/ChaosGenerator.swift b/Sources/ArborTesting/ChaosGenerator.swift
+index d01a97f..9825e69 100644
+--- a/Sources/ArborTesting/ChaosGenerator.swift
++++ b/Sources/ArborTesting/ChaosGenerator.swift
+@@ -16,6 +16,11 @@ public struct ChaosGenerator {
+   /// Some runs have apps that fight back. They make rules about frames moot for their windows and
+   /// keep timers alive, so most runs do without.
+   private let allowsMisbehaviour: Bool
++  /// `ARBOR_CHAOS_DESKS=1`: walks about displays. Ten times as many changes of displays, in the orders a Mac has; each display keeps
++  /// its size, as a thing on a desk does; and after half the changes the commands that place floating windows again.
++  private let desks = ProcessInfo.processInfo.environment["ARBOR_CHAOS_DESKS"] != nil
++  private var sizesOnTheDesk: [String: CGSize] = [:]
++  private let twoDisplays = ProcessInfo.processInfo.environment["ARBOR_CHAOS_TWO_DISPLAYS"] != nil
+ 
+   public init(seed: UInt64) {
+     random = ChaosRandom(seed: seed)
+@@ -23,6 +28,14 @@ public struct ChaosGenerator {
+     // A script starts from one standard display, no windows and Arbor not running.
+     if random.chance(50) { planned.append(.displays(arrangement(), .never)) }
+     if random.chance(30) { planned.append(.settings(settingsChange())) }
++    // `ARBOR_CHAOS_TWO_DISPLAYS=1`: two displays that stay, two windows docked on one, two floating on the other; holds at eight times their weight.
++    if twoDisplays {
++      planned = [
++        "displays main:0,0,1440,900:25,0,0,0* side:1440,-90,1920,1080:0,0,0,0 windows-never", "open 101 Safari pid 1000 at 100 100 700 500 min 574 240",
++        "open 102 Notes pid 1001 at 300 200 720 420 min 709 300", "open 103 Terminal pid 1003 at 1700 100 585 400",
++        "open 104 Mail pid 1002 at 2300 300 800 600 min 500 400", "launch", "dock 101 left", "dock 102 right", "settle",
++      ].map { ChaosAction(text: $0) }
++    }
+     // Everything that ships switched off, switched on together (`ARBOR_CHAOS_ALL_ON=1`).
+     if ProcessInfo.processInfo.environment["ARBOR_CHAOS_ALL_ON"] != nil {
+       planned.append(
+@@ -358,8 +371,8 @@ public struct ChaosGenerator {
+     case .grow, .shrink: 8
+     case .moveToDisplay: 8
+     case .focusDisplay: 4
+-    case .hold, .holdStill, .toggleHold: 1
+-    case .release: 1
++    case .hold, .holdStill, .toggleHold: ProcessInfo.processInfo.environment["ARBOR_CHAOS_HOLDS"] == nil && ProcessInfo.processInfo.environment["ARBOR_CHAOS_TWO_DISPLAYS"] == nil ? 1 : 8
++    case .release: ProcessInfo.processInfo.environment["ARBOR_CHAOS_HOLDS"] == nil && ProcessInfo.processInfo.environment["ARBOR_CHAOS_TWO_DISPLAYS"] == nil ? 1 : 6
+     case .undo: 30
+     case .redo: 8
+     case .watch, .displays: 1
+@@ -392,7 +405,7 @@ public struct ChaosGenerator {
+   // MARK: The next action
+ 
+   public mutating func next(_ world: ChaosRunner) -> ChaosAction {
+-    if !planned.isEmpty, random.chance(80) { return planned.removeFirst() }
++    if !planned.isEmpty, twoDisplays || random.chance(80) { return planned.removeFirst() }
+     guard world.isRunning else { return world.isPaused ? whilePaused(world) : whileStopped(world) }
+ 
+     let system = world.system
+@@ -441,7 +454,7 @@ public struct ChaosGenerator {
+         (380, .command),
+         (10, .nonsense),
+         (12, .url),
+-        (16, .displays),
++        (twoDisplays ? 0 : desks ? 160 : 16, .displays),
+         (16, .settings),
+         (60, .flush),
+         (36, .advance),
+@@ -578,7 +591,23 @@ public struct ChaosGenerator {
+       if random.chance(30) { return .url(random.pick(Self.hostileURLs)!) }
+       let words = command(random.pick(weighted: Self.weightedKinds)!, in: world).text.split(separator: " ")
+       return .url("arbor://" + words.joined(separator: "/"))
+-    case .displays: return .displays(arrangement(), random.pick(weighted: [(5, .first), (5, .late), (2, .never)])!)
++    case .displays:
++      guard desks else {
++        // `ARBOR_CHAOS_WINDOWS_FIRST=1`: mostly the order in which the windows speak before the displays do.
++        let mostlyFirst = ProcessInfo.processInfo.environment["ARBOR_CHAOS_WINDOWS_FIRST"] != nil
++        let change = ChaosAction.displays(
++          arrangement(), random.pick(weighted: [(mostlyFirst ? 12 : 2, .first), (5, .late), (5, .silent), (1, .never)])!)
++        // Half the time a window has spoken of its place a while before: what Arbor believes for some seconds is tried at every age.
++        if mostlyFirst, random.chance(50), !world.system.windows.isEmpty {
++          planned.insert(contentsOf: [.advance(Double(random.int(1...40))), change], at: 0)
++          let id = window(in: world, .inView)
++          return .move(id, movedFrame(of: id, in: world))
++        }
++        return change
++      }
++      // A frame remembered in the old coordinates is applied by the next layout that places floating windows.
++      if random.chance(50) { planned.insert(contentsOf: ["home", "relayout", "desktop", "home"].map { .command($0) }, at: 0) }
++      return .displays(arrangement(), random.chance(50) ? .late : .silent)
+     case .settings: return .settings(settingsChange())
+     case .flush: return .flush
+     case .advance: return .advance(random.pick([0, 0.1, 0.25, 0.3, 0.5, 1, 5])!)
+@@ -874,7 +903,11 @@ public struct ChaosGenerator {
+     // Each display goes just outside the box around the ones before it, so none overlap.
+     var box = CGRect.zero
+     for (index, id) in ids.prefix(count).enumerated() {
+-      let size = random.pick(sizes)!
++      var size = random.pick(sizes)!
++      if desks {
++        if let own = sizesOnTheDesk[id], !random.chance(10) { size = own }
++        sizesOnTheDesk[id] = size
++      }
+       var origin = CGPoint.zero
+       if index > 0 {
+         switch random.int(0...2) {
+diff --git a/Sources/ArborTesting/ChaosInvariants.swift b/Sources/ArborTesting/ChaosInvariants.swift
+index 59e4e43..8c1952f 100644
+--- a/Sources/ArborTesting/ChaosInvariants.swift
++++ b/Sources/ArborTesting/ChaosInvariants.swift
+@@ -69,6 +69,9 @@ extension ChaosRunner {
+     undoViolations(after: action, &problems)
+     holdViolations(&problems)
+     guardZoneViolations(&problems)
++    reachViolations(&problems)
++    wholeViolations(&problems)
++    restingPlaceViolations(after: action, &problems)
+     timerViolations(settled: action == .settle, &problems)
+     untouchedViolations(&problems)
+     // Encoding is slow next to everything else, so a random run checks it now and then. A replay checks it at every step:
+@@ -367,9 +370,95 @@ extension ChaosRunner {
+       && now.tree.subtree(now.camera, contains: now.tree.desktop)
+   }
+ 
++  /// Where Arbor puts a window that is meant to be in view, a person can get hold of it: forty points of its title bar are on a display.
++  /// At the step in which Arbor moved it, so that the script ends with the move. (`out-of-reach` asks the same after each way back.)
++  func reachViolations(_ problems: inout [InvariantViolation]) {
++    guard frameLogMark < system.frameLog.count else { return }
++    let moved = Set(system.frameLog[frameLogMark...].map(\.window))
++    for window in windowsOutOfReach() where moved.contains(window) && window != system.dragging && window != system.resizing {
++      problems.append(
++        .init("placed-out-of-reach", "Arbor put \(window) at \(system.windows[window]!.snapshot.frame.brief), where nobody can get hold of it, and does not count it as out of view"))
++    }
++  }
++
++  /// No window that Arbor placed shows less than all of itself, unless its user put it there, on this display as it is (the
++  /// product owner, 2026-10-14). Windows Arbor counts as out of view are another matter, and so is one that is larger than the display.
++  func wholeViolations(_ problems: inout [InvariantViolation]) {
++    guard frameLogMark < system.frameLog.count else { return }
++    let rules = controller.settings.rules
++    for window in Set(system.frameLog[frameLogMark...].map(\.window)).sorted() {
++      guard let fake = system.windows[window], fake.snapshot.isPresent, !fake.snapshot.isFullScreen, cooperates(fake),
++        controller.filter.manages(fake.snapshot), !controller.parked.contains(window),
++        window != system.dragging, window != system.resizing,
++        fake.lastRequest?.took == fake.snapshot.frame, !fake.groundHasShifted,
++        AppRule.firstMatch(in: rules, bundleID: fake.snapshot.bundleID, title: fake.snapshot.title)?.action != .ignore
++      else { continue }
++      let frame = fake.snapshot.frame
++      guard Self.area(of: frame, showingOn: system.displayList) < 0.995 * frame.area, !fake.changedItsWays,
++        let display = Self.display(showingMostOf: frame, among: system.displayList),
++        // It can be made to fit.
++        fake.minimumSize.width <= display.visibleFrame.width, fake.minimumSize.height <= display.visibleFrame.height,
++        // Left hanging over an edge, it may hang as far when Arbor makes room beside it or gives it another size.
++        !(userPlaces[window] ?? []).contains(where: { $0.allows(frame, on: display) })
++      else { continue }
++      let share = Int((100 * Self.area(of: frame, showingOn: system.displayList) / frame.area).rounded())
++      // A rule name of its own for a docked window that is kept larger than its slot and hangs out of the display on that account.
++      let floats = controller.workspaces.values.contains { $0.isFloating(window) }
++      // And for one that its user left hanging and that Arbor has made larger there: as much of it shows as its user left showing.
++      let showsAsMuch = (userPlaces[window] ?? []).contains {
++        $0.isOn(display) && Self.area(of: frame, showingOn: system.displayList) >= $0.showing - 1
++      }
++      // The product owner's blocker: its user had it wholly in view, never across an edge, and less than half of it shows now.
++      let mostlyOut = floats && !leftAcrossAnEdge.contains(window) && Self.area(of: frame, showingOn: system.displayList) < 0.5 * frame.area
++      problems.append(
++        .init(!floats ? "docked-partly-out" : mostlyOut ? "placed-mostly-out" : showsAsMuch ? "grown-while-hanging" : "placed-partly-out", "Arbor put \(window) at \(frame.brief), \(share) % of it on a display, and nobody had left it there on \(display.id) as it is"))
++    }
++  }
++
++  /// A floating window keeps its place relative to its display's corner across a change of displays in which that display stays as
++  /// large as it was, unless somebody moved it meanwhile (K1811, the lid). Also later: a frame remembered in the old coordinates is
++  /// applied by the next layout that places floating windows, so the rule looks on through time and through moves of the camera.
++  func restingPlaceViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
++    guard !restingPlaces.isEmpty else { return }
++    switch action {
++    case .displays, .advance, .flush, .settle, .launch, .crash, .cursor,
++      .command("home"), .command("relayout"), .command("desktop"), .command("show-all"), .command("back"), .command("forward"):
++      break
++    default:
++      restingPlaces = [:]
++      return
++    }
++    let timers = harness.scheduler.pendingKeys
++    guard !timers.contains(where: { key in ["space-", "enforce-", "landed-", "displays-blinked"].contains { key.hasPrefix($0) } }) else { return }
++    for (window, place) in restingPlaces.sorted(by: { $0.key < $1.key }) {
++      guard let fake = system.windows[window], fake.movesNotArbors == place.moves, fake.snapshot.isPresent, !fake.snapshot.isFullScreen,
++        cooperates(fake), controller.filter.manages(fake.snapshot),
++        controller.workspaces.values.contains(where: { $0.isFloating(window) && !$0.isStashed(window) })
++      else {
++        restingPlaces[window] = nil
++        continue
++      }
++      guard !controller.parked.contains(window) else { continue }
++      let frame = fake.snapshot.frame
++      if fake.placeIsArborsDoing, abs(frame.minX - place.frame.minX) > 1 || abs(frame.minY - place.frame.minY) > 1 {
++        restingPlaces[window] = nil
++        // Its own display had gone and has come back: Arbor takes it home (F52).
++        if let display = system.displayList.first(where: { $0.frame.contains(frame.center) }), !displaysBeforeTheChange.contains(display.id) {
++          continue
++        }
++        problems.append(
++          .init(theChangeChangedNothing ? "moved-for-nothing" : "left-its-place", "\(window) floated at \(place.frame.brief) when its display had moved, nobody has touched it, and Arbor has put it at \(frame.brief)"))
++        restingPlaces[window] = nil
++      }
++    }
++  }
++
+   /// `hold`: what shows stays what shows, on every display, until `release`: windows that are out of view stay there (F58).
+   func holdViolations(_ problems: inout [InvariantViolation]) {
+-    guard holdBefore == .view, controller.holdLevel == .view, wasRunningBefore, controller.displays == displaysBefore else { return }
++    guard holdBefore == .view, controller.holdLevel == .view, wasRunningBefore, controller.displays == displaysBefore,
++      // A switch of Spaces from before the hold is still to be laid out.
++      !timersBefore.contains(where: { $0.hasPrefix("space-") })
++    else { return }
+     // Not by node ids: windows in view may be docked, floated and resized among themselves, which makes new groups to be on.
+     for window in parkedBefore.subtracting(controller.parked).sorted() {
+       guard let fake = system.windows[window], fake.snapshot.isPresent, presentBefore.contains(window), cooperates(fake),
+@@ -424,9 +513,11 @@ extension ChaosRunner {
+       }
+     }
+     // On the way the Desktop may have been more than a tile, and no change of the arrangement takes a floating window out of view again.
++    // A window that came back over a framed view follows the Desktop out of view with the next layout, whenever that is (`vanished`).
++    let wentOut = controller.parked.subtracting(before.parked).subtracting(cameBack)
+     let cameIn = before.parked.subtracting(controller.parked)
+     let onlyFloatsCameIn = cameIn.allSatisfy { window in controller.workspaces.values.contains { $0.isFloating(window) } }
+-    if viewsStayed, !controller.parked.isSubset(of: before.parked) || !onlyFloatsCameIn {
++    if viewsStayed, !wentOut.isEmpty || !onlyFloatsCameIn {
+       problems.append(.init("undo-redo", "undo and redo changed what is out of view: \(before.parked.sorted()) became \(controller.parked.sorted())"))
+     }
+   }
+diff --git a/Sources/ArborTesting/ChaosKnownFailures.swift b/Sources/ArborTesting/ChaosKnownFailures.swift
+index 284ca7f..67c7d87 100644
+--- a/Sources/ArborTesting/ChaosKnownFailures.swift
++++ b/Sources/ArborTesting/ChaosKnownFailures.swift
+@@ -23,7 +23,7 @@ extension ChaosRunner {
+   /// and `chaos`, `hunt --known` and `ChaosRunner.replay` report these rules like any other.
+   public nonisolated static let knownFailures: [ChaosKnownFailure] = [
+     ChaosKnownFailure(
+-      rule: "parked-beside-another-display", owner: "R5",
++      rule: "parked-beside-another-display", owner: "the controller",
+       story: "A window out of view beside one display is docked on another display, out of view there too. It stays where it was, where "
+         + "part of it shows, though the other display has a better place.",
+       script: """
+@@ -49,7 +49,7 @@ extension ChaosRunner {
+         dock 107 beside 103 right
+         """),
+     ChaosKnownFailure(
+-      rule: "parked-not-put-back", owner: "R5",
++      rule: "parked-not-put-back", owner: "the controller",
+       story: "The app of a window that is out of view makes it larger. Its corner stays where it was, which is all `hasLeftItsCorner` "
+         + "looks at, so the part that now reaches into view stays in view.",
+       script: """
+@@ -61,7 +61,7 @@ extension ChaosRunner {
+         limits 101 min 3439 2261 max 3439 2261
+         """),
+     ChaosKnownFailure(
+-      rule: "leak-chosenOnShape", owner: "R5 (K2005)",
++      rule: "leak-chosenOnShape", owner: "the controller (K2005)",
+       story: "Nothing a person sees. A window closes while it is in the hand: its entry is cleared, then the drag is called off, which notes "
+         + "where its user left it while the workspace still knows the window. One entry for a window that is gone stays until Arbor starts again.",
+       script: """
+@@ -76,6 +76,89 @@ extension ChaosRunner {
+         grab 107
+         close 107
+         """),
++    ChaosKnownFailure(
++      rule: "placed-partly-out", owner: "the controller",
++      story: "A floating window gets old numbers back: it was wholly in view, was docked, the display became smaller, and Float All (or undo, `layout`, `dock`) "
++        + "gives it its old frame, which hangs over the edge now. More than half shows as a rule; ⌃⌥0 fetches it. Also: its y from a tall display is used on a short one.",
++      script: """
++        launch
++        open 113 Xcode pid 1004 at 800 10 692 359 max 825 1525
++        arrange
++        displays main:0,0,1280,800:0,0,72,0* windows-late
++        float-all
++        """,
++      """
++        open 109 Notes pid 1001 at 1098 493 700 455 max 763 1054
++        open 111 Music pid 1006 at 657 744 512 745 min 512 745
++        open 112 Xcode pid 1004 at 822 548 370 590
++        launch
++        displays main:0,0,1512,982:25,84,0,0* side:1512,-104,800,600:25,0,0,0 third:-294,982,1080,1920:25,0,0,0 windows-late
++        move 112 1418 453 370 590
++        grab 112
++        release
++        layout Music | Notes
++        zoom-node 1
++        """),
++    ChaosKnownFailure(
++      rule: "grown-while-hanging", owner: "the controller",
++      story: "Its user leaves a floating window hanging over an edge and makes it smaller; the next layout that places floating windows gives it its remembered, larger size "
++        + "at the same corner. As much shows as its user left showing.",
++      script: """
++        launch
++        open 101 Terminal pid 1003 at 671 613 738 618
++        open 102 Music pid 1006 at -194 842 716 615
++        open 103 Terminal pid 1003 at -546 784 760 249
++        layout Terminal | Finder
++        move 101 1245 330 468 618
++        close 102
++        """,
++      """
++        open 101 Safari pid 1000 at 920 616 441 606 min 399 282
++        renumber 101 102
++        renumber 102 103
++        launch
++        open 106 Finder pid 1005 at -1037 63 1674 1034 max 735 631
++        dock 103 top
++        move 106 1208 777 735 431
++        undo
++        """),
++    ChaosKnownFailure(
++      rule: "docked-partly-out", owner: "F61 and the core",
++      story: "A docked window that will not shrink to its slot keeps its size at the slot's corner and hangs out of the display: it should be a tile or get room (F61).",
++      script: """
++        launch
++        open 101 Finder pid 1005 at 2376 698 772 533 min 506 533
++        space 101 off
++        dock 101 bottom
++        space 101 on
++        key down show-all
++        """),
++    ChaosKnownFailure(
++      rule: "left-its-place", owner: "the controller",
++      story: "With something docked, a display that comes or goes beside this one makes Arbor lay this one out again: a floating window that lay over a docked neighbour is moved "
++        + "onto the Desktop's part, or by the width of the gap, though nothing about its own display has changed.",
++      script: """
++        open 104 Music pid 1006 at 638 248 352 519 max 310 1909 title main.swift
++        launch
++        open 113 Mail pid 1002 at -1019 232 732 742 min 732 742 title Untitled
++        layout Preview | (Safari / Music)
++        displays side:-1440,109,1440,900:0,0,0,43 main:0,0,1440,900:25,0,0,0* windows-late
++        """,
++      """
++        launch
++        open 102 Finder pid 1005 at -435 193 1915 2399 min 1915 2399
++        dock left
++        open 103 Xcode pid 1004 at -342 1241 673 673 max 786 1362
++        displays main:0,0,1440,900:25,0,0,0* side:1440,33,1512,982:0,0,0,0 windows-late
++        """,
++      """
++        launch
++        open 108 Preview pid 1007 at 506 112 231 228 min 231 228 max 485 1084
++        DOCK LEFT
++        displays third:2720,158,1280,800:25,0,0,0 side:1440,-211,1280,800:0,0,0,0 main:0,0,1440,900:0,0,0,0* windows-late
++        open 110 Terminal pid 1003 at 609 154 1688 1705 min 265 285
++        displays main:0,0,1440,900:0,0,0,0* windows-late
++        """),
+   ]
+ 
+   public nonisolated static let knownRules = Set(knownFailures.map(\.rule))
+diff --git a/Sources/ArborTesting/ChaosRunner.swift b/Sources/ArborTesting/ChaosRunner.swift
+index e5402ed..3de7910 100644
+--- a/Sources/ArborTesting/ChaosRunner.swift
++++ b/Sources/ArborTesting/ChaosRunner.swift
+@@ -76,6 +76,17 @@ public final class ChaosRunner {
+   var parkedBefore: Set<WindowID> = []
+   /// Windows whose app did not answer when they were to be moved: the move comes when it does, whatever else happens then.
+   var owedAMoveBefore: Set<WindowID> = []
++  /// Where macOS put each floating window that was wholly on a display when that display moved without changing, and how often
++  /// somebody other than Arbor had moved it by then. Forgotten with the next step that may well move a floating window.
++  var restingPlaces: [WindowID: (frame: CGRect, moves: Int)] = [:]
++  var displaysBeforeTheChange: Set<DisplayID> = []
++  var userPlaces: [WindowID: [UserPlace]] = [:]
++  var inHandBefore: WindowID?
++  /// For the harness's own tests: something done as part of the next step, as if Arbor had done it.
++  public var beforeTheNextCheck: ((ChaosRunner) -> Void)?
++  /// Windows that somebody other than Arbor has ever left across the edge of a display: hanging over it, or straddling two.
++  var leftAcrossAnEdge: Set<WindowID> = []
++  var theChangeChangedNothing = false
+   /// The displays there were last, for as long as there are none.
+   private var lastDisplays: [DisplaySnapshot] = []
+   var owedTheWayBackBefore: Set<WindowID> = []
+@@ -90,6 +101,8 @@ public final class ChaosRunner {
+   var staleSinceADrop = false
+   /// Whether the last command succeeded, and what was true before the `undo` that was the last action.
+   var lastCommandSucceeded = false
++  /// What Arbor answered to the commands of the current step that it refused. A script whose `hold` was refused says nothing about holds.
++  public private(set) var refusals: [String] = []
+   var beforeUndo: (workspaces: [DisplayID: Workspace], parked: Set<WindowID>, slots: [DisplayID: [WindowID: CGRect]])?
+   var holdBefore: HoldLevel?
+   var staleSinceAPeek = false
+@@ -177,6 +190,7 @@ public final class ChaosRunner {
+     Self.beforeEachStep?(action)
+     script.append(action)
+     found = []
++    refusals = []
+     filterBefore = controller.filter
+     frameLogMark = system.frameLog.count
+     owedAPlaceBefore = controller.windowsOwedAPlace
+@@ -192,11 +206,83 @@ public final class ChaosRunner {
+     holdBefore = isRunning ? controller.holdLevel : nil
+     owedAMoveBefore = controller.windowsOwedAMove
+     wasPeekingBefore = timersBefore.contains("peek")
++    let movesBefore = system.windows.mapValues(\.movesNotArbors)
++    inHandBefore = system.dragging ?? system.resizing
+     perform(action)
+     listen()
++    beforeTheNextCheck?(self)
++    beforeTheNextCheck = nil
++    noteWhereItsUserLeftEachWindow(after: action, movesBefore: movesBefore)
+     return found + check(after: action)
+   }
+ 
++  /// Where somebody other than Arbor last put each window, as seen from the corner of the display that shows most of it, and
++  /// what that display was like. macOS carrying a window along with its display is nobody putting it anywhere.
++  private func noteWhereItsUserLeftEachWindow(after action: ChaosAction, movesBefore: [WindowID: Int]) {
++    userPlaces = userPlaces.filter { system.windows[$0.key] != nil }
++    leftAcrossAnEdge = leftAcrossAnEdge.filter { system.windows[$0] != nil }
++    if case .displays = action { return }
++    if case .wayBack = action { return }
++    func note(_ id: WindowID, _ frame: CGRect) {
++      if !system.displayList.contains(where: { $0.frame.contains(frame) }) { leftAcrossAnEdge.insert(id) }
++      guard let display = Self.display(showingMostOf: frame, among: system.displayList) else { return }
++      // Every place it was given on a display that is still as it was counts: `float-all` takes a window back to an earlier one.
++      var place = UserPlace(
++        overhang: UserPlace.overhang(of: frame, on: display), showing: Self.area(of: frame, showingOn: system.displayList), display: display)
++      if let index = userPlaces[id, default: []].firstIndex(where: { $0.isOn(display) }) {
++        let known = userPlaces[id]!.remove(at: index)
++        place.overhang = zip(known.overhang, place.overhang).map(max)
++        place.showing = min(known.showing, place.showing)
++      }
++      userPlaces[id, default: []].append(place)
++    }
++    // Also where Arbor has moved it on in the same step: `home` is the last frame that was not Arbor's.
++    for (id, fake) in system.windows where fake.movesNotArbors != movesBefore[id] { if let home = fake.home { note(id, home) } }
++    // Where its app opened it counts as a place given it, if more than half of it shows there (the product owner).
++    if case .open(let new) = action {
++      let frame = Self.within(new.frame, minimum: new.minimum, maximum: new.maximum)
++      if Self.area(of: frame, showingOn: system.displayList) > 0.5 * frame.area { note(new.id, frame) } else { leftAcrossAnEdge.insert(new.id) }
++    }
++    // A native tab is where its group is.
++    if case .openTab(let new, let front) = action, userPlaces[new] == nil {
++      userPlaces[new] = userPlaces[front]
++      if leftAcrossAnEdge.contains(front) { leftAcrossAnEdge.insert(new) }
++    }
++    if case .selectTab(let tab, let front) = action, userPlaces[tab] == nil { userPlaces[tab] = userPlaces[front] }
++    // Where a window is let go of is where its user put it, whatever size Arbor gives it there (F48).
++    if let dropped = inHandBefore, system.dragging != dropped, let fake = system.windows[dropped], !controller.parked.contains(dropped),
++      controller.workspaces.values.contains(where: { $0.isFloating(dropped) })
++    {
++      note(dropped, fake.snapshot.frame)
++    }
++  }
++
++  struct UserPlace {
++    /// By how many points it hung over the display's left, top, right and bottom edge there, at most.
++    var overhang: [CGFloat]
++    /// How much of it showed there, in square points, at least.
++    var showing: CGFloat
++    var display: DisplaySnapshot
++
++    static func overhang(of frame: CGRect, on display: DisplaySnapshot) -> [CGFloat] {
++      [display.frame.minX - frame.minX, display.frame.minY - frame.minY, frame.maxX - display.frame.maxX, frame.maxY - display.frame.maxY]
++        .map { max($0, 0) }
++    }
++
++    func allows(_ frame: CGRect, on now: DisplaySnapshot) -> Bool {
++      isOn(now) && zip(Self.overhang(of: frame, on: now), overhang).allSatisfy { $0 <= $1 + 1 }
++    }
++
++    /// The same display, as large as it was. It may stand elsewhere among the displays, and its Dock and menu bar may have come or gone:
++    /// an overhang is over the display's edge, not over theirs.
++    func isOn(_ now: DisplaySnapshot) -> Bool { now.id == display.id && now.frame.size == display.frame.size }
++  }
++
++  static func display(showingMostOf frame: CGRect, among displays: [DisplaySnapshot]) -> DisplaySnapshot? {
++    displays.max { frame.intersection($0.frame).area < frame.intersection($1.frame).area }
++      .flatMap { frame.overlaps($0.frame) ? $0 : nil }
++  }
++
+   /// Tabs are opened, chosen and closed in a window that can be seen and that nobody is holding.
+   private func canChangeTabs(of front: WindowID) -> Bool {
+     system.dragging != front && system.resizing != front && system.windows[front]?.snapshot.isPresent == true
+@@ -241,7 +327,8 @@ public final class ChaosRunner {
+     case .move(let window, let frame):
+       guard let fake = system.windows[window] else { return }
+       let frame = Self.within(frame, minimum: fake.minimumSize, maximum: fake.maximumSize)
+-      if isReachable(frame) { system.userMove(window, to: frame) }
++      // Nobody moves, picks up or resizes a window while no display is plugged in.
++      if isReachable(frame), !system.displayList.isEmpty { system.userMove(window, to: frame) }
+     case .react: system.appsReact()
+ 
+     case .cursor(let point):
+@@ -256,7 +343,9 @@ public final class ChaosRunner {
+       if system.dragging == nil, system.resizing == nil { system.mouseDown = true }
+     case .grab(let window):
+       // Only a window that can be seen can be picked up.
+-      if let snapshot = system.windows[window]?.snapshot, snapshot.isPresent, isReachable(snapshot.frame) { system.grab(window) }
++      if let snapshot = system.windows[window]?.snapshot, snapshot.isPresent, isReachable(snapshot.frame), !system.displayList.isEmpty {
++        system.grab(window)
++      }
+     case .carry(let point):
+       // macOS does not let a title bar be dragged above the top of a display, under the menu bar.
+       var point = onADisplay(point)
+@@ -268,7 +357,8 @@ public final class ChaosRunner {
+     case .via(let source, let line):
+       // `quit`, `pause` and the like have their promises checked in `run`.
+       if let command = try? Command.parse(line), isRunning, ![.quit, .pause(minutes: nil), .togglePause].contains(command) {
+-        _ = controller.perform(command, from: source)
++        let reply = controller.perform(command, from: source)
++        if !reply.ok { refusals.append(reply.message) }
+       }
+     case .key(let line, let phase):
+       guard isRunning, let command = try? Command.parse(line),
+@@ -306,7 +396,7 @@ public final class ChaosRunner {
+       if listed { system.windows[window]?.groundHasShifted = true }
+     case .edge(let window, let frame, let hold):
+       // One window is dragged or resized at a time, and only from a fresh press of the button.
+-      guard system.dragging == nil, system.resizing == nil ? !system.mouseDown : system.resizing == window,
++      guard !system.displayList.isEmpty, system.dragging == nil, system.resizing == nil ? !system.mouseDown : system.resizing == window,
+         let current = system.windows[window]?.snapshot, current.isPresent, isReachable(current.frame),
+         let result = system.frameAfterResizing(window, toward: frame), isReachable(result)
+       else { return }
+@@ -323,7 +413,12 @@ public final class ChaosRunner {
+       guard let seams = harness.overlays.seams[display], seams.indices.contains(index) else { return }
+       harness.overlays.dragSeam(seams[index], by: CGFloat(delta), on: display)
+     case .command(let line):
+-      if let command = try? Command.parse(line) { run(command) } else { harness.run(line) }
++      if let command = try? Command.parse(line) {
++        run(command)
++      } else {
++        refusals.append("`\(line)` is no command and no event that this harness knows")
++        harness.run(line)
++      }
+     case .url(let url):
+       // As ArborApp does.
+       if case .success(let command) = controller.admit(url: url) { run(command) }
+@@ -389,10 +484,10 @@ public final class ChaosRunner {
+   private static func isReachable(_ frame: CGRect, on displays: [DisplaySnapshot]) -> Bool {
+     displays.isEmpty
+       || displays.contains { display in
+-        let showing = frame.intersection(display.frame)
+-        // Forty points of title bar, or half of a window narrower than that.
+-        return !showing.isNull && showing.width >= min(frame.width / 2, 40) && showing.height >= min(frame.height, 20)
+-          && frame.minY >= display.frame.minY
++        // Forty points of title bar, or half of a window narrower than that, and enough of its height to hit.
++        let bar = CGRect(x: frame.minX, y: frame.minY, width: frame.width, height: min(frame.height, 28))
++        let showing = bar.intersection(display.frame)
++        return !showing.isNull && showing.width >= min(frame.width / 2, 40) && showing.height >= min(bar.height, 12)
+       }
+   }
+ 
+@@ -414,6 +509,7 @@ public final class ChaosRunner {
+     if !system.displayList.isEmpty { lastDisplays = system.displayList }
+     let old = lastDisplays
+     var moves: [(window: WindowID, frame: CGRect)] = []
++    var resting: [WindowID: CGRect] = [:]
+     if follow != .never, let main = displays.first(where: \.isMain) ?? displays.first {
+       for (id, fake) in system.windows.sorted(by: { $0.key < $1.key }) {
+         let frame = fake.snapshot.frame
+@@ -428,6 +524,14 @@ public final class ChaosRunner {
+         // It does not leave a window where nobody could get hold of it, on a display that shrank, say.
+         if destination.id != home.id || !Self.isReachable(moved, on: displays) { moved = moved.fitted(into: destination.visibleFrame) }
+         if moved != frame { moves.append((id, moved)) }
++        // On a display that is as large as it was, only elsewhere, the window is where it was on it, and there it stays.
++        if destination.id == home.id, destination.frame.size == home.frame.size,
++          destination.visibleFrame.offsetBy(dx: -destination.frame.minX, dy: -destination.frame.minY)
++            == home.visibleFrame.offsetBy(dx: -home.frame.minX, dy: -home.frame.minY),
++          home.frame.contains(frame), !controller.parked.contains(id), id != system.dragging, id != system.resizing
++        {
++          resting[id] = moved
++        }
+       }
+     }
+     switch follow {
+@@ -438,6 +542,9 @@ public final class ChaosRunner {
+     case .first:
+       for move in moves { system.userMove(move.window, to: move.frame) }
+       system.setDisplays(displays)
++    case .silent:
++      for move in moves { system.moveSilently(move.window, to: move.frame) }
++      system.setDisplays(displays)
+     case .late:
+       for move in moves { system.moveSilently(move.window, to: move.frame) }
+       let mark = system.frameLog.count
+@@ -447,6 +554,9 @@ public final class ChaosRunner {
+       let placed = Set(system.frameLog[mark...].map(\.window))
+       for move in moves { system.report(move.window, userInitiated: !placed.contains(move.window)) }
+     }
++    restingPlaces = [:]
++    (displaysBeforeTheChange, theChangeChangedNothing) = (Set(old.map(\.id)), old == displays)
++    for (id, frame) in resting { if let fake = system.windows[id] { restingPlaces[id] = (frame, fake.movesNotArbors) } }
+     // The pointer cannot stay where there is no display any more, and the window it holds goes with it.
+     if system.dragging != nil, !displays.isEmpty { perform(.carry(system.cursor)) } else { system.cursor = onADisplay(system.cursor) }
+   }
+@@ -503,10 +613,15 @@ public final class ChaosRunner {
+     let placed = controller.parked.union(
+       controller.workspaces.values.flatMap(\.tree.allWindows).filter { controller.windows[$0]?.isPresent == true })
+     // Not while a layout is still to come, which would be taken for the work of undo and redo.
+-    if command == .undo, isRunning, !harness.scheduler.pendingKeys.contains(where: { $0.hasPrefix("space-") || $0.hasPrefix("enforce-") }) {
++    // Nor during a peek: undo ends it, and leaves the view on everything by design (`back` returns).
++    if command == .undo, isRunning, !controller.aPeekIsUnderWay,
++      !harness.scheduler.pendingKeys.contains(where: { $0.hasPrefix("space-") || $0.hasPrefix("enforce-") })
++    {
+       beforeUndo = (controller.workspaces, controller.parked, controller.layouts.mapValues(\.windowFrames))
+     }
+-    lastCommandSucceeded = controller.perform(command).ok
++    let reply = controller.perform(command)
++    lastCommandSucceeded = reply.ok
++    if !reply.ok { refusals.append(reply.message) }
+     if command == .quit { controller.shutdown() }
+     if wasRunning, !isRunning { found += shutdownViolations(placed: placed) }
+     if command == .quit, wasRunning || isPaused { endProcess() }
+diff --git a/Sources/ArborTesting/FakeWindowSystem+Chaos.swift b/Sources/ArborTesting/FakeWindowSystem+Chaos.swift
+index efc244b..0edfe4b 100644
+--- a/Sources/ArborTesting/FakeWindowSystem+Chaos.swift
++++ b/Sources/ArborTesting/FakeWindowSystem+Chaos.swift
+@@ -155,6 +155,10 @@ extension FakeWindowSystem {
+ 
+   /// macOS moves a window itself, as it does when the displays change. Nobody hears of it until `report`.
+   public func moveSilently(_ window: WindowID, to frame: CGRect) {
++    if let old = windows[window]?.snapshot.frame, old.size == frame.size, let request = windows[window]?.lastRequest {
++      let (dx, dy) = (frame.minX - old.minX, frame.minY - old.minY)
++      windows[window]?.lastRequest = (request.asked.offsetBy(dx: dx, dy: dy), request.took.offsetBy(dx: dx, dy: dy))
++    }
+     windows[window]?.snapshot.frame = frame
+   }
+ 
+diff --git a/Sources/arbor-sim/ChaosModes.swift b/Sources/arbor-sim/ChaosModes.swift
+index 996d3cd..2ece1a9 100644
+--- a/Sources/arbor-sim/ChaosModes.swift
++++ b/Sources/arbor-sim/ChaosModes.swift
+@@ -75,6 +75,10 @@ func runChaosMode(_ arguments: [String]) -> Int32? {
+     let named = argument.dropFirst("--known".count).drop { $0 == "=" }.split(separator: ",").map(String.init)
+     excused = named.isEmpty ? [] : excused.subtracting(named)
+   }
++  // `--pass=rule,rule` walks on past those rules too, counting them: for a hunt after one rule that others would end first.
++  for argument in arguments where argument.hasPrefix("--pass=") {
++    excused.formUnion(argument.dropFirst("--pass=".count).split(separator: ",").map(String.init))
++  }
+   switch arguments.first {
+   case "chaos":
+     guard arguments.count >= 2 else {
+@@ -118,10 +122,12 @@ func runChaosMode(_ arguments: [String]) -> Int32? {
+     let quiet = arguments.contains("--quiet")
+     let runner = ChaosRunner()
+     runner.checksFilesAtEveryStep = true
++    var broken = false
+     for (index, action) in readScript().enumerated() {
+       say(quiet ? "STEP \(index + 1)" : "> \(action.text)")
+       let mark = runner.system.frameLog.count
+       let violations = runner.step(action)
++      if !quiet { for refusal in runner.refusals { say("  REFUSED: \(refusal)") } }
+       if !quiet { say(runner.harness.ascii(columns: 64, rows: 16) + "\n") }
+       if arguments.contains("--frames") {
+         // Who moved what: Arbor's own moves in this step, in order, then where every window is.
+@@ -131,11 +137,13 @@ func runChaosMode(_ arguments: [String]) -> Int32? {
+       if let first = violations.first {
+         say("RULE \(first.rule)")
+         for violation in violations { say("  \(violation)") }
+-        return 1
++        // `--go-on` plays to the end: for steps added after the break, to see what fetches a window.
++        guard arguments.contains("--go-on") else { return 1 }
++        broken = true
+       }
+     }
+-    if !quiet { say("# every invariant held") }
+-    return 0
++    if !quiet, !broken { say("# every invariant held") }
++    return broken ? 1 : 0
+ 
+   case "ways-back":
+     // For a script that ends with a window gone: which of the things a person would try brings it back?
+diff --git a/Tests/ArborKitTests/ChaosRegressionTests.swift b/Tests/ArborKitTests/ChaosRegressionTests.swift
+index 52b9b31..fca7c46 100644
+--- a/Tests/ArborKitTests/ChaosRegressionTests.swift
++++ b/Tests/ArborKitTests/ChaosRegressionTests.swift
+@@ -549,6 +549,39 @@ private let c = WindowID(103)
+       """)
+   }
+ 
++  // MARK: What Arbor gives back is fitted unless its user left it there
++
++  /// `layout` docks a wide app and Arbor squeezes the floating Terminal into the strip that is left. Its user moves it down inside the
++  /// strip, four points behind the Dock. Docking another window makes room, and Arbor used to give the Terminal its own, larger size at
++  /// the corner the hand gave: 253 of 716 points showed, and ⌃⌥0 did not fetch it.
++  @Test func aSqueezedWindowItsUserNudgedGetsItsOwnSizeBackInView() {
++    expectEveryInvariantHolds(Self.squeezedThenNudged(moveTo: 330))
++    // The threshold: one point behind the Dock (the visible frame ends at 923, the window is 597 high).
++    expectEveryInvariantHolds(Self.squeezedThenNudged(moveTo: 327))
++  }
++
++  /// Its controls, which end with the window wholly in view: no hand; a hand that leaves it wholly inside the visible frame.
++  @Test func aSqueezedWindowThatIsLeftAloneOrLeftInsideTheVisibleFrameEndsWhollyInView() {
++    for script in [Self.squeezedThenNudged(moveTo: nil), Self.squeezedThenNudged(moveTo: 326)] {
++      let runner = world(after: script)
++      let frame = runner.system.windows[WindowID(102)]!.snapshot.frame
++      #expect(runner.system.displayList[0].frame.contains(frame), "\(frame)")
++    }
++  }
++
++  private static func squeezedThenNudged(moveTo y: Int?) -> String {
++    """
++    launch
++    open 102 Terminal pid 1003 at 117 200 763 597
++    open 105 Xcode pid 1004 at 100 100 1300 800 min 1188 685
++    displays third:0,0,1512,982:25,0,59,0* windows-late
++    layout Finder / Xcode
++    open 107 Safari pid 1000 at 176 351 431 478 max 437 480
++    \(y.map { "move 102 1212 \($0) 288 597" } ?? "settle")
++    dock left
++    """
++  }
++
+   // MARK: What Arbor owes a window it has let go of
+ 
+   /// Arbor never moves what it does not arrange, but for the way back it owes a window that it put out of view and whose app did
+diff --git a/Tests/ArborKitTests/ChaosTests.swift b/Tests/ArborKitTests/ChaosTests.swift
+index 27c1062..aabb8fc 100644
+--- a/Tests/ArborKitTests/ChaosTests.swift
++++ b/Tests/ArborKitTests/ChaosTests.swift
+@@ -24,7 +24,7 @@ private let steps = environment("ARBOR_CHAOS_STEPS") ?? 200
+     let report = """
+       \(ChaosRunner.shrink(failure))
+       This is not a flake: the same seed gives the same run. If the steps have to do with your change, it is yours. If not, your change \
+-      has only led this seed to a bug that was there: SEND THE SCRIPT TO THE CHAOS LAB (collab/reports/2026-10-14-chaos-lab.md), or list \
++      has only led this seed to a bug that was there: OPEN AN ISSUE WITH THE SCRIPT, or list \
+       it with its owner in Sources/ArborTesting/ChaosKnownFailures.swift (docs/TESTING.md, "Chaos").
+       """
+     // Until hunts find fewer than one unknown failure in 2000 seeds, a script nobody knows is reported here and does not turn
+@@ -63,6 +63,50 @@ private let steps = environment("ARBOR_CHAOS_STEPS") ?? 200
+     #expect(ChaosAction.command("dock left").text == "dock left")
+   }
+ 
++  /// A replay that echoes what it cannot play proves nothing, and neither does a `hold` that Arbor refused.
++  @Test func whatCannotBePlayedAndWhatArborRefusesIsSaid() {
++    let runner = ChaosRunner()
++    _ = runner.step(.launch)
++    #expect(runner.refusals.isEmpty)
++    _ = runner.step(ChaosAction(text: "displays main:0,0,800,600:0,0,0,0* windows-sideways"))
++    #expect(runner.refusals.count == 1 && runner.refusals[0].contains("windows-sideways"))
++    #expect(runner.system.displayList.first?.frame.width != 800, "the line was not played")
++    _ = runner.step(.command("hold"))
++    #expect(runner.refusals == ["there is nothing in view to hold"])
++    _ = runner.step(.settle)
++    #expect(runner.refusals.isEmpty)
++  }
++
++  /// The order a Mac has: the windows have moved with their displays by the time Arbor hears of the displays, and no app says so.
++  @Test func windowsThatMoveInSilenceAreWhereTheirDisplayIs() {
++    let runner = ChaosRunner()
++    for line in [
++      "displays main:0,0,1440,900:25,0,0,0* side:1440,0,1280,800:0,0,0,0 windows-first", "open 101 Notes pid 1001 at 1600 100 400 300",
++      "displays main:0,0,1440,900:25,0,0,0* side:-1280,50,1280,800:0,0,0,0 windows-silent",
++    ] { #expect(runner.step(ChaosAction(text: line)).isEmpty) }
++    #expect(runner.system.windows[WindowID(101)]?.snapshot.frame == CGRect(x: -1120, y: 150, width: 400, height: 300))
++  }
++
++  /// The rules about where Arbor puts a window see a move that leaves it hanging, and leave alone what its user left so.
++  @Test func aWindowPutWhereLessThanAllOfItShowsBreaksARuleUnlessItsUserLeftItThere() {
++    func rules(_ moves: [String], then frame: CGRect) -> Set<String> {
++      let runner = ChaosRunner()
++      for line in ["launch", "open 101 Notes pid 1001 at 200 200 400 300"] + moves { _ = runner.step(ChaosAction(text: line)) }
++      // As if a layout had done it.
++      runner.beforeTheNextCheck = { _ = $0.system.setFrame(frame, of: WindowID(101)) }
++      // Other rules notice that Arbor knows nothing of the move; they are not what is tried here.
++      return Set(runner.step(.flush).map(\.rule).filter { $0.hasPrefix("placed-") || $0 == "grown-while-hanging" })
++    }
++    #expect(rules([], then: CGRect(x: 1414, y: 200, width: 400, height: 300)).isSuperset(of: ["placed-out-of-reach", "placed-mostly-out"]))
++    #expect(rules([], then: CGRect(x: 1200, y: 200, width: 400, height: 300)) == ["placed-partly-out"])
++    #expect(rules([], then: CGRect(x: 900, y: 200, width: 400, height: 300)).isEmpty)
++    // Its user left it hanging by 160 points: Arbor may put it back there, and may not let it hang further.
++    #expect(rules(["move 101 1200 200 400 300"], then: CGRect(x: 1200, y: 300, width: 400, height: 300)).isEmpty)
++    #expect(rules(["move 101 1200 200 400 300"], then: CGRect(x: 1300, y: 200, width: 400, height: 300)) == ["placed-partly-out"])
++    // Larger where it hangs, with as much showing as its user left showing.
++    #expect(rules(["move 101 1200 200 400 300"], then: CGRect(x: 1200, y: 200, width: 700, height: 300)) == ["grown-while-hanging"])
++  }
++
+   @Test func actionsRoundTripThroughTheirText() {
+     for seed in UInt64(101)...102 {
+       var lines: [String] = []
+diff --git a/collab/parity.json b/collab/parity.json
+index aa0b287..0ce4119 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -125,7 +125,7 @@
+     {"id": "A65", "area": "Arbor only", "title": "Zoom with a mouse", "trellis": "", "arbor": "⌃⌥ + scroll: up steps in toward the pointer, down steps out; one step per notch; `scrollZoom`, `scrollZoomThreshold`, `scrollOnDesktopZooms`", "status": "shipped", "spec": "F55", "priority": 2, "tests": ["oneNotchIsOneStepWhateverAccelerationMakesOfIt", "travelStepsOncePerThreshold", "aWheelWithTheKeysHeldStepsOncePerNotchTowardAndAway", "withoutBothKeysNothingIsLookedAtOrSwallowed", "fingersStepOncePerThresholdOfTravel", "aScrollClaimedAtItsStartStaysClaimedWhenTheKeysGoUp", "momentumGivesNoStepsAndDoesNotReachTheApp", "onTheDesktopItZoomsWithoutTheKeysIfAskedTo", "withContinuousZoomTheSameScrollMovesAsFarAsAPinchThatWouldHaveSteppedAsOften"]},
+     {"id": "A91", "area": "Arbor only", "title": "Switching windows keeps the level", "trellis": "", "arbor": "From a framed window, ⌘Tab or a Dock click frames the window you go to; from a group the view steps out just far enough", "status": "shipped", "spec": "F01", "priority": 1, "tests": ["switchingFromAFramedWindowFramesTheOther", "switchingFromAFramedWindowToAFloatingOneShowsTheDesktopAlone", "fromAGroupOrEverythingTheViewStepsOutJustFarEnoughAsBefore", "aWindowAlreadyInViewNeverMovesTheView", "revealingAWindowZoomsOutJustFarEnough"]},
+     {"id": "A63", "area": "Arbor only", "title": "Accessibility permission taken away while running", "trellis": "", "arbor": "noticed within 3 s and at the next command; nothing pretends; the ways home lead to the switch; everything in view when it returns", "status": "shipped", "spec": "F63", "priority": 1, "tests": ["itIsNoticedWithinThreeSecondsWithoutAnybodyDoingAnything", "oneNoFollowedByYesChangesNothingAtAll", "aCommandGivenAfterwardsFailsTheFirstTimeAndMovesNothing", "theShowEverythingKeyPressedAfterwardsFailsTheFirstTimeTooInsteadOfPeeking", "nothingIsMovedAndEveryOverlayGoes", "theSentenceCountsWindowsAndNamesAppsNeverTitles", "withWindowsOutOfViewOnlyTheWaysHomeAreHeld", "itComesBackWithinASecondWithEverythingInViewAndTheOldViewOneBackAway", "itCopesWithWhatChangedMeanwhile", "aPauseEndsWithTheLossAndDoesNotComeBack", "quittingWithoutItIsSafeAndTheNextLaunchBringsTheWindowsBack"]},
+-    {"id": "A80", "area": "Arbor only", "title": "Chaos-tested: random commands and events never crash it or lose a window", "trellis": "", "arbor": "Seeded random runs check every invariant after each step; a failure shrinks to a script that replays (`arbor-sim chaos`)", "status": "shipped", "priority": 1, "tests": ["randomActionsKeepEveryInvariant", "everyCommandHasAGeneratorAndItsTextRoundTrips", "theSameSeedGivesTheSameRun", "shrinkingKeepsOnlyTheActionsThatMatter", "whateverIsDoneToStateJSONArborStartsWithEveryInvariantIntact", "aSavedTreeThatBreaksAnInvariantNeverReachesTheController", "aKnownFailureStillFails", "quittingBringsBackParkedWindowsThatAreMinimizedHiddenOrOnAnotherSpace", "floatingWindowsLeftParkedByACrashComeBack", "parkedWindowsStayOutOfViewWhenADisplayIsAttachedBesideThem", "theWindowInTheUsersHandIsNeitherParkedNorPutBack"]},
++    {"id": "A80", "area": "Arbor only", "title": "Chaos-tested: random commands and events never crash it or lose a window", "trellis": "", "arbor": "Seeded random runs check every invariant after each step; a failure shrinks to a script that replays (`arbor-sim chaos`)", "status": "shipped", "priority": 1, "tests": ["everyCommandHasAGeneratorAndItsTextRoundTrips", "theSameSeedGivesTheSameRun", "shrinkingKeepsOnlyTheActionsThatMatter", "whateverIsDoneToStateJSONArborStartsWithEveryInvariantIntact", "aSavedTreeThatBreaksAnInvariantNeverReachesTheController", "aKnownFailureStillFails", "quittingBringsBackParkedWindowsThatAreMinimizedHiddenOrOnAnotherSpace", "floatingWindowsLeftParkedByACrashComeBack", "parkedWindowsStayOutOfViewWhenADisplayIsAttachedBesideThem", "theWindowInTheUsersHandIsNeitherParkedNorPutBack"]},
+     {"id": "A58", "area": "Arbor only", "title": "Hold the view on a shared screen", "trellis": "", "arbor": "Hold This View; `hold [minutes]`, `release`, `toggle-hold`: nothing moves the view, windows out of view stay there, rules wait; it never widens by itself, its end moves nothing, and ⌃⌥⎋ releases", "status": "shipped", "spec": "F58", "priority": 1, "tests": ["aWindowOutOfViewThatTakesTheKeyboardStaysThereAndTheKeyboardGoesBack", "theKeyboardGoesBackToTheWindowThatHadItNotJustAnyWindowInView", "everyCameraCommandFailsAndChangesNothing", "releaseRestoresEveryCameraCommand", "aClickOnATileDoesNothing", "aDockRulesWindowFloatsWhileHeldAndDocksOnRelease", "whenTheOnlyWindowInViewClosesTheViewStaysHeldAndEmpty", "aMinimizedWindowIsAwayAndComesBackToTheSameView", "aHiddenAppIsAwayAsWell", "eachDisplaysViewStaysHeldWhenItEmpties", "aRuleThatWouldMoveTheViewIsNotAppliedOnReleaseAndTheReplySaysSo", "theSameWhenTheTimeIsUpWithNobodyTouchingAnything", "theSameWhenTheTimeIsUpWhileAnotherMacOSSpaceShows", "aRuleThatWouldNarrowWhatShowsIsNotAppliedEither", "aWindowTheUserHasMovedMeanwhileStaysWhereTheyPutIt", "theKeyThatPausesReleasesAHeldViewAndMovesNothing", "keptDownTheKeyDoesNotGoOnToPause", "theKeyThatFloatsEverythingIsRefusedLikeTheOthers", "fromTheMenuAndTheTerminalBothAreStillWaysOut", "pauseWorksWhileHeldAndEndsTheHold", "floatAllWorksWhileHeldAndEndsTheHold", "quittingWorksWhileHeldAndTheHoldIsNotKept", "aTimedHoldReleasesByItself", "theViewIsHeldOnEveryDisplay", "aHeldGroupCanBeTurnedTheOtherWayAndNothingElseComesIn", "dockingOneOfTwoBesideTheOtherStaysInsideTheHeldView", "aWindowThatClosesNeverWidensTheView", "aHeldWindowThatGoesFullScreenIsAwayNotGone", "nothingThatWasOutOfViewEverShowsWhileTheViewIsHeld", "duringAHoldItStaysOutOfViewAndIsNotLost", "itIsKeptOffADesktopThatIsInViewUntilTheViewMoves", "nothingComesInWhenTheTimeIsUpOrTheCallIsOver", "dialogsThatOpenOutOfViewWaitOnAHeldViewUntilTheViewMoves", "aDockClickOnAnAppBlockedOnADialogBringsThatDialogIn", "statusCountsTheDialogsThatWait", "aSecondWindowOfAnAppThatIsOutOfViewWaitsUntilTheViewMoves", "aCommandThatMovesNoViewLetsNothingIn", "aWindowWithNoWindowOfItsAppOutOfViewIsBroughtInAsEver", "aWindowThatTakesTheKeyboardJustAfterItWasAskedBackIsTurnedAwayOnASecondLook", "whatIsSeenIsWhatIsHeldThoughTheViewIsOnAWindowThatIsAway", "aWindowThatARulePinsIsNotKeptOut", "carryingTheFramedWindowToAnotherDisplayShowsNothingOfItsOwnMeanwhile"]},
+     {"id": "A59", "area": "Arbor only", "title": "Hold still during calls", "trellis": "", "arbor": "Hold Still; `hold still [minutes]`: the view moves only when asked, and what is turned away is said on screen. By itself while a camera or a microphone is on or a window in `holdStillFor` is open, if switched on: all three ship off until seen at work on a Mac", "status": "shipped", "spec": "F58", "priority": 1, "tests": ["outOfTheBoxNothingStartsAHoldByItself", "whatHoldingStillTurnsAwayIsSaidOnceForEachAppAndHold", "holdingStillGoToReachesAWindowOnAnotherMacOSSpace", "andTheViewFollowsItThere", "holdingStillTheUsersOwnMovesWork", "holdingStillAnAppThatComesForwardByItselfStaysOutOfView", "holdingStillTheViewFollowsAWindowTheUserSwitchedTo", "onlyAFocusChangeRightAfterAClickOrAModifierKeyCountsAsAsked", "holdingStillRulesWaitAsWell", "arborHoldsStillWhileACallsWindowIsOpen", "releaseDuringACallLastsUntilTheCallIsOver", "releasingAHeldViewDuringACallFallsBackToHoldingStill", "arborHoldsStillWhileACameraIsOnWhicheverAppTheCallIsIn", "theSameForAMicrophone", "aMicrophoneDoesNotCountUnlessSwitchedOn", "aMicrophoneThatDoesNotCountDoesNotCutTheWaitShort", "theSameWhenTheCallIsOver", "holdingStillTheKeyboardGoesBackToTheWindowJustSwitchedTo", "holdingStillASummonedWindowReachedByCommandTabIsNotSentAway", "aCallIsReplayed", "changingDevicesInTheMiddleOfACallDoesNotEndIt", "holdingStillAWindowTheUserOpenedIsDockedByItsRuleAtOnce"]},
+     {"id": "A27", "area": "Arbor only", "title": "Go to…: find any window, named space or saved view by typing", "trellis": "", "arbor": "⌃⌥G; `find [text]`, `reveal [window]`. Most recently used first; brings back minimised, hidden and tabbed windows. The palette has come and gone on a Mac; no key pressed in it, no picture looked at yet", "status": "shipped", "spec": "F27", "priority": 1, "tests": ["theListIsMostRecentlyFocusedFirstWithTheFocusedWindowAfterTheOthers", "returnOnAnEmptyQueryGoesBackAndForthBetweenTwoWindows", "fromAGroupChoosingAWindowOutOfViewMovesTheCameraJustFarEnoughAndFocusesIt", "fromAFramedWindowChoosingAWindowFramesTheChosenOne", "choosingAHiddenTabShowsIt", "aMinimizedWindowIsRestoredAndBroughtIntoView", "aWindowOfAHiddenAppComesBackWithItsApp", "theResultDoesNotDependOnWhenMacOSReports", "aWindowOnAnotherSpaceIsOnlyFocusedAndTheCameraFollowsWhenItsSpaceShows", "aWindowOnTheOtherDisplayIsRevealedThereAndThisDisplayStaysAsItIs", "shortcutsFollowToTheDisplayThePickerWentTo", "namedSpacesAreListedAfterTheWindowsAndBeforeTheSavedViews", "theVeryNameOfASpaceComesBeforeEverythingElse", "aStashedWindowIsSummonedWhenChosen", "whileHoldingStillTheViewStillGoesWhereItIsAsked", "everyShortcutClosesIt", "windowsArborLeavesAloneAreListedAndOnlyFocused", "itClosesWhenAnotherWindowTakesTheKeyboard", "choosingAWindowThatHasClosedSaysSoAndKeepsThePaletteOpenWithAFreshList", "choosingASavedViewMovesTheCameraThere", "findWithTextGoesStraightToTheBestMatch", "findWithNoMatchFailsAndSaysSo", "neitherTitlesNorQueriesAreLogged", "wordStartsBeatTheMiddleOfWords", "accentsAreIgnoredBothWays", "theTableFindsTheBestAlignment", "hugeInputsCostNoMoreThanLongOnes", "movingGoesRoundAtBothEnds", "staysOnItsDisplay"], "e2e": ["find a window by its title", "open Go to…", "close Go to…", "bring the minimised window back", "bring a window of the hidden app back"]},
+diff --git a/docs/FEATURES.md b/docs/FEATURES.md
+index 6f6f4b1..1011d14 100644
+--- a/docs/FEATURES.md
++++ b/docs/FEATURES.md
+@@ -161,7 +161,7 @@ Real-window evidence: mac-shell: scripts/mac-shell/proof.sh at ab40b20, macOS 26
+ | A65 | Zoom with a mouse |  | ⌃⌥ + scroll: up steps in toward the pointer, down steps out; one step per notch; `scrollZoom`, `scrollZoomThreshold`, `scrollOnDesktopZooms` | tested | tests 9/9 | [F55](features/F55-zoom-with-a-mouse.md) |
+ | A91 | Switching windows keeps the level |  | From a framed window, ⌘Tab or a Dock click frames the window you go to; from a group the view steps out just far enough | tested | tests 5/5 | [F01](features/F01-dock-and-zoom.md) |
+ | A63 | Accessibility permission taken away while running |  | noticed within 3 s and at the next command; nothing pretends; the ways home lead to the switch; everything in view when it returns | tested | tests 11/11 | [F63](features/F63-permission-taken-away.md) |
+-| A80 | Chaos-tested: random commands and events never crash it or lose a window |  | Seeded random runs check every invariant after each step; a failure shrinks to a script that replays (`arbor-sim chaos`) | tested | tests 11/11 |  |
++| A80 | Chaos-tested: random commands and events never crash it or lose a window |  | Seeded random runs check every invariant after each step; a failure shrinks to a script that replays (`arbor-sim chaos`) | tested | tests 10/10 |  |
+ | A58 | Hold the view on a shared screen |  | Hold This View; `hold [minutes]`, `release`, `toggle-hold`: nothing moves the view, windows out of view stay there, rules wait; it never widens by itself, its end moves nothing, and ⌃⌥⎋ releases | tested | tests 42/42 | [F58](features/F58-hold-the-view.md) |
+ | A59 | Hold still during calls |  | Hold Still; `hold still [minutes]`: the view moves only when asked, and what is turned away is said on screen. By itself while a camera or a microphone is on or a window in `holdStillFor` is open, if switched on: all three ship off until seen at work on a Mac | tested | tests 22/22 | [F58](features/F58-hold-the-view.md) |
+ | A27 | Go to…: find any window, named space or saved view by typing |  | ⌃⌥G; `find [text]`, `reveal [window]`. Most recently used first; brings back minimised, hidden and tabbed windows. The palette has come and gone on a Mac; no key pressed in it, no picture looked at yet | tested | tests 29/29, real windows 0/5 | [F27](features/F27-window-finder.md) |
+diff --git a/docs/TESTING.md b/docs/TESTING.md
+index e4da9fa..cb5d9a0 100644
+--- a/docs/TESTING.md
++++ b/docs/TESTING.md
+@@ -835,8 +835,24 @@ swift build -c release --product arbor-sim                             # four ti
+ .build/debug/arbor-sim replay --frames < script.txt                    # … and after each step Arbor's own moves, then where every window is
+ .build/debug/arbor-sim ways-back < script.txt                          # which of Float All, crash and launch, quit returns every window
+ ARBOR_CHAOS_ALL_ON=1 .build/release/arbor-sim hunt 1 2000 300          # everything that ships switched off, switched on together
++ARBOR_CHAOS_DESKS=1 .build/release/arbor-sim hunt 1 2000 300           # walks about displays: ten times the changes, in a Mac's orders, each display keeps its size
++ARBOR_CHAOS_WINDOWS_FIRST=1 .build/release/arbor-sim hunt 1 2000 300   # mostly the order in which the windows speak before the displays; a window has spoken 1 to 40 s before
++.build/release/arbor-sim hunt 1 2000 300 --pass=slot,undo-redo         # walks on past those rules too, counting them: for a hunt after one rule that others would end first
++.build/debug/arbor-sim replay --frames --go-on < script.txt            # plays on past a broken rule: for steps added to see what fetches a window
+ ```
+ 
++**A cure is hunted with a control**: the same seeds, under the same generator and rules, on the tree with the cure and on the tree without. Compare the lists of failing seeds, not
++only the counts: "no seed fails on the sum alone" is the finding. A seed that does is replayed on the control as a script, because a cure also leads walks elsewhere. The same
++goes for blame: before a family is given to the owner of the newest merge, its scripts are replayed on the tree without that merge.
++
++**A rate in walks is not a rate on desks.** A walk closes a lid as rarely as it does anything else; a person does it every day. Judge a finding by what a person has to do to get there.
++
++**Where Arbor puts a window**, at the step in which it makes the move: `placed-out-of-reach` (fewer than 40 × 12 points of title bar on a display, and Arbor does not count the window as
++out of view); `placed-partly-out` (a floating window hangs further over an edge than anybody but Arbor ever left it on this display at this size); `placed-mostly-out` (nobody ever left it across an edge, and
++under half shows: with "⌃⌥0 does not fetch it" this is the product owner's measure of a blocker); `grown-while-hanging` (made larger where its user left it hanging; as much shows as before);
++`docked-partly-out` (kept larger than its slot, it hangs out of the display); `left-its-place` and `moved-for-nothing` (a display only moved, or nothing changed at all, and a floating window was moved).
++`replay` says `REFUSED:` for every command Arbor refuses and every line that is no command and no event: a script whose `hold` was refused says nothing about holds.
++
+ **Seeds mean something only on one generator.** A new `Command` case, weight or event sends every seed elsewhere: compare rates and scripts, never
+ seed numbers, between two commits. **A script means something only on a harness that knows its words**: a line that is no event is taken for
+ a command, and a command Arbor does not know does nothing, so a script with `via …` or `key down …` on a branch from before those events
+-- 
+2.43.0
+
+
+From 4be4847171292e439d070b6c28133d2561b755e8 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Wed, 14 Oct 2026 23:21:21 +0000
+Subject: [PATCH 2/2] wip: nets for the seven rules over random walks, and
+ ordinary walks
+
+---
+ .../ChaosGenerator+Ordinary.swift             | 272 +++++++++
+ Sources/ArborTesting/ChaosGenerator.swift     |  18 +-
+ .../ChaosInvariants+SevenRules.swift          | 553 ++++++++++++++++++
+ Sources/ArborTesting/ChaosInvariants.swift    |   1 +
+ Sources/ArborTesting/ChaosKnownFailures.swift | 290 ++++++++-
+ Sources/ArborTesting/ChaosRunner.swift        |  22 +-
+ Sources/arbor-sim/ChaosModes.swift            |  12 +-
+ .../ArborKitTests/ChaosSevenRulesTests.swift  | 165 ++++++
+ docs/TESTING.md                               |  26 +
+ 9 files changed, 1350 insertions(+), 9 deletions(-)
+ create mode 100644 Sources/ArborTesting/ChaosGenerator+Ordinary.swift
+ create mode 100644 Sources/ArborTesting/ChaosInvariants+SevenRules.swift
+ create mode 100644 Tests/ArborKitTests/ChaosSevenRulesTests.swift
+
+diff --git a/Sources/ArborTesting/ChaosGenerator+Ordinary.swift b/Sources/ArborTesting/ChaosGenerator+Ordinary.swift
+new file mode 100644
+index 0000000..6edd4c5
+--- /dev/null
++++ b/Sources/ArborTesting/ChaosGenerator+Ordinary.swift
+@@ -0,0 +1,272 @@
++import ArborCore
++import ArborKit
++import CoreGraphics
++import Foundation
++
++/// `ARBOR_CHAOS_ORDINARY=1`: walks a person could take. The displays of a real desk, apps with the sizes real apps have, windows that open
++/// wholly in view, keys that are bound and items that are in the menu, the mouse, and time between one thing and the next. No settings
++/// edited by hand, no apps that fight back, no crash, no nonsense. **What such a walk finds is likely on a real desk**; what only the wild walks
++/// find has to be looked at for how a person would get there.
++///
++/// `ARBOR_CHAOS_DESK=laptop|desk|both` chooses the displays (`both`: a laptop and an external display that comes and goes, in the orders a Mac
++/// has), `ARBOR_CHAOS_DOCK=bottom|left|right|hidden` the side of the Dock. Left out, the seed chooses.
++extension ChaosGenerator {
++  struct Desk {
++    enum Kind: String, CaseIterable { case laptop, desk, both }
++    enum Plugged: CaseIterable { case both, laptopAlone, externalAlone }
++
++    var kind: Kind
++    var laptop: CGSize
++    var notch: CGFloat
++    var external: CGSize
++    /// Where the external display stands as seen from the laptop, and how far it is shifted along that side.
++    var side: Edge
++    var shift: CGFloat
++    var externalIsMain: Bool
++    var dock: Edge?
++    var dockSize: CGFloat
++    var plugged: Plugged
++
++    init(_ random: inout ChaosRandom) {
++      let environment = ProcessInfo.processInfo.environment
++      kind = environment["ARBOR_CHAOS_DESK"].flatMap(Kind.init(rawValue:)) ?? random.pick(Kind.allCases)!
++      (laptop, notch) = random.pick([
++        (CGSize(width: 1440, height: 900), 25), (CGSize(width: 1512, height: 982), 37), (CGSize(width: 1728, height: 1117), 37),
++        (CGSize(width: 1280, height: 800), 25),
++      ])!
++      external = random.pick([CGSize(width: 1920, height: 1080), CGSize(width: 2560, height: 1440), CGSize(width: 3008, height: 1692)])!
++      side = random.pick([.left, .right, .right, .top])!
++      shift = random.pick([0, 0, -200, 150, 323])!
++      externalIsMain = random.chance(40)
++      switch environment["ARBOR_CHAOS_DOCK"] {
++      case "bottom": dock = .bottom
++      case "left": dock = .left
++      case "right": dock = .right
++      case "hidden": dock = nil
++      default: dock = random.pick([.bottom, .bottom, .left, .right, nil])!
++      }
++      dockSize = random.pick([48, 59, 70, 86])!
++      plugged = kind == .laptop ? .laptopAlone : kind == .desk ? .externalAlone : .both
++    }
++
++    /// The main display has its corner at 0,0, the menu bar is on both, the Dock on the main one.
++    var displays: [DisplaySnapshot] {
++      func display(_ id: String, _ frame: CGRect, bar: CGFloat, isMain: Bool) -> DisplaySnapshot {
++        var (leading, below, trailing): (CGFloat, CGFloat, CGFloat) = (0, 0, 0)
++        if isMain {
++          switch dock {
++          case .bottom: below = dockSize
++          case .left: leading = dockSize
++          case .right: trailing = dockSize
++          default: break
++          }
++        }
++        return DisplaySnapshot(
++          id: DisplayID(id), frame: frame,
++          visibleFrame: CGRect(
++            x: frame.minX + leading, y: frame.minY + bar, width: frame.width - leading - trailing, height: frame.height - bar - below),
++          isMain: isMain)
++      }
++      switch plugged {
++      case .laptopAlone: return [display("main", CGRect(origin: .zero, size: laptop), bar: notch, isMain: true)]
++      case .externalAlone: return [display("side", CGRect(origin: .zero, size: external), bar: 25, isMain: true)]
++      case .both:
++        // As seen from the laptop's corner.
++        let offset: CGPoint =
++          switch side {
++          case .left: CGPoint(x: -external.width, y: shift)
++          case .right: CGPoint(x: laptop.width, y: shift)
++          default: CGPoint(x: shift, y: -external.height)
++          }
++        let origin = externalIsMain ? CGPoint(x: -offset.x, y: -offset.y) : .zero
++        return [
++          display("main", CGRect(origin: origin, size: laptop), bar: notch, isMain: !externalIsMain),
++          display("side", CGRect(x: origin.x + offset.x, y: origin.y + offset.y, width: external.width, height: external.height), bar: 25, isMain: externalIsMain),
++        ]
++      }
++    }
++  }
++
++  /// What real apps refuse to go below, and about how large they open. The order is that of `apps`.
++  private static let realApps: [(name: String, minimum: CGSize, opens: CGSize, maximum: CGSize?)] = [
++    ("Safari", CGSize(width: 574, height: 240), CGSize(width: 1200, height: 800), nil),
++    ("Notes", CGSize(width: 709, height: 300), CGSize(width: 900, height: 600), nil),
++    ("Mail", CGSize(width: 760, height: 400), CGSize(width: 1100, height: 700), nil),
++    ("Terminal", CGSize(width: 177, height: 60), CGSize(width: 877, height: 499), nil),
++    ("Xcode", CGSize(width: 1188, height: 685), CGSize(width: 1300, height: 800), nil),
++    ("Finder", CGSize(width: 501, height: 300), CGSize(width: 920, height: 436), nil),
++    ("Music", CGSize(width: 680, height: 480), CGSize(width: 980, height: 600), nil),
++    // As wide as it is, whatever anybody asks: a settings window.
++    ("Preview", CGSize(width: 723, height: 400), CGSize(width: 723, height: 650), CGSize(width: 723, height: 2000)),
++  ]
++
++  /// The keys a person presses, by how often.
++  private static let keys: [(weight: Int, value: String)] = [
++    (12, "dock left"), (12, "dock right"), (6, "dock top"), (8, "dock bottom"), (12, "toggle-float"), (5, "arrange"), (4, "float-all"),
++    (12, "zoom"), (8, "out"), (6, "in"), (6, "neighbor left"), (6, "neighbor right"), (10, "home"), (10, "show-all"), (6, "desktop"),
++    (6, "back"), (3, "forward"), (4, "focus left"), (4, "focus right"), (3, "focus up"), (3, "focus down"), (4, "grow"), (4, "shrink"),
++    (2, "balance"), (2, "rotate"), (2, "mirror"), (10, "undo"), (3, "redo"), (2, "save-view 1"), (3, "view 1"), (1, "save-view 2"),
++    (2, "view 2"), (1, "minimap"),
++  ]
++
++  /// What is in the menu and on no key, or is refused as a key by the harness.
++  private static let menu: [(weight: Int, value: String)] = [
++    (4, "toggle-pin"), (3, "toggle-pause"), (2, "hold"), (2, "release"), (6, "move-to-display next"), (2, "float-all-here"), (1, "quit"),
++    (2, "arrange-all"),
++  ]
++
++  mutating func startOrdinaryWalk() {
++    planned = [.displays(desk.displays, .never)]
++    let before = random.int(0...4)
++    for _ in 0..<before { planned.append(.open(ordinaryWindow(on: desk.displays))) }
++    planned.append(.launch)
++    planned.append(.settle)
++  }
++
++  private mutating func ordinaryWindow(on displays: [DisplaySnapshot]) -> ChaosAction.NewWindow {
++    let index = random.int(0...(Self.realApps.count - 1))
++    let app = Self.realApps[index]
++    let visible = (random.pick(displays) ?? FakeWindowSystem.standardDisplay).visibleFrame
++    var size = CGSize(
++      width: (app.opens.width * CGFloat(random.int(70...120)) / 100).rounded(), height: (app.opens.height * CGFloat(random.int(70...120)) / 100).rounded())
++    size.width = min(max(size.width, app.minimum.width), max(visible.width, app.minimum.width))
++    size.height = min(max(size.height, app.minimum.height), max(visible.height, app.minimum.height))
++    if let most = app.maximum { size = CGSize(width: min(size.width, most.width), height: min(size.height, most.height)) }
++    let origin = CGPoint(
++      x: random.points(visible.minX, max(visible.minX, visible.maxX - size.width)), y: random.points(visible.minY, max(visible.minY, visible.maxY - size.height)))
++    var new = ChaosAction.NewWindow(id: WindowID(nextWindow), app: app.name, pid: Int32(1000 + index), frame: CGRect(origin: origin, size: size))
++    nextWindow += 1
++    (new.minimum, new.maximum) = (app.minimum, app.maximum)
++    return new
++  }
++
++  /// A moment goes by, as it does between two things a person does: macOS reports, short timers run.
++  private mutating func thenAMoment(_ actions: [ChaosAction] = []) {
++    var rest = actions
++    if random.chance(85) { rest += [.react, .advance(random.pick([0.3, 0.5, 1, 1, 5])!), .react] }
++    planned.insert(contentsOf: rest, at: 0)
++  }
++
++  private mutating func existing(_ world: ChaosRunner, _ preference: Preference = .any) -> WindowID? {
++    let controller = world.controller
++    let all = world.system.windows.keys.sorted()
++    switch preference {
++    case .inView: return random.pick(all.filter { !controller.parked.contains($0) && world.system.windows[$0]!.snapshot.isPresent })
++    case .floating: return random.pick(all.filter { id in controller.workspaces.values.contains { $0.isFloating(id) } })
++    case .docked: return random.pick(all.filter { id in controller.workspaces.values.contains { $0.isDocked(id) } })
++    case .any: return random.pick(all)
++    }
++  }
++
++  mutating func ordinaryNext(_ world: ChaosRunner) -> ChaosAction {
++    if !planned.isEmpty { return planned.removeFirst() }
++    let system = world.system
++    guard world.isRunning else {
++      if !world.isPaused { return .launch }
++      // Paused, a person goes on working for a while.
++      switch random.int(0...5) {
++      case 0, 1: return .command("toggle-pause")
++      case 2: return existing(world).map { .focus($0) } ?? .flush
++      case 3: return .open(ordinaryWindow(on: system.displayList))
++      default: return .advance(1)
++      }
++    }
++    enum Kind { case open, close, minimize, hide, click, commandTab, drag, edge, seam, tile, key, hold, menu, time, fullScreen, displays, cursor, summon }
++    let windows = system.windows.count
++    let tiles = world.harness.overlays.tiles.values.reduce(0) { $0 + $1.count }
++    let seams = world.harness.overlays.seams.values.reduce(0) { $0 + $1.count }
++    let kind =
++      random.pick(weighted: [
++        (windows < 3 ? 100 : windows < 7 ? 30 : 4, Kind.open), (windows > 2 ? 14 : 2, .close), (14, .minimize), (5, .hide), (50, .click),
++        (30, .commandTab), (40, .drag), (14, .edge), (seams > 0 ? 12 : 0, .seam), (tiles > 0 ? 24 : 0, .tile), (300, .key), (10, .hold),
++        (30, .menu), (30, .time), (4, .fullScreen), (desk.kind == .both ? 10 : 0, .displays), (16, .cursor), (6, .summon),
++      ]) ?? .time
++    switch kind {
++    case .open:
++      let new = ordinaryWindow(on: system.displayList)
++      thenAMoment([.focus(new.id)])
++      return .open(new)
++    case .close:
++      guard let window = existing(world, .inView) else { return .flush }
++      thenAMoment()
++      return .close(window)
++    case .minimize:
++      guard let window = existing(world) else { return .flush }
++      let minimized = system.windows[window]!.snapshot.isMinimized
++      // Half the time straight back out of the Dock.
++      if !minimized, random.chance(50) { thenAMoment([.react, .advance(1), .react, .minimize(window, false)]) } else { thenAMoment() }
++      return .minimize(window, !minimized)
++    case .hide:
++      guard let window = existing(world) else { return .flush }
++      let snapshot = system.windows[window]!.snapshot
++      if !snapshot.isHidden, random.chance(50) { thenAMoment([.react, .advance(1), .react, .hide(pid: snapshot.pid, false)]) } else { thenAMoment() }
++      return .hide(pid: snapshot.pid, !snapshot.isHidden)
++    case .click:
++      guard let window = existing(world, .inView) else { return .flush }
++      thenAMoment()
++      return .focus(window)
++    case .commandTab:
++      // Onto any window of any app, in view or not.
++      guard let window = existing(world) else { return .flush }
++      thenAMoment()
++      // The Accessibility layer says which window of the app that came forward has the keyboard.
++      return .focus(window)
++    case .drag:
++      guard let window = existing(world, .inView) else { return .flush }
++      var gesture: [ChaosAction] = []
++      for _ in 0..<random.int(1...3) { gesture.append(.carry(point(in: world, dragging: window))) }
++      if random.chance(80) { gesture.append(.advance(random.pick([0.2, 0.3, 0.5])!)) }
++      thenAMoment(gesture + [.release])
++      return .grab(window)
++    case .edge:
++      guard let window = existing(world, .inView), let frame = system.windows[window]?.snapshot.frame else { return .flush }
++      var resized = frame
++      let delta = random.points(-300, 300)
++      switch random.int(0...2) {
++      case 0: resized.size.width = max(frame.width + delta, 100)
++      case 1: resized.size.height = max(frame.height + delta, 80)
++      default: resized = CGRect(x: frame.minX + delta, y: frame.minY, width: max(frame.width - delta, 100), height: frame.height)
++      }
++      thenAMoment()
++      return .edge(window, resized, hold: false)
++    case .seam:
++      guard let display = random.pick(world.harness.overlays.seams.filter { !$0.value.isEmpty }.keys.sorted()) else { return .flush }
++      thenAMoment()
++      return .seam(display, index: random.int(0...(world.harness.overlays.seams[display]!.count - 1)), delta: Double(random.int(-300...300)))
++    case .tile:
++      guard let tile = random.pick(world.harness.overlays.tiles.sorted(by: { $0.key < $1.key }).flatMap(\.value)) else { return .flush }
++      thenAMoment()
++      return .tile(tile.display, tile.node)
++    case .key:
++      // Down and up again.
++      let line = random.pick(weighted: Self.keys)!
++      // A look elsewhere and straight back.
++      let andBack: [ChaosAction] =
++        ["zoom", "out", "in", "home", "desktop", "neighbor left", "neighbor right"].contains(line) && random.chance(30)
++        ? [.react, .advance(1), .react, .key("back", .pressed), .key("back", .released)] : []
++      thenAMoment([.key(line, .released)] + andBack)
++      return .key(line, .pressed)
++    case .hold:
++      // Show Everything kept down is a look around.
++      thenAMoment([.advance(0.5), .advance(0.5), .key("show-all", .released)])
++      return .key("show-all", .pressed)
++    case .menu:
++      let line = random.pick(weighted: Self.menu)!
++      thenAMoment()
++      return ["quit", "toggle-pause"].contains(line) ? .command(line) : .via(.menu, line)
++    case .summon:
++      thenAMoment()
++      return .via(.shortcut, "summon \(random.pick(Self.realApps)!.name)")
++    case .time: return random.chance(50) ? .settle : .advance(random.pick([1, 5, 31])!)
++    case .fullScreen:
++      guard let window = existing(world, .inView) else { return .flush }
++      thenAMoment()
++      return .fullScreen(window, !system.windows[window]!.snapshot.isFullScreen)
++    case .displays:
++      desk.plugged = random.pick(Desk.Plugged.allCases.filter { $0 != desk.plugged })!
++      thenAMoment([.settle])
++      return .displays(desk.displays, random.pick([.late, .silent, .first])!)
++    case .cursor: return .cursor(point(in: world))
++    }
++  }
++}
+diff --git a/Sources/ArborTesting/ChaosGenerator.swift b/Sources/ArborTesting/ChaosGenerator.swift
+index 9825e69..9d4666f 100644
+--- a/Sources/ArborTesting/ChaosGenerator.swift
++++ b/Sources/ArborTesting/ChaosGenerator.swift
+@@ -11,8 +11,8 @@ public struct ChaosGenerator {
+   var random: ChaosRandom
+   /// Steps already decided: the setup, and the rest of a gesture that takes several actions. Other
+   /// actions slip in between them now and then, which is where the interesting orders come from.
+-  private var planned: [ChaosAction] = []
+-  private var nextWindow: UInt32 = 101
++  var planned: [ChaosAction] = []
++  var nextWindow: UInt32 = 101
+   /// Some runs have apps that fight back. They make rules about frames moot for their windows and
+   /// keep timers alive, so most runs do without.
+   private let allowsMisbehaviour: Bool
+@@ -21,10 +21,21 @@ public struct ChaosGenerator {
+   private let desks = ProcessInfo.processInfo.environment["ARBOR_CHAOS_DESKS"] != nil
+   private var sizesOnTheDesk: [String: CGSize] = [:]
+   private let twoDisplays = ProcessInfo.processInfo.environment["ARBOR_CHAOS_TWO_DISPLAYS"] != nil
++  /// `ARBOR_CHAOS_ORDINARY=1`: walks a person could take, on a real desk (ChaosGenerator+Ordinary.swift).
++  private let ordinary: Bool
++  var desk: Desk
+ 
+-  public init(seed: UInt64) {
++  public init(seed: UInt64, ordinary: Bool = ProcessInfo.processInfo.environment["ARBOR_CHAOS_ORDINARY"] != nil) {
++    self.ordinary = ordinary
+     random = ChaosRandom(seed: seed)
+     allowsMisbehaviour = random.chance(30)
++    // From a stream of its own, so that the other walks are what they were.
++    var forTheDesk = ChaosRandom(seed: seed &+ 0x5EED)
++    desk = Desk(&forTheDesk)
++    if ordinary {
++      startOrdinaryWalk()
++      return
++    }
+     // A script starts from one standard display, no windows and Arbor not running.
+     if random.chance(50) { planned.append(.displays(arrangement(), .never)) }
+     if random.chance(30) { planned.append(.settings(settingsChange())) }
+@@ -405,6 +416,7 @@ public struct ChaosGenerator {
+   // MARK: The next action
+ 
+   public mutating func next(_ world: ChaosRunner) -> ChaosAction {
++    if ordinary { return ordinaryNext(world) }
+     if !planned.isEmpty, twoDisplays || random.chance(80) { return planned.removeFirst() }
+     guard world.isRunning else { return world.isPaused ? whilePaused(world) : whileStopped(world) }
+ 
+diff --git a/Sources/ArborTesting/ChaosInvariants+SevenRules.swift b/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
+new file mode 100644
+index 0000000..473c691
+--- /dev/null
++++ b/Sources/ArborTesting/ChaosInvariants+SevenRules.swift
+@@ -0,0 +1,553 @@
++import ArborCore
++import ArborKit
++import CoreGraphics
++import Foundation
++
++/// The product's rules about what a person sees, as nets over random walks. Each asks what the window system saw, not what the
++/// controller believes, and each has a control in `ChaosSevenRulesTests` that fails when the net is cut.
++///
++/// | Rule | Net |
++/// |---|---|
++/// | Nothing moves until the person docks something | `moved-before-any-dock`, `fetched-before-any-dock`, `moved-at-launch`, `moved-at-resume`, `start-took-out-of-view`, `pause-and-resume-moved`, `there-and-back-moved`, `moved-unasked` |
++/// | No jolts: a window moves once, to where it ends up | `moved-twice`, `moved-again`; both with `-sizing` where its app refused a size, `-sizing-again` where it had refused before |
++/// | The window you switch to comes to the front and into view | `switched-to-out-of-view`, `app-switch-out-of-view`, `switched-to-partly-out`, `switched-to-behind` |
++/// | Quitting, Float All and pause give windows their own earlier sizes back | `size-not-given-back`, `size-kept-through-a-pause` |
++/// | After any way home no window is less than wholly in view | `home-not-whole`, `home-behind-the-dock`, `home-leaves-out` |
++extension ChaosRunner {
++  /// What the nets remember from step to step.
++  struct SevenRules {
++    var moveLogMark = 0
++    var layoutsBefore: [DisplayID: Layout] = [:]
++    var focusedBefore: WindowID?
++    var pausedBefore = false
++    var fullScreenBefore: Set<WindowID> = []
++    /// Arbor's moves of each window that a person could see, since somebody last did something. Time passing is nobody.
++    var seenSinceSomebodyActed: [WindowID: [FakeWindowSystem.Move]] = [:]
++    /// The windows the last thing somebody did was about; nil is all of them. Timers finish that work.
++    var concerned: Set<WindowID>? = []
++    /// The size each window last had of its own: as its app opened it, or as somebody other than Arbor made it while it was not docked.
++    var ownSizes: [WindowID: CGSize] = [:]
++    /// The size it had of its own before its user asked Arbor for another with a key: which of the two Arbor takes for its own is not laid down.
++    var earlierOwnSizes: [WindowID: CGSize] = [:]
++    /// The last thing somebody did was to plug, unplug or rearrange displays, which has rules of its own (`left-its-place`, `moved-for-nothing`).
++    var displaysChangedLast = false
++    /// Where every window was and what was out of view before the last thing somebody did, kept through a pause in which nobody does anything.
++    var beforeThePause: (frames: [WindowID: CGRect], parked: Set<WindowID>)?
++    /// Where everything was, at rest, before the last thing somebody did, and what that was.
++    var there: (frames: [WindowID: CGRect], action: ChaosAction, views: [DisplayID: NodeID])?
++    /// The last thing somebody did took the one before it back: where everything has to be again once it has come to rest.
++    var backDue: (frames: [WindowID: CGRect], there: ChaosAction)?
++    /// The window its user switched to last, until somebody does something else; and whether macOS said which window it was, or only
++    /// that another app came forward.
++    var switchedTo: WindowID?
++    var onlyTheAppWasReported = false
++    /// Windows whose app has refused to go below a size, or above one, in an earlier step: Arbor has had its chance to learn.
++    var refusedLess: Set<WindowID> = []
++    var refusedMore: Set<WindowID> = []
++  }
++
++  /// The detector of docs/VIABLE.md, section 5, that a rule of the walks stands for: one vocabulary on Linux and on a Mac.
++  public nonisolated static func detector(for rule: String) -> String? {
++    let table: [(prefix: String, detector: String)] = [
++      ("moved-twice", "jolt"), ("moved-again", "jolt"), ("moved-", "moved-unasked"), ("fetched-", "moved-unasked"), ("there-and-back", "moved-unasked"),
++      ("pause-and-resume", "moved-unasked"), ("left-its-place", "moved-unasked"), ("start-took", "lost"), ("switched-to-behind", "behind"),
++      ("switched-to", "focus"), ("app-switch", "focus"), ("size-", "size-lost"), ("home-", "lost"), ("lost", "lost"), ("out-of-reach", "lost"),
++      ("placed-", "lost"), ("vanished", "lost"), ("parked-on-the-desktop", "lost"), ("restless", "stuck"), ("given-up", "stuck"),
++    ]
++    return table.first { rule.hasPrefix($0.prefix) }?.detector
++  }
++
++  /// How often each net asked its question, over every runner of the process: a net that never asks catches nothing.
++  public nonisolated(unsafe) static var questionsAsked: [String: Int] = [:]
++
++  private func asked(_ net: String) { Self.questionsAsked[net, default: 0] += 1 }
++
++  // MARK: Before and after each step
++
++  /// Whether nobody does anything in `action`: time passes, and macOS reports what Arbor itself did.
++  func isOnlyTimePassing(_ action: ChaosAction) -> Bool {
++    switch action {
++    case .flush, .advance, .react, .save: true
++    // It lets go of the mouse first.
++    case .settle: system.dragging == nil && system.resizing == nil && !system.mouseDown
++    default: false
++    }
++  }
++
++  func noteBeforeTheSevenRules(_ action: ChaosAction) {
++    seven.moveLogMark = system.moveLog.count
++    seven.layoutsBefore = controller.layouts
++    seven.focusedBefore = system.focused
++    seven.pausedBefore = isPaused
++    seven.fullScreenBefore = Set(system.windows.values.lazy.filter(\.snapshot.isFullScreen).map(\.snapshot.id))
++    guard !isOnlyTimePassing(action) else { return }
++    seven.seenSinceSomebodyActed = [:]
++    seven.concerned = windowsConcerned(by: action)
++    seven.switchedTo = nil
++    if case .displays = action { seven.displaysChangedLast = true } else { seven.displaysChangedLast = false }
++    // A key that comes up again belongs to its going down.
++    if case .key(_, .released) = action { return }
++    seven.backDue = seven.there.flatMap { takesBack(action, $0.action) ? ($0.frames, $0.action) : nil }
++    let atRest = isRunning && !isWaitingForALayout() && system.dragging == nil && system.resizing == nil && !system.mouseDown
++    seven.there = atRest ? (system.windows.mapValues(\.snapshot.frame), action, controller.workspaces.mapValues(\.camera)) : nil
++    if isRunning, !isWaitingForALayout(), system.dragging == nil, system.resizing == nil {
++      seven.beforeThePause = (system.windows.mapValues(\.snapshot.frame), controller.parked)
++    } else if !isPaused || (action.commandLine.flatMap { try? Command.parse($0) })?.endsPause != true {
++      // Something was done during the pause, or there is none.
++      seven.beforeThePause = nil
++    }
++  }
++
++  /// The windows `action` is about. Nil where it is about all of them, or where that cannot be told from its words.
++  private func windowsConcerned(by action: ChaosAction) -> Set<WindowID>? {
++    func windows(of pid: Int32) -> Set<WindowID> { Set(system.windows.values.lazy.filter { $0.snapshot.pid == pid }.map(\.snapshot.id)) }
++    let inHand = Set([system.dragging, system.resizing].compactMap { $0 })
++    switch action {
++    case .open(let new): return [new.id]
++    case .close, .quitApp, .focusNothing, .cursor, .press, .commandKey, .save, .flush, .advance, .react: return []
++    case .minimize(let window, _), .space(let window, _), .fullScreen(let window, _), .title(let window, _), .limits(let window, _, _),
++      .behave(let window, _), .move(let window, _), .focus(let window), .switchApp(let window), .backgroundFocus(let window),
++      .listed(let window, _):
++      return [window]
++    case .grab(let window), .edge(let window, _, _): return inHand.union([window])
++    case .carry, .release, .loseRelease, .settle: return inHand
++    case .hide(let pid, _), .hang(let pid, _): return windows(of: pid)
++    case .activate(let bundleID): return Set(system.windows.values.lazy.filter { $0.snapshot.bundleID == bundleID }.map(\.snapshot.id))
++    case .openTab(let a, let b), .selectTab(let a, let b), .closeTab(let a, let b), .renumber(let a, let b): return [a, b]
++    case .command, .via, .key, .url: return windowsConcerned(byCommand: action.commandLine ?? "")
++    case .tile, .palette, .seam, .pinch, .displays, .settings, .wayBack, .crash, .launch, .sleep, .corrupt: return nil
++    }
++  }
++
++  /// The windows a command names, and the one that has the keyboard, which it means when it names none.
++  private func windowsConcerned(byCommand line: String) -> Set<WindowID>? {
++    guard let command = try? Command.parse(line) else { return [] }
++    if command.isQuery { return [] }
++    switch command {
++    case .dock, .dockBeside, .float, .toggleFloat, .resize, .pin, .unpin, .togglePin, .zoom, .reveal, .swap, .swapWindows, .grow, .shrink,
++      .moveToDisplay, .frameRect:
++      let named = line.split(separator: " ").compactMap { UInt32($0) }.map { WindowID($0) }
++      return Set(named + [system.focused].compactMap { $0 })
++    case .saveView, .name, .unname, .askName, .showShortcuts, .minimap, .checkForUpdates, .welcome, .checkSetup, .hold, .holdStill, .trace,
++      .launchAtLogin, .passThrough, .focusDisplay:
++      return []
++    default: return nil
++    }
++  }
++
++  /// After the action, before the rules are asked: whose size is whose.
++  func noteAfterTheSevenRules(_ action: ChaosAction, movesBefore: [WindowID: Int]) {
++    seven.ownSizes = seven.ownSizes.filter { system.windows[$0.key] != nil || system.backgroundTabs[$0.key] != nil }
++    switch action {
++    case .renumber(let old, let new): if system.windows[new] != nil, seven.ownSizes[new] == nil { seven.ownSizes[new] = seven.ownSizes[old] }
++    // A native tab has the size of its group.
++    case .openTab(let new, let front), .selectTab(let new, let front): if let size = seven.ownSizes[front] { seven.ownSizes[new] = size }
++    case .closeTab(let front, let next): if let size = seven.ownSizes[front] { seven.ownSizes[next] = size }
++    case .focus(let window): if system.windows[window] != nil { (seven.switchedTo, seven.onlyTheAppWasReported) = (window, false) }
++    case .switchApp(let window):
++      // Within one app macOS says which window has the keyboard.
++      if let pid = system.windows[window]?.snapshot.pid, seven.focusedBefore.flatMap({ system.windows[$0]?.snapshot.pid }) != pid {
++        (seven.switchedTo, seven.onlyTheAppWasReported) = (window, true)
++      }
++    case .limits(let window, _, _), .behave(let window, _):
++      seven.refusedLess.remove(window)
++      seven.refusedMore.remove(window)
++    default: break
++    }
++    seven.earlierOwnSizes = seven.earlierOwnSizes.filter { system.windows[$0.key] != nil }
++    for (id, fake) in system.windows {
++      guard let known = seven.ownSizes[id] else {
++        seven.ownSizes[id] = (fake.home ?? fake.snapshot.frame).size
++        continue
++      }
++      // What macOS makes of a window to fit it onto the display that is left is nobody's wish.
++      if case .displays = action { continue }
++      // Full screen is no size of its own, and what macOS gives back afterwards is what the window had before.
++      guard fake.movesNotArbors != movesBefore[id], let home = fake.home, let before = framesBefore[id], home.size != before.size,
++        !fake.snapshot.isFullScreen, !seven.fullScreenBefore.contains(id)
++      else { continue }
++      // The edges of a docked window move the gaps between slots.
++      let wasDocked = wasRunningBefore && workspacesBefore.values.contains { $0.isDocked(id) }
++      if !wasDocked, home.size != known {
++        seven.ownSizes[id] = home.size
++        seven.earlierOwnSizes[id] = nil
++      }
++    }
++    // A size its user asked Arbor for is its own as well.
++    if action.isACommand, let line = action.commandLine, let command = try? Command.parse(line) {
++      switch command {
++      case .grow, .shrink, .resize, .frameRect:
++        for window in Set(movesSeenInThisStep.map(\.window)) where controller.workspaces.values.contains(where: { $0.isFloating(window) }) {
++          if seven.concerned?.contains(window) == true, let frame = system.windows[window]?.snapshot.frame {
++            if seven.earlierOwnSizes[window] == nil { seven.earlierOwnSizes[window] = seven.ownSizes[window] }
++            seven.ownSizes[window] = frame.size
++          }
++        }
++      default: break
++      }
++    }
++  }
++
++  // MARK: What all the nets ask of a window
++
++  /// Arbor arranges it, its app does as it is asked, and a person can see it.
++  private func isFairGame(_ window: WindowID) -> FakeWindowSystem.FakeWindow? {
++    guard let fake = system.windows[window], fake.snapshot.isPresent, !fake.snapshot.isFullScreen, cooperates(fake),
++      controller.filter.manages(fake.snapshot), window != system.dragging, window != system.resizing, window != inHandBefore,
++      AppRule.firstMatch(in: controller.settings.rules, bundleID: fake.snapshot.bundleID, title: fake.snapshot.title)?.action != .ignore
++    else { return nil }
++    return fake
++  }
++
++  /// Arbor's moves in this step that changed what a person sees: not one that left the window as it was, nor one from out of view to out of view.
++  private var movesSeenInThisStep: [FakeWindowSystem.Move] {
++    guard seven.moveLogMark < system.moveLog.count else { return [] }
++    return system.moveLog[seven.moveLogMark...].filter { $0.before != $0.after && (isInView($0.before) || isInView($0.after)) }
++  }
++
++  private func isWaitingForALayout() -> Bool {
++    system.hasHeldEchoes
++      || harness.scheduler.pendingKeys.contains { key in
++        ["space-", "enforce-", "landed-", "displays-blinked", "focus", "back-from-full-screen", "summon-wait", "pending-slots", "sole-float-after-launch"]
++          .contains { key.hasPrefix($0) }
++      }
++  }
++
++  func sevenRulesViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
++    onceViolations(after: action, &problems)
++    unaskedViolations(after: action, &problems)
++    pauseAndResumeViolations(after: action, &problems)
++    thereAndBackViolations(&problems)
++    startViolations(after: action, &problems)
++    switchedToViolations(&problems)
++  }
++
++  // MARK: No jolts: a window moves once, to where it ends up
++
++  func onceViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
++    // Several things done in one step.
++    if case .wayBack = action {
++      seven.seenSinceSomebodyActed = [:]
++      return
++    }
++    let timeOnly = isOnlyTimePassing(action)
++    // A pause or a hold whose time was up: what follows is its own story, however long ago the last one was.
++    if timeOnly, seven.pausedBefore != isPaused || holdBefore != controller.holdLevel { seven.seenSinceSomebodyActed = [:] }
++    // So is anything after seconds in which nothing moved.
++    if case .advance(let seconds) = action, seconds >= 2 { seven.seenSinceSomebodyActed = [:] }
++    let seen = movesSeenInThisStep
++    guard !seen.isEmpty else { return }
++    for move in seen { seven.seenSinceSomebodyActed[move.window, default: []].append(move) }
++    for window in Set(seen.map(\.window)).sorted() {
++      guard isFairGame(window) != nil, presentBefore.contains(window), let moves = seven.seenSinceSomebodyActed[window] else { continue }
++      asked("once")
++      guard moves.count > 1 else { continue }
++      // Its app would not take a size. The first time Arbor could not have known.
++      let less = moves.contains { $0.after.width > $0.requested.width + 1 || $0.after.height > $0.requested.height + 1 }
++      let more = moves.contains { $0.after.width < $0.requested.width - 1 || $0.after.height < $0.requested.height - 1 }
++      let refused = less || more
++      let knew = (less && seven.refusedLess.contains(window)) || (more && seven.refusedMore.contains(window))
++      let path = ([moves[0].before] + moves.map(\.after)).map(\.brief).joined(separator: " → ")
++      problems.append(
++        .init(
++          (timeOnly ? "moved-again" : "moved-twice") + (knew ? "-sizing-again" : refused ? "-sizing" : ""),
++          "Arbor moved \(window) \(moves.count) times for one thing that happened: \(path)"))
++    }
++    for move in seen {
++      if move.after.width > move.requested.width + 1 || move.after.height > move.requested.height + 1 { seven.refusedLess.insert(move.window) }
++      if move.after.width < move.requested.width - 1 || move.after.height < move.requested.height - 1 { seven.refusedMore.insert(move.window) }
++    }
++  }
++
++  // MARK: Nothing moves that was not asked to
++
++  private static func nothingIsArranged(_ workspaces: [DisplayID: Workspace], _ parked: Set<WindowID>) -> Bool {
++    parked.isEmpty
++      && workspaces.values.allSatisfy {
++        $0.tree.allWindows.isEmpty && $0.stashedWindows.isEmpty && $0.pinnedWindows.isEmpty && $0.summoned == nil
++      }
++  }
++
++  /// The ways home, and the commands that lay everything out afresh or take an arrangement back.
++  private func asksForEverything(_ action: ChaosAction) -> Bool {
++    guard let line = action.commandLine, let command = try? Command.parse(line) else { return false }
++    switch command {
++    case .relayout, .resume, .quit, .undo, .redo, .arrange, .arrangeAll, .layout: return true
++    default: return command.bringsWindowsBack
++    }
++  }
++
++  func unaskedViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
++    if case .wayBack = action { return }
++    let seen = movesSeenInThisStep
++    let untouched = Self.nothingIsArranged(workspacesBefore, parkedBefore) && Self.nothingIsArranged(controller.workspaces, controller.parked)
++    if untouched { asked("before-any-dock") }
++    guard !seen.isEmpty else { return }
++    let resumed = seven.pausedBefore && !isPaused
++    for window in Set(seen.map(\.window)).sorted() {
++      guard let fake = isFairGame(window), let before = framesBefore[window], before != fake.snapshot.frame else { continue }
++      let named = seven.concerned?.contains(window) == true
++      let whatHappened = "Arbor moved \(window) from \(before.brief) to \(fake.snapshot.frame.brief)"
++      let showedBefore = Self.area(of: before, showingOn: system.displayList)
++      if untouched {
++        // A command that names a window is somebody asking, and so is one that asks for everything.
++        if action.isACommand, named || asksForEverything(action) { continue }
++        if seven.displaysChangedLast { continue }
++        problems.append(
++          .init(
++            showedBefore < 0.5 * before.area ? "fetched-before-any-dock" : "moved-before-any-dock",
++            "\(whatHappened), and nothing has been docked, pinned or summoned"))
++        continue
++      }
++      guard let display = controller.workspaceID(containing: window), let workspace = controller.workspaces[display] else { continue }
++      // What a crash left out of view is fetched. What was wholly in view and is not docked stays where it is.
++      if action == .launch || resumed {
++        asked("launch-or-resume")
++        // The view that comes back may not include the Desktop: then what floats goes out of view with it.
++        if workspace.isFloating(window), !workspace.isStashed(window), showedBefore >= 0.995 * before.area, !parkedBefore.contains(window),
++          !controller.parked.contains(window)
++        {
++          problems.append(.init(action == .launch ? "moved-at-launch" : "moved-at-resume", "\(whatHappened), where it floats as it did"))
++        }
++        continue
++      }
++      guard let concerned = seven.concerned, !concerned.contains(window), wasRunningBefore, presentBefore.contains(window),
++        controller.displays == displaysBefore, let earlier = workspacesBefore[display],
++        // The display looks as it looked, and the window is what it was on it.
++        seven.layoutsBefore[display] == controller.layouts[display], earlier.isDocked(window) == workspace.isDocked(window),
++        earlier.isFloating(window) == workspace.isFloating(window), earlier.isStashed(window) == workspace.isStashed(window),
++        parkedBefore.contains(window) == controller.parked.contains(window),
++        // Nothing was owed it.
++        !owedAMoveBefore.contains(window), !owedAPlaceBefore.contains(window), !owedTheWayBackBefore.contains(window)
++      else { continue }
++      asked("unasked")
++      // A docked window that somebody had moved out of its slot is put back.
++      if workspace.isDocked(window), let slot = seven.layoutsBefore[display]?.windowFrames[window],
++        !before.approximatelyEquals(slot, tolerance: Self.slotTolerance), fake.snapshot.frame.approximatelyEquals(slot, tolerance: Self.slotTolerance)
++      {
++        continue
++      }
++      problems.append(.init("moved-unasked", "\(whatHappened); what happened was not about it, and \(display) is laid out as it was"))
++    }
++  }
++
++  /// Whether `back` undoes `there` as a person understands it: out of the Dock again, shown again, out of full screen again, the view back
++  /// where it was.
++  private func takesBack(_ back: ChaosAction, _ there: ChaosAction) -> Bool {
++    switch (there, back) {
++    case (.minimize(let a, true), .minimize(let b, false)), (.fullScreen(let a, true), .fullScreen(let b, false)),
++      (.space(let a, false), .space(let b, true)):
++      return a == b
++    case (.hide(let a, true), .hide(let b, false)): return a == b
++    default:
++      // A key goes down and comes up: the command runs once.
++      guard let first = there.commandLine.flatMap({ try? Command.parse($0) }), let second = back.commandLine.flatMap({ try? Command.parse($0) }),
++        second == .back, controller.holdLevel == nil
++      else { return false }
++      switch first {
++      case .zoom, .stepIn, .stepOut, .neighbor, .home, .showAll, .desktop, .goToView:
++        // It did move a view, and only that.
++        return seven.there.map { $0.views != controller.workspaces.mapValues(\.camera) } == true
++      default: return false
++      }
++    }
++  }
++
++  /// There and back is nothing: into the Dock and out, hidden and shown, full screen and back, a move of the view and Back. Every window is
++  /// where it was.
++  func thereAndBackViolations(_ problems: inout [InvariantViolation]) {
++    guard let due = seven.backDue, isRunning, !isWaitingForALayout(), system.dragging == nil else { return }
++    seven.backDue = nil
++    asked("there-and-back")
++    for (window, frame) in due.frames.sorted(by: { $0.key < $1.key }) {
++      guard let fake = isFairGame(window), !fake.snapshot.frame.approximatelyEquals(frame, tolerance: 1),
++        isInView(frame) || isInView(fake.snapshot.frame), fake.placeIsArborsDoing
++      else { continue }
++      problems.append(
++        .init("there-and-back-moved", "\(window) was at \(frame.brief) before `\(due.there.text)`, which has been taken back, and is at \(fake.snapshot.frame.brief)"))
++    }
++  }
++
++  /// A start takes no window out of view that is in view when Arbor starts.
++  func startViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
++    guard action == .launch, isRunning, !wasRunningBefore, !seven.pausedBefore, !system.displayList.isEmpty else { return }
++    asked("start")
++    for window in system.windows.keys.sorted() {
++      guard let fake = isFairGame(window), presentBefore.contains(window), let before = framesBefore[window],
++        Self.area(of: before, showingOn: system.displayList) >= 0.5 * before.area, !isInView(fake.snapshot.frame) || controller.parked.contains(window)
++      else { continue }
++      problems.append(.init("start-took-out-of-view", "\(window) was in view at \(before.brief) when Arbor started, and Arbor has put it at \(fake.snapshot.frame.brief)"))
++    }
++  }
++
++  /// A pause that ends with nothing done meanwhile cannot be seen (F40): everything is where it was before it.
++  func pauseAndResumeViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
++    guard seven.pausedBefore, isRunning, let before = seven.beforeThePause, !isWaitingForALayout() else { return }
++    asked("pause-and-resume")
++    for (window, frame) in before.frames.sorted(by: { $0.key < $1.key }) {
++      guard let fake = isFairGame(window), !fake.snapshot.frame.approximatelyEquals(frame, tolerance: 1),
++        isInView(frame) || isInView(fake.snapshot.frame)
++      else { continue }
++      problems.append(
++        .init("pause-and-resume-moved", "\(window) was at \(frame.brief) before a pause in which nothing happened, and is at \(fake.snapshot.frame.brief) after it"))
++    }
++  }
++
++  // MARK: The window you switch to comes to the front and into view
++
++  func switchedToViolations(_ problems: inout [InvariantViolation]) {
++    guard let window = seven.switchedTo, system.focused == window, let fake = isFairGame(window), fake.snapshot.isOnActiveSpace,
++      !system.displayList.isEmpty, system.dragging == nil, system.resizing == nil, !isWaitingForALayout(),
++      // A held view turns the keyboard away, which is what it is for (F58).
++      controller.holdLevel == nil, holdBefore == nil, !controller.aPeekIsUnderWay,
++      !controller.windowsOwedAMove.contains(window)
++    else { return }
++    asked("switched-to")
++    let frame = fake.snapshot.frame
++    let showing = Self.area(of: frame, showingOn: system.displayList)
++    let arborPutItThere = fake.placeIsArborsDoing && fake.lastRequest?.took == frame && !fake.groundHasShifted
++    if controller.parked.contains(window)
++      || (arborPutItThere && showing < 0.5 * min(frame.area, system.displayList.map(\.visibleFrame.area).max() ?? 0)
++        && !(userPlaces[window] ?? []).contains { place in system.displayList.contains { place.allows(frame, on: $0) } })
++    {
++      problems.append(
++        .init(
++          seven.onlyTheAppWasReported ? "app-switch-out-of-view" : "switched-to-out-of-view",
++          "its user switched to \(window), which has the keyboard and is at \(frame.brief), out of view"))
++    } else if showing < 0.995 * frame.area, arborPutItThere,
++      let display = Self.display(showingMostOf: frame, among: system.displayList),
++      fake.minimumSize.width <= display.visibleFrame.width, fake.minimumSize.height <= display.visibleFrame.height,
++      !(userPlaces[window] ?? []).contains(where: { $0.allows(frame, on: display) })
++    {
++      problems.append(
++        .init(
++          "switched-to-partly-out",
++          "its user switched to \(window), which has the keyboard, and Arbor has it at \(frame.brief), \(Int((100 * showing / frame.area).rounded())) % in view"))
++    }
++    // Whatever Arbor raised since lies over it. A pinned or summoned window is meant to.
++    let above = system.windowsFrontToBack().prefix { $0 != window }
++    for other in above {
++      guard let cover = system.windows[other], cover.snapshot.isPresent, cover.snapshot.frame.insetBy(dx: 2, dy: 2).overlaps(frame),
++        !controller.workspaces.values.contains(where: { $0.staysInView(other) })
++      else { continue }
++      problems.append(.init("switched-to-behind", "its user switched to \(window), and \(other) at \(cover.snapshot.frame.brief) lies in front of it"))
++    }
++  }
++
++  // MARK: The ways home
++
++  /// What a way home promises, asked once it has been taken and everything has come to rest. `displays` are the ones it was about;
++  /// nil is all of them.
++  func wayHomeViolations(_ name: String, on displays: Set<DisplayID>?, givesSizesBack: Bool) -> [InvariantViolation] {
++    guard !system.displayList.isEmpty else { return [] }
++    var problems: [InvariantViolation] = []
++    let movedNow = Set(movesSeenInThisStep.map(\.window))
++    for window in system.windows.keys.sorted() {
++      guard let fake = isFairGame(window), !fake.groundHasShifted else { continue }
++      let frame = fake.snapshot.frame
++      let home = controller.workspaceID(containing: window)
++      if let displays, isRunning { guard let home, displays.contains(home) else { continue } }
++      guard let display = Self.display(showingMostOf: frame, among: system.displayList) ?? system.displayList.first(where: { $0.id == home })
++      else { continue }
++      let visible = display.visibleFrame
++      asked("way-home")
++      // Sent away on purpose, it comes when it is summoned (F53).
++      let stashed = isRunning && controller.workspaces.values.contains { $0.isStashed(window) }
++      if isRunning, controller.parked.contains(window) {
++        // A window too large for its slot shows as a tile, which is there to be seen and clicked.
++        let isATile = controller.layouts.values.contains { $0.tiles.contains { $0.windows.contains(window) } }
++        if !stashed, !isATile, !controller.windowsOwedAMove.contains(window) {
++          problems.append(.init("home-leaves-out", "after \(name), \(window) is still out of view, at \(frame.brief)"))
++        }
++        continue
++      }
++      let fits =
++        fake.minimumSize.width <= visible.width && fake.minimumSize.height <= visible.height && frame.width <= visible.width + 1
++        && frame.height <= visible.height + 1
++      let showsAll = Self.area(of: frame, showingOn: system.displayList) >= 0.995 * frame.area
++      func overhang() -> String {
++        "hangs \(Self.overhang(of: frame, over: visible).map { Int($0.rounded()) }) points over the left, top, right and bottom of what \(display.id) shows, \(visible.brief)"
++      }
++      if !showsAll {
++        // Where somebody left it hanging over an edge, it may go on hanging as far. And where Arbor never put it, it is its person's or macOS's.
++        if fits, fake.lastRequest?.took == frame, !(userPlaces[window] ?? []).contains(where: { $0.allows(frame, on: display) }) {
++          problems.append(.init("home-not-whole", "after \(name), \(window) is at \(frame.brief) and \(overhang())"))
++        }
++      } else if fits, movedNow.contains(window), fake.lastRequest?.took == frame, display.frame.contains(frame),
++        !visible.insetBy(dx: -1, dy: -1).contains(frame),
++        // Not where somebody left it as far behind them.
++        !(fake.home.map { zip(Self.overhang(of: frame, over: visible), Self.overhang(of: $0, over: visible)).allSatisfy { $0 <= $1 + 1 } } ?? false)
++      {
++        // What Arbor has just placed is clear of the Dock and the menu bar as well.
++        problems.append(.init("home-behind-the-dock", "after \(name), Arbor has put \(window) at \(frame.brief), where it \(overhang())"))
++      }
++      guard givesSizesBack, let own = seven.ownSizes[window] else { continue }
++      asked("sizes")
++      if let earlier = seven.earlierOwnSizes[window], abs(frame.width - earlier.width) <= 1.5, abs(frame.height - earlier.height) <= 1.5 { continue }
++      // What its app allows today, and what the display has room for.
++      var due = CGSize(width: max(own.width, fake.minimumSize.width), height: max(own.height, fake.minimumSize.height))
++      if let most = fake.maximumSize { due = CGSize(width: min(due.width, most.width), height: min(due.height, most.height)) }
++      guard due.width <= visible.width, due.height <= visible.height else { continue }
++      let step = fake.sizeStep ?? (fake.behaviour == .grid ? CGSize(width: 20, height: 20) : .zero)
++      if abs(frame.width - due.width) > max(step.width, 1.5) || abs(frame.height - due.height) > max(step.height, 1.5) {
++        // F40: what is in view at a pause is not touched, so that the pause cannot be seen.
++        let keptOnPurpose = isPaused && !parkedBefore.contains(window)
++        problems.append(
++          .init(
++            keptOnPurpose ? "size-kept-through-a-pause" : "size-not-given-back",
++            "after \(name), \(window) is \(Int(frame.width))×\(Int(frame.height)); its own size was \(Int(due.width))×\(Int(due.height))"))
++      }
++    }
++    return problems
++  }
++
++  /// By how many points `frame` hangs over the left, top, right and bottom of `bounds`.
++  private static func overhang(of frame: CGRect, over bounds: CGRect) -> [CGFloat] {
++    [bounds.minX - frame.minX, bounds.minY - frame.minY, frame.maxX - bounds.maxX, frame.maxY - bounds.maxY].map { max($0, 0) }
++  }
++
++  /// A way home taken as a plain command in the middle of a walk.
++  func wayHomeViolations(after action: ChaosAction) -> [InvariantViolation] {
++    let line: String
++    switch action {
++    case .command(let text), .via(_, let text): line = text
++    default: return []
++    }
++    guard let command = try? Command.parse(line), refusals.isEmpty, wasRunningBefore, holdBefore == nil, !isWaitingForALayout(),
++      system.dragging == nil, system.resizing == nil, inHandBefore == nil
++    else { return [] }
++    // The displays whose view is on everything now.
++    let atHome = Set(controller.workspaces.filter { $0.value.camera == $0.value.tree.root }.keys)
++    switch command {
++    case .quit: return isRunning ? [] : wayHomeViolations(line, on: nil, givesSizesBack: true)
++    case .pause, .togglePause: return isPaused ? wayHomeViolations(line, on: nil, givesSizesBack: true) : []
++    case .floatAll: return wayHomeViolations(line, on: nil, givesSizesBack: true)
++    case .floatAllHere:
++      let emptied = Set(controller.workspaces.filter { $0.value.tree.allWindows.isEmpty && workspacesBefore[$0.key]?.tree.allWindows.isEmpty == false }.keys)
++      return wayHomeViolations(line, on: emptied, givesSizesBack: true)
++    case .home, .showAll:
++      let moved = atHome.filter { workspacesBefore[$0]?.camera != controller.workspaces[$0]?.camera || seven.layoutsBefore[$0] != controller.layouts[$0] }
++      return wayHomeViolations(line, on: moved, givesSizesBack: false)
++    default: return []
++    }
++  }
++}
++
++extension ChaosAction {
++  /// The words of the command, if it is one.
++  var commandLine: String? {
++    switch self {
++    case .command(let text), .via(_, let text), .key(let text, _): text
++    case .url(let url): url.replacingOccurrences(of: "arbor://", with: "").replacingOccurrences(of: "/", with: " ")
++    default: nil
++    }
++  }
++
++  /// Somebody asked Arbor for something in words: a shortcut, the menu, the command line, a link.
++  var isACommand: Bool {
++    switch self {
++    case .command, .via, .key, .url: true
++    default: false
++    }
++  }
++}
+diff --git a/Sources/ArborTesting/ChaosInvariants.swift b/Sources/ArborTesting/ChaosInvariants.swift
+index 8c1952f..641158e 100644
+--- a/Sources/ArborTesting/ChaosInvariants.swift
++++ b/Sources/ArborTesting/ChaosInvariants.swift
+@@ -72,6 +72,7 @@ extension ChaosRunner {
+     reachViolations(&problems)
+     wholeViolations(&problems)
+     restingPlaceViolations(after: action, &problems)
++    sevenRulesViolations(after: action, &problems)
+     timerViolations(settled: action == .settle, &problems)
+     untouchedViolations(&problems)
+     // Encoding is slow next to everything else, so a random run checks it now and then. A replay checks it at every step:
+diff --git a/Sources/ArborTesting/ChaosKnownFailures.swift b/Sources/ArborTesting/ChaosKnownFailures.swift
+index 67c7d87..b615f7a 100644
+--- a/Sources/ArborTesting/ChaosKnownFailures.swift
++++ b/Sources/ArborTesting/ChaosKnownFailures.swift
+@@ -5,14 +5,17 @@ public struct ChaosKnownFailure: Sendable {
+   public var rule: String
+   /// Who fixes it, and the pull request if there is one.
+   public var owner: String
++  /// 1: a window is lost and no ordinary way fetches it. 2: an ordinary day meets it and a person minds. 3: a nuisance. 4: hardly seen.
++  /// The viable gate (docs/VIABLE.md) excuses no entry of severity 1 or 2.
++  public var severity: Int
+   /// What a person would see.
+   public var story: String
+   /// Scripts that show it, as `arbor-sim replay` takes them. More than one where hunts gave several: a script depends on much that has
+   /// nothing to do with the bug, and an unrelated change can stop one from getting there.
+   public var scripts: [String]
+ 
+-  public init(rule: String, owner: String, story: String, script: String, _ more: String...) {
+-    (self.rule, self.owner, self.story, self.scripts) = (rule, owner, story, [script] + more)
++  public init(rule: String, owner: String, severity: Int = 3, story: String, script: String, _ more: String...) {
++    (self.rule, self.owner, self.severity, self.story, self.scripts) = (rule, owner, severity, story, [script] + more)
+   }
+ }
+ 
+@@ -159,6 +162,289 @@ extension ChaosRunner {
+         open 110 Terminal pid 1003 at 609 154 1688 1705 min 265 285
+         displays main:0,0,1440,900:0,0,0,0* windows-late
+         """),
++    ChaosKnownFailure(
++      rule: "moved-twice", owner: "rule 3: a refused size costs no second move", severity: 2,
++      story: "A window is docked whose app will not take the slot's size. Arbor has moved the NEIGHBOURS to make the first layout by then, lays out again and moves "
++        + "them a second time. Every second ordinary walk meets it. Also: a floating window squeezed twice by one command.",
++      script: """
++        launch
++        open 102 Terminal pid 1003 at 388 150 543 541
++        dock right
++        open 103 Music pid 1006 at 689 71 854 685 min 854 432
++        dock 103 beside 102 right
++        """,
++      """
++        displays main:0,0,1440,900:25,0,48,0* windows-never
++        open 101 Finder pid 1005 at 302 264 837 449 min 501 300
++        launch
++        focus 101
++        key down dock right
++        open 103 Mail pid 1002 at 289 102 1078 539 min 760 400
++        key down dock top
++        """,
++      """
++        launch
++        open 103 Xcode pid 1004 at 1372 303 824 577 title Draft
++        open 104 Mail pid 1002 at -413 158 554.5 698.25 title Untitled
++        layout Xcode | Terminal
++        """),
++    ChaosKnownFailure(
++      rule: "moved-twice-sizing", owner: "rule 3: a refused size costs no second move", severity: 3,
++      story: "The window whose app refuses the size is itself moved twice: into the corner of its slot, and from there to where it fits (the middle, if it cannot "
++        + "grow). The first time Arbor cannot know.",
++      script: """
++        launch
++        open 101 Preview pid 1007 at 300 200 500 455 max 500 2000
++        dock left
++        """),
++    ChaosKnownFailure(
++      rule: "moved-twice-sizing-again", owner: "rule 3: a refused size costs no second move", severity: 2,
++      story: "The same, though its app has refused in the same way before: a settings window goes corner, then middle, every time it is docked.",
++      script: """
++        launch
++        open 101 Preview pid 1007 at 300 200 500 455 max 500 2000
++        dock left
++        settle
++        toggle-float
++        settle
++        dock right
++        """),
++    ChaosKnownFailure(
++      rule: "moved-again", owner: "rule 3: a refused size costs no second move", severity: 3,
++      story: "Two moves of one window by a layout that a timer runs (a Space that comes back, a tile clicked), or one by the command and one a moment later with "
++        + "nobody touching anything.",
++      script: """
++        displays third:0,0,1440,900:25,0,52,0* windows-silent
++        open 113 Notes pid 1001 at -135 803 721 296
++        launch
++        arrange all
++        tile third 0
++        settle
++        """),
++    ChaosKnownFailure(
++      rule: "moved-again-sizing", owner: "rule 3: a refused size costs no second move", severity: 3,
++      story: "As `moved-twice-sizing`, in a layout that a timer runs.",
++      script: """
++        open 104 Finder pid 1005 at 1744 430 433 547 min 345 191 max 816 191 title Untitled
++        launch
++        space 104 off
++        via shortcut dock 104 top
++        space 104 on
++        flush
++        """),
++    ChaosKnownFailure(
++      rule: "moved-again-sizing-again", owner: "rule 3: a refused size costs no second move", severity: 2,
++      story: "A docked window that cannot grow is walked through the corner of its slot and back to the middle seconds after it was placed, with nobody touching "
++        + "anything.",
++      script: """
++        open 101 Preview pid 1007 at 508 538 723 728 min 723 400 max 723 2000
++        launch
++        minimize 101
++        restore 101
++        key down arrange
++        advance 5
++        """,
++      """
++        launch
++        open 103 Preview pid 1007 at 1644 2082 1702 1371 min 242 158 max 386 1629
++        dock 103 top
++        move 103 1117 12 383 700
++        advance 0.3
++        """),
++    ChaosKnownFailure(
++      rule: "moved-unasked", owner: "rule 2: a floating window's frame is its person's", severity: 2,
++      story: "A window opens over docked ones and stays there. The next thing that happens, which has nothing to do with it (a click on another title bar, another "
++        + "window closing), shoves it onto the Desktop and shrinks it.",
++      script: """
++        launch
++        open 102 Mail pid 1002 at 994 188 1320 686 min 760 400
++        key down dock top
++        open 104 Music pid 1006 at 1329 186 696 528 min 680 480
++        grab 102
++        release
++        """,
++      """
++        open 101 Mail pid 1002 at 50 292 803 497 min 760 400
++        launch
++        open 103 Finder pid 1005 at 44 151 929 510 min 501 300
++        key down dock right
++        open 105 Terminal pid 1003 at 826 338 798 514 min 177 60
++        close 101
++        """),
++    ChaosKnownFailure(
++      rule: "moved-before-any-dock", owner: "rule 2: a floating window's frame is its person's", severity: 2,
++      story: "Nothing is docked, and Arbor moves a window that hangs over an edge of the screen wholly into view: when another window closes, when it comes back out "
++        + "of the Dock, at a key that moves the view.",
++      script: """
++        open 101 Finder pid 1005 at 112 32 1058 458 min 501 300
++        grab 101
++        carry 1303 40
++        release
++        launch
++        open 104 Safari pid 1000 at 20 113 1068 656 min 574 240
++        close 104
++        """,
++      """
++        launch
++        open 108 Mail pid 1002 at 649 39 803 805 min 760 400
++        key down desktop
++        """,
++      """
++        open 102 Preview pid 1007 at 184 55 723 455 min 723 400 max 723 2000
++        grab 102
++        carry 870 656
++        release
++        minimize 102
++        launch
++        restore 102
++        """),
++    ChaosKnownFailure(
++      rule: "fetched-before-any-dock", owner: "rule 2: nothing moves at a start", severity: 4,
++      story: "At a start, and when a window opens, one of which less than half shows is brought to the middle of the display: the rescue for what a crash left out "
++        + "of view. Arbor cannot tell it from a window its person pushed aside.",
++      script: """
++        open 101 Mail pid 1002 at 956 751 877 388
++        launch
++        """),
++    ChaosKnownFailure(
++      rule: "size-kept-through-a-pause", owner: "rule 5: pause gives every window its own size back", severity: 2,
++      story: "A pause leaves what is in view as it is, in its slot's size (F40, on purpose: a pause that cannot be seen). The product's fifth rule says a pause "
++        + "gives sizes back.",
++      script: """
++        launch
++        open 101 Finder pid 1005 at 154 80 754 440 min 501 300
++        key down dock left
++        react
++        toggle-pause
++        """),
++    ChaosKnownFailure(
++      rule: "size-not-given-back", owner: "rule 5: pin, and a trip to the other display", severity: 3,
++      story: "Pinning a docked window gives it half the display, and Float All leaves it so: its own size is forgotten. Also: sent to a smaller display and back, a "
++        + "window keeps the smaller size.",
++      script: """
++        open 107 Safari pid 1000 at 209 87 1176 832 min 574 240
++        focus 107
++        launch
++        key down dock right
++        via menu toggle-pin
++        way-back float-all
++        """,
++      """
++        displays main:-1280,0,1280,800:25,0,0,0 side:0,0,3008,1692:25,0,70,0* windows-never
++        launch
++        open 103 Xcode pid 1004 at 1435 753 1188 832 min 1188 685
++        via menu move-to-display next
++        via menu move-to-display next
++        way-back float-all
++        """),
++    ChaosKnownFailure(
++      rule: "home-not-whole", owner: "the ways home", severity: 3,
++      story: "After a way home a window Arbor placed hangs over an edge further than anybody left it: a docked window that is pinned and will not be as small as the "
++        + "pin wants; old numbers given back on a smaller display; its own, larger size given back at the corner a hand gave.",
++      script: """
++        open 101 Xcode pid 1004 at 0 41 1280 685 min 1188 685
++        launch
++        grab 101
++        carry 714 28
++        release
++        tile main 1
++        via menu toggle-pin
++        way-back home
++        """,
++      """
++        displays main:0,0,1512,982:37,0,0,0* side:-2560,323,2560,1440:25,0,0,0 windows-never
++        open 101 Finder pid 1005 at 45 657 708 305 min 501 300
++        open 104 Finder pid 1005 at -1592 412 810 523 min 501 300
++        launch
++        key down arrange
++        displays side:0,0,2560,1440:25,0,0,0* windows-first
++        displays main:0,0,1512,982:37,0,0,0* windows-late
++        way-back float-all
++        """),
++    ChaosKnownFailure(
++      rule: "home-behind-the-dock", owner: "the ways home", severity: 4,
++      story: "The Dock has come to this display since the window was last its person's: Float All gives the old frame back, part of it behind the Dock.",
++      script: """
++        displays main:0,0,1280,800:25,0,86,0* side:0,-1440,2560,1440:25,0,0,0 windows-never
++        launch
++        open 102 Mail pid 1002 at 136 -767 1122 693 min 760 400
++        key down dock bottom
++        displays main:0,0,1280,800:25,0,86,0* windows-silent
++        displays side:0,0,2560,1440:25,0,86,0* windows-first
++        way-back float-all
++        """),
++    ChaosKnownFailure(
++      rule: "there-and-back-moved", owner: "rule 2: there and back is nothing", severity: 2,
++      story: "Into the Dock and out again, or a look at one window and Back: a window is not where it was. One that hung over an edge is pulled in; one that lay "
++        + "over docked windows is shoved; a view framed on the window that went does not come back.",
++      script: """
++        launch
++        open 102 Terminal pid 1003 at 771 559 824 374 min 177 60
++        advance 0.3
++        minimize 102
++        restore 102
++        react
++        advance 1
++        """,
++      """
++        launch
++        open 103 Notes pid 1001 at 784 678 792 708 min 709 300
++        key down dock left
++        open 104 Music pid 1006 at 246 836 745 558 min 680 480
++        advance 5
++        react
++        key down zoom
++        key down back
++        react
++        """,
++      """
++        open 101 Safari pid 1000 at 349 116 864 744 min 574 240
++        launch
++        open 102 Safari pid 1000 at 165 78 1116 824 min 574 240
++        key down dock left
++        key down zoom
++        advance 5
++        react
++        minimize 102
++        restore 102
++        react
++        advance 0.5
++        """),
++    ChaosKnownFailure(
++      rule: "start-took-out-of-view", owner: "rule 2: a start takes nothing out of view", severity: 2,
++      story: "Quit gives every window back in view. The next start brings the arrangement and the view back, and what is a tile or outside the view there goes out "
++        + "of view before its person has touched anything.",
++      script: """
++        open 101 Preview pid 1007 at 80 491 723 553 min 723 400 max 723 2000
++        open 102 Xcode pid 1004 at 546 183 1248 896 min 1188 685
++        launch
++        key down arrange
++        quit
++        launch
++        """,
++      """
++        open 103 Terminal pid 1003 at 917 485 719 409 min 177 60
++        open 104 Music pid 1006 at 991 54 784 480 min 680 480
++        launch
++        key down arrange
++        key down in
++        quit
++        launch
++        """),
++    ChaosKnownFailure(
++      rule: "app-switch-out-of-view", owner: "rule 4: the window you switch to", severity: 3,
++      story: "Another app comes forward and nobody says which of its windows has the keyboard (`keyboardFocusMoved` alone). The controller does not ask, and the "
++        + "window stays out of view with the keyboard in it. The Accessibility layer is meant to say; where it misses, this is what a person sees.",
++      script: """
++        launch
++        open 104 Music pid 1006 at 786 116 513 637
++        open 105 Terminal pid 1003 at 842 40 354 368
++        focus 104
++        dock top
++        zoom
++        switch-app 105
++        settle
++        """),
+   ]
+ 
+   public nonisolated static let knownRules = Set(knownFailures.map(\.rule))
+diff --git a/Sources/ArborTesting/ChaosRunner.swift b/Sources/ArborTesting/ChaosRunner.swift
+index 3de7910..357b591 100644
+--- a/Sources/ArborTesting/ChaosRunner.swift
++++ b/Sources/ArborTesting/ChaosRunner.swift
+@@ -87,6 +87,8 @@ public final class ChaosRunner {
+   /// Windows that somebody other than Arbor has ever left across the edge of a display: hanging over it, or straddling two.
+   var leftAcrossAnEdge: Set<WindowID> = []
+   var theChangeChangedNothing = false
++  /// What the nets for the product's seven rules remember (ChaosInvariants+SevenRules.swift).
++  var seven = SevenRules()
+   /// The displays there were last, for as long as there are none.
+   private var lastDisplays: [DisplaySnapshot] = []
+   var owedTheWayBackBefore: Set<WindowID> = []
+@@ -208,12 +210,14 @@ public final class ChaosRunner {
+     wasPeekingBefore = timersBefore.contains("peek")
+     let movesBefore = system.windows.mapValues(\.movesNotArbors)
+     inHandBefore = system.dragging ?? system.resizing
++    noteBeforeTheSevenRules(action)
+     perform(action)
+     listen()
+     beforeTheNextCheck?(self)
+     beforeTheNextCheck = nil
+     noteWhereItsUserLeftEachWindow(after: action, movesBefore: movesBefore)
+-    return found + check(after: action)
++    noteAfterTheSevenRules(action, movesBefore: movesBefore)
++    return found + wayHomeViolations(after: action) + check(after: action)
+   }
+ 
+   /// Where somebody other than Arbor last put each window, as seen from the corner of the display that shows most of it, and
+@@ -447,6 +451,7 @@ public final class ChaosRunner {
+         let frames = gone.map { "\($0) at \(system.windows[$0]!.snapshot.frame.brief)" }.joined(separator: ", ")
+         found.append(.init("out-of-reach", "after \(way.rawValue) nobody can get hold of \(frames)"))
+       }
++      found += wayHomeViolations(way.rawValue, on: way.isAboutOneDisplay ? displaysAtHome : nil, givesSizesBack: way.givesSizesBack)
+     case .save: if isRunning { controller.saveNow() }
+     case .crash: if isRunning || isPaused { endProcess() }
+     case .launch: if !isRunning, !isPaused { launch() }
+@@ -709,19 +714,34 @@ public final class ChaosRunner {
+ 
+   /// What a person does when a window is gone: float everything, quit Arbor, or (after whatever ended it) start it again.
+   public enum WayBack: String, CaseIterable, Sendable {
++    // The ones that leave the arrangement as it is come first: at the end of a walk each is taken in turn.
++    case home
++    case showAll = "show-all"
++    case pause
+     case floatAll = "float-all"
+     case startAgain = "start-again"
+     case quit
+ 
+     var actions: [ChaosAction] {
+       switch self {
++      case .home: [.release, .command("resume"), .launch, .command("release"), .command("home"), .settle]
++      case .showAll: [.release, .command("resume"), .launch, .command("release"), .command("show-all"), .settle]
++      case .pause: [.release, .command("resume"), .launch, .settle, .command("pause")]
+       case .floatAll: [.release, .command("resume"), .launch, .command("float-all"), .settle]
+       case .quit: [.release, .launch, .command("quit")]
+       case .startAgain: [.release, .crash, .launch, .settle]
+       }
+     }
++
++    /// Quitting, Float All and pause give every window the size it had of its own (F48).
++    var givesSizesBack: Bool { [.pause, .floatAll, .quit].contains(self) }
++    /// ⌃⌥0 and ⌃⌥Space are about the display they are pressed on.
++    var isAboutOneDisplay: Bool { [.home, .showAll].contains(self) }
+   }
+ 
++  /// The displays whose view is on everything.
++  var displaysAtHome: Set<DisplayID> { Set(controller.workspaces.filter { $0.value.camera == $0.value.tree.root }.keys) }
++
+   /// Windows nobody could get hold of: present or not, none of their title bar is within reach on any display. Windows that Arbor does
+   /// not arrange, whose apps do not do as they are asked, and that their own app or the user put where they are, are not Arbor's to fetch.
+   public func windowsOutOfReach() -> [WindowID] {
+diff --git a/Sources/arbor-sim/ChaosModes.swift b/Sources/arbor-sim/ChaosModes.swift
+index 2ece1a9..27b6ea9 100644
+--- a/Sources/arbor-sim/ChaosModes.swift
++++ b/Sources/arbor-sim/ChaosModes.swift
+@@ -79,6 +79,10 @@ func runChaosMode(_ arguments: [String]) -> Int32? {
+   for argument in arguments where argument.hasPrefix("--pass=") {
+     excused.formUnion(argument.dropFirst("--pass=".count).split(separator: ",").map(String.init))
+   }
++  // Shrinking walks past what the walk walked past, or a script could not lose a step without ending at another rule.
++  func shrunk(_ failure: ChaosFailure) -> ChaosFailure {
++    ChaosRunner.shrink(failure) { ChaosRunner.replay($0, excusing: excused.subtracting([failure.rule])) }
++  }
+   switch arguments.first {
+   case "chaos":
+     guard arguments.count >= 2 else {
+@@ -93,7 +97,7 @@ func runChaosMode(_ arguments: [String]) -> Int32? {
+       return 0
+     }
+     say("")
+-    say("\(ChaosRunner.shrink(failure))")
++    say("\(shrunk(failure))")
+     return 1
+ 
+   case "hunt":
+@@ -109,13 +113,15 @@ func runChaosMode(_ arguments: [String]) -> Int32? {
+       byRule[failure.rule, default: 0] += 1
+       // A few shrunk scripts per rule are enough to work on; the rest are counted.
+       if byRule[failure.rule]! <= 3 {
+-        say("\(ChaosRunner.shrink(failure))\n")
++        say("\(shrunk(failure))\n")
+       } else {
+-        say("seed \(seed): \(failure.violations[0])")
++        say("seed \(seed): \(failure.violations[0]) ← \(failure.script.last?.text ?? "")")
+       }
+     }
+     say("\(count) seeds × \(steps) steps: " + (byRule.isEmpty ? "every invariant held" : "\(byRule.sorted { $0.key < $1.key })"))
+     for (rule, seeds) in known.sorted(by: { $0.key < $1.key }) { say("known: \(rule) in \(seeds) seeds") }
++    // A net that never asks its question catches nothing.
++    for (net, times) in ChaosRunner.questionsAsked.sorted(by: { $0.key < $1.key }) { say("asked: \(net) \(times) times") }
+     return byRule.isEmpty ? 0 : 1
+ 
+   case "replay":
+diff --git a/Tests/ArborKitTests/ChaosSevenRulesTests.swift b/Tests/ArborKitTests/ChaosSevenRulesTests.swift
+new file mode 100644
+index 0000000..64dfe5e
+--- /dev/null
++++ b/Tests/ArborKitTests/ChaosSevenRulesTests.swift
+@@ -0,0 +1,165 @@
++import ArborCore
++import ArborKit
++import ArborTesting
++import CoreGraphics
++import Foundation
++import Testing
++
++private let a = WindowID(101)
++private let b = WindowID(102)
++
++/// The nets for the product's seven rules (`ChaosInvariants+SevenRules.swift`) catch what they are for. Each test is a control: a fault is
++/// done to the world as if Arbor had done it, and the net has to speak; beside it the same story without the fault, where it has to be silent.
++@Suite @MainActor struct ChaosSevenRulesTests {
++  /// Plays `lines`, whatever rules they break, then `last` with `fault` done as part of it. Returns the nets that spoke at `last`.
++  private func nets(after lines: [String], then last: String, fault: ((FakeWindowSystem) -> Void)? = nil) -> Set<String> {
++    let runner = ChaosRunner()
++    for line in lines { _ = runner.step(ChaosAction(text: line)) }
++    if let fault { runner.beforeTheNextCheck = { fault($0.system) } }
++    let prefixes = ["moved-", "fetched-", "switched-to-", "app-switch-", "size-", "home-"]
++    return Set(runner.step(ChaosAction(text: last)).map(\.rule).filter { rule in prefixes.contains { rule.hasPrefix($0) } })
++  }
++
++  private func rect(_ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloat) -> CGRect { CGRect(x: x, y: y, width: width, height: height) }
++
++  private let twoFloating = ["launch", "open 101 Notes pid 1001 at 100 100 500 400", "open 102 Mail pid 1002 at 800 300 500 400", "settle"]
++  private let oneDocked = [
++    "launch", "open 101 Notes pid 1001 at 100 100 500 400", "open 102 Mail pid 1002 at 800 300 500 400", "dock 101 left", "settle",
++  ]
++
++  // MARK: No jolts
++
++  @Test func aWindowMovedTwiceForOneThingIsAJolt() {
++    #expect(nets(after: oneDocked, then: "dock 102 right").isEmpty)
++    // There and on, in the step of the command that was about it.
++    let twice = nets(after: oneDocked, then: "dock 102 right") {
++      _ = $0.setFrame(self.rect(700, 100, 500, 400), of: b)
++      _ = $0.setFrame(self.rect(726, 37, 702, 851), of: b)
++    }
++    #expect(twice.contains("moved-twice"))
++  }
++
++  @Test func aWindowMovedAgainAMomentLaterWithNobodyTouchingAnythingIsAJolt() {
++    let moved = oneDocked + ["dock 102 right"]
++    #expect(nets(after: moved, then: "flush").isEmpty)
++    #expect(nets(after: moved, then: "flush") { _ = $0.setFrame(self.rect(726, 60, 702, 800), of: b) }.contains("moved-again"))
++    // Once somebody has done something else it is a first move again. (That it was not asked for is another net's business.)
++    #expect(!nets(after: moved + ["cursor 10 10"], then: "flush") { _ = $0.setFrame(self.rect(726, 60, 702, 800), of: b) }.contains("moved-again"))
++  }
++
++  @Test func whatNobodyCanSeeIsNoJolt() {
++    // Framed on 101, 102 is out of view, and is moved about there.
++    let framed = oneDocked + ["zoom 101", "settle"]
++    let unseen = nets(after: framed, then: "cursor 10 10") {
++      _ = $0.setFrame(self.rect(1439, 2000, 500, 400), of: b)
++      _ = $0.setFrame(self.rect(1439, 2100, 500, 400), of: b)
++    }
++    #expect(!unseen.contains("moved-twice"))
++  }
++
++  @Test func anAppThatRefusesASizeIsToldApartAndOnlyTheFirstTimeIsNews() {
++    let narrow = ["launch", "open 101 Notes pid 1001 at 100 100 500 400 max 500 2000", "open 102 Mail pid 1002 at 800 300 500 400", "settle"]
++    // Into the corner of its slot, and from there to its middle.
++    #expect(nets(after: narrow, then: "dock 101 left").contains("moved-twice-sizing"))
++    #expect(nets(after: narrow + ["dock 101 left", "settle", "float 101", "settle"], then: "dock 101 right").contains("moved-twice-sizing-again"))
++  }
++
++  // MARK: Nothing moves that was not asked to
++
++  @Test func nothingMovesBeforeAnythingIsDocked() {
++    #expect(nets(after: twoFloating, then: "focus 101").isEmpty)
++    #expect(nets(after: twoFloating, then: "focus 101") { _ = $0.setFrame(self.rect(120, 100, 500, 400), of: a) } == ["moved-before-any-dock"])
++    #expect(nets(after: ["open 101 Notes pid 1001 at 100 100 500 400"], then: "launch").isEmpty)
++    #expect(
++      nets(after: ["open 101 Notes pid 1001 at 100 100 500 400"], then: "launch") { _ = $0.setFrame(self.rect(120, 100, 500, 400), of: a) }
++        == ["moved-before-any-dock"])
++  }
++
++  @Test func aWindowTheStepWasNotAboutStaysWhereItIs() {
++    #expect(nets(after: oneDocked, then: "focus 101").isEmpty)
++    #expect(nets(after: oneDocked, then: "focus 101") { _ = $0.setFrame(self.rect(820, 300, 500, 400), of: b) }.contains("moved-unasked"))
++    // The one it was about is another matter.
++    #expect(!nets(after: oneDocked, then: "focus 102") { _ = $0.setFrame(self.rect(820, 300, 500, 400), of: b) }.contains("moved-unasked"))
++  }
++
++  @Test func whatFloatsInViewStaysWhereItIsAtLaunchAndWhenAPauseEnds() {
++    let again = oneDocked + ["quit"]
++    #expect(nets(after: again, then: "launch").isEmpty)
++    #expect(nets(after: again, then: "launch") { _ = $0.setFrame(self.rect(820, 300, 500, 400), of: b) }.contains("moved-at-launch"))
++    let paused = oneDocked + ["pause"]
++    #expect(nets(after: paused, then: "resume").isEmpty)
++    #expect(nets(after: paused, then: "resume") { _ = $0.setFrame(self.rect(820, 300, 500, 400), of: b) }.contains("moved-at-resume"))
++  }
++
++  // MARK: The window you switch to
++
++  @Test func theWindowSwitchedToIsInView() {
++    let framed = oneDocked + ["zoom 101", "settle"]
++    #expect(nets(after: framed + ["focus 102", "react"], then: "settle").isEmpty)
++    // Sent out again behind its user's back.
++    #expect(
++      nets(after: framed + ["focus 102", "react", "settle"], then: "flush") { _ = $0.setFrame(self.rect(1439, 868, 500, 400), of: b) }
++        .contains("switched-to-out-of-view"))
++  }
++
++  @Test func theWindowSwitchedToIsInFront() {
++    let overlapping = ["launch", "open 101 Notes pid 1001 at 100 100 500 400", "open 102 Mail pid 1002 at 300 200 500 400", "settle"]
++    #expect(nets(after: overlapping + ["focus 101", "react"], then: "settle").isEmpty)
++    #expect(nets(after: overlapping + ["focus 101", "react"], then: "settle") { $0.raise(b) }.contains("switched-to-behind"))
++  }
++
++  // MARK: The ways home
++
++  @Test(arguments: ["float-all", "quit"]) func aWayOutGivesEveryWindowItsOwnSizeBack(way: String) {
++    #expect(nets(after: oneDocked, then: way).isEmpty)
++    #expect(nets(after: oneDocked, then: way) { _ = $0.setFrame(self.rect(100, 100, 702, 400), of: a) }.contains("size-not-given-back"))
++  }
++
++  @Test func theSizeItsUserGaveItLastIsItsOwn() {
++    // Made larger by hand while it floated, then docked.
++    let resized = twoFloating + ["move 101 100 100 640 480", "dock 101 left", "settle"]
++    #expect(nets(after: resized, then: "float-all").isEmpty)
++    #expect(nets(after: resized, then: "float-all") { _ = $0.setFrame(self.rect(100, 100, 500, 400), of: a) }.contains("size-not-given-back"))
++  }
++
++  /// F40 leaves what is in view as it is, so that a pause cannot be seen; the product's fifth rule says a pause gives sizes back. Until that is
++  /// decided the net says so under a name of its own.
++  @Test func whatAPauseLeavesInItsSlotHasANameOfItsOwn() {
++    #expect(nets(after: oneDocked, then: "pause") == ["size-kept-through-a-pause"])
++  }
++
++  @Test func afterAWayHomeEveryWindowIsWhollyInView() {
++    let framed = oneDocked + ["zoom 101", "settle"]
++    #expect(nets(after: framed, then: "home").isEmpty)
++    #expect(nets(after: framed, then: "home") { _ = $0.setFrame(self.rect(1200, 300, 500, 400), of: b) }.contains("home-not-whole"))
++    // Where its user left it hanging, it may hang.
++    let hanging = ["launch", "open 101 Notes pid 1001 at 100 100 500 400", "open 102 Mail pid 1002 at 800 300 500 400", "dock 101 left", "move 102 1200 300 500 400", "zoom 101", "settle"]
++    #expect(!nets(after: hanging, then: "home").contains("home-not-whole"))
++  }
++
++  @Test func whatArborPlacesOnTheWayHomeIsClearOfTheDock() {
++    let withADock = ["displays main:0,0,1440,900:25,0,70,0* windows-never"] + oneDocked + ["zoom 101", "settle"]
++    #expect(nets(after: withADock, then: "home").isEmpty)
++    #expect(nets(after: withADock, then: "home") { _ = $0.setFrame(self.rect(800, 480, 500, 400), of: b) }.contains("home-behind-the-dock"))
++  }
++
++  // MARK: The nets are cast
++
++  /// A net that never asks its question catches nothing. The floors are about half of what forty ordinary walks gave when this was written.
++  @Test func ordinaryWalksReachEveryQuestion() {
++    let before = ChaosRunner.questionsAsked
++    // Past every rule: what is counted is how far the walks get, not what they find.
++    for seed in UInt64(1)...40 {
++      let runner = ChaosRunner()
++      var generator = ChaosGenerator(seed: seed, ordinary: true)
++      for _ in 0..<200 { _ = runner.step(generator.next(runner)) }
++      for way in ChaosRunner.WayBack.allCases { _ = runner.step(.wayBack(way)) }
++    }
++    func asked(_ net: String) -> Int { (ChaosRunner.questionsAsked[net] ?? 0) - (before[net] ?? 0) }
++    for (net, floor) in Self.floors { #expect(asked(net) >= floor, "\(net) was asked \(asked(net)) times") }
++  }
++
++  private static let floors = [
++    "once": 1, "before-any-dock": 1, "unasked": 1, "launch-or-resume": 1, "switched-to": 1, "way-home": 1, "sizes": 1,
++  ]
++}
+diff --git a/docs/TESTING.md b/docs/TESTING.md
+index cb5d9a0..a89130f 100644
+--- a/docs/TESTING.md
++++ b/docs/TESTING.md
+@@ -853,6 +853,32 @@ under half shows: with "⌃⌥0 does not fetch it" this is the product owner's m
+ `docked-partly-out` (kept larger than its slot, it hangs out of the display); `left-its-place` and `moved-for-nothing` (a display only moved, or nothing changed at all, and a floating window was moved).
+ `replay` says `REFUSED:` for every command Arbor refuses and every line that is no command and no event: a script whose `hold` was refused says nothing about holds.
+ 
++**The seven rules as nets** (`ChaosInvariants+SevenRules.swift`). They ask what the window system saw, never what the controller believes, and each has a control in `ChaosSevenRulesTests`: a fault
++done to the world as if Arbor had done it, at which the net has to speak, beside the same story without the fault, at which it has to be silent. `ChaosRunner.detector(for:)` gives the detector of `docs/VIABLE.md`, section 5, that a rule stands for.
++
++| Rule of the product | Rules of the walks | Detector |
++|---|---|---|
++| Nothing moves until the person docks something, and nothing that was not asked to | `moved-before-any-dock`, `fetched-before-any-dock`, `moved-at-launch`, `moved-at-resume`, `moved-unasked`, `there-and-back-moved`, `pause-and-resume-moved` | `moved-unasked` |
++| A start takes nothing out of view | `start-took-out-of-view` | `lost` |
++| A window moves once, to where it ends up | `moved-twice` (in the step of the command or event), `moved-again` (later, with nobody touching anything); `-sizing` where its app refused a size, `-sizing-again` where it had refused in the same way before | `jolt` |
++| The window you switch to comes to the front and into view | `switched-to-out-of-view`, `switched-to-partly-out`, `app-switch-out-of-view` (only the app was reported), `switched-to-behind` | `focus`, `behind` |
++| Quitting, Float All and pause give windows their own sizes back | `size-not-given-back`, `size-kept-through-a-pause` | `size-lost` |
++| After any way home no window shows less than its person left showing | `home-not-whole`, `home-behind-the-dock`, `home-leaves-out` | `lost` |
++
++The ways home (`way-back home`, `show-all`, `pause`, `float-all`, `start-again`, `quit`) are each taken at the end of every walk, the ones that leave the arrangement alone first.
++A hunt ends with `asked: <net> <n> times`: **a net that never asks its question catches nothing**, and `ordinaryWalksReachEveryQuestion` holds each to a floor.
++
++**Ordinary walks** (`ARBOR_CHAOS_ORDINARY=1`): the displays of a real desk, apps with the smallest sizes real apps have, windows that open wholly in view, keys that are bound, items that are in the menu, the mouse, and
++a moment between one thing and the next. No settings edited by hand, no app that fights back, no crash, no nonsense. **What such a walk finds is likely on a real desk**; what only the wild walks find has to be looked at for how a person would get there.
++
++```bash
++ARBOR_CHAOS_ORDINARY=1 .build/release/arbor-sim hunt 1 2000 300                                # the seed chooses the desk
++ARBOR_CHAOS_ORDINARY=1 ARBOR_CHAOS_DESK=laptop ARBOR_CHAOS_DOCK=left .build/release/arbor-sim hunt 1 2000 300   # laptop | desk | both; bottom | left | right | hidden
++ARBOR_CHAOS_ORDINARY=1 .build/release/arbor-sim hunt 1 2000 300 --known                        # the known failures end a walk like any other
++```
++
++**The scoreboard** is the number of ordinary walks in 10,000 in which a rule broke, by rule: the `known:` lines of a hunt count the walks that passed a rule by, the summary line those that ended at one.
++
+ **Seeds mean something only on one generator.** A new `Command` case, weight or event sends every seed elsewhere: compare rates and scripts, never
+ seed numbers, between two commits. **A script means something only on a harness that knows its words**: a line that is no event is taken for
+ a command, and a command Arbor does not know does nothing, so a script with `via …` or `key down …` on a branch from before those events
+-- 
+2.43.0
+

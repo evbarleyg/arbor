@@ -1,0 +1,514 @@
+From 2adfbb88fbac6269a17ea8d4083f9b1e9d471033 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 07:07:19 +0000
+Subject: [PATCH 1/2] ci: the lines of `make lint` run side by side in the gate
+ and in CI: one minute instead of two
+
+`make lint` is two dozen checks that know nothing of one another, and make runs them one after another: 16 s at the start of
+the night, 141 s now, on one core of four. It is the first step of every `make gate`, and all that CI runs for a draft.
+
+scripts/side-by-side.py reads the rule off the Makefile and runs its lines as many at a time as there are cores: 67 s, as
+long as the longest line and no longer. Every line runs whatever became of the others, what each printed is shown whole and in the
+order of the rule, and the lines that failed are named. What only make can work out it refuses.
+
+The rule stays where it is and as it is: whoever adds a check adds a line to it, and `make lint` means what it meant.
+---
+ .github/workflows/linux.yml |   2 +-
+ Makefile                    |   1 +
+ scripts/gate.sh             |   3 +-
+ scripts/side-by-side.py     | 189 ++++++++++++++++++++++++++++++++++++
+ scripts/test-ci-linux.py    |   7 ++
+ scripts/test-fast-tests.py  |   6 +-
+ 6 files changed, 203 insertions(+), 5 deletions(-)
+ create mode 100755 scripts/side-by-side.py
+
+diff --git a/.github/workflows/linux.yml b/.github/workflows/linux.yml
+index 85753a9..2150f78 100644
+--- a/.github/workflows/linux.yml
++++ b/.github/workflows/linux.yml
+@@ -46,7 +46,7 @@ jobs:
+       - name: The selection of tests for the Mac, the record of a run, and the net under both
+         run: ./scripts/ci-step.py ci-tests ./scripts/test-ci-tests.py
+       - name: Lint (imports a Mac would miss; Mac shell scripts that would change a person's Mac; these jobs)
+-        run: ./scripts/ci-step.py lint make lint
++        run: ./scripts/ci-step.py lint ./scripts/side-by-side.py lint
+       - name: Release tooling
+         run: ./scripts/ci-step.py --summary '✘|not tried|release tools test' release-tools ./scripts/release-tools-test.sh
+ 
+diff --git a/Makefile b/Makefile
+index c4f0aa1..8578482 100644
+--- a/Makefile
++++ b/Makefile
+@@ -13,6 +13,7 @@ lint:
+ 	@python3 scripts/lint-mac-shell.py
+ 	@python3 scripts/mac-shell/first-dock.py --self-test > /dev/null
+ 	@python3 scripts/test-fast-tests.py
++	@python3 scripts/side-by-side.py --self-test
+ 	@python3 scripts/lint-paste-safe.py --self-test && python3 scripts/lint-paste-safe.py
+ 	@python3 scripts/side_by_side.py
+ 	@for test in scripts/test-public-*.py; do python3 $$test || exit 1; done
+diff --git a/scripts/gate.sh b/scripts/gate.sh
+index d3230e9..76281a2 100755
+--- a/scripts/gate.sh
++++ b/scripts/gate.sh
+@@ -50,7 +50,8 @@ gate() {
+   # What runs in the background does not hear Ctrl-C by itself, and would go on compiling, and rewrite docs/FEATURES.md, after this has gone.
+   trap 'trap - TERM; echo "the gate was interrupted"; kill 0' INT TERM
+ 
+-  step lint make lint
++  # What `make lint` runs, its lines side by side.
++  step lint ./scripts/side-by-side.py lint
+   step build swift build --build-tests
+   if [ -e "$logs/build.failed" ]; then
+     grep -E 'error:' "$logs/build.log" | sort -u | head -20 | sed 's/^/      /'
+diff --git a/scripts/side-by-side.py b/scripts/side-by-side.py
+new file mode 100755
+index 0000000..f38c0c0
+--- /dev/null
++++ b/scripts/side-by-side.py
+@@ -0,0 +1,189 @@
++#!/usr/bin/env python3
++"""Runs the lines of one rule of the Makefile side by side: what `make lint` proves, in a third of the time.
++
++  scripts/side-by-side.py lint           every line of the rule `lint`, as many at a time as there are cores
++  scripts/side-by-side.py --self-test    the rows below
++
++`make lint` is two dozen checks that know nothing of one another, and make runs them one after another: two minutes by now, on
++one core of four. `make gate` and CI's job `linux / lint` run them through this instead. The rule stays where it is and as it
++is: whoever adds a check adds a line to the Makefile, and `make lint` goes on meaning the same.
++
++Every line runs, whatever became of the others, so one round tells all; make stops at the first that fails. What each line
++printed is shown whole and in the order of the rule, as make would have shown it, so two runs can be compared. Then the lines
++that failed are named, with their exit codes, and the slowest, with their seconds. The last line names the tools of this machine: a
++sandbox has the image's git and a runner of GitHub's a newer one, and a check was once green in every sandbox and red on every runner for that.
++
++It reads what make would hand to the shell: a tab, an `@` that is dropped, `$$` for `$`, a line that ends in `\\` goes on in the
++next. What only make can work out (`$(…)`, `${…}`, `$@` and the like, a `-` or `+` in front) it refuses, rather than run something else.
++What the rule depends on is not run: `lint` depends on nothing.
++Exit code 0 when every line passed, 1 when one failed, 2 when the rule cannot be read.
++"""
++
++import concurrent.futures
++import os
++import re
++import subprocess
++import sys
++import tempfile
++import time
++
++ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
++ONLY_MAKE_KNOWS = re.compile(r"(?<!\$)(?:\$\$)*\$(?!\$)")
++
++
++class Unreadable(Exception):
++    pass
++
++
++def lines_of(makefile, rule):
++    """The commands of a rule, as the shell gets them."""
++    found = re.search(rf"^{re.escape(rule)}:(?!=)([^\n]*)\n((?:\t[^\n]*\n|#[^\n]*\n)*)", makefile, re.M)
++    if not found:
++        raise Unreadable(f"the Makefile has no rule for {rule}")
++    if found.group(1).split("#")[0].strip():
++        raise Unreadable(f"{rule} depends on{found.group(1).split('#')[0].rstrip()}, which this would not run")
++    commands, going_on = [], False
++    for line in found.group(2).split("\n"):
++        if not line.startswith("\t"):
++            continue
++        text = line[1:]
++        if going_on:
++            commands[-1] += "\n" + text
++        else:
++            commands.append(text)
++        going_on = text.endswith("\\")
++    if not commands:
++        raise Unreadable(f"the rule for {rule} has no lines")
++    for index, command in enumerate(commands):
++        if command[:1] in "-+":
++            raise Unreadable(f"only make knows what to do with the `{command[0]}` before `{command[1:60]}`")
++        command = command[1:] if command.startswith("@") else command
++        if ONLY_MAKE_KNOWS.search(command):
++            raise Unreadable(f"only make knows what the `$` stands for in `{command[:80]}`")
++        commands[index] = command.replace("$$", "$")
++    return commands
++
++
++def run(commands, folder, jobs):
++    """(exit code, output, seconds) of each, in their order."""
++    def one(command):
++        began = time.monotonic()
++        done = subprocess.run(["/bin/sh", "-c", command], cwd=folder, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
++                              encoding="utf-8", errors="replace", check=False)
++        return done.returncode, done.stdout, time.monotonic() - began
++
++    with concurrent.futures.ThreadPoolExecutor(jobs) as pool:
++        return list(pool.map(one, commands))
++
++
++def tools():
++    """What the checks are run with here, each with its version."""
++    found = []
++    for name in ("git", "python3", "bash", "make"):
++        try:
++            said = subprocess.run([name, "--version"], capture_output=True, text=True, check=False, timeout=10).stdout
++        except (OSError, subprocess.TimeoutExpired):
++            said = ""
++        version = re.search(r"\d+(?:\.\d+)+", said)
++        found.append(f"{name} {version.group() if version else 'is not here'}")
++    return ", ".join(found)
++
++
++def side_by_side(makefile, rule, folder, jobs, out=sys.stdout):
++    try:
++        commands = lines_of(makefile, rule)
++    except Unreadable as error:
++        print(f"✘ side-by-side.py: {error}", file=out)
++        return 2
++    began = time.monotonic()
++    results = run(commands, folder, jobs)
++    for _, output, _ in results:
++        out.write(output)
++    failed = [(command, code) for command, (code, _, _) in zip(commands, results) if code]
++    for command, code in failed:
++        print(f"✘ exit code {code}: {command.splitlines()[0][:150]}", file=out)
++    slowest = sorted(zip(commands, results), key=lambda pair: -pair[1][2])[:3]
++    print(f"{rule}: {len(commands) - len(failed)} of {len(commands)} lines passed in {time.monotonic() - began:.0f} s, {jobs} at a time "
++          f"(one after another: {sum(seconds for _, _, seconds in results):.0f} s); the slowest: "
++          + ", ".join(f"{seconds:.0f} s {command.split('#')[0].strip()[:60]}" for command, (_, _, seconds) in slowest), file=out)
++    print(f"with {tools()}", file=out)
++    return 1 if failed else 0
++
++
++def self_test():
++    import io
++    rows = []
++
++    def read(text, rule="lint"):
++        try:
++            return lines_of(text, rule)
++        except Unreadable as error:
++            return str(error)
++
++    def tried(text, jobs=4):
++        said = io.StringIO()
++        with tempfile.TemporaryDirectory() as folder:
++            code = side_by_side(text, "lint", folder, jobs, said)
++            return code, said.getvalue(), sorted(os.listdir(folder))
++
++    rows += [
++        ("the lines of a rule, without their @", read("a:\n\ttrue\nlint:\n\t@one\n\ttwo --flag\n\nb:\n\tthree\n"), ["one", "two --flag"]),
++        ("a dollar for the shell", read("lint:\n\t@for x in a b; do echo $$x || [ $$? = 2 ]; done\n"), ["for x in a b; do echo $x || [ $? = 2 ]; done"]),
++        ("a remark after a command goes to the shell with it, as make does it", read("lint:\n\t@one  # why\n"), ["one  # why"]),
++        ("a remark of the Makefile's own among the lines", read("lint:\n\t@one\n# why\n\t@two\n"), ["one", "two"]),
++        ("a line that goes on in the next", read("lint:\n\t@one \\\n\t  two\n\t@three\n"), ["one \\\n  two", "three"]),
++        ("the rule ends at an empty line", read("lint:\n\t@one\n\n\t@stray\n"), ["one"]),
++        ("a rule that only begins like it", read("lint-fast:\n\t@one\n"), "the Makefile has no rule for lint"),
++        ("a variable of that name", read("lint:=x\n"), "the Makefile has no rule for lint"),
++        ("no lines", read("lint:\nother:\n\t@one\n"), "the rule for lint has no lines"),
++        ("it depends on something", read("lint: build\n\t@one\n"), "lint depends on build, which this would not run"),
++        ("a remark after the colon is none", read("lint: # all of it\n\t@one\n"), ["one"]),
++        ("a variable of make's", read("lint:\n\t@one $(ARGS)\n"), "only make knows what the `$` stands for in `one $(ARGS)`"),
++        ("the same in braces", read("lint:\n\t@one ${ARGS}\n"), "only make knows what the `$` stands for in `one ${ARGS}`"),
++        ("the target's name", read("lint:\n\t@echo $@\n"), "only make knows what the `$` stands for in `echo $@`"),
++        ("three dollars: one for the shell, one of make's", read("lint:\n\t@echo $$$x\n"), "only make knows what the `$` stands for in `echo $$$x`"),
++        ("four are two for the shell", read("lint:\n\t@echo $$$$\n"), ["echo $$"]),
++        ("a failure that make would overlook", read("lint:\n\t-one\n"), "only make knows what to do with the `-` before `one`"),
++    ]
++    code, said, _ = tried("lint:\n\t@sleep 0.3; echo first\n\t@echo second\n\t@echo third >&2\n")
++    rows.append(("all pass: what they printed, in the order of the rule, whichever ended first", (code, said.split("\n")[:3]), (0, ["first", "second", "third"])))
++    rows.append(("and how it went", "lint: 3 of 3 lines passed in " in said, True))
++    rows.append(("and with what", bool(re.search(r"^with git \d+\.\d+[.\d]*, python3 \d+\.\d+[.\d]*, bash \d+\.\d+[.\d]*, make \d+\.\d+[.\d]*$", said.rstrip("\n").split("\n")[-1])), True))
++    code, said, left = tried("lint:\n\t@echo one; exit 3\n\t@touch ran-all-the-same\n\t@false\n")
++    rows.append(("two fail: the others run all the same, and both are named", (code, left, [line for line in said.split("\n") if line.startswith("✘")]),
++                 (1, ["ran-all-the-same"], ["✘ exit code 3: echo one; exit 3", "✘ exit code 1: false"])))
++    rows.append(("and counted", "lint: 1 of 3 lines passed" in said, True))
++    began = time.monotonic()
++    code, _, _ = tried("lint:\n" + "\t@sleep 1\n" * 4)
++    rows.append(("they do run side by side, also on a machine that is busy", (code, time.monotonic() - began < 3), (0, True)))
++    began = time.monotonic()
++    tried("lint:\n" + "\t@sleep 0.3\n" * 4, jobs=1)
++    rows.append(("and no more at a time than was said", time.monotonic() - began > 1.1, True))
++    rows.append(("a line that waits for the keyboard gets none", tried("lint:\n\t@cat\n")[0], 0))
++    rows.append(("a rule that cannot be read: nothing runs", tried("lint:\n\t@touch ran\n\t@echo $(X)\n")[::2], (2, [])))
++    with open(os.path.join(ROOT, "Makefile"), encoding="utf-8") as handle:
++        real = read(handle.read())
++    rows.append(("the real rule can be read, and is long", isinstance(real, list) and len(real) > 15, True))
++
++    wrong = 0
++    for what, got, expected in rows:
++        if got != expected:
++            wrong += 1
++            print(f"✘ {what}: expected {expected!r}, got {got!r}")
++    print(f"{len(rows) - wrong} of {len(rows)} side-by-side situations came out as expected")
++    return 1 if wrong else 0
++
++
++def main(arguments):
++    if arguments == ["--self-test"]:
++        return self_test()
++    if len(arguments) != 1 or arguments[0].startswith("-"):
++        print(__doc__.split("\n\n")[1])
++        return 2
++    with open(os.path.join(ROOT, "Makefile"), encoding="utf-8") as handle:
++        makefile = handle.read()
++    return side_by_side(makefile, arguments[0], ROOT, len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else os.cpu_count() or 1)
++
++
++if __name__ == "__main__":
++    sys.exit(main(sys.argv[1:]))
+diff --git a/scripts/test-ci-linux.py b/scripts/test-ci-linux.py
+index 0f0e680..74abfea 100755
+--- a/scripts/test-ci-linux.py
++++ b/scripts/test-ci-linux.py
+@@ -158,6 +158,9 @@ def plain(command):
+     # And so is `make test`: where the record goes does not change what runs. $(TEST_ARGS) is empty unless somebody fills it.
+     if words[:2] == ["swift", "test"] and words[2::2][:2] == ["--event-stream-output-path", "--event-stream-version"]:
+         words = ["swift", "test", *(word for word in words[6:] if word != "$(TEST_ARGS)")]
++    # The lines of that rule, side by side.
++    if words[:1] == ["scripts/side-by-side.py"] and len(words) == 2 and not words[1].startswith("-"):
++        words = ["make", words[1]]
+     # It builds the same, and leaves out the index that only an editor reads.
+     if words[:2] == ["swift", "build"]:
+         words = [word for word in words if word != "--disable-index-store"]
+@@ -633,6 +636,10 @@ TABLE = [
+     ("runs `swift test`", "divided, and a part's failure is thrown away", changed(WHOLE, DIVIDED.replace(".jsonl\n", ".jsonl || true\n", 1)), MAKEFILE),
+     ("lint-a.py", "lint was dropped", changed("      - run: ./scripts/ci-step.py lint make lint\n", ""), MAKEFILE),
+     ("lint-a.py", "lint is only printed", changed("lint make lint", "lint make lint -n"), MAKEFILE),
++    (None, "the lines of lint side by side", changed("lint make lint", "lint ./scripts/side-by-side.py lint"), MAKEFILE),
++    ("lint-a.py", "the lines of another rule", changed("lint make lint", "lint ./scripts/side-by-side.py build"), MAKEFILE),
++    ("lint-a.py", "only its own self-test", changed("lint make lint", "lint ./scripts/side-by-side.py --self-test"), MAKEFILE),
++    ("lint-a.py", "something more is said to it", changed("lint make lint", "lint ./scripts/side-by-side.py lint --only one"), MAKEFILE),
+     ("runs `scripts/lint-b.py`", "a lint that make check runs by another way", GOOD,
+      changed("check: lint build test", "more:\n\t@python3 scripts/lint-b.py\ncheck: lint more build test", MAKEFILE)),
+     ("has no `check`", "make check was renamed", GOOD, changed("check:", "verify:", MAKEFILE)),
+diff --git a/scripts/test-fast-tests.py b/scripts/test-fast-tests.py
+index cb60187..49e98ce 100755
+--- a/scripts/test-fast-tests.py
++++ b/scripts/test-fast-tests.py
+@@ -354,8 +354,8 @@ def gate(fail="", *arguments, rule=CHECK, reading=""):
+         shutil.copy(os.path.join(HERE, "gate.sh"), os.path.join(folder, "scripts", "gate.sh"))
+         with open(os.path.join(folder, "Makefile"), "w", encoding="utf-8") as handle:
+             handle.write("lint:\n\t@true\n\n" + rule + "\nafter:\n\t@./scripts/not-of-check.sh\n")
+-        for path in {"bin/make", "bin/swift", "scripts/fast-tests.py", "scripts/parity.py", *re.findall(r"scripts/[\w./-]+", rule)}:
+-            run_by_python = path.endswith(".py") and path != "scripts/fast-tests.py"
++        for path in {"bin/make", "bin/swift", "scripts/fast-tests.py", "scripts/side-by-side.py", "scripts/parity.py", *re.findall(r"scripts/[\w./-]+", rule)}:
++            run_by_python = path.endswith(".py") and path not in ("scripts/fast-tests.py", "scripts/side-by-side.py")
+             with open(os.path.join(folder, path), "w", encoding="utf-8") as handle:
+                 handle.write((PYTHON_STAND_IN if run_by_python else STAND_IN) % os.path.basename(path))
+             os.chmod(os.path.join(folder, path), 0o755)
+@@ -389,7 +389,7 @@ else:
+     row("gate.sh: and all the others still run", said.count("✔"), STEPS - 1)
+     code, said = gate("make typecheck-mac,test-tooling.py")
+     row("gate.sh: steps in the background fail", (code, "the gate is shut: test-tooling typecheck-mac (" in said), (1, True))
+-    code, said = gate("make lint")
++    code, said = gate("side-by-side.py lint")
+     row("gate.sh: lint fails, and the rest is still looked at", (code, said.count("✔"), "the gate is shut: lint (" in said), (1, STEPS - 1, True))
+     code, said = gate("swift build")
+     row("gate.sh: it does not build, so nothing else is tried", (code, said.count("✔"), "it does not build" in said), (1, 1, True))
+-- 
+2.43.0
+
+
+From ef036fa5b65ceab7117b9943d3b48e7d3c890a52 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 15:52:57 +0000
+Subject: [PATCH 2/2] wip: the first phase
+
+---
+ .github/workflows/linux.yml | 23 ++++++++++++++++++++++-
+ CLAUDE.md                   |  2 +-
+ Makefile                    |  2 +-
+ scripts/gate.sh             | 19 ++++++++++++++-----
+ scripts/test-ci-linux.py    |  5 ++++-
+ scripts/test-fast-tests.py  | 18 ++++++++++++++----
+ 6 files changed, 56 insertions(+), 13 deletions(-)
+
+diff --git a/.github/workflows/linux.yml b/.github/workflows/linux.yml
+index 2150f78..4e5504f 100644
+--- a/.github/workflows/linux.yml
++++ b/.github/workflows/linux.yml
+@@ -70,6 +70,27 @@ jobs:
+       - name: Type-check the macOS-only code against stand-ins
+         run: ./scripts/ci-step.py --summary 'error:|type-check' typecheck-mac make typecheck-mac
+ 
++  # The real Accessibility layer and the controller, compiled against the model of a Mac (scripts/mac-on-linux): built, not run. Twice in one day a
++  # change that was green everywhere else broke only that build, and whoever next asked the model a question paid. Its stories are not played
++  # here: they take minutes, and their list moves with whatever changes what Arbor does. It compiles for itself, from nothing: two minutes.
++  linux-model:
++    name: model
++    if: ${{ inputs.all }}
++    runs-on: ubuntu-24.04
++    container: swift:6.4-noble
++    timeout-minutes: 15
++    steps:
++      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
++      - name: Python and make for the scripts, and a git that trusts the checkout
++        # The checkout belongs to the runner's user and the container runs as root, which git refuses to work with.
++        run: |
++          apt-get update -qq && apt-get install -y -qq python3 make
++          git config --global --add safe.directory "$GITHUB_WORKSPACE"
++      - name: Toolchain
++        run: ./scripts/ci-step.py toolchain swift --version
++      - name: Build Arbor against the model of a Mac
++        run: ./scripts/ci-step.py --summary 'error:|does not compile|^built:' model make mac-on-linux-build
++
+   # Whatever drives the built arbor-sim, and the rest of `make check` that is not a test.
+   linux-sim:
+     name: sim
+@@ -194,7 +215,7 @@ jobs:
+   # that a slip in lint does not hide a stale FEATURES.md until the next push.
+   linux-verdict:
+     name: verdict
+-    needs: [linux-lint, linux-typecheck-mac, linux-sim, linux-rehearsal, linux-tooling, linux-tests]
++    needs: [linux-lint, linux-typecheck-mac, linux-model, linux-sim, linux-rehearsal, linux-tooling, linux-tests]
+     if: ${{ inputs.all && !cancelled() }}
+     runs-on: ubuntu-24.04
+     timeout-minutes: 5
+diff --git a/CLAUDE.md b/CLAUDE.md
+index 8567426..2e4b987 100644
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -33,7 +33,7 @@ make build      # swift build (debug)
+ make test       # swift test: core unit tests + controller scenario tests
+ make test-making-way  # the same tests with floatingWindowsMakeWay on wherever a test does not choose its settings (F64)
+ make check      # build + test + the arbor-sim smoke run + the scenarios + on Linux the real-window suite, rehearsed + the tools' self-test; must pass before every commit
+-make gate       # on Linux: check, scenarios, parity, typecheck-mac and lint, each once and on every core: 4 minutes instead of 9
++make gate       # on Linux: check, scenarios, parity, typecheck-mac, lint and the model of a Mac (built), each once and on every core: 4 minutes instead of 9
+ make sim ARGS='"open Safari" "dock 101 left"'   # drive the real controller headlessly
+ make run        # run the debug Arbor binary from this terminal; like install and uninstall it declines without one: the Mac's owner decides
+ make app        # build build/Arbor.app (release; signed as docs/INSTALL.md describes)
+diff --git a/Makefile b/Makefile
+index 8578482..86c88a2 100644
+--- a/Makefile
++++ b/Makefile
+@@ -70,7 +70,7 @@ check: lint build test
+ 	@python3 scripts/test-parity.py
+ 	@./scripts/release-tools-test.sh
+ 
+-# On Linux: all that a change must pass before it is pushed (check, scenarios, parity, typecheck-mac, lint), each thing once and
++# On Linux: all that a change must pass before it is pushed (check, scenarios, parity, typecheck-mac, lint, mac-on-linux-build), each thing once and
+ # on every core: four minutes where those take fourteen. CHECK=1: fail if docs/FEATURES.md is out of date, as CI does.
+ .PHONY: gate check-fast test-fast test-classic
+ gate:
+diff --git a/scripts/gate.sh b/scripts/gate.sh
+index 76281a2..5862ee5 100755
+--- a/scripts/gate.sh
++++ b/scripts/gate.sh
+@@ -1,11 +1,11 @@
+ #!/bin/bash
+ # Everything a change must pass on Linux before it is pushed, each thing once and on every core: `make gate`.
+ #
+-#   scripts/gate.sh             lint, build, the tests, whatever else `make check` runs (smoke, privacy, scenarios, the tools' self-tests …),
+-#                               the type-check of the macOS-only code, parity (which rewrites docs/FEATURES.md, as `make parity` does)
++#   scripts/gate.sh             lint, build, the model of a Mac (built, not run), the tests, whatever else `make check` runs (smoke, privacy, scenarios,
++#                               the tools' self-tests …), the type-check of the macOS-only code, parity (which rewrites docs/FEATURES.md, as `make parity` does)
+ #   scripts/gate.sh --check     parity fails if docs/FEATURES.md is out of date instead of rewriting it, as CI does
+ #
+-# It proves what `make check scenarios parity typecheck-mac lint` proves. That runs the tests on one core of four, because nearly
++# It proves what `make check scenarios parity typecheck-mac lint mac-on-linux-build` proves. That runs the tests on one core of four, because nearly
+ # every test is bound to the main actor, and the scenarios twice. Here the tests run a process to a file, as many at a time as
+ # there are cores (scripts/fast-tests.py), parity reads the record they left, and what does not need one another's results
+ # runs side by side. On four cores, with the build up to date: four minutes instead of nine.
+@@ -50,9 +50,18 @@ gate() {
+   # What runs in the background does not hear Ctrl-C by itself, and would go on compiling, and rewrite docs/FEATURES.md, after this has gone.
+   trap 'trap - TERM; echo "the gate was interrupted"; kill 0' INT TERM
+ 
+-  # What `make lint` runs, its lines side by side.
+-  step lint ./scripts/side-by-side.py lint
++  # A container whose first process is not an init reaps nobody: what the tools' self-test starts and leaves (some 160 a run) piles up, lib.sh's supervisor
++  # looks all processes over, and after a night the rows that go by the clock fall, first beside the compiler and then alone. It shuts nothing: it says why.
++  zombies=$(ps -eo stat= 2>/dev/null | grep -c '^Z')
++  [ "$zombies" -lt 300 ] || echo "  ! $zombies processes have ended here and nobody has asked after them: the tools' self-test grows slow, then red. Restart the container; for good: docker run --init"
++
++  # Side by side: none of the three goes by the clock, and none needs what another leaves. What `make lint` runs, its lines side by side in their turn;
++  # the real Accessibility layer and the controller against the model of a Mac (scripts/mac-on-linux), which compiles for itself and takes nothing of `swift build`'s:
++  # a quarter of a minute where nothing under Sources changed.
++  step lint ./scripts/side-by-side.py lint &
++  step model make mac-on-linux-build &
+   step build swift build --build-tests
++  wait
+   if [ -e "$logs/build.failed" ]; then
+     grep -E 'error:' "$logs/build.log" | sort -u | head -20 | sed 's/^/      /'
+     echo "the gate is shut: it does not build ($((SECONDS - began)) s)"
+diff --git a/scripts/test-ci-linux.py b/scripts/test-ci-linux.py
+index 74abfea..9463ba3 100755
+--- a/scripts/test-ci-linux.py
++++ b/scripts/test-ci-linux.py
+@@ -56,7 +56,7 @@ OF_THE_MAC = {"real-windows", "tests-accounted-for", "macos-from-nothing"}
+ WHOLE_RUNS = ["swift test", "scripts/fast-tests.py same whole.jsonl linux.tsv"]
+ HANDED_ON = ("tests-linux", "linux.tsv")
+ # What CI's Linux jobs run beyond `make check`.
+-ALSO = ["make typecheck-mac", "scripts/parity.py --report test-*.jsonl --check", "scripts/test-ci-changes.py",
++ALSO = ["make typecheck-mac", "make mac-on-linux-build", "scripts/parity.py --report test-*.jsonl --check", "scripts/test-ci-changes.py",
+         "scripts/test-mac-queue.py", "scripts/test-ci-tests.py"]
+ # What stands for a command of `make check`: all of these together, or it does not count. The tests are divided among several
+ # machines (scripts/fast-tests.py): each cuts out its part, builds it and runs it, and one job holds the parts against the sources.
+@@ -398,6 +398,7 @@ jobs:
+       - name: Build
+         run: ./scripts/ci-step.py --summary 'warning:' build swift build
+       - run: ./scripts/ci-step.py typecheck-mac make typecheck-mac
++      - run: ./scripts/ci-step.py model make mac-on-linux-build
+   linux-b:
+     name: b
+     runs-on: ubuntu-latest
+@@ -646,6 +647,8 @@ TABLE = [
+     ("runs `scripts/parity.py", "parity was dropped", changed("      - run: ./scripts/ci-step.py parity python3 scripts/parity.py --report test-*.jsonl --check\n", ""), MAKEFILE),
+     ("runs `scripts/parity.py", "parity no longer minds FEATURES.md", changed("test-*.jsonl --check", "test-*.jsonl"), MAKEFILE),
+     ("runs `make typecheck-mac`", "the type-check was dropped", changed("typecheck-mac make typecheck-mac", "typecheck-mac true"), MAKEFILE),
++    ("runs `make mac-on-linux-build`", "nobody asks any more whether Arbor compiles against the model of a Mac", changed("      - run: ./scripts/ci-step.py model make mac-on-linux-build\n", ""), MAKEFILE),
++    ("runs `make mac-on-linux-build`", "the model is played instead, which is another thing", changed("model make mac-on-linux-build", "model make mac-on-linux"), MAKEFILE),
+     ("runs `scripts/test-ci-changes.py`", "the Mac's rules go unchecked", changed("      - run: ./scripts/ci-step.py ci-changes ./scripts/test-ci-changes.py\n", ""), MAKEFILE),
+ ]
+ 
+diff --git a/scripts/test-fast-tests.py b/scripts/test-fast-tests.py
+index 49e98ce..d857270 100755
+--- a/scripts/test-fast-tests.py
++++ b/scripts/test-fast-tests.py
+@@ -338,15 +338,15 @@ PYTHON_STAND_IN = 'import os, sys\nname = "%s"\nif name in os.environ["FAIL"].sp
+ with open(os.path.join(shard.ROOT, "Makefile"), encoding="utf-8") as handle:
+     CHECK = re.search(r"^check:.*\n(?:(?:\t|#).*\n)*", handle.read(), re.M).group()
+ RECIPE = [line for line in CHECK.split("\n") if line.startswith("\t")]
+-# lint, build, tests, typecheck-mac, parity, and the recipe.
+-STEPS = 5 + len(RECIPE)
++# lint, model, build, tests, typecheck-mac, parity, and the recipe.
++STEPS = 6 + len(RECIPE)
+ 
+ 
+ # What the ledger of macOS's surprises has to say to the change: whatever READING holds, and then it fails, which is nobody's business.
+ READING_STAND_IN = 'import os, sys\nif sys.argv[1:] == ["--for"] and os.environ.get("READING"):\n    print(os.environ["READING"])\nprint("a traceback", file=sys.stderr)\nsys.exit(3)\n'
+ 
+ 
+-def gate(fail="", *arguments, rule=CHECK, reading=""):
++def gate(fail="", *arguments, rule=CHECK, reading="", ps="S\nZ\nR+\n"):
+     """The exit code of gate.sh and what it printed when the steps FAIL names fail."""
+     with tempfile.TemporaryDirectory() as folder:
+         os.makedirs(os.path.join(folder, "scripts"))
+@@ -361,6 +361,9 @@ def gate(fail="", *arguments, rule=CHECK, reading=""):
+             os.chmod(os.path.join(folder, path), 0o755)
+         with open(os.path.join(folder, "scripts", "reality-ledger.py"), "w", encoding="utf-8") as handle:
+             handle.write(READING_STAND_IN)
++        with open(os.path.join(folder, "bin", "ps"), "w", encoding="utf-8") as handle:
++            handle.write("#!/bin/sh\nprintf '%s'\n" % ps.replace("\n", "\\n"))
++        os.chmod(os.path.join(folder, "bin", "ps"), 0o755)
+         done = subprocess.run(["bash", os.path.join(folder, "scripts", "gate.sh"), *arguments], capture_output=True, text=True, check=False,
+                               env={**os.environ, "PATH": os.path.join(folder, "bin") + os.pathsep + os.environ["PATH"], "FAIL": fail, "READING": reading})
+         return done.returncode, done.stdout + done.stderr
+@@ -392,7 +395,14 @@ else:
+     code, said = gate("side-by-side.py lint")
+     row("gate.sh: lint fails, and the rest is still looked at", (code, said.count("✔"), "the gate is shut: lint (" in said), (1, STEPS - 1, True))
+     code, said = gate("swift build")
+-    row("gate.sh: it does not build, so nothing else is tried", (code, said.count("✔"), "it does not build" in said), (1, 1, True))
++    row("gate.sh: it does not build, so nothing else is tried but what ran beside the build", (code, said.count("✔"), "it does not build" in said), (1, 2, True))
++    code, said = gate("make mac-on-linux-build")
++    row("gate.sh: Arbor no longer compiles against the model of a Mac, and the rest is still looked at", (code, said.count("✔"), "the gate is shut: model (" in said), (1, STEPS - 1, True))
++    code, said = gate("side-by-side.py lint,make mac-on-linux-build")
++    row("gate.sh: both that run beside the build fail", (code, "the gate is shut: lint model (" in said), (1, True))
++    row("gate.sh: a few processes nobody has asked after are nobody's business", "nobody has asked after" in gate()[1], False)
++    code, said = gate(ps="Z\n" * 300 + "S\nR+\n")
++    row("gate.sh: three hundred are said, with the cure, and shut nothing", (code, "  ! 300 processes have ended here" in said, "docker run --init" in said, "the gate is open" in said), (0, True, True, True))
+     code, said = gate("fast-tests.py run")
+     row("gate.sh: the tests fail, so parity is not asked", (code, "not asked" in said, "the gate is shut: tests (" in said), (1, True, True))
+     row("gate.sh: parity fails", gate("parity.py")[0], 1)
+-- 
+2.43.0
+

@@ -1,0 +1,55 @@
+diff --git a/scripts/typecheck-mac/stubs/FakeMacOS/Accessibility.swift b/scripts/typecheck-mac/stubs/FakeMacOS/Accessibility.swift
+index a744b0fd..aaed672a 100644
+--- a/scripts/typecheck-mac/stubs/FakeMacOS/Accessibility.swift
++++ b/scripts/typecheck-mac/stubs/FakeMacOS/Accessibility.swift
+@@ -319,7 +319,7 @@ extension FakeMac {
+       take(frame, window, listedAfter: serverListsACallAfter)
+     }
+     if let delay = window.goesBackAfter {
+-      appDoes(window.app, after: delay, "w\(window.number) goes back to where it was") { [self] in take(before, window) }
++      appDoes(window.app, after: delay, "w\(window.number) goes back to where it was") { [self] in take(before, window, listedAfter: serverListsAnAppsMoveAfter) }
+     }
+   }
+ 
+@@ -328,7 +328,10 @@ extension FakeMac {
+     guard window.isOpen else { return }
+     let before = window.frame
+     window.frame = frame
+-    if lag > 0 {
++    if lag > 0, let sizeLag = serverListsANewSizeAfter {
++      if before.size != frame.size { send(after: min(sizeLag, lag), from: .system, "") { window.bounds.size = frame.size } }
++      if before.origin != frame.origin { send(after: lag, from: .system, "") { window.bounds.origin = frame.origin } }
++    } else if lag > 0 {
+       send(after: lag, from: .system, "") { if window.frame == frame { window.bounds = frame } }
+     } else {
+       window.bounds = frame
+diff --git a/scripts/typecheck-mac/stubs/FakeMacOS/DesktopShown.swift b/scripts/typecheck-mac/stubs/FakeMacOS/DesktopShown.swift
+index baed92e6..18b259e9 100644
+--- a/scripts/typecheck-mac/stubs/FakeMacOS/DesktopShown.swift
++++ b/scripts/typecheck-mac/stubs/FakeMacOS/DesktopShown.swift
+@@ -39,7 +39,7 @@ extension FakeMac {
+   }
+ 
+   /// The window's frame as the window server lists it.
+-  public func listedBounds(of window: Window) -> CGRect { sweptTo?[window.number] ?? window.bounds.offsetBy(dx: listIsOffBy, dy: 0) }
++  public func listedBounds(of window: Window) -> CGRect { sweptTo?[window.number] ?? window.bounds.offsetBy(dx: listIsOffBy, dy: listIsOffDownBy) }
+ 
+   /// Whether what shows at the point is the strip of a window that was swept aside.
+   func isStrip(at point: CGPoint) -> Bool { windowShowing(at: point, reach: 4).map { sweptTo?[$0.number] != nil } ?? false }
+diff --git a/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift b/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift
+index bebc8ee7..5cc98216 100644
+--- a/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift
++++ b/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift
+@@ -85,6 +85,12 @@ public final class FakeMac: @unchecked Sendable {
+   public var serverListsACallAfter: TimeInterval = 0
+   /// The window server lists every window so many points to the right of where its app has it, for good. GUESS: nobody has measured such a difference; the layer must not depend on there being none.
+   public var listIsOffBy: CGFloat = 0
++  /// THE JUDGE'S, UNCOMMITTED. The same downwards.
++  public var listIsOffDownBy: CGFloat = 0
++  /// THE JUDGE'S, UNCOMMITTED: a new SIZE is listed so long after its call, a new place after `serverListsACallAfter`: half-way frames. Nil: as committed.
++  public var serverListsANewSizeAfter: TimeInterval?
++  /// THE JUDGE'S, UNCOMMITTED: the list is so far behind a stubborn window's own way back. GUESS: nobody has measured the list against an app's own move.
++  public var serverListsAnAppsMoveAfter: TimeInterval = 0
+   /// While macOS shows its desktop: where the window server lists each window it swept aside, by number (DesktopShown.swift).
+   public internal(set) var sweptTo: [UInt32: CGRect]?
+   /// How long after the button went down on a strip the window server lists the windows where they are again, with the button still down. 27 ms on a hosted

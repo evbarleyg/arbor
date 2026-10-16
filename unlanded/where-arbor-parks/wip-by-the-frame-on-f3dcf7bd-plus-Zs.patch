@@ -1,0 +1,429 @@
+diff --git a/Sources/ArborKit/Controller/Controller+AskFirst.swift b/Sources/ArborKit/Controller/Controller+AskFirst.swift
+index cd345ad1..b9a7b4b1 100644
+--- a/Sources/ArborKit/Controller/Controller+AskFirst.swift
++++ b/Sources/ArborKit/Controller/Controller+AskFirst.swift
+@@ -121,7 +121,7 @@ extension Controller {
+       size: growsAsAsked ? size : CGSize(width: min(size.width, has.width), height: min(size.height, has.height)))
+     guard abs(question.width - has.width) > 1 || abs(question.height - has.height) > 1 else { return nil }
+     guard parked.contains(window.id) else {
+-      let staysThere = whereItStops(question.origin, titleBar: titleBars[window.id] ?? Self.guessedTitleBar) == question.origin
++      let staysThere = whereItStops(question, titleBar: likelyTitleBar(of: window.id) ?? Self.guessedTitleBar) == question.origin
+       return staysThere ? question : nil
+     }
+     return isOutOfView(question.union(has)) && displays.contains { question.overlaps($0.frame) } ? question : nil
+diff --git a/Sources/ArborKit/Controller/Controller+Displays.swift b/Sources/ArborKit/Controller/Controller+Displays.swift
+index 18217b43..fcf6212d 100644
+--- a/Sources/ArborKit/Controller/Controller+Displays.swift
++++ b/Sources/ArborKit/Controller/Controller+Displays.swift
+@@ -515,11 +515,11 @@ extension Controller {
+       // window found out of view at a start, its place says how high its title bar is; where it does not, the guess stands.
+       let places = parkingPlaces(for: frame.size, on: display)
+       if titleBars[window] == nil {
+-        titleBars[window] = places.lazy.compactMap { self.titleBar(ofAWindowAt: frame.origin, sentTo: $0) }.first
++        titleBars[window] = places.lazy.compactMap { self.titleBar(ofAWindowAt: frame, sentTo: $0) }.first
+       }
+       let best = CGRect(origin: parkingOrigin(for: frame.size, of: window, on: display), size: frame.size)
+-      if isAsFarAsItGoes(window, at: frame.origin, sentTo: best.origin) { continue }
+-      if places.contains(where: { isAsFarAsItGoes(window, at: frame.origin, sentTo: $0) }), !showsLess(window, sentTo: best, than: frame) {
++      if isAsFarAsItGoes(window, at: frame, sentTo: best.origin) { continue }
++      if places.contains(where: { isAsFarAsItGoes(window, at: frame, sentTo: $0) }), !showsLess(window, sentTo: best, than: frame) {
+         continue
+       }
+       park(window, on: display)
+diff --git a/Sources/ArborKit/Controller/Controller+Layout.swift b/Sources/ArborKit/Controller/Controller+Layout.swift
+index 94ca0afd..2d05cc05 100644
+--- a/Sources/ArborKit/Controller/Controller+Layout.swift
++++ b/Sources/ArborKit/Controller/Controller+Layout.swift
+@@ -378,14 +378,14 @@ extension Controller {
+   /// parked window reaches higher than its origin says, and can show on a neighbour that ends a little
+   /// above this display's bottom. The places are judged by where the window would really stop (Controller+TitleBars.swift).
+   func parkingOrigin(for size: CGSize, of window: WindowID, on display: DisplaySnapshot) -> CGPoint {
+-    parkingOrigin(for: size, titleBar: titleBars[window], on: display)
++    parkingOrigin(for: size, titleBar: likelyTitleBar(of: window), on: display)
+   }
+ 
+   /// With nil, for a window whose title bar is not known, by a guess.
+   func parkingOrigin(for size: CGSize, titleBar: CGFloat?, on display: DisplaySnapshot) -> CGPoint {
+     let candidates = parkingPlaces(for: size, on: display)
+     func showing(_ origin: CGPoint) -> CGFloat {
+-      whatShows(of: CGRect(origin: whereItStops(origin, titleBar: titleBar ?? Self.guessedTitleBar), size: size))
++      whatShows(of: CGRect(origin: whereItStops(CGRect(origin: origin, size: size), titleBar: titleBar ?? Self.guessedTitleBar), size: size))
+     }
+     var best = (origin: candidates[0], showing: showing(candidates[0]))
+     for origin in candidates.dropFirst() where showing(origin) < best.showing { best = (origin, showing(origin)) }
+@@ -394,7 +394,7 @@ extension Controller {
+ 
+   /// Whether less of `window` would show if it were sent to `frame` than shows of it at `now`.
+   func showsLess(_ window: WindowID, sentTo frame: CGRect, than now: CGRect) -> Bool {
+-    let stop = whereItStops(frame.origin, titleBar: titleBars[window] ?? Self.guessedTitleBar)
++    let stop = whereItStops(frame, titleBar: likelyTitleBar(of: window) ?? Self.guessedTitleBar)
+     return whatShows(of: CGRect(origin: stop, size: frame.size)) < whatShows(of: now)
+   }
+ 
+diff --git a/Sources/ArborKit/Controller/Controller+Rules.swift b/Sources/ArborKit/Controller/Controller+Rules.swift
+index 579b805b..ea9492ff 100644
+--- a/Sources/ArborKit/Controller/Controller+Rules.swift
++++ b/Sources/ArborKit/Controller/Controller+Rules.swift
+@@ -176,7 +176,7 @@ extension Controller {
+       if isOnePointAcross, !aHandCanGetHold(of: frame) { return true }
+       return parkingPlaces(for: frame.size, on: display).contains { place in
+         let isThere = abs(frame.minX - place.x) <= 1 && abs(frame.minY - place.y) <= 1
+-        let titleBar = titleBar(ofAWindowAt: frame.origin, sentTo: place)
++        let titleBar = titleBar(ofAWindowAt: frame, sentTo: place)
+         guard isThere || titleBar != nil else { return false }
+         // By the height its place speaks of, and by the guess, which is what Arbor goes by until a window has answered.
+         return [titleBar, nil].contains { parkingOrigin(for: frame.size, titleBar: $0, on: display) == place }
+diff --git a/Sources/ArborKit/Controller/Controller+TitleBars.swift b/Sources/ArborKit/Controller/Controller+TitleBars.swift
+index f6bb9e38..510af933 100644
+--- a/Sources/ArborKit/Controller/Controller+TitleBars.swift
++++ b/Sources/ArborKit/Controller/Controller+TitleBars.swift
+@@ -11,43 +11,62 @@ extension Controller {
+   /// No title bar is taken to be higher than this: twice the highest seen.
+   static let highestTitleBar: CGFloat = 104
+ 
+-  /// The display that stops a window on its way down to `origin`: the one its corner is on, or the nearest. With one display that is
+-  /// what was measured, with several it is a guess that the fake window system shares.
++  /// The display whose lines hold back a size call to a window with its corner at `origin`: the one the corner is on, or the nearest. With
++  /// one display that is what was measured, with several it is a guess that the fake window system shares.
+   func stopper(of origin: CGPoint) -> DisplaySnapshot? {
+     displays.first { $0.frame.contains(origin) }
+       ?? displays.min { $0.frame.distance(to: origin) < $1.frame.distance(to: origin) }
+   }
+ 
+-  /// Where a window with a title bar this high, asked to go to `origin`, ends up.
+-  func whereItStops(_ origin: CGPoint, titleBar: CGFloat) -> CGPoint {
+-    guard let stopper = stopper(of: origin) else { return origin }
+-    return CGPoint(x: origin.x, y: min(origin.y, stopper.visibleFrame.maxY - titleBar))
++  /// The displays as the one rule for where macOS leaves a window reckons with them, which the fake window system plays too.
++  var screens: Screens { Screens(displays.map { ($0.frame, $0.visibleFrame) }) }
++
++  /// Where a window with a title bar this high, asked to be at `frame`, comes to rest. The display that has most of it sees to that, not the one
++  /// its corner is on: sent to the top left corner beside a neighbour that begins lower, a window high enough to reach that neighbour
++  /// came to lie wholly in view on it.
++  func whereItStops(_ frame: CGRect, titleBar: CGFloat) -> CGPoint {
++    screens.rest(of: frame, titleBar: titleBar)
+   }
+ 
+-  /// The title bar of a window that is at `origin` because macOS stopped it there on its way to `place`. Nil if that cannot be why it
+-  /// is there: it is not straight above the place, or further above the bottom than macOS stops any window.
+-  func titleBar(ofAWindowAt origin: CGPoint, sentTo place: CGPoint) -> CGFloat? {
+-    guard origin.y < place.y, abs(origin.x - place.x) <= 1, let bottom = stopper(of: place)?.visibleFrame.maxY else { return nil }
+-    let titleBar = bottom - origin.y
+-    return titleBar > 0 && titleBar <= Self.highestTitleBar ? titleBar : nil
++  /// The title bar of a window that is at `frame` because macOS stopped it there on its way down to `place`. Nil if that cannot be why it is
++  /// there: no title bar as high as macOS stops any window by would have brought it to rest just there.
++  func titleBar(ofAWindowAt frame: CGRect, sentTo place: CGPoint) -> CGFloat? {
++    guard frame.minY < place.y else { return nil }
++    let asked = CGRect(origin: place, size: frame.size)
++    return displays.lazy.map { $0.visibleFrame.maxY - frame.minY }.first { titleBar in
++      titleBar > 0 && titleBar <= Self.highestTitleBar && self.isNear(frame.origin, self.whereItStops(asked, titleBar: titleBar))
++    }
+   }
+ 
+   /// Takes note of how far above the bottom macOS stopped a window that was `asked` to go below it. Says whether that is news. An
+   /// answer from anywhere else says nothing: the app refused, or something else moved the window.
+   @discardableResult
+   func learnTitleBar(of window: WindowID, asked: CGRect, took: CGRect) -> Bool {
+-    guard let titleBar = titleBar(ofAWindowAt: took.origin, sentTo: asked.origin), titleBars[window] != titleBar else { return false }
++    guard let titleBar = titleBar(ofAWindowAt: took, sentTo: asked.origin), titleBars[window] != titleBar else { return false }
+     titleBars[window] = titleBar
++    if let app = windows[window]?.bundleID { titleBarsOfApps[app] = titleBar }
+     return true
+   }
+ 
+-  /// Whether `window`, at `origin`, is where it ends up when it is sent to `place`: there, or where macOS stops it.
+-  func isAsFarAsItGoes(_ window: WindowID, at origin: CGPoint, sentTo place: CGPoint) -> Bool {
+-    guard abs(origin.x - place.x) <= 1 else { return false }
+-    if abs(origin.y - place.y) <= 1 { return true }
+-    return titleBars[window].map { abs(origin.y - whereItStops(place, titleBar: $0).y) <= 1 } ?? false
++  /// What to reckon with for `window`: its own answer; before it has given one, that of another window of its app, which are mostly alike. By
++  /// one guess for all, every window with a toolbar went out of view by way of a corner where a strip of it showed on the neighbour.
++  func likelyTitleBar(of window: WindowID) -> CGFloat? {
++    titleBars[window] ?? windows[window]?.bundleID.flatMap { titleBarsOfApps[$0] }
++  }
++
++  /// Whether `window`, at `frame`, is where it ends up when it is sent to `place`: there, or where macOS stops it. Of a window whose title bar
++  /// is not known that can be said where the height makes no difference: below a menu bar. On no display at all it is nowhere: the display
++  /// it reached onto has gone.
++  func isAsFarAsItGoes(_ window: WindowID, at frame: CGRect, sentTo place: CGPoint) -> Bool {
++    guard whatShows(of: frame) > 0 else { return false }
++    if isNear(frame.origin, place) { return true }
++    let asked = CGRect(origin: place, size: frame.size)
++    let heights: [CGFloat] = titleBars[window].map { [$0] } ?? [1, Self.highestTitleBar]
++    return heights.allSatisfy { isNear(frame.origin, whereItStops(asked, titleBar: $0)) }
+   }
+ 
++  private func isNear(_ a: CGPoint, _ b: CGPoint) -> Bool { abs(a.x - b.x) <= 1 && abs(a.y - b.y) <= 1 }
++
+   /// How many square points of `frame` the displays show, all together: another name for `areaShowing(of:)`.
+   func whatShows(of frame: CGRect) -> CGFloat {
+     areaShowing(of: frame)
+diff --git a/Sources/ArborKit/Controller/Controller.swift b/Sources/ArborKit/Controller/Controller.swift
+index 26c60f1c..e098d506 100644
+--- a/Sources/ArborKit/Controller/Controller.swift
++++ b/Sources/ArborKit/Controller/Controller.swift
+@@ -182,6 +182,8 @@ public final class Controller {
+   var parkedAgain: [WindowID: Int] = [:]
+   /// How much of each window's top macOS kept above the bottom of the visible frame when Arbor sent it below (Controller+TitleBars.swift).
+   var titleBars: [WindowID: CGFloat] = [:]
++  /// What the last window of each app to answer so answered, by bundle id: reckoned with for a window that has not. For this run only.
++  var titleBarsOfApps: [String: CGFloat] = [:]
+   /// Windows Arbor has let go of (their app was excluded, a rule ignores them) that are still out of view, because their
+   /// app did not answer when they were to be brought back, and where each belongs. Paid when the app has something
+   /// to report, and at the latest when Arbor stops.
+diff --git a/Tests/ArborKitTests/TitleBarTests.swift b/Tests/ArborKitTests/TitleBarTests.swift
+index 5113c9fd..3b705d42 100644
+--- a/Tests/ArborKitTests/TitleBarTests.swift
++++ b/Tests/ArborKitTests/TitleBarTests.swift
+@@ -155,6 +155,45 @@ import Testing
+     #expect(h.measure { h.system.setDisplays(h.system.displayList) }.moves == 0)
+   }
+ 
++  /// What one window of an app has answered is reckoned with for the next, until that has answered for itself: an app's windows are mostly
++  /// alike. So it is an app's first window of a run that may go by way of the wrong corner, and no other.
++  @Test(arguments: [(52.0, 40.0), (52.0, 50.0), (80.0, 60.0)])
++  func theNextWindowOfTheAppGoesOutOfViewInOneMove(titleBar: Double, above: Double) {
++    let (h, a, f) = besideADisplay(endingAbove: CGFloat(above), titleBar: CGFloat(titleBar))
++    #expect(h.measure { h.run("zoom \(a.rawValue)") }.repeatMoves == 1, "the first")
++    h.run("back")
++    let next = h.system.open(app: "Editor", pid: 12, frame: CGRect(x: 600, y: 340, width: 640, height: 420))
++    h.system.setTitleBar(next, CGFloat(titleBar))
++    h.scheduler.advance(by: 1)
++    let budget = h.measure { h.run("zoom \(a.rawValue)") }
++    #expect(budget.repeatMoves == 0 && budget.idleMoves == 0, "\(budget)")
++    #expect(h.frame(next)?.maxX == CGFloat(1) && h.frame(f)?.maxX == CGFloat(1), "\(h.frame(next)!)")
++    // Closed and opened again, it is a new window of an app that is known.
++    h.run("back")
++    h.system.close(next)
++    h.system.close(f)
++    let later = h.system.open(app: "Editor", pid: 12, frame: CGRect(x: 600, y: 340, width: 640, height: 420))
++    h.system.setTitleBar(later, CGFloat(titleBar))
++    h.scheduler.advance(by: 1)
++    #expect(h.measure { h.run("zoom \(a.rawValue)") }.repeatMoves == 0)
++  }
++
++  /// A window that is not like its app's others is put right by its own answer, as ever.
++  @Test func aWindowUnlikeItsAppsOthersAnswersForItself() {
++    let (h, a, f) = besideADisplay(endingAbove: 40, titleBar: 28)
++    h.run("zoom \(a.rawValue)")
++    #expect(h.frame(f)?.minX == CGFloat(1439))
++    h.run("back")
++    let other = h.system.open(app: "Editor", pid: 12, frame: CGRect(x: 600, y: 340, width: 640, height: 420))
++    h.system.setTitleBar(other, 52)
++    h.scheduler.advance(by: 1)
++    #expect(h.measure { h.run("zoom \(a.rawValue)") }.repeatMoves == 1)
++    #expect(whatShows(h, of: other) <= 52 && whatShows(h, of: f) <= 28, "\(h.frame(other)!), \(h.frame(f)!)")
++    h.run("back")
++    let again = h.measure { h.run("zoom \(a.rawValue)") }
++    #expect(again.repeatMoves == 0 && again.idleMoves == 0, "each by its own: \(again)")
++  }
++
+   /// Its app falls silent between the two questions. The first answer stands, and the window is fetched like any other.
+   @Test func anAppThatDoesNotAnswerTheSecondQuestionKeepsItsWindowWithinArborsReach() {
+     let (h, a, f) = besideADisplay(endingAbove: 60, titleBar: 80)
+diff --git a/Tests/ArborKitTests/WhereArborParksTests.swift b/Tests/ArborKitTests/WhereArborParksTests.swift
+new file mode 100644
+index 00000000..bc9ecbca
+--- /dev/null
++++ b/Tests/ArborKitTests/WhereArborParksTests.swift
+@@ -0,0 +1,92 @@
++import ArborCore
++@testable import ArborKit
++import ArborTesting
++import CoreGraphics
++import Testing
++
++/// Where a window waits that is out of view. macOS does not leave a window where it is asked to go: its title bar stays within reach, and
++/// the display that sees to that is the one that has most of the window, not the one its corner is on (`Screens`, from 78 calls on a hosted
++/// Mac). Arbor reckoned by the corner, and only with the stop at the bottom.
++@Suite @MainActor struct WhereArborParksTests {
++  static func display(_ id: String, _ frame: CGRect, top: CGFloat = 31, bottom: CGFloat = 0, left: CGFloat = 0, right: CGFloat = 0) -> DisplaySnapshot {
++    let visible = CGRect(
++      x: frame.minX + left, y: frame.minY + top, width: frame.width - left - right, height: frame.height - top - bottom)
++    return DisplaySnapshot(id: DisplayID(id), frame: frame, visibleFrame: visible, isMain: id == "main")
++  }
++
++  /// The main display of the calls, with its Dock.
++  static let main = display("main", CGRect(x: 0, y: 0, width: 1600, height: 900), bottom: 78)
++  /// A left neighbour that begins 500 points lower, and a display at the right.
++  static let lowerLeft = display("lower-left", CGRect(x: -1280, y: 500, width: 1280, height: 800))
++  static let right = display("right", CGRect(x: 1600, y: 0, width: 1920, height: 1080))
++
++  /// `[a | Desktop]` framed on `a`, so that `f`, which floats, is out of view.
++  func withAWindowOutOfView(_ displays: [DisplaySnapshot], size: CGSize, titleBar: CGFloat) -> (Harness, f: WindowID) {
++    let h = Harness(displays: displays)
++    let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
++    let f = h.system.open(app: "Editor", pid: 12, frame: CGRect(origin: CGPoint(x: 300, y: 100), size: size))
++    h.system.setTitleBar(f, titleBar)
++    h.start()
++    h.run("dock \(a.rawValue) left")
++    h.run("zoom \(a.rawValue)")
++    return (h, f)
++  }
++
++  func whatShows(_ h: Harness, of frame: CGRect) -> CGFloat {
++    h.system.displayList.map { frame.intersection($0.frame).area }.reduce(0, +)
++  }
++
++  /// Seen on the Mac: asked to the main display's top left corner, a window of 1000×600 went to -999,531, wholly in view on the neighbour, which
++  /// it is high enough to reach; one of 656×422, which is not, rested below the main display's menu bar with one point's width in view. Arbor chose
++  /// that corner for both.
++  @Test(arguments: [(CGSize(width: 656, height: 422), 32.0), (CGSize(width: 1000, height: 600), 52.0), (CGSize(width: 900, height: 750), 28.0)])
++  func besideANeighbourThatBeginsLowerAHighWindowDoesNotEndUpInView(size: CGSize, titleBar: Double) throws {
++    let (h, f) = withAWindowOutOfView([Self.main, Self.lowerLeft, Self.right], size: size, titleBar: CGFloat(titleBar))
++    let frame = try #require(h.frame(f))
++    #expect(h.controller.parked.contains(f))
++    #expect(whatShows(h, of: frame) < size.width * size.height / 4, "\(frame)")
++    let places = h.controller.parkingPlaces(for: size, on: Self.main)
++    let least = places.map { whatShows(h, of: h.system.whereMacOSPuts(CGRect(origin: $0, size: size), titleBar: CGFloat(titleBar))) }.min()
++    #expect(whatShows(h, of: frame) == least, "\(frame)")
++    #expect(h.measure { h.system.setDisplays(h.system.displayList) }.moves == 0, "and there it stays")
++  }
++
++  /// With a wider display below, the top right corner is where least of a window shows. It rests below the menu bar there (36 of 36 on the Mac),
++  /// which Arbor took for a refusal: at every report of the displays it asked again. The menu bar stops every window alike, so
++  /// nothing is learnt of this window's title bar.
++  @Test func aWindowParkedAtTheTopIsNotAskedAgain() {
++    let below = Self.display("below", CGRect(x: -160, y: 900, width: 1920, height: 1080))
++    let (h, f) = withAWindowOutOfView([Self.main, below], size: CGSize(width: 656, height: 422), titleBar: 32)
++    #expect(h.frame(f) == CGRect(x: 1599, y: 31, width: 656, height: 422))
++    for _ in 1...3 { #expect(h.measure { h.system.setDisplays(h.system.displayList) }.moves == 0) }
++    #expect(h.controller.titleBars[f] == nil)
++  }
++
++  /// A window of which nothing is known is asked for its size where it stands, before it goes to its slot. One that lies under the menu bar would
++  /// hop below it at the question, so it is not asked there.
++  @Test(arguments: [(100, 2), (10, 1)] as [(CGFloat, Int)]) func aWindowThatLiesUnderTheMenuBarIsNotAskedForItsSizeThere(y: CGFloat, calls: Int) {
++    let h = Harness()
++    let a = h.system.open(app: "A", pid: 11, frame: CGRect(x: 200, y: y, width: 1000, height: 600))
++    h.start()
++    let mark = h.system.moveLog.count
++    h.run("dock \(a.rawValue) left")
++    #expect(h.system.moveLog[mark...].filter { $0.window == a }.count == calls, "\(h.system.moveLog[mark...])")
++    expectWindowsMatchLayout(h)
++  }
++
++  /// With the Dock at the right what went out of view did not: asked for 1023,767 a window took 934,740, 20 times of 20: with nothing of it inside the
++  /// visible frame macOS pulls a window in until 40 points are, and the Dock's strip shows it besides. It waits at the side where one point
++  /// inside the visible frame is one point to see.
++  @Test(arguments: [(0.0, 50.0, -479.0), (50.0, 0.0, 1023.0)]) func besideADockAtTheSideItWaitsAtTheOtherSide(left: Double, right: Double, x: Double) {
++    let hosted = Self.display("main", CGRect(x: 0, y: 0, width: 1024, height: 768), left: CGFloat(left), right: CGFloat(right))
++    let h = Harness(displays: [hosted])
++    let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 400, height: 400))
++    let f = h.system.open(app: "Editor", pid: 12, frame: CGRect(x: 300, y: 100, width: 480, height: 348))
++    h.start()
++    h.run("dock \(a.rawValue) left")
++    let budget = h.measure { h.run("zoom \(a.rawValue)") }
++    #expect(h.frame(f) == CGRect(x: x, y: 740, width: 480, height: 348))
++    #expect(budget.repeatMoves == 0 && budget.idleMoves == 0, "\(budget)")
++    #expect(h.measure { h.system.setDisplays(h.system.displayList) }.moves == 0, "and there it stays")
++  }
++}
+diff --git a/scripts/mac-shell/check-where-it-parks.sh b/scripts/mac-shell/check-where-it-parks.sh
+new file mode 100755
+index 00000000..7089e871
+--- /dev/null
++++ b/scripts/mac-shell/check-where-it-parks.sh
+@@ -0,0 +1,102 @@
++#!/bin/bash
++# Where a window waits that is out of view, on real macOS: does it rest where Arbor reckoned, with as little of it to see, and is it left in peace there?
++#
++#   scripts/mac-shell/run.sh --no-preflight "<why>" scripts/mac-shell/check-where-it-parks.sh
++#
++# Why no pre-flight: the fake Mac has no stand-in for the Dock's side nor for a virtual display, so a rehearsal plays the first two claims with the Dock at the
++# bottom (the first is red there, rightly) and ends at the third.
++#
++# macOS does not leave a window where it is asked to go. Its title bar stays below the menu bar and above the bottom of the visible frame; with nothing of
++# it inside a visible frame it is pulled in until 40 points are; and the display that sees to that is the one that has most of the window, where the
++# display its corner is on has a column of it at most (Sources/ArborCore/Screens.swift, from bare calls with no Arbor running). Arbor reckoned by the
++# corner and only with the stop at the bottom. What only a Mac can say is whether ARBOR's own calls end as it now reckons:
++#   - the Dock at the right: out of view at the bottom LEFT, one column to see. It was asked to 1023,767 and took 934,740: 90 by 28 points in plain view.
++#   - the Dock at the left: at the bottom right.
++#   - a wider display below: at the top right, BELOW THE MENU BAR; and not asked again when the displays report. It was, at every report.
++#   - each time: one request on the way out, one on the way back, and back where it was.
++# After each claim: what Arbor asked of the window, from arbor.log.
++#
++# Only on GitHub's Macs: it moves the Dock to every side and puts it back, plugs a virtual display in and out and rearranges the displays.
++source "$(dirname "$0")/lib.sh"
++needs_throwaway_mac "move the Dock to every side, plug a virtual display in and out and rearrange the displays, at which macOS moves every window"
++
++whole() { awk '{ for (i = 1; i <= NF; i++) printf "%d ", $i + 0.5 }' | sed 's/ $//'; }
++now_at() { real_frame_of "$1" | whole; }
++is_at() { [ "$(now_at "$1")" = "$2" ] || { echo "    it is at $(now_at "$1"), not at $2"; return 1; }; }
++rests_at() { [ "$(now_at "$1" | cut -d' ' -f1-2)" = "$2" ] || { echo "    it is at $(now_at "$1"), its corner not at $2"; return 1; }; }
++asked_of() { arbor_log_since "$ARBOR_STEP_MARK" | grep -E "w$1\\b" | tail -n 8 | sed 's/^.*DEBUG /    (/; s/$/)/' || true; }
++# recorded <name> <command…>: a trace of its own around the command. frames_asked <name> <id>: how many frames Arbor asked that window for in it.
++recorded() {
++  local name=$1
++  shift
++  "$ARBOR_BIN/arborctl" trace on "$name" > /dev/null
++  "$@"
++  sleep 3
++  "$ARBOR_BIN/arborctl" trace off > /dev/null
++}
++frames_asked() { cat "$ARBOR_HOME"/traces/*-"$1".jsonl | grep -c "\"call\":\"setFrame\".*\"id\":$2\\b" || true; }
++
++DOCK_WAS="$(defaults read com.apple.dock orientation 2> /dev/null || echo bottom)"
++dock_at() {
++  defaults write com.apple.dock orientation "$1"
++  killall Dock
++  sleep 4 # the Dock comes back, and the visible frame follows a moment later
++  echo "> the Dock at the $1"
++}
++at_exit "dock_at $DOCK_WAS"
++
++arbor_build
++macos_tiling off
++
++for side in right left; do
++  dock_at "$side"
++  arbor_start 2
++  take "sx sy sw sh" screen_of 1
++  take "fx fy fw fh" display_frame_of 1
++  echo "the display $fx $fy $fw $fh, visible $sx $sy $sw $sh"
++  claim "the Dock at the $side: what goes out of view does"
++  # It waits at the width of its slot.
++  ctl dock "$W1" left
++  ctl dock "$W2" right
++  check "both are docked" eventually is in_slot "$W2"
++  slot=$(now_at "$W2")
++  width=$(echo "$slot" | cut -d' ' -f3)
++  ctl zoom "$W1"
++  check "it is out of view" eventually is parked "$W2"
++  if [ "$side" = right ]; then x=$((sx - width + 1)); else x=$((sx + sw - 1)); fi
++  check "at the side away from the Dock, one column inside the visible frame, its title bar above the bottom" \
++    eventually rests_at "$W2" "$x $((sy + sh - 28))"
++  check "and stays there" stays rests_at "$W2" "$x $((sy + sh - 28))"
++  asked_of "$W2"
++  shot "dock-$side"
++  ctl back
++  check "it is back in its slot" eventually is_at "$W2" "$slot"
++  arbor_stop
++done
++dock_at bottom
++
++arbor_start 2
++claim "a wider display below: it waits at the top right, below the menu bar, and is not asked again"
++display_add 1920 1080 below
++display_move below -160
++take "sx sy sw sh" screen_of 1
++take "fx fy fw fh" display_frame_of 1
++echo "the main display $fx $fy $fw $fh, visible $sx $sy $sw $sh"
++ctl dock "$W1" left
++ctl dock "$W2" right
++check "both are docked" eventually is in_slot "$W2"
++slot=$(now_at "$W2")
++ctl zoom "$W1"
++check "it is out of view" eventually is parked "$W2"
++check "at the top right corner, below the menu bar" eventually rests_at "$W2" "$((fx + fw - 1)) $sy"
++asked_of "$W2"
++shot top-right
++claim "the displays report, and nothing that matters to it has changed: it is left in peace"
++recorded peace display_move below -150
++check "it is where it was" rests_at "$W2" "$((fx + fw - 1)) $sy"
++check "and was asked for nothing" test "$(frames_asked peace "$W2")" = 0
++asked_of "$W2"
++ctl back
++check "it is back in its slot" eventually is_at "$W2" "$slot"
++display_remove
++arbor_stop

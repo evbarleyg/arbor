@@ -1,0 +1,583 @@
+From 6add1b1ea5ebdf57343e320d34d73f67760bad89 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 15:22:44 +0000
+Subject: [PATCH 1/3] wip: one request for the keyboard
+
+---
+ .../Controller/Controller+Events.swift        |  7 +-
+ .../Controller/Controller+KeyboardFocus.swift |  5 +-
+ .../Controller/Controller+Layout.swift        |  4 +
+ .../OneRequestForTheKeyboardTests.swift       | 88 +++++++++++++++++++
+ 4 files changed, 100 insertions(+), 4 deletions(-)
+ create mode 100644 Tests/ArborKitTests/OneRequestForTheKeyboardTests.swift
+
+diff --git a/Sources/ArborKit/Controller/Controller+Events.swift b/Sources/ArborKit/Controller/Controller+Events.swift
+index 05013cc1..715d5008 100644
+--- a/Sources/ArborKit/Controller/Controller+Events.swift
++++ b/Sources/ArborKit/Controller/Controller+Events.swift
+@@ -323,11 +323,16 @@ extension Controller: OverlayActions {
+     let outer = following.namesAPlace
+     following.namesAPlace = true
+     defer { following.namesAPlace = outer }
+-    moveCamera(on: display, to: node)
++    // A tile of windows names them: the first that shows gets the keyboard, and nobody else on the way there.
++    guard let inside = workspaces[display]?.tree.windows(under: node).first else { return moveCamera(on: display, to: node) }
++    onTheWay(to: inside) { moveCamera(on: display, to: node) }
+     if let layout = layouts[display],
+       let first = workspaces[display]?.tree.windows(under: node).first(where: { layout.windowFrames[$0] != nil })
+     {
+       askForTheKeyboard(for: first)
++    } else {
++      // Should none of them show: as after any move of the view.
++      ensureFocusIsVisible(on: display, alsoFromAPinnedWindow: true)
+     }
+   }
+ 
+diff --git a/Sources/ArborKit/Controller/Controller+KeyboardFocus.swift b/Sources/ArborKit/Controller/Controller+KeyboardFocus.swift
+index eec2140b..34155dfe 100644
+--- a/Sources/ArborKit/Controller/Controller+KeyboardFocus.swift
++++ b/Sources/ArborKit/Controller/Controller+KeyboardFocus.swift
+@@ -149,7 +149,6 @@ extension Controller {
+   /// Gives `window` keyboard focus and brings it into view if it is not.
+   func giveFocus(to window: WindowID) {
+     // A command asked for this window, so it comes into view now, not when macOS has moved the keyboard.
+-    // That can hand focus to another window on the way (`ensureFocusIsVisible`), so the request comes after.
+     let replaced = focusRequest
+     onTheWay(to: window) { bringIntoView(window) }
+     // `swap` and `move-to-display` ask for the window that has it as a rule: asking macOS again is several round trips.
+@@ -192,8 +191,8 @@ extension Controller {
+     return true
+   }
+ 
+-  /// Runs `move`, which moves the view on the way to `window`, named by its person. A view that moves takes the keyboard along and picks that very
+-  /// window as a rule. It is asked nothing then, as at the request that follows.
++  /// Runs `move`, which moves the view on the way to `window`, named by its person. A view that moves takes the keyboard along, but not on this
++  /// way: the request for `window` follows, and it is the only one (`ensureFocusIsVisible`).
+   func onTheWay(to window: WindowID, _ move: () -> Void) {
+     let outer = namedWindow
+     namedWindow = window
+diff --git a/Sources/ArborKit/Controller/Controller+Layout.swift b/Sources/ArborKit/Controller/Controller+Layout.swift
+index 9fd44b9e..0ee89dd3 100644
+--- a/Sources/ArborKit/Controller/Controller+Layout.swift
++++ b/Sources/ArborKit/Controller/Controller+Layout.swift
+@@ -818,6 +818,10 @@ extension Controller {
+     on displayID: DisplayID, alsoFromAPinnedWindow: Bool = false, alsoFromNothing: Bool = true, asAnHeir: Bool = false,
+     notTo asked: Set<WindowID> = []
+   ) -> Bool {
++    // What names a window gives THAT window the keyboard, by a request of its own at the end of the act, and nobody else is handed it on the
++    // way. Two requests in one breath, for windows of two apps: the app of the window that was named is still in front, so it is not asked
++    // forward, and the other app's coming forward lands last (`onTheWay(to:)`).
++    guard namedWindow == nil else { return false }
+     // A command that moves the view says where the attention goes, so the keyboard goes along, also out of a
+     // pinned window, which is still in view: keys meant for the window that arrived must not end up in a call.
+     // An app can go on naming a window in the Dock as its focused one. A number Arbor does not know is a free-standing panel or
+diff --git a/Tests/ArborKitTests/OneRequestForTheKeyboardTests.swift b/Tests/ArborKitTests/OneRequestForTheKeyboardTests.swift
+new file mode 100644
+index 00000000..81e7c88e
+--- /dev/null
++++ b/Tests/ArborKitTests/OneRequestForTheKeyboardTests.swift
+@@ -0,0 +1,88 @@
++import ArborCore
++import ArborKit
++import ArborTesting
++import CoreGraphics
++import Testing
++
++/// What names a window gives THAT window the keyboard, and inside such an act nobody else is handed it (collab/BOARD.md, 1.89).
++///
++/// On the way to the window the view moves, the window that had the keyboard goes out of view, and Arbor used to hand the keyboard to a window in view,
++/// of another app, and ask for the window that was named in the same breath. On a Mac the first app's coming forward lands after the second
++/// request, which asks nobody forward because its app is still in front: the keyboard ends in a window nobody named. That lives below the
++/// seam (`make mac-on-linux`, "n19"). What shows here is its cause: two requests where one is due.
++@Suite @MainActor struct OneRequestForTheKeyboardTests {
++  /// Alpha's docked window fills the view and has the keyboard. Alpha and Beta each have a floating window, out of view with the Desktop, and
++  /// Beta's was used after Alpha's, which is what made Arbor pick it.
++  func aDockedWindowFillsTheView() -> (Harness, docked: WindowID, floating: WindowID, others: WindowID) {
++    let h = Harness()
++    let docked = h.system.open(app: "Alpha", pid: 11, frame: CGRect(x: 40, y: 60, width: 400, height: 300))
++    let floating = h.system.open(app: "Alpha", pid: 11, frame: CGRect(x: 840, y: 520, width: 300, height: 220))
++    let others = h.system.open(app: "Beta", pid: 12, frame: CGRect(x: 840, y: 80, width: 300, height: 220))
++    h.start()
++    h.run("dock \(docked.rawValue) left")
++    for window in [floating, others, docked] { h.system.userFocus(window) }
++    h.run("zoom \(docked.rawValue)")
++    h.scheduler.advance(by: 2)
++    #expect(h.system.focusedWindow() == docked && !h.system.isVisible(floating) && !h.system.isVisible(others), "\(h.ascii())")
++    return (h, docked, floating, others)
++  }
++
++  func asked(_ h: Harness, since mark: Int) -> [WindowID] { h.system.focusLog.dropFirst(mark).map(\.window) }
++
++  @Test(arguments: ["reveal $w", "focus $w", "find $w"]) func aCommandThatNamesAFloatingWindow(line: String) {
++    let (h, _, floating, _) = aDockedWindowFillsTheView()
++    let mark = h.system.focusLog.count
++    #expect(h.run(line.replacingOccurrences(of: "$w", with: "\(floating.rawValue)")).ok)
++    h.scheduler.advance(by: 2)
++    #expect(asked(h, since: mark) == [floating], "one request, for the window that was named")
++    #expect(h.system.focusedWindow() == floating && h.system.isVisible(floating))
++    expectWindowsMatchLayout(h)
++  }
++
++  @Test func aRowOfGoTo() {
++    let (h, _, floating, _) = aDockedWindowFillsTheView()
++    #expect(h.run("find").ok)
++    let mark = h.system.focusLog.count
++    h.controller.finderChose(.window(floating))
++    h.scheduler.advance(by: 2)
++    #expect(asked(h, since: mark) == [floating])
++    #expect(h.system.focusedWindow() == floating)
++  }
++
++  /// The view is on the Desktop with the keyboard in Beta's floating window, and the docked window is named, by a command or by a click on its tile.
++  @Test(arguments: ["reveal", "focus", "zoom", "tile"]) func theDockedWindowIsNamedFromTheDesktop(how: String) throws {
++    let (h, docked, _, others) = aDockedWindowFillsTheView()
++    #expect(h.run("desktop").ok)
++    h.system.userFocus(others)
++    h.scheduler.advance(by: 2)
++    let mark = h.system.focusLog.count
++    if how == "tile" {
++      h.overlays.clickTile(try #require(h.workspace.tree.leaf(containing: docked)))
++    } else {
++      #expect(h.run("\(how) \(docked.rawValue)").ok)
++    }
++    h.scheduler.advance(by: 2)
++    #expect(asked(h, since: mark) == [docked], "\(how)")
++    #expect(h.system.focusedWindow() == docked && h.system.isVisible(docked), "\(how)")
++  }
++
++  /// The control: a move of the view that names nobody still takes the keyboard out of the window it takes out of view.
++  @Test func aMoveThatNamesNobodyStillHandsTheKeyboardOn() {
++    let (h, docked, _, others) = aDockedWindowFillsTheView()
++    let mark = h.system.focusLog.count
++    #expect(h.run("desktop").ok)
++    h.scheduler.advance(by: 2)
++    #expect(!h.system.isVisible(docked) && asked(h, since: mark) == [others], "the one used last of those in view")
++  }
++
++  /// The promise ends with the act.
++  @Test func nothingIsLeftPromised() {
++    let (h, _, floating, _) = aDockedWindowFillsTheView()
++    #expect(h.run("reveal \(floating.rawValue)").ok)
++    h.scheduler.advance(by: 2)
++    let mark = h.system.focusLog.count
++    #expect(h.run("back").ok)
++    h.scheduler.advance(by: 2)
++    #expect(asked(h, since: mark).count == 1, "the next move of the view hands the keyboard on again: \(asked(h, since: mark))")
++  }
++}
+-- 
+2.43.0
+
+
+From 14dd35fc3a44e8a40f3f713cb5303266b228ff5d Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 15:54:10 +0000
+Subject: [PATCH 2/3] wip: after the reading of 1.89
+
+---
+ .../Controller/Controller+Events.swift        |  6 +-
+ .../Controller/Controller+KeyboardFocus.swift |  9 ++-
+ .../Controller/Controller+Layout.swift        |  6 +-
+ .../Controller/Controller+OneLayout.swift     |  5 +-
+ .../OneRequestForTheKeyboardTests.swift       | 77 +++++++++++++++++--
+ scripts/mac-on-linux/tests/OneRequest.swift   | 77 +++++++++++++++++++
+ scripts/mac-on-linux/tests/main.swift         |  1 +
+ 7 files changed, 165 insertions(+), 16 deletions(-)
+ create mode 100644 scripts/mac-on-linux/tests/OneRequest.swift
+
+diff --git a/Sources/ArborKit/Controller/Controller+Events.swift b/Sources/ArborKit/Controller/Controller+Events.swift
+index 715d5008..44c1505b 100644
+--- a/Sources/ArborKit/Controller/Controller+Events.swift
++++ b/Sources/ArborKit/Controller/Controller+Events.swift
+@@ -325,14 +325,16 @@ extension Controller: OverlayActions {
+     defer { following.namesAPlace = outer }
+     // A tile of windows names them: the first that shows gets the keyboard, and nobody else on the way there.
+     guard let inside = workspaces[display]?.tree.windows(under: node).first else { return moveCamera(on: display, to: node) }
++    let view = workspaces[display]?.camera
+     onTheWay(to: inside) { moveCamera(on: display, to: node) }
+     if let layout = layouts[display],
+       let first = workspaces[display]?.tree.windows(under: node).first(where: { layout.windowFrames[$0] != nil })
+     {
+       askForTheKeyboard(for: first)
+     } else {
+-      // Should none of them show: as after any move of the view.
+-      ensureFocusIsVisible(on: display, alsoFromAPinnedWindow: true)
++      // None of them shows: they are in the Dock, or hidden. As after any move of the view.
++      let moved = workspaces[display]?.camera != view
++      ensureFocusIsVisible(on: display, alsoFromAPinnedWindow: moved, alsoFromNothing: moved)
+     }
+   }
+ 
+diff --git a/Sources/ArborKit/Controller/Controller+KeyboardFocus.swift b/Sources/ArborKit/Controller/Controller+KeyboardFocus.swift
+index 34155dfe..58e975a9 100644
+--- a/Sources/ArborKit/Controller/Controller+KeyboardFocus.swift
++++ b/Sources/ArborKit/Controller/Controller+KeyboardFocus.swift
+@@ -182,7 +182,7 @@ extension Controller {
+   /// they ask for last counts. And of an app found hanging the question would be the call that times out, after which the layer sends that
+   /// app nothing: unasked, the first call of the request at least waits with the app and is carried out when it wakes.)
+   func sendTheKeyboard(to window: WindowID) -> Bool {
+-    let whereabouts = window == namedWindow ? .here : system.whereabouts(of: window)
++    let whereabouts = system.whereabouts(of: window)
+     guard whereabouts == .here else {
+       Log.info("\(window) \(whereabouts == .unknown ? "does not say where it is" : "is in the Dock or gone"): the keyboard is not sent to it")
+       return false
+@@ -196,8 +196,13 @@ extension Controller {
+   func onTheWay(to window: WindowID, _ move: () -> Void) {
+     let outer = namedWindow
+     namedWindow = window
+-    defer { namedWindow = outer }
+     move()
++    namedWindow = outer
++    // Its app does not answer: it could not be fetched, and the request that follows reaches nobody. The keyboard must not stay in whatever
++    // the move took out of view.
++    if outer == nil, unplaced.contains(window), let display = workspaceID(containing: window) {
++      ensureFocusIsVisible(on: display, alsoFromNothing: false)
++    }
+   }
+ 
+   private func noteFocusRequest(for window: WindowID, replacing replaced: FocusRequest?) {
+diff --git a/Sources/ArborKit/Controller/Controller+Layout.swift b/Sources/ArborKit/Controller/Controller+Layout.swift
+index 0ee89dd3..2819032c 100644
+--- a/Sources/ArborKit/Controller/Controller+Layout.swift
++++ b/Sources/ArborKit/Controller/Controller+Layout.swift
+@@ -809,7 +809,7 @@ extension Controller {
+   /// If the focused window was just parked, or nobody has the keyboard (`nobodyHasTheKeyboard`), focuses a window in view:
+   /// the one used last. Of windows never used, the one under the pointer (a floating one first: more often than not it lies in
+   /// front), or the top-left one.
+-  /// Returns whether it did.
++  /// Returns whether it did, or need not because a window that was named is about to get the keyboard. False: there is nobody in view to take it.
+   ///
+   /// The one used last is also the one that was in front when the view left. Focusing raises, so a framed window
+   /// given the focus would cover a guest that was used after it.
+@@ -820,8 +820,8 @@ extension Controller {
+   ) -> Bool {
+     // What names a window gives THAT window the keyboard, by a request of its own at the end of the act, and nobody else is handed it on the
+     // way. Two requests in one breath, for windows of two apps: the app of the window that was named is still in front, so it is not asked
+-    // forward, and the other app's coming forward lands last (`onTheWay(to:)`).
+-    guard namedWindow == nil else { return false }
++    // forward, and the other app's coming forward lands last (`onTheWay(to:)`). The keyboard is seen to: nobody need do anything in its stead.
++    guard namedWindow == nil else { return true }
+     // A command that moves the view says where the attention goes, so the keyboard goes along, also out of a
+     // pinned window, which is still in view: keys meant for the window that arrived must not end up in a call.
+     // An app can go on naming a window in the Dock as its focused one. A number Arbor does not know is a free-standing panel or
+diff --git a/Sources/ArborKit/Controller/Controller+OneLayout.swift b/Sources/ArborKit/Controller/Controller+OneLayout.swift
+index a0ededc2..dd1b1fed 100644
+--- a/Sources/ArborKit/Controller/Controller+OneLayout.swift
++++ b/Sources/ArborKit/Controller/Controller+OneLayout.swift
+@@ -21,7 +21,7 @@ extension Controller {
+     // old that the layout asks it again may show after all (Controller+LearnedSizes.swift).
+     if isAwaited || hasARecordToBeAskedAbout(window) || !theViewGoesStraightTo(window, dockedOn: display, isBack: true, byName: byName) {
+       relayout(display, reason: .structure, motion: motion)
+-      if byName { bringIntoView(window) }
++      if byName { onTheWay(to: window) { bringIntoView(window) } }
+     }
+     // Who has the keyboard goes on record either way.
+     bringIntoViewIfFocused(window, retries: 0)
+@@ -57,8 +57,7 @@ extension Controller {
+       guard let self, let asked = self.askedBack, asked.window == window else { return }
+       self.askedBack = nil
+       guard self.isRunning, let snapshot = self.windows[window], self.workspaces.mapValues(\.camera) == asked.views else { return }
+-      self.bringIntoView(window, onItsWayBack: !snapshot.isPresent)
+-      // The move gives the keyboard to whatever shows there now.
++      self.onTheWay(to: window) { self.bringIntoView(window, onItsWayBack: !snapshot.isPresent) }
+       self.askForTheKeyboard(for: window)
+     }
+   }
+diff --git a/Tests/ArborKitTests/OneRequestForTheKeyboardTests.swift b/Tests/ArborKitTests/OneRequestForTheKeyboardTests.swift
+index 81e7c88e..1c328827 100644
+--- a/Tests/ArborKitTests/OneRequestForTheKeyboardTests.swift
++++ b/Tests/ArborKitTests/OneRequestForTheKeyboardTests.swift
+@@ -9,15 +9,16 @@ import Testing
+ /// On the way to the window the view moves, the window that had the keyboard goes out of view, and Arbor used to hand the keyboard to a window in view,
+ /// of another app, and ask for the window that was named in the same breath. On a Mac the first app's coming forward lands after the second
+ /// request, which asks nobody forward because its app is still in front: the keyboard ends in a window nobody named. That lives below the
+-/// seam (`make mac-on-linux`, "n19"). What shows here is its cause: two requests where one is due.
++/// seam, where only the model of a Mac can play it (`make mac-on-linux`). What shows here is its cause: two requests where one is due.
+ @Suite @MainActor struct OneRequestForTheKeyboardTests {
+   /// Alpha's docked window fills the view and has the keyboard. Alpha and Beta each have a floating window, out of view with the Desktop, and
+   /// Beta's was used after Alpha's, which is what made Arbor pick it.
+-  func aDockedWindowFillsTheView() -> (Harness, docked: WindowID, floating: WindowID, others: WindowID) {
++  func aDockedWindowFillsTheView(_ more: (Harness) -> Void = { _ in }) -> (Harness, docked: WindowID, floating: WindowID, others: WindowID) {
+     let h = Harness()
+     let docked = h.system.open(app: "Alpha", pid: 11, frame: CGRect(x: 40, y: 60, width: 400, height: 300))
+     let floating = h.system.open(app: "Alpha", pid: 11, frame: CGRect(x: 840, y: 520, width: 300, height: 220))
+     let others = h.system.open(app: "Beta", pid: 12, frame: CGRect(x: 840, y: 80, width: 300, height: 220))
++    more(h)
+     h.start()
+     h.run("dock \(docked.rawValue) left")
+     for window in [floating, others, docked] { h.system.userFocus(window) }
+@@ -49,15 +50,16 @@ import Testing
+     #expect(h.system.focusedWindow() == floating)
+   }
+ 
+-  /// The view is on the Desktop with the keyboard in Beta's floating window, and the docked window is named, by a command or by a click on its tile.
+-  @Test(arguments: ["reveal", "focus", "zoom", "tile"]) func theDockedWindowIsNamedFromTheDesktop(how: String) throws {
++  /// The view is on the Desktop with the keyboard in Beta's floating window, and the docked window is named, by a command or by a click on it in the
++  /// minimap, which goes the way of a tile's click.
++  @Test(arguments: ["reveal", "zoom", "minimap"]) func theDockedWindowIsNamedFromTheDesktop(how: String) throws {
+     let (h, docked, _, others) = aDockedWindowFillsTheView()
+     #expect(h.run("desktop").ok)
+     h.system.userFocus(others)
+     h.scheduler.advance(by: 2)
+     let mark = h.system.focusLog.count
+-    if how == "tile" {
+-      h.overlays.clickTile(try #require(h.workspace.tree.leaf(containing: docked)))
++    if how == "minimap" {
++      h.controller.tileActivated(display: FakeWindowSystem.standardDisplay.id, node: try #require(h.workspace.tree.leaf(containing: docked)))
+     } else {
+       #expect(h.run("\(how) \(docked.rawValue)").ok)
+     }
+@@ -66,6 +68,69 @@ import Testing
+     #expect(h.system.focusedWindow() == docked && h.system.isVisible(docked), "\(how)")
+   }
+ 
++  /// It lies in the Dock, is asked back by name, and the view waits for it: the move comes seconds after the request, and hands the keyboard to nobody else.
++  @Test func aWindowThatIsAskedBackOutOfTheDock() {
++    let (h, docked, floating, others) = aDockedWindowFillsTheView()
++    h.system.setMinimized(floating, true)
++    h.scheduler.advance(by: 2)
++    h.system.userFocus(docked)
++    let mark = h.system.focusLog.count
++    #expect(h.run("reveal \(floating.rawValue)").ok)
++    h.scheduler.advance(by: 5)
++    #expect(!asked(h, since: mark).contains(others), "\(asked(h, since: mark))")
++    #expect(h.system.focusedWindow() == floating && h.system.isVisible(floating))
++  }
++
++  /// The app of the window that was named does not answer: it cannot be fetched, and on a Mac the request reaches nobody. The keyboard does not stay in
++  /// the window that the move took out of view.
++  @Test func theAppOfTheWindowThatWasNamedHangs() {
++    var hung = WindowID(0)
++    let (h, docked, _, others) = aDockedWindowFillsTheView {
++      hung = $0.system.open(app: "Gamma", pid: 13, frame: CGRect(x: 500, y: 300, width: 300, height: 220))
++    }
++    #expect(!h.system.isVisible(hung))
++    h.system.setUnresponsive(pid: 13, true)
++    let mark = h.system.focusLog.count
++    _ = h.run("reveal \(hung.rawValue)")
++    #expect(!h.system.isVisible(docked) && asked(h, since: mark).first == others, "\(asked(h, since: mark)); \(h.ascii())")
++  }
++
++  /// A window is let be where it stood when Arbor started, with the keyboard in it (Controller+LetBe.swift), and another window is named. The one that
++  /// was let be goes into its tile, and the view does not go after it: the keyboard is about to leave it.
++  @Test(arguments: ["tile", "Go to…", "reveal"]) func anotherWindowIsNamedWhileOneIsLetBe(how: String) throws {
++    var settings = Settings()
++    settings.makeRoom = false
++    let old = Harness(settings: settings)
++    let player = old.system.open(app: "Music", pid: 11, frame: CGRect(x: 500, y: 300, width: 400, height: 300))
++    let browser = old.system.open(app: "Safari", pid: 12, frame: CGRect(x: 200, y: 100, width: 700, height: 500))
++    let chat = old.system.open(app: "Chat", pid: 13, frame: CGRect(x: 300, y: 200, width: 500, height: 400))
++    old.start()
++    for line in ["dock \(player.rawValue) left", "dock \(browser.rawValue) right", "dock \(chat.rawValue) right"] { old.run(line) }
++    for line in ["resize \(player.rawValue) right -300", "resize \(chat.rawValue) left -300"] { old.run(line) }
++    old.scheduler.advance(by: 3)
++    #expect(old.layout?.hiddenWindows == [player, chat], "the fixture: two tiles beside a window: \(old.ascii())")
++    old.controller.shutdown()
++    old.system.userFocus(player)
++    let h = old.newProcess()
++    h.start()
++    h.scheduler.advance(by: 3)
++    #expect(h.controller.windowLetBe == player && h.system.focusedWindow() == player)
++    h.system.clearFrameLog()
++    let (mark, place) = (h.system.focusLog.count, try #require(h.workspace.tree.leaf(containing: chat)))
++    switch how {
++    case "tile": h.overlays.clickTile(place)
++    case "Go to…":
++      #expect(h.run("find").ok)
++      h.controller.finderChose(.window(chat))
++    default: #expect(h.run("reveal \(chat.rawValue)").ok)
++    }
++    h.scheduler.advance(by: 3)
++    #expect(h.workspace.camera == place && h.system.isVisible(chat) && !h.system.isVisible(player), "\(how): \(h.ascii())")
++    #expect(asked(h, since: mark) == [chat] && h.system.focusedWindow() == chat, "\(how): \(asked(h, since: mark))")
++    #expect(movesWithoutWaste(h, of: player, since: h.system.movesWhenTheFrameLogWasCleared) == 1, "\(how): once, to the corner")
++    expectWindowsMatchLayout(h)
++  }
++
+   /// The control: a move of the view that names nobody still takes the keyboard out of the window it takes out of view.
+   @Test func aMoveThatNamesNobodyStillHandsTheKeyboardOn() {
+     let (h, docked, _, others) = aDockedWindowFillsTheView()
+diff --git a/scripts/mac-on-linux/tests/OneRequest.swift b/scripts/mac-on-linux/tests/OneRequest.swift
+new file mode 100644
+index 00000000..362462f6
+--- /dev/null
++++ b/scripts/mac-on-linux/tests/OneRequest.swift
+@@ -0,0 +1,77 @@
++import ArborCore
++@testable import ArborKit
++import CoreGraphics
++import FakeMacOS
++import Foundation
++
++// What names a window gives THAT window the keyboard, and inside such an act nobody else is handed it (collab/BOARD.md, 1.89).
++//
++// The race: inside one act Arbor asked for the keyboard twice. First for a window it picked itself, of ANOTHER app, because the window that had the keyboard went
++// out of view with the move; then for the window its person named, of the app that still read as in front, so that the layer's `focus` spared `activate()`. The other
++// app's coming forward landed last. On the model only when this was written.
++
++/// Alpha in front with the keyboard in its docked window, which fills the view. `floating`, of `app`, and Beta's window float, out of view, and Beta's was used last of the two.
++@MainActor
++private func stage(_ story: Story, floatingOf app: String) -> (StoreyTwo, docked: FakeMac.Window, floating: FakeMac.Window, others: FakeMac.Window) {
++  var docked: FakeMac.Window!, floating: FakeMac.Window!, others: FakeMac.Window!
++  let two = StoreyTwo(story) { mac in
++    let alpha = mac.launch("Alpha")
++    docked = mac.open("docked", in: alpha, frame: CGRect(x: 40, y: 60, width: 400, height: 300))
++    floating = mac.open("floating", in: app == "Alpha" ? alpha : mac.launch(app), frame: CGRect(x: 640, y: 420, width: 300, height: 220))
++    others = mac.open("others", in: mac.launch("Beta"), frame: CGRect(x: 640, y: 80, width: 300, height: 220))
++  }
++  two.run("dock \(docked.number) left")
++  for window in [floating!, others!, docked!] {
++    two.mac.click(window)
++    two.mac.pass(1)
++  }
++  two.run("zoom \(docked.number)", then: 2)
++  story.check(
++    "the stage: the docked window fills the view and has the keyboard, what floats is out of view",
++    two.mac.keyWindow === docked && two.isOutOfView(floating) && two.isOutOfView(others))
++  return (two, docked, floating, others)
++}
++
++@MainActor
++func tellOfOneRequestForTheKeyboard(_ book: Book) {
++  for how in ["reveal", "focus", "Go to…"] {
++    book.story("a floating window of the app in front is named (\(how)), and another app's was used after it") { story in
++      let (two, _, floating, others) = stage(story, floatingOf: "Alpha")
++      let since = two.mac.journal.count
++      if how == "Go to…" {
++        two.run("find", then: 0.5)
++        two.controller.finderChose(.window(WindowID(floating.number)))
++        two.mac.pass(5)
++      } else {
++        two.run("\(how) \(floating.number)", then: 5)
++      }
++      story.check("the window that was named is in view", two.isInView(floating), two.whereabouts(floating))
++      story.check("and has the keyboard", two.mac.keyWindow === floating, "w\(two.mac.keyWindow?.number ?? 0) has it")
++      story.check(
++        "the other app never came forward", !two.mac.journal.dropFirst(since).contains { $0.contains("\(others.app.name) (pid") && $0.contains("comes forward") })
++    }
++  }
++
++  book.story("the window that is named lies in the Dock, and its app takes longer than the view waits") { story in
++    let (two, docked, floating, others) = stage(story, floatingOf: "Alpha")
++    two.mac.minimize(floating)
++    two.mac.pass(2)
++    two.mac.click(docked)
++    two.mac.pass(1)
++    docked.app.carriesOutAfter = 1.5
++    others.app.carriesOutAfter = 1.5
++    two.run("reveal \(floating.number)", then: 8)
++    story.check("the window that was named has the keyboard", two.mac.keyWindow === floating, "w\(two.mac.keyWindow?.number ?? 0) has it")
++    story.check("and is in view", two.isInView(floating), two.whereabouts(floating))
++  }
++
++  book.story("the window that is named belongs to an app that hangs") { story in
++    let (two, docked, floating, _) = stage(story, floatingOf: "Gamma")
++    two.mac.hang(floating.app)
++    two.run("reveal \(floating.number)", then: 8)
++    story.check("the window that had the keyboard is out of view", two.isOutOfView(docked), two.whereabouts(docked))
++    story.check(
++      "the keyboard is in a window in view: the request for the one that was named reaches nobody", two.mac.keyWindow.map { two.isInView($0) } ?? false,
++      "w\(two.mac.keyWindow?.number ?? 0) has it")
++  }
++}
+diff --git a/scripts/mac-on-linux/tests/main.swift b/scripts/mac-on-linux/tests/main.swift
+index 7f6cd8b8..68f0e6a7 100644
+--- a/scripts/mac-on-linux/tests/main.swift
++++ b/scripts/mac-on-linux/tests/main.swift
+@@ -143,6 +143,7 @@ tellOfOpening(book)
+ tellOfOddOpenings(book)
+ tellOfComingForward(book)
+ tellOfSheets(book)
++tellOfOneRequestForTheKeyboard(book)
+ tellOfGoing(book)
+ tellOfShowing(book)
+ tellOfDragging(book)
+-- 
+2.43.0
+
+
+From e9fcd94636fa760163891b929307301a3c59cac3 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 16:05:23 +0000
+Subject: [PATCH 3/3] wip: inFront goes; my stories trimmed (never built)
+
+---
+ .../Controller/Controller+Commands.swift      |  2 +-
+ .../Controller/Controller+Guests.swift        | 11 ----------
+ scripts/mac-on-linux/tests/OneRequest.swift   | 20 +------------------
+ 3 files changed, 2 insertions(+), 31 deletions(-)
+
+diff --git a/Sources/ArborKit/Controller/Controller+Commands.swift b/Sources/ArborKit/Controller/Controller+Commands.swift
+index 61bba121..e9a6d743 100644
+--- a/Sources/ArborKit/Controller/Controller+Commands.swift
++++ b/Sources/ArborKit/Controller/Controller+Commands.swift
+@@ -424,7 +424,7 @@ extension Controller {
+       return result
+     }
+     onTheWay(to: id) { moveCamera(on: display, to: space) }
+-    askForTheKeyboard(for: inFront(of: id, on: display))
++    askForTheKeyboard(for: id)
+     return .success("framed \(id)")
+   }
+ 
+diff --git a/Sources/ArborKit/Controller/Controller+Guests.swift b/Sources/ArborKit/Controller/Controller+Guests.swift
+index 08f2286c..a52118ea 100644
+--- a/Sources/ArborKit/Controller/Controller+Guests.swift
++++ b/Sources/ArborKit/Controller/Controller+Guests.swift
+@@ -42,15 +42,4 @@ extension Controller {
+     }
+     return host
+   }
+-
+-  /// The window to focus when `id`'s space has been framed: `id`, or a guest of that space that was used after it.
+-  /// Focusing raises, and a framed window fills the display: raised over a guest that was in front of it when the
+-  /// view left, it would hide the guest.
+-  func inFront(of id: WindowID, on display: DisplayID) -> WindowID {
+-    guard let workspace = workspaces[display], let space = workspace.tree.leaf(containing: id) else { return id }
+-    let guests = (workspace.guests ?? [:]).filter {
+-      $0.value == space && !parked.contains($0.key) && windows[$0.key]?.isPresent == true
+-    }
+-    return focusHistory.first { $0 == id || guests[$0] != nil } ?? id
+-  }
+ }
+diff --git a/scripts/mac-on-linux/tests/OneRequest.swift b/scripts/mac-on-linux/tests/OneRequest.swift
+index 362462f6..c67c14b2 100644
+--- a/scripts/mac-on-linux/tests/OneRequest.swift
++++ b/scripts/mac-on-linux/tests/OneRequest.swift
+@@ -8,7 +8,7 @@ import Foundation
+ //
+ // The race: inside one act Arbor asked for the keyboard twice. First for a window it picked itself, of ANOTHER app, because the window that had the keyboard went
+ // out of view with the move; then for the window its person named, of the app that still read as in front, so that the layer's `focus` spared `activate()`. The other
+-// app's coming forward landed last. On the model only when this was written.
++// app's coming forward landed last. The roads to it are told in N19Roads.swift. Here: two that lie beside them.
+ 
+ /// Alpha in front with the keyboard in its docked window, which fills the view. `floating`, of `app`, and Beta's window float, out of view, and Beta's was used last of the two.
+ @MainActor
+@@ -34,24 +34,6 @@ private func stage(_ story: Story, floatingOf app: String) -> (StoreyTwo, docked
+ 
+ @MainActor
+ func tellOfOneRequestForTheKeyboard(_ book: Book) {
+-  for how in ["reveal", "focus", "Go to…"] {
+-    book.story("a floating window of the app in front is named (\(how)), and another app's was used after it") { story in
+-      let (two, _, floating, others) = stage(story, floatingOf: "Alpha")
+-      let since = two.mac.journal.count
+-      if how == "Go to…" {
+-        two.run("find", then: 0.5)
+-        two.controller.finderChose(.window(WindowID(floating.number)))
+-        two.mac.pass(5)
+-      } else {
+-        two.run("\(how) \(floating.number)", then: 5)
+-      }
+-      story.check("the window that was named is in view", two.isInView(floating), two.whereabouts(floating))
+-      story.check("and has the keyboard", two.mac.keyWindow === floating, "w\(two.mac.keyWindow?.number ?? 0) has it")
+-      story.check(
+-        "the other app never came forward", !two.mac.journal.dropFirst(since).contains { $0.contains("\(others.app.name) (pid") && $0.contains("comes forward") })
+-    }
+-  }
+-
+   book.story("the window that is named lies in the Dock, and its app takes longer than the view waits") { story in
+     let (two, docked, floating, others) = stage(story, floatingOf: "Alpha")
+     two.mac.minimize(floating)
+-- 
+2.43.0
+

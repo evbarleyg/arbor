@@ -1,0 +1,189 @@
+diff --git a/Sources/ArborCore/LayoutNotation+Parser.swift b/Sources/ArborCore/LayoutNotation+Parser.swift
+index 2a5c48f..df5a006 100644
+--- a/Sources/ArborCore/LayoutNotation+Parser.swift
++++ b/Sources/ArborCore/LayoutNotation+Parser.swift
+@@ -227,6 +227,8 @@ extension LayoutNotation {
+     let end: Int
+     var position = 0
+     var desktopColumn: Int?
++    /// The windows written by number so far: a window has one place, like the Desktop.
++    var numbered: Set<WindowID> = []
+ 
+     static let expectedSpace = "expected an app's name, a window number, `Desktop`, `(` or `[`"
+     static let joinsItsNeighbour = "a name cannot begin or end with a character that joins the one beside it"
+@@ -357,6 +359,9 @@ extension LayoutNotation {
+           throw ParseError(
+             column: mark.column, message: "this goes after an app's name, not a window number; an app called \(word) needs quotes")
+         }
++        guard numbered.insert(id).inserted else {
++          throw ParseError(column: token.column, message: "window \(id.rawValue) is already in this arrangement")
++        }
+         return .window(id)
+       case .word(let name), .quoted(let name):
+         // `Spec` drops what cannot be written. Dropped in silence, the only name of a line would leave `layout Desktop`.
+diff --git a/Sources/ArborCore/Workspace.swift b/Sources/ArborCore/Workspace.swift
+index 57f989e..716296f 100644
+--- a/Sources/ArborCore/Workspace.swift
++++ b/Sources/ArborCore/Workspace.swift
+@@ -292,12 +292,19 @@ public struct Workspace: Codable, Sendable, Equatable {
+     if done { tree.stopKeepingWhereItChangesNothing(for: [.view, .turned]) }
+   }
+ 
+-  /// Replaces the tree and shows everything, like `reset(tree:)`, but keeps the saved views and the history that
++  /// Replaces the tree and shows everything, like `reset(tree:)`, but keeps the saved views, the history and the names that
+   /// `counterparts` can carry over (from a node of the old tree to the node of the new one that stands for it).
+   /// Where the view was is the last entry of the history, so `back` returns there.
+   public mutating func reset(tree newTree: LayoutTree, carrying counterparts: [NodeID: NodeID]) {
+-    let (views, history) = (savedViews, back + [camera])
++    let (views, history, named) = (savedViews, back + [camera], names)
+     reset(tree: newTree)
++    // A name whose space is gone goes with it: `setName` would give it to the root. In a fixed order, for the case that two
++    // spaces have become one, which can have one name only.
++    for (name, node) in named.sorted(by: { $0.key < $1.key }) {
++      if let counterpart = counterparts[node], newTree.contains(counterpart), self.name(of: counterpart) == nil {
++        _ = try? setName(name, of: counterpart)
++      }
++    }
+     savedViews = views.compactMapValues { counterparts[$0] }.filter { newTree.contains($0.value) }
+     back = Self.dedupe(history.compactMap { counterparts[$0] }.filter(newTree.contains))
+     while back.last == camera { back.removeLast() }
+diff --git a/Sources/ArborKit/Controller/Controller+LayoutNotation.swift b/Sources/ArborKit/Controller/Controller+LayoutNotation.swift
+index c6dffb4..2e7ba5d 100644
+--- a/Sources/ArborKit/Controller/Controller+LayoutNotation.swift
++++ b/Sources/ArborKit/Controller/Controller+LayoutNotation.swift
+@@ -110,6 +110,8 @@ extension Controller {
+     // As for `arrange`: what the user arranged is not for a rule to undo when a window's title arrives late.
+     stopWatchingTitles()
+     let isPlaced = Set(placed)
++    // Docking ends a pin, and nobody sees that either.
++    let unpinned = placed.filter(isPinned)
+     for other in workspaces.keys.sorted() where other != display {
+       let taken = workspaces[other]!.allWindows.filter(isPlaced.contains)
+       guard !taken.isEmpty else { continue }
+@@ -163,6 +165,9 @@ extension Controller {
+     if unseen > 0 {
+       notes.append("\(Self.count(unseen, "window")) on the Desktop \(unseen == 1 ? "is" : "are") out of view: the Desktop is too small to use")
+     }
++    if !unpinned.isEmpty {
++      notes.append(unpinned.count == 1 ? "\(unpinned[0]) is no longer kept in view" : "\(unpinned.count) windows are no longer kept in view")
++    }
+     return .success(([message] + notes).joined(separator: "; "))
+   }
+ 
+diff --git a/Tests/ArborCoreTests/LayoutNotationTreeTests.swift b/Tests/ArborCoreTests/LayoutNotationTreeTests.swift
+index 55986fb..18b7250 100644
+--- a/Tests/ArborCoreTests/LayoutNotationTreeTests.swift
++++ b/Tests/ArborCoreTests/LayoutNotationTreeTests.swift
+@@ -160,8 +160,10 @@ private let everyone = [
+   }
+ 
+   @Test func missingThingsAreReportedOnce() throws {
+-    let resolution = try build("Mail | mail | [Mail MAIL*] | 7 | 7", []).resolution
+-    #expect(resolution.missing == [.app("Mail"), .window(WindowID(7))])
++    // An app can be written as often as it has windows; a number only once, which the parser sees to.
++    let resolution = try build("Mail | mail | [Mail MAIL*] | 7 | 8", []).resolution
++    #expect(resolution.missing == [.app("Mail"), .window(WindowID(7)), .window(WindowID(8))])
++    #expect(throws: LayoutNotation.ParseError.self) { try LayoutNotation.parse("7 | 7") }
+   }
+ 
+   @Test func aCallerThatListsNonsenseStillGetsAValidTree() throws {
+diff --git a/Tests/ArborKitTests/LayoutCommandTests.swift b/Tests/ArborKitTests/LayoutCommandTests.swift
+index 224ef8e..d441527 100644
+--- a/Tests/ArborKitTests/LayoutCommandTests.swift
++++ b/Tests/ArborKitTests/LayoutCommandTests.swift
+@@ -521,6 +521,68 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
+     #expect(h.workspace.isFloating(second))
+   }
+ 
++  // MARK: What nobody sees is said
++
++  /// A window has one place, as the Desktop has.
++  @Test(arguments: [("101 | 101", 7), ("101 | w101", 7), ("101 | (102 / W101)", 14), ("[101 102 101]", 10)])
++  func aWindowWrittenTwiceByNumberIsRefused(line: String, column: Int) {
++    let h = harness("A", "B")
++    let refused = h.run("layout \(line)")
++    #expect(!refused.ok && refused.message.hasPrefix("layout, column \(column): window 101 is already in this arrangement"), "\(refused.message)")
++    #expect(h.workspace.tree.allWindows.isEmpty, "and nothing changed")
++    // An app's name twice is two of its windows.
++    #expect(h.run("layout A | A").message == "arranged 1 window; only 1 window of A")
++  }
++
++  /// Docking ends a pin. `dock` says so, and so does a line.
++  @Test func aPinThatALineEndsIsMentioned() {
++    let h = harness("A", "B", "C")
++    #expect(h.run("pin 101").ok)
++    #expect(h.run("layout A | B").message == "arranged 2 windows; w101 is no longer kept in view")
++    #expect(!h.controller.isPinned(w(101)))
++    #expect(h.run("layout Desktop").ok && h.run("pin 101").ok && h.run("pin 102").ok && h.run("pin 103").ok)
++    #expect(h.run("layout A | B").message == "arranged 2 windows; 2 windows are no longer kept in view")
++    #expect(h.controller.isPinned(w(103)), "one that the line does not name stays as it is")
++    #expect(h.run("layout A | B").message == "arranged 2 windows", "and the same line again has nothing to say")
++  }
++
++  // MARK: Names of spaces (F20)
++
++  /// Saved views and history follow the spaces that still hold the same windows. So do the names a person gave them.
++  @Test func aNameFollowsItsSpaceThroughALine() {
++    let h = harness("Safari", "Mail", "Notes")
++    #expect(h.run("layout Safari | (Mail / Notes)").ok)
++    h.run("zoom 102")
++    h.run("out")
++    #expect(h.run("name Post").ok && h.run("save-view 1").ok)
++    h.run("zoom 101")
++    #expect(h.run("name Reading").ok)
++    h.run("home")
++    for line in ["layout Safari:2 | (Mail / Notes)", "layout (Mail / Notes) | Safari", "layout (Notes / Mail):3 | Desktop | Safari"] {
++      #expect(h.run(line).message == "arranged 3 windows", "\(line): nothing is gone, and nothing is said to be")
++      #expect(Set(h.workspace.names.keys) == ["Post", "Reading"], "\(line): \(h.workspace.names)")
++      #expect(h.run("go Post").ok, "\(line)")
++      #expect(Set(h.workspace.tree.windows(under: h.workspace.camera)) == [w(102), w(103)], "\(line)")
++      #expect(h.run("go Reading").ok && h.workspace.tree.windows(under: h.workspace.camera) == [w(101)], "\(line)")
++      h.run("home")
++      #expect(h.workspace.tree.invariantViolations().isEmpty)
++    }
++  }
++
++  /// A space that the line takes apart is gone, and its name with it: there is nothing left to call that.
++  @Test func aNameGoesWithASpaceThatTheLineTakesApart() {
++    let h = harness("Safari", "Mail", "Notes")
++    #expect(h.run("layout Safari | (Mail / Notes)").ok)
++    h.run("zoom 102")
++    h.run("out")
++    #expect(h.run("name Post").ok && h.run("save-view 1").ok)
++    // Nobody sees them go, so the reply says it, in the words of `arrange`.
++    #expect(h.run("layout (Safari / Mail) | Notes").message == "arranged 3 windows; 1 saved view is gone; 1 name is gone")
++    #expect(h.workspace.names.isEmpty, "\(h.workspace.names)")
++    #expect(!h.run("go Post").ok)
++    #expect(h.workspace.tree.invariantViolations().isEmpty)
++  }
++
+   // MARK: What is printed can be read
+ 
+   /// A line is at most 4096 bytes, and a title is cut by characters: 60 of them are 180 bytes in Chinese or Japanese.
+diff --git a/collab/QUESTIONS.md b/collab/QUESTIONS.md
+index 2435ff6..2a68fd0 100644
+--- a/collab/QUESTIONS.md
++++ b/collab/QUESTIONS.md
+@@ -1177,3 +1177,6 @@ One line per product decision made while building, newest last.
+ - Product owner, 2026-10-14 (links): the floor is that a link may not cost what ⌃⌥Z cannot bring back. Above it, `arrange`, its styled forms on a whole display, `cycle-layout` and `layout` stay refused where they would cost a saved view or a name, although undo restores them. What takes several links and has a way back each time is not guarded. `arbor://save-view/N` is refused where N is taken.
+ - Product owner, 2026-10-14 (`arborctl … > /dev/full`): by design: the exit code says whether Arbor did it, not whether the shell could print it.
+ - Product owner, 2026-10-14 (how a claim is run, third lesson): ask for the RIGHT place, not only a whole window; let time pass between two reports a simulator delivers at once; press the keys a person presses, not the commands behind them; after every release add a step that must move something. The replays are under `scripts/replays` on the branch `tools/decision-replays`.
++- F54: the names a person gave (F20) follow their spaces through a line, as saved views and history do (`Workspace.reset(tree:carrying:)`, through `setName`, and only to a space that is there: `setName` gives a name whose node is gone to the root). Before, `layout Safari:2 | (Mail / Notes)` after `layout Safari | (Mail / Notes)` kept view 1 of Mail and Notes and lost its name without a word.
++- F54: a pin that a line ends by docking the window is mentioned, in the words of `dock`: "w101 is no longer kept in view". (Saved views and names that go with spaces a line takes apart are said by `notingWhatIsLost`, for `arrange`, `float-all` and `layout` alike.)
++- F54: a window written twice by number is refused with its column, like a second Desktop: "window 101 is already in this arrangement". It used to be left out in silence. An app's name twice still means two of its windows.
+diff --git a/collab/parity.json b/collab/parity.json
+index d61b5cf..51418e8 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -118,9 +118,9 @@
+     {"id": "A20", "area": "Arbor only", "title": "Named spaces: name a space, go to it by name", "trellis": "", "arbor": "`name`, `unname`, `go <name>` (whole name, or a beginning that fits one; on any display), `spaces`; names in replies, `state`, `ascii`, tiles and the menu; `arbor://go/<name>`", "status": "shipped", "spec": "F20", "priority": 1, "tests": ["namingTheSpaceInViewShowsEverywhereAndMovesNothing", "anySpaceCanBeNamed", "aNameThatCannotBeIsRefusedWithTheReason", "namesAreTidied", "aDirectionIsNotAName", "charactersThatForgeOrHideAreRefused", "namingANamedSpaceRenamesIt", "aNameGivenToASecondSpaceMoves", "nameWithoutTextAndUnnameRemoveTheNameInView", "unnameWithANameNeedsAllOfIt", "goFindsTheWholeNameThenABeginning", "aBeginningThatFitsSeveralMovesNothingAndListsThem", "aNameNobodyHasSaysWhatThereIs", "backReturnsFromWhereGoWent", "aDirectionStillMeansTheNeighbour", "twoDisplaysCanHoldTheSameNameAndGoPrefersTheOneItActsOn", "goToANameOnAnotherDisplayMovesThatViewAndTheKeyboard", "theWholeNameElsewhereBeatsABeginningHere", "spacesListsEveryDisplayStartingWithThisOne", "repliesCallANamedSpaceByItsName", "aTileThatStandsForANamedSpaceIsCaptionedWithTheName", "theMenuListsTheNamesGoCanReach", "namedSpacesSaysWhatOtherFeaturesNeed", "aURLMayGoButNotNameUnnameAskOrList", "textRoundTrips", "shortcutsNameAndGoOnTheDisplayThatHasTheKeyboard", "afterGoingToAnotherDisplayTheNextShortcutActsThere", "goingToAnotherDisplayPrefersAWindowOfTheSpaceToAPinnedOne", "namesStayOutOfTheLog", "arrangeAndFloatAllSayHowManyNamesWent", "goingToTheDesktopOfAnotherDisplayGivesAFloatingWindowThereTheKeyboard", "theNameGivenToASpaceIsDrawnOnItsTile", "aNamedSpacesTileShowsItsNameWhateverTheStyle", "aNamedGroupsCapsuleHoldsTheNameInPlaceOfTheCount", "onAHeldViewANameCanBeGivenAndTakenOffAndNothingOpensOrMoves", "whicheverCommandTakesANameAlongSaysSo"]},
+     {"id": "A21", "area": "Arbor only", "title": "A name stays with its windows", "trellis": "", "arbor": "A named group is kept (F62), grows by what is docked at the edge of its view, follows its only window, goes with its last one; saved, and back after a relaunch, a pause or a display's return", "status": "shipped", "spec": "F20", "priority": 1, "tests": ["namingIsNotAStep", "aNameGivenSinceAStepSurvivesUndoingIt", "aNameTakenOffSinceAStepStaysOff", "aNameWhoseSpaceTheUndoTakesAwayGoes", "undoingADockIntoANamedSpaceLeavesTheSpaceAsItWas", "undoDoesNotBringBackANameWhoseWindowsHaveClosed", "aNamedGroupSurvivesItsNeighboursLeaving", "downToOneWindowAndUpAgainItIsStillTheSameSpace", "aWindowDockedAtAnyEdgeOfItsViewJoinsTheNamedSpace", "aWindowDraggedToTheEdgeOfItsViewJoinsTheNamedSpace", "turningANamedPairRoundWithTheKeyboardKeepsItsName", "theOnlyWindowOfANamedGroupHasNowhereToGoInItsView", "theNameOfAWindowsPlaceFollowsItWhenItIsDockedElsewhere", "aTabGroupKeepsItsNameWhileTabsComeAndGo", "minimizingAndHidingChangeNoName", "theNameGoesWhenTheLastWindowCloses", "theNameGoesWhenTheLastWindowFloats", "theNameGoesWhenTheLastWindowMovesToAnotherDisplay", "arrangeAndFloatAllRemoveNamesAsTheyDoSavedViews", "namesSurviveARelaunch", "afterARebootNamesFollowTheWindowsThatAreMatchedAgain", "namesSurviveAPause", "anUnpluggedDisplayKeepsItsNamesAndBringsThemBack", "namesOfAnUnpluggedDisplaySurviveARelaunch", "aFileFromBeforeNamesLoads", "nonsenseInAFileCostsOnlyItself", "aFileCannotBreakTheTwoRules", "theTableDecidesWhatIsKeptForAName", "namesStayTrue", "theNameOfADisplayWithNoWindowOnItComesBackWithTheDisplay"]},
+     {"id": "A22", "area": "Arbor only", "title": "⌃⌥N: a field to type a space's name into", "trellis": "", "arbor": "`ask-name`: one field over the space; the line under it says what ↩ will do; closes with ⎋, ⌃⌥N, when another window gets the keyboard, and when the view leaves. The model is tested; the panel has not run on a Mac yet (`check-F20.sh`)", "status": "partial", "spec": "F20", "priority": 2, "tests": ["theShortcutIsControlOptionN", "askingShowsTheFieldOverTheSpaceAndMovesNothing", "returnNamesTheSpaceAndClosesTheField", "theFieldStartsWithTheNameTheSpaceHas", "theLineUnderTheFieldSaysWhatReturnWillDo", "aNameThatIsRefusedKeepsTheFieldOpen", "anEmptyFieldRemovesTheNameOrJustCloses", "escapeTheShortcutAgainAndCancelCloseItAndChangeNothing", "theFieldClosesWhenTheViewLeavesItsSpace", "theFieldStaysWhileTheViewStays", "theFieldClosesWhenItsSpaceGoesAway", "theFieldClosesWhenArborPausesOrQuits", "theFieldBelongsToItsDisplayWhereverThePointerGoes", "theFieldClosesWhenItsDisplayIsUnplugged", "onASmallDisplayTheFieldStaysOnIt", "theFieldClosesWhenAnotherWindowGetsTheKeyboard", "aFieldLeftOpenWhenTheViewBeganToBeHeldCanBePutAway"]},
+-    {"id": "A154", "area": "Arbor only", "title": "An arrangement as a line of text", "trellis": "", "arbor": "`layout \"Safari | Desktop | (Mail / Notes)\"`; sizes, tab groups, `Safari*`, `@2`; from shortcuts and URLs; docs/LAYOUTS.md", "status": "shipped", "spec": "F54", "priority": 2, "tests": ["theExamplesOfTheSpecParse", "theExamplesOfTheSpecBuildTheExpectedTrees", "sideBySideAboveAndTheDesktop", "sizesAreRelative", "aTabGroupSharesOnePlace", "twoWindowsOfOneAppArePlacedInFocusOrder", "aStarCollectsTheRestAsTabs", "missingAppsAreReportedAndTheirSlotsClosedUp", "windowsNotMentionedFloatOnTheDesktop", "anotherDisplayCanBeNamedByNumberOrID", "windowsComeOverFromOtherDisplays", "aShortcutCanHoldALine", "aURLArranges", "aURLCarriesTheLinePercentEncoded", "theExamplesInTheDocumentationDoWhatTheySay", "bindTakesALineSignsAndAll", "aShortcutThatCannotBeReadLeavesNoPrivateWordInTheLog"], "e2e": ["arrange by a line of text", "arrange by app name, the rest as tabs"]},
++    {"id": "A154", "area": "Arbor only", "title": "An arrangement as a line of text", "trellis": "", "arbor": "`layout \"Safari | Desktop | (Mail / Notes)\"`; sizes, tab groups, `Safari*`, `@2`; from shortcuts and URLs; docs/LAYOUTS.md", "status": "shipped", "spec": "F54", "priority": 2, "tests": ["theExamplesOfTheSpecParse", "theExamplesOfTheSpecBuildTheExpectedTrees", "sideBySideAboveAndTheDesktop", "sizesAreRelative", "aTabGroupSharesOnePlace", "twoWindowsOfOneAppArePlacedInFocusOrder", "aStarCollectsTheRestAsTabs", "missingAppsAreReportedAndTheirSlotsClosedUp", "windowsNotMentionedFloatOnTheDesktop", "anotherDisplayCanBeNamedByNumberOrID", "windowsComeOverFromOtherDisplays", "aShortcutCanHoldALine", "aURLArranges", "aURLCarriesTheLinePercentEncoded", "theExamplesInTheDocumentationDoWhatTheySay", "bindTakesALineSignsAndAll", "aShortcutThatCannotBeReadLeavesNoPrivateWordInTheLog", "aNameFollowsItsSpaceThroughALine", "aNameGoesWithASpaceThatTheLineTakesApart", "aPinThatALineEndsIsMentioned"], "e2e": ["arrange by a line of text", "arrange by app name, the rest as tabs"]},
+     {"id": "A155", "area": "Arbor only", "title": "Print the arrangement as a line that recreates it", "trellis": "", "arbor": "`layout`, `layout --titles`, `layout --ids`", "status": "shipped", "spec": "F54", "priority": 2, "tests": ["onItsOwnItPrintsTheArrangement", "whatItPrintsIsWhatWasTyped", "theLinePrintedRecreatesTheArrangement", "idsSayExactlyWhichWindowGoesWhere", "titlesAreWrittenOnlyWhenAskedFor", "anyTreeComesBackFromItsLine", "aLineBuiltAndWrittenAgainIsStable", "everyArrangementSurvivesBeingWrittenAndRead", "manyWindowsWithLongTitlesStillPrintALineThatCanBeRead", "titlesAreShortenedBeforeTheyAreDropped", "aTitleThatIsPartOfAnotherStillFindsItsOwnWindow", "theClosestTitleWinsWhoeverWasUsedLast", "whatIsNamedExactlyIsNotTakenByAVagueSlot"], "e2e": ["arrange by a line of text"]},
+-    {"id": "A156", "area": "Arbor only", "title": "Errors in a line name the column and what was expected", "trellis": "", "arbor": "\"column 15: `|` and `/` are mixed here: put brackets around one of them\", with a `^` under it; no input traps", "status": "shipped", "spec": "F54", "priority": 3, "tests": ["errorsNameTheColumnAndWhatWasExpected", "theErrorPointsAtTheColumn", "anErrorShowsWhere", "randomTextNeverTrapsTheParser", "damagedLinesNeverTrapTheParser", "everyPairOfPiecesIsAnswered", "noTextCrashesParsingOrPrinting", "noLineLosesAWindowOrBreaksATree"]},
++    {"id": "A156", "area": "Arbor only", "title": "Errors in a line name the column and what was expected", "trellis": "", "arbor": "\"column 15: `|` and `/` are mixed here: put brackets around one of them\", with a `^` under it; no input traps", "status": "shipped", "spec": "F54", "priority": 3, "tests": ["errorsNameTheColumnAndWhatWasExpected", "theErrorPointsAtTheColumn", "anErrorShowsWhere", "randomTextNeverTrapsTheParser", "damagedLinesNeverTrapTheParser", "everyPairOfPiecesIsAnswered", "noTextCrashesParsingOrPrinting", "noLineLosesAWindowOrBreaksATree", "aWindowWrittenTwiceByNumberIsRefused"]},
+     {"id": "A157", "area": "Arbor only", "title": "Open the apps an arrangement is missing", "trellis": "", "arbor": "`layout --open …`: each window takes its place as it appears, and the view stays put", "status": "shipped", "spec": "F54", "priority": 3, "tests": ["missingAppsAreOpenedAndJoinWhenTheirWindowAppears", "theViewStaysWhereItIsWhenALatecomerArrives", "itStopsWaitingAfterAMinute", "itStopsWaitingOnceTheUserRearranges", "aSplashScreenThatClosesLeavesTheSlotForTheRealWindow", "pausingAndQuittingEndTheWait", "theArrangementComesBeforeARuleButNotBeforeIgnore", "aURLNeitherOpensAppsNorAsks"]},
+     {"id": "A65", "area": "Arbor only", "title": "Zoom with a mouse", "trellis": "", "arbor": "⌃⌥ + scroll: up steps in toward the pointer, down steps out; one step per notch; `scrollZoom`, `scrollZoomThreshold`, `scrollOnDesktopZooms`", "status": "shipped", "spec": "F55", "priority": 2, "tests": ["oneNotchIsOneStepWhateverAccelerationMakesOfIt", "travelStepsOncePerThreshold", "aWheelWithTheKeysHeldStepsOncePerNotchTowardAndAway", "withoutBothKeysNothingIsLookedAtOrSwallowed", "fingersStepOncePerThresholdOfTravel", "aScrollClaimedAtItsStartStaysClaimedWhenTheKeysGoUp", "momentumGivesNoStepsAndDoesNotReachTheApp", "onTheDesktopItZoomsWithoutTheKeysIfAskedTo", "withContinuousZoomTheSameScrollMovesAsFarAsAPinchThatWouldHaveSteppedAsOften"]},
+     {"id": "A91", "area": "Arbor only", "title": "Switching windows keeps the level", "trellis": "", "arbor": "From a framed window, ⌘Tab or a Dock click frames the window you go to; from a group the view steps out just far enough", "status": "shipped", "spec": "F01", "priority": 1, "tests": ["switchingFromAFramedWindowFramesTheOther", "switchingFromAFramedWindowToAFloatingOneShowsTheDesktopAlone", "fromAGroupOrEverythingTheViewStepsOutJustFarEnoughAsBefore", "aWindowAlreadyInViewNeverMovesTheView", "revealingAWindowZoomsOutJustFarEnough"]},

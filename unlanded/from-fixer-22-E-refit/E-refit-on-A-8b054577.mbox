@@ -1,0 +1,1205 @@
+From afe766fc7a16f00bb57aa126c5a319e3e3cd0ebf Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 05:51:16 +0000
+Subject: [PATCH 1/4] fix: what no layout could place when its display went is
+ not sent to the corner
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Nothing docked, a window on the monitor, its app hidden or the window in the Dock. The monitor's cable is pulled, and Arbor
+took the window to the corner of the laptop's display: it jumped into view when it showed, and stayed in the corner if
+Arbor ended meanwhile. Plugged in again, the monitor had it in its own corner. A window told to stay in view went too, if
+the laptop's view was held and showed nothing. Seen on a hosted Mac, to the point: (1023,767) on a display of 1024×768.
+
+Whatever changes display counts as out of view until a layout has placed it. No layout places a window that is off the
+screen, and a held view that shows nothing lets no layout through. The last step of a change of displays then sent
+whatever still counted to the corner.
+
+- What this change has sent to another display, belongs in view there by the layout in effect, and no layout placed is
+  put where it floats, then and there, where a layout would put it. macOS itself leaves such a window where its display was
+  until it shows; it obeys a move while it is away. One move, which nobody sees, and none when it shows. A held view that
+  shows nothing takes in only what was told to stay in view. What is off the screen is never raised: that would fetch
+  it out of the Dock.
+- Where macOS has brought a floating window, at its own size and most of it on the display that takes it in, is where
+  it is remembered. Arbor worked out a frame of its own and moved the window a second time for the difference: on that Mac
+  1.6 s after macOS, from (220,180) to (120,140).
+
+Two tests held only through the mark this takes away, and say so now: a floating window that was in the Dock when its
+display went comes out where it went in, as on one display, and stays where macOS brought it; and the quit that fetches a
+window whatever the books say gets its window out of view by an app that does not obey. Both scripts of the known failure
+`left-its-place` are cured; the rule still breaks by another road, with this change and without, and the entry tells that one.
+---
+ .../Controller/Controller+Displays.swift      |  71 ++++-
+ .../AwayWhenItsDisplayGoesTests.swift         | 294 ++++++++++++++++++
+ .../DisplaysComeAndGoTests.swift              |   9 +-
+ Tests/ArborKitTests/LifecycleTests.swift      |   5 +-
+ Tests/ArborKitTests/TwoDisplayTests.swift     |  32 +-
+ collab/parity.json                            |   6 +
+ .../25-hidden-when-the-cable-is-pulled.sim    |  47 +++
+ 7 files changed, 448 insertions(+), 16 deletions(-)
+ create mode 100644 Tests/ArborKitTests/AwayWhenItsDisplayGoesTests.swift
+ create mode 100644 collab/scenarios/25-hidden-when-the-cable-is-pulled.sim
+
+diff --git a/Sources/ArborKit/Controller/Controller+Displays.swift b/Sources/ArborKit/Controller/Controller+Displays.swift
+index 58ac3eed..03755947 100644
+--- a/Sources/ArborKit/Controller/Controller+Displays.swift
++++ b/Sources/ArborKit/Controller/Controller+Displays.swift
+@@ -101,7 +101,7 @@ extension Controller {
+       bringIntoViewIfFocused(focused)
+     }
+     unasked { relayoutAll(reason: .camera, motion: .instant) }
+-    parkAgain()
++    parkAgain(placing: Set(arriving))
+     scheduleSave()
+   }
+ 
+@@ -368,7 +368,7 @@ extension Controller {
+     Log.info("a display blinked: \(moved.count) window(s) that macOS moved meanwhile are looked after")
+     placeArrivingWindows(moved)
+     unasked { relayoutAll(reason: .camera, motion: .instant) }
+-    parkAgain()
++    parkAgain(placing: Set(moved))
+   }
+ 
+   /// Keeps the workspace of a display that went away as dormant and floats
+@@ -408,7 +408,17 @@ extension Controller {
+       } else {
+         frame = frame.offsetBy(dx: visible.minX - origin.x, dy: visible.minY - origin.y)
+       }
+-      workspaces[main]!.floating[window] = frame.fitted(into: visible)
++      // macOS clears a display that goes at once. Where it has brought a floating window, at its own size and most of it on
++      // this display, is where the window is, and that outranks what is worked out here: macOS goes by the displays'
++      // corners and this by what the menu bars leave, and a window off the screen would jump by the difference when it
++      // shows.
++      if workspace.isFloating(window), !parked.contains(window), let actual = windows[window]?.frame,
++        actual.size == frame.size, actual.fractionInside(mainDisplay.frame) >= 0.5
++      {
++        workspaces[main]!.floating[window] = actual
++      } else {
++        workspaces[main]!.floating[window] = frame.fitted(into: visible)
++      }
+       workspaces[main]!.setRole(workspace.role(of: window), of: window)
+     }
+     return moving
+@@ -590,12 +600,14 @@ extension Controller {
+ 
+   /// Sends the windows that are still parked after a display change to the corner that is out of view
+   /// with the displays as they are now. The old corner can be in the middle of a display that grew, or on
+-  /// one plugged in beside it.
+-  func parkAgain() {
++  /// one plugged in beside it. `arrived`: the windows this change has sent to another display, which count as out of view
++  /// until a layout has placed them (`placeArrivingWindows`).
++  func parkAgain(placing arrived: Set<WindowID> = []) {
+     for window in parked.sorted() {
+       guard let displayID = workspaceID(containing: window), let display = display(displayID),
+         let frame = windows[window]?.frame
+       else { continue }
++      if arrived.contains(window), floatsInView(window, on: displayID), putWhereItFloats(window, on: display) { continue }
+       // macOS stops a window short of the corner (`parkingOrigin`). One that is where it would stop again stays. So does one in
+       // another of the places, chosen before its title bar was known, if no less of it would show in the one chosen now. Of a
+       // window found out of view at a start, its place says how high its title bar is; where it does not, the guess stands.
+@@ -613,6 +625,55 @@ extension Controller {
+     }
+   }
+ 
++  /// Whether `window` floats on `displayID` and is meant to show with the view there as it is: told to stay in view, or on a
++  /// Desktop that is part of the view. By the layout in effect, not a fresh one, which widens to the surroundings of a view
++  /// whose window takes up no room; and a held view that shows nothing gives nothing away, wherever its camera has got to.
++  private func floatsInView(_ window: WindowID, on displayID: DisplayID) -> Bool {
++    guard let workspace = workspaces[displayID], workspace.isFloating(window), !workspace.isStashed(window),
++      !holdKeepsOut(window)
++    else { return false }
++    if workspace.staysInView(window) { return true }
++    guard !displaysHeldEmpty.contains(displayID) else { return false }
++    return layouts[displayID].map { workspace.tree.subtree($0.camera, contains: workspace.tree.desktop) } ?? false
++  }
++
++  /// `window` has changed display and belongs in view, and no layout has placed it: none places a window whose app is hidden or
++  /// that is in the Dock, and a held view that shows nothing lets no layout through. It is put where it floats, which as a
++  /// rule is where macOS has brought it already. It used to go on counting as out of view and was taken to the corner:
++  /// with nothing docked, behind its person's back, to jump back before their eyes when it showed again, and to stay there
++  /// if Arbor ended meanwhile. (Making way for docked windows is left to the layout that comes when it shows, as before.)
++  /// False if it could not be done.
++  private func putWhereItFloats(_ window: WindowID, on display: DisplaySnapshot) -> Bool {
++    // macOS lets nobody move a window in full screen, and its frame there says nothing. It is fetched when it leaves.
++    guard let current = windows[window], !current.isFullScreen, let floats = workspaces[display.id]?.floating[window] else {
++      return false
++    }
++    // Where its person left it hanging over the edge it goes on hanging, as in `floatingMoves`.
++    let leftThere = appPlacedFrames[window] != floats && wasLeftThereByItsUser(floats, of: window, on: display)
++    // Where a layout would put it: there is one measure of that for each way of treating floating windows.
++    let target =
++      settings.floatingWindowsMakeWay
++      ? floats.fitted(into: leftThere ? reach(of: display.visibleFrame, for: floats, on: display) : display.visibleFrame)
++      : whereItWas(floats, of: window, on: display)
++    if !current.frame.approximatelyEquals(target, tolerance: 1) {
++      guard let actual = system.setFrame(target, of: window) else { return false }
++      windows[window]?.frame = actual
++      // On a hosted Mac a test window obeyed, hidden and in the Dock (`scripts/mac-shell/check-off-the-screen-at-an-unplug.sh`); of real
++      // apps nobody knows. One that has not gone there goes on counting as out of view, which is what fetches it when it
++      // shows. (Another size can be its character cells.)
++      guard abs(actual.minX - target.minX) <= 2, abs(actual.minY - target.minY) <= 2 else { return false }
++    }
++    settled[window] = windows[window]?.frame
++    // Fitted, it is there for the displays' sake, and what is remembered is still its own (`putBackWhereItWas`).
++    if !settings.floatingWindowsMakeWay { fittedFrames[window] = target == floats ? nil : windows[window]?.frame }
++    (misfits[window], parkedAgain[window]) = (nil, nil)
++    parked.remove(window)
++    unplaced.remove(window)
++    // As the layout does for a window kept in view that it brings in.
++    if current.isPresent, staysInView(window) { system.raise(window) }
++    return true
++  }
++
+   /// Removes a window from every dormant workspace, dropping workspaces left
+   /// with no windows.
+   func forgetInDormantWorkspaces(_ window: WindowID) {
+diff --git a/Tests/ArborKitTests/AwayWhenItsDisplayGoesTests.swift b/Tests/ArborKitTests/AwayWhenItsDisplayGoesTests.swift
+new file mode 100644
+index 00000000..786af10c
+--- /dev/null
++++ b/Tests/ArborKitTests/AwayWhenItsDisplayGoesTests.swift
+@@ -0,0 +1,294 @@
++import ArborCore
++import ArborKit
++import ArborTesting
++import CoreGraphics
++import Foundation
++import Testing
++
++private let both = "displays main:0,0,1512,982:37,0,0,0* side:1512,-200,2560,1440:25,0,0,0"
++private let laptopAlone = "displays main:0,0,1512,982:37,0,0,0*"
++/// `between` is the order nearly every window was recorded speaking in on hosted Macs. `first`, in which ALL of them speak while macOS's
++/// list of displays is still the old one, is harsher than any recording (with real apps ONE window of a change often does): a control.
++private let orders = ["between", "late", "silent", "first"]
++/// The orders in which a window of a display that goes "arrives": in `first` macOS's move passes for somebody's own.
++private let arrivingOrders = ["between", "late", "silent"]
++private let terminal = WindowID(101)
++private let music = WindowID(101)
++
++/// A floating window that no layout can place when its display goes: its app is hidden, it is in the Dock, or the view of the display
++/// it arrives on is held and shows nothing, which lets no layout through.
++///
++/// Whatever changes display counts as out of view until the layout has placed it. What no layout placed went on counting, and the last
++/// step of a change of displays sends whatever counts as out of view to the corner of the displays as they are now. So with nothing
++/// docked (rule 2) a window macOS had just brought onto the laptop, in full view, was taken to the corner behind its person's back.
++/// Now it is put where it floats. Where the windows speak first the fault never showed (macOS's move passes for
++/// somebody's own, so nothing "arrives"): that order is played all the same, as a control.
++@Suite @MainActor struct AwayWhenItsDisplayGoesTests {
++  @discardableResult
++  private func play(
++    _ lines: [String], in runner: ChaosRunner = ChaosRunner(), sourceLocation: SourceLocation = #_sourceLocation
++  ) -> ChaosRunner {
++    // Of the known failures only those that have nothing to do with a floating window being moved are let pass.
++    let aboutThis: Set<String> = [
++      "moved-before-any-dock", "moved-unasked", "moved-twice", "moved-again", "there-and-back-moved", "left-its-place", "parked-not-put-back",
++    ]
++    for line in lines {
++      let violations = runner.step(ChaosAction(text: line)).filter { !ChaosRunner.knownRules.subtracting(aboutThis).contains($0.rule) }
++      #expect(violations.isEmpty, "\(line): \(violations)", sourceLocation: sourceLocation)
++    }
++    return runner
++  }
++
++  private func frame(_ window: WindowID, in runner: ChaosRunner) -> CGRect { runner.system.windows[window]!.snapshot.frame }
++
++  /// How much of `window` the displays show, of 1.
++  private func share(of window: WindowID, in runner: ChaosRunner) -> CGFloat {
++    let frame = frame(window, in: runner)
++    return runner.system.displayList.map { frame.intersection($0.frame).area }.reduce(0, +) / frame.area
++  }
++
++  /// Nothing docked, Terminal on the monitor; `away` takes it off the screen; the monitor is unplugged.
++  private func unplugged(_ away: String?, order: String) -> ChaosRunner {
++    play(
++      ["\(both) windows-first", "launch", "open 101 Terminal pid 1003 at 2000 200 800 600 min 177 60", "settle"]
++        + [away, "settle", "\(laptopAlone) windows-\(order)", "settle"].compactMap { $0 })
++  }
++
++  // MARK: Nothing docked
++
++  @Test(arguments: ["hide 1003", "minimize 101"], orders)
++  func whatIsOffTheScreenWhenItsDisplayGoesIsNotSentToTheCorner(away: String, order: String) {
++    let runner = unplugged(away, order: order)
++    #expect(share(of: terminal, in: runner) == 1, "\(frame(terminal, in: runner))")
++    #expect(!runner.controller.parked.contains(terminal))
++    #expect(runner.controller.workspaces[DisplayID("main")]?.isFloating(terminal) == true)
++    // Back on the screen it is there, and nothing moves before its person's eyes.
++    let was = frame(terminal, in: runner)
++    let mark = runner.system.frameLog.count
++    play([away == "minimize 101" ? "restore 101" : "show 1003", "settle", "react", "advance 1", "react"], in: runner)
++    #expect(frame(terminal, in: runner) == was)
++    #expect(runner.system.frameLog[mark...].allSatisfy { $0.frame == was }, "\(runner.system.frameLog[mark...])")
++  }
++
++  /// Kept in view and off the screen at once: put where it floats, and NOT raised as the layout raises what it brings in. On a Mac a raise
++  /// fetches a minimized window out of the Dock (`a-raise-fetches-a-minimized-window-out-of-the-dock` in `collab/reality.json`), which
++  /// would undo its person's ⌘M.
++  @Test(arguments: ["hide 1003", "minimize 101"], arrivingOrders)
++  func keptInViewAndOffTheScreenItIsNotRaised(away: String, order: String) {
++    let runner = play(
++      ["\(both) windows-first", "launch", "open 101 Terminal pid 1003 at 2000 200 800 600 min 177 60", "pin 101", "settle", away, "settle"])
++    runner.system.clearRaiseLog()
++    play(["\(laptopAlone) windows-\(order)", "settle"], in: runner)
++    #expect(!runner.system.raiseLog.contains(terminal), "\(runner.system.raiseLog)")
++    #expect(share(of: terminal, in: runner) == 1, "\(frame(terminal, in: runner))")
++    #expect(!runner.controller.parked.contains(terminal))
++    #expect(runner.controller.workspaces[DisplayID("main")]?.isPinned(terminal) == true)
++  }
++
++  /// The control: in sight all along, it ends in the same place.
++  @Test(arguments: orders) func inSightItEndsInTheSamePlace(order: String) {
++    #expect(frame(terminal, in: unplugged(nil, order: order)) == frame(terminal, in: unplugged("hide 1003", order: order)))
++  }
++
++  /// macOS goes by the displays' corners, Arbor went by what the menu bars leave, so the two places can differ by a few points.
++  /// Where macOS has brought a window is where it is: Arbor moves nothing, not now and not when the window shows again. (Where the
++  /// windows speak first the window counts as the laptop's from then on, and the monitor does not get it back: an older fault.)
++  @Test(arguments: ["hide 1003", "minimize 101", nil], arrivingOrders)
++  func whereMacOSHasBroughtItIsWhereItStays(away: String?, order: String) {
++    let runner = play(
++      ["\(both) windows-first", "launch", "open 101 Terminal pid 1003 at 2000 0 800 500 min 177 60", "settle", away, "settle"]
++        .compactMap { $0 })
++    let mark = runner.system.frameLog.count
++    play(["\(laptopAlone) windows-\(order)", "settle"], in: runner)
++    let broughtTo = CGRect(x: 488, y: 200, width: 800, height: 500)
++    #expect(frame(terminal, in: runner) == broughtTo)
++    play([away == "minimize 101" ? "restore 101" : "show 1003", "settle", "react", "advance 1", "react"], in: runner)
++    #expect(frame(terminal, in: runner) == broughtTo)
++    #expect(runner.system.frameLog[mark...].allSatisfy { $0.frame == broughtTo }, "\(runner.system.frameLog[mark...])")
++    #expect(runner.controller.workspaces[DisplayID("main")]?.floating[terminal] == broughtTo)
++    // And the monitor gets it back to the point.
++    play(["\(both) windows-\(order)", "settle"], in: runner)
++    #expect(frame(terminal, in: runner) == CGRect(x: 2000, y: 0, width: 800, height: 500))
++  }
++
++  // MARK: There and back is nothing, off the screen too
++
++  /// The monitor is plugged in again while the window is still off the screen: it is back where it floated, and nothing moves when it shows.
++  @Test(arguments: ["hide 1003", "minimize 101"], arrivingOrders)
++  func pluggedInAgainItIsBackBeforeItShows(away: String, order: String) {
++    let runner = unplugged(away, order: order)
++    play(["\(both) windows-\(order)", "settle", "react", "advance 1", "react"], in: runner)
++    let own = CGRect(x: 2000, y: 200, width: 800, height: 600)
++    #expect(frame(terminal, in: runner) == own)
++    #expect(runner.controller.workspaces[DisplayID("side")]?.isFloating(terminal) == true)
++    let mark = runner.system.frameLog.count
++    play([away == "minimize 101" ? "restore 101" : "show 1003", "settle", "react", "advance 1", "react"], in: runner)
++    #expect(frame(terminal, in: runner) == own)
++    #expect(runner.system.frameLog[mark...].allSatisfy { $0.frame == own }, "\(runner.system.frameLog[mark...])")
++  }
++
++  /// A guard: it held before. Whether an app obeys a move while its window is off the screen, nobody has measured. If it does not, the
++  /// window is fetched when it shows, as it always was: it must not pass for placed and be left on the laptop, filed under the monitor.
++  @Test func anAppThatDoesNotObeyWhileHiddenIsFetchedWhenItShows() {
++    let runner = unplugged("hide 1003", order: "late")
++    play(["behave 101 frozen", "\(both) windows-late", "settle", "react", "advance 1", "react"], in: runner)
++    play(["behave 101 normal", "show 1003", "settle", "react", "advance 1", "react"], in: runner)
++    #expect(frame(terminal, in: runner) == CGRect(x: 2000, y: 200, width: 800, height: 600))
++    #expect(!runner.controller.parked.contains(terminal))
++  }
++
++  /// Left hanging over the monitor's edges by its person's own hand, it hangs there again, and does not jump when it shows.
++  @Test(arguments: ["hide 1003", nil], arrivingOrders)
++  func whereItsPersonLeftItHangingItHangsAgain(away: String?, order: String) {
++    let runner = play(
++      ["\(both) windows-first", "launch", "open 101 Terminal pid 1003 at 2000 200 800 600 min 177 60", "advance 1"]
++        + ["grab 101", "carry 3900 700", "release", "settle", "advance 1"])
++    let left = frame(terminal, in: runner)
++    #expect(share(of: terminal, in: runner) < 1, "it hangs over the edge: \(left)")
++    play(
++      [away, "settle", "\(laptopAlone) windows-\(order)", "settle", "react", "advance 1", "react"].compactMap { $0 }
++        + ["\(both) windows-\(order)", "settle", "react", "advance 1", "react"], in: runner)
++    #expect(frame(terminal, in: runner) == left)
++    play(["show 1003", "settle", "react", "advance 1", "react"], in: runner)
++    #expect(frame(terminal, in: runner) == left)
++  }
++
++  /// The laptop's view is on one window, so hidden Terminal went out of view there, rightly. The monitor comes back, with its Desktop
++  /// in view: Terminal is back where it floated, not in the monitor's corner, where a crash would leave it.
++  @Test(arguments: arrivingOrders) func outOfViewOnTheLaptopItIsStillBackOnTheMonitor(order: String) {
++    let runner = play(
++      ["\(both) windows-first", "launch", "open 101 Terminal pid 1003 at 2000 200 800 600 min 177 60", "advance 1"]
++        + ["open 110 Notes pid 1001 at 500 300 700 500 min 300 200", "key down dock right", "key up dock right", "advance 1"]
++        + ["key down zoom", "key up zoom", "advance 1", "react", "hide 1003", "settle", "\(laptopAlone) windows-\(order)", "settle"])
++    #expect(runner.controller.parked.contains(terminal))
++    play(["react", "advance 1", "\(both) windows-\(order)", "settle", "react", "advance 1", "settle", "crash", "show 1003", "settle"], in: runner)
++    #expect(frame(terminal, in: runner) == CGRect(x: 2000, y: 200, width: 800, height: 600))
++  }
++
++  /// In the Dock on the laptop while the lid is shut and opened. (A guard: it held before, by way of the corner.)
++  @Test(arguments: ["hide 1003", "minimize 101"], arrivingOrders)
++  func throughAShutLidItIsBackOnTheLaptop(away: String, order: String) {
++    let runner = play(
++      ["\(both) windows-first", "launch", "open 101 Terminal pid 1003 at 300 200 800 600 min 177 60", "advance 1", away, "react", "advance 1", "react"]
++        + ["displays side:0,0,2560,1440:25,0,0,0* windows-\(order)", "settle", "react", "advance 1", "react"]
++        + ["\(both) windows-\(order)", "settle", "react", "advance 1", "react"]
++        + [away == "minimize 101" ? "restore 101" : "show 1003", "settle", "react", "advance 1", "react"])
++    #expect(frame(terminal, in: runner) == CGRect(x: 300, y: 200, width: 800, height: 600))
++  }
++
++  /// What made it more than a detour: if Arbor ended there, by a crash, the window stayed in the corner.
++  @Test func afterACrashItIsStillInView() {
++    let runner = unplugged("hide 1003", order: "late")
++    play(["crash", "show 1003", "settle"], in: runner)
++    #expect(share(of: terminal, in: runner) == 1, "\(frame(terminal, in: runner))")
++  }
++
++  /// As a hosted Mac was seen to do it (`macos-leaves-a-window-that-is-off-the-screen-where-its-display-was` in `collab/reality.json`): macOS
++  /// does not bring such a window over. It stays where its display was until it shows. Arbor puts it where it floats on the laptop,
++  /// in one move, while it is away, and nothing moves when it shows. So it was on that Mac.
++  @Test(arguments: ["hide 1003", "minimize 101"]) func leftWhereItsDisplayWasItIsPutInViewWhileItIsAway(away: String) {
++    let runner = play(
++      ["\(both) windows-first", "launch", "open 101 Terminal pid 1003 at 2000 200 800 600 min 177 60", "settle", away, "settle"])
++    let unplugging = runner.system.frameLog.count
++    play(["\(laptopAlone) windows-never", "settle"], in: runner)
++    #expect(runner.system.frameLog[unplugging...].filter { $0.window == terminal }.count == 1, "\(runner.system.frameLog[unplugging...])")
++    #expect(share(of: terminal, in: runner) == 1, "\(frame(terminal, in: runner))")
++    #expect(!runner.controller.parked.contains(terminal))
++    let was = frame(terminal, in: runner)
++    let showing = runner.system.frameLog.count
++    play([away == "minimize 101" ? "restore 101" : "show 1003", "settle", "react", "advance 1", "react"], in: runner)
++    #expect(frame(terminal, in: runner) == was)
++    #expect(runner.system.frameLog[showing...].allSatisfy { $0.frame == was }, "\(runner.system.frameLog[showing...])")
++  }
++
++  // MARK: What belongs out of view goes out of view as before
++
++  /// A guard: it held before. The laptop's view is on one window, so its Desktop is out of view, and what floats goes with it, hidden or not. (Where the
++  /// windows speak first nothing arrives: macOS's move passes for somebody's own, and what somebody lays over a view stays.)
++  @Test(arguments: ["hide 1003", nil], arrivingOrders)
++  func withTheDesktopOutOfViewWhatArrivesGoesOutOfView(away: String?, order: String) {
++    let runner = play(
++      ["\(both) windows-first", "launch", "open 101 Terminal pid 1003 at 2000 200 800 600 min 177 60", "advance 1"]
++        + ["open 110 Notes pid 1001 at 500 300 700 500 min 300 200", "key down dock right", "key up dock right", "advance 1"]
++        + ["key down zoom", "key up zoom", "advance 1", "react", away, "settle", "\(laptopAlone) windows-\(order)", "settle"]
++        .compactMap { $0 })
++    #expect(runner.controller.parked.contains(terminal))
++    #expect(share(of: terminal, in: runner) < 0.01, "\(frame(terminal, in: runner))")
++  }
++
++  /// Out of view for real since before (the monitor's view is on one window), then hidden; the lid opens. It is the laptop's, and must
++  /// not be left lying over the monitor's view, held or not. (A guard against letting be whatever happens to show somewhere.)
++  @Test(arguments: [["toggle-hold", "advance 1"], []], arrivingOrders)
++  func whatWasOutOfViewForRealIsNotLeftOverAnotherDisplaysView(hold: [String], order: String) {
++    let runner = play(
++      ["\(both) windows-first", "launch", "open 101 Mail pid 1002 at 200 150 900 600 min 400 300", "advance 1"]
++        + ["open 120 Keynote pid 1007 at 2700 100 900 700 min 400 300", "advance 1", "key down dock right", "key up dock right", "advance 1", "react"]
++        + ["key down zoom", "key up zoom", "advance 1", "react"] + hold
++        + ["displays side:0,0,2560,1440:25,0,0,0* windows-\(order)", "settle", "react", "advance 1", "react", "hide 1002", "react", "advance 1", "react"]
++        + ["\(both) windows-\(order)", "settle", "react", "advance 1", "react", "show 1002", "settle", "react", "advance 1", "react"])
++    #expect(frame(WindowID(101), in: runner) == CGRect(x: 200, y: 150, width: 900, height: 600))
++  }
++
++  // MARK: A held view that shows nothing
++
++  /// Music on the monitor; Terminal docked and framed on the laptop. `steps` come between that and the unplugging.
++  private func unpluggedBesideAFramedTerminal(pinned: Bool, _ steps: [String], order: String) -> ChaosRunner {
++    play(
++      ["\(both) windows-first", "launch", "open 101 Music pid 1006 at 2000 200 800 600 min 680 480", pinned ? "pin 101" : nil, "advance 1"]
++        .compactMap { $0 }
++        + ["open 110 Terminal pid 1003 at 500 300 700 500 min 177 60", "key down dock right", "key up dock right", "advance 1"]
++        + ["key down zoom", "key up zoom", "advance 1", "react"] + steps
++        + ["react", "advance 1", "react", "\(laptopAlone) windows-\(order)", "react", "advance 1", "react"])
++  }
++
++  /// "Always in view" is its person's own word about that window. The one display left showed nothing at all.
++  @Test(arguments: ["hide 1003", "close 110", "full-screen 110 on"], orders)
++  func aPinnedWindowArrivesInViewUnderAHeldViewThatShowsNothing(emptiedBy: String, order: String) {
++    let runner = unpluggedBesideAFramedTerminal(pinned: true, ["toggle-hold", "advance 1", emptiedBy], order: order)
++    #expect(share(of: music, in: runner) == 1, "\(frame(music, in: runner))")
++    #expect(!runner.controller.parked.contains(music))
++    #expect(runner.controller.workspaces[DisplayID("main")]?.isPinned(music) == true)
++  }
++
++  /// The controls: without the hold, and with the held view still showing its window, it always did.
++  @Test(arguments: [["advance 1", "hide 1003"], ["toggle-hold", "advance 1"]])
++  func aPinnedWindowArrivesInViewOtherwiseToo(steps: [String]) {
++    let runner = unpluggedBesideAFramedTerminal(pinned: true, steps, order: "late")
++    #expect(share(of: music, in: runner) == 1, "\(frame(music, in: runner))")
++    #expect(!runner.controller.parked.contains(music))
++  }
++
++  /// A guard: it held before. Not pinned, it is an ordinary floating window, and a held view gives nothing away: it goes out of view with the Desktop. However the
++  /// view was emptied: after ⌘W the camera is on what was around the window, Desktop included. (Where the windows speak first it
++  /// stays in view, before this change and after: macOS's move passes for somebody's own. An older fault, and a worse one here.)
++  @Test(arguments: ["hide 1003", "close 110", "minimize 110"], arrivingOrders)
++  func whatIsNotPinnedStaysOutOfAHeldView(emptiedBy: String, order: String) {
++    let runner = unpluggedBesideAFramedTerminal(pinned: false, ["toggle-hold", "advance 1", emptiedBy], order: order)
++    #expect(runner.controller.parked.contains(music))
++    #expect(share(of: music, in: runner) < 0.01, "\(frame(music, in: runner))")
++  }
++
++  // MARK: A display that only blinked
++
++  /// The same last step ends a blink: the monitor is gone and back before anything is reported.
++  @Test func afterABlinkAHiddenAppsWindowIsNotInTheCorner() {
++    let main = FakeWindowSystem.standardDisplay
++    let side = DisplaySnapshot(
++      id: DisplayID("side"), frame: CGRect(x: 1440, y: 0, width: 1280, height: 800),
++      visibleFrame: CGRect(x: 1440, y: 0, width: 1280, height: 800), isMain: false)
++    let h = Harness(displays: [main, side])
++    let spot = CGRect(x: 1900, y: 100, width: 300, height: 200)
++    let d = h.system.open(app: "Terminal", pid: 1003, frame: spot)
++    h.start()
++    h.system.setHidden(pid: 1003, true)
++    h.scheduler.advance(by: 1)
++    h.system.displayList = [main]
++    h.system.userMove(d, to: CGRect(x: 100, y: 60, width: 300, height: 200))
++    h.scheduler.advance(by: 1)
++    h.system.displayList = [main, side]
++    h.scheduler.advance(by: 5)
++    // As a window in sight is (`afterABlinkWhatMacOSMovedIsPutBack`).
++    #expect(h.frame(d) == spot)
++    #expect(!h.controller.parked.contains(d))
++  }
++}
+diff --git a/Tests/ArborKitTests/DisplaysComeAndGoTests.swift b/Tests/ArborKitTests/DisplaysComeAndGoTests.swift
+index 39f13f99..1d7410d9 100644
+--- a/Tests/ArborKitTests/DisplaysComeAndGoTests.swift
++++ b/Tests/ArborKitTests/DisplaysComeAndGoTests.swift
+@@ -78,11 +78,10 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
+   /// Plays `lines`. No net may speak but of what is known. Returns the world.
+   @discardableResult
+   private func play(
+-    _ lines: [String], in runner: ChaosRunner = ChaosRunner(), excusing excused: Set<String> = [],
+-    sourceLocation: SourceLocation = #_sourceLocation
++    _ lines: [String], in runner: ChaosRunner = ChaosRunner(), sourceLocation: SourceLocation = #_sourceLocation
+   ) -> ChaosRunner {
+     for line in lines {
+-      let violations = runner.step(ChaosAction(text: line)).filter { !ChaosRunner.knownRules.union(excused).contains($0.rule) }
++      let violations = runner.step(ChaosAction(text: line)).filter { !ChaosRunner.knownRules.contains($0.rule) }
+       #expect(violations.isEmpty, "\(line): \(violations)", sourceLocation: sourceLocation)
+     }
+     return runner
+@@ -190,9 +189,7 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
+         }
+         let found = frames(runner)
+         let mark = runner.system.frameLog.count
+-        // Where a display GOES, Arbor works out a place of its own for what macOS has just brought over, and moves it the height the
+-        // two menu bars differ by: another fault, with a fix of its own on the way, which takes this excuse out.
+-        play([line] + moment, in: runner, excusing: ["moved-for-nothing"])
++        play([line] + moment, in: runner)
+         let came = !Set(next.map(\.id)).subtracting(connected).isEmpty && Set(old.map(\.id)).isSubset(of: Set(next.map(\.id)))
+         connected = Set(next.map(\.id))
+         // Where a display only comes, and none goes: every window is where it belongs already.
+diff --git a/Tests/ArborKitTests/LifecycleTests.swift b/Tests/ArborKitTests/LifecycleTests.swift
+index 782d18bd..88774b87 100644
+--- a/Tests/ArborKitTests/LifecycleTests.swift
++++ b/Tests/ArborKitTests/LifecycleTests.swift
+@@ -68,10 +68,13 @@ import Testing
+     h.run("dock \(b.rawValue) right")
+     h.run("zoom \(a.rawValue)")
+     // Parked, then minimized; then its display goes and comes back, after which Arbor no longer
+-    // counts it as parked, and moves nothing because a minimized window takes no space.
++    // counts it as parked, and moves nothing because a minimized window takes no space. (Its app obeys nobody while it is in
++    // the Dock, or Arbor would have brought it into view on the display that stayed.)
+     h.system.setMinimized(b, true)
++    h.system.setBehaviour(b, .frozen)
+     h.system.setDisplays([FakeWindowSystem.standardDisplay])
+     h.system.setDisplays([FakeWindowSystem.standardDisplay, Self.second])
++    h.system.setBehaviour(b, .normal)
+     #expect(!h.system.isVisible(b))
+     h.controller.shutdown()
+     #expect(h.system.isVisible(b), "\(h.frame(b)!)")
+diff --git a/Tests/ArborKitTests/TwoDisplayTests.swift b/Tests/ArborKitTests/TwoDisplayTests.swift
+index 48e91af3..3ade7925 100644
+--- a/Tests/ArborKitTests/TwoDisplayTests.swift
++++ b/Tests/ArborKitTests/TwoDisplayTests.swift
+@@ -59,23 +59,47 @@ private let side = DisplaySnapshot(
+     expectWindowsMatchLayout(h, on: main.id)
+   }
+ 
+-  @Test(arguments: [false, true]) func theSameWindowStillFloatingWaitsOutOfViewForTheDesktop(makingWay: Bool) {
++  /// Still floating, it comes out of the Dock where it went in, as on one display (below): over a framed view too, whether or not a display
++  /// went meanwhile (the product owner, 2026-10-15; Q29: a floating window is not taken out of view). It used to be out of view then, waiting for the
++  /// Desktop, but only because it still counted as out of view from the unplug, when it had been sent to the corner with
++  /// the Desktop in view: the fault of `AwayWhenItsDisplayGoesTests`.
++  @Test(arguments: [false, true]) func theSameWindowStillFloatingComesOutOfTheDockWhereItWentIn(makingWay: Bool) {
+     let (h, a, _, f) = makeHarness(settings: makingWay ? .makingWay : Settings())
+     h.system.setMinimized(f, true)
+     unplugSide(h, macOSMoves: f)
++    let broughtTo = h.frame(f)!
++    #expect(h.system.isVisible(f) && !h.controller.parked.contains(f))
+     h.run("zoom \(a.rawValue)")
+     h.system.echoes.keyboard = false
+     h.system.setMinimized(f, false)
+-    #expect(!h.system.isVisible(f), "\(h.frame(f)!) lies over the framed window")
++    #expect(h.frame(f) == broughtTo)
++    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: a), "the view stays on Safari")
+     h.run("show-all")
+     if makingWay {
+       #expect(h.layout!.desktopFrame!.contains(h.frame(f)!), "\(h.ascii())")
+     } else {
+-      // As far from this display's corner as it was from its own display's: it has not been in view here yet.
+-      #expect(h.frame(f) == CGRect(x: 60, y: 325, width: 320, height: 300))
++      // Where macOS has brought it is where it is. (It used to go as far from this display's corner as it was from its own display's,
++      // (60,325): a second move, by Arbor, for a frame of Arbor's own reckoning.)
++      #expect(h.frame(f) == broughtTo)
+     }
+   }
+ 
++  /// The measure for the test above: the same story with no display coming or going.
++  @Test func asAFloatingWindowThatWasInTheDockOnOneDisplayAllAlong() {
++    let h = Harness(displays: [main])
++    let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
++    let f = h.system.open(app: "Calculator", frame: CGRect(x: 900, y: 300, width: 320, height: 300))
++    h.start()
++    h.run("dock \(a.rawValue) left")
++    let wentIn = h.frame(f)!
++    h.system.setMinimized(f, true)
++    h.run("zoom \(a.rawValue)")
++    h.system.echoes.keyboard = false
++    h.system.setMinimized(f, false)
++    #expect(h.frame(f) == wentIn)
++    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: a))
++  }
++
+   /// Frames are global: when another display becomes the main one the origin moves, and every window has other numbers where it lies. The stand-in's plain
+   /// change leaves the numbers as they are, which would be macOS shoving every window across the screen. That used to come out right all the
+   /// same, because Arbor carried a floating window after its display. It no longer sets a floating window in view a frame at a change of
+diff --git a/collab/parity.json b/collab/parity.json
+index a8d3f9e1..79894060 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -1726,6 +1726,7 @@
+         "aFloatingWindowThatMacOSMovedBeforeTheUnplugWasReportedStillGoesBack",
+         "aPinGoesByTheSameRule",
+         "aPinPlacedUnseenGoesByTheSameRule",
++        "aPinnedWindowArrivesInViewUnderAHeldViewThatShowsNothing",
+         "aReconnectedDisplayGetsItsArrangementBack",
+         "aVisitorWhoseOwnDisplayStaysAwayGoesBackToWhereItWaited",
+         "aWindowDockedElsewhereMeanwhileStaysThere",
+@@ -1742,15 +1743,19 @@
+         "dormantWorkspacesExpireAfterThirtyDays",
+         "everyWayHomeThatLaysOutFetchesWhatTheChangeLeft",
+         "floatingWindowsGoBackToWhereTheyFloated",
++        "keptInViewAndOffTheScreenItIsNotRaised",
+         "norDoesTheLaptopForgetItsOwnAfterSuchAStart",
+         "pinnedWhileVisitingItBelongsWhereItWasPinned",
+         "placedUnseenOnADisplayThatIsNeitherFirstNorMainItStays",
++        "pluggedInAgainItIsBackBeforeItShows",
+         "stateWithoutDormantWorkspacesStillLoads",
+         "theLidShutsUnderAWindowThatStraddlesTwoDisplays",
+         "theNewestPlaceOfAWindowWins",
+         "theSameDisplaysInAnotherOrderDoNotStopArborFromFollowingTheUser",
+         "underAHoldTheViewStaysAndTheKeyboardComesBackIntoIt",
+         "whatFloatedOnTheMonitorGoesBackWithIt",
++        "whatIsNotPinnedStaysOutOfAHeldView",
++        "whatIsOffTheScreenWhenItsDisplayGoesIsNotSentToTheCorner",
+         "whatItsPersonDraggedMeanwhileStaysWhereItWasDropped",
+         "whatItsPersonSentToAnotherDisplayStaysThere",
+         "whatItsPersonSizedMeanwhileKeepsPlaceAndSize",
+@@ -1762,6 +1767,7 @@
+         "whenTheViewFollowsTheKeyboardEveryWindowStillMovesOnce",
+         "whereItOnlyWaitedIsNotItsPlace",
+         "whereItOnlyWaitedWentUnseenAndItStillGoesHome",
++        "whereMacOSHasBroughtItIsWhereItStays",
+         "whereMacOSPutsWindowsBackItselfArborMovesNothing",
+         "windowsClosedWhileTheDisplayWasAwayAreDropped",
+         "withTheLidOpenedBehindArborsBackItStaysToo",
+diff --git a/collab/scenarios/25-hidden-when-the-cable-is-pulled.sim b/collab/scenarios/25-hidden-when-the-cable-is-pulled.sim
+new file mode 100644
+index 00000000..c5ae61be
+--- /dev/null
++++ b/collab/scenarios/25-hidden-when-the-cable-is-pulled.sim
+@@ -0,0 +1,47 @@
++# Proposed by an executor (2026-10-15); the documenter may edit or drop it.
++# Story: a laptop beside a monitor, nothing docked. A terminal floats on the monitor and its app is hidden with ⌘H. The
++# monitor's cable is pulled. macOS brings the window onto the laptop, and there it is when the app is shown again. Arbor
++# used to take it to the corner behind its person's back, from where it jumped back when it showed, and where it stayed if
++# Arbor ended meanwhile. Plugged in again while still hidden, the window is back on the monitor before it shows.
++# Played in the order hosted Macs were recorded speaking in: macOS's list of displays is new at once, the apps say where
++# their windows are, and Arbor is told once the displays have settled.
++# Reference: rule 2 (nothing moves until the person docks something), Q20 (there and back is nothing), F08.
++plug side right 1920x1080
++open Terminal 800x600
++move 101 1700 200 800 600
++wait 3
++hide Terminal
++quietly unplug side
++move 101 260 200 800 600
++wait 1.7
++report-displays
++expect still
++expect at 101 260 200
++wait 3
++unhide Terminal
++expect still
++expect at 101 260 200
++expect visible 101
++expect floating 101
++# And back, hidden again: nothing moves before its person's eyes.
++hide Terminal
++quietly plug side right 1920x1080
++wait 1.7
++report-displays
++expect at 101 1700 200
++wait 3
++unhide Terminal
++expect still
++expect at 101 1700 200
++expect size 101 800x600
++# In the Dock instead of hidden, it is the same.
++minimize 101
++quietly unplug side
++move 101 260 200 800 600
++wait 1.7
++report-displays
++expect still
++expect at 101 260 200
++restore 101
++expect still
++expect visible 101
+-- 
+2.43.0
+
+
+From 21d4113e5dc941ff708a40f2b4550130848342cb Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 06:57:28 +0000
+Subject: [PATCH 2/4] fix: a window sized with Arbor's own keys belongs where
+ it is
+
+A floating window that waits on the laptop while its monitor is away, made larger or smaller there with grow or shrink,
+was taken back when the monitor returned, and the size undone. That is its person's command about that window, like
+`move-to-display` and like a hand on its edge: no display it floated on fetches it any more.
+---
+ Sources/ArborKit/Controller/Controller+Tiling.swift |  1 +
+ Tests/ArborKitTests/DisplaysComeAndGoTests.swift    | 13 +++++++++++++
+ collab/parity.json                                  |  1 +
+ 3 files changed, 15 insertions(+)
+
+diff --git a/Sources/ArborKit/Controller/Controller+Tiling.swift b/Sources/ArborKit/Controller/Controller+Tiling.swift
+index 6782583f..5ef4b574 100644
+--- a/Sources/ArborKit/Controller/Controller+Tiling.swift
++++ b/Sources/ArborKit/Controller/Controller+Tiling.swift
+@@ -411,6 +411,7 @@ extension Controller {
+     // A size its person asked for is its own, also if it filled the view till now (Controller+Fill.swift).
+     unmarkFill(of: id, on: displayID)
+     workspaces[displayID]?.floating[id] = actual
++    aHandHasPlaced(id)
+     // Its user has taken it in hand: alone on the Desktop, it is not stretched over it again (F18).
+     floatingWindowMoved(id, from: displayID)
+     scheduleSave()
+diff --git a/Tests/ArborKitTests/DisplaysComeAndGoTests.swift b/Tests/ArborKitTests/DisplaysComeAndGoTests.swift
+index 1d7410d9..4b15f85d 100644
+--- a/Tests/ArborKitTests/DisplaysComeAndGoTests.swift
++++ b/Tests/ArborKitTests/DisplaysComeAndGoTests.swift
+@@ -467,6 +467,19 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
+     #expect(frames(runner)[safari] == sentTo)
+   }
+ 
++  /// Made larger or smaller with Arbor's own keys on the lap: its person's command about that window, there. It stays, at that size.
++  @Test(arguments: ["grow", "shrink"], ["between", "late", "silent"])
++  func whatItsPersonSizedWithArborsOwnKeysStaysToo(key: String, order: String) {
++    let runner = play(
++      ["\(desk.both) windows-never", desk.windows[2], "launch", "settle", "\(desk.laptop) windows-\(order)"] + moment
++        + ["focus 103", "react", "advance 1", "react", "key down \(key)", "key up \(key)", "react", "advance 5", "react"])
++    let sized = frames(runner)[mail]!
++    #expect(sized.size != whereMailWas.size)
++    play(["\(desk.both) windows-\(order)"] + moment, in: runner)
++    #expect(frames(runner)[mail] == sized)
++    #expect(runner.controller.workspaces[laptop]?.isFloating(mail) == true)
++  }
++
+   /// The hand's word is on file: a crash a minute later does not bring the claim back.
+   @Test func whatItsPersonSizedLastsThroughACrash() {
+     let runner = monitorUnpluggedAndBack(meanwhile: [
+diff --git a/collab/parity.json b/collab/parity.json
+index 79894060..4c095898 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -1759,6 +1759,7 @@
+         "whatItsPersonDraggedMeanwhileStaysWhereItWasDropped",
+         "whatItsPersonSentToAnotherDisplayStaysThere",
+         "whatItsPersonSizedMeanwhileKeepsPlaceAndSize",
++        "whatItsPersonSizedWithArborsOwnKeysStaysToo",
+         "whatMacOSHadToMoveMeanwhileGoesHome",
+         "whatMacOSHasBroughtBackItselfIsNotMovedAgain",
+         "whatNobodyRescuedIsFittedInOneMove",
+-- 
+2.43.0
+
+
+From b62afe25a6cd8217b62a58eb6b35982661ce2e70 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 07:13:53 +0000
+Subject: [PATCH 3/4] test(mac-shell): off the screen when its display goes, on
+ a real Mac
+
+A floating window whose app is hidden, or that is in the Dock, while a virtual second display is unplugged and plugged in
+again, with nothing docked. It claims what the change before this one promises: the window is not in the corner, lies on the
+display it belongs to, and nothing moves when it shows. And it measures what nobody had recorded: what macOS does to such a
+window by itself, with Arbor and without, and whether such a window obeys a move. Every change is recorded as a trace.
+
+It has run twice on hosted Macs (macOS 26.6.2), within ten minutes: with the change 40 of 40; without it 30 of 40, all ten the
+fault. What it measured is in the ledger: a window that is hidden or in the Dock obeys a move, which settles a case that
+was open; and macOS alone does not bring such a window over when its display goes, which is a new one.
+
+The fake Mac has one display, so like check-displays.sh it cannot be rehearsed to its end. A copy with display_add and
+display_remove stubbed was rehearsed instead, which found that the second app was never started.
+---
+ collab/reality.json                           |  53 +++++--
+ .../check-off-the-screen-at-an-unplug.sh      | 146 ++++++++++++++++++
+ 2 files changed, 190 insertions(+), 9 deletions(-)
+ create mode 100755 scripts/mac-shell/check-off-the-screen-at-an-unplug.sh
+
+diff --git a/collab/reality.json b/collab/reality.json
+index 7503777c..c7d2229e 100644
+--- a/collab/reality.json
++++ b/collab/reality.json
+@@ -7623,6 +7623,34 @@
+     "scripts/mac-shell/walk-diff.py"
+    ]
+   },
++  {
++   "id": "macos-leaves-a-window-that-is-off-the-screen-where-its-display-was",
++   "kind": "second-actor",
++   "layer": "at the seam",
++   "expected": "When a display goes, macOS moves its windows onto the displays that remain at once (`macos-moves-windows-at-once-and-arbor-hears-of-the-displays-later`), those of a hidden app and those in the Dock too. The stand-ins move them all.",
++   "happened": "Not those. With Arbor not running, a window of a hidden app and one in the Dock stayed where their display had been when it went: at x 2560 and 2040 beside a display 1024 points wide, four seconds later. (Their y went by 312 points, with the main display's change of resolution.) macOS brought each in only when it was shown, and then to the frame it had last had on that display, not to the nearest place. Plugged in again while they were away, the display did not get them back. A window in sight was brought over within 0.3 s. The same numbers in two runs.",
++   "found": "The last step of `check-off-the-screen-at-an-unplug.sh`, without Arbor, on a hosted Mac on 2026-10-15 (macOS 26.6.2, a virtual second display, two test windows, two runs).",
++   "modelled": "partly",
++   "knobs": [
++    "FakeWindowSystem.moveSilently",
++    "FakeWindowSystem.displayList"
++   ],
++   "guards": [
++    "test: leftWhereItsDisplayWasItIsPutInViewWhileItIsAway",
++    "e2e: it is where it lay while it was away: nothing moved when it showed"
++   ],
++   "copes": "Sources/ArborKit/Controller/Controller+Displays.swift puts it where it floats on the display that takes it in, in one move, while it is away (`putWhereItFloats`): seen on that Mac, where nothing moved when it showed. The chaos lab's displays still take every window along; only the one test plays it as macOS does.",
++   "hurt": 2,
++   "touches": [
++    "moved-unasked",
++    "jolt"
++   ],
++   "sources": [
++    "scripts/mac-shell/check-off-the-screen-at-an-unplug.sh",
++    "Sources/ArborKit/Controller/Controller+Displays.swift",
++    "Tests/ArborKitTests/AwayWhenItsDisplayGoesTests.swift"
++   ]
++  },
+   {
+    "id": "macos-leaves-out-a-menu-bar-item-that-does-not-fit",
+    "kind": "missing-report",
+@@ -10282,25 +10310,32 @@
+    "kind": "late-or-partial-answer",
+    "layer": "at the seam",
+    "expected": "The fake's `setFrame` moves a minimized window, or one of an app put away with ⌘H, like any other.",
+-   "happened": "macOS is said to refuse or ignore such moves, so tests forgive moves that would fail on a Mac. Another measurement says that a minimized window can be given its place before it shows. Which of the two holds, and when, is not settled.",
+-   "found": "A table that set the fake against macOS, row by row, in a review of what had been proved on real windows.",
+-   "modelled": "no",
+-   "knobs": [],
+-   "guards": [],
+-   "copes": "open",
++   "happened": "macOS was said to refuse or ignore such moves, so that tests would forgive moves that fail on a Mac. Measured, it obeys: a test window of an app put away with ⌘H, and one in the Dock, each asked for a frame by Accessibility, answered with that frame, echoed it, and the window server had them there while they were still away; shown, they were there. Four such moves in each of two runs. Of real apps nobody knows.",
++   "found": "A table that set the fake against macOS, row by row, in a review of what had been proved on real windows. Settled by `check-off-the-screen-at-an-unplug.sh` on a hosted Mac on 2026-10-15 (macOS 26.6.2, a virtual second display, two test apps, once with and once without the change it came with), in its traces.",
++   "modelled": "yes",
++   "knobs": [
++    "FakeWindowSystem.setFrame",
++    "FakeWindowSystem.setBehaviour"
++   ],
++   "guards": [
++    "test: whatIsOffTheScreenWhenItsDisplayGoesIsNotSentToTheCorner",
++    "test: anAppThatDoesNotObeyWhileHiddenIsFetchedWhenItShows"
++   ],
++   "copes": "Sources/ArborKit/Controller/Controller+Displays.swift puts such a window where it floats while it is away (`putWhereItFloats`), and one whose app does not obey goes on counting as out of view, which fetches it when it shows.",
+    "hurt": 3,
+    "touches": [
+     "jolt"
+    ],
+    "sources": [
+     "Sources/ArborTesting/FakeWindowSystem.swift",
+-    "collab/BACKLOG.md"
++    "collab/BACKLOG.md",
++    "scripts/mac-shell/check-off-the-screen-at-an-unplug.sh",
++    "Tests/ArborKitTests/AwayWhenItsDisplayGoesTests.swift"
+    ],
+    "backlog": [
+     "K180",
+     "K1394"
+-   ],
+-   "certainty": "suspected"
++   ]
+   },
+   {
+    "id": "the-fake-says-the-keyboard-moved-from-within-every-focus-call",
+diff --git a/scripts/mac-shell/check-off-the-screen-at-an-unplug.sh b/scripts/mac-shell/check-off-the-screen-at-an-unplug.sh
+new file mode 100755
+index 00000000..a0eb63fa
+--- /dev/null
++++ b/scripts/mac-shell/check-off-the-screen-at-an-unplug.sh
+@@ -0,0 +1,146 @@
++#!/bin/bash
++# A floating window that is off the screen when its display goes, on real macOS: its app hidden, or the window in the Dock.
++# The second display is virtual (lib.sh's display_add, vdisplay.m). Nothing is docked.
++#
++#   scripts/mac-shell/run.sh scripts/mac-shell/check-off-the-screen-at-an-unplug.sh
++#
++# What only a Mac can answer, and what this brings back besides its checks (the lines that begin with "measured:", and a trace of every
++# change in traces/):
++#   1. What does macOS do to such a window when its display goes, and when it comes back? With Arbor and, at the end, without.
++#   2. Does such a window obey a move? Arbor asks one of it only where macOS has not put it in its place already.
++#   3. With Arbor: it is not in the corner, it lies on the display it belongs to, and nothing moves when it shows.
++#
++# On GitHub's Macs plugging the display in also switches the main one from 1024×768 to 1920×1080, and unplugging switches it back, so
++# every plug is a change of resolution too.
++source "$(dirname "$0")/lib.sh"
++needs_throwaway_mac "plug a virtual display in and out, at which macOS moves every window"
++
++WIDTH=1280
++HEIGHT=800
++
++arbor_build
++
++# As in check-displays.sh: nothing asks Arbor anything while a trace is recorded.
++# recorded <name> <command…>
++TRACES="$ARBOR_OUT/traces"
++mkdir -p "$TRACES"
++recorded() {
++  local name=$1
++  shift
++  "$ARBOR_BIN/arborctl" trace on "$name" > /dev/null
++  "$@"
++  sleep 3
++  "$ARBOR_BIN/arborctl" trace off > /dev/null
++  cp "$ARBOR_HOME"/traces/*-"$name".jsonl "$TRACES/$name.jsonl" || echo "no trace $name"
++}
++
++arranges() { [ "$(arbor_ask displays)" = "$1" ]; }
++
++# Whether at least half of the window lies on display n, by the window server's frame: it has one for a window that is off the screen too.
++# mostly_on <n> <id>
++mostly_on() {
++  local x y w h dx dy dw dh
++  take "x y w h" real_frame_of "$2"
++  take "dx dy dw dh" display_frame_of "$1"
++  awk -v x="$x" -v y="$y" -v w="$w" -v h="$h" -v dx="$dx" -v dy="$dy" -v dw="$dw" -v dh="$dh" 'BEGIN {
++    r = (x + w < dx + dw) ? x + w : dx + dw; l = (x > dx) ? x : dx
++    b = (y + h < dy + dh) ? y + h : dy + dh; t = (y > dy) ? y : dy
++    exit !(r > l && b > t && (r - l) * (b - t) * 2 >= w * h)
++  }'
++}
++
++hide_it() { tw2 hide; }
++unhide_it() { tw2 unhide; }
++minimize_it() { tw minimize "$W2"; }
++restore_it() { tw restore "$W2"; }
++
++# there_and_back <name> <id> <hidden|minimized> <put it away> <bring it back>
++there_and_back() {
++  local name=$1 id=$2 state=$3 away=$4 back=$5 own there
++
++  claim "$name when the cable is pulled, a floating window is not taken to the corner, and nothing moves when it shows"
++  own=$(real_frame_of "$id")
++  "$away"
++  check "it is $state" eventually is "$state" "$id"
++  recorded "$name-unplugged" display_remove
++  check "Arbor arranges one display" eventually arranges 1
++  sleep 1
++  echo "measured: $name, unplugged: it was at $own; the window server has it at $(real_frame_of "$id"), Arbor at $(frame_of "$id")"
++  check "it belongs to the display that is left" is display1 "$id"
++  check "it floats" is floating "$id"
++  check "it does not count as out of view" fails is parked "$id"
++  check "most of it lies on the display that is left" mostly_on 1 "$id"
++  there=$(real_frame_of "$id")
++  recorded "$name-shown-on-the-main-display" "$back"
++  check "shown, it is in view" eventually in_view "$id"
++  echo "measured: $name, shown on the main display: the window server has it at $(real_frame_of "$id")"
++  # shellcheck disable=SC2086
++  check "it is where it lay while it was away: nothing moved when it showed" frame_is "$id" $there
++  shot "$name-1-shown-on-the-main-display"
++
++  claim "$name when the display is plugged in again, a floating window is back where it floated before it shows"
++  "$away"
++  check "it is $state again" eventually is "$state" "$id"
++  recorded "$name-plugged-in-again" display_add $WIDTH $HEIGHT right
++  check "Arbor arranges two displays" eventually arranges 2
++  sleep 1
++  echo "measured: $name, plugged in again: the window server has it at $(real_frame_of "$id"), Arbor at $(frame_of "$id")"
++  check "it belongs to the second display again" eventually is display2 "$id"
++  check "it does not count as out of view" fails is parked "$id"
++  # shellcheck disable=SC2086
++  check "it is where it floated, while still away" frame_is "$id" $own
++  recorded "$name-shown-on-the-second-display" "$back"
++  check "shown, it is in view" eventually in_view "$id"
++  # shellcheck disable=SC2086
++  check "nothing moved when it showed" frame_is "$id" $own
++  shot "$name-2-shown-on-the-second-display"
++}
++
++step "two displays, nothing docked: a window of each of two apps floats on the second"
++ARBOR_SECOND_APP=1
++arbor_start 2
++display_add $WIDTH $HEIGHT right
++check "Arbor arranges two displays" eventually arranges 2
++take "dx dy dw dh" display_frame_of 2
++tw move "$W2" $((dx + 120)) $((dy + 140)) 480 348
++tw2 move "$V1" $((dx + 640)) $((dy + 260)) 480 348
++sleep 2
++check "the first app's window is the second display's" eventually is display2 "$W2"
++check "the second app's window is the second display's" eventually is display2 "$V1"
++check "nothing is docked" count docked 0
++summary
++shot 0-two-displays
++
++there_and_back hidden "$V1" hidden hide_it unhide_it
++there_and_back minimized "$W2" minimized minimize_it restore_it
++
++step "without Arbor: what macOS alone does to a hidden window and to one in the Dock"
++arbor_quit
++echo "measured: macOS alone, before: hidden-to-be $(real_frame_of "$V1"), minimized-to-be $(real_frame_of "$W2")"
++hide_it
++minimize_it
++sleep 2
++display_remove
++sleep 4
++echo "measured: macOS alone, unplugged, still away: $(real_frame_of "$V1"), $(real_frame_of "$W2")"
++unhide_it
++restore_it
++sleep 2
++echo "measured: macOS alone, unplugged, shown: $(real_frame_of "$V1"), $(real_frame_of "$W2")"
++hide_it
++minimize_it
++sleep 2
++display_add $WIDTH $HEIGHT right
++sleep 4
++echo "measured: macOS alone, plugged in again, still away: $(real_frame_of "$V1"), $(real_frame_of "$W2")"
++unhide_it
++restore_it
++sleep 2
++echo "measured: macOS alone, plugged in again, shown: $(real_frame_of "$V1"), $(real_frame_of "$W2")"
++shot 3-macos-alone
++
++step "the end"
++arbor_relaunch
++display_remove
++check "Arbor arranges one display" eventually arranges 1
++arbor_stop 4-after-quit
+-- 
+2.43.0
+
+
+From 331d704a86efe7fcec2f43a995fe92400e11ddd1 Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 14:36:40 +0000
+Subject: [PATCH 4/4] fixup! fix: what no layout could place when its display
+ went is not sent to the corner
+
+---
+ .../Controller/Controller+Displays.swift      | 13 ++-
+ .../AwayWhenItsDisplayGoesTests.swift         | 90 ++++++++++++++++---
+ .../ArborKitTests/ChaosSevenRulesTests.swift  |  9 +-
+ collab/parity.json                            |  3 +
+ 4 files changed, 99 insertions(+), 16 deletions(-)
+
+diff --git a/Sources/ArborKit/Controller/Controller+Displays.swift b/Sources/ArborKit/Controller/Controller+Displays.swift
+index 03755947..43be152d 100644
+--- a/Sources/ArborKit/Controller/Controller+Displays.swift
++++ b/Sources/ArborKit/Controller/Controller+Displays.swift
+@@ -625,14 +625,21 @@ extension Controller {
+     }
+   }
+ 
+-  /// Whether `window` floats on `displayID` and is meant to show with the view there as it is: told to stay in view, or on a
+-  /// Desktop that is part of the view. By the layout in effect, not a fresh one, which widens to the surroundings of a view
+-  /// whose window takes up no room; and a held view that shows nothing gives nothing away, wherever its camera has got to.
++  /// Whether `window` floats on `displayID` and is meant to show with the view there as it is. Told to stay in view, it is. So is one that is off
++  /// the screen, over a view framed on something else than the Desktop too: it is as a window that comes out of the Dock, nobody has asked
++  /// Arbor for anything, and in sight macOS would have brought it there to stay (`takeFloatingWindowsFromWhereTheyAre`; the product owner,
++  /// 2026-10-15).
++  ///
++  /// Not so while the view is held, which gives nothing away, or where floating windows make way; and about a window on the screen the layout
++  /// has had its say. These show only on a Desktop that is part of the view. By the layout in effect, not a fresh one, which widens to
++  /// the surroundings of a view whose window takes up no room; and a held view that shows nothing lets nothing in, wherever its camera
++  /// has got to.
+   private func floatsInView(_ window: WindowID, on displayID: DisplayID) -> Bool {
+     guard let workspace = workspaces[displayID], workspace.isFloating(window), !workspace.isStashed(window),
+       !holdKeepsOut(window)
+     else { return false }
+     if workspace.staysInView(window) { return true }
++    guard holdLevel == .view || settings.floatingWindowsMakeWay || windows[window]?.isPresent == true else { return true }
+     guard !displaysHeldEmpty.contains(displayID) else { return false }
+     return layouts[displayID].map { workspace.tree.subtree($0.camera, contains: workspace.tree.desktop) } ?? false
+   }
+diff --git a/Tests/ArborKitTests/AwayWhenItsDisplayGoesTests.swift b/Tests/ArborKitTests/AwayWhenItsDisplayGoesTests.swift
+index 786af10c..b2c6b7f7 100644
+--- a/Tests/ArborKitTests/AwayWhenItsDisplayGoesTests.swift
++++ b/Tests/ArborKitTests/AwayWhenItsDisplayGoesTests.swift
+@@ -15,6 +15,26 @@ private let arrivingOrders = ["between", "late", "silent"]
+ private let terminal = WindowID(101)
+ private let music = WindowID(101)
+ 
++/// What the laptop's view is like when the monitor goes, and whether a floating window that arrives shows there.
++struct ViewItArrivesOn: Sendable, CustomStringConvertible {
++  var description: String
++  var steps: [String]
++  var shows: Bool
++}
++
++private let docked = ["open 110 Notes pid 1001 at 500 300 700 500 min 300 200", "key down dock right", "key up dock right", "advance 1"]
++private let framed = docked + ["key down zoom", "key up zoom", "advance 1", "react"]
++private let held = ["toggle-hold", "advance 1"]
++private let viewsItArrivesOn = [
++  ViewItArrivesOn(description: "nothing docked", steps: [], shows: true),
++  ViewItArrivesOn(description: "nothing docked, held", steps: held, shows: true),
++  ViewItArrivesOn(description: "the Desktop beside a docked window", steps: docked, shows: true),
++  ViewItArrivesOn(description: "the Desktop beside a docked window, held", steps: docked + held, shows: true),
++  ViewItArrivesOn(description: "framed on one window", steps: framed, shows: true),
++  ViewItArrivesOn(description: "framed on one window, held", steps: framed + held, shows: false),
++  ViewItArrivesOn(description: "framed, held, and showing nothing", steps: framed + held + ["hide 1001", "react", "advance 1", "react"], shows: false),
++]
++
+ /// A floating window that no layout can place when its display goes: its app is hidden, it is in the Dock, or the view of the display
+ /// it arrives on is held and shows nothing, which lets no layout through.
+ ///
+@@ -90,6 +110,25 @@ private let music = WindowID(101)
+     #expect(frame(terminal, in: unplugged(nil, order: order)) == frame(terminal, in: unplugged("hide 1003", order: order)))
+   }
+ 
++  /// The measure of it all: off the screen, a window ends where it would have ended in sight, whatever the view it arrives on. In view, or
++  /// waiting out of view under a hold that does not show the Desktop. (It compares, so it goes on holding when the rule for windows in sight changes.)
++  @Test(arguments: viewsItArrivesOn, arrivingOrders)
++  func offTheScreenItEndsWhereItWouldInSight(view: ViewItArrivesOn, order: String) {
++    func arrived(_ away: String?) -> ChaosRunner {
++      play(
++        ["\(both) windows-first", "launch", "open 101 Terminal pid 1003 at 2000 200 800 600 min 177 60", "advance 1"] + view.steps
++          + [away, "settle", "\(laptopAlone) windows-\(order)", "settle", "react", "advance 1", "react"].compactMap { $0 })
++    }
++    let inSight = arrived(nil)
++    // (Out of view, a sliver of a point shows in the corner.)
++    #expect(view.shows ? share(of: terminal, in: inSight) == 1 : share(of: terminal, in: inSight) < 0.01, "in sight: \(frame(terminal, in: inSight))")
++    for away in ["hide 1003", "minimize 101"] {
++      let runner = arrived(away)
++      #expect(frame(terminal, in: runner) == frame(terminal, in: inSight), "\(away)")
++      #expect(runner.controller.parked.contains(terminal) == inSight.controller.parked.contains(terminal), "\(away)")
++    }
++  }
++
+   /// macOS goes by the displays' corners, Arbor went by what the menu bars leave, so the two places can differ by a few points.
+   /// Where macOS has brought a window is where it is: Arbor moves nothing, not now and not when the window shows again. (Where the
+   /// windows speak first the window counts as the laptop's from then on, and the monitor does not get it back: an older fault.)
+@@ -111,6 +150,17 @@ private let music = WindowID(101)
+     #expect(frame(terminal, in: runner) == CGRect(x: 2000, y: 0, width: 800, height: 500))
+   }
+ 
++  /// Kept in view and in sight: a window with a part to play is the layout's to place, and is placed where macOS has brought it, not a few points beside it.
++  @Test(arguments: arrivingOrders) func keptInViewItStaysWhereMacOSHasBroughtItToo(order: String) {
++    let runner = play(["\(both) windows-first", "launch", "open 101 Terminal pid 1003 at 2000 0 800 500 min 177 60", "pin 101", "settle"])
++    let mark = runner.system.frameLog.count
++    play(["\(laptopAlone) windows-\(order)", "settle", "react", "advance 1", "react"], in: runner)
++    let broughtTo = CGRect(x: 488, y: 200, width: 800, height: 500)
++    #expect(frame(terminal, in: runner) == broughtTo)
++    #expect(runner.system.frameLog[mark...].allSatisfy { $0.frame == broughtTo }, "\(runner.system.frameLog[mark...])")
++    #expect(runner.controller.workspaces[DisplayID("main")]?.isPinned(terminal) == true)
++  }
++
+   // MARK: There and back is nothing, off the screen too
+ 
+   /// The monitor is plugged in again while the window is still off the screen: it is back where it floated, and nothing moves when it shows.
+@@ -153,14 +203,14 @@ private let music = WindowID(101)
+     #expect(frame(terminal, in: runner) == left)
+   }
+ 
+-  /// The laptop's view is on one window, so hidden Terminal went out of view there, rightly. The monitor comes back, with its Desktop
+-  /// in view: Terminal is back where it floated, not in the monitor's corner, where a crash would leave it.
++  /// The laptop's view is on one window and held, so hidden Terminal waits out of view there, rightly. The hold is released and the monitor comes
++  /// back, with its Desktop in view: Terminal is back where it floated, not in the monitor's corner, where a crash would leave it.
+   @Test(arguments: arrivingOrders) func outOfViewOnTheLaptopItIsStillBackOnTheMonitor(order: String) {
+     let runner = play(
+-      ["\(both) windows-first", "launch", "open 101 Terminal pid 1003 at 2000 200 800 600 min 177 60", "advance 1"]
+-        + ["open 110 Notes pid 1001 at 500 300 700 500 min 300 200", "key down dock right", "key up dock right", "advance 1"]
+-        + ["key down zoom", "key up zoom", "advance 1", "react", "hide 1003", "settle", "\(laptopAlone) windows-\(order)", "settle"])
++      ["\(both) windows-first", "launch", "open 101 Terminal pid 1003 at 2000 200 800 600 min 177 60", "advance 1"] + framed + held
++        + ["hide 1003", "settle", "\(laptopAlone) windows-\(order)", "settle"])
+     #expect(runner.controller.parked.contains(terminal))
++    play(["toggle-hold", "advance 1"], in: runner)
+     play(["react", "advance 1", "\(both) windows-\(order)", "settle", "react", "advance 1", "settle", "crash", "show 1003", "settle"], in: runner)
+     #expect(frame(terminal, in: runner) == CGRect(x: 2000, y: 200, width: 800, height: 600))
+   }
+@@ -201,17 +251,35 @@ private let music = WindowID(101)
+     #expect(runner.system.frameLog[showing...].allSatisfy { $0.frame == was }, "\(runner.system.frameLog[showing...])")
+   }
+ 
++  // MARK: Over a view that is on something else
++
++  /// The laptop's view is on one window. An arrival is as a window that comes out of the Dock: nobody has asked Arbor for anything, so it stays where
++  /// macOS has brought it, over the framed window, in sight or not, and nothing moves when it shows (the product owner, 2026-10-15).
++  /// It used to go out of view with the Desktop it now belongs to.
++  @Test(arguments: ["hide 1003", "minimize 101", nil], arrivingOrders)
++  func overAViewFramedOnSomethingElseWhatArrivesStays(away: String?, order: String) {
++    let runner = play(
++      ["\(both) windows-first", "launch", "open 101 Terminal pid 1003 at 2000 200 800 600 min 177 60", "advance 1"] + framed
++        + [away, "settle", "\(laptopAlone) windows-\(order)", "settle"].compactMap { $0 })
++    #expect(!runner.controller.parked.contains(terminal))
++    #expect(share(of: terminal, in: runner) == 1, "\(frame(terminal, in: runner))")
++    let was = frame(terminal, in: runner)
++    let mark = runner.system.frameLog.count
++    play([away.map { $0 == "minimize 101" ? "restore 101" : "show 1003" }, "settle", "react", "advance 1", "react"].compactMap { $0 }, in: runner)
++    #expect(frame(terminal, in: runner) == was)
++    #expect(runner.system.frameLog[mark...].filter { $0.window == terminal }.allSatisfy { $0.frame == was }, "\(runner.system.frameLog[mark...])")
++  }
++
+   // MARK: What belongs out of view goes out of view as before
+ 
+-  /// A guard: it held before. The laptop's view is on one window, so its Desktop is out of view, and what floats goes with it, hidden or not. (Where the
++  /// A guard: it held before. Where floating windows make way for docked ones they live on the Desktop and go with it, hidden or not. (Where the
+   /// windows speak first nothing arrives: macOS's move passes for somebody's own, and what somebody lays over a view stays.)
+   @Test(arguments: ["hide 1003", nil], arrivingOrders)
+-  func withTheDesktopOutOfViewWhatArrivesGoesOutOfView(away: String?, order: String) {
++  func whereFloatingWindowsMakeWayWhatArrivesGoesWithTheDesktop(away: String?, order: String) {
+     let runner = play(
+-      ["\(both) windows-first", "launch", "open 101 Terminal pid 1003 at 2000 200 800 600 min 177 60", "advance 1"]
+-        + ["open 110 Notes pid 1001 at 500 300 700 500 min 300 200", "key down dock right", "key up dock right", "advance 1"]
+-        + ["key down zoom", "key up zoom", "advance 1", "react", away, "settle", "\(laptopAlone) windows-\(order)", "settle"]
+-        .compactMap { $0 })
++      ["settings {\"floatingWindowsMakeWay\":true}", "\(both) windows-first", "launch"]
++        + ["open 101 Terminal pid 1003 at 2000 200 800 600 min 177 60", "advance 1"] + framed
++        + [away, "settle", "\(laptopAlone) windows-\(order)", "settle"].compactMap { $0 })
+     #expect(runner.controller.parked.contains(terminal))
+     #expect(share(of: terminal, in: runner) < 0.01, "\(frame(terminal, in: runner))")
+   }
+diff --git a/Tests/ArborKitTests/ChaosSevenRulesTests.swift b/Tests/ArborKitTests/ChaosSevenRulesTests.swift
+index 94b279f3..3af7e454 100644
+--- a/Tests/ArborKitTests/ChaosSevenRulesTests.swift
++++ b/Tests/ArborKitTests/ChaosSevenRulesTests.swift
+@@ -778,11 +778,16 @@ private let b = WindowID(102)
+     #expect(!numbers(after: oneDocked + ["dock 102 right", "settle"], then: "zoom 101").contains("dock-took-out-of-view"))
+   }
+ 
+-  /// The fault itself is the control, for as long as it is there: nothing is docked, an app is hidden, its display is unplugged, and its window goes to the corner.
++  /// The control is what is left of a fault that is cured. Nothing is docked, an app is hidden, its display is unplugged, and its window went to the corner. Now
++  /// it is put where it floats. If macOS has left it where its display was, as hosted Macs do, and its app does not obey while it is hidden, it
++  /// goes on counting as out of view, which is what fetches it when it shows.
+   @Test func withNothingArrangedNoWindowCountsAsOutOfView() {
+     let desk = ["displays main:0,0,1512,982:37,0,0,0* side:1512,-200,2560,1440:25,0,0,0 windows-first", "launch", "open 101 Terminal pid 1003 at 2000 200 800 600 min 177 60", "settle"]
+     let unplugged = "displays main:0,0,1512,982:37,0,0,0* windows-late"
+-    #expect(numbers(after: desk + ["hide 1003", "settle"], then: unplugged, "settle").contains("parked-before-any-dock"))
++    let leftBehind = "displays main:0,0,1512,982:37,0,0,0* windows-never"
++    #expect(numbers(after: desk + ["hide 1003", "settle", "behave 101 frozen"], then: leftBehind, "settle").contains("parked-before-any-dock"))
++    #expect(!numbers(after: desk + ["hide 1003", "settle"], then: leftBehind, "settle").contains("parked-before-any-dock"))
++    #expect(!numbers(after: desk + ["hide 1003", "settle"], then: unplugged, "settle").contains("parked-before-any-dock"))
+     #expect(!numbers(after: desk, then: unplugged, "settle").contains("parked-before-any-dock"))
+   }
+ 
+diff --git a/collab/parity.json b/collab/parity.json
+index 4c095898..b243dc19 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -1744,7 +1744,10 @@
+         "everyWayHomeThatLaysOutFetchesWhatTheChangeLeft",
+         "floatingWindowsGoBackToWhereTheyFloated",
+         "keptInViewAndOffTheScreenItIsNotRaised",
++        "keptInViewItStaysWhereMacOSHasBroughtItToo",
+         "norDoesTheLaptopForgetItsOwnAfterSuchAStart",
++        "offTheScreenItEndsWhereItWouldInSight",
++        "overAViewFramedOnSomethingElseWhatArrivesStays",
+         "pinnedWhileVisitingItBelongsWhereItWasPinned",
+         "placedUnseenOnADisplayThatIsNeitherFirstNorMainItStays",
+         "pluggedInAgainItIsBackBeforeItShows",
+-- 
+2.43.0
+

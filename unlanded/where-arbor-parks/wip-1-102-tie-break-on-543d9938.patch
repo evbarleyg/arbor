@@ -1,0 +1,84 @@
+diff --git a/Sources/ArborKit/Controller/Controller+Layout.swift b/Sources/ArborKit/Controller/Controller+Layout.swift
+index 94ca0afd..59b88a22 100644
+--- a/Sources/ArborKit/Controller/Controller+Layout.swift
++++ b/Sources/ArborKit/Controller/Controller+Layout.swift
+@@ -381,12 +381,20 @@ extension Controller {
+     parkingOrigin(for: size, titleBar: titleBars[window], on: display)
+   }
+ 
+-  /// With nil, for a window whose title bar is not known, by a guess.
++  /// With nil, for a window whose title bar is not known, by a guess. Of places that are as good as each other by the guess, the one that is
++  /// best whichever of the heights that were measured is the window's own: by the order of the places alone a window with a toolbar went
++  /// to a corner where fifteen rows of it showed on the neighbour, and from there to the other.
+   func parkingOrigin(for size: CGSize, titleBar: CGFloat?, on display: DisplaySnapshot) -> CGPoint {
+-    let candidates = parkingPlaces(for: size, on: display)
+-    func showing(_ origin: CGPoint) -> CGFloat {
+-      whatShows(of: CGRect(origin: whereItStops(origin, titleBar: titleBar ?? Self.guessedTitleBar), size: size))
++    func showing(_ origin: CGPoint, _ titleBar: CGFloat) -> CGFloat {
++      whatShows(of: CGRect(origin: whereItStops(origin, titleBar: titleBar), size: size))
++    }
++    func showing(_ origin: CGPoint) -> (CGFloat, atWorst: CGFloat) {
++      guard let titleBar else {
++        return (showing(origin, Self.guessedTitleBar), Self.measuredTitleBars.map { showing(origin, $0) }.max() ?? 0)
++      }
++      return (showing(origin, titleBar), 0)
+     }
++    let candidates = parkingPlaces(for: size, on: display)
+     var best = (origin: candidates[0], showing: showing(candidates[0]))
+     for origin in candidates.dropFirst() where showing(origin) < best.showing { best = (origin, showing(origin)) }
+     return best.origin
+diff --git a/Sources/ArborKit/Controller/Controller+Rules.swift b/Sources/ArborKit/Controller/Controller+Rules.swift
+index 579b805b..cdebcfbb 100644
+--- a/Sources/ArborKit/Controller/Controller+Rules.swift
++++ b/Sources/ArborKit/Controller/Controller+Rules.swift
+@@ -178,8 +178,8 @@ extension Controller {
+         let isThere = abs(frame.minX - place.x) <= 1 && abs(frame.minY - place.y) <= 1
+         let titleBar = titleBar(ofAWindowAt: frame.origin, sentTo: place)
+         guard isThere || titleBar != nil else { return false }
+-        // By the height its place speaks of, and by the guess, which is what Arbor goes by until a window has answered.
+-        return [titleBar, nil].contains { parkingOrigin(for: frame.size, titleBar: $0, on: display) == place }
++        // By the height its place speaks of; as Arbor chooses until a window has answered; and by the guess alone, as it used to then.
++        return [titleBar, nil, Self.guessedTitleBar].contains { parkingOrigin(for: frame.size, titleBar: $0, on: display) == place }
+       }
+     }
+   }
+diff --git a/Sources/ArborKit/Controller/Controller+TitleBars.swift b/Sources/ArborKit/Controller/Controller+TitleBars.swift
+index f6bb9e38..9b239d43 100644
+--- a/Sources/ArborKit/Controller/Controller+TitleBars.swift
++++ b/Sources/ArborKit/Controller/Controller+TitleBars.swift
+@@ -8,6 +8,8 @@ import CoreGraphics
+ extension Controller {
+   /// What is reckoned with for a window that has not been sent below the bottom yet. The answer puts it right.
+   static let guessedTitleBar: CGFloat = 32
++  /// The heights that were measured.
++  static let measuredTitleBars: [CGFloat] = [28, 32, 52]
+   /// No title bar is taken to be higher than this: twice the highest seen.
+   static let highestTitleBar: CGFloat = 104
+ 
+diff --git a/Tests/ArborKitTests/TitleBarTests.swift b/Tests/ArborKitTests/TitleBarTests.swift
+index 5113c9fd..81212f86 100644
+--- a/Tests/ArborKitTests/TitleBarTests.swift
++++ b/Tests/ArborKitTests/TitleBarTests.swift
+@@ -71,8 +71,9 @@ import Testing
+     #expect(whatShows(h, of: f) <= CGFloat(titleBar), "\(h.frame(f)!) beside a display that ends \(above) points higher")
+   }
+ 
+-  /// A title bar no higher than was reckoned with costs no second move: no less of the window would show elsewhere.
+-  @Test(arguments: [28.0, 32.0], [20.0, 30.0, 40.0, 50.0, 60.0])
++  /// A title bar of one of the heights that were measured costs no second move, though the window has not said yet which is its own: the
++  /// place is good for all of them. By one guess, 32, a window with a toolbar went to the bottom right first and from there to the bottom left.
++  @Test(arguments: [28.0, 32.0, 52.0], [20.0, 30.0, 40.0, 50.0, 60.0])
+   func aWindowGoesOutOfViewInOneMove(titleBar: Double, above: Double) {
+     let (h, a, _) = besideADisplay(endingAbove: CGFloat(above), titleBar: CGFloat(titleBar))
+     let budget = h.measure { h.run("zoom \(a.rawValue)") }
+@@ -143,8 +144,8 @@ import Testing
+     }
+   }
+ 
+-  /// A higher one is put right by the answer: one move more, once, and only where the window would show otherwise.
+-  @Test(arguments: [(52.0, 40.0), (52.0, 50.0), (80.0, 60.0)])
++  /// One higher than any that was measured is put right by the answer: one move more, once, and only where the window would show otherwise.
++  @Test(arguments: [(80.0, 60.0), (80.0, 70.0), (104.0, 90.0)])
+   func aTitleBarHigherThanReckonedWithCostsASecondMoveOnce(titleBar: Double, above: Double) {
+     let (h, a, f) = besideADisplay(endingAbove: CGFloat(above), titleBar: CGFloat(titleBar))
+     #expect(h.measure { h.run("zoom \(a.rawValue)") }.repeatMoves == 1, "where macOS stops it is not known before it is sent there")

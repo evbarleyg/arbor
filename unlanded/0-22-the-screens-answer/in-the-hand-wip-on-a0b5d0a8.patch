@@ -1,0 +1,399 @@
+diff --git a/Sources/ArborKit/AX/AXWindowSystem.swift b/Sources/ArborKit/AX/AXWindowSystem.swift
+index a44fff05..59ce60ec 100644
+--- a/Sources/ArborKit/AX/AXWindowSystem.swift
++++ b/Sources/ArborKit/AX/AXWindowSystem.swift
+@@ -233,6 +233,25 @@ public final class AXWindowSystem: WindowSystem {
+   }
+ 
+   public func setFrame(_ frame: CGRect, of window: WindowID) -> CGRect? {
++    carryOut(on: window) { known in
++      let steps = FramePlan.steps(
++        from: known, to: frame,
++        rooms: NSScreen.screens.map {
++          FramePlan.room(onDisplay: ScreenGeometry.global(fromAppKit: $0.frame), visible: ScreenGeometry.global(fromAppKit: $0.visibleFrame))
++        })
++      return (steps, { FramePlan.makingUp(for: steps, result: $0, target: frame) })
++    }
++  }
++
++  public func setSize(_ size: CGSize, of window: WindowID) -> CGRect? {
++    carryOut(on: window) { _ in ([.size(size)], { _ in nil }) }
++  }
++
++  /// Makes the calls of a plan to a window, and those that have to follow once the frame has been read back. `plan` is handed the frame the
++  /// window is believed to have.
++  private func carryOut(
++    on window: WindowID, _ plan: (CGRect) -> (steps: [FramePlan.Step], makingUp: (CGRect) -> [FramePlan.Step]?)
++  ) -> CGRect? {
+     guard let record = records[window], answers(record.snapshot.pid) else { return nil }
+     // macOS accepts a new size for a full-screen window and does nothing.
+     guard !record.snapshot.isFullScreen else { return record.snapshot.frame }
+@@ -258,15 +277,9 @@ public final class AXWindowSystem: WindowSystem {
+     }
+     if enhanced { appElement?.setBool("AXEnhancedUserInterface", false) }
+ 
+-    let steps = FramePlan.steps(
+-      from: record.snapshot.frame, to: frame,
+-      rooms: NSScreen.screens.map {
+-        FramePlan.room(onDisplay: ScreenGeometry.global(fromAppKit: $0.frame), visible: ScreenGeometry.global(fromAppKit: $0.visibleFrame))
+-      })
++    let (steps, makingUp) = plan(record.snapshot.frame)
+     var result = perform(steps, on: element)
+-    if let taken = result, let more = FramePlan.makingUp(for: steps, result: taken, target: frame) {
+-      result = perform(more, on: element)
+-    }
++    if let taken = result, let more = makingUp(taken) { result = perform(more, on: element) }
+ 
+     // Also when the app fell silent half way: a call that times out is still delivered when the app wakes up.
+     if enhanced { appElement?.setBool("AXEnhancedUserInterface", true) }
+diff --git a/Sources/ArborKit/Controller/Controller+Drag.swift b/Sources/ArborKit/Controller/Controller+Drag.swift
+index 9e5aa369..1bedf605 100644
+--- a/Sources/ArborKit/Controller/Controller+Drag.swift
++++ b/Sources/ArborKit/Controller/Controller+Drag.swift
+@@ -49,6 +49,10 @@ extension Controller {
+     /// bar in the top band: slid sideways, or merely nudged, it has not been carried to that edge. Nothing is offered along it
+     /// until the pointer has left the band once.
+     var edgesNeverLeft: Set<Edge> = []
++    /// Where the pointer took hold, and how far along the window's title bar that is (Controller+InTheHand.swift).
++    var hold: (at: CGPoint, alongTheTitleBar: CGFloat)?
++    /// It has left its slot and been asked for its own size, or there was nothing to ask.
++    var wasAskedInTheHand = false
+   }
+ 
+   /// Held while dragging, this turns docking off. Not ⌥: since macOS 15 that brings up macOS's own
+@@ -87,6 +91,7 @@ extension Controller {
+     drag?.macTiling = system.macTiling()
+     drag?.edgesNeverLeft = screenEdges(near: point)
+     drag?.sizeOwed = own
++    drag?.hold = windows[id].map { (point, point.x - $0.frame.minX) }
+     soleFloatTakenInHand(id)
+     // Word of a drag can come late, when the pointer has already stopped where it is going. The
+     // hold counts from now, without waiting for a move that may not come.
+@@ -99,6 +104,7 @@ extension Controller {
+     guard drag?.window == id else { return }
+     drag?.point = point
+     if drag?.edgesNeverLeft.isEmpty == false { drag?.edgesNeverLeft.formIntersection(screenEdges(near: point)) }
++    giveItsOwnSizeInTheHand()
+     updateHover()
+   }
+ 
+diff --git a/Sources/ArborKit/Controller/Controller+InTheHand.swift b/Sources/ArborKit/Controller/Controller+InTheHand.swift
+new file mode 100644
+index 00000000..bfe51841
+--- /dev/null
++++ b/Sources/ArborKit/Controller/Controller+InTheHand.swift
+@@ -0,0 +1,46 @@
++import ArborCore
++import CoreGraphics
++
++/// Its own size in the hand.
++///
++/// A docked window that is dragged out of its slot has the shape of the slot, and used to keep it until it was let go: a column carried
++/// across the screen that turned into a window at the drop. macOS's own tiles get their size back in the hand, as they leave their place, and
++/// so does a docked window now: **the moment it has left its slot it is asked for its own size, once. Never for a place: that is the
++/// hand's. The drop is a drop and nothing more.**
++///
++/// What a Mac makes of a size set during a drag was measured first (a hosted Mac, macOS 26, 60 calls with the button down, a test window and
++/// TextEdit): it is taken as at rest, the window's corner stays where it is, the window goes on following the pointer at the distance it
++/// had, and the release is a release. So a window that becomes narrower than the point it is held at shrinks away from under the
++/// pointer, and follows it from afar. Hence the one condition.
++extension Controller {
++  /// How far the pointer carries a docked window before it has left its slot. Less is a slip of the hand.
++  static let slipOfTheHand: CGFloat = 24
++
++  /// How much of the title bar has to be left to the right of the pointer once the window has its own width.
++  static let leftUnderTheHand: CGFloat = 24
++
++  /// Called with every move of a drag.
++  func giveItsOwnSizeInTheHand() {
++    guard let session = drag, !session.wasAskedInTheHand, let home = session.sourceDisplay,
++      workspaces[home]?.isDocked(session.window) == true, let hold = session.hold,
++      hypot(session.point.x - hold.at.x, session.point.y - hold.at.y) >= Self.slipOfTheHand,
++      let has = windows[session.window]?.frame,
++      var own = session.sizeOwed ?? frameToTakeAlong(of: session.window, from: home, ifDocked: true)?.size
++    else { return }
++    drag?.wasAskedInTheHand = true
++    // It may be carried over a smaller display than the one it floated on.
++    if let room = displayID(at: session.point).flatMap({ display($0) })?.visibleFrame.size {
++      own = CGSize(width: min(own.width, room.width), height: min(own.height, room.height))
++    }
++    guard abs(own.width - has.width) > 1 || abs(own.height - has.height) > 1 else { return }
++    // It stays under the hand. Where it would not, it carries the shape of its slot until it is let go, and is then placed with the
++    // pointer as far along its title bar as it held the tile (`droppedFrame`): dull, not wrong.
++    guard hold.alongTheTitleBar <= own.width - Self.leftUnderTheHand else { return }
++    guard let actual = system.setSize(own, of: session.window) else { return }
++    windows[session.window]?.frame = actual
++    Log.debug("\(session.window) has left its slot and took its own size in the hand, \(Int(actual.width))×\(Int(actual.height))")
++    // Out of a low slot the screen cuts it in the hand as it would at rest. That is not its size: it is asked once more when it is let
++    // go, wherever that is (`give`). Nobody chases the hand with calls meanwhile.
++    drag?.sizeOwed = ownFrame(of: actual, askedFor: own).size == actual.size ? nil : own
++  }
++}
+diff --git a/Sources/ArborKit/Controller/Controller+UndockedFrames.swift b/Sources/ArborKit/Controller/Controller+UndockedFrames.swift
+index bde15d20..7e48261e 100644
+--- a/Sources/ArborKit/Controller/Controller+UndockedFrames.swift
++++ b/Sources/ArborKit/Controller/Controller+UndockedFrames.swift
+@@ -118,6 +118,8 @@ extension Controller {
+     if let room = self.displayID(at: pointer).flatMap({ display($0) })?.visibleFrame.size {
+       size = CGSize(width: min(size.width, room.width), height: min(size.height, room.height))
+     }
++    // It has that size already, got in the hand (Controller+InTheHand.swift): the drop is a drop and nothing more.
++    if abs(size.width - dragged.width) < 0.5, abs(size.height - dragged.height) < 0.5 { return dragged }
+     // The frame can be a moment older than the pointer, so neither number is taken on trust.
+     let along = min(max((pointer.x - dragged.minX) / dragged.width, 0), 1)
+     let below = min(max(pointer.y - dragged.minY, 0), min(Self.titleBarReach, size.height))
+diff --git a/Sources/ArborKit/Platform/WindowSystem.swift b/Sources/ArborKit/Platform/WindowSystem.swift
+index fe9aedfe..b9f483bd 100644
+--- a/Sources/ArborKit/Platform/WindowSystem.swift
++++ b/Sources/ArborKit/Platform/WindowSystem.swift
+@@ -174,6 +174,14 @@ public protocol WindowSystem: AnyObject {
+   /// macOS takes the window, Arbor stands aside (`MacTiling`). No default: in a wrapper that forgot to pass it on, the fight
+   /// over the window would be back in silence.
+   func macTiling() -> MacTiling
++
++  /// Sets a window's size and nothing else: its place is whoever's has it, a hand that is dragging it for one. `setFrame` cannot do that: with
++  /// a new size it always sets the place as well, and nobody has seen what a Mac makes of that in the middle of a drag. A size set during a
++  /// drag was seen (a hosted Mac, macOS 26, 60 calls with the button down): taken as at rest, the window's corner stays, and the
++  /// drag goes on. Returns the frame the window has afterwards, or nil as `setFrame` does. No default: a wrapper that made a `setFrame`
++  /// of it would pull the window out of the hand.
++  @discardableResult
++  func setSize(_ size: CGSize, of window: WindowID) -> CGRect?
+ }
+ 
+ extension WindowSystem {
+diff --git a/Sources/ArborKit/Trace/RecordingWindowSystem.swift b/Sources/ArborKit/Trace/RecordingWindowSystem.swift
+index f93a2aaf..1363eed1 100644
+--- a/Sources/ArborKit/Trace/RecordingWindowSystem.swift
++++ b/Sources/ArborKit/Trace/RecordingWindowSystem.swift
+@@ -59,6 +59,10 @@ public final class RecordingWindowSystem: WindowSystem {
+     return actual
+   }
+ 
++  public func setSize(_ size: CGSize, of window: WindowID) -> CGRect? {
++    recorder.call("setSize", [window, size.width, size.height], returning: { inner.setSize(size, of: window) })
++  }
++
+   public func focus(_ window: WindowID) {
+     if recorder.isRecording { recorder.record(.focus(window)) }
+     inner.focus(window)
+diff --git a/Sources/ArborTesting/FakeWindowSystem.swift b/Sources/ArborTesting/FakeWindowSystem.swift
+index 50d975a9..f127a371 100644
+--- a/Sources/ArborTesting/FakeWindowSystem.swift
++++ b/Sources/ArborTesting/FakeWindowSystem.swift
+@@ -214,6 +214,8 @@ public final class FakeWindowSystem: WindowSystem {
+     public var after: CGRect
+     /// Announced with `moveTogether`, so its app worked beside the others.
+     public var together: Bool
++    /// Asked with `setSize`: no place was named, and `requested` has the one the window had.
++    public var sizeOnly = false
+   }
+ 
+   public struct Focus: Equatable {
+@@ -277,6 +279,12 @@ public final class FakeWindowSystem: WindowSystem {
+     return move(window, to: frame, together: false)
+   }
+ 
++  /// One call, where the window is at that moment, in a hand or not: taken as at rest, and its corner stays (a hosted Mac, 64 of 64).
++  public func setSize(_ size: CGSize, of window: WindowID) -> CGRect? {
++    guard let origin = windows[window]?.snapshot.frame.origin else { return nil }
++    return move(window, to: CGRect(origin: origin, size: size), together: false, sizeOnly: true)
++  }
++
+   public func moveTogether(_ frames: [(window: WindowID, frame: CGRect)]) {
+     if ignoresMoveTogether { return }
+     // Like the Accessibility layer: what nobody asked for is reported, so that nobody believes an old frame.
+@@ -288,7 +296,7 @@ public final class FakeWindowSystem: WindowSystem {
+     for (window, frame) in frames { answersAhead[window] = (frame, move(window, to: frame, together: true)) }
+   }
+ 
+-  private func move(_ window: WindowID, to frame: CGRect, together: Bool) -> CGRect? {
++  private func move(_ window: WindowID, to frame: CGRect, together: Bool, sizeOnly: Bool = false) -> CGRect? {
+     willSetFrame?(window, frame)
+     guard var fake = windows[window], !unresponsive.contains(fake.snapshot.pid) else { return nil }
+     if isDenied {
+@@ -328,13 +336,13 @@ public final class FakeWindowSystem: WindowSystem {
+           }
+         }
+       }
+-      let steps = plan(from: before, to: frame)
++      let steps = sizeOnly ? [.size(frame.size)] : plan(from: before, to: frame)
+       perform(steps)
+-      if let more = FramePlan.makingUp(for: steps, result: isAt, target: frame) { perform(more) }
++      if !sizeOnly, let more = FramePlan.makingUp(for: steps, result: isAt, target: frame) { perform(more) }
+       applied = whereMacOSPuts(Self.accepted(CGRect(origin: frame.origin, size: isAt.size), by: fake), titleBar: fake.titleBar)
+     }
+     let changed = before != applied
+-    moveLog.append(Move(window: window, requested: frame, before: before, after: applied, together: together))
++    moveLog.append(Move(window: window, requested: frame, before: before, after: applied, together: together, sizeOnly: sizeOnly))
+     let (home, moves) = (fake.home ?? fake.snapshot.frame, fake.movesNotArbors)
+     fake.snapshot.frame = applied
+     (fake.home, fake.movesNotArbors) = (home, moves)
+diff --git a/Sources/ArborTesting/TraceReplayer.swift b/Sources/ArborTesting/TraceReplayer.swift
+index 9c0b0030..7458384b 100644
+--- a/Sources/ArborTesting/TraceReplayer.swift
++++ b/Sources/ArborTesting/TraceReplayer.swift
+@@ -1142,4 +1142,7 @@ private final class ReplayWindowSystem: WindowSystem {
+   /// A hint that may be ignored: the `setFrame` calls it foretells are answered from the recording one by one.
+   func moveTogether(_ frames: [(window: WindowID, frame: CGRect)]) {}
+   func setFrameOnce(_ frame: CGRect, of window: WindowID, pid: Int32) -> CGRect? { setFrame(frame, of: window) }
++  func setSize(_ size: CGSize, of window: WindowID) -> CGRect? {
++    replayer?.answer(call: "setSize", [window, size.width, size.height])?.decoded() ?? fake?.setSize(size, of: window)
++  }
+ }
+diff --git a/Sources/arbor-fakemac/Arbor.swift b/Sources/arbor-fakemac/Arbor.swift
+index f22a6046..31f6ffd7 100644
+--- a/Sources/arbor-fakemac/Arbor.swift
++++ b/Sources/arbor-fakemac/Arbor.swift
+@@ -132,6 +132,7 @@ final class WatchedSystem: WindowSystem {
+   func allWindows() -> [WindowSnapshot] { fake.allWindows() }
+   func displays() -> [DisplaySnapshot] { fake.displays() }
+   func setFrame(_ frame: CGRect, of window: WindowID) -> CGRect? { fake.setFrame(frame, of: window) }
++  func setSize(_ size: CGSize, of window: WindowID) -> CGRect? { fake.setSize(size, of: window) }
+   func setFrameOnce(_ frame: CGRect, of window: WindowID, pid: Int32) -> CGRect? {
+     fake.setFrameOnce(frame, of: window, pid: pid)
+   }
+diff --git a/Tests/ArborKitTests/InTheHandTests.swift b/Tests/ArborKitTests/InTheHandTests.swift
+new file mode 100644
+index 00000000..983dca03
+--- /dev/null
++++ b/Tests/ArborKitTests/InTheHandTests.swift
+@@ -0,0 +1,115 @@
++import ArborCore
++import ArborKit
++import ArborTesting
++import CoreGraphics
++import Testing
++
++/// A docked window gets its own size in the hand, as it leaves its slot (Controller+InTheHand.swift): a size, once, and never a place.
++@Suite @MainActor struct InTheHandTests {
++  /// `window`, whose own frame is `own`, docked on the left of the display of the recordings, in a slot 12,43 325×650, with another at the right.
++  func desk(own: CGRect) throws -> (h: Harness, window: WindowID, slot: CGRect) {
++    let h = Harness(displays: [TheScreensAnswerTests.withADock])
++    let other = h.system.open(app: "Other", frame: CGRect(x: 600, y: 100, width: 380, height: 348))
++    let window = h.system.open(app: "Mine", frame: own)
++    h.start()
++    h.system.tiling = .off
++    h.run("dock \(window.rawValue) left")
++    h.run("dock \(other.rawValue) right")
++    let slot = try #require(h.layout?.windowFrames[window])
++    try #require(h.frame(window) == slot)
++    return (h, window, slot)
++  }
++
++  func asked(_ h: Harness, of window: WindowID, since mark: Int) -> [FakeWindowSystem.Move] {
++    h.system.moveLog[mark...].filter { $0.window == window }
++  }
++
++  /// The fake's hand takes hold in the middle of the title bar.
++  func hold(_ slot: CGRect) -> CGPoint { CGPoint(x: slot.midX, y: slot.minY + 10) }
++
++  @Test func asItLeavesItsSlotItHasItsOwnSizeAndTheDropIsADropAndNothingMore() throws {
++    let (h, window, slot) = try desk(own: CGRect(x: 300, y: 100, width: 400, height: 300))
++    let (from, mark) = (hold(slot), h.system.moveLog.count)
++    h.system.beginDrag(window, at: from)
++    h.system.moveDrag(to: CGPoint(x: from.x + 30, y: from.y + 10))
++    let inTheHand = asked(h, of: window, since: mark)
++    #expect(inTheHand.count == 1 && inTheHand.allSatisfy(\.sizeOnly), "a size, once, and no place: \(inTheHand)")
++    #expect(h.frame(window) == CGRect(x: slot.minX + 30, y: slot.minY + 10, width: 400, height: 300), "its corner stays with the hand: \(h.frame(window) as Any)")
++    h.system.moveDrag(to: CGPoint(x: 640, y: 300))
++    h.system.moveDrag(to: CGPoint(x: 660, y: 320), holding: 1)
++    let carried = try #require(h.frame(window))
++    h.system.endDrag()
++    #expect(asked(h, of: window, since: mark).count == 1, "nothing more on the way, and nothing at the drop: \(asked(h, of: window, since: mark))")
++    #expect(h.workspace.isFloating(window) && h.frame(window) == carried && h.workspace.floating[window] == carried)
++  }
++
++  @Test func aSlipOfTheHandAsksNothing() throws {
++    let (h, window, slot) = try desk(own: CGRect(x: 300, y: 100, width: 400, height: 300))
++    let (from, mark) = (hold(slot), h.system.moveLog.count)
++    h.system.beginDrag(window, at: from)
++    h.system.moveDrag(to: CGPoint(x: from.x + 16, y: from.y + 16))
++    #expect(asked(h, of: window, since: mark).isEmpty, "23 points")
++    h.system.moveDrag(to: CGPoint(x: from.x + 17, y: from.y + 17))
++    #expect(asked(h, of: window, since: mark).count == 1, "24")
++    h.system.loseTheReleaseOfTheDrag()
++  }
++
++  /// Narrower than where it is held, it would shrink away from under the pointer and follow it from afar (seen on a Mac: 496 points off).
++  @Test func whereItWouldNotStayUnderTheHandItIsSizedAtTheDrop() throws {
++    let (h, window, slot) = try desk(own: CGRect(x: 300, y: 100, width: 180, height: 300))
++    let (from, mark) = (hold(slot), h.system.moveLog.count)
++    h.system.beginDrag(window, at: from)
++    h.system.moveDrag(to: CGPoint(x: 600, y: 300))
++    h.system.moveDrag(to: CGPoint(x: 660, y: 320), holding: 1)
++    #expect(asked(h, of: window, since: mark).isEmpty, "162 along a title bar that would be 180 long: 18 left")
++    #expect(h.frame(window)?.size == slot.size)
++    h.system.endDrag()
++    let frame = try #require(h.frame(window))
++    #expect(frame.size == CGSize(width: 180, height: 300))
++    #expect(abs((660 - frame.minX) / frame.width - 0.5) < 0.01, "the pointer as far along its title bar as it held the tile: \(frame)")
++  }
++
++  /// Out of a low slot the screen cuts it in the hand as at rest (300 for 600 on a Mac). Not written down; asked once more at the drop.
++  @Test func cutInTheHandItIsAskedOnceMoreAtTheDrop() throws {
++    let h = Harness(displays: [TheScreensAnswerTests.withADock])
++    let a = h.system.open(app: "A", frame: CGRect(x: 170, y: 100, width: 480, height: 348))
++    let tall = h.system.open(app: "Tall", frame: CGRect(x: 300, y: 60, width: 400, height: 600))
++    h.start()
++    h.system.tiling = .off
++    h.run("dock \(a.rawValue) left")
++    h.run("dock \(tall.rawValue) beside \(a.rawValue) bottom")
++    let slot = try #require(h.frame(tall))
++    let (from, mark) = (hold(slot), h.system.moveLog.count)
++    h.system.beginDrag(tall, at: from)
++    h.system.moveDrag(to: CGPoint(x: from.x + 200, y: from.y + 10))
++    let inTheHand = asked(h, of: tall, since: mark)
++    #expect(inTheHand.count == 1 && inTheHand[0].sizeOnly && inTheHand[0].after.height < 600, "the case: \(inTheHand)")
++    h.system.moveDrag(to: CGPoint(x: 760, y: 414), holding: 1)
++    #expect(asked(h, of: tall, since: mark).count == 1, "nobody chases the hand with calls")
++    h.system.endDrag()
++    #expect(h.frame(tall)?.size == CGSize(width: 400, height: 600), "\(asked(h, of: tall, since: mark).map(\.after))")
++    #expect(h.workspace.floating[tall]?.size == CGSize(width: 400, height: 600))
++  }
++
++  /// Let go where nothing is dropped, or the drag given up: back into its slot, at the slot's size.
++  @Test func aDragThatComesToNothingPutsItBackIntoItsSlot() throws {
++    let (h, window, slot) = try desk(own: CGRect(x: 300, y: 100, width: 400, height: 300))
++    h.system.beginDrag(window, at: hold(slot))
++    h.system.moveDrag(to: CGPoint(x: 500, y: 300))
++    try #require(h.frame(window)?.size == CGSize(width: 400, height: 300))
++    h.system.loseTheReleaseOfTheDrag()
++    h.scheduler.advance(by: 2)
++    #expect(h.workspace.isDocked(window) && h.frame(window) == slot, "\(h.frame(window) as Any)")
++    h.run("float \(window.rawValue)")
++    #expect(h.frame(window)?.size == CGSize(width: 400, height: 300), "and its own size is still its own")
++  }
++
++  /// A floating window is nobody's but its person's: nothing is asked of it in the hand.
++  @Test func aFloatingWindowIsAskedNothing() throws {
++    let (h, _, _) = try desk(own: CGRect(x: 300, y: 100, width: 400, height: 300))
++    let floating = h.system.open(app: "Floats", frame: CGRect(x: 350, y: 200, width: 300, height: 200))
++    let mark = h.system.moveLog.count
++    h.system.drag(floating, through: [CGPoint(x: 500, y: 210), CGPoint(x: 560, y: 300), CGPoint(x: 600, y: 340)])
++    #expect(asked(h, of: floating, since: mark).isEmpty)
++  }
++}
+diff --git a/Tests/ArborKitTests/TraceRecorderTests.swift b/Tests/ArborKitTests/TraceRecorderTests.swift
+index 472b0391..e907b5d6 100644
+--- a/Tests/ArborKitTests/TraceRecorderTests.swift
++++ b/Tests/ArborKitTests/TraceRecorderTests.swift
+@@ -731,6 +731,8 @@ private func endReason(_ entries: [TraceEntry]) -> String? {
+     #expect(spy.calls.last == "setMinimized w5 true")
+     system.unhideApp(pid: 9)
+     #expect(spy.calls.last == "unhideApp 9")
++    #expect(system.setSize(CGSize(width: 30, height: 40), of: id) == CGRect(x: 1, y: 2, width: 30, height: 40))
++    #expect(spy.calls.last == "setSize w5 30×40", "a size and no place: never a setFrame")
+     #expect(spy.calls.prefix(2) == ["start", "allWindows"])
+     #expect(spy.calls.contains("setFrame w5 1,2 3×4"))
+     #expect(spy.calls.contains("focus w5"))
+@@ -973,6 +975,10 @@ final class SpyWindowSystem: WindowSystem {
+     onSetFrame()
+     return frame
+   }
++  func setSize(_ size: CGSize, of window: WindowID) -> CGRect? {
++    calls.append("setSize \(window) \(Int(size.width))×\(Int(size.height))")
++    return CGRect(origin: CGPoint(x: 1, y: 2), size: size)
++  }
+   func focus(_ window: WindowID) { calls.append("focus \(window)") }
+   func focusedWindow() -> WindowID? { WindowID(42) }
+   func cursorLocation() -> CGPoint { CGPoint(x: 7, y: 8) }

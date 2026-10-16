@@ -1,0 +1,14 @@
+diff --git a/Sources/ArborKit/Controller/Controller+Displays.swift b/Sources/ArborKit/Controller/Controller+Displays.swift
+index 58ac3eed..825a46be 100644
+--- a/Sources/ArborKit/Controller/Controller+Displays.swift
++++ b/Sources/ArborKit/Controller/Controller+Displays.swift
+@@ -186,7 +186,8 @@ extension Controller {
+       for (window, remembered) in workspaces[home]!.floating.sorted(by: { $0.key < $1.key }) where window != drag?.window {
+         guard only?.contains(window) != false,
+           only != nil || moved.contains(window) || spokeOfItsPlace[window].map({ $0 >= lately }) == true,
+-          workspaces[home]!.role(of: window) == nil, !parked.contains(window), isManaged(window), let current = windows[window],
++          workspaces[home]!.role(of: window) == nil, !workspaces[home]!.isFilled(window), !parked.contains(window), isManaged(window),
++          let current = windows[window],
+           current.isPresent, !isAsArborFittedIt(window, at: current.frame, whoseOwnSizeIs: remembered.size),
+           titleBarIsWithinReach(current.frame)
+         else { continue }

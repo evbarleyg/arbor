@@ -1,0 +1,576 @@
+From 6335624b2137203a2c316f694ec4b7c39e6e902c Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 14:29:30 +0000
+Subject: [PATCH] fix: a window that speaks before the displays have changed is
+ no hand's move: what its report booked is taken back
+
+---
+ .../Controller/Controller+Displays.swift      |   2 +
+ .../Controller/Controller+Events.swift        |   6 +-
+ .../Controller/Controller+Invariants.swift    |   1 +
+ .../Controller/Controller+SpokeAhead.swift    | 122 +++++++++
+ Sources/ArborKit/Controller/Controller.swift  |   3 +
+ Sources/ArborTesting/ChaosInvariants.swift    |   1 +
+ Tests/ArborKitTests/SpokeAheadTests.swift     | 258 ++++++++++++++++--
+ 7 files changed, 365 insertions(+), 28 deletions(-)
+ create mode 100644 Sources/ArborKit/Controller/Controller+SpokeAhead.swift
+
+diff --git a/Sources/ArborKit/Controller/Controller+Displays.swift b/Sources/ArborKit/Controller/Controller+Displays.swift
+index d7cca434..3505e46f 100644
+--- a/Sources/ArborKit/Controller/Controller+Displays.swift
++++ b/Sources/ArborKit/Controller/Controller+Displays.swift
+@@ -20,6 +20,7 @@ extension Controller {
+   /// With `lettingGo` only the books are brought up to date and nothing is moved, raised or focused: for `shutdown`, which
+   /// moves every window itself, once (`lookAtTheDisplaysBeforeLettingGo`).
+   func updateDisplays(lettingGo: Bool = false) {
++    takeBackWhatWasBookedAhead()
+     // If windows were moved behind Arbor's back, here is the report after all. What follows looks after every window.
+     // Moved with this change of displays, as far as can be told: those, and below whatever is not where Arbor knew it.
+     var movedByMacOS = movedBehindArborsBack
+@@ -394,6 +395,7 @@ extension Controller {
+   /// negotiates, there never is a report (`DisplayChange`), and nobody else would: the move was not the user's, so nothing
+   /// followed it, and nothing is done about it at once, because there may be no display to go by.
+   func noteMoveBehindArborsBack(of window: WindowID) {
++    takeBackWhatWasBookedAhead()
+     movedBehindArborsBack.insert(window)
+     noteThatTheDisplaysAreUnknown()
+     lookForABlink(triesLeft: Self.blinkTries)
+diff --git a/Sources/ArborKit/Controller/Controller+Events.swift b/Sources/ArborKit/Controller/Controller+Events.swift
+index 3869b53a..253520c2 100644
+--- a/Sources/ArborKit/Controller/Controller+Events.swift
++++ b/Sources/ArborKit/Controller/Controller+Events.swift
+@@ -54,6 +54,7 @@ extension Controller: WindowSystemEvents {
+     fittedFrames[id] = nil
+     appPlacedFrames[id] = nil
+     spokeOfItsPlace[id] = nil
++    bookedAhead[id] = nil
+     shrunk[id] = nil
+     fittedToADisplay[id] = nil
+     fills.inHand.remove(id)
+@@ -205,6 +206,8 @@ extension Controller: WindowSystemEvents {
+       // A new title arrives the same way as a move. Taking it for one would replace the frame
+       // the user chose with wherever docked windows have pushed the window to since.
+       guard previous?.frame != window.frame, !isOnlySettlingOnDesktop(window, on: display) else { return }
++      let mayBeTakenBack = keepWhatTheBooksSay(of: window.id, on: display)
++      defer { noteWhatWasBookedAhead(of: window.id) }
+       if filledWindowChanged(window, on: display) { return }
+       // Remember where the user put it, following it to another display.
+       let destination = displayID(at: window.frame.center) ?? display
+@@ -229,7 +232,8 @@ extension Controller: WindowSystemEvents {
+       if destination != display { workspaces[destination]?.setRole(role, of: window.id) }
+       if destination != display { notify(.windows) }
+       scheduleSave()
+-      floatingWindowMoved(window.id, from: display)
++      // What is laid out for a window that crossed a border waits until the move is known to stay (Controller+SpokeAhead.swift).
++      if !mayBeTakenBack || destination == display { floatingWindowMoved(window.id, from: display) }
+       return
+     }
+ 
+diff --git a/Sources/ArborKit/Controller/Controller+Invariants.swift b/Sources/ArborKit/Controller/Controller+Invariants.swift
+index 3401288f..afab5023 100644
+--- a/Sources/ArborKit/Controller/Controller+Invariants.swift
++++ b/Sources/ArborKit/Controller/Controller+Invariants.swift
+@@ -239,6 +239,7 @@ extension Controller {
+     check("titleBars", titleBars.keys)
+     check("appPlacedFrames", appPlacedFrames.keys)
+     check("spokeOfItsPlace", spokeOfItsPlace.keys)
++    check("bookedAhead", bookedAhead.keys)
+     check("returningWindows", returningWindows)
+     check("awaitedBack", awaitedBack)
+     check("titleWatches", titleWatches.keys)
+diff --git a/Sources/ArborKit/Controller/Controller+SpokeAhead.swift b/Sources/ArborKit/Controller/Controller+SpokeAhead.swift
+new file mode 100644
+index 00000000..737530ed
+--- /dev/null
++++ b/Sources/ArborKit/Controller/Controller+SpokeAhead.swift
+@@ -0,0 +1,122 @@
++import ArborCore
++import CoreGraphics
++import Foundation
++
++/// The window that speaks before the displays have changed.
++///
++/// At a change of displays macOS moves windows and their apps say so. Those reports find macOS with other displays than Arbor was told of
++/// and are turned away (`knowsTheDisplays`). One comes earlier. With eleven real apps on a hosted Mac, in 10 of 13 changes exactly one
++/// window reported its new frame 0.003 to 0.7 s before macOS's own list was new. At that moment nothing tells it from an app's or a
++/// tool's own move, so it is booked like one, by the displays that are about to change: a new place, a hand's note, and a new home where
++/// it crossed a border. It had then left the arrangement that goes to sleep with its display, and did not come back with it; or it kept
++/// the home its report gave it where a display came under it.
++///
++/// So it is booked, and what the books said before is kept for a moment. If macOS turns out to have other displays by then, the entry is
++/// taken back and the window counts as one that macOS moved behind Arbor's back, like all the others. From there on it is one of them:
++/// it is taken from where it is, by the displays that are (`takeFloatingWindowsFromWhereTheyAre`). Books only: no frame is set here.
++///
++/// An app's or a tool's own move in that second is overtaken the same way and loses nothing: the window is taken from where it is. What a hand
++/// or a command of Arbor's has done to it since the report stands: an entry is taken back only while the books say what the report wrote.
++extension Controller {
++  /// What the books said of a floating window before a report gave it another place.
++  struct BookedAhead {
++    var at: Date
++    var home: DisplayID
++    var place: CGRect
++    /// Filed under another display it is nobody's guest and fills no view, and being filed back alone does not make it so again.
++    var host: NodeID?
++    var fill: (at: CGRect, settled: CGRect?, misfit: (slot: CGRect, frame: CGRect)?)?
++    var chosen: (frame: CGRect, display: CGRect, showing: CGFloat)?
++    var spoke: Date?
++    var fitted: FittedWindow?
++    /// What the report wrote.
++    var booked: Entry?
++  }
++
++  /// Where the books have a floating window.
++  struct Entry: Equatable {
++    var home: DisplayID
++    var place: CGRect
++    var fillsAt: CGRect?
++  }
++
++  private func entry(of window: WindowID) -> Entry? {
++    guard let home = workspaceID(containing: window), let place = workspaces[home]!.floating[window] else { return nil }
++    return Entry(home: home, place: place, fillsAt: workspaces[home]!.filled?[window])
++  }
++
++  /// How long before macOS's list of displays is new a window may speak of what the change did to it. 0.7 s is the longest recorded.
++  static let aheadOfTheDisplays: TimeInterval = 1
++
++  /// Called before a report of `window`, floating on `home`, is booked as a move of its user's. With a button down it is one, whatever was
++  /// reported before, and a window with a part to play (kept in view, summoned, stashed) is not taken from where it is either. Returns
++  /// whether the entry may yet be taken back: then nothing is laid out for it until it is known to stay.
++  func keepWhatTheBooksSay(of window: WindowID, on home: DisplayID) -> Bool {
++    guard !system.isMouseButtonDown(), floatingEdgeInHand != window, !fills.inHand.contains(window),
++      let place = workspaces[home]?.floating[window], workspaces[home]!.role(of: window) == nil
++    else {
++      bookedAhead[window] = nil
++      return false
++    }
++    // It may speak more than once on its way: that it moved, then that its size changed. What counts is where it was before the first.
++    if let kept = bookedAhead[window], isYoung(kept) { return true }
++    bookedAhead[window] = BookedAhead(
++      at: now(), home: home, place: place, host: workspaces[home]!.guests?[window],
++      fill: workspaces[home]!.filled?[window].map { ($0, settled[window], misfits[window]) }, chosen: chosenOnShape[window],
++      spoke: spokeOfItsPlace[window], fitted: fittedToADisplay[window])
++    // Nobody else may speak and no key be pressed: Arbor looks by itself.
++    scheduler.schedule("spoke-ahead", after: Self.aheadOfTheDisplays) { [weak self] in self?.theMomentIsOver() }
++    return true
++  }
++
++  /// Called when the report has been booked.
++  func noteWhatWasBookedAhead(of window: WindowID) {
++    if bookedAhead[window] != nil { bookedAhead[window]!.booked = entry(of: window) }
++  }
++
++  private func isYoung(_ kept: BookedAhead) -> Bool { now().timeIntervalSince(kept.at) <= Self.aheadOfTheDisplays + 0.01 }
++
++  /// Called at every sign that macOS has other displays than Arbor was told of, and at the report of the displays. With the displays
++  /// as Arbor knows them nothing is decided yet: a report that is only about the Dock ends no moment.
++  func takeBackWhatWasBookedAhead() {
++    guard !bookedAhead.isEmpty, isRunning, !knowsTheDisplays else { return }
++    let entries = bookedAhead.sorted { $0.key < $1.key }
++    bookedAhead = [:]
++    scheduler.cancel("spoke-ahead")
++    for (window, kept) in entries where isYoung(kept) {
++      // Docked, closed, given a part, dropped or sent elsewhere meanwhile, or in a hand: somebody has decided since.
++      guard let booked = kept.booked, booked == entry(of: window), workspaces[booked.home]!.role(of: window) == nil, drag?.window != window,
++        workspaces[kept.home] != nil
++      else { continue }
++      let home = booked.home
++      if home != kept.home { workspaces[home]!.floating[window] = nil }
++      workspaces[kept.home]!.floating[window] = kept.place
++      // (The end of a fill over a view without the Desktop makes a guest.)
++      if let host = kept.host { workspaces[kept.home]!.receive(window, asGuestOf: host) } else { workspaces[kept.home]!.endVisit(of: window) }
++      if let fill = kept.fill {
++        workspaces[kept.home]!.fill(window, at: fill.at)
++        (settled[window], misfits[window]) = (fill.settled, fill.misfit)
++      }
++      chosenOnShape[window] = kept.chosen
++      spokeOfItsPlace[window] = kept.spoke
++      fittedToADisplay[window] = kept.fitted
++      Log.debug("window \(window) spoke before the displays changed: not its user's move")
++      if home != kept.home { notify(.windows) }
++      noteMoveBehindArborsBack(of: window)
++    }
++    scheduleSave()
++  }
++
++  /// A moment after the last entry. The displays are other: see above. They are as they were: the moves were what they looked like, they
++  /// stay booked, and what was owed to them is laid out now.
++  private func theMomentIsOver() {
++    takeBackWhatWasBookedAhead()
++    let entries = bookedAhead.sorted { $0.key < $1.key }
++    bookedAhead = [:]
++    guard isRunning else { return }
++    for (window, kept) in entries {
++      guard let home = workspaceID(containing: window), home != kept.home, workspaces[home]!.isFloating(window) else { continue }
++      floatingWindowMoved(window, from: kept.home)
++    }
++  }
++}
+diff --git a/Sources/ArborKit/Controller/Controller.swift b/Sources/ArborKit/Controller/Controller.swift
+index 6d1a351b..45df0666 100644
+--- a/Sources/ArborKit/Controller/Controller.swift
++++ b/Sources/ArborKit/Controller/Controller.swift
+@@ -176,6 +176,8 @@ public final class Controller {
+   /// When each floating window's app last said where it is and that passed for the person's own move
+   /// (Controller+Displays.swift, "A display that moved").
+   var spokeOfItsPlace: [WindowID: Date] = [:]
++  /// What the books said of floating windows before their last reports were booked, for a moment (Controller+SpokeAhead.swift).
++  var bookedAhead: [WindowID: BookedAhead] = [:]
+   /// Windows reported back (their app shown again) since the layout that will show them was put off (Controller+Spaces.swift).
+   var returningWindows: Set<WindowID> = []
+   /// Displays whose layout was put off until all the reports of a Space switch or a hidden app are in.
+@@ -615,6 +617,7 @@ public final class Controller {
+     owedTheWayBack = owedTheWayBack.filter { windows[$0.key] != nil }
+     appPlacedFrames = appPlacedFrames.filter { windows[$0.key] != nil }
+     spokeOfItsPlace = spokeOfItsPlace.filter { windows[$0.key] != nil }
++    bookedAhead = bookedAhead.filter { windows[$0.key] != nil }
+     landsAt = landsAt.filter { windows[$0.key] != nil }
+     chosenOnShape = chosenOnShape.filter { windows[$0.key] != nil }
+     fittedToADisplay = fittedToADisplay.filter { windows[$0.key] != nil }
+diff --git a/Sources/ArborTesting/ChaosInvariants.swift b/Sources/ArborTesting/ChaosInvariants.swift
+index 14177009..591aad4a 100644
+--- a/Sources/ArborTesting/ChaosInvariants.swift
++++ b/Sources/ArborTesting/ChaosInvariants.swift
+@@ -24,6 +24,7 @@ extension ChaosRunner {
+     "rehearsal",
+     "meet-",
+     "fill-in-hand-",
++    "spoke-ahead",
+   ]
+ 
+   /// How far a docked window may sit from its slot: 4 points of the app rounding its size
+diff --git a/Tests/ArborKitTests/SpokeAheadTests.swift b/Tests/ArborKitTests/SpokeAheadTests.swift
+index 9bf30b30..08be3d90 100644
+--- a/Tests/ArborKitTests/SpokeAheadTests.swift
++++ b/Tests/ArborKitTests/SpokeAheadTests.swift
+@@ -20,14 +20,9 @@ import Testing
+     var aDisplayGoes: Bool { self == .theSideGoes || self == .theLidShuts }
+   }
+ 
+-  /// Where every display stays, a floating window in view is taken from where it is once Arbor is told, and whatever an early report booked is
+-  /// overtaken. Where one goes that is not enough: the early report has filed the window under a display chosen by the old geometry, so it has left
+-  /// the arrangement that goes to sleep, or joined it. Strict: whoever cures a case is told so.
+-  static let notYet: Comment = "board 0.23: who speaks before the list is new is filed by the old geometry, and a display goes"
+-
+   /// Three windows that float on each display: 101 to 103 on the laptop, 104 to 106 on the side.
+-  func make() -> Harness {
+-    let h = Harness(displays: [Self.laptop, Self.side], settings: Settings())
++  func make(_ settings: Settings = Settings()) -> Harness {
++    let h = Harness(displays: [Self.laptop, Self.side], settings: settings)
+     for index in 0..<6 {
+       h.system.open(
+         app: "App\(index)", pid: 1001 + Int32(index),
+@@ -54,11 +49,11 @@ import Testing
+       windows.compactMap { number in h.frame(WindowID(number)).map { (WindowID(number), $0.offsetBy(dx: dx, dy: dy)) } }
+     }
+     switch change {
+-    case .theSideGoes: return ([Self.laptop], along(104...106, dx: -1440))
++    case .theSideGoes: return ([Self.laptop], along(104...107, dx: -1440))
+     // Every coordinate is another: what is on the side goes with its corner, what was on the laptop is brought over.
+-    case .theLidShuts: return ([shifted(Self.side, to: .zero, main: true)], along(101...103, dx: 0) + along(104...106, dx: -1440))
+-    case .theSideChangesSides: return ([Self.laptop, shifted(Self.side, to: CGPoint(x: -1920, y: 0))], along(104...106, dx: -3360))
+-    case .theSideGoesBelow: return ([Self.laptop, shifted(Self.side, to: CGPoint(x: 0, y: 900))], along(104...106, dx: -1440, dy: 900))
++    case .theLidShuts: return ([shifted(Self.side, to: .zero, main: true)], along(101...103, dx: 0) + along(104...107, dx: -1440))
++    case .theSideChangesSides: return ([Self.laptop, shifted(Self.side, to: CGPoint(x: -1920, y: 0))], along(104...107, dx: -3360))
++    case .theSideGoesBelow: return ([Self.laptop, shifted(Self.side, to: CGPoint(x: 0, y: 900))], along(104...107, dx: -1440, dy: 900))
+     }
+   }
+ 
+@@ -76,7 +71,7 @@ import Testing
+   }
+ 
+   func expectTheSameEnd(_ one: Harness, _ other: Harness, _ what: String, sourceLocation: SourceLocation = #_sourceLocation) {
+-    for window in (101...106).map({ WindowID($0) }) {
++    for window in (101...107).map({ WindowID($0) }) {
+       #expect(one.frame(window) == other.frame(window), "\(what): \(window)", sourceLocation: sourceLocation)
+     }
+     #expect(one.controller.workspaces == other.controller.workspaces, "\(what): where windows float", sourceLocation: sourceLocation)
+@@ -91,7 +86,7 @@ import Testing
+     let (early, late) = (make(), make())
+     play(change, ahead: [window], on: early)
+     play(change, ahead: [], on: late)
+-    withKnownIssue(Self.notYet) { expectTheSameEnd(early, late, "\(change), \(window) first") } when: { change.aDisplayGoes }
++    expectTheSameEnd(early, late, "\(change), \(window) first")
+     expectWindowsMatchLayout(early)
+   }
+ 
+@@ -100,7 +95,7 @@ import Testing
+     let (early, late) = (make(), make())
+     play(change, ahead: [WindowID(105)], lead: lead, on: early)
+     play(change, ahead: [], lead: lead, on: late)
+-    withKnownIssue(Self.notYet) { expectTheSameEnd(early, late, "\(change), \(lead) s before") } when: { change.aDisplayGoes }
++    expectTheSameEnd(early, late, "\(change), \(lead) s before")
+   }
+ 
+   @Test(arguments: Change.allCases)
+@@ -108,7 +103,7 @@ import Testing
+     let (early, late) = (make(), make())
+     play(change, ahead: Set((101...106).map { WindowID($0) }), on: early)
+     play(change, ahead: [], on: late)
+-    withKnownIssue(Self.notYet) { expectTheSameEnd(early, late, "\(change)") } when: { change.aDisplayGoes }
++    expectTheSameEnd(early, late, "\(change)")
+   }
+ 
+   /// A display comes, and none goes: the case that was recorded. macOS leaves a window of the laptop astride the border, its centre on the newcomer.
+@@ -135,9 +130,7 @@ import Testing
+       return h
+     }
+     let (early, late) = (play(early: true), play(early: false))
+-    withKnownIssue("board 0.23: who speaks before the list is new lies where the books say, and keeps the home its report gave it") {
+-      expectTheSameEnd(early, late, "a display comes")
+-    }
++    expectTheSameEnd(early, late, "a display comes")
+   }
+ 
+   /// It goes back with its display, like the others.
+@@ -148,10 +141,8 @@ import Testing
+     play(.theSideGoes, ahead: [window], on: h)
+     h.system.plug(Self.side)
+     h.scheduler.advance(by: 5)
+-    withKnownIssue(Self.notYet) {
+-      #expect((104...106).map { h.frame(WindowID($0))! } == homes)
+-      #expect(h.controller.workspaces[Self.side.id]?.floating.keys.sorted() == [WindowID(104), WindowID(105), WindowID(106)])
+-    }
++    #expect((104...106).map { h.frame(WindowID($0))! } == homes)
++    #expect(h.controller.workspaces[Self.side.id]?.floating.keys.sorted() == [WindowID(104), WindowID(105), WindowID(106)])
+   }
+ 
+   /// Nobody else speaks and no key is pressed: Arbor finds out by itself, a moment after the report.
+@@ -163,11 +154,9 @@ import Testing
+     }
+     play(.theSideGoes, ahead: [WindowID(104)], on: early)
+     play(.theSideGoes, ahead: [], on: late)
+-    withKnownIssue(Self.notYet) {
+-      #expect(early.frame(WindowID(104)) == late.frame(WindowID(104)))
+-      #expect(early.controller.workspaces == late.controller.workspaces)
+-      #expect(early.controller.dormant.mapValues(\.workspace) == late.controller.dormant.mapValues(\.workspace))
+-    }
++    #expect(early.frame(WindowID(104)) == late.frame(WindowID(104)))
++    #expect(early.controller.workspaces == late.controller.workspaces)
++    #expect(early.controller.dormant.mapValues(\.workspace) == late.controller.dormant.mapValues(\.workspace))
+   }
+ 
+   // MARK: A blink
+@@ -255,4 +244,219 @@ import Testing
+     #expect(h.controller.workspaces[h.display]?.isDocked(WindowID(104)) == true)
+     expectWindowsMatchLayout(h)
+   }
++
++  // MARK: All that the report wrote is taken back
++
++  /// 104 is docked on the side and fills its view, and 107 has opened over it: a guest of that view. Filed under another display it would be no
++  /// guest any more, and being filed back alone does not make it one.
++  @Test(arguments: Change.allCases)
++  func aGuestThatSpeaksFirstIsStillAGuest(_ change: Change) {
++    func make() -> Harness {
++      let h = self.make()
++      #expect(h.run("dock 104 left").ok && h.run("zoom 104").ok)
++      h.system.open(app: "App3", pid: 1004, frame: CGRect(x: 1800, y: 300, width: 480, height: 348))
++      h.scheduler.advance(by: 5)
++      #expect(h.controller.workspaces[Self.side.id]?.guests?[WindowID(107)] != nil, "the story needs a guest")
++      return h
++    }
++    let (early, late) = (make(), make())
++    play(change, ahead: [WindowID(107)], on: early)
++    play(change, ahead: [], on: late)
++    expectTheSameEnd(early, late, "\(change)")
++  }
++
++  /// 105 fills the side's view: its size is Arbor's, and its own frame is kept for the end of the fill.
++  @Test(arguments: Change.allCases)
++  func aWindowThatFillsTheViewSpeaksFirst(_ change: Change) {
++    func make() -> Harness {
++      let h = self.make()
++      #expect(h.run("zoom 105").ok)
++      h.scheduler.advance(by: 5)
++      #expect(h.controller.workspaces[Self.side.id]?.isFilled(WindowID(105)) == true, "the story needs a fill")
++      return h
++    }
++    let (early, late) = (make(), make())
++    play(change, ahead: [WindowID(105)], on: early)
++    play(change, ahead: [], on: late)
++    expectTheSameEnd(early, late, "\(change)")
++    for h in [early, late] {
++      h.system.setDisplays([Self.laptop, Self.side])
++      h.scheduler.advance(by: 5)
++    }
++    expectTheSameEnd(early, late, "\(change), and back")
++  }
++
++  /// Where floating windows make way the layout places them, by the books.
++  @Test(arguments: Change.allCases, [false, true])
++  func whereFloatingWindowsMakeWay(_ change: Change, aloneItTakesTheDesktop: Bool) {
++    var settings = Settings.makingWay
++    settings.soleFloatTakesDesktop = aloneItTakesTheDesktop
++    let (early, late) = (make(settings), make(settings))
++    for h in [early, late] {
++      for window in [WindowID(105), WindowID(106)] { h.system.close(window) }
++      h.scheduler.advance(by: 5)
++    }
++    play(change, ahead: [WindowID(104)], on: early)
++    play(change, ahead: [], on: late)
++    expectTheSameEnd(early, late, "\(change)")
++    for h in [early, late] {
++      h.system.setDisplays([Self.laptop, Self.side])
++      h.scheduler.advance(by: 5)
++    }
++    expectTheSameEnd(early, late, "\(change), and back")
++  }
++
++  /// Alone on the Desktop of the display that stays, which it fills, and macOS nudges it. Booked as its user's move it would count as taken in hand.
++  @Test func aloneOnTheDesktopThatStays() {
++    var settings = Settings.makingWay
++    settings.soleFloatTakesDesktop = true
++    func play(early: Bool) -> Harness {
++      let h = make(settings)
++      for window in [WindowID(102), WindowID(103)] { h.system.close(window) }
++      h.scheduler.advance(by: 5)
++      let nudged = h.frame(WindowID(101))!.offsetBy(dx: 60, dy: 40)
++      if early { h.system.userMove(WindowID(101), to: nudged) }
++      h.scheduler.advance(by: 0.3)
++      h.system.displayList = [Self.laptop]
++      if !early { h.system.userMove(WindowID(101), to: nudged) }
++      h.scheduler.advance(by: DisplayChange.comingAndGoing)
++      h.system.setDisplays([Self.laptop])
++      h.scheduler.advance(by: 5)
++      return h
++    }
++    expectTheSameEnd(play(early: true), play(early: false), "nudged")
++  }
++
++  /// That it moved, and then that its size changed: what counts is where it was before the first.
++  @Test(arguments: Change.allCases)
++  func itSpeaksTwice(_ change: Change) {
++    func play(early: Bool) -> Harness {
++      let h = make()
++      let (displays, moves) = plan(change, h)
++      func speaks(_ window: WindowID, _ frame: CGRect) {
++        h.system.userMove(window, to: CGRect(origin: frame.origin, size: h.frame(window)!.size))
++        h.system.userMove(window, to: frame)
++      }
++      let smaller = moves.map { ($0.0, $0.0 == WindowID(105) ? $0.1.insetBy(dx: 40, dy: 30) : $0.1) }
++      for (window, frame) in smaller where early && window == WindowID(105) { speaks(window, frame) }
++      h.scheduler.advance(by: 0.3)
++      h.system.displayList = displays
++      for (window, frame) in smaller where !early || window != WindowID(105) { speaks(window, frame) }
++      h.scheduler.advance(by: DisplayChange.comingAndGoing)
++      h.system.setDisplays(displays)
++      h.scheduler.advance(by: 5)
++      return h
++    }
++    expectTheSameEnd(play(early: true), play(early: false), "\(change)")
++  }
++
++  /// The Dock is shown or hidden in that second: a report of the displays, and they are the same. It decides nothing.
++  @Test func aReportThatIsOnlyAboutTheDockEndsNoMoment() {
++    var withDock = Self.laptop
++    withDock.visibleFrame.size.height -= 60
++    func play(ahead: Set<WindowID>) -> Harness {
++      let h = make()
++      let (displays, moves) = plan(.theSideGoes, h)
++      for (window, frame) in moves where ahead.contains(window) { h.system.userMove(window, to: frame) }
++      h.scheduler.advance(by: 0.1)
++      h.system.setDisplays([withDock, Self.side])
++      h.scheduler.advance(by: 0.2)
++      h.system.displayList = [withDock]
++      for (window, frame) in moves where !ahead.contains(window) { h.system.userMove(window, to: frame) }
++      h.scheduler.advance(by: DisplayChange.comingAndGoing)
++      h.system.setDisplays([withDock])
++      h.scheduler.advance(by: 5)
++      _ = displays
++      return h
++    }
++    expectTheSameEnd(play(ahead: [WindowID(105)]), play(ahead: []), "the Dock, then the side goes")
++  }
++
++  // MARK: Only books, for a second, and never against a hand
++
++  /// Nothing is moved for it: not at the report, not when it is taken back, not before Arbor is told of the displays.
++  @Test(arguments: Change.allCases)
++  func noFrameIsSetBeforeArborIsTold(_ change: Change) {
++    let h = make()
++    let (displays, moves) = plan(change, h)
++    h.system.clearFrameLog()
++    h.system.userMove(moves[0].0, to: moves[0].1)
++    h.scheduler.advance(by: 0.3)
++    h.system.displayList = displays
++    for (window, frame) in moves.dropFirst() { h.system.userMove(window, to: frame) }
++    h.scheduler.advance(by: DisplayChange.comingAndGoing - 0.1)
++    #expect(h.system.frameLog.isEmpty, "\(h.system.frameLog)")
++  }
++
++  /// The second ends by the clock, with nobody speaking, and leaves nothing behind.
++  @Test func theMomentEndsByTheClock() {
++    let h = make()
++    h.system.clearFrameLog()
++    h.system.userMove(WindowID(105), to: CGRect(x: 300, y: 200, width: 480, height: 348))
++    #expect(h.scheduler.pendingKeys.contains("spoke-ahead"))
++    h.scheduler.advance(by: 1.05)
++    #expect(!h.scheduler.pendingKeys.contains("spoke-ahead"))
++    #expect(h.system.frameLog.isEmpty, "\(h.system.frameLog)")
++    #expect(h.controller.invariantViolations().isEmpty)
++  }
++
++  /// Nor when it was taken back, when the window has gone, or when Arbor pauses or quits in that second.
++  @Test(arguments: ["taken back", "closed", "pause", "quit"])
++  func nothingIsLeftBehind(after what: String) {
++    let h = make()
++    h.system.userMove(WindowID(105), to: CGRect(x: 300, y: 200, width: 480, height: 348))
++    h.scheduler.advance(by: 0.2)
++    switch what {
++    case "taken back":
++      h.system.displayList = [Self.laptop]
++      h.system.userMove(WindowID(104), to: CGRect(x: 200, y: 200, width: 480, height: 348))
++      #expect(!h.scheduler.pendingKeys.contains("spoke-ahead"))
++    case "closed": h.system.close(WindowID(105))
++    case "pause": #expect(h.run("pause").ok)
++    default: h.controller.shutdown()
++    }
++    h.system.clearFrameLog()
++    let books = h.controller.workspaces
++    h.scheduler.advance(by: 1.05)
++    #expect(!h.scheduler.pendingKeys.contains("spoke-ahead"))
++    if what != "taken back" {
++      #expect(h.controller.workspaces == books)
++      #expect(h.system.frameLog.isEmpty, "\(h.system.frameLog)")
++    }
++  }
++
++  /// An app's or a tool's move, and within the second a hand takes the window elsewhere. Where the hand let go of it is its place.
++  @Test func aHandWithinTheMomentWins() {
++    let h = make()
++    h.system.userMove(WindowID(105), to: CGRect(x: 1700, y: 300, width: 480, height: 348))
++    h.scheduler.advance(by: 0.1)
++    h.system.drag(WindowID(105), through: [CGPoint(x: 1900, y: 310), CGPoint(x: 500, y: 310)], holding: 0)
++    let there = h.frame(WindowID(105))!
++    #expect(h.controller.workspaces[h.display]?.floating[WindowID(105)] == there, "the story needs a drop on the laptop")
++    play(.theSideGoes, ahead: [], lead: 0.1, on: h)
++    #expect(h.frame(WindowID(105)) == there)
++    #expect(h.controller.workspaces[h.display]?.floating[WindowID(105)] == there)
++    #expect(h.controller.dormant[Self.side.id]?.workspace.floating[WindowID(105)] == nil)
++  }
++
++  /// And so is where a command of Arbor's took it.
++  @Test func aCommandWithinTheMomentWins() {
++    let h = make()
++    h.system.userMove(WindowID(105), to: CGRect(x: 1700, y: 300, width: 480, height: 348))
++    h.scheduler.advance(by: 0.1)
++    #expect(h.run("move-to-display next 105").ok)
++    let there = h.frame(WindowID(105))!
++    #expect(h.controller.workspaces[h.display]?.floating[WindowID(105)] == there, "the story needs it on the laptop")
++    play(.theSideGoes, ahead: [], lead: 0.1, on: h)
++    #expect(h.frame(WindowID(105)) == there)
++    #expect(h.controller.workspaces[h.display]?.floating[WindowID(105)] == there)
++    #expect(h.controller.dormant[Self.side.id]?.workspace.floating[WindowID(105)] == nil)
++  }
++
++  /// What Arbor itself does to a window is no report of a move: nothing is kept for it.
++  @Test func arborsOwnMoveBeginsNoMoment() {
++    let h = make()
++    #expect(h.run("move-to-display next 105").ok)
++    #expect(!h.scheduler.pendingKeys.contains("spoke-ahead"))
++  }
+ }
+-- 
+2.43.0
+

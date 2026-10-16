@@ -1,0 +1,15 @@
+diff --git a/scripts/test-public-check.py b/scripts/test-public-check.py
+index 6387cac6..57525fb3 100755
+--- a/scripts/test-public-check.py
++++ b/scripts/test-public-check.py
+@@ -1040,7 +1040,9 @@ def check_hook():
+         repository.git("config", "--replace-all", "remote.fork.url", public)
+         row("the hook: the public repository under another name", pushed_with(), (True, [4], True))
+         repository.git("remote", "remove", "fork")
+-        repository.git("remote", "add", "origin/swarm", repository.origin)
++        # By configuration, as an older git or a hand leaves it: since 2.5x `git remote add` refuses a name that lies within another's.
++        repository.git("config", "remote.origin/swarm.url", repository.origin)
++        repository.git("config", "remote.origin/swarm.fetch", "+refs/heads/*:refs/remotes/origin/swarm/*")
+         integrated(trunk, check.VERSION + 1)
+         row("the hook: a remote whose branches lie among origin's: origin's are not gone by", pushed_with(), own_reads)
+         repository.git("remote", "remove", "origin/swarm")

@@ -1,0 +1,97 @@
+From a5640d50b24dd8aef309bb83a355fd6e8a57d83e Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 14:39:09 +0000
+Subject: [PATCH 4/5] wip: known holes must occur; no counts
+
+---
+ Tests/ArborKitTests/InOnePieceTests.swift | 33 +++++++++++------------
+ 1 file changed, 16 insertions(+), 17 deletions(-)
+
+diff --git a/Tests/ArborKitTests/InOnePieceTests.swift b/Tests/ArborKitTests/InOnePieceTests.swift
+index 82012f24..674f01b9 100644
+--- a/Tests/ArborKitTests/InOnePieceTests.swift
++++ b/Tests/ArborKitTests/InOnePieceTests.swift
+@@ -45,19 +45,18 @@ private func expectInOnePiece(_ h: Harness, _ name: String, sourceLocation: Sour
+   for problem in seen(h, act) { Issue.record("\(name): \(problem)", sourceLocation: sourceLocation) }
+ }
+ 
+-/// For an act that is known to show holes. How many states with a hole the net sees is written down: nobody adds one unseen, and whoever closes
+-/// one lowers the number here. It is a ratchet, not a measure: a change of gaps or of the cast changes it too.
+-/// They are of three kinds, and none is cured yet. Windows cross, each going to ground that another has yet to leave (Arrange Windows, the docks,
+-/// resume). The act does not go by the order at all (pause, quit, Float All: windows are let go by their numbers). An arrival of which nobody
+-/// knows whether it can grow is asked a question first, and so comes after the one that shrinks. What is ruled holds here too: no stray.
++/// For an act that is known to show holes: they are a known issue, which must occur. Whoever closes them finds this red, and says `expectInOnePiece` from
++/// then on. How many there are is not held: that goes by gaps and by the cast as much as by the order. They are of three kinds, and none is cured
++/// yet. Windows cross, each going to ground that another has yet to leave (Arrange Windows, the docks, resume). The act does not go by the order at
++/// all (pause, quit, Float All: windows are let go by their numbers). An arrival of which nobody knows whether it can grow is asked a question first, and
++/// so comes after the one that shrinks. What is ruled holds here too: no stray.
+ @MainActor
+-private func expectNoStray(
+-  _ h: Harness, _ name: String, holes known: Int, sourceLocation: SourceLocation = #_sourceLocation, _ act: () -> Void
+-) {
++private func expectHolesButNoStray(_ h: Harness, _ name: String, sourceLocation: SourceLocation = #_sourceLocation, _ act: () -> Void) {
+   let problems = seen(h, act)
+   for problem in problems.filter(isStray) { Issue.record("\(name): \(problem)", sourceLocation: sourceLocation) }
+-  let holes = problems.filter(isHole)
+-  #expect(holes.count == known, "\(name): \(holes)", sourceLocation: sourceLocation)
++  withKnownIssue("\(name): ground is bared on the way", sourceLocation: sourceLocation) {
++    for problem in problems.filter(isHole) { Issue.record("\(name): \(problem)", sourceLocation: sourceLocation) }
++  }
+ }
+ 
+ private func isStray(_ problem: NotInOnePiece) -> Bool { if case .stray = problem { true } else { false } }
+@@ -182,7 +181,7 @@ private func isHole(_ problem: NotInOnePiece) -> Bool { if case .hole = problem
+ 
+   @Test(arguments: [4, 8], [true, false]) func arrangeWindows(_ count: Int, foretold: Bool) {
+     let (h, _) = pile(count, foretold: foretold)
+-    expectNoStray(h, "arrange", holes: count == 4 ? 2 : 15) { h.run("arrange") }
++    expectHolesButNoStray(h, "arrange") { h.run("arrange") }
+   }
+ 
+   @Test(arguments: [4, 8], [true, false]) func fillEverythingAndBack(_ count: Int, foretold: Bool) {
+@@ -227,7 +226,7 @@ private func isHole(_ problem: NotInOnePiece) -> Bool { if case .hole = problem
+     let (h, windows) = pile(4, foretold: foretold)
+     for (index, window) in windows.enumerated() {
+       h.system.userFocus(window)
+-      expectNoStray(h, "dock \(index + 1)", holes: [0, 0, 5, 4][index]) { h.run(index % 2 == 0 ? "dock left" : "dock right") }
++      expectHolesButNoStray(h, "dock \(index + 1)") { h.run(index % 2 == 0 ? "dock left" : "dock right") }
+     }
+   }
+ 
+@@ -242,20 +241,20 @@ private func isHole(_ problem: NotInOnePiece) -> Bool { if case .hole = problem
+   @Test(arguments: [true, false]) func pauseAndResume(foretold: Bool) {
+     let (h, _) = pile(4, foretold: foretold)
+     h.run("arrange")
+-    expectNoStray(h, "pause", holes: 2) { h.run("pause") }
+-    expectNoStray(h, "resume", holes: 2) { h.run("resume") }
++    expectHolesButNoStray(h, "pause") { h.run("pause") }
++    expectHolesButNoStray(h, "resume") { h.run("resume") }
+   }
+ 
+   @Test(arguments: [true, false]) func quit(foretold: Bool) {
+     let (h, _) = pile(4, foretold: foretold)
+     h.run("arrange")
+-    expectNoStray(h, "quit", holes: 2) { h.controller.shutdown() }
++    expectHolesButNoStray(h, "quit") { h.controller.shutdown() }
+   }
+ 
+   @Test(arguments: [true, false]) func floatAll(foretold: Bool) {
+     let (h, _) = pile(4, foretold: foretold)
+     h.run("arrange")
+-    expectNoStray(h, "float all", holes: 2) { h.run("float-all") }
++    expectHolesButNoStray(h, "float all") { h.run("float-all") }
+   }
+ 
+   /// Two of four have closed while a third filled the screen, so the one that comes back finds a wider slot than it has ever had: it is asked
+@@ -268,7 +267,7 @@ private func isHole(_ problem: NotInOnePiece) -> Bool { if case .hole = problem
+     h.system.close(windows[0])
+     h.system.close(windows[2])
+     h.scheduler.runPending()
+-    expectNoStray(h, "everything", holes: foretold ? 1 : 2) { h.run("show-all") }
++    expectHolesButNoStray(h, "everything") { h.run("show-all") }
+     expectWindowsMatchLayout(h)
+   }
+ 
+-- 
+2.43.0
+

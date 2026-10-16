@@ -1,0 +1,795 @@
+From 61423f4a237c2d5337a6739e4e83befa0512076a Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 15:05:17 +0000
+Subject: [PATCH] fix: one word for one key: it fills the screen; and two lines
+ say what strangers can follow
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The welcome says that ⌃⌥↩ fills the screen with a window. The line after a dock said "⌃⌥↩ frames it", and the menu's row for the
+same key read "Frame Focused Window": whoever had learned the one did not find the other. The glossary decided for "fill the
+screen" on 2026-10-15, by twelve fresh readers, and ended "the strings follow; until then the app still says Frame".
+
+These are the strings of the key: the menu's row, and with it the panel of shortcuts and Go to…, reads Fill the Screen; the
+welcome, where the key is unbound, names the row by its new words. The same command for a window or a space that is named is
+called likewise. The pages that teach the key follow (README, KEYBOARD, GUIDE, MENU). No command, key, setting or reply changes.
+
+Two lines, by the product owner's word after three strangers had read stills of them. The line after a dock loses "Docked",
+which none of them understood: "⌃⌥↩ fills the screen with it" says what the key does, not what Arbor calls the state; where no
+key can be named it reads "Fill the screen with it from Arbor’s menu". And when that key has taken the other windows out of view
+the line teaches one way back, the key that did it: "⌃⌥↩ again goes back", where it named ⌃⌥Space ("which one is it?"). Only after
+the key's own command: by another road (a click on a tile, Step In, a window gone to) nobody has pressed it, and with the view on
+a group it does not lead back at all. There the line keeps "⌃⌥Space shows everything", which is true from anywhere.
+
+That way back is one only while the window that had the keyboard has it: in another's hands the key fills the screen with that
+one. What is on screen is never untrue, so the line goes when the keyboard goes elsewhere.
+
+A display is never a screen, says the glossary, and two tests hold titles to that. "Fill the screen" is the glossary's own
+phrase: it says so now beside "screen edge", and the tests follow.
+
+Replies still say "framed", and so do the help of the setting `shortcuts`, `help`, and the words of another gesture (Frame a
+Rectangle, Frame What Is Inside) and of a setting (New windows while framed). Go to… finds a command by the menu's name alone: by
+"fill" and "screen" now, no longer by "frame", "window" or "focused".
+---
+ README.md                                     |   6 +-
+ Sources/ArborCore/CommandTitle.swift          |   6 +-
+ Sources/ArborCore/HeadsUp.swift               |  12 +-
+ Sources/ArborCore/OnboardingModel.swift       |   2 +-
+ .../Controller/Controller+HeadsUp.swift       |  17 ++-
+ .../ArborKit/Controller/Controller+Menu.swift |   2 +-
+ Tests/ArborCoreTests/CommandTitleTests.swift  |   7 +-
+ Tests/ArborCoreTests/HeadsUpTests.swift       |  14 ++-
+ .../ArborCoreTests/OnboardingModelTests.swift |   2 +-
+ Tests/ArborKitTests/DoctorTests.swift         |   2 +-
+ Tests/ArborKitTests/FillTheScreenTests.swift  |   4 +-
+ Tests/ArborKitTests/FilmTests.swift           |   2 +-
+ Tests/ArborKitTests/HeadsUpTests.swift        | 117 +++++++++++++++---
+ Tests/ArborKitTests/MenuTests.swift           |  14 ++-
+ collab/scenarios/43-say-what-happened.sim     |   4 +-
+ docs/GLOSSARY.md                              |   6 +-
+ docs/GUIDE.md                                 |   8 +-
+ docs/KEYBOARD.md                              |   2 +-
+ docs/MENU.md                                  |   4 +-
+ docs/RELEASE-NOTES.md                         |   2 +-
+ docs/features/F43-say-what-happened.md        |   4 +-
+ scripts/mac-shell/shots-F43.sh                |   4 +-
+ scripts/mac-shell/suite/77-says.sh            |   4 +-
+ 23 files changed, 182 insertions(+), 63 deletions(-)
+
+diff --git a/README.md b/README.md
+index d668fd55..6b64b5a1 100644
+--- a/README.md
++++ b/README.md
+@@ -5,7 +5,7 @@ brings the arrangement back. Your Mac's own tiling forgets an arrangement; Arbor
+ 
+ Your real windows dock into
+ nested splits, with the Desktop kept as a space between them, and a camera
+-zooms between those spaces: frame one window, step out to its group, step
++zooms between those spaces: fill the screen with one window, step out to its group, step
+ out again to see everything.
+ 
+ Inspired by [TrellisWM](https://trelliswm.app) by Dan Fessler. Arbor is an
+@@ -344,7 +344,7 @@ Here ⌃⌥ + arrow looks and ⌃⌥⌘ + arrow docks. The other seven of the ni
+ | ⌃⌥↑ / ⌃⌥↓ | Step out / step in |
+ | ⌃⌥← / ⌃⌥→ | Neighbouring space |
+ | ⌃⌥⇧ + arrow | Focus the nearest window that way; with none in view, the neighbouring space |
+-| ⌃⌥↩ | Frame the focused window; again to return |
++| ⌃⌥↩ | Fill the screen with the focused window; again to return |
+ | ⌃⌥[ / ⌃⌥] | Back / forward |
+ | ⌃⌥D | Desktop |
+ | ⌃⌥G | Go to…: find a window, a named space or a saved view by typing |
+@@ -491,7 +491,7 @@ arborctl help                 # every command (works without Arbor running)
+ arborctl state                # JSON: displays, trees, windows
+ arborctl ascii                # the layout drawn as text
+ arborctl dock 412 beside 388 bottom
+-arborctl zoom                 # frame the focused window
++arborctl zoom                 # fill the screen with the focused window
+ arborctl bindings             # the keyboard shortcuts in effect
+ arborctl stats                # what commands cost on this Mac
+ arborctl displays             # the displays, and the options in effect on each
+diff --git a/Sources/ArborCore/CommandTitle.swift b/Sources/ArborCore/CommandTitle.swift
+index 332f8211..b6fc427c 100644
+--- a/Sources/ArborCore/CommandTitle.swift
++++ b/Sources/ArborCore/CommandTitle.swift
+@@ -28,9 +28,9 @@ extension Command {
+     case .neighbor(.right): return "Space to the Right"
+     case .neighbor(.top): return "Space Above"
+     case .neighbor(.bottom): return "Space Below"
+-    case .zoom(nil): return "Frame Focused Window"
+-    case .zoom: return "Frame a Window"
+-    case .zoomNode: return "Frame a Space"
++    case .zoom(nil): return "Fill the Screen"
++    case .zoom: return "Fill the Screen with a Window"
++    case .zoomNode: return "Fill the Screen with a Space"
+     case .frameRect: return "Frame a Rectangle"
+     case .desktop: return "Show the Desktop"
+     case .saveView(let slot): return "Save View \(slot)"
+diff --git a/Sources/ArborCore/HeadsUp.swift b/Sources/ArborCore/HeadsUp.swift
+index ebd3eb32..c870e6b6 100644
+--- a/Sources/ArborCore/HeadsUp.swift
++++ b/Sources/ArborCore/HeadsUp.swift
+@@ -203,19 +203,25 @@ public enum HeadsUpHint: String, Sendable, CaseIterable {
+ 
+   /// The sentence. `shortcut` gives the keys in effect for a command, or nil if it has none, in which case the
+   /// part that names them is left out.
+-  public func model(facts: HeadsUpFacts, shortcut: (Command) -> String?) -> HeadsUpModel {
++  /// `afterTheKeyThatFills`: the key that fills the screen has just brought this about.
++  public func model(facts: HeadsUpFacts, shortcut: (Command) -> String?, afterTheKeyThatFills: Bool = false) -> HeadsUpModel {
+     switch self {
+     case .outOfView:
+       return HeadsUpModel(
+         kind: .hint,
+         text: facts.outOfView == 1
+           ? "Your other window is out of view, not closed" : "Your other windows are out of view, not closed",
+-        hint: shortcut(.showAll).map { "\($0) shows everything" })
++        // One way back is taught: the key that did it. Two of three strangers, told of another key here, asked which one it is. Where
++        // the windows went by another road (a click on a tile, Go to…) that key need not lead back, and "again" would be untrue.
++        hint: (afterTheKeyThatFills ? shortcut(.zoom(nil)).map { "\($0) again goes back" } : nil)
++          ?? shortcut(.showAll).map { "\($0) shows everything" })
+     case .tile:
+       return HeadsUpModel(
+         kind: .hint, text: "Too small to show: click the tile to zoom in", hint: shortcut(.find(nil)).map { "\($0) goes there too" })
+     case .docked:
+-      return HeadsUpModel(kind: .hint, text: "Docked", hint: shortcut(.zoom(nil)).map { "\($0) frames it" })
++      // What the key does, not what Arbor calls the state: of three strangers none understood "Docked".
++      return HeadsUpModel(
++        kind: .hint, text: shortcut(.zoom(nil)).map { "\($0) fills the screen with it" } ?? "Fill the screen with it from Arbor’s menu")
+     case .leftToMacOS:
+       // First the way that works at once, then the lasting cure, which is no shortcut and is said whatever the keys are.
+       let ways = [shortcut(.dock(nil, .left)).map { "\($0) docks it" }, "Check Setup… in the menu"].compactMap { $0 }
+diff --git a/Sources/ArborCore/OnboardingModel.swift b/Sources/ArborCore/OnboardingModel.swift
+index 414ee790..d35c1d38 100644
+--- a/Sources/ArborCore/OnboardingModel.swift
++++ b/Sources/ArborCore/OnboardingModel.swift
+@@ -682,7 +682,7 @@ public struct OnboardingModel: Equatable, Sendable {
+         text: "It takes the other side.", isDone: done.dockedTwo),
+       // One breath: the docks alone look like little, and the two moves after them are where Arbor pays.
+       Step(
+-        id: .frame, lead: fill.map { "Then press \($0)" } ?? "Then choose Frame Focused Window in Arbor’s menu",
++        id: .frame, lead: fill.map { "Then press \($0)" } ?? "Then choose Fill the Screen in Arbor’s menu",
+         // Twelve readers of twelve could not tell it from the green button's full screen.
+         text: "The window you are in fills the screen; the menu bar stays, and it is not macOS’s full screen. Your other windows are out "
+           + "of view, not closed: ⌘Tab and the Dock still reach them.",
+diff --git a/Sources/ArborKit/Controller/Controller+HeadsUp.swift b/Sources/ArborKit/Controller/Controller+HeadsUp.swift
+index 4f95788b..d63c8dcf 100644
+--- a/Sources/ArborKit/Controller/Controller+HeadsUp.swift
++++ b/Sources/ArborKit/Controller/Controller+HeadsUp.swift
+@@ -18,6 +18,8 @@ extension Controller {
+     var showing: DisplayID?
+     /// The line as it was placed there, to place it again when the minimap below it comes or goes.
+     var line: HeadsUpModel?
++    /// The window the line's way back is about: it is one only while that window has the keyboard (`HeadsUpHint.model`).
++    var goesWithTheKeyboardOf: WindowID?
+     /// The display as it was then. It need not be as Arbor knows it (`showWithoutLooking`).
+     var display: DisplaySnapshot?
+     /// Each display as it was when last looked at, to tell a teaching moment by what changed.
+@@ -91,7 +93,8 @@ extension Controller {
+     // What was lost comes before what a newcomer might like to know. The hint keeps its showing for the next time.
+     let loss = result.ok && HeadsUpText.namesALoss(result.message)
+     // Whoever went back or forth is told what was taken back or put back, not taught what a dock is (F19).
+-    if result.ok, let moment, !loss, command != .undo, command != .redo {
++    if result.ok, var moment, !loss, command != .undo, command != .redo {
++      moment.afterTheKeyThatFills = command == .zoom(nil)
+       teach(moment)
+       return
+     }
+@@ -217,6 +220,9 @@ extension Controller {
+       let pause = shortcutLabel(for: .togglePause).map { ", \($0) pauses" } ?? ""
+       showHeadsUp(
+         HeadsUpModel(kind: .change, text: "Shortcuts are off in \(frontmostAppName)", hint: "⌘Tab leaves" + pause), on: display)
++    case .focus, .keyboard:
++      // In another window's hands the key fills the screen with that one, and leads nowhere back. What is on screen is never untrue.
++      if let window = headsUp.goesWithTheKeyboardOf, system.focusedWindow() != window { hideHeadsUp() }
+     case .hold:
+       // What was said before the hold began, by command or because a call started, is not for the audience either.
+       if !mayShowUnasked, headsUp.line?.kind != .problem { hideHeadsUp() }
+@@ -251,6 +257,8 @@ extension Controller {
+     var hint: HeadsUpHint
+     var display: DisplayID
+     var facts: HeadsUpFacts
++    /// See `HeadsUpHint.model`.
++    var afterTheKeyThatFills = false
+   }
+ 
+   /// Brings the remembered facts of `displays` up to date and returns the first teaching moment in what changed
+@@ -298,7 +306,10 @@ extension Controller {
+     guard mayShowUnasked else { return }
+     headsUp.hintsShown[moment.hint.rawValue, default: 0] += 1
+     scheduleSave()
+-    showHeadsUp(moment.hint.model(facts: moment.facts, shortcut: shortcutLabel(for:)), on: moment.display)
++    showHeadsUp(
++      moment.hint.model(facts: moment.facts, shortcut: shortcutLabel(for:), afterTheKeyThatFills: moment.afterTheKeyThatFills),
++      on: moment.display)
++    if moment.afterTheKeyThatFills, moment.hint == .outOfView { headsUp.goesWithTheKeyboardOf = system.focusedWindow() }
+   }
+ 
+   // MARK: Showing it
+@@ -326,6 +337,7 @@ extension Controller {
+     if let old = headsUp.showing, old != id { overlays.showHeadsUp(nil, on: old) }
+     headsUp.showing = id
+     headsUp.display = display
++    headsUp.goesWithTheKeyboardOf = nil
+     var placed = model.placed(in: display.visibleFrame, above: minimapFrame(under: display))
+     // Said while a person's command is being carried out. What follows from one a moment later is Arbor's own remark.
+     placed.isAnswer = headsUp.source?.isAnsweredOnScreen == true
+@@ -353,6 +365,7 @@ extension Controller {
+ 
+   func hideHeadsUp() {
+     scheduler.cancel("heads-up")
++    headsUp.goesWithTheKeyboardOf = nil
+     guard let display = headsUp.showing else { return }
+     headsUp.showing = nil
+     overlays.showHeadsUp(nil, on: display)
+diff --git a/Sources/ArborKit/Controller/Controller+Menu.swift b/Sources/ArborKit/Controller/Controller+Menu.swift
+index c76ebd9a..d2cd4036 100644
+--- a/Sources/ArborKit/Controller/Controller+Menu.swift
++++ b/Sources/ArborKit/Controller/Controller+Menu.swift
+@@ -137,7 +137,7 @@ extension Controller {
+       // Controller+OpenWindows.swift.
+       Item.submenu("Windows") { windowListItems() }
+       Item.command("Show Everything", .showAll).like(places.button(.everything))
+-      Item.command("Frame Focused Window", .zoom(nil)).enabled(focused.map(canFrame) ?? false).ticked(focused?.isFramed == true)
++      Item.command("Fill the Screen", .zoom(nil)).enabled(focused.map(canFrame) ?? false).ticked(focused?.isFramed == true)
+       Item.command("Go to…", .find(nil)).enabled(!finderRows().isEmpty)
+       Item.submenu("Saved Views", sections: savedViewSections(places))
+       Item.submenu(
+diff --git a/Tests/ArborCoreTests/CommandTitleTests.swift b/Tests/ArborCoreTests/CommandTitleTests.swift
+index 7ad2cd83..40f1fcc3 100644
+--- a/Tests/ArborCoreTests/CommandTitleTests.swift
++++ b/Tests/ArborCoreTests/CommandTitleTests.swift
+@@ -9,7 +9,9 @@ import Testing
+     #expect(Command.desktop.title == "Show the Desktop", "docs/MENU.md, View")
+     #expect(Command.dock(nil, .left).title == "Dock Left")
+     #expect(Command.saveView(3).title == "Save View 3")
+-    #expect(Command.zoom(nil).title == "Frame Focused Window")
++    #expect(Command.zoom(nil).title == "Fill the Screen")
++    #expect(Command.zoom(WindowID(5)).title == "Fill the Screen with a Window")
++    #expect(Command.zoomNode(NodeID(3)).title == "Fill the Screen with a Space")
+     #expect(Command.neighbor(.top).title == "Space Above")
+     #expect(Command.togglePause.title == "Pause or Resume Arbor")
+     #expect(Command.pause(minutes: 1).title == "Pause Arbor for 1 Minute")
+@@ -60,7 +62,8 @@ import Testing
+       "layout a | b", "layout --open a", "check-setup", "welcome", "check-for-updates", "launch-at-login on", "launch-at-login off",
+     ].map { try Command.parse($0) }
+     for command in commands {
+-      let words = command.title.lowercased().split(separator: " ").map(String.init)
++      // A display is never a screen, but what a window does to one is fill the screen: the glossary's own phrase, by twelve readers.
++      let words = command.title.lowercased().replacing("fill the screen", with: "").split(separator: " ").map(String.init)
+       for banned in ["tile", "snap", "hotkey", "hotkeys", "screen", "monitor", "node", "camera", "parked", "hidden", "stack", "maximize"] {
+         #expect(!words.contains(banned), "\(command.text): \(command.title)")
+       }
+diff --git a/Tests/ArborCoreTests/HeadsUpTests.swift b/Tests/ArborCoreTests/HeadsUpTests.swift
+index 6a428448..62a2202c 100644
+--- a/Tests/ArborCoreTests/HeadsUpTests.swift
++++ b/Tests/ArborCoreTests/HeadsUpTests.swift
+@@ -185,7 +185,9 @@ import Testing
+   // MARK: How long
+ 
+   @Test func readOutTheLineIsTwoSentences() {
+-    #expect(HeadsUpModel(kind: .hint, text: "Docked", hint: "⌃⌥↩ frames it").spoken == "Docked. ⌃⌥↩ frames it")
++    #expect(
++      HeadsUpModel(kind: .hint, text: "Your other window is out of view, not closed", hint: "⌃⌥↩ again goes back").spoken
++        == "Your other window is out of view, not closed. ⌃⌥↩ again goes back")
+     #expect(HeadsUpModel(kind: .problem, text: "Already showing everything").spoken == "Already showing everything")
+   }
+ 
+@@ -248,7 +250,15 @@ import Testing
+     // docs/GLOSSARY.md, "Sentences to reuse".
+     #expect(HeadsUpHint.outOfView.model(facts: two, shortcut: keys).line == "Your other windows are out of view, not closed · ⌃⌥Space shows everything")
+     #expect(HeadsUpHint.outOfView.model(facts: facts(2, 1, 0), shortcut: keys).text == "Your other window is out of view, not closed")
+-    #expect(HeadsUpHint.docked.model(facts: two, shortcut: keys).line == "Docked · ⌃⌥↩ frames it")
++    // One way back is taught: after the key that fills the screen, that key.
++    #expect(
++      HeadsUpHint.outOfView.model(facts: two, shortcut: keys, afterTheKeyThatFills: true).line
++        == "Your other windows are out of view, not closed · ⌃⌥↩ again goes back")
++    #expect(
++      HeadsUpHint.outOfView.model(facts: two, shortcut: { $0 == .showAll ? "⌃⌥Space" : nil }, afterTheKeyThatFills: true).hint
++        == "⌃⌥Space shows everything", "chosen from the menu with the key unbound")
++    #expect(HeadsUpHint.docked.model(facts: two, shortcut: keys).line == "⌃⌥↩ fills the screen with it")
++    #expect(HeadsUpHint.docked.model(facts: two, shortcut: { _ in nil }).line == "Fill the screen with it from Arbor’s menu")
+     #expect(HeadsUpHint.tile.model(facts: two, shortcut: keys).line == "Too small to show: click the tile to zoom in · ⌃⌥G goes there too")
+     #expect(
+       HeadsUpHint.leftToMacOS.model(facts: two, shortcut: keys).line
+diff --git a/Tests/ArborCoreTests/OnboardingModelTests.swift b/Tests/ArborCoreTests/OnboardingModelTests.swift
+index 84b5095f..1b5c6563 100644
+--- a/Tests/ArborCoreTests/OnboardingModelTests.swift
++++ b/Tests/ArborCoreTests/OnboardingModelTests.swift
+@@ -555,7 +555,7 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
+       model.steps.map(\.lead) == [
+         "Click a window and choose Dock Focused Window → Left in Arbor’s menu",
+         "Click another and choose Dock Focused Window → Right in Arbor’s menu",
+-        "Then choose Frame Focused Window in Arbor’s menu", "Then choose Show Everything in Arbor’s menu",
++        "Then choose Fill the Screen in Arbor’s menu", "Then choose Show Everything in Arbor’s menu",
+       ])
+     #expect(model.wayBack == "Pause Arbor in its menu pauses it: every window is as it was. Quit does the same.", "by the item's own title")
+     #expect(model.keysLegend.isEmpty, "no key is named, so none is explained")
+diff --git a/Tests/ArborKitTests/DoctorTests.swift b/Tests/ArborKitTests/DoctorTests.swift
+index 4daca52a..430664af 100644
+--- a/Tests/ArborKitTests/DoctorTests.swift
++++ b/Tests/ArborKitTests/DoctorTests.swift
+@@ -559,7 +559,7 @@ import Testing
+ 
+     // With ARBOR_NO_HOTKEYS nothing will ever be registered.
+     facts.inputDisabled = true
+-    #expect(h.controller.onboardingModel(facts).step(.frame)?.lead == "Then choose Frame Focused Window in Arbor’s menu")
++    #expect(h.controller.onboardingModel(facts).step(.frame)?.lead == "Then choose Fill the Screen in Arbor’s menu")
+   }
+ }
+ 
+diff --git a/Tests/ArborKitTests/FillTheScreenTests.swift b/Tests/ArborKitTests/FillTheScreenTests.swift
+index 8c1e67bd..92f4b541 100644
+--- a/Tests/ArborKitTests/FillTheScreenTests.swift
++++ b/Tests/ArborKitTests/FillTheScreenTests.swift
+@@ -1023,10 +1023,10 @@ private let own = CGRect(x: 200, y: 150, width: 640, height: 420)
+ 
+   @Test func theMenusRowIsThereForAFloatingWindowAndTickedWhileItFills() throws {
+     let (h, _, _) = newcomer()
+-    var row = try #require(h.controller.menuModel().item("Frame Focused Window"))
++    var row = try #require(h.controller.menuModel().item("Fill the Screen"))
+     #expect(row.isEnabled && !row.isTicked)
+     h.press("zoom")
+-    row = try #require(h.controller.menuModel().item("Frame Focused Window"))
++    row = try #require(h.controller.menuModel().item("Fill the Screen"))
+     #expect(row.isEnabled && row.isTicked)
+   }
+ 
+diff --git a/Tests/ArborKitTests/FilmTests.swift b/Tests/ArborKitTests/FilmTests.swift
+index 445ed5db..260cb241 100644
+--- a/Tests/ArborKitTests/FilmTests.swift
++++ b/Tests/ArborKitTests/FilmTests.swift
+@@ -507,7 +507,7 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
+     #expect(try window(101, in: first).minX == 12)
+     #expect(end["ring"] != nil)
+     #expect(end["backdrop"] != nil)
+-    #expect((end["headsUp"] as? [String: Any])?["text"] as? String == "Docked")
++    #expect((end["headsUp"] as? [String: Any])?["text"] as? String == "⌃⌥↩ fills the screen with it")
+   }
+ 
+   @Test func whatArborPutsOffHappensInItsTime() throws {
+diff --git a/Tests/ArborKitTests/HeadsUpTests.swift b/Tests/ArborKitTests/HeadsUpTests.swift
+index 7f6e13c8..51ee2a4f 100644
+--- a/Tests/ArborKitTests/HeadsUpTests.swift
++++ b/Tests/ArborKitTests/HeadsUpTests.swift
+@@ -462,9 +462,9 @@ private let side = DisplaySnapshot(
+   @Test func theFirstDockTheFirstWindowsOutOfViewAndTheFirstTileAreExplained() {
+     let (h, _, b, _) = makeHarness(taught: false)
+     h.run("dock left", from: .shortcut)
+-    #expect(lines(h).last == "Docked · ⌃⌥↩ frames it")
++    #expect(lines(h).last == "⌃⌥↩ fills the screen with it")
+     h.run("zoom", from: .shortcut)
+-    #expect(lines(h).last == "Your other windows are out of view, not closed · ⌃⌥Space shows everything")
++    #expect(lines(h).last == "Your other windows are out of view, not closed · ⌃⌥↩ again goes back")
+     h.run("show-all", from: .shortcut)
+     #expect(lines(h).count == 2)
+ 
+@@ -573,7 +573,7 @@ private let side = DisplaySnapshot(
+     let h = Harness(displays: [small], settings: settings { $0.newWindows = "dock" })
+     h.start()
+     let a = h.system.open(app: "Safari")
+-    #expect(lines(h) == ["Docked · ⌃⌥↩ frames it"])
++    #expect(lines(h) == ["⌃⌥↩ fills the screen with it"])
+     // Arbor learns of this only when it asks Safari to be smaller.
+     h.system.setMinimumSize(a, CGSize(width: 800, height: 400))
+     let mail = h.system.open(app: "Mail")
+@@ -642,14 +642,91 @@ private let side = DisplaySnapshot(
+     #expect(h.overlays.messages.count == 1)
+   }
+ 
++  // MARK: One way back is taught, and only while it is one
++
++  /// "⌃⌥↩ again goes back" is about the window that had the keyboard when the key was pressed. In another's hands the key does something
++  /// else: it fills the screen with that one. What is on screen is never untrue, so the line goes with the keyboard.
++  @Test(arguments: ["switched to", "opens"]) func theWayBackGoesWhenTheKeyboardGoesElsewhere(how: String) {
++    let (h, a, b, c) = makeHarness(taught: false)
++    h.run("dock \(a.rawValue) left")
++    h.run("dock \(b.rawValue) right")
++    h.system.userFocus(a)
++    h.run("zoom", from: .shortcut)
++    #expect(h.overlays.headsUp.values.map(\.line) == ["Your other windows are out of view, not closed · ⌃⌥↩ again goes back"], "or this proves nothing")
++    if how == "opens" {
++      h.system.userFocus(h.system.open(app: "Music", frame: CGRect(x: 500, y: 300, width: 400, height: 300)))
++    } else {
++      h.system.userFocus(c)
++    }
++    #expect(h.overlays.headsUp.isEmpty, "\(h.overlays.headsUp.values.map(\.line))")
++  }
++
++  /// A report that the same window has the keyboard, which macOS sends after the key too, takes nothing away.
++  @Test func theWayBackStaysWhileTheKeyboardDoes() {
++    let (h, a, b, _) = makeHarness(taught: false)
++    h.run("dock \(a.rawValue) left")
++    h.run("dock \(b.rawValue) right")
++    h.system.userFocus(a)
++    h.run("zoom", from: .shortcut)
++    h.system.userFocus(a)
++    h.scheduler.advance(by: 1)
++    #expect(h.overlays.headsUp.values.map(\.hint) == ["⌃⌥↩ again goes back"])
++  }
++
++  /// What is true from anywhere stays, whoever has the keyboard.
++  @Test func theWayBackThatIsTrueFromAnywhereStays() {
++    let (h, a, b, c) = makeHarness(taught: false)
++    h.run("dock \(a.rawValue) left")
++    h.run("dock \(b.rawValue) right")
++    h.run("zoom \(a.rawValue)", from: .shortcut)
++    #expect(h.overlays.headsUp.values.map(\.hint) == ["⌃⌥Space shows everything"], "or this proves nothing")
++    h.system.userFocus(c)
++    #expect(h.overlays.headsUp.values.map(\.hint) == ["⌃⌥Space shows everything"])
++  }
++
++  /// The line that comes next is not taken away by what the one before it was about.
++  @Test func theNextLineIsItsOwn() {
++    let (h, a, b, c) = makeHarness(taught: false)
++    h.run("dock \(a.rawValue) left")
++    h.run("dock \(b.rawValue) right")
++    h.system.userFocus(a)
++    h.run("zoom", from: .shortcut)
++    h.run("save-view 1", from: .shortcut)
++    #expect(h.overlays.headsUp.values.map(\.text).first?.hasPrefix("Saved view 1") == true, "or this proves nothing")
++    h.system.userFocus(c)
++    #expect(h.overlays.headsUp.values.map(\.text).first?.hasPrefix("Saved view 1") == true)
++  }
++
++  /// The menu's row is the key's own command, and teaches the key.
++  @Test func theMenusRowTeachesTheKey() {
++    let (h, a, b, _) = makeHarness(taught: false)
++    h.run("dock \(a.rawValue) left")
++    h.run("dock \(b.rawValue) right")
++    h.system.userFocus(a)
++    h.run("zoom", from: .menu)
++    #expect(lines(h).last == "Your other windows are out of view, not closed · ⌃⌥↩ again goes back")
++  }
++
++  /// Stepping in takes windows out of view too, and from a group the key does not lead back: it fills the screen with one of the group.
++  @Test func steppingInKeepsTheWayBackThatIsTrueFromAnywhere() {
++    let (h, a, b, c) = makeHarness(taught: false)
++    h.run("dock \(a.rawValue) left")
++    h.run("dock \(b.rawValue) right")
++    h.run("dock \(c.rawValue) beside \(b.rawValue) bottom")
++    h.system.userFocus(b)
++    #expect(h.run("in", from: .shortcut).ok)
++    #expect(lines(h).last == "Your other window is out of view, not closed · ⌃⌥Space shows everything")
++  }
++
+   @Test func aDropAndAClickOnATileTeachToo() {
+     let (h, a, b, _) = makeHarness(taught: false)
+     h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
+     h.system.drag(a, through: [CGPoint(x: 600, y: 210), CGPoint(x: 300, y: 400), CGPoint(x: 2, y: 400)])
+-    #expect(lines(h) == ["Docked · ⌃⌥↩ frames it"])
++    #expect(lines(h) == ["⌃⌥↩ fills the screen with it"])
+ 
+     h.run("dock \(b.rawValue) right")
+     h.overlays.clickTile(h.workspace.tree.leaf(containing: a)!)  // as a click on a tile would: the view moves there
++    // No key brought this about, so there is none to press "again".
+     #expect(lines(h).last == "Your other windows are out of view, not closed · ⌃⌥Space shows everything")
+   }
+ 
+@@ -703,29 +780,37 @@ private let side = DisplaySnapshot(
+   // MARK: Acceptance 4: the user's own shortcuts
+ 
+   @Test func aReboundShortcutIsNamedByTheUsersKeys() {
+-    let own = settings { $0.bindings = ["ctrl+opt+e": "show-all", "ctrl+opt+cmd+h": "dock left", "ctrl+opt+shift+3": "save-view 3"] }
+-    let (h, _, _, _) = makeHarness(settings: own, taught: false)
++    let own = settings {
++      $0.bindings = ["ctrl+opt+e": "show-all", "ctrl+opt+cmd+h": "dock left", "ctrl+opt+shift+3": "save-view 3", "ctrl+opt+r": "zoom"]
++    }
++    let (h, a, _, _) = makeHarness(settings: own, taught: false)
+     h.run("in", from: .shortcut)
+     #expect(lines(h).last == "Nothing is docked yet: drag a window to a screen edge, or try ⌃⌥⌘H")
+-    h.run("dock left", from: .shortcut)
+-    h.run("zoom", from: .shortcut)
++    h.run("dock \(a.rawValue) left", from: .shortcut)
++    #expect(lines(h).last == "⌃⌥R fills the screen with it")
++    // By its number: not the key that fills the screen, so the way back that is true from anywhere.
++    h.run("zoom \(a.rawValue)", from: .shortcut)
+     #expect(lines(h).last == "Your other windows are out of view, not closed · ⌃⌥E shows everything")
++    h.run("show-all", from: .shortcut)
++    h.system.userFocus(a)
++    h.run("zoom", from: .shortcut)
++    #expect(lines(h).last == "Your other windows are out of view, not closed · ⌃⌥R again goes back")
+   }
+ 
+   @Test func aRemovedShortcutIsLeftOutOfTheSentence() {
+     let removed = settings { $0.bindings = ["ctrl+opt+return": nil, "ctrl+opt+space": nil, "ctrl+opt+0": nil] }
+     let (h, _, _, _) = makeHarness(settings: removed, taught: false)
+     h.run("dock left", from: .menu)
+-    #expect(h.overlays.messages.last?.model.line == "Docked")
++    #expect(h.overlays.messages.last?.model.line == "Fill the screen with it from Arbor’s menu")
+     h.run("zoom", from: .menu)
+     #expect(h.overlays.messages.last?.model.line == "Your other windows are out of view, not closed")
+   }
+ 
+   @Test func anotherShortcutThatDoesTheJobStandsIn() {
+     // `home` has a key in the whole map only.
+-    let (h, _, _, _) = makeHarness(settings: settings { $0.bindings = ["ctrl+opt+space": nil] }.withEveryKey, taught: false)
+-    h.run("dock left", from: .shortcut)
+-    h.run("zoom", from: .shortcut)
++    let (h, a, _, _) = makeHarness(settings: settings { $0.bindings = ["ctrl+opt+space": nil] }.withEveryKey, taught: false)
++    h.run("dock \(a.rawValue) left", from: .shortcut)
++    h.run("zoom \(a.rawValue)", from: .shortcut)
+     #expect(lines(h).last == "Your other windows are out of view, not closed · ⌃⌥0 shows everything")
+   }
+ 
+@@ -746,7 +831,7 @@ private let side = DisplaySnapshot(
+     let (h, _, _, _) = makeHarness(settings: own, taught: false)
+     h.controller.applicationActivated(FrontmostApp(bundleID: "org.gnu.Emacs", name: "Emacs"))
+     h.run("dock left", from: .menu)
+-    #expect(lines(h) == ["Docked"], "⌃⌥↩ is Emacs's for now (F41)")
++    #expect(lines(h) == ["Fill the screen with it from Arbor’s menu"], "⌃⌥↩ is Emacs's for now (F41)")
+     let result = h.run("show-shortcuts", from: .menu)
+     let model = h.overlays.cheatSheets[h.display]
+     #expect(model?.title == "Off in Emacs, except ⌃⌥⎋", "the whole list, under a heading that says what it is worth here")
+@@ -791,7 +876,7 @@ private let side = DisplaySnapshot(
+   @Test func withShortcutsSwitchedOffNoKeysAreNamed() {
+     let (h, _, _, _) = makeHarness(settings: settings { $0.hotkeysEnabled = false }, taught: false)
+     h.run("dock left", from: .menu)
+-    #expect(lines(h) == ["Docked"])
++    #expect(lines(h) == ["Fill the screen with it from Arbor’s menu"])
+     h.run("view 3", from: .menu)
+     #expect(lines(h).last == "View 3 is not saved; “Save View 3” saves where you are looking")
+   }
+@@ -934,7 +1019,7 @@ private let side = DisplaySnapshot(
+     h.run("arrange")
+     h.system.userFocus(a)
+     h.key("ctrl+opt+return")
+-    #expect(lines(h) == ["Your other windows are out of view, not closed · ⌃⌥Space shows everything"])
++    #expect(lines(h) == ["Your other windows are out of view, not closed · ⌃⌥↩ again goes back"])
+     h.scheduler.advance(by: 10)
+ 
+     h.keyDown("ctrl+opt+space")
+@@ -994,7 +1079,7 @@ private let side = DisplaySnapshot(
+   @Test func whatArborSaysInItsOwnWordsIsLoggedAsSaid() {
+     let (h, a, _, _) = makeHarness(taught: false)
+     h.run("dock \(a.rawValue) left", from: .shortcut)
+-    #expect(h.controller.headsUp.logged == "Docked · ⌃⌥↩ frames it")
++    #expect(h.controller.headsUp.logged == "⌃⌥↩ fills the screen with it")
+     h.run("save-view 2", from: .shortcut)
+     #expect(h.controller.headsUp.logged == lines(h).last)
+     #expect(h.controller.headsUp.logged.hasPrefix("Saved view 2"))
+diff --git a/Tests/ArborKitTests/MenuTests.swift b/Tests/ArborKitTests/MenuTests.swift
+index 108dde0c..4b254ac7 100644
+--- a/Tests/ArborKitTests/MenuTests.swift
++++ b/Tests/ArborKitTests/MenuTests.swift
+@@ -38,7 +38,7 @@ import Testing
+                 Notes: Notes 102
+                 Mail: Mail 103
+           ✓ Show Everything  ⌃⌥Space
+-            Frame Focused Window  ⌃⌥↩
++            Fill the Screen  ⌃⌥↩
+             Go to…  ⌃⌥G
+             Saved Views ▸
+                 Go To
+@@ -347,7 +347,9 @@ import Testing
+     ]
+     for item in everyMenu().flatMap(\.allItems) {
+       // A display is never a screen, but what people do in a call is share their screen: macOS and every call app say so.
++      // And what a window does to a display is fill the screen: the glossary's own phrase.
+       let words = (item.title + " " + (item.help ?? "")).lowercased().replacingOccurrences(of: "a shared screen", with: "")
++        .replacingOccurrences(of: "fill the screen", with: "")
+       for word in banned { #expect(!words.contains(word), "“\(item.title)” says “\(word)”") }
+       #expect(!item.title.contains("..."), "“\(item.title)”: an ellipsis is one character")
+       #expect(!item.title.contains("\""), "“\(item.title)”: curly quotes around names")
+@@ -509,15 +511,15 @@ import Testing
+ 
+   @Test func theFramedWindowIsTicked() {
+     let (h, a, _, c) = makeHarness()
+-    #expect(h.controller.menuModel().item("Frame Focused Window")?.isTicked == false)
++    #expect(h.controller.menuModel().item("Fill the Screen")?.isTicked == false)
+     h.run("zoom \(a.rawValue)")
+-    #expect(h.controller.menuModel().item("Frame Focused Window")?.isTicked == true)
++    #expect(h.controller.menuModel().item("Fill the Screen")?.isTicked == true)
+     // Chosen again it un-frames, as the key does.
+     #expect(h.controller.perform(.zoom(nil)).ok)
+-    #expect(h.controller.menuModel().item("Frame Focused Window")?.isTicked == false)
++    #expect(h.controller.menuModel().item("Fill the Screen")?.isTicked == false)
+     h.system.userFocus(c)
+     h.run("desktop")
+-    #expect(h.controller.menuModel().item("Frame Focused Window")?.isTicked == false, "a floating window is not framed by the Desktop being shown")
++    #expect(h.controller.menuModel().item("Fill the Screen")?.isTicked == false, "a floating window is not framed by the Desktop being shown")
+   }
+ 
+   @Test func aWindowKeptInViewIsTicked() {
+@@ -694,7 +696,7 @@ import Testing
+   /// beneath it. Since QUESTIONS Q29 every floating window fills the view, so the row is there for it, and for a summoned one as before.
+   @Test func frameIsThereForAWindowKeptInViewAndGreyForASummonedOneUnlessSomethingBeneathItIsFramed() {
+     let (h, a, _, c) = makeHarness()
+-    func frame() -> MenuModel.Item? { h.controller.menuModel().item("Frame Focused Window") }
++    func frame() -> MenuModel.Item? { h.controller.menuModel().item("Fill the Screen") }
+     h.run("pin \(c.rawValue)")
+     h.system.userFocus(c)
+     #expect(frame()?.isEnabled == true && frame()?.isTicked == false)
+diff --git a/collab/scenarios/43-say-what-happened.sim b/collab/scenarios/43-say-what-happened.sim
+index ab463b6b..dad7a860 100644
+--- a/collab/scenarios/43-say-what-happened.sim
++++ b/collab/scenarios/43-say-what-happened.sim
+@@ -13,13 +13,13 @@ expect said Nothing is docked yet: drag a window to a screen edge, or try ⌃⌥
+ # They drag a window to the left edge. No command ran, and the moment is explained all the same.
+ drag 101 3 400
+ expect docked 101
+-expect said Docked · ⌃⌥↩ frames it
++expect said ⌃⌥↩ fills the screen with it
+ # They press those keys. The other windows vanish: the sentence that keeps a newcomer.
+ focus 101
+ press zoom
+ expect fills 101
+ expect hidden 102
+-expect said Your other windows are out of view, not closed · ⌃⌥Space shows everything
++expect said Your other windows are out of view, not closed · ⌃⌥↩ again goes back
+ press show-all
+ expect visible 102
+ # The line goes by itself.
+diff --git a/docs/GLOSSARY.md b/docs/GLOSSARY.md
+index 912cb96f..f7c51b89 100644
+--- a/docs/GLOSSARY.md
++++ b/docs/GLOSSARY.md
+@@ -21,7 +21,7 @@ Written by the executor swarm, 2026-10-14 (product review); for the documenter t
+ | **name** (noun and verb), **named space** | A few words a space is called by: "Name This Space…", "go to Writing" | label, tag, title (windows have those), workspace | Saved views have numbers, spaces have names. Never "Spaces" alone as a title, which reads as macOS's; the menu lists names under Saved Views (docs/MENU.md) |
+ | **Go to…** | The palette (⌃⌥G) that finds a window, a saved view or a named space by typing, and takes the view there; or a command by its name in the menu, and runs it | finder (that is where macOS keeps files), picker, switcher, launcher, search | A menu's word for "take me there", and G is its key. The command is `find` |
+ | **zoom** | Any move in or out: pinching, stepping | | The general word |
+-| **fill the screen**, "fills the screen" | Zoom until one window fills the view: "Fill the Screen"; "Docked · ⌃⌥↩ fills the screen with it". Wherever it is taught, a few words more: "the menu bar stays, and it is not macOS's full screen" | frame, framed (they stay the specs' word; the command is `zoom`), maximise, full screen, zoom in, focus on | **Changed on 2026-10-15.** Twelve fresh readers, three a word, of 10 for "is the phrase clear": Fill the Screen 8 8 8, Focus On 6 6 6 (clashes with "focused window" and macOS's Focus), Zoom In 5 5 5 (bigger text, the Accessibility zoom), Frame 4 4 4 ("a border", "a screenshot"). Eight of the nine who did not have it proposed it unprompted. Twelve of twelve were not sure whether it is the green button's full screen, whatever the word: hence the few words more. A group or the Desktop "fills the screen" likewise. The strings follow; until then the app still says Frame |
++| **fill the screen**, "fills the screen" | Zoom until one window fills the view: "Fill the Screen"; "⌃⌥↩ fills the screen with it" (without "Docked" before it: of three strangers none understood that word; the line says what the key does, not what Arbor calls the state). Wherever it is taught, a few words more: "the menu bar stays, and it is not macOS's full screen" | frame, framed (they stay the specs' word; the command is `zoom`), maximise, full screen, zoom in, focus on | **Changed on 2026-10-15.** Twelve fresh readers, three a word, of 10 for "is the phrase clear": Fill the Screen 8 8 8, Focus On 6 6 6 (clashes with "focused window" and macOS's Focus), Zoom In 5 5 5 (bigger text, the Accessibility zoom), Frame 4 4 4 ("a border", "a screenshot"). Eight of the nine who did not have it proposed it unprompted. Twelve of twelve were not sure whether it is the green button's full screen, whatever the word: hence the few words more. A group or the Desktop "fills the screen" likewise. The strings of the key followed the same day (board 1.97): the menu's row, the panel of shortcuts, Go to…, the line after a dock, the welcome. Replies still say "framed" |
+ | **step out**, **step in** | One level wider, one level closer | up, down, parent, child | TrellisWM's words |
+ | **Show Everything** | The widest view of a display | overview, root, home (that is the command for every display at once) | TrellisWM's words |
+ | **peek** (verb and noun), **outline** | Hold the Show Everything shortcut to look, let go to land: what is outlined is framed | overview mode, Exposé, quick look, spring-loaded (fine in an explanation), highlight, selection | Short, and says that it ends by itself. The focus ring is a **ring**; the thing a peek draws is an **outline** |
+@@ -36,7 +36,7 @@ Written by the executor swarm, 2026-10-14 (product review); for the documenter t
+ | **gap** | The space between docked windows; drag it to resize both | seam, divider, gutter, handle | TrellisWM's word, and the setting is `gap` |
+ | **arrange** | Dock every window in a grid ("Arrange Windows"); and, of an app, be looked after by Arbor at all ("Don't Arrange Music") | manage, handle, tile | TrellisWM's menu uses both senses |
+ | **shortcut** | Keys that run a command | hotkey, key binding, chord | Apple's word. The `bindings` and `hotkeysEnabled` keys stay for old files; `shortcuts` is an alias of the `bindings` command |
+-| **display** | A monitor | screen (except "screen edge"), monitor | Apple's word |
++| **display** | A monitor | screen (except "screen edge" and "fill the screen", which see), monitor | Apple's word |
+ | **focused window** | The window the keyboard types into | active, frontmost, current, key window | Already everywhere |
+ | **pause**, **resume** | Arbor lets go of windows, shortcuts and gestures for a while | disable, suspend, stop | Says that it comes back |
+ | **hold** (the view), **held**, **release** | "Hold This View: nothing moves the view, not even your own keys. For a shared screen." Replies: "the view is held" | lock, freeze, pin (that is for a window, F49), presenting mode | Says what stays and that it is let go again. The lock is only the icon |
+@@ -78,7 +78,7 @@ JSON keys, values, exit codes and options are promised never to change once rele
+ Onboarding, the HUD (F43), the README and replies should say these the same way.
+ 
+ - What Arbor is: "Dock windows side by side, then zoom between them."
+-- When windows leave the view for the first time: "Your other windows are out of view, not closed. ⌃⌥Space shows everything."
++- When windows leave the view for the first time: "Your other windows are out of view, not closed. ⌃⌥↩ again goes back." One way back is taught, the key that did it (2026-10-15: two of three strangers, told of ⌃⌥Space here, asked which one it is). Where they went by another road (a click on a tile, Go to…): "… ⌃⌥Space shows everything."
+ - The three ways back, always in this order: "Show Everything (⌃⌥Space) · Float All Windows puts your Mac back to normal · quitting Arbor brings every window back into view." The coach names one (Q29; three blurred for four readers of six): "⌃⌥⎋ pauses Arbor: every window is as it was. Quit does the same."
+ - Why Accessibility: "macOS lets an app move other apps' windows only with Accessibility permission. Arbor reads where windows are and their titles, moves them, and sends nothing anywhere."
+ - Why Screen Recording (optional): "With it, windows show their contents while they move. Without it they show their app's colour and icon. Nothing is recorded or stored."
+diff --git a/docs/GUIDE.md b/docs/GUIDE.md
+index 5b23aa9b..7f94c7cc 100644
+--- a/docs/GUIDE.md
++++ b/docs/GUIDE.md
+@@ -126,7 +126,7 @@ Nothing moves when permission arrives. Arbor arranges nothing until you ask.
+ 
+ 1. **Dock.** Click any window and press **⌃⌥⌘←**. (Or drag it by its title bar to the left edge of the screen; a preview shows where it will land. With macOS's own tiling on, that edge is macOS's: the key works at every setting.)
+ 2. **Dock a second.** Click another and press **⌃⌥⌘→**. It takes the other half, and the first does not move. Nor does any other window: what floated where the docked ones now sit is still there, exactly as you left it.
+-3. **Frame.** Click one of the docked windows and press **⌃⌥↩**. It fills the screen. **Your other windows are out of view, not closed.**
++3. **Fill the screen.** Click one of the docked windows and press **⌃⌥↩**. It has the screen to itself. **Your other windows are out of view, not closed.**
+ 4. **And back.** Press **⌃⌥↩** again (or ⌃⌥Space). The arrangement is back.
+ 
+ ⌃⌥↩ works on a window you never docked, too. It grows to fill the screen and stays there, whatever else opens or closes; it is still a floating window, and nothing else moves. ⌃⌥↩ again, and it is exactly where and as large as it was. So it is after ⌃⌥Z, a pause or Quit. Drag it away by its title bar and it comes out in its own size; give it another size by hand and that is its size from then on. An app that will not grow that far goes as far as it can, in the middle. ⌃⌥Space shows everything, so it gives that window its own size back too. Any other move of the view (⌃⌥[, Go to…) brings what arrives to the front; the filled window waits behind it, still filled.
+@@ -134,8 +134,8 @@ Nothing moves when permission arrives. Arbor arranges nothing until you ask.
+ Now try: ⌃⌥← and ⌃⌥→ in a docked window, to move it one place. ⌃⌥[ to go back to where the view was, like a browser. Drag the gap between two docked windows to resize both. Drag a third window onto the **bottom edge of a docked window** to put it underneath: that makes a group, and Step Out (in the menu) from either
+ of its windows, framed, shows the group.
+ 
+-Arbor talks you through these the first few times, in a line low on the display: "Docked · ⌃⌥↩ frames it", "Your other windows are out of view, not closed · ⌃⌥Space shows
+-everything". After three times it takes each as read. The same line says why when a shortcut cannot do anything where you are ("No space to the left", "Nothing to step into:
++Arbor talks you through these the first few times, in a line low on the display: "⌃⌥↩ fills the screen with it", "Your other windows are out of view, not closed · ⌃⌥↩ again goes
++back". After three times it takes each as read. The same line says why when a shortcut cannot do anything where you are ("No space to the left", "Nothing to step into:
+ Safari fills the view"), and confirms what you cannot see, such as a saved view. It fades by itself and never takes a click or the keyboard.
+ 
+ **Keyboard Shortcuts…** in the menu shows every shortcut on screen, and what the pointer and the trackpad do; any key or click puts the list away.
+@@ -173,7 +173,7 @@ In a hurry? **Arrange Windows**, in the menu, docks every window on the display
+ 
+ The digits, and ⌃⌥↑, are keys of the whole map: `arborctl set shortcuts all` binds them all, `arborctl bind` the ones you want ([section 4](#4-making-it-yours)). The menu has the commands either way, under **Saved Views** and as Step Out.
+ 
+-Frame the browser (⌃⌥↩) and press **⌃⌥⇧1**. Frame the terminal, press ⌃⌥↑ so that terminal and chat share the screen, and press **⌃⌥⇧2**. From now on **⌃⌥1** and **⌃⌥2** take you there from anywhere on that display, and ⌃⌥[ takes you back. Nine per display: the numbers belong to the display you are typing on; a name (below) is found from every display.
++Fill the screen with the browser (⌃⌥↩) and press **⌃⌥⇧1**. Do the same with the terminal, press ⌃⌥↑ so that terminal and chat share the screen, and press **⌃⌥⇧2**. From now on **⌃⌥1** and **⌃⌥2** take you there from anywhere on that display, and ⌃⌥[ takes you back. Nine per display: the numbers belong to the display you are typing on; a name (below) is found from every display.
+ 
+ ```
+  ⌃⌥1                            ⌃⌥2                             ⌃⌥Space
+diff --git a/docs/KEYBOARD.md b/docs/KEYBOARD.md
+index 8154e821..c638258c 100644
+--- a/docs/KEYBOARD.md
++++ b/docs/KEYBOARD.md
+@@ -12,7 +12,7 @@ modifier, no digit, no other letter.
+ | Keys | Does | Command |
+ |---|---|---|
+ | ⌃⌥← / ⌃⌥→ | Dock the window in front at that side, or move it one place | `dock left` / `dock right` |
+-| ⌃⌥↩ | Frame it: it has the screen to itself. Again, and it is back | `zoom` |
++| ⌃⌥↩ | Fill the screen with it. Again, and it is back | `zoom` |
+ | ⌃⌥Space | Show everything. Held: a peek, which has all four arrows and ⎋ for as long as it lasts (F51). ⌃⌥← and ⌃⌥→ dock nothing while the key is down: pressed early they begin the hold, pressed after ⎋ they do nothing | `show-all` |
+ | ⌃⌥[ | Back to where the view was | `back` |
+ | ⌃⌥Z | Undo the last change to the arrangement | `undo` |
+diff --git a/docs/MENU.md b/docs/MENU.md
+index b0c3c264..771a9278 100644
+--- a/docs/MENU.md
++++ b/docs/MENU.md
+@@ -13,7 +13,7 @@ Arbor has no window and no Dock icon. The menu is the only part of it a newcomer
+ 1. **The way back.** Someone whose windows have just left the view opens this menu. What they need is in its first three rows: whoever misses one
+    window finds it under Windows, every open window by app and title, and Show Everything is right below. Above them stands Arrange Windows, whose key
+    is never to be bound again (`collab/QUESTIONS.md`, Q29, point 2): it is run from here.
+-2. **The vocabulary.** Read from the top, it teaches the model: arrange, show everything, frame, dock, float; stepping out and in is
++2. **The vocabulary.** Read from the top, it teaches the model: arrange, show everything, fill the screen, dock, float; stepping out and in is
+    under View. Each row shows its shortcut, in submenus too, so the menu is also where shortcuts are learned.
+ 3. **What Arbor is doing that is out of the ordinary**, and the command that ends it: paused, holding, waiting for permission.
+ 
+@@ -64,7 +64,7 @@ a key: `neighbor`, `focus <direction>` and `home` (`NineKeysTests.whatHasNoKeyIs
+ | 1 | Arrange Windows | | `arrange` | shipped | the first command (Q29, point 2): it has no key in either map, ⌃⌥A is never bound again (`docs/KEYBOARD.md`), so it is run from here; and arranging is what a newcomer came for |
+ | 2 | Windows ▸ | | | shipped | every open window; a click brings it to the front and into view |
+ | 3 | Show Everything | ⌃⌥Space | `show-all` | shipped | ✓ when that is the view and no window fills it. |
+-| 4 | Frame Focused Window | ⌃⌥↩ | `zoom` | shipped | ✓ when it is framed, or floats and fills the view; choosing it again takes that back, as the key does |
++| 4 | Fill the Screen | ⌃⌥↩ | `zoom` | shipped | with the focused window. ✓ when it is framed, or floats and fills the view; choosing it again takes that back, as the key does |
+ | 5 | Go to… | ⌃⌥G | `find` | F27 | |
+ | 6 | Saved Views ▸ | | | shipped, F10 | |
+ | 7 | View ▸ | | | | the rest of what moves the view, and what holds it |
+diff --git a/docs/RELEASE-NOTES.md b/docs/RELEASE-NOTES.md
+index f86619a7..ec45b1a9 100644
+--- a/docs/RELEASE-NOTES.md
++++ b/docs/RELEASE-NOTES.md
+@@ -19,7 +19,7 @@ Nothing here has been used by a person for a working day yet. All real-Mac evide
+ 
+ What the first person to work with Arbor said of build 1: it does too much by itself (`collab/QUESTIONS.md`, Q29). A line stands here once its code is on the trunk. The two below came to `main` with the second step of 2026-10-15, which the next section tells of.
+ 
+-- **Nine keys instead of fifty.** Each is ⌃⌥ and one key: ⌃⌥← and ⌃⌥→ dock the window in front, ⌃⌥↩ frames it and goes back, ⌃⌥Space shows everything, ⌃⌥[ goes back, ⌃⌥Z undoes, ⌃⌥F floats, ⌃⌥G is Go to…, ⌃⌥⎋ pauses. Every other key is the apps' again, and the menu has the rest. **Coming from build 1:** the nine are what you get at the next start, and ⌃⌥← and ⌃⌥→ now dock where they used to look. `arborctl set shortcuts all` (Settings… → Shortcuts → All of them) brings the whole map back as it was; shortcuts of your own in `bindings` stay as they are. ● on a hosted Mac, posted events, a window of another app in front that writes down every key (`suite/41-nine-keys.sh`, 84 of 84, once): each of the nine acts and none reaches the app; nineteen keys of the whole map reach it and Arbor does nothing. ◐ for the choice in the settings window, which nobody has seen
++- **Nine keys instead of fifty.** Each is ⌃⌥ and one key: ⌃⌥← and ⌃⌥→ dock the window in front, ⌃⌥↩ fills the screen with it and goes back, ⌃⌥Space shows everything, ⌃⌥[ goes back, ⌃⌥Z undoes, ⌃⌥F floats, ⌃⌥G is Go to…, ⌃⌥⎋ pauses. Every other key is the apps' again, and the menu has the rest. **Coming from build 1:** the nine are what you get at the next start, and ⌃⌥← and ⌃⌥→ now dock where they used to look. `arborctl set shortcuts all` (Settings… → Shortcuts → All of them) brings the whole map back as it was; shortcuts of your own in `bindings` stay as they are. ● on a hosted Mac, posted events, a window of another app in front that writes down every key (`suite/41-nine-keys.sh`, 84 of 84, once): each of the nine acts and none reaches the app; nineteen keys of the whole map reach it and Arbor does nothing. ◐ for the choice in the settings window, which nobody has seen
+ - **⌃⌥A is never bound again**, in either map. With a widely used chat app in front it archived the open conversation there. Arrange Windows is the first row of the menu. ● the key arrives in the app with either map (the same run)
+ 
+ ## On the way to the second build: not it (`main`, 2026-10-15, in two steps)
+diff --git a/docs/features/F43-say-what-happened.md b/docs/features/F43-say-what-happened.md
+index 83f702d3..cfee8e90 100644
+--- a/docs/features/F43-say-what-happened.md
++++ b/docs/features/F43-say-what-happened.md
+@@ -20,7 +20,7 @@ focus or clicks, replaced at once by the next one. It shows the reply of a comma
+ - it **failed** (instead of the beep): "No space to the left", "Nothing to step into: Safari fills the view";
+ - it changed something **invisible**: saved a view, paused or resumed, switched auto-docking, excluded an app, undid or redid;
+ - it is a **teaching moment**, each at most three times ever (counted in `state.json`): the first times windows leave the view, "2 windows are out of view · ⌃⌥Space
+-  shows everything"; the first dock, "Docked. ⌃⌥↩ frames it"; the first time a tile appears, "Too small to show: click the tile to zoom in".
++  shows everything"; the first dock, "⌃⌥↩ fills the screen with it"; the first time a tile appears, "Too small to show: click the tile to zoom in".
+ 
+ Setting `messages`: `"all"` (also every success), `"helpful"` (default: the three cases above), `"off"`. Commands from `arborctl` and URLs never show it. (The menu is answered on screen: decided by the product owner. Reload Settings lives only in the menu, and the alternative is a bare beep.)
+ 
+@@ -55,7 +55,7 @@ itself), with the user's own bindings in place of the defaults. Any key or click
+ **Different from the text above**, each with its reason in `collab/QUESTIONS.md`:
+ 
+ - Teaching moments are read from what changed on the display, so a **drop**, a click on a tile and ⌘Tab teach as well as commands.
+-- The out-of-view hint uses the glossary's sentence ("Your other windows are out of view, not closed · ⌃⌥Space shows everything") and comes only when everything was in view before.
++- The out-of-view hint uses the glossary's sentence ("Your other windows are out of view, not closed · ⌃⌥↩ again goes back" after that key, "· ⌃⌥Space shows everything" otherwise) and comes only when everything was in view before.
+ - The line stays 1.5 s **or longer**: 0.06 s a character, at most 6 s.
+ - The presenter method is `showHeadsUp(_ model: HeadsUpModel?, on:)`, which carries kind, text, hint, place and width, rather than `showMessage(_ text:on:)`.
+ - The panel's groups and order are read from `help`, which has the same three groups as `docs/KEYBOARD.md`.
+diff --git a/scripts/mac-shell/shots-F43.sh b/scripts/mac-shell/shots-F43.sh
+index b92c3b77..8c155a5f 100755
+--- a/scripts/mac-shell/shots-F43.sh
++++ b/scripts/mac-shell/shots-F43.sh
+@@ -81,8 +81,8 @@ check "the window keeps the keyboard" is focused "$W1"
+ step "the first dock"
+ key ctrl+opt+cmd+left
+ shot_after 0.4 02-docked
+-check "the first dock is explained" said "Docked"
+-check "and names the keys that frame it" said "⌃⌥↩ frames it"
++check "the first dock is explained" said "fills the screen with it"
++check "and names the key that fills the screen with it" said "⌃⌥↩ fills the screen with it"
+ check "the window keeps the keyboard" is focused "$W1"
+ 
+ step "the line comes and goes"
+diff --git a/scripts/mac-shell/suite/77-says.sh b/scripts/mac-shell/suite/77-says.sh
+index ea1c017f..3e54ee53 100755
+--- a/scripts/mac-shell/suite/77-says.sh
++++ b/scripts/mac-shell/suite/77-says.sh
+@@ -51,7 +51,7 @@ for round in first second; do
+   check "⌃⌥⌘← docks the focused window, the $round time" pressed ctrl+opt+cmd+left dock left
+   check "⌃⌥F floats it again, the $round time" pressed ctrl+opt+f toggle-float
+ done
+-check "explained twice so far" eventually said_times "Docked · ⌃⌥↩ frames it" 2
++check "explained twice so far" eventually said_times "⌃⌥↩ fills the screen with it" 2
+ arbor_quit
+ arbor_relaunch
+ click_window "$W1"
+@@ -59,7 +59,7 @@ for round in third fourth; do
+   check "⌃⌥⌘← docks the focused window, the $round time" pressed ctrl+opt+cmd+left dock left
+   check "⌃⌥F floats it again, the $round time" pressed ctrl+opt+f toggle-float
+ done
+-check "a third time after the restart, and not a fourth" stays said_times "Docked · ⌃⌥↩ frames it" 3
++check "a third time after the restart, and not a fourth" stays said_times "⌃⌥↩ fills the screen with it" 3
+ 
+ claim "⌃⌥↑ with everything in view is answered on screen; the same command from a terminal is answered there and not on screen"
+ proves A30
+-- 
+2.43.0
+

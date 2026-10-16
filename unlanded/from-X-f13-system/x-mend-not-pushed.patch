@@ -1,0 +1,133 @@
+diff --git a/scripts/mac-shell/check-F13-system.sh b/scripts/mac-shell/check-F13-system.sh
+index dbc4f9d0..1701df70 100755
+--- a/scripts/mac-shell/check-F13-system.sh
++++ b/scripts/mac-shell/check-F13-system.sh
+@@ -2,7 +2,7 @@
+ # Proves the parts of F13 (distribution) that cannot be tried without changing the Mac they run on. check-F13.sh has
+ # everything else, and is safe anywhere.
+ #
+-#   scripts/mac-shell/run.sh scripts/mac-shell/check-F13-system.sh      # about five minutes
++#   scripts/mac-shell/run.sh scripts/mac-shell/check-F13-system.sh      # about eight minutes
+ #
+ #   1  with the identity in a keychain on the search list, `make app` finds it by itself
+ #   2  `make install` as a person runs it: Arbor is started by macOS, on the account's own settings
+@@ -23,28 +23,48 @@ system_cleanup() {
+   cp "$real_home/Library/Application Support/Arbor/arbor.log" "$ARBOR_OUT/arbor-installed.log" 2>/dev/null
+ }
+ f13_also_clean=system_cleanup
++# What macOS's list of login items says of each entry of Arbor's, as "[enabled, allowed, notified] (0xb)". The disposition stands above the identifier.
++login_dispositions() {
++  sudo sfltool dumpbtm 2>/dev/null | awk -v id="$bundle_id" '
++    /^ *Disposition:/ { said = $0; sub(/^ *Disposition: */, "", said) }
++    /^ *Identifier:/ && index($0, id) { print said }'
++}
+ 
+ f13_describe_the_mac
+ mkdir -p "$(dirname "$ARBOR_POINTER")"
+ swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/pointer.swift" -o "$ARBOR_POINTER" > "$ARBOR_OUT/build-pointer.log" 2>&1 &
+ pointer_build=$!
++# What System Settings posts when its switch is flipped (first-five-minutes.sh).
++cat > "$sandbox/notice.swift" << 'SWIFT'
++import Foundation
++DistributedNotificationCenter.default().postNotificationName(
++  Notification.Name("com.apple.accessibility.api"), object: nil, userInfo: nil, deliverImmediately: true)
++SWIFT
++swiftc -O -swift-version 5 "$sandbox/notice.swift" -o "$sandbox/notice" > "$ARBOR_OUT/build-notice.log" 2>&1 \
++  || { cat "$ARBOR_OUT/build-notice.log"; die "the tool that posts the notice did not compile"; }
+ f13_clone
+ 
+ step "1  the identity, in a keychain on the search list"
+-# Not one named login.keychain-db: there macOS asks in a dialog, which check-signing.sh answers (steps 7 and 8). What follows needs an identity
+-# that sign.sh finds by itself, through the search list.
+-keychain="$HOME/Library/Keychains/arbor-f13.keychain-db"
++# lib-F13.sh's own keychain, at the root of the place apart. f13_make_keychain puts it on the throwaway HOME's search list, and that is all
++# sign.sh needs to find the identity by itself. Not one under ~/Library/Keychains: for $HOME/Library/Keychains/arbor-f13.keychain-db macOS 26.6.2
++# asked in a dialog (a hosted Mac, 2026-10-15), as it does for login.keychain-db (check-signing.sh, steps 7 and 8), where for the same tool and
++# a file at the root of the place apart it had asked nobody, three times of three. Nobody answered, the tool took the identity out again as it
++# promises, every build after that was ad hoc, and the question of step 3 was not asked.
+ f13_make_keychain
+ echo "the search list: $(security list-keychains -d user | tr -d '\n')"
+ limit 120 ./scripts/make-signing-identity.sh --keychain "$keychain" < /dev/null 2>&1 | tee "$ARBOR_OUT/identity.txt"
+ security find-identity -p codesigning
+-check "codesign could use the key at once, without a dialog" says "$ARBOR_OUT/identity.txt" "codesign can sign with it"
++check "codesign could use the key at once, without a dialog" says "$ARBOR_OUT/identity.txt" "codesign can sign with it" \
++  || die "codesign cannot use the key without a dialog: without the identity step 3 asks nothing, and the dialog would lie over every picture"
+ check "the identity is found through the search list, as sign.sh looks for it" \
+   with "$(security find-identity -p codesigning)" "\"$identity\""
+ 
+ # From here on Arbor is started as a person would start it, and lives in the account's real home whatever this shell's
+-# HOME says.
+-unset ARBOR_HOME
++# HOME says. Arbor's folder there, for lib.sh alone, which shows the log's new lines under a failure and brings the log back at the end: not
++# unset, at which lib.sh's last lines died before they had counted, and six failures ended with exit code 0; and not exported: what is started
++# from here is to find the folder as a person's shell would have it find it.
++export -n ARBOR_HOME
++ARBOR_HOME="$real_home/Library/Application Support/Arbor"
+ export ARBOR_SOCKET="$real_home/Library/Application Support/Arbor/arbor.sock"
+ 
+ step "2  make install, as a person runs it"
+@@ -76,11 +96,20 @@ else
+   granted_cdhash=$(cdhash "$installed")
+   if tcc_sql "INSERT OR REPLACE INTO access (service, client, client_type, auth_value, auth_reason, auth_version, csreq, indirect_object_identifier, flags, last_modified) VALUES ('kTCCServiceAccessibility', '$bundle_id', 0, 2, 3, 1, X'$hex', 'UNUSED', 0, strftime('%s', 'now'));"; then
+     echo "granted to this build: $(tcc_rows)"
+-    if within 6 status_starts "running"; then
+-      echo "  Arbor noticed by itself"
++    # The switch in System Settings does more than write the row: it posts a notice, and a process that runs learns of a grant through nothing
++    # else: neither the row nor a restart of tccd is noticed (first-five-minutes.sh; and this script's first run). In this order: tccd has to have
++    # read the row before the notice goes out.
++    sudo killall -9 tccd 2>/dev/null
++    sleep 3
++    "$sandbox/notice"
++    if within 12 status_starts "running"; then
++      echo "  Arbor noticed while it ran: the row, a restart of tccd, and the notice System Settings posts"
+     else
+-      sudo killall -9 tccd 2>/dev/null
+-      within 6 status_starts "running" && echo "  Arbor noticed once tccd had been restarted"
++      echo "  Arbor did not notice while it ran; started anew"
++      arborctl quit > /dev/null 2>&1
++      within 5 gone "$installed"
++      open "$installed"
++      within 12 status_starts "running"
+     fi
+     echo "  $(arborctl status | head -n 1)"
+     check "with the grant, this build runs" status_starts "running"
+@@ -96,10 +125,17 @@ else
+     ARBOR_SIGN_IDENTITY=- limit 600 make install 2>&1 | tee "$ARBOR_OUT/install-adhoc.txt" | grep -E "error|^Signed|^Installed|^Started|^  |^Asked"
+     check "an ad-hoc build does not inherit the grant: the stale-signature case" within 8 status_starts "waiting for Accessibility"
+     check "make install explains that case" says "$ARBOR_OUT/install-adhoc.txt" "tccutil reset Accessibility $bundle_id"
+-    echo "  the entry is still there, and still says allowed: $(tcc_rows)"
++    echo "  the entry after that (the fourth field: 2 is allowed, 0 is not): $(tcc_rows)"
+     shot 03-stale-signature
+-    tccutil reset Accessibility "$bundle_id"
+-    check "tccutil reset removes the entry" test -z "$(tcc_rows)"
++    said=$(tccutil reset Accessibility "$bundle_id" 2>&1)
++    echo "  $said"
++    # tccutil knows a bundle only from where and by whom it was opened, and one under /tmp it does not know (collab/reality.json,
++    # tccutil-knows-a-bundle-only-from-where-and-by-whom-it-was-opened). The place apart is under /tmp.
++    if with "$said" "No such bundle identifier"; then
++      echo "  NOT ANSWERED HERE: whether tccutil reset removes the entry, which is what make install advises: tccutil does not know a bundle under /tmp"
++    else
++      check "tccutil reset removes the entry" test -z "$(tcc_rows)"
++    fi
+   else
+     echo "skipped: the permission database cannot be written here"
+   fi
+@@ -113,6 +149,7 @@ echo "  $(arborctl launch-at-login on)"
+ check "launch-at-login on, from ~/Applications" same "$(arborctl launch-at-login)" on
+ check "the binary agrees, without asking the running app" \
+   same "$("$installed/Contents/MacOS/Arbor" --launch-at-login)" on
++check "and macOS's own list of login items has the entry enabled" with "$(login_dispositions)" "[enabled"
+ sudo sfltool dumpbtm 2>/dev/null | grep -i -B 4 -A 14 "$bundle_id" | head -n 60 > "$ARBOR_OUT/login-item.txt"
+ grep -iE "^ *(name|disposition|identifier|url|bundle id|type|developer)" "$ARBOR_OUT/login-item.txt" | head -n 16
+ limit 600 make install 2>&1 | grep -E "error|^Installed|^Started"
+@@ -136,7 +173,9 @@ check "make uninstall removed the login item" says "$ARBOR_OUT/uninstall.txt" "A
+ check "asked Arbor to quit" says "$ARBOR_OUT/uninstall.txt" "Asked the running Arbor to quit"
+ check "removed the app" test ! -e "$installed"
+ check "nothing of it is left running" gone "$installed"
+-echo "  login items that still mention Arbor: $(sudo sfltool dumpbtm 2>/dev/null | grep -ci "$bundle_id")"
++# macOS keeps an entry in its list after that (two lines of one entry mentioned Arbor at the first run). What matters is what the entry says.
++echo "  what macOS's list of login items says of Arbor's entries now: $(login_dispositions | tr '\n' ';')"
++check "none of them is enabled: Arbor does not open at the next login" without "$(login_dispositions)" "[enabled"
+ check "settings are still there" test -f "$real_home/Library/Application Support/Arbor/settings.json"
+ 
+ step "6  a downloaded copy"

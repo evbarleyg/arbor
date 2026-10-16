@@ -1,0 +1,1826 @@
+diff --git a/Sources/ArborCore/EchoFilter.swift b/Sources/ArborCore/EchoFilter.swift
+index 1d1458ba..545dd1c5 100644
+--- a/Sources/ArborCore/EchoFilter.swift
++++ b/Sources/ArborCore/EchoFilter.swift
+@@ -8,7 +8,8 @@ import Foundation
+ /// after a move every report about that window is an echo. After that **the frame decides, not the time**: a report of the
+ /// frame the window was given is an echo however late it is served, because a main thread that is held serves reports late
+ /// (830 ms on a hosted Mac, drawing tiles for the first time), and a report of any other frame never is. Somebody who puts a window
+-/// by hand exactly where Arbor had put it loses nothing by that. Once somebody else has moved the window, nothing is expected of it any more.
++/// by hand exactly where Arbor had put it loses nothing by that. Once somebody else has moved the window, nothing is expected of it any more:
++/// brought back there, it has been moved. Whoever learns of such a move otherwise than from `judge` says so with `hasStrayed`.
+ ///
+ /// Times are seconds on a clock that never goes backwards (the system's uptime), not the time of day: with
+ /// the clock set back an hour, a move would otherwise stay fresh for an hour and the user's
+@@ -70,10 +71,16 @@ public struct EchoFilter: Sendable {
+ 
+   /// Whether `frame` is where a move of Arbor's of the last second has taken `window`, or a stage of one. Another question than `judge`'s: for
+   /// whoever watches a window under a press and must tell "Arbor has just moved it" from "it stands where it stood". By the frame
+-  /// alone every window at rest where Arbor once put it would pass for just moved.
++  /// alone every window at rest where Arbor once put it would pass for just moved. It is asked about what the window server lists, which can be
++  /// behind, so it settles nothing: what the app itself reports is still to be judged.
+   public mutating func isEcho(_ frame: CGRect, of window: WindowID, at time: TimeInterval) -> Bool {
+     guard let expectation = expectations[window], time - expectation.time <= Self.memory else { return false }
+-    return judge(frame, of: window, at: time) != .other
++    // Nothing can be made of an expectation from after now, by anybody.
++    guard time >= expectation.time else {
++      expectations[window] = nil
++      return false
++    }
++    return expectation.frame.approximatelyEquals(frame, tolerance: Self.tolerance) || isFresh(window, at: time)
+   }
+ 
+   /// Whether a window that was reported `early` has ended up somewhere else than Arbor put it. Then somebody else has moved it: whoever asks
+diff --git a/Sources/ArborKit/AX/AXKnocks.swift b/Sources/ArborKit/AX/AXKnocks.swift
+index b5c7f7be..baac6dcf 100644
+--- a/Sources/ArborKit/AX/AXKnocks.swift
++++ b/Sources/ArborKit/AX/AXKnocks.swift
+@@ -1,4 +1,5 @@
+ import ApplicationServices
++import ArborCore
+ import Dispatch
+ import Foundation
+ 
+@@ -18,13 +19,17 @@ final class AXKnocks: @unchecked Sendable {
+   private let lock = NSLock()
+   private var doors: [pid_t: DispatchQueue] = [:]
+ 
+-  /// `then` is called on the main thread, with whether the app answered. One that is gone fails at once, which is an answer.
+-  func knock(at pid: pid_t, then: @escaping @MainActor @Sendable (_ attends: Bool) -> Void) {
++  private func door(of pid: pid_t) -> DispatchQueue {
+     lock.lock()
++    defer { lock.unlock() }
+     let door = doors[pid] ?? DispatchQueue(label: "dev.arbor.knock.\(pid)", qos: .userInteractive)
+     doors[pid] = door
+-    lock.unlock()
+-    door.async {
++    return door
++  }
++
++  /// `then` is called on the main thread, with whether the app answered. One that is gone fails at once, which is an answer.
++  func knock(at pid: pid_t, then: @escaping @MainActor @Sendable (_ attends: Bool) -> Void) {
++    door(of: pid).async {
+       // This queue alone uses the element. It waits as long as every element made on the fly: the whole process's timeout.
+       let app = AXUIElementCreateApplication(pid)
+       let unanswered = AXCalls.wentUnanswered { app.read(kAXRoleAttribute).error }
+@@ -34,6 +39,66 @@ final class AXKnocks: @unchecked Sendable {
+     }
+   }
+ 
++  /// What an app says when it is asked which of its windows has the keyboard.
++  enum Keyboard: Sendable, Equatable {
++    /// That one, or none (Finder after a click on the wallpaper).
++    case window(WindowID?)
++    /// Nothing: it took the whole timeout over it, or is quitting.
++    case unanswered
++  }
++
++  /// Asks an app which of its windows has the keyboard, and waits for the answer for `patience` seconds and no longer. Every command wants to know, several
++  /// times over, of the app in front: the one its person is working in, and so the likeliest to be busy.
++  ///
++  /// One of two things happens. Either the answer is returned. Or nil is, and `late` is called on the main thread once the app has answered or has let
++  /// the call time out, with which of the two: then this was a knock like any other.
++  func whoHasTheKeyboard(in pid: pid_t, patience: TimeInterval, late: @escaping @MainActor @Sendable (_ attends: Bool) -> Void) -> Keyboard? {
++    let done = DispatchSemaphore(value: 0)
++    let state = Asked()
++    door(of: pid).async {
++      // This queue alone uses these elements.
++      let app = AXUIElementCreateApplication(pid)
++      var focused: AXUIElement??
++      let unanswered = AXCalls.wentUnanswered {
++        focused = app.elementIfAnswered(kAXFocusedWindowAttribute)
++        return focused == nil ? .cannotComplete : .success
++      }
++      // The number is a round trip of its own, served at once by an app that has just attended. The caller could spare it for a window it knows,
++      // on its own thread; it is here so that it need ask nothing there.
++      let answer: Keyboard = focused.map { .window($0?.windowID) } ?? .unanswered
++      if state.isStillAwaited(now: answer) {
++        done.signal()
++      } else {
++        DispatchQueue.main.async {
++          MainActor.assumeIsolated { late(!unanswered) }
++        }
++      }
++    }
++    _ = done.wait(timeout: .now() + max(patience, 0))
++    return state.stopWaiting()
++  }
++
++  /// Settles, between the one who asks and the one who waits, who has the last word.
++  private final class Asked: @unchecked Sendable {
++    private let lock = NSLock()
++    private var answer: Keyboard?
++    private var isAwaited = true
++
++    func isStillAwaited(now answer: Keyboard) -> Bool {
++      lock.lock()
++      defer { lock.unlock() }
++      if isAwaited { self.answer = answer }
++      return isAwaited
++    }
++
++    func stopWaiting() -> Keyboard? {
++      lock.lock()
++      defer { lock.unlock() }
++      isAwaited = false
++      return answer
++    }
++  }
++
+   /// Forgets an app that quit.
+   func forget(_ pid: pid_t) {
+     lock.lock()
+diff --git a/Sources/ArborKit/AX/AXWindowSystem.swift b/Sources/ArborKit/AX/AXWindowSystem.swift
+index d2feddae..32dcc241 100644
+--- a/Sources/ArborKit/AX/AXWindowSystem.swift
++++ b/Sources/ArborKit/AX/AXWindowSystem.swift
+@@ -118,13 +118,17 @@ public final class AXWindowSystem: WindowSystem {
+   private var answersAhead: [WindowID: (requested: CGRect, answer: CGRect?)] = [:]
+   /// What is to be read of each app once it has answered a knock, in the order it came up (`whenItAttends`).
+   private let knocks = AXKnocks()
+-  private var behindTheDoor: [pid_t: [@MainActor () -> Void]] = [:]
+-  /// Numbers the runs, so that a knock of one is not answered in the next.
+-  private var runNumber = 0
+-  /// Which of its windows an app last said has its keyboard, and when, until something happens that may change it (`focusedWindow`).
+-  private var keyboardSaid: (app: pid_t, window: WindowID?, at: TimeInterval)?
+-  /// How old that may be before it is asked again, behind the back of whoever wants to know.
+-  private static let keyboardKeeps: TimeInterval = 1
++  private var behindTheDoor: [pid_t: [Waiting]] = [:]
++  /// `otherwise`: what is done instead if the app does not attend, where that cannot wait until it answers again.
++  private struct Waiting {
++    let work: @MainActor () -> Void
++    var otherwise: (@MainActor () -> Void)?
++  }
++  /// Which of its windows each app last said has its keyboard: in a report, which names the window, or when it was asked. For whoever wants to know
++  /// while the app is too busy to say (`focusedWindow`).
++  private var keyboardSaid: [pid_t: WindowID?] = [:]
++  /// How long whoever wants to know waits for the app in front to say. An app that attends says it within a millisecond or two.
++  private static let patienceWithTheKeyboard: TimeInterval = 0.05
+ 
+   fileprivate static weak var current: AXWindowSystem?
+ 
+@@ -240,9 +244,6 @@ public final class AXWindowSystem: WindowSystem {
+     focusWhenFree = nil
+     isLettingGo = false
+     answersAhead.removeAll()
+-    behindTheDoor.removeAll()
+-    runNumber += 1
+-    keyboardSaid = nil
+     for token in tokens {
+       NSWorkspace.shared.notificationCenter.removeObserver(token)
+       NotificationCenter.default.removeObserver(token)
+@@ -568,8 +569,6 @@ public final class AXWindowSystem: WindowSystem {
+     }
+     // Making a window main and raising it takes its app some nine milliseconds; asking what has the focus, a fraction of one.
+     if focusedWindow() == window { return }
+-    // From here on something is asked of the app that changes it.
+-    keyboardSaid = nil
+     // That look asks the app in front, which may be this one and may have begun to hang: it has cost a second then, and is on record.
+     // Asking again would cost another. The window gets the keyboard when its app answers again (`answersAgain`).
+     guard answers(record.snapshot.pid) else {
+@@ -641,32 +640,36 @@ public final class AXWindowSystem: WindowSystem {
+     guard let pid = NSWorkspace.shared.frontmostApplication?.processIdentifier else { return nil }
+     // An app that is not observed has no window Arbor knows, and Arbor itself would be asking its own busy main
+     // thread. One that hangs is not asked either.
+-    guard let app = apps[pid] else { return nil }
+-    // Every command asks this, several times over, and would wait each time for as long as the app in front is busy. An app says when its keyboard
+-    // goes to another window, so what it last said holds until it, macOS, the pointer or Arbor itself does something that may change
+-    // that. Should a report have been lost, it is found out behind the asker's back, and reported like any change. The same answer is none.
+-    if let said = keyboardSaid, said.app == pid, !unresponsive.contains(pid) {
+-      if uptime - said.at > Self.keyboardKeeps, behindTheDoor[pid] == nil, !lanes.isBusy(pid) {
+-        keyboardSaid?.at = uptime
+-        whenItAttends(pid) { [weak self] in self?.reportFocus(of: pid, unprompted: true, told: said.window) }
+-      }
+-      return said.window
+-    }
+-    guard answers(pid), behindTheDoor[pid] == nil else {
+-      // One that is only busy moving its windows has not given the keyboard away: "nobody has it" would take the ring off the
+-      // window, and the keyboard from a dialog. Nor has one that is being knocked at: whether it attends is just what is not known.
+-      guard !unresponsive.contains(pid), let last = lastReportedFocus, records[last]?.snapshot.pid == pid else { return nil }
+-      return last
+-    }
++    guard apps[pid] != nil, !unresponsive.contains(pid) else { return nil }
++    let said = keyboardSaid[pid]
++    // One that is only busy moving its windows has not given the keyboard away: "nobody has it" would take the ring off the
++    // window, and the keyboard from a dialog.
++    if lanes.isBusy(pid) { return said ?? nil }
++    // Every command asks this, several times over, and used to wait each time for as long as the app in front was busy. It is still asked every time, and
++    // an app that attends is believed and nothing else. But it is asked on another thread, and waited for only a moment. One that takes longer
++    // is busy, and it is on the thread that is busy that an app gives the keyboard to another of its windows: so what it last said very
++    // likely holds, and is the answer. What it says when it gets round to it is reported, if it is another window (`reportFocus`).
++    let isBeingAsked = behindTheDoor[pid] != nil
++    if let said, isBeingAsked { return said }
+     let began = uptime
+-    guard let element = app.element.elementIfAnswered(kAXFocusedWindowAttribute) else {
++    // Of an app that has never said anything there is nothing to fall back on but "nobody", which is a claim too. So that is waited for as ever.
++    let patience = said == nil ? TimeInterval(Self.messagingTimeout) + 0.05 : Self.patienceWithTheKeyboard
++    let answer = knocks.whoHasTheKeyboard(in: pid, patience: patience) { [weak self] attends in
++      if !isBeingAsked { self?.doorOpens(of: pid, attends: attends) }
++    }
++    switch answer {
++    case .window(let window):
++      keyboardSaid[pid] = .some(window)
++      return window
++    case .unanswered:
+       // Every layout asks this, and would wait as long again.
+       noteSilence(of: pid, since: began)
+       return nil
++    case nil:
++      // The question is a knock like any other, and whatever comes up about the app meanwhile waits behind it.
++      if !isBeingAsked { behindTheDoor[pid] = [Waiting { [weak self] in self?.reportFocus(of: pid, unprompted: true) }] }
++      return said ?? nil
+     }
+-    let window = element.flatMap { windowID(of: $0, pid: pid) }
+-    keyboardSaid = (pid, window, uptime)
+-    return window
+   }
+ 
+   /// The number of the window behind `element`. Asking for it is a round trip (a millisecond from an app
+@@ -690,7 +693,6 @@ public final class AXWindowSystem: WindowSystem {
+   }
+ 
+   public func setMinimized(_ window: WindowID, _ minimized: Bool) {
+-    keyboardSaid = nil
+     guard let record = records[window], answers(record.snapshot.pid) else { return }
+     let began = uptime
+     if record.element.setBool(kAXMinimizedAttribute, minimized) == .cannotComplete {
+@@ -792,7 +794,7 @@ public final class AXWindowSystem: WindowSystem {
+     lanes.forget(pid)
+     knocks.forget(pid)
+     behindTheDoor[pid] = nil
+-    if keyboardSaid?.app == pid { keyboardSaid = nil }
++    keyboardSaid[pid] = nil
+     AXEnhancedUI.shared.forget(pid)
+     if focusWhenFree?.app == pid { focusWhenFree = nil }
+     AXCalls.names.set(nil, for: pid)
+@@ -823,7 +825,6 @@ public final class AXWindowSystem: WindowSystem {
+     recorder?.raw("didActivateApplication pid \(pid)")
+     activations += 1
+     lastReportedFocus = nil
+-    keyboardSaid = nil
+     // Whoever switches apps says where the keyboard goes.
+     if let waiting = focusWhenFree, waiting.app != pid { focusWhenFree = nil }
+     if apps[pid] == nil, !waitingToObserve.contains(pid) { observe(pid: pid, announce: true, wasRunning: true) }
+@@ -867,31 +868,35 @@ public final class AXWindowSystem: WindowSystem {
+ 
+   /// Does `work`, which reads something of `pid` on this thread, once the app has shown that it attends (`AXKnocks`). What comes up for an
+   /// app meanwhile waits behind it, so that everything about one app is done in the order it came up.
+-  private func whenItAttends(_ pid: pid_t, _ work: @escaping @MainActor () -> Void) {
++  private func whenItAttends(_ pid: pid_t, otherwise: (@MainActor () -> Void)? = nil, _ work: @escaping @MainActor () -> Void) {
+     if behindTheDoor[pid] != nil {
+-      behindTheDoor[pid]?.append(work)
++      behindTheDoor[pid]?.append(Waiting(work: work, otherwise: otherwise))
+       return
+     }
+-    behindTheDoor[pid] = [work]
+-    let run = runNumber
+-    knocks.knock(at: pid) { [weak self] attends in
+-      guard let self, self.running, self.runNumber == run, var waiting = self.behindTheDoor.removeValue(forKey: pid) else { return }
+-      // It can answer the knock and hang. Whoever reads first finds out, at the price of one timeout; the others would pay as much each. Asked after
+-      // each, not before: one that was silent until now is on that list still, and it is what waited here that takes it off (`act`).
+-      while attends, !waiting.isEmpty, self.running, self.runNumber == run {
+-        waiting.removeFirst()()
+-        if self.unresponsive.contains(pid) { break }
+-      }
+-      guard !waiting.isEmpty, self.running, self.runNumber == run else { return }
+-      // When it answers again everything about it is read afresh (`answersAgain`), which makes up for what is dropped here.
+-      for window in self.secondLooks.keys where self.records[window]?.snapshot.pid == pid {
+-        self.secondLooks.removeValue(forKey: window)?.timer.cancel()
+-      }
+-      guard !attends else { return }
+-      // Nobody has waited for it on this thread.
+-      self.noteSilence(of: pid, since: self.uptime - TimeInterval(Self.messagingTimeout))
+-      if NSWorkspace.shared.frontmostApplication?.processIdentifier == pid { self.keyboardLeftTheKnownWindows() }
++    behindTheDoor[pid] = [Waiting(work: work, otherwise: otherwise)]
++    knocks.knock(at: pid) { [weak self] attends in self?.doorOpens(of: pid, attends: attends) }
++  }
++
++  /// The knock at `pid` has been answered, or has gone unanswered. One of before a pause finds no door, or one that has been shut since: what it says of
++  /// the app is as true of that.
++  private func doorOpens(of pid: pid_t, attends: Bool) {
++    guard running, var waiting = behindTheDoor.removeValue(forKey: pid) else { return }
++    // It can answer the knock and hang. Whoever reads first finds out, at the price of one timeout; the others would pay as much each. Asked after
++    // each, not before: one that was silent until now is on that list still, and it is what waited here that takes it off (`act`).
++    while attends, !waiting.isEmpty, running {
++      waiting.removeFirst().work()
++      if unresponsive.contains(pid) { break }
++    }
++    guard !waiting.isEmpty, running else { return }
++    // When it answers again everything about it is read afresh (`answersAgain`), which makes up for what is dropped here.
++    for left in waiting { left.otherwise?() }
++    for window in secondLooks.keys where records[window]?.snapshot.pid == pid {
++      secondLooks.removeValue(forKey: window)?.timer.cancel()
+     }
++    guard !attends else { return }
++    // Nobody has waited for it on this thread.
++    noteSilence(of: pid, since: uptime - TimeInterval(Self.messagingTimeout))
++    if NSWorkspace.shared.frontmostApplication?.processIdentifier == pid { keyboardLeftTheKnownWindows() }
+   }
+ 
+   /// Called when a call came back without an answer. A process that made Arbor wait is hung. One that is gone fails at
+@@ -941,6 +946,8 @@ public final class AXWindowSystem: WindowSystem {
+     }
+     for window in windowIDs(of: pid) { refresh(window, userInitiated: true) }
+     rescan([pid], afterSpaceSwitch: false)
++    // It may have been shown again meanwhile, and the report of that gone the way of whatever found it silent.
++    confirmSoon(pid)
+     if let waiting = focusWhenFree, waiting.app == pid, isStillWanted(waiting) {
+       // What was asked of it as it fell silent, unless the person has gone elsewhere since.
+       focus(waiting.window)
+@@ -1017,7 +1024,6 @@ public final class AXWindowSystem: WindowSystem {
+   /// nor the new ones, so the lists are read now, for a prompt layout, and once more when the transition is over.
+   private func spaceChanged() {
+     recorder?.raw("activeSpaceDidChange")
+-    keyboardSaid = nil
+     rescan(Array(apps.keys), afterSpaceSwitch: true)
+     rescanSoon()
+   }
+@@ -1108,9 +1114,8 @@ public final class AXWindowSystem: WindowSystem {
+     // Full screen comes with a Space switch, and the resize reports can arrive before the window says
+     // it is in full screen.
+     for id in known where listedIDs.contains(id) {
+-      // An app that falls silent half way is asked nothing more: each of its windows would cost a whole timeout. Seen on a hosted Mac (the list
+-      // answered, then this a whole timeout, then the keyboard 0.66 s). That is all these two lines stand on: on the model of a Mac
+-      // (`make mac-on-linux`) nothing happens between two calls that are answered, so no story reaches them.
++      // An app that falls silent half way is asked nothing more: each of its windows would cost a whole timeout. Seen on a hosted Mac: the list
++      // answered, then this a whole timeout, then the keyboard 0.66 s.
+       guard let record = records[id], answers(record.snapshot.pid) else { continue }
+       let began = uptime
+       let answer = record.element.read("AXFullScreen")
+@@ -1182,7 +1187,7 @@ public final class AXWindowSystem: WindowSystem {
+ 
+   /// Windows their apps have reported as created and Arbor has not announced yet: some are not ready to be looked at
+   /// at once, and may be found on a list before the second look.
+-  private var reportedCreated: Set<WindowID> = []
++  private var reportedCreated: [AXUIElement] = []
+ 
+   /// The windows the window server had, on whichever Space, when Arbor last counted them (at the start and after every
+   /// Space switch), and those seen since. One that is seen for the first time and is not among them has opened since.
+@@ -1214,8 +1219,8 @@ public final class AXWindowSystem: WindowSystem {
+         let box = MainActorBox(value: element)
+         Task { @MainActor [weak self] in
+           try? await Task.sleep(nanoseconds: 300_000_000)
+-          // Whoever asked at the start has read the list of windows by now.
+-          self?.addWindow(box.value, pid: pid, announce: true, wasOpenBefore: wasOpenBefore, attempt: attempt + 1)
++          // Whoever asked at the start has read the list of windows by now. An app that is opening something is likely to be busy.
++          self?.whenItAttends(pid) { self?.addWindow(box.value, pid: pid, announce: true, wasOpenBefore: wasOpenBefore, attempt: attempt + 1) }
+         }
+       } else {
+         bringIntoViewIfDialog(element, id: id, app: app)
+@@ -1223,7 +1228,7 @@ public final class AXWindowSystem: WindowSystem {
+       return
+     }
+     records[id] = record
+-    let wasReportedCreated = reportedCreated.remove(id) != nil
++    let wasReportedCreated = reportedCreated.firstIndex { CFEqual($0, element) }.map { reportedCreated.remove(at: $0) } != nil
+     let hasOpenedSince = counted.insert(id).inserted
+     putAway.remove(id)
+     guard announce else { return }
+@@ -1351,6 +1356,8 @@ public final class AXWindowSystem: WindowSystem {
+     else { return }
+     record.snapshot = snapshot
+     records[window] = record
++    // What is passed on as somebody else's doing the filter has to hear of too: should the window come back to where Arbor once put it, that is a move.
++    if userInitiated { _ = echoes.hasStrayed(window, now: snapshot.frame) }
+     if !record.isBackgroundTab { events?.windowChanged(record.snapshot, userInitiated: userInitiated) }
+   }
+ 
+@@ -1397,10 +1404,9 @@ public final class AXWindowSystem: WindowSystem {
+   /// reporting that would move the camera away from what the user is doing. If the app then comes forward,
+   /// `appCameForward` reports its focused window.
+   ///
+-  /// `unprompted`: nothing has said that the keyboard went anywhere (`focusedWindow`). Then only another answer than askers are being given
+-  /// is news, or than the asker was `told` if that has been put in doubt since: a command asks who has the keyboard and gives it to another
+-  /// window at once. A report of the keyboard is something the view may follow, and "it left" takes the ring off a window.
+-  private func reportFocus(of pid: pid_t, unprompted: Bool = false, told: WindowID? = nil) {
++  /// `unprompted`: nothing has said that the keyboard went anywhere: somebody asked, and the app was too busy to say (`focusedWindow`). Then only another
++  /// answer than askers are being given is news. A report of the keyboard is something the view may follow, and "it left" takes the ring off a window.
++  private func reportFocus(of pid: pid_t, unprompted: Bool = false) {
+     guard NSWorkspace.shared.frontmostApplication?.processIdentifier == pid else { return }
+     guard let app = apps[pid], answers(pid) else {
+       // An app that is not observed, or does not answer: `answersAgain` and `noteLate` come back to one that will.
+@@ -1415,10 +1421,10 @@ public final class AXWindowSystem: WindowSystem {
+       keyboardLeftTheKnownWindows()
+       return
+     }
+-    let given = keyboardSaid?.app == pid ? keyboardSaid?.window : told
+-    keyboardSaid = (pid, answer.flatMap { windowID(of: $0, pid: pid) }, uptime)
++    let (given, now) = (keyboardSaid[pid], answer.flatMap { windowID(of: $0, pid: pid) })
++    keyboardSaid[pid] = .some(now)
+     if unprompted {
+-      if given == keyboardSaid?.window { return }
++      if let given, given == now { return }
+       // This has overtaken the app's own report, or that is lost. What that would have had done first is done first: a new tab is a window
+       // that Arbor does not know either, and the list tells them apart.
+       rescan([pid], afterSpaceSwitch: false)
+@@ -1537,7 +1543,8 @@ public final class AXWindowSystem: WindowSystem {
+         return
+       }
+       // It stays booked until it has been taken: while it waits at the door of a busy app the books are no better, and `move` goes by
+-      // that. A later booking has taken its place by then if the window has been moved again.
++      // that. A later booking may have taken its place by then: a report that came in time and waited at the same door is served before
++      // this, and books a look of its own, for later. That one is not this one's to take.
+       self.whenItAttends(pid) { [weak self] in
+         guard let self, self.secondLooks[window]?.number == number else { return }
+         self.secondLooks[window] = nil
+@@ -1570,10 +1577,11 @@ public final class AXWindowSystem: WindowSystem {
+     absorbLateResults()
+     // Before anything looks at the app's list (`answersAgain` does), where the new window may already be. Helpers that
+     // never become windows (tooltips, full-screen scaffolding) are reported too and never announced.
+-    // This one is registered on the app, without a window's number: the element is the new window.
+-    if notification == kAXWindowCreatedNotification, let id = raw.map({ WindowID($0) }) ?? element.windowID {
++    // This one is registered on the app, without a window's number: the element is the new window. That is kept, and not the number, which
++    // would have to be asked for, of an app that may hang by now: that a window has opened is a fact, whatever becomes of the rest.
++    if notification == kAXWindowCreatedNotification {
+       if reportedCreated.count > 200 { reportedCreated.removeAll() }
+-      reportedCreated.insert(id)
++      reportedCreated.append(element)
+     }
+     // A trace shows what macOS said before what Arbor made of it.
+     if let recorder, recorder.isRecording {
+@@ -1585,12 +1593,26 @@ public final class AXWindowSystem: WindowSystem {
+     }
+     // Nearly all of them make Arbor ask the app something, and whoever has posted a notification may be busy, or hang, by the time it arrives.
+     let arrived = uptime
+-    // All but these three may come with a change of who has the keyboard.
+-    if ![kAXMovedNotification, kAXResizedNotification, kAXTitleChangedNotification].contains(notification) { keyboardSaid = nil }
++    // An app says when its keyboard goes to another of its windows, and to which: the element is that window. Comparing it with those Arbor holds asks
++    // nothing. Of a window Arbor does not know yet nothing is kept, so that whoever wants to know waits for the app to say.
++    if notification == kAXFocusedWindowChangedNotification, let pid = element.pid {
++      keyboardSaid[pid] = records.first { $0.value.snapshot.pid == pid && CFEqual($0.value.element, element) }.map { .some($0.key) }
++    }
++    // That a window has gone is a fact, and its app is often busy just then, saving what was in it. So it is taken at once, whatever waits behind the door: the
++    // report of the keyboard that goes before every close has shut it. Unless a tab may be taking its place, which only the app's list tells.
++    var gone: (@MainActor () -> Void)?
++    if notification == kAXUIElementDestroyedNotification, let window = raw.map({ WindowID($0) }), let record = records[window] {
++      if record.isBackgroundTab || !windowIDs(of: record.snapshot.pid).contains(where: { records[$0]?.isBackgroundTab == true }) {
++        drop(window)
++      } else {
++        // Gone it is, whether or not the app ever says what shows instead.
++        gone = { [weak self] in self?.drop(window) }
++      }
++    }
+     guard let pid = element.pid, behindTheDoor[pid] != nil || !asksNothing(notification, window: raw, of: pid, at: arrived) else {
+       return act(on: notification, element: element, window: raw, arrived: arrived)
+     }
+-    whenItAttends(pid) { [weak self] in self?.act(on: notification, element: element, window: raw, arrived: arrived) }
++    whenItAttends(pid, otherwise: gone) { [weak self] in self?.act(on: notification, element: element, window: raw, arrived: arrived) }
+   }
+ 
+   /// Whether a notification is dealt with without a call to its app.
+@@ -1602,10 +1624,9 @@ public final class AXWindowSystem: WindowSystem {
+       guard let raw else { return true }
+       return records[WindowID(raw)] == nil || lanes.isBusy(pid) || echoes.isFresh(WindowID(raw), at: time)
+     case kAXUIElementDestroyedNotification:
+-      // That it has gone is a fact, and its app is often busy just then, saving what was in it. Which tab shows instead macOS 26 has said by now; should
+-      // the order ever be the other way round, the list is read without a knock, as it always was. When a stand-in goes every app is asked.
++      // One that is out of the books by now (`handle`). Of another the list is read, and when a stand-in goes every app is asked.
+       guard let raw else { return true }
+-      return !standIns.contains(WindowID(raw))
++      return !standIns.contains(WindowID(raw)) && records[WindowID(raw)] == nil
+     case kAXApplicationActivatedNotification, kAXApplicationDeactivatedNotification, kAXApplicationHiddenNotification: return true
+     default: return false
+     }
+@@ -1758,7 +1779,6 @@ public final class AXWindowSystem: WindowSystem {
+       releaseWasLost()
+       // Whoever clicks says where the keyboard goes.
+       focusWhenFree = nil
+-      keyboardSaid = nil
+       press = makePress(at: cursorLocation())
+       events?.pointerPressed()
+       // A monitor hears only what apps get, so this double-click is the app's, and on a title bar macOS's.
+@@ -1947,6 +1967,7 @@ public final class AXWindowSystem: WindowSystem {
+       if let bounds = Self.serverBounds(of: window), var record = records[window] {
+         record.snapshot.frame = bounds
+         records[window] = record
++        _ = echoes.hasStrayed(window, now: bounds)
+         events?.windowChanged(record.snapshot, userInitiated: true)
+       }
+       events?.dragEnded(window, at: cursorLocation())
+diff --git a/Tests/ArborCoreTests/RealWindowDecisionTests.swift b/Tests/ArborCoreTests/RealWindowDecisionTests.swift
+index 8d119e2c..05f06612 100644
+--- a/Tests/ArborCoreTests/RealWindowDecisionTests.swift
++++ b/Tests/ArborCoreTests/RealWindowDecisionTests.swift
+@@ -561,6 +561,15 @@ extension Box where Value == EchoFilter {
+     #expect(!filter.hasStrayed(w, now: own))
+   }
+ 
++  /// Whoever watches a window under a press asks about what the window server lists, which can be behind. That is a question, and settles nothing: the
++  /// app's own report of Arbor's move is still to come.
++  @Test func askingWhetherAFrameIsAnEchoChangesNothing() {
++    let filter = Box(EchoFilter())
++    filter.expect(set, for: w, at: 100)
++    #expect(!filter.isEcho(set.offsetBy(dx: -200, dy: 0), of: w, at: 100.3))
++    #expect(filter.judge(set, of: w, at: 100.5) == .echo)
++  }
++
+   @Test func aNewerMoveIsWhatCounts() {
+     let filter = Box(EchoFilter())
+     filter.expect(set, for: w, at: 100)
+diff --git a/collab/parity.json b/collab/parity.json
+index ba5b4819..8a44d6dd 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -2821,6 +2821,7 @@
+         "anAppThatHangsForMinutesIsStillWaitedFor",
+         "anOrdinaryPauseWaitsForNothing",
+         "anotherAppsFloatingWindowStaysWhereItsUserPutItWhenAHungAppWakesUp",
++        "askingWhetherAFrameIsAnEchoChangesNothing",
+         "itIsBackTheMomentItsAppWakes",
+         "noWordIsLeftThatWouldSendAWindowOutOfView",
+         "noWordIsLeftWhileArborRuns",
+diff --git a/docs/ARCHITECTURE.md b/docs/ARCHITECTURE.md
+index 06d2c5f0..1e10945e 100644
+--- a/docs/ARCHITECTURE.md
++++ b/docs/ARCHITECTURE.md
+@@ -1065,10 +1065,18 @@ answered. That is the moment the app attends, and what is asked then is served a
+ and not the main thread, where a person's next key would wait with it (on a hosted Mac one "focused window changed" of an app that was busy 0.7 s
+ at a time held Arbor up for 1.5 s). The handlers are what they were; all that comes up about one app is done in the order it came up; a report of a
+ move is judged by when it ARRIVED; what asks the app nothing (Arbor's own moves echoing back, "activated", "hidden") does not wait unless something waits
+-before it. An app that lets the knock go unanswered is on record as silent without anybody having waited, and everything about it is read afresh when
+-it answers again. **Which window has the keyboard** is asked by every command, several times over: it is answered from what the app in front last said,
+-which holds until that app, macOS, the pointer or Arbor does something that may change it, and is asked again behind the asker's back when it is older than
+-a second. Still on the main thread without a knock: `focus`, `raise` and `setMinimized`, which somebody is waiting for; the lists of all apps at a change of Space; the start. A hung app with three docked windows
++before it. **That a window has opened, or gone, is a fact**, and is taken when it is reported, whatever waits: of a new window the element is kept, whose number
++would have to be asked for; a window that has gone is out of the books at once, unless a tab may be taking its place, which the app's list tells, and then it goes
++whether or not the app ever answers with that. An app that lets the knock go unanswered is on record as silent without anybody having waited, and
++everything about it is read afresh when it answers again. One that answers the knock and hangs costs whoever reads first one timeout, and the rest is dropped likewise.
++**Which window has the keyboard** is asked by every command, several times over, of the app in front. It is asked every time, and an app that attends is believed and
++nothing else; but it is asked on that queue, and waited for a twentieth of a second. An app that takes longer is busy, and the answer is what it last SAID: its
++report that the keyboard has moved names the window, which costs no call, and it is on the thread that is busy that an app moves its keyboard. What it says when it
++gets round to it is reported if it is another window. Of an app that has never said anything the answer is waited for as ever: "nobody" is a claim too.
++Still on the main thread without a knock: `focus`, `raise` and `setMinimized`, which somebody is waiting for; the lists of all apps at a change of Space and when a
++stand-in goes (only the stand-in's own app is knocked at); the start, and the retries to observe an app; the looks that follow a while after something else
++(`confirmSoon`, `rescanSoon`, dialogs that are brought into view); the frame at the end of a resize. And an app that answers the knock and falls to work again,
++without ever letting a call time out, is waited for at each thing that is read of it: how many calls a busy app answers in a row only a Mac can say. A hung app with three docked windows
+ was seen to stop Arbor for 19.5 s. Now the main thread waits 0.5 s for a move, and the first call that times out, on a lane or
+ on the main thread, ends the conversation: `setFrame` returns nil, and nothing more is asked of that
+ app until it answers a call made off the main thread (tried twice a second) or
+diff --git a/scripts/mac-on-linux/known-failures.txt b/scripts/mac-on-linux/known-failures.txt
+index 04f3b9ca..2d7914c0 100644
+--- a/scripts/mac-on-linux/known-failures.txt
++++ b/scripts/mac-on-linux/known-failures.txt
+@@ -289,3 +289,13 @@ Arbor starts while an app hangs, which wakes 60 s later: announced as one that w
+ # is logged: "wN is being dragged, which began late".
+ text is selected over 120 points, and meanwhile the window moves the pointer's way, as far as the pointer has gone, by itself: it is not taken for a drag # late, one look is enough if the window has caught up with the pointer (WindowGrab.judge)
+ text is selected over 120 points, and meanwhile the window jumps to within 24 points of the pointer's own travel, by itself: it is not taken for a drag # late, one look is enough if the window has caught up with the pointer (WindowGrab.judge)
++
++# What knocking first costs, and where it ends (tests/BusyAppsAttacked.swift). What an app's report calls for is read a hop later than before, so two listed faults that need something to happen within
++# two milliseconds of a window's opening have 2.3 ms for it instead of 1.9: no hand is that fast, and an app that does several things in one burst meets them either way.
++an app opens a window and hangs 0.5 ms later; the Space changes; the app wakes: and Arbor knows that it is not on the Space that shows # reportFocus takes on the window that has its app's keyboard as one that shows; so it was before anybody knocked
++an app opens a window and hangs 2.1 ms later; the Space changes; the app wakes: and Arbor knows that it is not on the Space that shows # the same, in the hop that knocking adds
++a window gets a new tab, which its app moves 1.5 ms later: the tab is not announced as a window of its own # the list is read once, and believed; so it was before anybody knocked
++a window gets a new tab, which its app moves 2.1 ms later: the tab is not announced as a window of its own # the same, in the hop that knocking adds
++# An app that answers the knock and falls to work again, without ever letting a call time out, is never put on record as silent, and each thing read of it waits for its next moment of attention.
++an app moves its six windows; it is busy 0.7 s at a time, and each time it attends it answers 1 calls: Arbor's main thread waits 0.1 s at most # 2.1 s, as before anybody knocked: one answer is spent on the knock
++an app moves its six windows; it is busy 0.7 s at a time, and each time it attends it answers 3 calls: Arbor's main thread waits 0.1 s at most # 0.7 s, half of what it was before anybody knocked
+diff --git a/scripts/mac-on-linux/mutants.py b/scripts/mac-on-linux/mutants.py
+index c021353a..a6c11909 100755
+--- a/scripts/mac-on-linux/mutants.py
++++ b/scripts/mac-on-linux/mutants.py
+@@ -371,12 +371,11 @@ MUTANTS = [
+     {
+         # Board 1.70: what Arbor reads when an app's notifications arrive it reads on its main thread, and an app that is busy lets it wait.
+         "name": "what a notification calls for is read at once, whatever its app is doing",
+-        "old": "    whenItAttends(pid) { [weak self] in self?.act(on: notification, element: element, window: raw, arrived: arrived) }\n",
++        "old": "    whenItAttends(pid, otherwise: gone) { [weak self] in self?.act(on: notification, element: element, window: raw, arrived: arrived) }\n",
+         "new": "    act(on: notification, element: element, window: raw, arrived: arrived)\n",
+         "red": [
+             "an app opens a window and is busy at once, loading what goes into it: Arbor's main thread waits for it two seconds at most",
+             "an app moves its window 1 ms before it hangs for 5 s: while it hangs Arbor's main thread waits two seconds for it at most",
+-            "the stand-in for a window on its way out of full screen goes, and as that is on its way to Arbor its app hangs for 5 s: Arbor's main thread has not waited for the app",
+         ],
+     },
+     {
+@@ -385,8 +384,7 @@ MUTANTS = [
+         "old": "      self.whenItAttends(pid) { [weak self] in\n        guard let self, self.secondLooks[window]?.number == number else { return }\n",
+         "new": "      do {\n        guard self.secondLooks[window]?.number == number else { return }\n",
+         "red": [
+-            "an app is busy 0.7 s at a time, and 0.2 s into its work its windows are arranged with another's: "
+-            "in all that, and the six seconds that follow, its main thread spends 0.1 s at most in calls to apps",
++            "an app is busy 0.7 s at a time, and 0.2 s into its work its windows are arranged with another's: in all that, and the six seconds that follow, its main thread spends 0.1 s at most in calls to apps",
+         ],
+     },
+     {
+@@ -400,105 +398,305 @@ MUTANTS = [
+         ],
+     },
+     {
+-        "name": "the question nobody prompted is asked at once",
+-        "old": "        whenItAttends(pid) { [weak self] in self?.reportFocus(of: pid, unprompted: true, told: said.window) }\n",
+-        "new": "        reportFocus(of: pid, unprompted: true, told: said.window)\n",
+-        "red": ["the app in front is busy 0.7 s at a time, and Arbor is given a command every 0.4 s: each is answered within a tenth of a second"],
++        "name": "the later looks at a new element are taken at once",
++        "old": "          self?.whenItAttends(pid) { self?.addWindow(box.value, pid: pid, announce: true, wasOpenBefore: wasOpenBefore, attempt: attempt + 1) }\n",
++        "new": "          self?.addWindow(box.value, pid: pid, announce: true, wasOpenBefore: wasOpenBefore, attempt: attempt + 1)\n",
++        "red": [
++            "an app that is busy 0.7 s at a time opens a panel (AXDialog) in a moment of attention: Arbor's main thread has not waited for the app",
++        ],
+     },
+     {
+-        "name": "who has the keyboard is asked of the app in front every time",
+-        "old": "    if let said = keyboardSaid, said.app == pid, !unresponsive.contains(pid) {\n",
+-        "new": "    if let said = keyboardSaid, said.app == pid, false {\n",
+-        "red": ["the app in front is busy 0.7 s at a time, and Arbor is given a command every 0.4 s: each is answered within a tenth of a second"],
++        "name": "what asks nothing overtakes what waits behind the door",
++        "old": "    guard let pid = element.pid, behindTheDoor[pid] != nil || !asksNothing(notification, window: raw, of: pid, at: arrived) else {\n",
++        "new": "    guard let pid = element.pid, !asksNothing(notification, window: raw, of: pid, at: arrived) else {\n",
++        "red": [
++            "an app that is hidden is shown, and hidden again at once: Arbor knows that it is hidden",
++        ],
+     },
+     {
+-        "name": "what an app last said of the keyboard holds for ever",
+-        "old": "      if uptime - said.at > Self.keyboardKeeps, behindTheDoor[pid] == nil, !lanes.isBusy(pid) {\n",
+-        "new": "      if false {\n",
++        # What waits behind the door is dropped when the knock goes unanswered, and the report of the keyboard that goes before every close shuts it.
++        "name": "that a window has gone waits until its app attends",
++        "old": "        drop(window)\n      } else {\n",
++        "new": "        gone = { [weak self] in self?.drop(window) }\n      } else {\n",
++        "red": [
++            "a window closes, and as that is on its way to Arbor its app hangs for 5 s: it is reported gone within a third of a second",
++            "a docked window closes, and as that is on its way to Arbor its app is busy 0.7 s at a time: it is reported gone within a third of a second",
++        ],
++    },
++    {
++        "name": "a window has gone at once, though a tab may be taking its place",
++        "old": "      if record.isBackgroundTab || !windowIDs(of: record.snapshot.pid).contains(where: { records[$0]?.isBackgroundTab == true }) {\n",
++        "new": "      if true {\n",
++        "red": [
++            "the tab in front is closed, and the app's list of windows is 10 ms behind: Arbor knows the tab that shows now",
++        ],
++    },
++    {
++        "name": "a window whose app never says what shows instead has not gone",
++        "old": "    for left in waiting { left.otherwise?() }\n",
++        "new": "    _ = 0\n",
+         "red": [
+-            "the keyboard goes to another window of the app in front, whose reports are five seconds late, and Arbor's layer is asked who has it two seconds later: "
+-            "a second after that the answer is right",
++            "an app has a window with two tabs and a plain one; the plain one closes, and as that is on its way to Arbor the app hangs for 5 s: it is reported gone within two seconds",
+         ],
+     },
+     {
+-        # In 89 stories the window that had the keyboard all along was reported to have got it, a moment into the first command.
++        "name": "that a window has gone never asks anything",
++        "old": "      return !standIns.contains(WindowID(raw)) && records[WindowID(raw)] == nil\n",
++        "new": "      return true\n",
++        "red": [
++            "the stand-in for a window on its way out of full screen goes, and as that is on its way to Arbor its app is busy 0.7 s at a time: Arbor's main thread has not waited for the app",
++            "an app has a window with two tabs and a plain one; the plain one closes, and as that is on its way to Arbor the app hangs for 5 s: Arbor's main thread has not waited for the app",
++        ],
++    },
++    {
++        # The polite walk, seed 153: noted behind the door, it went the way of an unanswered knock.
++        "name": "that a window has opened is not noted when it is reported",
++        "old": "      reportedCreated.append(element)\n",
++        "new": "      _ = 0\n",
++        "red": [
++            "an app opens a window and hangs 2.1 ms later; the Space changes; the app wakes: the new window is announced as new",
++        ],
++    },
++    {
++        # An app can answer the knock and hang: four reports behind the door cost the main thread four seconds.
++        "name": "what waited behind the door is read though the app has fallen silent again",
++        "old": "      if unresponsive.contains(pid) { break }\n",
++        "new": "      _ = 0\n",
++        "red": [
++            "an app moves its four windows and hangs 2.2 ms later, as it has answered Arbor's knock: Arbor's main thread waits for it for one timeout at most",
++        ],
++    },
++    {
++        "name": "a frame that is not answered says nothing about its app",
++        "old": "    guard let frame = record.element.frame else { return noteSilence(of: record.snapshot.pid, since: began) }\n",
++        "new": "    guard let frame = record.element.frame else { return }\n",
++        "red": [
++            "an app moves its four windows and hangs 2.2 ms later, as it has answered Arbor's knock: once it has woken Arbor knows where all four are",
++        ],
++    },
++    {
++        # On a hosted Mac an app answered with its list and let the next question time out.
++        "name": "an app that falls silent in the middle of a scan is asked about its other windows too",
++        "old": "      guard let record = records[id], answers(record.snapshot.pid) else { continue }\n      let began = uptime\n",
++        "new": "      guard let record = records[id] else { continue }\n      let began = uptime\n",
++        "red": [
++            "an app with four windows gives the keyboard to another of them, answers 2 more calls and hangs for 8 s: Arbor's main thread waits for it for one timeout at most",
++        ],
++    },
++    {
++        "name": "a question in the middle of a scan that is not answered says nothing about its app",
++        "old": "      if answer.error == .cannotComplete { noteSilence(of: record.snapshot.pid, since: began) }\n",
++        "new": "      _ = began\n",
++        "red": [
++            "an app with four windows gives the keyboard to another of them, answers 3 more calls and hangs for 8 s: Arbor's main thread waits for it for one timeout at most",
++        ],
++    },
++    {
++        "name": "an app that lets the knock go unanswered is not put on record",
++        "old": "    // Nobody has waited for it on this thread.\n    noteSilence(of: pid, since: uptime - TimeInterval(Self.messagingTimeout))\n",
++        "new": "    // Nobody has waited for it on this thread.\n    _ = 0\n",
++        "red": [
++            "an app moves its window 1 ms before it hangs for 5 s: once it has woken Arbor knows where the window is",
++        ],
++    },
++    {
++        "name": "of an app in front that lets the knock go unanswered nothing is said",
++        "old": "    if NSWorkspace.shared.frontmostApplication?.processIdentifier == pid { keyboardLeftTheKnownWindows() }\n  }\n\n  /// Called when a call came back",
++        "new": "    _ = 0\n  }\n\n  /// Called when a call came back",
++        "red": [
++            "an app hangs for 5 s, and a moment later it is brought forward with ⌘Tab: when the knock has gone unanswered Arbor says that it does not know who has it",
++        ],
++    },
++    {
++        "name": "an app that answers again is not looked at for dialogs",
++        "old": "    confirmSoon(pid)\n    if let waiting = focusWhenFree, waiting.app == pid, isStillWanted(waiting) {\n",
++        "new": "    _ = 0\n    if let waiting = focusWhenFree, waiting.app == pid, isStillWanted(waiting) {\n",
++        "red": [
++            "a dialog opens as its app is hidden; later the app is shown again and hangs for 3 s half a millisecond later: and does not take the dialog for a window",
++        ],
++    },
++    {
++        "name": "a door outlasts a pause",
++        "old": "    behindTheDoor[pid] = nil\n",
++        "new": "    _ = 0\n",
++        "red": [
++            "an app moves a window and hangs, Arbor's layer is stopped while the knock is out, the app wakes, and the layer is started: what the app does from then on is heard",
++        ],
++    },
++    {
++        "name": "what an app said of the keyboard outlasts a pause",
++        "old": "    keyboardSaid[pid] = nil\n",
++        "new": "    _ = 0\n",
++        "red": [
++            "Arbor's layer is stopped, the keyboard goes to another window of the app in front, the layer is started, and is asked who has it while the app is busy for 0.7 s: the answer is the window that has it",
++        ],
++    },
++    {
++        # The first draft floated the window its person had just left.
++        "name": "the report that the keyboard has moved does not say where to",
++        "old": "      keyboardSaid[pid] = records.first { $0.value.snapshot.pid == pid && CFEqual($0.value.element, element) }.map { .some($0.key) }\n",
++        "new": "      _ = pid\n",
++        "red": [
++            "the keyboard goes to another window of the app in front, which then is busy for 0.7 s, and 0.1 s later Arbor is told to float the window that has it: the window that has the keyboard floats",
++        ],
++    },
++    {
++        "name": "who has the keyboard is waited for as long as it takes",
++        "old": "    let patience = said == nil ? TimeInterval(Self.messagingTimeout) + 0.05 : Self.patienceWithTheKeyboard\n",
++        "new": "    let patience = TimeInterval(Self.messagingTimeout) + 0.05\n",
++        "red": [
++            "the app in front is busy 0.7 s at a time, and Arbor is given a command every 0.4 s: each is answered within a tenth of a second",
++        ],
++    },
++    {
++        "name": "of an app that has never said anything nobody has the keyboard",
++        "old": "    let patience = said == nil ? TimeInterval(Self.messagingTimeout) + 0.05 : Self.patienceWithTheKeyboard\n",
++        "new": "    let patience = Self.patienceWithTheKeyboard\n",
++        "red": [
++            "an app that is busy for 0.7 s comes forward, and 0.1 s later Arbor is told to float the window that has the keyboard: Arbor takes the command",
++        ],
++    },
++    {
++        "name": "an app that is being asked is asked again",
++        "old": "    if let said, isBeingAsked { return said }\n",
++        "new": "    _ = 0\n",
++        "red": [
++            "the app in front hangs for 5 s, and Arbor's layer is asked who has the keyboard every half second: Arbor's main thread has waited a twentieth of a second for it, once",
++        ],
++    },
++    {
++        "name": "an app that is on record as silent is asked who has the keyboard",
++        "old": "    guard apps[pid] != nil, !unresponsive.contains(pid) else { return nil }\n",
++        "new": "    guard apps[pid] != nil else { return nil }\n",
++        "red": [
++            "the app in front hangs for 5 s, and Arbor's layer is asked who has the keyboard every half second: Arbor's main thread has waited a twentieth of a second for it, once",
++        ],
++    },
++    {
++        "name": "an app that is moving its windows is asked who has the keyboard",
++        "old": "    if lanes.isBusy(pid) { return said ?? nil }\n",
++        "new": "    _ = 0\n",
++        "red": [
++            "an app hangs: from then on nothing is asked of the app, and nothing waits for it",
++        ],
++    },
++    {
++        "name": "what an app says of the keyboard when it is asked is not kept",
++        "old": "      keyboardSaid[pid] = .some(window)\n      return window\n",
++        "new": "      _ = 0\n      return window\n",
++        "red": [
++            "the app in front is busy 0.7 s at a time, and Arbor is given a command every 0.4 s: each is answered within a tenth of a second",
++        ],
++    },
++    {
++        "name": "what an app says of the keyboard as it comes forward is not kept",
++        "old": "    keyboardSaid[pid] = .some(now)\n",
++        "new": "    _ = 0\n",
++        "red": [
++            "an app comes forward and is busy for 0.7 s from 5.0 ms after: and has waited 0.1 s at most for another thread's",
++        ],
++    },
++    {
++        "name": "no answer about the keyboard says nothing about the app",
++        "old": "      // Every layout asks this, and would wait as long again.\n      noteSilence(of: pid, since: began)\n      return nil\n    case nil:",
++        "new": "      // Every layout asks this, and would wait as long again.\n      _ = began\n      return nil\n    case nil:",
++        "red": [
++            "the app in front, which has never said who has its keyboard, hangs for 5 s, and Arbor's layer is asked twice: Arbor's main thread has waited for one timeout",
++        ],
++    },
++    {
++        "name": "whoever was told what a busy app last said is never put right",
++        "old": "      if !isBeingAsked { behindTheDoor[pid] = [Waiting { [weak self] in self?.reportFocus(of: pid, unprompted: true) }] }\n",
++        "new": "      _ = 0\n",
++        "red": [
++            "the keyboard goes to another window of the app in front, whose reports are five seconds late and which is then busy for 0.7 s, and Arbor's layer is asked who has it meanwhile: once the app attends whoever asked has been told",
++        ],
++    },
++    {
++        # In 89 stories of the first draft the window that had the keyboard all along was reported to have got it.
+         "name": "the same answer to a question nobody prompted is news",
+-        "old": "      if given == keyboardSaid?.window { return }\n",
++        "old": "      if let given, given == now { return }\n",
+         "new": "      _ = given\n",
+         "red": [
+-            "Arbor's layer is asked who has the keyboard, and again every two seconds, and nothing changes: and nothing is reported",
+-            "a dialog has the keyboard, Arbor's layer is asked who has it every two seconds, and nothing changes: nothing is reported",
++            "the app in front is busy for 0.7 s, Arbor's layer is asked who has the keyboard meanwhile, and nothing has changed: and nothing is reported",
+         ],
+     },
+     {
+         "name": "another answer to a question nobody prompted is kept quiet",
+-        "old": "      if given == keyboardSaid?.window { return }\n",
+-        "new": "      if given != WindowID(0) { return }\n",
++        "old": "      if let given, given == now { return }\n",
++        "new": "      if given != nil { return }\n",
+         "red": [
+-            "the keyboard goes to another window of the app in front, whose reports are five seconds late, and Arbor's layer is asked who has it two seconds later: "
+-            "and whoever was given the old one has been told",
++            "the keyboard goes to another window of the app in front, whose reports are five seconds late and which is then busy for 0.7 s, and Arbor's layer is asked who has it meanwhile: once the app attends whoever asked has been told",
+         ],
+     },
+-    {
+-        "name": "what the asker was told is forgotten once it is in doubt",
+-        "old": "    let given = keyboardSaid?.app == pid ? keyboardSaid?.window : told\n",
+-        "new": "    let given = keyboardSaid?.app == pid ? keyboardSaid?.window : WindowID(0)\n",
+-        "red": ["Arbor's layer is asked who has the keyboard and then at once to give it to a window of another app: the window that had it all along is not reported to have got it"],
+-    },
+     {
+         "name": "an app that cannot be asked a question nobody prompted has lost the keyboard",
+         "old": "      if !unprompted { keyboardLeftTheKnownWindows() }\n",
+         "new": "      keyboardLeftTheKnownWindows()\n",
+         "red": [
+-            "an app takes 0.7 s over every call, and Arbor's layer is asked who has the keyboard and then at once to move the window that has it: "
+-            "the keyboard is not said to have left it",
++            "an app takes 0.7 s over every call, and Arbor's layer is asked who has the keyboard and then at once to move the window that has it: the keyboard is not said to have left it",
+         ],
+     },
+     {
+-        # The polite walk: 31 of 1,000 seeds against 6.
++        # The polite walk on the first draft: 31 of 1,000 seeds against 6.
+         "name": "what overtakes an app's own reports does not read the list first",
+         "old": "      rescan([pid], afterSpaceSwitch: false)\n    }\n    guard let element = answer",
+         "new": "      _ = 0\n    }\n    guard let element = answer",
+-        "red": ["a window gets a new tab, and at that moment Arbor's layer is asked who has the keyboard: the tab is not announced as a window of its own"],
++        "red": [
++            "a window gets a new tab, its app is then busy for 0.7 s with its reports five seconds late, and Arbor's layer is asked who has the keyboard meanwhile: the tab is not announced as a window of its own",
++        ],
+     },
+     {
+-        # What waits behind the door is dropped when the knock goes unanswered.
+-        "name": "that a window has gone waits until its app attends",
+-        "old": "      return !standIns.contains(WindowID(raw))\n",
+-        "new": "      return false\n",
++        "name": "a question that times out counts as answered",
++        "file": "ArborKit/AX/AXKnocks.swift",
++        "old": "          MainActor.assumeIsolated { late(!unanswered) }\n",
++        "new": "          MainActor.assumeIsolated { late(true) }\n",
+         "red": [
+-            "a window closes, and as that is on its way to Arbor its app hangs for 5 s: it is reported gone within a third of a second",
+-            "a window closes, and as that is on its way to Arbor its app is busy 0.7 s at a time: it is reported gone within a third of a second",
++            "the app in front hangs for 5 s, and Arbor's layer is asked who has the keyboard every half second: Arbor's main thread has waited a twentieth of a second for it, once",
+         ],
+     },
+     {
+-        "name": "when a stand-in goes every app is asked at once",
+-        "old": "      return !standIns.contains(WindowID(raw))\n",
+-        "new": "      return true\n",
++        "name": "an answer that comes in time is not taken",
++        "file": "ArborKit/AX/AXKnocks.swift",
++        "old": "      if isAwaited { self.answer = answer }\n      return isAwaited\n",
++        "new": "      if isAwaited { self.answer = answer }\n      return false\n",
+         "red": [
+-            "the stand-in for a window on its way out of full screen goes, and as that is on its way to Arbor its app is busy 0.7 s at a time: "
+-            "Arbor's main thread has not waited for the app",
++            "the app in front hangs for 5 s, and Arbor's layer is asked who has the keyboard every half second: Arbor's main thread has waited a twentieth of a second for it, once",
+         ],
+     },
+     {
+-        # An app can answer the knock and hang: four reports behind the door cost the main thread four seconds.
+-        "name": "what waited behind the door is read though the app has fallen silent again",
+-        "old": "        if self.unresponsive.contains(pid) { break }\n",
+-        "new": "        _ = 0\n",
+-        "red": ["an app moves its four windows and hangs 2.2 ms later, as it has answered Arbor's knock: Arbor's main thread waits for it for one timeout at most"],
++        # What is read back after a move can be the old frame: the books are no better until the second look has been TAKEN.
++        "name": "a second look is no longer booked once its time has come",
++        "old": "      self.whenItAttends(pid) { [weak self] in\n        guard let self, self.secondLooks[window]?.number == number else { return }\n        self.secondLooks[window] = nil\n",
++        "new": "      self.secondLooks[window] = nil\n      self.whenItAttends(pid) { [weak self] in\n        guard let self else { return }\n",
++        "red": [
++            "an app applies a size 70 ms late and falls to work for a second; Arbor's layer gives its window a size, and 0.6 s later the old one again: in the end it has the old size",
++        ],
+     },
+     {
+-        # A fault of this very cure on its first day: it is what waited behind the door that takes an app off the list of the silent.
+-        "name": "an app that was silent until it answered the knock is not listened to",
+-        "old": "      while attends, !waiting.isEmpty, self.running, self.runNumber == run {\n",
+-        "new": "      while attends, !waiting.isEmpty, self.running, self.runNumber == run, !self.unresponsive.contains(pid) {\n",
+-        "red": ["a dialog opens as its app is hidden, the app hangs, is brought forward meanwhile, and wakes: and does not take the dialog for a window"],
++        # A report that came in time and waited at the same door is served first, and books a look of its own.
++        "name": "a look that has waited at the door takes the booking of a later one",
++        "old": "        guard let self, self.secondLooks[window]?.number == number else { return }\n",
++        "new": "        guard let self, self.secondLooks[window] != nil else { return }\n",
++        "red": [
++            "Arbor gives a window a frame, which its app takes by way of another; it hangs for 0.4 s on the way, and the report of the stage waits behind the door: and nothing passed for the person's doing",
++        ],
+     },
+     {
+-        "name": "a frame that is not answered says nothing about its app",
+-        "old": "    guard let frame = record.element.frame else { return noteSilence(of: record.snapshot.pid, since: began) }\n",
+-        "new": "    guard let frame = record.element.frame else { return }\n",
+-        "red": ["an app moves its four windows and hangs 2.2 ms later, as it has answered Arbor's knock: once it has woken Arbor knows where all four are"],
++        "name": "a second look that is dropped stays booked",
++        "old": "      secondLooks.removeValue(forKey: window)?.timer.cancel()\n    }\n    guard !attends else { return }\n",
++        "new": "      _ = window\n    }\n    guard !attends else { return }\n",
++        "red": [
++            "an app applies a size 70 ms late and hangs for 5 s; once all is over Arbor's layer gives its window the frame it has: nothing is asked of the app",
++        ],
++    },
++    {
++        "name": "a report is judged by when it is served",
++        "old": "    let time = arrived ?? uptime\n",
++        "new": "    let time = uptime\n",
++        "red": [
++            "Arbor gives a window a frame, which its app takes by way of another; it hangs for 0.4 s on the way, and the report of the stage waits behind the door: and nothing passed for the person's doing",
++        ],
+     },
+     {
+         # A hosted Mac, 2026-10-15: a main thread held for 830 ms, and the same frame was Arbor's own at +1,295 ms and the person's at +1,314.
+@@ -506,7 +704,34 @@ MUTANTS = [
+         "file": "ArborCore/EchoFilter.swift",
+         "old": "    if expectation.frame.approximatelyEquals(frame, tolerance: Self.tolerance) { return .echo }\n",
+         "new": "    if time - expectation.time <= Self.memory, expectation.frame.approximatelyEquals(frame, tolerance: Self.tolerance) { return .echo }\n",
+-        "red": ["Arbor gives a window a frame, and its main thread is held for 1.2 s before the app's reports of that are served: and none of them counts as the person's doing"],
++        "red": [
++            "Arbor gives a window a frame, and its main thread is held for 1.2 s before the app's reports of that are served: and none of them counts as the person's doing",
++        ],
++    },
++    {
++        "name": "asking whether a frame is an echo settles it",
++        "file": "ArborCore/EchoFilter.swift",
++        "old": "    return expectation.frame.approximatelyEquals(frame, tolerance: Self.tolerance) || isFresh(window, at: time)\n",
++        "new": "    return judge(frame, of: window, at: time) != .other\n",
++        "red": [
++            "Arbor gives a window of an app whose reports are 0.5 s late a frame, the window server lists it 0.2 s late, and 0.16 s after the call the person selects text in it: and none of them counts as the person's doing",
++        ],
++    },
++    {
++        "name": "what is read afresh and passed on as somebody's doing the filter does not hear of",
++        "old": "    if userInitiated { _ = echoes.hasStrayed(window, now: snapshot.frame) }\n",
++        "new": "    _ = 0\n",
++        "red": [
++            "Arbor gives a window a frame; later its app moves it away and hangs for 3 s; later still it is moved back: so does the move back",
++        ],
++    },
++    {
++        "name": "where a drag ended the filter does not hear of",
++        "old": "        _ = echoes.hasStrayed(window, now: bounds)\n",
++        "new": "        _ = 0\n",
++        "red": [
++            "Arbor gives a window a frame; later it is dragged away, its app saying nothing until it is over and hanging as it is let go; later still it is moved back: so does the move back",
++        ],
+     },
+ ]
+ 
+diff --git a/scripts/mac-on-linux/tests/BusyApps.swift b/scripts/mac-on-linux/tests/BusyApps.swift
+index 217d6b7e..9cea4cc1 100644
+--- a/scripts/mac-on-linux/tests/BusyApps.swift
++++ b/scripts/mac-on-linux/tests/BusyApps.swift
+@@ -107,7 +107,8 @@ func tellOfBusyApps(_ book: Book) {
+     story.check("the other is", one.heard.all.contains(.focused(behind.number)), one.heard.texts)
+   }
+ 
+-  book.story("the keyboard goes to another window of the app in front, whose reports are five seconds late, and Arbor's layer is asked who has it two seconds later") { story in
++  // An app that attends is asked, and believed, every time: what it last said is for when it is too busy to say.
++  book.story("the keyboard goes to another window of the app in front, whose reports are five seconds late, and Arbor's layer is asked who has it a fifth of a second later") { story in
+     var windows: [FakeMac.Window] = []
+     let one = StoreyOne(story) { mac in
+       let app = mac.launch("Notes")
+@@ -117,14 +118,35 @@ func tellOfBusyApps(_ book: Book) {
+     let other = windows.first { $0.number != had }!
+     one.heard.clear()
+     other.app.reportsLateBy = 5
+-    // As with cmd-`: no press of the pointer, which would make the layer ask afresh.
++    // As with cmd-`.
+     one.mac.appMakesKey(other)
+-    one.mac.pass(2)
++    one.mac.pass(0.2)
++    story.check("the answer is right", one.layer.focusedWindow()?.rawValue == other.number)
++    one.mac.pass(7)
++    story.check("the app's own report is passed on, once", one.heard.all.filter { $0 == .focused(other.number) }.count == 1, one.heard.texts)
++  }
++
++  // Too busy to say, and its report still on its way: nobody can know better at that moment. Whoever asked is put right as soon as the app attends.
++  book.story("the keyboard goes to another window of the app in front, whose reports are five seconds late and which is then busy for 0.7 s, and Arbor's layer is asked who has it meanwhile") { story in
++    var windows: [FakeMac.Window] = []
++    let one = StoreyOne(story) { mac in
++      let app = mac.launch("Notes")
++      windows = [mac.open("a", in: app, frame: CGRect(x: 100, y: 100, width: 400, height: 300)), mac.open("b", in: app, frame: CGRect(x: 520, y: 100, width: 400, height: 300))]
++    }
++    let had = one.layer.focusedWindow()?.rawValue
++    let other = windows.first { $0.number != had }!
++    one.heard.clear()
++    other.app.reportsLateBy = 5
++    one.mac.appMakesKey(other)
++    one.mac.later(0.0005) { one.mac.hang(other.app, for: 0.7) }
++    one.mac.pass(0.1)
++    let began = one.mac.now
+     _ = one.layer.focusedWindow()
++    story.check("the answer takes a twentieth of a second at most", one.mac.now - began <= 0.051, "\(one.mac.now - began) s")
+     one.mac.pass(1)
+-    story.check("a second after that the answer is right", one.layer.focusedWindow()?.rawValue == other.number)
+-    story.check("and whoever was given the old one has been told", one.heard.all.contains(.focused(other.number)), one.heard.texts)
+-    one.mac.pass(4)
++    story.check("once the app attends whoever asked has been told", one.heard.all.contains(.focused(other.number)), one.heard.texts)
++    story.check("and the next answer is right", one.layer.focusedWindow()?.rawValue == other.number)
++    one.mac.pass(6)
+     story.check("the app's own report adds nothing", one.heard.all.filter { $0 == .focused(other.number) }.count == 1, one.heard.texts)
+   }
+ 
+@@ -173,6 +195,25 @@ func tellOfBusyApps(_ book: Book) {
+     }
+   }
+ 
++  // Or it hangs further on, in the middle of what is read: on a hosted Mac an app answered with its list, and let the next question time out. A report that the keyboard has
++  // moved makes Arbor ask a dozen things, some of them of each window. Before anybody knocked, and noted the silence there, that cost up to six seconds.
++  for calls in 1...12 {
++    book.story("an app with four windows gives the keyboard to another of them, answers \(calls) more \(calls == 1 ? "call" : "calls") and hangs for 8 s") { story in
++      var windows: [FakeMac.Window] = []
++      let one = StoreyOne(story) { mac in
++        let app = mac.launch("Notes")
++        windows = (0..<4).map { mac.open("w\($0)", in: app, frame: CGRect(x: 100 + 60 * CGFloat($0), y: 100, width: 400, height: 300)) }
++      }
++      let waited = one.mac.secondsTheMainThreadWaited
++      windows[0].app.hangsAfterCalls = calls
++      one.mac.appMakesKey(windows[0])
++      one.mac.later(8) { one.mac.wake(windows[0].app) }
++      one.mac.pass(12)
++      story.check("Arbor's main thread waits for it for one timeout at most", one.mac.secondsTheMainThreadWaited - waited <= 1.1, "\(one.mac.secondsTheMainThreadWaited - waited) s")
++      story.check("once it has woken Arbor knows which window has the keyboard", one.layer.focusedWindow()?.rawValue == windows[0].number && one.heard.all.contains(.focused(windows[0].number)), one.heard.texts)
++    }
++  }
++
+   // The other way round: an app that was silent answers the knock. It is what waited behind the door that takes it off the list of the silent. Found by the polite walk (seed 773).
+   book.story("a dialog opens as its app is hidden, the app hangs, is brought forward meanwhile, and wakes") { story in
+     var mine: FakeMac.Window!, theirs: FakeMac.Window!
+@@ -194,6 +235,78 @@ func tellOfBusyApps(_ book: Book) {
+     story.check("and does not take the dialog for a window", one.known.sorted() == [mine.number, theirs.number], "\(one.known); \(one.heard.texts)")
+   }
+ 
++  // With a busy app it is the late answer that finds the tab.
++  book.story("a window gets a new tab, its app is then busy for 0.7 s with its reports five seconds late, and Arbor's layer is asked who has the keyboard meanwhile") { story in
++    var window: FakeMac.Window!
++    let one = StoreyOne(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 100, y: 100, width: 400, height: 300)) }
++    _ = one.layer.focusedWindow()
++    one.mac.pass(2)
++    one.heard.clear()
++    window.app.reportsLateBy = 5
++    let tab = one.mac.newTab(of: window)
++    one.mac.later(0.0005) { one.mac.hang(window.app, for: 0.7) }
++    one.mac.pass(0.1)
++    _ = one.layer.focusedWindow()
++    one.mac.pass(8)
++    story.check("the tab is not announced as a window of its own", !one.heard.all.contains(.appeared(tab.number)), one.heard.texts)
++    story.check("it takes the place of the one it covers", one.heard.all.contains(.replaced(window.number, by: tab.number)), one.heard.texts)
++  }
++
++  // Too busy to say, and nothing has changed: there is nothing to say afterwards either.
++  book.story("the app in front is busy for 0.7 s, Arbor's layer is asked who has the keyboard meanwhile, and nothing has changed") { story in
++    var window: FakeMac.Window!
++    let one = StoreyOne(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 100, y: 100, width: 400, height: 300)) }
++    story.check("to begin with the answer is its window", one.layer.focusedWindow()?.rawValue == window.number)
++    one.heard.clear()
++    one.mac.hang(window.app, for: 0.7)
++    story.check("so it is meanwhile", one.layer.focusedWindow()?.rawValue == window.number)
++    one.mac.pass(3)
++    story.check("and nothing is reported", one.heard.all.isEmpty, one.heard.texts)
++  }
++
++  // Of an app that has never said anything the answer is waited for, as ever. Once.
++  book.story("the app in front, which has never said who has its keyboard, hangs for 5 s, and Arbor's layer is asked twice") { story in
++    var window: FakeMac.Window!
++    let one = StoreyOne(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 100, y: 100, width: 400, height: 300)) }
++    let waited = one.mac.secondsTheMainThreadWaited
++    one.mac.hang(window.app, for: 5)
++    _ = one.layer.focusedWindow()
++    _ = one.layer.focusedWindow()
++    story.check("Arbor's main thread has waited for one timeout", one.mac.secondsTheMainThreadWaited - waited <= 1.1, "\(one.mac.secondsTheMainThreadWaited - waited) s")
++  }
++
++  // No answer is an answer too, and comes late by its nature.
++  book.story("the app in front hangs for 5 s, and Arbor's layer is asked who has the keyboard every half second") { story in
++    var window: FakeMac.Window!
++    let one = StoreyOne(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 100, y: 100, width: 400, height: 300)) }
++    story.check("to begin with the answer is its window", one.layer.focusedWindow()?.rawValue == window.number)
++    let waited = one.mac.secondsTheMainThreadWaited
++    one.mac.hang(window.app, for: 5)
++    for _ in 0..<8 {
++      _ = one.layer.focusedWindow()
++      one.mac.pass(0.5)
++    }
++    story.check("Arbor's main thread has waited a twentieth of a second for it, once", one.mac.secondsTheMainThreadWaited - waited <= 0.051, "\(one.mac.secondsTheMainThreadWaited - waited) s")
++    one.mac.pass(3)
++    story.check("once it has woken the answer is its window again", one.layer.focusedWindow()?.rawValue == window.number)
++  }
++
++  // What asks nothing is done at once, unless something of the same app waits: everything about one app is done in the order it came up.
++  book.story("an app that is hidden is shown, and hidden again at once") { story in
++    var theirs: FakeMac.Window!
++    let one = StoreyOne(story) { mac in
++      theirs = mac.open("theirs", in: mac.launch("Mail"), frame: CGRect(x: 520, y: 100, width: 400, height: 300))
++      _ = mac.open("mine", in: mac.launch("Notes"), frame: CGRect(x: 100, y: 100, width: 400, height: 300))
++    }
++    one.mac.hide(theirs.app)
++    one.mac.pass(2)
++    story.check("to begin with Arbor knows that it is hidden", one.snapshot(theirs)?.isHidden == true)
++    one.mac.unhide(theirs.app)
++    one.mac.hide(theirs.app)
++    one.mac.pass(3)
++    story.check("Arbor knows that it is hidden", one.snapshot(theirs)?.isHidden == true, one.heard.texts)
++  }
++
+   // That a window has gone is a fact, and nothing need be asked about it. An app is often busy just then: it is saving what was in the window. Found by the polite walk.
+   for (name, then) in [("hangs for 5 s", { (mac: FakeMac, app: FakeMac.App) in mac.hang(app, for: 5) }), ("is busy 0.7 s at a time", { mac, app in mac.keepsBusy(app, for: 5) })] {
+     book.story("a window closes, and as that is on its way to Arbor its app \(name)") { story in
+@@ -226,10 +339,16 @@ func tellOfBusyApps(_ book: Book) {
+       let waited = one.mac.secondsTheMainThreadWaited
+       then(one.mac, behind.app)
+       one.mac.pass(0.05)
++      let began = one.mac.now
+       one.mac.activate(behind.app)
+       one.mac.pass(9)
+       story.check("Arbor's main thread has not waited for the app", one.mac.secondsTheMainThreadWaited - waited < 0.1, "\(one.mac.secondsTheMainThreadWaited - waited) s")
+       story.check("in the end its window is reported to have the keyboard", one.heard.all.contains(.focused(behind.number)), one.heard.texts)
++      // Of an app that is found silent nobody knows: whoever drew a ring on the strength of what it last said hears so. (One that is only busy says "activated" itself, late.)
++      if name == "hangs for 5 s" {
++        let words = one.heard.everything.filter { $0.event == .keyboardMoved && $0.time > began + 0.5 && $0.time < began + 2 }
++        story.check("when the knock has gone unanswered Arbor says that it does not know who has it", !words.isEmpty, one.heard.texts)
++      }
+     }
+     book.story("the tab in front of another closes, and as that is on its way to Arbor its app \(name)") { story in
+       var window: FakeMac.Window!
+@@ -266,6 +385,58 @@ func tellOfBusyApps(_ book: Book) {
+     }
+   }
+ 
++  // A stage of Arbor's own move is one by when its report ARRIVED. Behind the door it can be served much later.
++  book.story("Arbor gives a window a frame, which its app takes by way of another; it hangs for 0.4 s on the way, and the report of the stage waits behind the door") { story in
++    var window: FakeMac.Window!
++    let one = StoreyOne(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 100, y: 100, width: 400, height: 300)) }
++    let target = CGRect(x: 12, y: 43, width: 500, height: 650)
++    one.heard.clear()
++    _ = one.layer.setFrame(target, of: WindowID(window.number))
++    one.mac.pass(0.05)
++    // Something that has to be asked about shuts the door; the stage comes behind it.
++    one.mac.rename(window, "on its way")
++    one.mac.appMoves(window, to: target.offsetBy(dx: 0, dy: 40))
++    one.mac.later(0.0005) { one.mac.hang(window.app) }
++    one.mac.later(0.4) { one.mac.wake(window.app) }
++    // Still on its way when the report is served at last.
++    one.mac.later(0.5) { one.mac.appMoves(window, to: target) }
++    one.mac.pass(4)
++    story.check("the window has the frame", window.frame == target, window.frame.text)
++    story.check("and nothing passed for the person's doing", !one.heard.all.contains(.changed(window.number, byUser: true)), one.heard.texts)
++  }
++
++  // What Arbor reads back after a move can be the old frame, and the reports that come so soon are not read: the books are no better until the second look has been TAKEN. At the
++  // door of an app that has fallen to work it waits. Whoever spared a call meanwhile, because the window "is there already", would leave it where the first move then lands.
++  book.story("an app applies a size 70 ms late and falls to work for a second; Arbor's layer gives its window a size, and 0.6 s later the old one again") { story in
++    var window: FakeMac.Window!
++    let old = CGRect(x: 100, y: 100, width: 400, height: 300)
++    let one = StoreyOne(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: old) }
++    window.app.appliesSizeAfter = 0.07
++    _ = one.layer.setFrame(CGRect(x: 100, y: 100, width: 600, height: 500), of: WindowID(window.number))
++    one.mac.pass(0.2)
++    one.mac.hang(window.app, for: 1)
++    one.mac.pass(0.4)
++    _ = one.layer.setFrame(old, of: WindowID(window.number))
++    one.mac.pass(5)
++    story.check("in the end it has the old size", window.frame == old, window.frame.text)
++  }
++
++  // A look that is dropped is no longer booked: or no call would ever be spared again.
++  book.story("an app applies a size 70 ms late and hangs for 5 s; once all is over Arbor's layer gives its window the frame it has") { story in
++    var window: FakeMac.Window!
++    let one = StoreyOne(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 100, y: 100, width: 400, height: 300)) }
++    let target = CGRect(x: 100, y: 100, width: 600, height: 500)
++    window.app.appliesSizeAfter = 0.07
++    _ = one.layer.setFrame(target, of: WindowID(window.number))
++    one.mac.pass(0.2)
++    one.mac.hang(window.app, for: 5)
++    one.mac.pass(10)
++    story.check("it has the frame, and Arbor knows", window.frame == target && one.snapshot(window)?.frame == target, "\(window.frame.text); \(one.snapshot(window)?.frame.text ?? "")")
++    let calls = one.mac.calls
++    _ = one.layer.setFrame(target, of: WindowID(window.number))
++    story.check("nothing is asked of the app", one.mac.calls == calls, "\(one.mac.calls - calls) calls")
++  }
++
+   // It is not only apps that are busy. A main thread that is held serves reports late: on a hosted Mac it drew tiles for the first time, for 830 ms, right after `arrange`, and of three reports of one
+   // move, all of the frame that had been asked for, the first was served after 0.996 s and the others after 1.015 and 1.017 s, and passed for the person's doing. The frame decides, not the time.
+   for held in [0.1, 0.5, 0.9, 1.2, 3.0] {
+diff --git a/scripts/mac-on-linux/tests/BusyAppsAttacked.swift b/scripts/mac-on-linux/tests/BusyAppsAttacked.swift
+new file mode 100644
+index 00000000..9cf6c749
+--- /dev/null
++++ b/scripts/mac-on-linux/tests/BusyAppsAttacked.swift
+@@ -0,0 +1,570 @@
++import ArborCore
++@testable import ArborKit
++import CoreGraphics
++import FakeMacOS
++import Foundation
++
++// Busy apps (BusyApps.swift), attacked: the stories of a reader who was asked to break the first draft of "knock before reading", and did. That draft remembered who has the keyboard for a
++// second and forgot it at a scatter of events: it was believed when it was stale, so that a command acted on the window its person had just left, and thrown away too eagerly, so that
++// the next to ask asked on the main thread after all. All of these were red on it. Those that were green before anybody knocked say so.
++
++@MainActor
++func tellOfBusyAppsAttacked(_ book: Book) {
++  // cmd-` in an app that is then busy, and a command within its burst. Late is one thing, the wrong window another. The report that the keyboard has moved names the window, which costs no call.
++  for (name, busy) in [("is busy for 0.7 s", 0.7), ("is not busy", 0.0)] {
++    book.story("the keyboard goes to another window of the app in front, which then \(name), and 0.1 s later Arbor is told to float the window that has it") { story in
++      var mine: FakeMac.Window!, theirs: [FakeMac.Window] = []
++      let two = StoreyTwo(story) { mac in
++        mine = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 60, y: 100, width: 400, height: 300))
++        let app = mac.launch("Busy")
++        theirs = [mac.open("a", in: app, frame: CGRect(x: 500, y: 60, width: 400, height: 300)), mac.open("b", in: app, frame: CGRect(x: 500, y: 380, width: 400, height: 300))]
++      }
++      story.check("three windows are arranged", two.run("arrange", then: 2).ok && (theirs + [mine]).allSatisfy { two.isDocked($0) })
++      story.check("the app in front is theirs", two.mac.frontmost === theirs[0].app)
++      // Twice there and back, so that the layer has reported who has it, and what was said is fresh.
++      two.mac.appMakesKey(theirs[0])
++      two.mac.pass(1)
++      two.mac.appMakesKey(theirs[1])
++      two.mac.pass(0.5)
++      let had = two.mac.keyWindow!
++      let other = theirs.first { $0 !== had }!
++      two.mac.appMakesKey(other)
++      if busy > 0 { two.mac.later(0.0005) { two.mac.hang(other.app, for: busy) } }
++      two.mac.pass(0.1)
++      story.check("the Mac has the keyboard in the other window", two.mac.keyWindow === other)
++      let result = two.run("float", then: 3)
++      story.check("Arbor takes the command", result.ok, result.message)
++      story.check("the window that has the keyboard floats", !two.isDocked(other), "docked: \(theirs.map { "w\($0.number) \(two.isDocked($0))" })")
++      story.check("the one that had it before stays docked", two.isDocked(had), "docked: \(theirs.map { "w\($0.number) \(two.isDocked($0))" })")
++    }
++  }
++
++  // The same of the layer alone.
++  book.story("the keyboard goes to another window of the app in front, which is then busy for 0.7 s, and Arbor's layer is asked who has it") { story in
++    var windows: [FakeMac.Window] = []
++    let one = StoreyOne(story) { mac in
++      let app = mac.launch("Notes")
++      windows = [mac.open("a", in: app, frame: CGRect(x: 100, y: 100, width: 400, height: 300)), mac.open("b", in: app, frame: CGRect(x: 520, y: 100, width: 400, height: 300))]
++    }
++    one.mac.appMakesKey(windows[0])
++    one.mac.pass(1)
++    one.mac.appMakesKey(windows[1])
++    one.mac.pass(0.5)
++    let had = one.layer.focusedWindow()?.rawValue
++    let other = windows.first { $0.number != had }!
++    one.mac.appMakesKey(other)
++    one.mac.later(0.0005) { one.mac.hang(other.app, for: 0.7) }
++    one.mac.pass(0.1)
++    let answer = one.layer.focusedWindow()?.rawValue
++    story.check("a tenth of a second later the answer is the window that has it", answer == other.number, "answer \(String(describing: answer)), had \(String(describing: had)), at \(one.mac.now - one.mac.dawn)")
++  }
++
++  // cmd-Tab to an app that is busy, and has never said which of its windows has the keyboard. "Nobody" is a claim too: that is waited for, as ever.
++  book.story("an app that is busy for 0.7 s comes forward, and 0.1 s later Arbor is told to float the window that has the keyboard") { story in
++    var mine: FakeMac.Window!, theirs: FakeMac.Window!
++    let two = StoreyTwo(story) { mac in
++      theirs = mac.open("theirs", in: mac.launch("Busy"), frame: CGRect(x: 500, y: 60, width: 400, height: 300))
++      mine = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 60, y: 100, width: 400, height: 300))
++    }
++    story.check("two windows are arranged", two.run("arrange", then: 2).ok && [theirs!, mine!].allSatisfy { two.isDocked($0) })
++    two.mac.activate(theirs.app)
++    two.mac.later(0.0005) { two.mac.hang(theirs.app, for: 0.7) }
++    two.mac.pass(0.1)
++    let result = two.run("float", then: 3)
++    story.check("Arbor takes the command", result.ok, result.message)
++    story.check("the window that has the keyboard floats", !two.isDocked(theirs), "theirs docked \(two.isDocked(theirs)), mine docked \(two.isDocked(mine))")
++    story.check("the other stays docked", two.isDocked(mine))
++  }
++
++  // That a window has gone is a fact, whatever waits behind the door: and the report of the keyboard that goes before every close has shut it.
++  for seconds in [5.0, 30.0] {
++    book.story("a window of an app like Safari closes, and half a millisecond later the app hangs for \(seconds) s") { story in
++      var windows: [FakeMac.Window] = []
++      let one = StoreyOne(story) { mac in
++        let app = mac.launch("Safari")
++        app.dropsAClosingWindowAtOnce = true
++        windows = [mac.open("a", in: app, frame: CGRect(x: 100, y: 100, width: 400, height: 300)), mac.open("b", in: app, frame: CGRect(x: 520, y: 100, width: 400, height: 300))]
++      }
++      one.heard.clear()
++      one.mac.close(windows[1])
++      one.mac.later(0.0005) { one.mac.hang(windows[0].app, for: seconds) }
++      one.mac.pass(4)
++      story.check("it is reported gone within four seconds", one.heard.all.contains(.destroyed(windows[1].number)), one.heard.texts)
++      one.mac.pass(seconds + 3)
++      story.check("once", one.heard.all.filter { $0 == .destroyed(windows[1].number) }.count == 1, one.heard.texts)
++    }
++  }
++
++  // Where a tab may be taking its place the app's list is read first. Gone it is, whether or not the app ever answers with that.
++  for (name, then) in [("hangs for 5 s", { (mac: FakeMac, app: FakeMac.App) in mac.hang(app, for: 5) }), ("is busy 0.7 s at a time", { mac, app in mac.keepsBusy(app, for: 5) })] {
++    book.story("an app has a window with two tabs and a plain one; the plain one closes, and as that is on its way to Arbor the app \(name)") { story in
++      var tabbed: FakeMac.Window!, plain: FakeMac.Window!
++      let one = StoreyOne(story) { mac in
++        let app = mac.launch("Notes")
++        tabbed = mac.open("tabbed", in: app, frame: CGRect(x: 100, y: 100, width: 400, height: 300))
++        plain = mac.open("plain", in: app, frame: CGRect(x: 520, y: 100, width: 400, height: 300))
++      }
++      _ = one.mac.newTab(of: tabbed)
++      one.mac.pass(2)
++      one.mac.click(plain)
++      one.mac.pass(2)
++      one.heard.clear()
++      let waited = one.mac.secondsTheMainThreadWaited
++      one.mac.close(plain)
++      one.mac.pass(0.013)
++      then(one.mac, plain.app)
++      one.mac.pass(2)
++      story.check("it is reported gone within two seconds", one.heard.all.contains(.destroyed(plain.number)), one.heard.texts)
++      one.mac.pass(7)
++      story.check("once", one.heard.all.filter { $0 == .destroyed(plain.number) }.count == 1, one.heard.texts)
++      story.check("Arbor's main thread has not waited for the app", one.mac.secondsTheMainThreadWaited - waited < 0.1, "\(one.mac.secondsTheMainThreadWaited - waited) s")
++    }
++  }
++
++  // A Mac on which other things happen. The price of asking every time: a twentieth of a second, once for each command, while the app in front is busy.
++  for (name, between) in [
++    ("the person clicks in its window", { (two: StoreyTwo, mine: FakeMac.Window, theirs: [FakeMac.Window]) in two.mac.click(two.mac.keyWindow!) }),
++    ("another app, in the background, shows a tooltip", { two, mine, theirs in
++      _ = two.mac.open("", in: mine.app, frame: CGRect(x: 80, y: 120, width: 100, height: 20), subrole: "AXUnknown", takesKeyboard: false)
++    }),
++    ("nothing else happens", { _, _, _ in }),
++  ] {
++    book.story("the app in front is busy 0.7 s at a time, \(name), and Arbor is given a command, every 0.4 s") { story in
++      var mine: FakeMac.Window!, theirs: [FakeMac.Window] = []
++      let two = StoreyTwo(story) { mac in
++        mine = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 60, y: 100, width: 400, height: 300))
++        let busy = mac.launch("Busy")
++        theirs = [mac.open("a", in: busy, frame: CGRect(x: 500, y: 60, width: 400, height: 300)), mac.open("b", in: busy, frame: CGRect(x: 500, y: 380, width: 400, height: 300))]
++      }
++      story.check("three windows are arranged", two.run("arrange", then: 2).ok && (theirs + [mine]).allSatisfy { two.isDocked($0) })
++      two.mac.keepsBusy(theirs[0].app, for: 12)
++      two.mac.pass(0.1)
++      let waited = two.mac.secondsTheMainThreadWaited
++      var slowest = (text: "", seconds: 0.0)
++      for command in ["state", "status", "state", "ascii", "state", "status", "state", "ascii"] {
++        between(two, mine, theirs)
++        two.mac.pass(0.05)
++        let began = two.mac.now
++        _ = two.run(command, then: 0)
++        if two.mac.now - began > slowest.seconds { slowest = (command, two.mac.now - began) }
++        two.mac.pass(0.35)
++      }
++      story.check("each is answered within a tenth of a second", slowest.seconds <= 0.1, "`\(slowest.text)` took \(slowest.seconds) s")
++      story.check("Arbor's main thread has waited a twentieth of a second for each at most", two.mac.secondsTheMainThreadWaited - waited <= 8 * 0.05 + 0.01, "\(two.mac.secondsTheMainThreadWaited - waited) s")
++    }
++  }
++
++  // That a window has opened is a fact as well. Its number would have to be asked for; the element that comes with the report is kept instead.
++  book.story("an app opens a window and hangs for 5 s half a millisecond later") { story in
++    var window: FakeMac.Window!
++    let one = StoreyOne(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 100, y: 100, width: 400, height: 300)) }
++    let waited = one.mac.secondsTheMainThreadWaited
++    let new = one.mac.open("new", in: window.app, frame: CGRect(x: 520, y: 100, width: 400, height: 300))
++    one.mac.later(0.0005) { one.mac.hang(window.app, for: 5) }
++    one.mac.pass(9)
++    story.check("Arbor's main thread has not waited for the app", one.mac.secondsTheMainThreadWaited - waited < 0.1, "\(one.mac.secondsTheMainThreadWaited - waited) s")
++    story.check("in the end Arbor knows the new window", one.known.contains(new.number), "\(one.known)")
++  }
++
++  // Reports as late as Finder's and Terminal's of their moves (0.3 to 0.55 s; of the keyboard nobody has measured any). An app that attends is asked, and believed.
++  for late in [0.3, 0.55] {
++    book.story("the keyboard goes to another window of an app whose reports are \(late) s late, and 0.2 s later Arbor is told to float the window that has it") { story in
++      var mine: FakeMac.Window!, theirs: [FakeMac.Window] = []
++      let two = StoreyTwo(story) { mac in
++        mine = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 60, y: 100, width: 400, height: 300))
++        let app = mac.launch("Terminal")
++        theirs = [mac.open("a", in: app, frame: CGRect(x: 500, y: 60, width: 400, height: 300)), mac.open("b", in: app, frame: CGRect(x: 500, y: 380, width: 400, height: 300))]
++      }
++      story.check("three windows are arranged", two.run("arrange", then: 2).ok && (theirs + [mine]).allSatisfy { two.isDocked($0) })
++      _ = two.run("state", then: 3)
++      let had = two.mac.keyWindow!
++      let other = theirs.first { $0 !== had }!
++      other.app.reportsLateBy = late
++      two.mac.appMakesKey(other)
++      two.mac.pass(0.2)
++      let result = two.run("float", then: 3)
++      story.check("Arbor takes the command", result.ok, result.message)
++      story.check("the window that has the keyboard floats", !two.isDocked(other), "docked: \(theirs.map { "w\($0.number) \(two.isDocked($0))" })")
++      story.check("the one that had it before stays docked", two.isDocked(had), "docked: \(theirs.map { "w\($0.number) \(two.isDocked($0))" })")
++    }
++  }
++
++  // The second and third look at a new element that is no window (yet), 0.3 and 0.6 s later.
++  for subrole in ["AXDialog", "AXUnknown"] {
++    book.story("an app that is busy 0.7 s at a time opens a panel (\(subrole)) in a moment of attention") { story in
++      var window: FakeMac.Window!
++      let one = StoreyOne(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 100, y: 100, width: 400, height: 300)) }
++      let waited = one.mac.secondsTheMainThreadWaited
++      _ = one.mac.open("Saving…", in: window.app, frame: CGRect(x: 150, y: 150, width: 300, height: 100), subrole: subrole, takesKeyboard: false)
++      one.mac.later(0.02) { one.mac.keepsBusy(window.app, for: 5) }
++      one.mac.pass(8)
++      story.check("Arbor's main thread has not waited for the app", one.mac.secondsTheMainThreadWaited - waited < 0.1, "\(one.mac.secondsTheMainThreadWaited - waited) s")
++    }
++  }
++
++  // A pause and a resume while a knock is out.
++  book.story("an app moves a window and hangs, Arbor's layer is stopped and started while the knock is out, and the app wakes") { story in
++    var windows: [FakeMac.Window] = []
++    let one = StoreyOne(story) { mac in
++      let app = mac.launch("Notes")
++      windows = [mac.open("a", in: app, frame: CGRect(x: 100, y: 100, width: 400, height: 300)), mac.open("b", in: app, frame: CGRect(x: 520, y: 100, width: 400, height: 300))]
++    }
++    one.mac.appMoves(windows[0], to: CGRect(x: 120, y: 200, width: 400, height: 300))
++    one.mac.later(0.0005) { one.mac.hang(windows[0].app, for: 0.6) }
++    one.mac.pass(0.1)
++    one.layer.stop()
++    one.mac.pass(0.1)
++    one.layer.start()
++    one.heard.clear()
++    one.mac.pass(0.1)
++    one.mac.later(0.5) { one.mac.appMoves(windows[1], to: CGRect(x: 540, y: 220, width: 400, height: 300)) }
++    one.mac.pass(6)
++    let known = Dictionary(uniqueKeysWithValues: one.layer.allWindows().map { ($0.id.rawValue, $0.frame) })
++    story.check("in the end Arbor knows both windows, where they are", windows.allSatisfy { known[$0.number] == $0.frame }, "\(known); \(one.heard.texts)")
++  }
++
++  book.story("an app moves a window and hangs, Arbor's layer is stopped while the knock is out, the app wakes, and the layer is started") { story in
++    var windows: [FakeMac.Window] = []
++    let one = StoreyOne(story) { mac in
++      let app = mac.launch("Notes")
++      windows = [mac.open("a", in: app, frame: CGRect(x: 100, y: 100, width: 400, height: 300)), mac.open("b", in: app, frame: CGRect(x: 520, y: 100, width: 400, height: 300))]
++    }
++    one.mac.appMoves(windows[0], to: CGRect(x: 120, y: 200, width: 400, height: 300))
++    one.mac.later(0.0005) { one.mac.hang(windows[0].app, for: 0.3) }
++    one.mac.pass(0.1)
++    one.layer.stop()
++    one.mac.pass(0.5)
++    one.layer.start()
++    one.mac.pass(1)
++    one.mac.appMoves(windows[1], to: CGRect(x: 540, y: 220, width: 400, height: 300))
++    one.mac.pass(3)
++    let known = Dictionary(uniqueKeysWithValues: one.layer.allWindows().map { ($0.id.rawValue, $0.frame) })
++    story.check("what the app does from then on is heard", windows.allSatisfy { known[$0.number] == $0.frame }, "\(known); \(one.heard.texts)")
++  }
++
++  // While it is stopped the layer hears nothing: what an app said before is worth nothing after.
++  book.story("Arbor's layer is stopped, the keyboard goes to another window of the app in front, the layer is started, and is asked who has it while the app is busy for 0.7 s") { story in
++    var windows: [FakeMac.Window] = []
++    let one = StoreyOne(story) { mac in
++      let app = mac.launch("Notes")
++      windows = [mac.open("a", in: app, frame: CGRect(x: 100, y: 100, width: 400, height: 300)), mac.open("b", in: app, frame: CGRect(x: 520, y: 100, width: 400, height: 300))]
++    }
++    let had = one.layer.focusedWindow()?.rawValue
++    let other = windows.first { $0.number != had }!
++    one.layer.stop()
++    one.mac.appMakesKey(other)
++    one.mac.pass(1)
++    one.layer.start()
++    one.mac.pass(1)
++    one.mac.hang(other.app, for: 0.7)
++    story.check("the answer is the window that has it", one.layer.focusedWindow()?.rawValue == other.number)
++  }
++
++  // An echo is Arbor's own by its frame, until somebody else has moved the window. The filter has to hear of that whichever way Arbor does: here the report was dropped behind the door.
++  book.story("Arbor gives a window a frame; later its app moves it away and hangs for 3 s; later still it is moved back") { story in
++    var window: FakeMac.Window!
++    let one = StoreyOne(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 100, y: 100, width: 400, height: 300)) }
++    let target = CGRect(x: 12, y: 43, width: 500, height: 650)
++    _ = one.layer.setFrame(target, of: WindowID(window.number))
++    one.mac.pass(5)
++    one.heard.clear()
++    let elsewhere = target.offsetBy(dx: 200, dy: 40)
++    one.mac.appMoves(window, to: elsewhere)
++    one.mac.later(0.0005) { one.mac.hang(window.app, for: 3) }
++    one.mac.pass(8)
++    story.check("the move away counts as somebody's doing", one.heard.all.contains(.changed(window.number, byUser: true)), one.heard.texts)
++    one.heard.clear()
++    one.mac.appMoves(window, to: target)
++    one.mac.pass(3)
++    story.check("so does the move back", one.heard.all.contains(.changed(window.number, byUser: true)), one.heard.texts)
++  }
++
++  book.story("Arbor gives a window a frame; later it is dragged away, its app saying nothing until it is over and hanging as it is let go; later still it is moved back") { story in
++    var window: FakeMac.Window!
++    let one = StoreyOne(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 100, y: 100, width: 400, height: 300)) }
++    let target = CGRect(x: 12, y: 43, width: 500, height: 650)
++    _ = one.layer.setFrame(target, of: WindowID(window.number))
++    one.mac.pass(5)
++    window.app.isSilentDuringDrags = true
++    one.mac.drag(from: CGPoint(x: 200, y: 55), to: CGPoint(x: 500, y: 155))
++    one.mac.hang(window.app, for: 3)
++    one.mac.release()
++    one.mac.pass(0.5)
++    story.check("the drag counts as somebody's doing", one.heard.all.contains(.changed(window.number, byUser: true)), one.heard.texts)
++    one.heard.clear()
++    one.mac.changeSilently(window, to: target)
++    one.mac.pass(5)
++    one.mac.appMoves(window, to: target.offsetBy(dx: 1, dy: 0))
++    one.mac.pass(3)
++    story.check("so does the move back", one.heard.all.contains(.changed(window.number, byUser: true)), one.heard.texts)
++  }
++
++  // Whoever watches a window under a press asks about what the window server lists, which can be behind. That settles nothing.
++  book.story("Arbor gives a window of an app whose reports are 0.5 s late a frame, the window server lists it 0.2 s late, and 0.16 s after the call the person selects text in it") { story in
++    var window: FakeMac.Window!
++    let one = StoreyOne(story) { mac in window = mac.open("window", in: mac.launch("Terminal"), frame: CGRect(x: 100, y: 100, width: 400, height: 300)) }
++    window.app.reportsLateBy = 0.5
++    one.mac.serverListsACallAfter = 0.2
++    let target = CGRect(x: 140, y: 120, width: 500, height: 400)
++    one.heard.clear()
++    _ = one.layer.setFrame(target, of: WindowID(window.number))
++    one.mac.pass(0.16)
++    one.mac.press(at: CGPoint(x: 300, y: 300))
++    one.mac.pass(0.01)
++    one.mac.moveMouse(to: CGPoint(x: 310, y: 300))
++    one.mac.pass(0.01)
++    one.mac.moveMouse(to: CGPoint(x: 320, y: 300))
++    one.mac.pass(0.3)
++    one.mac.release()
++    one.mac.pass(3)
++    story.check("the reports of Arbor's move are served", one.heard.all.contains { if case .changed = $0 { true } else { false } }, one.heard.texts)
++    story.check("and none of them counts as the person's doing", !one.heard.all.contains(.changed(window.number, byUser: true)), one.heard.texts)
++  }
++
++  // An app is hidden while a knock is out and goes unanswered.
++  book.story("a window is renamed, its app hangs for 4 s, and meanwhile the person hides the app") { story in
++    var mine: FakeMac.Window!, theirs: FakeMac.Window!
++    let one = StoreyOne(story) { mac in
++      mine = mac.open("mine", in: mac.launch("Notes"), frame: CGRect(x: 100, y: 100, width: 400, height: 300))
++      theirs = mac.open("theirs", in: mac.launch("Mail"), frame: CGRect(x: 520, y: 100, width: 400, height: 300))
++    }
++    _ = mine
++    one.mac.rename(theirs, "new")
++    one.mac.later(0.0005) { one.mac.hang(theirs.app, for: 4) }
++    one.mac.pass(0.2)
++    one.mac.hide(theirs.app)
++    one.mac.pass(9)
++    story.check("in the end Arbor knows that it is hidden", one.snapshot(theirs)?.isHidden == true, one.heard.texts)
++    story.check("and its new title", one.snapshot(theirs)?.title == "new")
++  }
++
++  // The window with the keyboard is sent to another Space, and nothing says so. What the app answers then is the model's guess.
++  book.story("the only window of the app in front is sent to another Space, and three seconds later Arbor's layer is asked who has the keyboard") { story in
++    var window: FakeMac.Window!
++    let one = StoreyOne(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 100, y: 100, width: 400, height: 300)) }
++    story.check("to begin with it has the keyboard", one.layer.focusedWindow()?.rawValue == window.number)
++    one.mac.send(window, toSpace: 2)
++    one.mac.pass(3)
++    story.check("nobody has it", one.layer.focusedWindow() == nil, "\(String(describing: one.layer.focusedWindow()))")
++  }
++
++  // Whether a window has the keyboard already, so that it need not be given it.
++  book.story("the keyboard goes to another window of an app whose reports are 0.5 s late, and 0.2 s later Arbor's layer is asked to give it back") { story in
++    var windows: [FakeMac.Window] = []
++    let one = StoreyOne(story) { mac in
++      let app = mac.launch("Terminal")
++      windows = [mac.open("a", in: app, frame: CGRect(x: 100, y: 100, width: 400, height: 300)), mac.open("b", in: app, frame: CGRect(x: 520, y: 100, width: 400, height: 300))]
++    }
++    let had = windows.first { $0.number == one.layer.focusedWindow()?.rawValue }!
++    let other = windows.first { $0 !== had }!
++    other.app.reportsLateBy = 0.5
++    one.mac.appMakesKey(other)
++    one.mac.pass(0.2)
++    one.layer.focus(WindowID(had.number))
++    one.mac.pass(3)
++    story.check("it has it again", one.mac.keyWindow === had, "w\(one.mac.keyWindow?.number ?? 0) has it")
++  }
++
++  // "Shown" finds the app silent. Somebody has to look at the windows that could not be told from dialogs when it answers again. Red before anybody knocked, too.
++  book.story("a dialog opens as its app is hidden; later the app is shown again and hangs for 3 s half a millisecond later") { story in
++    var mine: FakeMac.Window!, theirs: FakeMac.Window!
++    let one = StoreyOne(story) { mac in
++      mine = mac.open("mine", in: mac.launch("Notes"), frame: CGRect(x: 100, y: 100, width: 400, height: 300))
++      theirs = mac.open("theirs", in: mac.launch("Mail"), frame: CGRect(x: 520, y: 100, width: 400, height: 300))
++    }
++    _ = one.mac.open("Save changes?", in: theirs.app, frame: CGRect(x: 570, y: 150, width: 300, height: 200), subrole: "AXDialog")
++    one.mac.pass(0.002)
++    one.mac.hide(theirs.app)
++    one.mac.pass(3)
++    one.mac.activate(theirs.app)
++    one.mac.later(0.0005) { one.mac.hang(theirs.app, for: 3) }
++    one.mac.pass(9)
++    story.check("Arbor knows that its window shows again", one.snapshot(theirs)?.isHidden == false)
++    story.check("and does not take the dialog for a window", one.known.sorted() == [mine.number, theirs.number], "\(one.known); \(one.heard.texts)")
++  }
++
++  // However long ago. Nobody has seen such a report lost.
++  for seconds in [3.0, 60.0] {
++    book.story("the keyboard goes to another window of the app in front, no report of that ever arrives, and \(seconds) s later Arbor is told to float the window that has it") { story in
++      var mine: FakeMac.Window!, theirs: [FakeMac.Window] = []
++      let two = StoreyTwo(story) { mac in
++        mine = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 60, y: 100, width: 400, height: 300))
++        let app = mac.launch("Terminal")
++        theirs = [mac.open("a", in: app, frame: CGRect(x: 500, y: 60, width: 400, height: 300)), mac.open("b", in: app, frame: CGRect(x: 500, y: 380, width: 400, height: 300))]
++      }
++      story.check("three windows are arranged", two.run("arrange", then: 2).ok && (theirs + [mine]).allSatisfy { two.isDocked($0) })
++      _ = two.run("state", then: 3)
++      let had = two.mac.keyWindow!
++      let other = theirs.first { $0 !== had }!
++      other.app.reportsLateBy = 1000
++      two.mac.appMakesKey(other)
++      two.mac.pass(seconds)
++      let result = two.run("float", then: 3)
++      story.check("Arbor takes the command", result.ok, result.message)
++      story.check("the window that has the keyboard floats", !two.isDocked(other), "docked: \(theirs.map { "w\($0.number) \(two.isDocked($0))" })")
++      story.check("the one that had it before stays docked", two.isDocked(had), "docked: \(theirs.map { "w\($0.number) \(two.isDocked($0))" })")
++    }
++  }
++
++  // What that costs a person: a floating window, put back by hand where Arbor had once put it, is remembered where it is not.
++  book.story("a window floats where Arbor put it; something moves it away as its app hangs for 3 s; it is moved back; the view goes elsewhere and comes back") { story in
++    var mine: FakeMac.Window!, theirs: [FakeMac.Window] = []
++    let two = StoreyTwo(story) { mac in
++      mine = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 60, y: 100, width: 400, height: 300))
++      let app = mac.launch("Other")
++      theirs = [mac.open("a", in: app, frame: CGRect(x: 500, y: 60, width: 400, height: 300)), mac.open("b", in: app, frame: CGRect(x: 500, y: 380, width: 400, height: 300))]
++    }
++    story.check("three windows are arranged", two.run("arrange", then: 2).ok && (theirs + [mine]).allSatisfy { two.isDocked($0) })
++    story.check("one is floated", two.run("float \(mine.number)", then: 3).ok && !two.isDocked(mine))
++    let home = mine.frame
++    let away = home.offsetBy(dx: 150, dy: 90)
++    two.mac.appMoves(mine, to: away)
++    two.mac.later(0.0005) { two.mac.hang(mine.app, for: 3) }
++    two.mac.pass(8)
++    two.mac.appMoves(mine, to: home)
++    two.mac.pass(3)
++    story.check("it stands where it was moved back to", mine.frame == home, two.whereabouts(mine))
++    let remembered = two.controller.workspaces.values.compactMap { $0.floating[WindowID(mine.number)] }.first
++    story.check("and that is where Arbor remembers it", remembered == home, "remembered \(remembered?.text ?? "nowhere"), home \(home.text), away \(away.text)")
++    _ = two.run("pause", then: 2)
++    _ = two.run("resume", then: 3)
++    story.check("after a pause it stands there still", mine.frame == home, two.whereabouts(mine))
++    _ = two.run("zoom \(theirs[0].number)", then: 3)
++    _ = two.run("show-all", then: 3)
++    story.check("after the view has been elsewhere it stands there again", mine.frame == home, "\(two.whereabouts(mine)), home \(home.text), away \(away.text)")
++  }
++
++  // From the polite walk (`polite|489|hide 71 93; open 21 15 +0.002; hang 62 1; space 92 92`). New it is at any moment, since the element is kept. On which Space it is, is the listed fault, and the
++  // moment up to which the hang brings it out is a hop later than before anybody knocked (2.3 ms against 1.9).
++  for tenths in [5, 21, 40] {
++    book.story("an app opens a window and hangs \(Double(tenths) / 10) ms later; the Space changes; the app wakes") { story in
++      var window: FakeMac.Window!
++      let one = StoreyOne(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 100, y: 100, width: 400, height: 300)) }
++      one.heard.clear()
++      window.app.reportsFocusBeforeCreated = true
++      let new = one.mac.open("new", in: window.app, frame: CGRect(x: 520, y: 100, width: 400, height: 300))
++      one.mac.later(Double(tenths) / 10_000) { one.mac.hang(window.app) }
++      one.mac.pass(4)
++      one.mac.switchSpace(to: 3)
++      one.mac.pass(2)
++      one.mac.wake(window.app)
++      one.mac.pass(4)
++      story.check("the new window is announced as new", one.heard.all.contains(.appeared(new.number)) && !one.heard.all.contains(.found(new.number)), one.heard.texts)
++      story.check("and Arbor knows that it is not on the Space that shows", one.snapshot(new)?.isOnActiveSpace == false, "\(String(describing: one.snapshot(new)?.isOnActiveSpace))")
++    }
++  }
++
++  // The same with a plain AppKit app: something else of the app's shuts the door a moment before "destroyed" arrives.
++  for seconds in [5.0, 30.0] {
++    book.story("a window closes, its app renames another as it goes, and hangs for \(seconds) s as both reports are on their way") { story in
++      var windows: [FakeMac.Window] = []
++      let one = StoreyOne(story) { mac in
++        let app = mac.launch("Notes")
++        windows = [mac.open("a", in: app, frame: CGRect(x: 100, y: 100, width: 400, height: 300)), mac.open("b", in: app, frame: CGRect(x: 520, y: 100, width: 400, height: 300))]
++      }
++      one.heard.clear()
++      one.mac.close(windows[1])
++      one.mac.later(0.0119) { one.mac.rename(windows[0], "a, alone") }
++      one.mac.later(0.0125) { one.mac.hang(windows[0].app, for: seconds) }
++      one.mac.pass(4)
++      story.check("it is reported gone within four seconds", one.heard.all.contains(.destroyed(windows[1].number)), one.heard.texts)
++      one.mac.pass(seconds + 3)
++      story.check("once", one.heard.all.filter { $0 == .destroyed(windows[1].number) }.count == 1, one.heard.texts)
++    }
++  }
++
++  // "Nothing is promised about the moment after" (`AXKnocks`): an app that answers the knock and is BUSY again, not hung, answers within the timeout and is never put on record. A limit of the idea:
++  // how many calls a busy app answers in a row only a Mac can say.
++  for calls in [1, 3, 10] {
++    book.story("an app moves its six windows; it is busy 0.7 s at a time, and each time it attends it answers \(calls) calls") { story in
++      var windows: [FakeMac.Window] = []
++      let one = StoreyOne(story) { mac in
++        let app = mac.launch("Notes")
++        windows = (0..<6).map { mac.open("w\($0)", in: app, frame: CGRect(x: 100 + 40 * CGFloat($0), y: 100, width: 400, height: 300)) }
++      }
++      let app = windows[0].app
++      let waited = one.mac.secondsTheMainThreadWaited
++      let end = one.mac.now + 20
++      var wakes = false
++      // Looks every millisecond, whatever Arbor's main thread does: an app that has begun to work goes on for 0.7 s, attends, and answers so many calls.
++      func watch() {
++        guard one.mac.now < end else { return app.hangsAfterCalls = nil }
++        if app.isHung, !wakes {
++          wakes = true
++          one.mac.later(0.7) {
++            one.mac.wake(app)
++            app.hangsAfterCalls = calls
++            wakes = false
++          }
++        }
++        one.mac.later(0.001) { watch() }
++      }
++      for window in windows { one.mac.appMoves(window, to: window.frame.offsetBy(dx: 0, dy: 120)) }
++      one.mac.later(0.0005) { one.mac.hang(app) }
++      watch()
++      one.mac.pass(21)
++      if app.isHung { one.mac.wake(app) }
++      one.mac.pass(5)
++      story.check("Arbor's main thread waits 0.1 s at most", one.mac.secondsTheMainThreadWaited - waited <= 0.1, "\(one.mac.secondsTheMainThreadWaited - waited) s")
++      let known = Dictionary(uniqueKeysWithValues: one.layer.allWindows().map { ($0.id.rawValue, $0.frame) })
++      story.check("in the end Arbor knows where all six are", windows.allSatisfy { known[$0.number] == $0.frame }, "\(known)")
++    }
++  }
++
++  // A close with the real controller on top: what the controller asks when it hears "gone".
++  for (name, then) in [("hangs for 5 s", { (mac: FakeMac, app: FakeMac.App) in mac.hang(app, for: 5) }), ("is busy 0.7 s at a time", { mac, app in mac.keepsBusy(app, for: 5) })] {
++    book.story("a docked window closes, and as that is on its way to Arbor its app \(name)") { story in
++      var mine: FakeMac.Window!, theirs: [FakeMac.Window] = []
++      let two = StoreyTwo(story) { mac in
++        mine = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 60, y: 100, width: 400, height: 300))
++        let app = mac.launch("Notes")
++        theirs = [mac.open("a", in: app, frame: CGRect(x: 500, y: 60, width: 400, height: 300)), mac.open("b", in: app, frame: CGRect(x: 500, y: 380, width: 400, height: 300))]
++      }
++      story.check("three windows are arranged", two.run("arrange", then: 3).ok && (theirs + [mine]).allSatisfy { two.isDocked($0) })
++      two.mac.pass(1)
++      func inCalls() -> (total: Double, worst: Double) { CallStats.shared["accessibility calls by thread", "main thread"].map { ($0.total, $0.worst) } ?? (0, 0) }
++      CallStats.shared.reset()
++      two.mac.close(theirs[1])
++      two.mac.pass(0.013)
++      then(two.mac, theirs[0].app)
++      two.mac.pass(0.3)
++      story.check("it is reported gone within a third of a second", two.heard.all.contains(.destroyed(theirs[1].number)))
++      two.mac.pass(9)
++      story.check("Arbor's main thread has spent 0.1 s at most in calls to apps", inCalls().total <= 0.1, "\(inCalls().total) s, the longest \(inCalls().worst) s")
++    }
++  }
++
++  // At "activated" and "deactivated" the controller asks at once who has the keyboard.
++  for ms in [5.0, 8.0] {
++    book.story("an app comes forward and is busy for 0.7 s from \(ms) ms after") { story in
++      var mine: FakeMac.Window!, theirs: FakeMac.Window!
++      let two = StoreyTwo(story) { mac in
++        theirs = mac.open("theirs", in: mac.launch("Busy"), frame: CGRect(x: 500, y: 60, width: 400, height: 300))
++        mine = mac.open("mine", in: mac.launch("Mine"), frame: CGRect(x: 60, y: 100, width: 400, height: 300))
++      }
++      story.check("two windows are arranged", two.run("arrange", then: 3).ok && [theirs!, mine!].allSatisfy { two.isDocked($0) })
++      func inCalls() -> (total: Double, worst: Double) { CallStats.shared["accessibility calls by thread", "main thread"].map { ($0.total, $0.worst) } ?? (0, 0) }
++      CallStats.shared.reset()
++      let waited = two.mac.secondsTheMainThreadWaited
++      two.mac.activate(theirs.app)
++      two.mac.later(ms / 1000) { two.mac.hang(theirs.app, for: 0.7) }
++      two.mac.pass(3)
++      story.check("Arbor's main thread has spent 0.1 s at most in calls to apps", inCalls().total <= 0.1, "\(inCalls().total) s, the longest \(inCalls().worst) s")
++      story.check("and has waited 0.1 s at most for another thread's", two.mac.secondsTheMainThreadWaited - waited <= 0.1, "\(two.mac.secondsTheMainThreadWaited - waited) s")
++    }
++  }
++
++  // From the polite walk at 100 steps (`polite|271|tab 81 94 +0.002; move 86 8`): the listed fault of a list that is read once, its gap a hop wider (2.3 ms against 1.9).
++  for tenths in [15, 21, 30] {
++    book.story("a window gets a new tab, which its app moves \(Double(tenths) / 10) ms later") { story in
++      var window: FakeMac.Window!
++      let one = StoreyOne(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 100, y: 100, width: 400, height: 300)) }
++      one.heard.clear()
++      window.app.reportsFocusBeforeCreated = true
++      let tab = one.mac.newTab(of: window)
++      one.mac.later(Double(tenths) / 10_000) { one.mac.appMoves(tab, to: CGRect(x: 240, y: 110, width: 260, height: 300)) }
++      one.mac.pass(3)
++      story.check("the tab is not announced as a window of its own", !one.heard.all.contains(.appeared(tab.number)), one.heard.texts)
++    }
++  }
++}
+diff --git a/scripts/mac-on-linux/tests/main.swift b/scripts/mac-on-linux/tests/main.swift
+index b2904b75..628094e1 100644
+--- a/scripts/mac-on-linux/tests/main.swift
++++ b/scripts/mac-on-linux/tests/main.swift
+@@ -156,6 +156,7 @@ tellOfPlacing(book)
+ tellOfArrangements(book)
+ tellOfSlowApps(book)
+ tellOfBusyApps(book)
++tellOfBusyAppsAttacked(book)
+ tellOfTheWalk(book)
+ if let replay = book.options.replay { exit(replayWalk(replay)) }
+ exit(book.tellAll())

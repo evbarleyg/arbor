@@ -1,0 +1,1745 @@
+diff --git a/Sources/ArborCore/GestureRouter.swift b/Sources/ArborCore/GestureRouter.swift
+index 58c1e19..075ab40 100644
+--- a/Sources/ArborCore/GestureRouter.swift
++++ b/Sources/ArborCore/GestureRouter.swift
+@@ -65,6 +65,8 @@ public struct GestureRouter: Equatable, Sendable {
+   }
+   /// What the scroll in progress does, if it is Arbor's.
+   private var scrollKind = ScrollKind.undecided
++  /// For a wheel on the Desktop, whose every notch would otherwise ask anew.
++  private var surface = SurfaceMemo()
+ 
+   /// The setting `scrollZoom`: a scroll with ⌃⌥ held zooms.
+   public var zoomsWithScroll = false
+@@ -138,21 +140,49 @@ public struct GestureRouter: Equatable, Sendable {
+     scrollTapIsWanted(keys: keys)
+   }
+ 
++  /// Whether it matters for this event what is under the pointer: only with `scrollOnDesktopZooms`, without any key, and
++  /// when a scroll begins or has no phases.
++  private func surfaceMatters(_ phase: ScrollClaim.Phase, momentum: ScrollClaim.Momentum, keys: Keys) -> Bool {
++    guard zoomsWithScroll, zoomsOnDesktop, keys == .none else { return false }
++    return phase == .began || (phase == .none && momentum == .none)
++  }
++
++  /// Whether `scroll` would have to find out what is under the pointer for this event. Finding out takes
++  /// milliseconds, so whoever holds this value under a lock asks first, finds out with the lock released, and hands
++  /// `scroll` the answer.
++  public func scrollAsksWhatIsUnder(
++    _ phase: ScrollClaim.Phase, momentum: ScrollClaim.Momentum = .none, at point: CGPoint, keys: Keys, now: Double
++  ) -> Bool {
++    surfaceMatters(phase, momentum: momentum, keys: keys) && surface.isBare(at: point, now: now) == nil
++  }
++
+   /// A scroll is Arbor's if, as it begins, ⌃⌥ and nothing else is held or, with `continuousZoom`, a pinch of Arbor's is in
+   /// progress. A wheel has no beginning: each notch is on its own, and only zooms.
+   ///
+   /// - Parameters:
+   ///   - hasNotches: the event is one notch of a wheel, not points of travel.
+-  ///   - overDesktop: whether no app's window is under the pointer. Evaluated only with `zoomsOnDesktop`, without
++  ///   - now: when the event happened, in seconds on any clock that does not go backwards. Without it nothing is
++  ///     remembered from one event to the next about what is under the pointer.
++  ///   - overDesktop: whether no app's window is under the pointer. Evaluated only if `scrollAsksWhatIsUnder`: with `zoomsOnDesktop`, without
+   ///     the keys, and when a scroll begins or has no phases.
+   public mutating func scroll(
+     _ phase: ScrollClaim.Phase, momentum: ScrollClaim.Momentum = .none, pan: CGSize, at point: CGPoint,
+-    keys: Keys, hasNotches: Bool = false, overDesktop: @autoclosure () -> Bool = false
++    keys: Keys, hasNotches: Bool = false, now: Double? = nil, overDesktop: @autoclosure () -> Bool = false
+   ) -> Answer {
+     let height = Double(pan.height)
++    var isOverDesktop = false
++    if surfaceMatters(phase, momentum: momentum, keys: keys) {
++      if let now, let remembered = surface.isBare(at: point, now: now) {
++        isOverDesktop = remembered
++      } else {
++        isOverDesktop = overDesktop()
++        // Kept from when it was found out, not from when it was last of use.
++        if let now { surface.remember(isOverDesktop, at: point, now: now) }
++      }
++    }
+     if phase == .none, momentum == .none {
+       // A wheel, or a driver that smooths one: no beginning, no end, no momentum.
+-      guard zoomsWithScroll, keys.makeANotchArbors || (keys == .none && zoomsOnDesktop && overDesktop()) else {
++      guard zoomsWithScroll, keys.makeANotchArbors || isOverDesktop else {
+         return Answer(swallow: false)
+       }
+       let steps = hasNotches ? scrollZoom.notch(height) : scrollZoom.move(by: height)
+@@ -170,7 +200,7 @@ public struct GestureRouter: Equatable, Sendable {
+         // Where only one of the two can be had there is nothing to decide.
+         scrollKind = !zoomsWithScroll ? .pan : !isContinuous ? .zoom : .undecided
+         claim = zoomsWithScroll || isContinuous
+-      } else if keys == .none, zoomsWithScroll, zoomsOnDesktop, overDesktop() {
++      } else if isOverDesktop {
+         scrollKind = .zoom
+         claim = true
+       } else {
+@@ -216,6 +246,7 @@ public struct GestureRouter: Equatable, Sendable {
+     scrollClaim.reset()
+     scrollZoom.reset()
+     scrollKind = .undecided
++    surface.forget()
+     return stream.cancel()
+   }
+ 
+diff --git a/Sources/ArborCore/Settings.swift b/Sources/ArborCore/Settings.swift
+index 0d702f2..3b9a615 100644
+--- a/Sources/ArborCore/Settings.swift
++++ b/Sources/ArborCore/Settings.swift
+@@ -193,7 +193,7 @@ public struct Settings: Codable, Equatable, Sendable {
+   /// Points of travel for one step on a Magic Mouse or trackpad. A wheel steps once per notch.
+   public var scrollZoomThreshold: Double = 40
+   /// Scrolling where no app's window is under the pointer zooms without the keys, as a pinch there does. Every scroll on
+-  /// the Mac then passes through Arbor, and each notch of a wheel reads the window list.
++  /// the Mac then passes through Arbor.
+   public var scrollOnDesktopZooms: Bool = false
+   /// What happens to a new window that no entry of `rules` matches: `"float"`, it stays where its app put it, or
+   /// `"dock"`, it docks beside the focused window. `"dock"` is short for a last rule
+diff --git a/Sources/ArborCore/SettingsCommand.swift b/Sources/ArborCore/SettingsCommand.swift
+index d46b328..a52d5e2 100644
+--- a/Sources/ArborCore/SettingsCommand.swift
++++ b/Sources/ArborCore/SettingsCommand.swift
+@@ -87,7 +87,10 @@ public enum SettingsCommand: Equatable, Sendable, Codable {
+         let chord = try KeyChord(text: written)
+         return chord.text
+       } catch {
+-        throw ParseError("\(SettingError.quoted(written)) is not a shortcut: \(error)")
++        // It may name a key by what it types (`ctrl+opt+ö`). Whether it does depends on the keyboard layout in use, which
++        // only the controller knows: it goes on tidied, and is judged there.
++        if let tidied = withAKeyNamedByACharacter(written) { return tidied }
++        throw ParseError(notAShortcut(written, error))
+       }
+     }
+ 
+@@ -160,6 +163,22 @@ public enum SettingsCommand: Equatable, Sendable, Codable {
+     }
+   }
+ 
++  public static func notAShortcut(_ written: String, _ error: any Error) -> String {
++    "\(SettingError.quoted(written)) is not a shortcut: \(error)"
++  }
++
++  /// `Opt + Ctrl + Ö` as `ctrl+opt+ö`, if the text is modifiers and one single character besides. Nil otherwise.
++  static func withAKeyNamedByACharacter(_ written: String) -> String? {
++    let parts = written.filter { !$0.isWhitespace }.lowercased().split(separator: "+", omittingEmptySubsequences: false)
++    var modifiers: KeyChord.Modifiers = []
++    var strangers: [Substring] = []
++    for part in parts {
++      if let modifier = KeyChord.modifierNames[String(part)] { modifiers.insert(modifier) } else { strangers.append(part) }
++    }
++    guard strangers.count == 1, strangers[0].count == 1 else { return nil }
++    return String(KeyChord(modifiers, .a).text.dropLast()) + strangers[0]
++  }
++
+   private static let ruleUsage =
+     "usage: rule add <bundle id> <action> [title <text>] | rule change <n> <bundle id> <action> [title <text>]"
+     + " | rule remove <n> | rule move <n> <place>"
+@@ -250,8 +269,11 @@ public enum SettingsCommand: Equatable, Sendable, Codable {
+ extension Settings {
+   /// Drops everything `bindings` says about `chord`, however the user spelt it (`opt+ctrl+Space`),
+   /// including an entry that could not be read. What `bind` and `unbind` do first.
+-  public mutating func removeBindings(for chord: KeyChord) {
+-    for text in bindings.keys where (try? KeyChord(text: text)) == chord { bindings.removeValue(forKey: text) }
+-    unreadableBindings.removeAll { (try? KeyChord(text: $0)) == chord }
++  /// On `layout`, where a key can also be named by what it types: `ü` and `us:[` are one shortcut on a German keyboard.
++  public mutating func removeBindings(for chord: KeyChord, layout: KeyLayout = .us) {
++    for text in bindings.keys where (try? KeyChord(text: text, layout: layout)) == chord {
++      bindings.removeValue(forKey: text)
++    }
++    unreadableBindings.removeAll { (try? KeyChord(text: $0, layout: layout)) == chord }
+   }
+ }
+diff --git a/Sources/ArborCore/SettingsSchema.swift b/Sources/ArborCore/SettingsSchema.swift
+index a4f9372..664b8fd 100644
+--- a/Sources/ArborCore/SettingsSchema.swift
++++ b/Sources/ArborCore/SettingsSchema.swift
+@@ -188,7 +188,7 @@ public enum SettingsSchema {
+         "A ⇧-drag that starts on the Desktop, in a gap or on a tile also frames a rectangle."),
+       .toggle(
+         "continuousZoom", \.continuousZoom, "Continuous zoom",
+-        "Not finished: the view will follow the fingers during a pinch, and pan with ⌥ and two fingers. "
++        "Not finished: the view will follow the fingers during a pinch, and slide with ⌃⌥ and two fingers sideways. "
+           + "For now a pinch steps as before.", hidden: true),
+       .toggle(
+         "guardDesktopClicks", \.guardDesktopClicks, "Guard clicks on the Desktop",
+diff --git a/Sources/ArborCore/SurfaceMemo.swift b/Sources/ArborCore/SurfaceMemo.swift
+new file mode 100644
+index 0000000..c19560e
+--- /dev/null
++++ b/Sources/ArborCore/SurfaceMemo.swift
+@@ -0,0 +1,39 @@
++import CoreGraphics
++
++/// What was last found under the pointer, kept for a moment.
++///
++/// Finding out means reading the window server's list: a quarter of a millisecond on a good day, three while an app
++/// hangs, with an event waiting all the while. A wheel has no beginning at which to ask once: a free-spinning one, or a
++/// driver that smooths one, sends a hundred or two events a second, each on its own. They are about the same
++/// place, so one answer serves them for as long as the pointer rests, but not for long: windows come and go, and
++/// Arbor's own steps move them.
++public struct SurfaceMemo: Equatable, Sendable {
++  /// Seconds an answer is good for, counted from when it was given: more events do not keep it alive.
++  public static let lifetime = 0.3
++  /// How far, in points along either axis, a hand on a wheel may nudge the pointer.
++  public static let slack: CGFloat = 2
++
++  private var point = CGPoint.zero
++  private var time = -Double.infinity
++  private var isBare = false
++
++  public init() {}
++
++  /// The answer, if there is one that still holds. Times are seconds on any clock that does not go backwards.
++  public func isBare(at point: CGPoint, now: Double) -> Bool? {
++    guard now >= time, now - time < Self.lifetime,
++      max(abs(point.x - self.point.x), abs(point.y - self.point.y)) <= Self.slack
++    else { return nil }
++    return isBare
++  }
++
++  public mutating func remember(_ isBare: Bool, at point: CGPoint, now: Double) {
++    self.isBare = isBare
++    self.point = point
++    time = now
++  }
++
++  public mutating func forget() {
++    self = SurfaceMemo()
++  }
++}
+diff --git a/Sources/ArborKit/App/ArborApp.swift b/Sources/ArborKit/App/ArborApp.swift
+index d46ab81..3ee0855 100644
+--- a/Sources/ArborKit/App/ArborApp.swift
++++ b/Sources/ArborKit/App/ArborApp.swift
+@@ -282,7 +282,8 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
+       // Only without the permission. Why any other key did nothing is said on screen, and `handle` has the beep for those who
+       // switched that off, and knows when to keep quiet.
+       guard result?.ok == false, !self.controller.accessibilityGranted else { return }
+-      NSSound.beep()
++      // With messages switched off `handle` has beeped already.
++      if self.controller.settings.messageLevel != .off { NSSound.beep() }
+       // The ways home are held without the permission only to lead to where it is granted.
+       if self.controller.shouldOpenAccessibilitySettings() { self.openAccessibilitySettings() }
+     }
+diff --git a/Sources/ArborKit/Controller/Controller+DesktopGuard.swift b/Sources/ArborKit/Controller/Controller+DesktopGuard.swift
+index 40cd53a..ce7386b 100644
+--- a/Sources/ArborKit/Controller/Controller+DesktopGuard.swift
++++ b/Sources/ArborKit/Controller/Controller+DesktopGuard.swift
+@@ -3,16 +3,20 @@ import CoreGraphics
+ 
+ extension Controller {
+   /// Where a press might land on bare Desktop inside Arbor's view, for the guard of the Desktop
+-  /// (docs/features/F60-guard-the-wallpaper-click.md) and for ⇧-drag (F05), which ask the same question: on every
+-  /// display with something docked, the part Arbor lays out, less where the windows it knows to be in view really
+-  /// are. Empty before the start, while paused, and wherever else `inputSettings` turns both off.
++  /// (docs/features/F60-guard-the-wallpaper-click.md), for ⇧-drag (F05) and for a scroll on the Desktop that zooms (F55,
++  /// `scrollOnDesktopZooms`), which ask the same question: on every display with something docked, the part Arbor lays out,
++  /// less where the windows it knows to be in view really are. Empty before the start, while paused, and wherever else
++  /// `inputSettings` turns all three off.
+   ///
+   /// The windows' real frames, not their slots: a window that cannot grow to its slot has wallpaper around it. They
+   /// change without a new layout (the user drags a floating window about), which observers hear of as `.frames`.
+   /// A frame gone stale all the same errs on the safe side: the press goes where it would without Arbor.
+   public func desktopGuardZones() -> DesktopGuardZones {
+     let settings = inputSettings
+-    guard isRunning, settings.guardDesktopClicks || settings.frameRectangleOnDesktop else { return DesktopGuardZones() }
++    let scrolls = settings.gesturesEnabled && settings.scrollZoom && settings.scrollOnDesktopZooms
++    guard isRunning, settings.guardDesktopClicks || settings.frameRectangleOnDesktop || scrolls else {
++      return DesktopGuardZones()
++    }
+     let inView = windows.values.filter { $0.isPresent && !parked.contains($0.id) }.map(\.frame)
+     return DesktopGuardZones(
+       displays: displays.compactMap { display -> DesktopGuardZones.Display? in
+diff --git a/Sources/ArborKit/Controller/Controller+Displays.swift b/Sources/ArborKit/Controller/Controller+Displays.swift
+index 0427920..20e5b27 100644
+--- a/Sources/ArborKit/Controller/Controller+Displays.swift
++++ b/Sources/ArborKit/Controller/Controller+Displays.swift
+@@ -68,6 +68,8 @@ extension Controller {
+     relayoutAll(reason: .camera, motion: .instant)
+     parkAgain()
+     scheduleSave()
++    // With the last display gone nothing is laid out, so no layout brings this up.
++    summonKeysMayHaveChanged()
+   }
+ 
+   // MARK: A display that moved
+diff --git a/Sources/ArborKit/Controller/Controller+PassThrough.swift b/Sources/ArborKit/Controller/Controller+PassThrough.swift
+index bab3f12..d72cf8a 100644
+--- a/Sources/ArborKit/Controller/Controller+PassThrough.swift
++++ b/Sources/ArborKit/Controller/Controller+PassThrough.swift
+@@ -29,11 +29,15 @@ extension Controller {
+ 
+   /// Whether the command is the `summon` of the app whose window is summoned now, so that it would send it away. A key that
+   /// brought an app has to be there to send it away again, also in an app that otherwise keeps its own ⌃⌥: a terminal is
+-  /// the first thing people summon, and the first they switch Arbor's shortcuts off in.
++  /// the first thing people summon, and the first they switch Arbor's shortcuts off in. Only while that app is the one in
++  /// front: with `summonStays` a summoned terminal can lie there while a virtual machine has the keyboard, and all its keys.
+   private func sendsAwayWhatIsSummoned(_ command: Command) -> Bool {
+     guard case .summon(let app) = command else { return false }
+     return workspaces.values.contains { workspace in
+-      workspace.summoned.flatMap { windows[$0.window] }.map { Self.isWindow($0, of: app) } ?? false
++      guard let window = workspace.summoned.flatMap({ windows[$0.window] }), Self.isWindow(window, of: app) else {
++        return false
++      }
++      return window.bundleID == frontmostApp?.bundleID
+     }
+   }
+ 
+@@ -71,7 +75,11 @@ extension Controller {
+     } else if isPausedForApp {
+       _ = resume()
+     }
+-    guard isPassingThrough != wasPassingThrough else { return }
++    guard isPassingThrough != wasPassingThrough else {
++      // From one app that keeps its keys to another: which of them is summoned may make a difference.
++      summonKeysMayHaveChanged()
++      return
++    }
+     wasPassingThrough = isPassingThrough
+     // Told with this.
+     summonKeysLastTold = isPassingThrough ? activeBindings.filter { sendsAwayWhatIsSummoned($0.command) }.map(\.chord) : []
+diff --git a/Sources/ArborKit/Controller/Controller+Permission.swift b/Sources/ArborKit/Controller/Controller+Permission.swift
+index 762d6fa..47eaa55 100644
+--- a/Sources/ArborKit/Controller/Controller+Permission.swift
++++ b/Sources/ArborKit/Controller/Controller+Permission.swift
+@@ -70,9 +70,40 @@ extension Controller {
+   /// drop), which must not have the ground pulled from under it: the question is put as soon as that has returned.
+   public func accessibilityWasRefused() {
+     guard isWatchingPermission, accessibilityGranted else { return }
+-    scheduler.schedule("accessibility", after: 0) { [weak self] in self?.askAboutAccessibility(beyondDoubt: true) }
++    scheduler.schedule("accessibility", after: 0) { [weak self] in
++      self?.askAboutAccessibility(beyondDoubt: true)
++      self?.makeUpForRefusedCalls()
++    }
+   }
+ 
++  /// A call was refused, and yet Arbor may: the permission was gone for a moment (the privacy daemon restarts now and then). What
++  /// was refused has not been done, and Arbor's picture of the windows says that it has. So it stops and starts as for a
++  /// loss, moving nothing on the way out and reading everything again on the way in, and says nothing: the view stays.
++  private func makeUpForRefusedCalls() {
++    guard accessibilityGranted, isRunning else { return }
++    let since = lastMakingUp.map { abs(now().timeIntervalSince($0)) } ?? .infinity
++    if since >= Self.secondsOfPeaceThatForgive { makingUpInARow = 0 }
++    // macOS says yes and goes on refusing: whatever that is, reading everything again does not help, and must not go on for ever.
++    guard makingUpInARow < Self.mostMakingUpInARow else { return }
++    guard since >= Self.secondsBetweenMakingUp else {
++      // Not now, and not never: a second moment like the first leaves as much undone.
++      scheduler.schedule("making-up", after: Self.secondsBetweenMakingUp - since) { [weak self] in self?.makeUpForRefusedCalls() }
++      return
++    }
++    lastMakingUp = now()
++    makingUpInARow += 1
++    Log.info("a call was refused though Arbor has the permission: reading the windows again")
++    overlays.showDropPreview(nil)
++    resumeState = persistedState()
++    shutdown(movingWindows: false)
++    start()
++    if isRunning, let focused = system.focusedWindow() { windowFocused(focused) }
++  }
++
++  static let secondsBetweenMakingUp = 10.0
++  static let mostMakingUpInARow = 3
++  static let secondsOfPeaceThatForgive = 60.0
++
+   /// Begins to ask, from `start()`. Without a probe (tests, arbor-sim unless they set one) nobody asks.
+   func watchAccessibility() {
+     guard accessibilityProbe != nil else { return }
+diff --git a/Sources/ArborKit/Controller/Controller+Settings.swift b/Sources/ArborKit/Controller/Controller+Settings.swift
+index cfe948b..40191c8 100644
+--- a/Sources/ArborKit/Controller/Controller+Settings.swift
++++ b/Sources/ArborKit/Controller/Controller+Settings.swift
+@@ -152,45 +152,81 @@ extension Controller {
+ 
+   // MARK: Shortcuts
+ 
++  /// A shortcut as `bind` and `unbind` were given it, read as settings.json's are: on the keyboard layout in use, where a key
++  /// can also be named by what it types (`ctrl+opt+ö`).
++  private struct NamedChord {
++    let chord: KeyChord
++    /// How to write it, in replies and in the file: tidied, and with the key as the person named it. `ö` is a place to Arbor
++    /// (`us:;` on a German keyboard), which is not what anybody typed or would look for.
++    let text: String
++
++    init(_ text: String, layout: KeyLayout) throws {
++      do {
++        chord = try KeyChord(text: text, layout: layout)
++      } catch {
++        throw Refusal(SettingsCommand.notAShortcut(text, error))
++      }
++      if (try? KeyChord(text: text)) != nil {
++        self.text = chord.text
++      } else {
++        // Only a single character that is no modifier's name gets here.
++        let key = text.filter { !$0.isWhitespace }.lowercased().split(separator: "+").last.map(String.init) ?? ""
++        self.text = String(KeyChord(chord.modifiers, chord.key).text.dropLast(chord.key.name.count)) + key
++      }
++    }
++  }
++
++  /// What runs now when the keys of `chord` are pressed, whichever way its shortcut is written.
++  private func binding(on chord: KeyChord) -> KeyBinding? {
++    let code = chord.code(in: layoutInEffect)
++    return effectiveBindings.bindings.first { $0.modifiers == chord.modifiers && $0.keyCode == code }
++  }
++
+   private func bind(_ chordText: String, to commandText: String) throws -> CommandResult {
+-    let chord = try KeyChord(text: chordText)
++    let layout = layoutInEffect
++    let named = try NamedChord(chordText, layout: layout)
++    let chord = named.chord
+     let command = try Command.parse(commandText)
+-    let before = KeyBindings.effective(settings: settings).bindings.first { $0.chord == chord }?.command
+-    guard before != command else { return .success("\(chord.text) already runs `\(command.text)`") }
++    let holder = binding(on: chord)
++    let before = holder?.command
++    guard before != command else { return .success("\(named.text) already runs `\(command.text)`") }
+     let message =
+-      "\(chord.text) runs `\(command.text)`" + (before.map { " (it ran `\($0.text)`)" } ?? "")
++      "\(named.text) runs `\(command.text)`" + (before.map { " (it ran `\($0.text)`)" } ?? "")
+       + (chord.caution.map { "; mind that \($0)" } ?? "")
+     // The command is left out of the log: it can be `rule add …` with part of a window title in it.
+-    return change(message: message, log: "bound \(chord.text)") { updated in
+-      updated.removeBindings(for: chord)
++    return change(message: message, log: "bound \(named.text)") { updated in
++      updated.removeBindings(for: chord, layout: layout)
++      // The key is taken from whatever has it, however that is written: `us:z` and `y` are one key on a German keyboard.
++      // (A default that sits there because the layout cannot type its sign gives way by itself: the key's own name is a place.)
++      if let holder, holder.chord != chord { updated.removeBindings(for: holder.chord, layout: layout) }
+       // No entry is needed to say what the defaults already say.
+       if !KeyBindings.defaults.contains(KeyBinding(chord, command)) {
+-        updated.bindings[chord.text] = command.text
++        updated.bindings[named.text] = command.text
+       }
+       // One set of rules for shortcuts wherever they come from: what settings.json may not bind (a
+       // query, a key that would no longer type), `bind` may not either.
+-      let problems = KeyBindings.effective(settings: updated).problems
+-      if let problem = problems.first(where: { $0.hasPrefix("\(chord.text): ") }) { throw Refusal(problem) }
++      let problems = KeyBindings.effective(settings: updated, layout: layout).problems
++      if let problem = problems.first(where: { $0.hasPrefix("\(named.text): ") }) { throw Refusal(problem) }
+     }
+   }
+ 
+   private func unbind(_ chordText: String) throws -> CommandResult {
+-    let chord = try KeyChord(text: chordText)
+-    guard let before = KeyBindings.effective(settings: settings).bindings.first(where: { $0.chord == chord })
+-    else {
+-      return .success("\(chord.text) already runs nothing")
+-    }
+-    let others = KeyBindings.effective(settings: settings).bindings.filter {
+-      $0.command == before.command && $0.chord != chord
+-    }
++    let layout = layoutInEffect
++    let named = try NamedChord(chordText, layout: layout)
++    let chord = named.chord
++    guard let before = binding(on: chord) else { return .success("\(named.text) already runs nothing") }
++    let others = effectiveBindings.bindings.filter { $0.command == before.command && $0.chord != before.chord }
+     let message =
+-      "\(chord.text) no longer runs `\(before.command.text)`"
++      "\(named.text) no longer runs `\(before.command.text)`"
+       + (others.first.map { "; \($0.chord.text) still does" } ?? "; no shortcut does now")
+-    return change(message: message, log: "unbound \(chord.text)") { updated in
+-      updated.removeBindings(for: chord)
++    return change(message: message, log: "unbound \(named.text)") { updated in
++      updated.removeBindings(for: chord, layout: layout)
++      updated.removeBindings(for: before.chord, layout: layout)
+       // A default comes back when settings.json says nothing about its shortcut; null is what removes it.
+-      if KeyBindings.defaults.contains(where: { $0.chord == chord }) {
+-        updated.bindings.updateValue(nil, forKey: chord.text)
++      if KeyBindings.effective(settings: updated, layout: layout).bindings.contains(where: {
++        $0.modifiers == chord.modifiers && $0.keyCode == before.keyCode
++      }) {
++        updated.bindings.updateValue(nil, forKey: named.text)
+       }
+     }
+   }
+diff --git a/Sources/ArborKit/Controller/Controller+Summon.swift b/Sources/ArborKit/Controller/Controller+Summon.swift
+index 68bf084..1ffa362 100644
+--- a/Sources/ArborKit/Controller/Controller+Summon.swift
++++ b/Sources/ArborKit/Controller/Controller+Summon.swift
+@@ -27,6 +27,8 @@ extension Controller {
+       guard window.isPresent else {
+         // Minimized or hidden since: there is nothing to send away, and the press means "bring it".
+         workspaces[display]!.dismissSummon()
++        // No layout follows, which would bring this up.
++        summonKeysMayHaveChanged()
+         continue
+       }
+       dismissSummon(on: display)
+diff --git a/Sources/ArborKit/Controller/Controller.swift b/Sources/ArborKit/Controller/Controller.swift
+index d7e2a41..f56b1a3 100644
+--- a/Sources/ArborKit/Controller/Controller.swift
++++ b/Sources/ArborKit/Controller/Controller.swift
+@@ -379,6 +379,10 @@ public final class Controller {
+   var permissionWatch = PermissionWatch()
+   /// When a failed shortcut last opened the Accessibility pane.
+   var lastVisitToSettings: Date?
++  /// When Arbor last read everything again because a call had been refused for no lasting reason.
++  var lastMakingUp: Date?
++  /// How often it has, with less than a minute between.
++  var makingUpInARow = 0
+   /// True from the first `start()` with a probe.
+   var isWatchingPermission = false
+   /// True during `shutdown(movingWindows: false)`: `placeVisibly` and `putBack`, through which it moves windows, do nothing.
+diff --git a/Sources/ArborKit/Controller/SettingsPanelModel.swift b/Sources/ArborKit/Controller/SettingsPanelModel.swift
+index 965aaa0..ee3fcd2 100644
+--- a/Sources/ArborKit/Controller/SettingsPanelModel.swift
++++ b/Sources/ArborKit/Controller/SettingsPanelModel.swift
+@@ -486,14 +486,13 @@ public final class SettingsPanelModel {
+   public func replaceHolder() {
+     guard let clash else { return }
+     self.clash = nil
+-    give(clash.chord, to: clash.row, takingFrom: clash.holderChord)
++    give(clash.chord, to: clash.row)
+   }
+ 
+-  /// First the new shortcut, which can be refused, and only then away with the old one, and with the holder's if that
+-  /// is written otherwise (written the same, `bind` has replaced it).
+-  private func give(_ chord: KeyChord, to row: ShortcutRow, takingFrom holder: KeyChord? = nil) {
++  /// First the new shortcut, which can be refused, and only then away with the old one. `bind` takes the key from whatever
++  /// has it, however that is written; `unbind` goes by the key as well, so unbinding the holder's spelling would undo this.
++  private func give(_ chord: KeyChord, to row: ShortcutRow) {
+     var commands: [SettingsCommand] = [.bind(chord: chord.text, command: row.command.text)]
+-    if let holder, holder != chord { commands.append(.unbind(chord: holder.text)) }
+     if let old = row.chord { commands.append(.unbind(chord: old.text)) }
+     perform(commands, at: place(of: row))
+   }
+diff --git a/Sources/ArborKit/Input/GestureTap.swift b/Sources/ArborKit/Input/GestureTap.swift
+index 0a72f8c..0dd43a4 100644
+--- a/Sources/ArborKit/Input/GestureTap.swift
++++ b/Sources/ArborKit/Input/GestureTap.swift
+@@ -26,6 +26,8 @@ final class GestureTap {
+     let router = OSAllocatedUnfairLock(initialState: GestureRouter())
+     /// The scroll tap, for the handlers, which switch it on and off.
+     let scrollTap = OSAllocatedUnfairLock<EventTap?>(initialState: nil)
++    /// Where bare Desktop might be, by the controller's latest word.
++    let zones = OSAllocatedUnfairLock(initialState: DesktopGuardZones())
+     let onCommand: @MainActor (Command) -> Void
+     let onGesture: @MainActor (GestureUpdate) -> Void
+ 
+@@ -113,6 +115,11 @@ final class GestureTap {
+     }
+   }
+ 
++  /// Hands the callbacks the controller's latest word on where bare Desktop might be (`scrollOnDesktopZooms`).
++  func publish(_ zones: DesktopGuardZones) {
++    context.zones.withLock { $0 = zones }
++  }
++
+   func stop() {
+     tap?.stop()
+     tap = nil
+@@ -224,10 +231,18 @@ final class GestureTap {
+       width: event.getDoubleValueField(.scrollWheelEventPointDeltaAxis2),
+       height: hasNotches && points == 0 ? lines : points)
+     let pointer = event.location
++    let now = Double(event.timestamp) / 1_000_000_000
++    // The window list is read with the lock released: the main actor must not wait for the window server.
++    let asks = context.router.withLock {
++      $0.scrollAsksWhatIsUnder(phase, momentum: momentum, at: pointer, keys: keys, now: now)
++    }
++    // Over a window Arbor knows, and where nothing is docked, a few rectangles say no and the list is not read at all.
++    let overDesktop =
++      asks && context.zones.withLock({ $0.mayBeBare(pointer, throughPanels: true) }) && !WindowList.appWindowIsUnder(pointer)
+     let answer = context.router.withLock {
+       $0.scroll(
+-        phase, momentum: momentum, pan: pan, at: pointer, keys: keys,
+-        hasNotches: hasNotches, overDesktop: !WindowList.appWindowIsUnder(pointer))
++        phase, momentum: momentum, pan: pan, at: pointer, keys: keys, hasNotches: hasNotches, now: now,
++        overDesktop: overDesktop)
+     }
+     if phase != .changed, phase != .none {
+       TapLog.debug("scroll \(phase): \(answer.swallow ? "Arbor's" : "the app's")")
+diff --git a/Sources/ArborKit/Input/PointerInput.swift b/Sources/ArborKit/Input/PointerInput.swift
+index 655d6b7..aa5321f 100644
+--- a/Sources/ArborKit/Input/PointerInput.swift
++++ b/Sources/ArborKit/Input/PointerInput.swift
+@@ -40,6 +40,7 @@ final class PointerInput {
+   /// Where a plain click might land on bare Desktop (F60). Call after every change of the layout.
+   func publish(_ zones: DesktopGuardZones) {
+     framer.publish(zones)
++    gestures.publish(zones)
+   }
+ 
+   func stop() {
+diff --git a/Sources/ArborTesting/Chaos.swift b/Sources/ArborTesting/Chaos.swift
+index 1abf644..33f773c 100644
+--- a/Sources/ArborTesting/Chaos.swift
++++ b/Sources/ArborTesting/Chaos.swift
+@@ -141,6 +141,8 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
+   /// Merges a JSON object into settings.json and runs `reload-settings`.
+   case settings(String)
+   case flush
++  /// The user switches Arbor off under Privacy & Security → Accessibility, or on again. Nobody tells Arbor (F63).
++  case revoke, grant
+   case advance(Double)
+   /// Lets go of the mouse and lets apps and timers run until nothing is pending.
+   case settle
+@@ -279,6 +281,8 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
+       return (["displays"] + words + ["windows-\(follow.rawValue)"]).joined(separator: " ")
+     case .settings(let json): return "settings \(json)"
+     case .flush: return "flush"
++    case .revoke: return "revoke"
++    case .grant: return "grant"
+     case .advance(let seconds): return "advance \(Self.format(seconds))"
+     case .settle: return "settle"
+     case .wayBack(let way): return "way-back \(way.rawValue)"
+@@ -463,6 +467,8 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
+     // `settings {…}` edits the file; `settings` and `settings --markdown` are commands.
+     case ("settings", 2...) where words[1].hasPrefix("{"): return .settings(words.dropFirst().joined(separator: " "))
+     case ("flush", 1): return .flush
++    case ("revoke", 1): return .revoke
++    case ("grant", 1): return .grant
+     case ("advance", 2): return number(1).map { .advance(Double($0)) }
+     case ("settle", 1): return .settle
+     case ("save", 1): return .save
+diff --git a/Sources/ArborTesting/ChaosGenerator.swift b/Sources/ArborTesting/ChaosGenerator.swift
+index d01a97f..d47e9f9 100644
+--- a/Sources/ArborTesting/ChaosGenerator.swift
++++ b/Sources/ArborTesting/ChaosGenerator.swift
+@@ -406,7 +406,7 @@ public struct ChaosGenerator {
+     enum Kind {
+       case open, close, quitApp, minimize, hide, space, spaceSwitch, fullScreen, title, limits, behave, move, react
+       case cursor, focus, switchApp, focusNothing, backgroundFocus, press, drag, carry, release, edge, tile, palette, seam, command, nonsense, url
+-      case displays, settings, flush, advance, settle, save, crash
++      case displays, settings, flush, advance, settle, save, crash, permission
+       case loseRelease, via, key, pinch, activate, hang, openTab, selectTab, closeTab, list
+     }
+     let tabs = system.backgroundTabs.count
+@@ -444,6 +444,7 @@ public struct ChaosGenerator {
+         (16, .displays),
+         (16, .settings),
+         (60, .flush),
++        (system.isDenied ? 60 : 8, .permission),
+         (36, .advance),
+         (30, .settle),
+         (4, .save),
+@@ -581,6 +582,7 @@ public struct ChaosGenerator {
+     case .displays: return .displays(arrangement(), random.pick(weighted: [(5, .first), (5, .late), (2, .never)])!)
+     case .settings: return .settings(settingsChange())
+     case .flush: return .flush
++    case .permission: return system.isDenied ? .grant : .revoke
+     case .advance: return .advance(random.pick([0, 0.1, 0.25, 0.3, 0.5, 1, 5])!)
+     case .settle: return .settle
+     case .save: return .save
+diff --git a/Sources/ArborTesting/ChaosInvariants.swift b/Sources/ArborTesting/ChaosInvariants.swift
+index 59e4e43..3573856 100644
+--- a/Sources/ArborTesting/ChaosInvariants.swift
++++ b/Sources/ArborTesting/ChaosInvariants.swift
+@@ -13,7 +13,7 @@ import Foundation
+ extension ChaosRunner {
+   /// Timers the controller may have pending, by prefix. A key that matches none has leaked.
+   static let knownTimers = ["save", "undo-continuation", "enforce-", "space-", "resume", "focus", "rule-title-", "pending-slots", "peek", "raise-pins",
+-    "settings-file", "update-check", "summon-wait", "accessibility",
++    "settings-file", "update-check", "summon-wait", "accessibility", "making-up",
+     "landed-", "drag-dwell", "sole-float-after-launch", "layout-open ", "release", "call-over",
+     "events", "control-connection-",
+     "heads-up", "minimap-",
+@@ -46,6 +46,16 @@ extension ChaosRunner {
+     if staleSinceADrop {
+       for index in inside.indices where inside[index].rule == "stale-layout" { inside[index].rule = "stale-layout-after-drop" }
+     }
++    // The app registers `activeBindings` and its taps follow `inputSettings` only when it is told that they changed
++    // (`Change.input`, `.lifecycle`, `.hold`, settings applied). Whatever changes either has to say so.
++    if isRunning || isPaused, let told = toldBindings {
++      let now = controller.activeBindings
++      if told != now {
++        let gone = told.filter { !now.contains($0) }.map(\.command.text), new = now.filter { !told.contains($0) }.map(\.command.text)
++        inside.append(.init("registered", "the app holds \(told.count) shortcuts, Arbor wants \(now.count): too many \(gone.prefix(4)), missing \(new.prefix(4))"))
++      }
++      if toldInput != controller.inputSettings { inside.append(.init("taps", "the taps follow settings that are out of date")) }
++    }
+     guard isRunning else {
+       return inside + (harness.overlays.finder == nil ? [] : [.init("palette", "Go to… is open and Arbor is paused or not running")])
+     }
+@@ -490,7 +500,8 @@ extension ChaosRunner {
+     if rings.count > 1 { problems.append(.init("focus-ring", "there are \(rings.count) focus rings: \(rings.map(\.window).sorted())")) }
+     // It looks again a moment after the keyboard moves, stays away while the mouse is busy, and is worked out
+     // afresh by every layout, so it is judged once nothing of the kind is pending.
+-    guard harness.scheduler.pendingKeys.allSatisfy({ $0 == "save" }), !system.hasHeldEchoes else { return }
++    // (The question about the permission is always pending, and has nothing to do with the ring.)
++    guard harness.scheduler.pendingKeys.allSatisfy({ $0 == "save" || $0 == "accessibility" }), !system.hasHeldEchoes else { return }
+     for ring in rings {
+       guard let fake = system.windows[ring.window] else {
+         problems.append(.init("focus-ring", "the focus ring is around \(ring.window), which is gone"))
+diff --git a/Sources/ArborTesting/ChaosRunner.swift b/Sources/ArborTesting/ChaosRunner.swift
+index e5402ed..20d4e94 100644
+--- a/Sources/ArborTesting/ChaosRunner.swift
++++ b/Sources/ArborTesting/ChaosRunner.swift
+@@ -49,11 +49,21 @@ public final class ChaosRunner {
+   public private(set) var script: [ChaosAction] = []
+   /// Whether `state` and state.json are read back after every step, rather than now and then.
+   public var checksFilesAtEveryStep = false
++  /// What the app would have registered, and what its taps would follow: taken when it is told that they changed.
++  var toldBindings: [KeyBinding]?
++  var toldInput = Settings()
+   /// Called with every action of every runner before it is applied. arbor-sim's watchdog listens.
+   public static var beforeEachStep: ((ChaosAction) -> Void)?
+ 
+   /// settings.json, as the object in the file.
+-  private var settingsFile: [String: Any] = [:]
++  /// It begins with keys that summon: nobody presses them here, but which of them Arbor holds depends on what is summoned and
++  /// on who is in front (the rule `registered`).
++  private var settingsFile: [String: Any] = [
++    "bindings": [
++      "ctrl+opt+cmd+s": "summon Safari", "ctrl+opt+cmd+n": "summon Notes", "ctrl+opt+cmd+m": "summon com.example.mail",
++      "ctrl+opt+cmd+t": "summon Terminal", "ctrl+opt+cmd+x": "summon Xcode", "ctrl+opt+cmd+p": "summon Preview",
++    ]
++  ]
+   /// state.json, and what was written to it, as of the last save.
+   private var stateFile: Data?
+   private var stateWritten: PersistedState?
+@@ -194,6 +204,9 @@ public final class ChaosRunner {
+     wasPeekingBefore = timersBefore.contains("peek")
+     perform(action)
+     listen()
++    // Without the permission Arbor can neither see nor move anything, and until it has noticed, its picture is out of date.
++    // The same until it has made up for what was refused in a moment without it.
++    if system.isDenied || controller.permissionLoss != nil || harness.scheduler.pendingKeys.contains("making-up") { return [] }
+     return found + check(after: action)
+   }
+ 
+@@ -334,6 +347,11 @@ public final class ChaosRunner {
+       settingsFile.merge(object) { $1 }
+       harness.run("reload-settings")
+     case .flush: harness.scheduler.runPending()
++    case .revoke: system.isDenied = true
++    case .grant:
++      system.isDenied = false
++      // What a refused call left to be asked is asked at once.
++      harness.scheduler.runPending()
+     case .advance(let seconds): harness.scheduler.advance(by: min(max(seconds, 0), 60))
+     case .settle: settle()
+ 
+@@ -354,7 +372,8 @@ public final class ChaosRunner {
+       }
+     case .save: if isRunning { controller.saveNow() }
+     case .crash: if isRunning || isPaused { endProcess() }
+-    case .launch: if !isRunning, !isPaused { launch() }
++    // The app does not start the controller before it has the permission.
++    case .launch: if !isRunning, !isPaused, !system.isDenied, controller.permissionLoss == nil { launch() }
+     case .renumber(let old, let new):
+       guard !isRunning, !isPaused, system.windows[old] != nil, system.windows[new] == nil else { return }
+       system.renumber(old, as: new)
+@@ -403,7 +422,8 @@ public final class ChaosRunner {
+     for _ in 0..<8 {
+       system.appsReact()
+       harness.scheduler.runPending()
+-      if !system.hasHeldEchoes, harness.scheduler.pendingKeys.isEmpty { break }
++      // The question about the permission is asked again and again for as long as Arbor runs.
++      if !system.hasHeldEchoes, harness.scheduler.pendingKeys.allSatisfy({ $0 == "accessibility" }) { break }
+     }
+   }
+ 
+@@ -472,7 +492,20 @@ public final class ChaosRunner {
+       }
+     }
+     harness = Harness(settings: settings(), saved: saved, system: system)
++    harness.watchAccessibility()
+     let (controller, scheduler, before) = (harness.controller, harness.scheduler, elapsed)
++    // As ArborApp does: what it registers and what its taps follow, taken when it is told that they changed.
++    toldBindings = nil
++    let note: () -> Void = { [unowned self, unowned controller] in
++      self.toldBindings = controller.activeBindings
++      self.toldInput = controller.inputSettings
++    }
++    controller.onSettingsApplied = { _ in note() }
++    controller.observe { [unowned controller] change in
++      guard change == .lifecycle || change == .input || change == .hold else { return }
++      guard controller.isInBusiness else { return }
++      note()
++    }
+     let start = Date(timeIntervalSinceReferenceDate: 800_000_000)
+     controller.now = { start.addingTimeInterval(before + scheduler.now) }
+     controller.loadSettings = { [unowned self] in self.settings() }
+diff --git a/Sources/ArborTesting/Fakes.swift b/Sources/ArborTesting/Fakes.swift
+index bd5b29b..b6d724a 100644
+--- a/Sources/ArborTesting/Fakes.swift
++++ b/Sources/ArborTesting/Fakes.swift
+@@ -188,8 +188,11 @@ public final class MemoryStateStore: StateStore {
+ 
+   public func load() -> PersistedState? { saved }
+ 
++  /// The disk is full: what is saved from now on is lost, and `load()` finds nothing.
++  public var isFull = false
++
+   public func save(_ state: PersistedState) {
+-    saved = state
++    saved = isFull ? nil : state
+     saveCount += 1
+   }
+ }
+diff --git a/Tests/ArborCoreTests/SurfaceMemoTests.swift b/Tests/ArborCoreTests/SurfaceMemoTests.swift
+new file mode 100644
+index 0000000..8779e23
+--- /dev/null
++++ b/Tests/ArborCoreTests/SurfaceMemoTests.swift
+@@ -0,0 +1,171 @@
++import ArborCore
++import CoreGraphics
++import Testing
++
++/// What is under the pointer, kept for a moment (SurfaceMemo.swift), and what the router makes of it.
++@Suite struct SurfaceMemoTests {
++  let here = CGPoint(x: 100, y: 200)
++
++  // MARK: The memo
++
++  @Test func atFirstNothingIsKnown() {
++    #expect(SurfaceMemo().isBare(at: here, now: 0) == nil)
++    #expect(SurfaceMemo().isBare(at: .zero, now: 0) == nil, "not even at the origin")
++  }
++
++  @Test(arguments: [true, false])
++  func anAnswerHoldsForAMomentWhileThePointerRests(isBare: Bool) {
++    var memo = SurfaceMemo()
++    memo.remember(isBare, at: here, now: 10)
++    #expect(memo.isBare(at: here, now: 10) == isBare)
++    #expect(memo.isBare(at: here, now: 10.29) == isBare)
++    #expect(memo.isBare(at: here, now: 10.3) == nil)
++    #expect(memo.isBare(at: here, now: 100) == nil)
++    memo.remember(isBare, at: here, now: 0)
++    #expect(memo.isBare(at: here, now: SurfaceMemo.lifetime) == nil, "to the moment")
++  }
++
++  @Test func aNudgeIsNoMoveAndAMoveEndsIt() {
++    var memo = SurfaceMemo()
++    memo.remember(true, at: here, now: 10)
++    for (dx, dy) in [(2.0, 0.0), (-2, 0), (0, 2), (0, -2), (2, -2)] {
++      #expect(memo.isBare(at: CGPoint(x: here.x + dx, y: here.y + dy), now: 10.1) == true, "\(dx) \(dy)")
++    }
++    for (dx, dy) in [(2.5, 0.0), (-3, 0), (0, 2.5), (0, -40)] {
++      #expect(memo.isBare(at: CGPoint(x: here.x + dx, y: here.y + dy), now: 10.1) == nil, "\(dx) \(dy)")
++    }
++  }
++
++  @Test func aClockThatWentBackwardsIsNotTrusted() {
++    var memo = SurfaceMemo()
++    memo.remember(true, at: here, now: 10)
++    #expect(memo.isBare(at: here, now: 9.9) == nil)
++  }
++
++  @Test func forgettingForgets() {
++    var memo = SurfaceMemo()
++    memo.remember(true, at: here, now: 10)
++    memo.forget()
++    #expect(memo.isBare(at: here, now: 10) == nil)
++    #expect(memo == SurfaceMemo())
++  }
++
++  // MARK: A wheel on the Desktop
++
++  func router(onDesktop: Bool = true) -> GestureRouter {
++    var router = GestureRouter()
++    router.zoomsWithScroll = true
++    router.zoomsOnDesktop = onDesktop
++    return router
++  }
++
++  let notch = CGSize(width: 0, height: 1)
++
++  /// A free-spinning wheel, or a driver that smooths one: a hundred or two events a second.
++  @Test func aSpinningWheelAsksAFewTimesASecondNotWithEveryNotch() {
++    var router = router()
++    var asked = 0
++    func desktop() -> Bool {
++      asked += 1
++      return true
++    }
++    for index in 0..<200 {
++      let answer = router.scroll(
++        .none, pan: notch, at: here, keys: .none, hasNotches: true, now: 50 + Double(index) * 0.005, overDesktop: desktop())
++      #expect(answer == .init(swallow: true, commands: [.stepIn]))
++    }
++    #expect(asked == 4, "one second of it, an answer being good for 0.3 s")
++  }
++
++  @Test func theAnswerThatAnAppsWindowIsThereIsKeptAsWell() {
++    var router = router()
++    var asked = 0
++    func window() -> Bool {
++      asked += 1
++      return false
++    }
++    for index in 0..<20 {
++      let answer = router.scroll(
++        .none, pan: notch, at: here, keys: .none, hasNotches: true, now: 50 + Double(index) * 0.01, overDesktop: window())
++      #expect(answer == .init(swallow: false))
++    }
++    #expect(asked == 1)
++  }
++
++  /// More notches do not keep an answer alive: Arbor's own steps move windows under the pointer.
++  @Test func anAnswerIsNotKeptAliveByBeingUsed() {
++    var router = router()
++    #expect(router.scroll(.none, pan: notch, at: here, keys: .none, hasNotches: true, now: 1, overDesktop: true).swallow)
++    #expect(router.scroll(.none, pan: notch, at: here, keys: .none, hasNotches: true, now: 1.25, overDesktop: false).swallow)
++    #expect(!router.scroll(.none, pan: notch, at: here, keys: .none, hasNotches: true, now: 1.31, overDesktop: false).swallow)
++  }
++
++  @Test func elsewhereItIsAskedAgain() {
++    var router = router()
++    #expect(router.scroll(.none, pan: notch, at: here, keys: .none, hasNotches: true, now: 1, overDesktop: true).swallow)
++    let there = CGPoint(x: 400, y: 200)
++    #expect(!router.scroll(.none, pan: notch, at: there, keys: .none, hasNotches: true, now: 1.01, overDesktop: false).swallow)
++  }
++
++  // MARK: Asking first, with the lock released
++
++  /// `scroll` evaluates `overDesktop` exactly when `scrollAsksWhatIsUnder` says it would.
++  @Test func askingFirstAgreesWithWhatScrollDoes() {
++    let phases: [(ScrollClaim.Phase, ScrollClaim.Momentum)] = [
++      (.none, .none), (.mayBegin, .none), (.began, .none), (.changed, .none), (.ended, .none), (.none, .began),
++      (.none, .continued), (.none, .ended), (.none, .none), (.began, .none),
++    ]
++    let allKeys: [GestureRouter.Keys] = [.none, .arbors, .init(shift: true), .init(command: true), .init(option: true)]
++    for onDesktop in [false, true] {
++      for zooms in [false, true] {
++        for keys in allKeys {
++          var router = router(onDesktop: onDesktop)
++          router.zoomsWithScroll = zooms
++          var now = 5.0
++          for (phase, momentum) in phases {
++            for step in [0.0, 0.1, 0.4] {
++              now += step
++              let foretold = router.scrollAsksWhatIsUnder(phase, momentum: momentum, at: here, keys: keys, now: now)
++              var asked = false
++              func desktop() -> Bool {
++                asked = true
++                return true
++              }
++              _ = router.scroll(phase, momentum: momentum, pan: notch, at: here, keys: keys, now: now, overDesktop: desktop())
++              #expect(asked == foretold, "\(onDesktop) \(zooms) \(keys) \(phase) \(momentum) \(now)")
++            }
++          }
++        }
++      }
++    }
++  }
++
++  @Test func withTheSettingOffOrAKeyHeldNothingIsAsked() {
++    #expect(!router(onDesktop: false).scrollAsksWhatIsUnder(.none, at: here, keys: .none, now: 1))
++    #expect(!router().scrollAsksWhatIsUnder(.none, at: here, keys: .arbors, now: 1))
++    #expect(!router().scrollAsksWhatIsUnder(.changed, at: here, keys: .none, now: 1))
++    for momentum in [ScrollClaim.Momentum.began, .continued, .ended] {
++      #expect(!router().scrollAsksWhatIsUnder(.none, momentum: momentum, at: here, keys: .none, now: 1), "coasting is decided already")
++    }
++    var withoutScrollZoom = router()
++    withoutScrollZoom.zoomsWithScroll = false
++    #expect(!withoutScrollZoom.scrollAsksWhatIsUnder(.began, at: here, keys: .none, now: 1))
++    #expect(withoutScrollZoom.scroll(.began, pan: notch, at: here, keys: .none, now: 1, overDesktop: true) == .init(swallow: false))
++    #expect(router().scrollAsksWhatIsUnder(.none, at: here, keys: .none, now: 1))
++    #expect(router().scrollAsksWhatIsUnder(.began, at: here, keys: .none, now: 1))
++  }
++
++  @Test func resettingForgetsTheAnswer() {
++    var router = router()
++    _ = router.scroll(.none, pan: notch, at: here, keys: .none, hasNotches: true, now: 1, overDesktop: true)
++    #expect(!router.scrollAsksWhatIsUnder(.none, at: here, keys: .none, now: 1.1))
++    _ = router.reset()
++    #expect(router.scrollAsksWhatIsUnder(.none, at: here, keys: .none, now: 1.1))
++  }
++
++  @Test func withoutAClockNothingIsKept() {
++    var router = router()
++    #expect(router.scroll(.none, pan: notch, at: here, keys: .none, hasNotches: true, overDesktop: true).swallow)
++    #expect(!router.scroll(.none, pan: notch, at: here, keys: .none, hasNotches: true, overDesktop: false).swallow)
++  }
++}
+diff --git a/Tests/ArborKitTests/DesktopGuardTests.swift b/Tests/ArborKitTests/DesktopGuardTests.swift
+index 57c23a8..6a54677 100644
+--- a/Tests/ArborKitTests/DesktopGuardTests.swift
++++ b/Tests/ArborKitTests/DesktopGuardTests.swift
+@@ -200,6 +200,29 @@ import Testing
+     #expect(!h.controller.desktopGuardZones().isEmpty)
+   }
+ 
++  /// F55's `scrollOnDesktopZooms` asks the same question of a scroll.
++  @Test func theZonesAreThereForAScrollOnTheDesktopToo() {
++    let (h, a, _) = makeHarness()
++    var settings = h.controller.settings
++    settings.guardDesktopClicks = false
++    settings.frameRectangleOnDesktop = false
++    settings.scrollOnDesktopZooms = true
++    h.controller.apply(settings: settings)
++    let zones = h.controller.desktopGuardZones()
++    #expect(zones.mayBeBare(h.layout!.desktopFrame!.center, throughPanels: true))
++    #expect(!zones.mayBeBare(h.frame(a)!.center, throughPanels: true), "a window Arbor knows: nobody need read the window list")
++    // Not if a scroll cannot zoom anyway.
++    for off in [\Settings.scrollZoom, \Settings.gesturesEnabled] {
++      var without = settings
++      without[keyPath: off] = false
++      h.controller.apply(settings: without)
++      #expect(h.controller.desktopGuardZones().isEmpty)
++    }
++    h.controller.apply(settings: settings)
++    h.run("pause")
++    #expect(h.controller.desktopGuardZones().isEmpty)
++  }
++
+   @Test func beforeTheStartNothingIsGuarded() {
+     #expect(Harness().controller.desktopGuardZones().isEmpty)
+   }
+diff --git a/Tests/ArborKitTests/MenuChaosTests.swift b/Tests/ArborKitTests/MenuChaosTests.swift
+index c976226..795dd7e 100644
+--- a/Tests/ArborKitTests/MenuChaosTests.swift
++++ b/Tests/ArborKitTests/MenuChaosTests.swift
+@@ -59,6 +59,8 @@ private let seeds: [UInt64] = {
+         keys.note(action)
+         // Without a display there is no menu bar to open the menu from.
+         guard step % 3 == 0, !keys.any, !runner.controller.displays.isEmpty else { continue }
++        // The switch under Accessibility is off (`revoke`). Nobody tells Arbor: the row that is chosen next is how it finds out (F63).
++        guard !runner.system.isDenied else { continue }
+         let rows = runner.controller.menuModel().allItems.filter { $0.command.map { !Self.notTried.contains($0) } ?? false }
+         guard let row = random.pick(rows), let command = row.command else { continue }
+         let before = runner.harness.run("status").message
+@@ -94,7 +96,7 @@ private let seeds: [UInt64] = {
+         let action = generator.next(runner)
+         _ = runner.step(action)
+         keys.note(action)
+-        guard step % 3 == 0, !keys.any else { continue }
++        guard step % 3 == 0, !keys.any, !runner.system.isDenied else { continue }
+         guard let button = random.pick(runner.controller.menuBarModel().buttons), let command = button.command else { continue }
+         let before = runner.harness.run("status").message
+         let result = runner.harness.run(command.text, from: .menu)
+diff --git a/Tests/ArborKitTests/PermissionLossTests.swift b/Tests/ArborKitTests/PermissionLossTests.swift
+index a4a30da..0bc3a98 100644
+--- a/Tests/ArborKitTests/PermissionLossTests.swift
++++ b/Tests/ArborKitTests/PermissionLossTests.swift
+@@ -406,6 +406,84 @@ import Testing
+     #expect(!h.controller.isRunning && h.controller.permissionLoss != nil)
+   }
+ 
++  // MARK: A loss that is over before it is noticed
++
++  /// The privacy daemon restarts in the instant of a command. Found by chaos: the window was docked in the tree, stayed where it
++  /// was, Arbor believed it in its slot, and nothing was going to put it there.
++  @Test func whatWasRefusedInAMomentWithoutThePermissionIsMadeUpFor() {
++    let (h, _, _, _, slack) = makeHarness(framed: false)
++    h.scheduler.advance(by: 0.5)
++    h.system.flagLags = true  // within the second in which the flag is trusted
++    h.revokeAccessibility()
++    #expect(h.run("dock \(slack.rawValue) top").ok)
++    #expect(h.system.deniedCalls > 0)
++    h.grantAccessibility()
++    h.system.flagLags = false
++    h.scheduler.advance(by: 0)
++    #expect(h.controller.isRunning && h.controller.permissionLoss == nil, "no loss was announced")
++    #expect(h.workspace.isDocked(slack))
++    expectWindowsMatchLayout(h)
++  }
++
++  @Test func theViewAndTheArrangementStayAsTheyWere() {
++    let (h, safari, _, notes, _) = makeHarness()
++    let (tree, camera) = (h.workspace.tree, h.workspace.camera)
++    h.scheduler.advance(by: 0.5)
++    h.controller.accessibilityWasRefused()
++    h.scheduler.advance(by: 0)
++    #expect(h.controller.isRunning && h.workspace.tree == tree && h.workspace.camera == camera)
++    #expect(h.system.isVisible(notes) && !h.system.isVisible(safari))
++    expectWindowsMatchLayout(h)
++  }
++
++  @Test func itDoesNotDependOnTheFileHavingBeenWritten() {
++    let (h, _, _, _, _) = makeHarness()
++    let (tree, camera) = (h.workspace.tree, h.workspace.camera)
++    h.store.isFull = true
++    h.controller.accessibilityWasRefused()
++    h.scheduler.advance(by: 0)
++    #expect(h.controller.isRunning && h.workspace.tree == tree && h.workspace.camera == camera)
++  }
++
++  /// Found by chaos: two such moments within ten seconds, and the second was never made up for.
++  @Test func aSecondMomentSoonAfterTheFirstIsMadeUpForAsSoonAsTenSecondsAreOver() {
++    let (h, _, _, _, slack) = makeHarness(framed: false)
++    h.controller.accessibilityWasRefused()
++    h.scheduler.advance(by: 0.5)  // still within the second in which the flag is trusted
++    h.system.flagLags = true
++    h.revokeAccessibility()
++    #expect(h.run("dock \(slack.rawValue) top").ok && h.system.deniedCalls > 0)
++    h.grantAccessibility()
++    h.system.flagLags = false
++    h.scheduler.advance(by: 1)
++    #expect(h.frame(slack) != h.layout?.windowFrames[slack], "not yet")
++    h.scheduler.advance(by: 9)
++    #expect(h.controller.isRunning && h.controller.permissionLoss == nil)
++    expectWindowsMatchLayout(h)
++  }
++
++  /// macOS says yes and goes on refusing: whatever that would be, Arbor must not stop and start for ever.
++  @Test func callsThatGoOnBeingRefusedDoNotSendItRoundInCircles() {
++    let (h, _, _, _, _) = makeHarness()
++    var starts = 0
++    h.controller.observe { [unowned controller = h.controller] in if $0 == .lifecycle, controller.isRunning { starts += 1 } }
++    for _ in 0..<50 {
++      h.controller.accessibilityWasRefused()
++      h.scheduler.advance(by: 0.1)
++    }
++    #expect(starts == 1, "once in ten seconds")
++    for _ in 0..<600 {
++      h.controller.accessibilityWasRefused()
++      h.scheduler.advance(by: 0.1)
++    }
++    #expect(starts == 3, "three times, and then it is clear that it does not help")
++    // After a minute of peace it is another story.
++    h.scheduler.advance(by: 60)
++    h.controller.accessibilityWasRefused()
++    h.scheduler.advance(by: 0)
++    #expect(starts == 4)
++  }
++
+   // MARK: Saying so
+ 
+   @Test func theSentenceCountsWindowsAndNamesAppsNeverTitles() {
+diff --git a/Tests/ArborKitTests/SettingsCommandScenarioTests.swift b/Tests/ArborKitTests/SettingsCommandScenarioTests.swift
+index e0daea5..4d283a3 100644
+--- a/Tests/ArborKitTests/SettingsCommandScenarioTests.swift
++++ b/Tests/ArborKitTests/SettingsCommandScenarioTests.swift
+@@ -430,6 +430,112 @@ private final class Fixture {
+     #expect(KeyBindings.effective(settings: f.settings).problems.isEmpty)
+   }
+ 
++  // MARK: On another keyboard layout
++
++  /// What is registered for the key where `text` is on a German keyboard.
++  private func german(_ f: Fixture, _ text: String) throws -> KeyBinding? {
++    let chord = try KeyChord(text: text, layout: SampleKeyLayouts.german)
++    return f.h.controller.effectiveBindings.bindings.first {
++      $0.modifiers == chord.modifiers && $0.keyCode == chord.code(in: SampleKeyLayouts.german)
++    }
++  }
++
++  /// settings.json takes `ctrl+opt+ö` on a German keyboard, and so must the commands that write it.
++  @Test func aKeyCanBeNamedByWhatItTypes() throws {
++    let f = Fixture()
++    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
++    let result = f.h.run("bind ctrl+opt+ö desktop")
++    #expect(result.ok && result.message == "ctrl+opt+ö runs `desktop`", "\(result.message)")
++    #expect(f.settings.bindings == ["ctrl+opt+ö": "desktop"], "written as it was named, not as a place on a US keyboard")
++    let binding = try #require(try german(f, "ctrl+opt+ö"))
++    #expect(binding.command == .desktop && binding.label == "⌃⌥Ö" && binding.keyCode == KeyChord.Key.semicolon.code)
++    #expect(f.h.run("bind Opt+Ctrl+Ö desktop").message == "ctrl+opt+ö already runs `desktop`")
++    #expect(f.h.run("unbind ctrl+opt+ö").message == "ctrl+opt+ö no longer runs `desktop`; ctrl+opt+d still does")
++    #expect(f.settings.bindings.isEmpty)
++    #expect(f.h.run("unbind ctrl+opt+ö").message == "ctrl+opt+ö already runs nothing")
++  }
++
++  @Test func onAUSKeyboardThatCharacterIsStillRefused() {
++    let f = Fixture()
++    #expect(!f.h.run("bind ctrl+opt+ö desktop").ok)
++    #expect(!f.h.run("unbind ctrl+opt+ö").ok)
++    #expect(f.saved.isEmpty)
++  }
++
++  /// Back is `ctrl+opt+[`, which a German keyboard cannot type alone: it stays where a US keyboard has it, on the key marked Ü.
++  @Test func theDefaultThatSitsOnThatKeyIsSeenReplacedAndRemoved() throws {
++    let f = Fixture()
++    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
++    #expect(try german(f, "ctrl+opt+ü")?.command == .back)
++    #expect(f.h.run("bind ctrl+opt+ü back").message == "ctrl+opt+ü already runs `back`")
++    #expect(f.h.run("bind ctrl+opt+ü arrange").message == "ctrl+opt+ü runs `arrange` (it ran `back`)")
++    #expect(try german(f, "ctrl+opt+ü")?.command == .arrange)
++    #expect(f.h.controller.effectiveBindings.problems.isEmpty)
++    #expect(f.h.run("unbind ctrl+opt+ü").message == "ctrl+opt+ü no longer runs `arrange`; ctrl+opt+a still does")
++    #expect(try german(f, "ctrl+opt+ü") == nil, "the default does not come back")
++    #expect(f.settings.bindings == ["ctrl+opt+ü": nil])
++  }
++
++  @Test func theTwoWaysOfNamingAKeyAreOneShortcut() throws {
++    var settings = Settings()
++    settings.bindings = ["ctrl+opt+us:;": "arrange"]
++    let f = Fixture(settings: settings)
++    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
++    #expect(f.h.run("bind ctrl+opt+ö desktop").message == "ctrl+opt+ö runs `desktop` (it ran `arrange`)")
++    #expect(f.settings.bindings == ["ctrl+opt+ö": "desktop"])
++    #expect(f.h.run("unbind ctrl+opt+us:;").message == "ctrl+opt+us:; no longer runs `desktop`; ctrl+opt+d still does")
++    #expect(f.settings.bindings.isEmpty)
++    // And the other way round.
++    f.h.run("bind ctrl+opt+ö arrange")
++    #expect(f.h.run("bind ctrl+opt+us:; desktop").message == "ctrl+opt+us:; runs `desktop` (it ran `arrange`)")
++    #expect(f.settings.bindings == ["ctrl+opt+us:;": "desktop"])
++    #expect(f.h.controller.effectiveBindings.problems.isEmpty)
++  }
++
++  /// `-` is typed by the key where a US keyboard has `/`, and a default on `/`, which a German keyboard cannot type alone, sits there.
++  @Test func bindingAKeyTakesItFromWhateverHasItHoweverThatIsWritten() throws {
++    var settings = Settings()
++    settings.bindings = ["ctrl+opt+us:z": "float-all", "ctrl+opt+/": "arrange"]
++    let f = Fixture(settings: settings)
++    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
++    #expect(f.h.run("bind ctrl+opt+y desktop").message.hasPrefix("ctrl+opt+y runs `desktop` (it ran `float-all`)"))
++    #expect(f.h.run("bind ctrl+opt+- home").message.hasPrefix("ctrl+opt+- runs `home` (it ran `arrange`)"))
++    #expect(f.settings.bindings == ["ctrl+opt+y": "desktop", "ctrl+opt+-": "home"])
++    #expect(f.h.controller.effectiveBindings.problems.isEmpty)
++  }
++
++  /// The key marked Z on a German keyboard is where a US keyboard has Y.
++  @Test func unbindingAKeyByItsPlaceRemovesTheEntryThatNamesItByItsLetter() {
++    var settings = Settings()
++    settings.bindings = ["ctrl+opt+z": "desktop"]
++    let f = Fixture(settings: settings)
++    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
++    #expect(f.h.run("unbind ctrl+opt+us:y").message == "ctrl+opt+us:y no longer runs `desktop`; ctrl+opt+d still does")
++    // The entry is gone. Undo is on ⌃⌥Z by default and would come back to the key, so null stands there, under the name that was given.
++    #expect(f.settings.bindings == ["ctrl+opt+us:y": nil])
++    #expect(!f.h.controller.effectiveBindings.bindings.contains { $0.keyCode == KeyChord.Key.y.code && $0.modifiers == [.control, .option] })
++    #expect(f.h.controller.effectiveBindings.problems.isEmpty)
++  }
++
++  /// `z` is the key that types z. What is said about it has to be about that key.
++  @Test func aLetterMeansTheKeyThatTypesItWhenAskingWhatItRan() throws {
++    var settings = Settings()
++    settings.bindings = ["ctrl+opt+z": "desktop", "ctrl+opt+y": "arrange"]
++    let f = Fixture(settings: settings)
++    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
++    #expect(f.h.run("bind ctrl+opt+z home").message == "ctrl+opt+z runs `home` (it ran `desktop`)")
++    #expect(f.h.run("unbind ctrl+opt+y").message == "ctrl+opt+y no longer runs `arrange`; ctrl+opt+a still does")
++    #expect(f.settings.bindings == ["ctrl+opt+z": "home"])
++  }
++
++  @Test func withShortcutsFollowLayoutOffCharactersOfTheLayoutAreNotKeyNames() {
++    var settings = Settings()
++    settings.shortcutsFollowLayout = false
++    let f = Fixture(settings: settings)
++    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
++    #expect(!f.h.run("bind ctrl+opt+ö desktop").ok)
++  }
++
+   @Test func bindReplacesWhatTheShortcutRan() throws {
+     let f = Fixture()
+     #expect(
+diff --git a/Tests/ArborKitTests/SettingsPanelModelTests.swift b/Tests/ArborKitTests/SettingsPanelModelTests.swift
+index 3d7711c..6edb5c6 100644
+--- a/Tests/ArborKitTests/SettingsPanelModelTests.swift
++++ b/Tests/ArborKitTests/SettingsPanelModelTests.swift
+@@ -494,7 +494,9 @@ private final class Panel {
+     let clash = try #require(p.model.clash)
+     #expect(clash.holder == .floatAll && clash.chord.text == "ctrl+opt+y" && clash.label == "⌃⌥Y")
+     p.model.replaceHolder()
+-    #expect(p.commands == ["bind ctrl+opt+y desktop", "unbind ctrl+opt+us:z", "unbind ctrl+opt+d"])
++    // `bind` takes the key from whatever has it, however that is written.
++    #expect(p.commands == ["bind ctrl+opt+y desktop", "unbind ctrl+opt+d"])
++    #expect(p.h.controller.settings.bindings["ctrl+opt+us:z"] == nil)
+     #expect(p.h.controller.effectiveBindings.problems.isEmpty)
+     #expect(p.h.controller.effectiveBindings.bindings.filter { $0.keyCode == 6 }.map(\.command) == [.desktop])
+   }
+diff --git a/Tests/ArborKitTests/SummonKeyTests.swift b/Tests/ArborKitTests/SummonKeyTests.swift
+index 32a2435..4860d7f 100644
+--- a/Tests/ArborKitTests/SummonKeyTests.swift
++++ b/Tests/ArborKitTests/SummonKeyTests.swift
+@@ -92,6 +92,30 @@ import Testing
+     #expect(held(s.h) == ["toggle-pause"])
+   }
+ 
++  /// With `summonStays` the terminal lies there while another app has the keyboard. If that app keeps its keys, it keeps all.
++  @Test func anotherListedAppInFrontKeepsTheKeyOfTheAppThatIsSummoned() {
++    let s = makeHarness()
++    #expect(s.h.run("set summonStays true").ok)
++    let machine = s.h.system.open(app: "Machine", bundleID: "com.example.machine", pid: 1005)
++    #expect(s.h.run("pass-through com.example.machine on").ok)
++    s.h.system.userFocus(s.editor)
++    s.h.key("ctrl+opt+t")
++    #expect(held(s.h) == ["summon Terminal", "toggle-pause"])
++    var told = 0
++    s.h.controller.observe { if $0 == .input { told += 1 } }
++
++    s.h.system.userFocus(machine)
++    #expect(s.h.workspace.isSummoned(s.terminal), "it stays")
++    #expect(s.h.controller.isPassingThrough)
++    #expect(held(s.h) == ["toggle-pause"])
++    #expect(told == 1, "shortcuts were off and are off; the app has to hear of the one key all the same")
++
++    s.h.system.userFocus(s.terminal)
++    #expect(held(s.h) == ["summon Terminal", "toggle-pause"])
++    #expect(told == 2)
++    #expect(s.h.key("ctrl+opt+t")?.message.hasPrefix("sent Terminal away") == true)
++  }
++
+   @Test func whenTheSummonEndsSomeOtherWayTheKeyGoesBackToTheApp() {
+     for command in ["dock left", "pin", "float"] {
+       let s = makeHarness()
+@@ -107,6 +131,35 @@ import Testing
+     }
+   }
+ 
++  /// The lid is closed with no other display: nothing is laid out, so no layout brings the news. Found by chaos.
++  @Test func whatTheAppWasToldIsWhatArborWantsAlsoWhenEveryDisplayGoesAndComesBack() {
++    let s = makeHarness()
++    var told = s.h.controller.activeBindings
++    s.h.controller.observe { [unowned controller = s.h.controller] change in
++      if change == .input || change == .lifecycle || change == .hold { told = controller.activeBindings }
++    }
++    s.h.key("ctrl+opt+t")
++    #expect(held(s.h) == ["summon Terminal", "toggle-pause"] && told == s.h.controller.activeBindings)
++    s.h.system.setDisplays([])
++    #expect(told == s.h.controller.activeBindings, "\(told.map(\.command.text)) against \(held(s.h))")
++    s.h.system.setDisplays([FakeWindowSystem.standardDisplay])
++    #expect(told == s.h.controller.activeBindings, "\(told.map(\.command.text)) against \(held(s.h))")
++  }
++
++  /// ⌘M in the summoned terminal, then its key: that means "bring it", and the summon that was is over. Found by chaos.
++  @Test func whatTheAppWasToldIsWhatArborWantsAlsoWhenTheKeyFindsTheWindowMinimized() {
++    let s = makeHarness()
++    var told = s.h.controller.activeBindings
++    s.h.controller.observe { [unowned controller = s.h.controller] change in
++      if change == .input || change == .lifecycle || change == .hold { told = controller.activeBindings }
++    }
++    s.h.key("ctrl+opt+t")
++    s.h.system.setMinimized(s.terminal, true)
++    #expect(told == s.h.controller.activeBindings)
++    s.h.key("ctrl+opt+t")
++    #expect(told == s.h.controller.activeBindings, "\(told.map(\.command.text)) against \(held(s.h))")
++  }
++
+   @Test func observersAreToldOnceForEachChangeAndNotWithEveryLayout() {
+     let s = makeHarness()
+     var told = 0
+diff --git a/collab/QUESTIONS.md b/collab/QUESTIONS.md
+index 2435ff6..d08cb4e 100644
+--- a/collab/QUESTIONS.md
++++ b/collab/QUESTIONS.md
+@@ -1177,3 +1177,5 @@ One line per product decision made while building, newest last.
+ - Product owner, 2026-10-14 (links): the floor is that a link may not cost what ⌃⌥Z cannot bring back. Above it, `arrange`, its styled forms on a whole display, `cycle-layout` and `layout` stay refused where they would cost a saved view or a name, although undo restores them. What takes several links and has a way back each time is not guarded. `arbor://save-view/N` is refused where N is taken.
+ - Product owner, 2026-10-14 (`arborctl … > /dev/full`): by design: the exit code says whether Arbor did it, not whether the shell could print it.
+ - Product owner, 2026-10-14 (how a claim is run, third lesson): ask for the RIGHT place, not only a whole window; let time pass between two reports a simulator delivers at once; press the keys a person presses, not the commands behind them; after every release add a step that must move something. The replays are under `scripts/replays` on the branch `tools/decision-replays`.
++- F44: `bind` and `unbind` took only a US keyboard's key names, and compared with the shortcuts of a US keyboard. Now they go by the layout in use. Decided: a key named by what it types is written into settings.json as it was named (`ctrl+opt+ö`), not as the place it is to Arbor (`us:;`); "it ran" and "already runs" are about the key, whichever way its shortcut is written; `unbind` removes the entry that holds the key, whatever its spelling, and writes null only if a default would otherwise come back.
++- F55, `scrollOnDesktopZooms`: the window list's answer is kept for 0.3 s from when it was given, while the pointer stays within 2 points; being used does not keep it alive, because Arbor's own steps move windows under the pointer. There is no such memory for clicks (a menu may have opened meanwhile); for a notch the mistake is mild. The controller's zones are asked first, which also makes "on the Desktop" mean what it means for ⇧-drag: inside the view of a display with something docked.
+diff --git a/collab/parity.json b/collab/parity.json
+index d61b5cf..f520458 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -108,7 +108,7 @@
+     {"id": "A56", "area": "Arbor only", "title": "Keys follow the keyboard, gestures follow the pointer", "trellis": "", "arbor": "A shortcut acts on the display being typed on and steps in toward the focused window, unless the pointer moved last; `stepInToward`", "status": "shipped", "spec": "F56", "priority": 2, "tests": ["aShortcutActsOnTheFocusedWindowsDisplayWhileThePointerRestsOnTheOther", "aGestureActsOnThePointersDisplay", "aPointerPushedAsideBeforeTypingDoesNotLead", "aPointerThatMovedSinceActsOnItsOwnDisplay", "shortcutsPressedOneAfterAnotherStayOnOneDisplay", "everyCameraCommandFollowsTheKeyboard", "withNoFocusedWindowThePointerDecides", "inFromAShortcutStepsTowardTheFocusedWindowWhileThePointerRests", "inFromAShortcutStepsTowardAPointerThatMovedSince", "inFromAGestureStepsTowardThePointer", "stepInTowardPointerIsHowItWasBefore", "stepInTowardFocusIgnoresAPointerThatJustMoved", "aSecondShortcutGoesOnWhereTheFirstWent", "typingGivesTheLeadBackToTheKeyboard"]},
+     {"id": "A51", "area": "Arbor only", "title": "Peek: hold to look, let go to land", "trellis": "", "arbor": "Hold ⌃⌥Space: everything shows while the keys are down; the pointer or the arrow keys move an outline; letting go frames it, ⎋ returns; `peek`", "status": "shipped", "spec": "F51", "priority": 2, "tests": ["aTapShowsEverythingAndHistoryGetsOneEntry", "aTapIsExactlyWhatTheCommandDoes", "aSlowPressStaysOnEverything", "lettingGoFramesTheWindowUnderThePointerAndBackReturnsToTheViewBeforeThePeek", "lettingGoWithoutMovingReturnsToTheOriginalViewWithNoHistoryEntry", "escapeReturnsToTheOriginalViewWithNoHistoryEntryAndDoesNotPause", "theArrowKeysMoveTheOutlineInsteadOfTheView", "anArrowWithinTheFirstMomentDoesWhatItAlwaysDid", "aClickFramesWhatWasClickedAtOnce", "aClickedTileIsALandingToo", "temporaryShortcutsAreGoneAfterEveryEnding", "aTapWithTheModifiersKeptDownStaysOnEverything", "aReleaseThatIsNeverReportedStillEndsThePeek", "autoRepeatAfterEscapeDoesNotStartAnotherPeek", "aPeekHappensOnTheDisplayThatHasTheKeyboard", "withPeekOffHoldingIsTheSameAsTapping", "anotherCommandLeavesTheViewOnEverythingForGood", "aModifierGoingUpFirstEndsTheHold"]},
+     {"id": "A61", "area": "Arbor only", "title": "Apps that keep their own ⌃⌥, and apps Arbor pauses for", "trellis": "", "arbor": "Shortcuts Off in “App”; `pass-through`; `passThroughApps`, `pauseForApps`; ⌃⌥⎋ answers everywhere", "status": "shipped", "spec": "F41", "priority": 2, "tests": ["theKeyThatSummonedAnAppSendsItAwayThoughShortcutsAreOffInIt", "summonedByCommandTabTheKeyIsThereToo", "anAppThatIsInFrontWithoutBeingSummonedKeepsAllItsKeys", "aListedAppInFrontTakesTheShortcutsAndGesturesAndGivesThemBack", "theAppIsToldOnlyWhenTheAnswerChanges", "itsWindowsAreStillDockedMovedOutOfViewAndRevealed", "theCommandTogglesTheFrontmostAppSavesAndAppliesAtOnce", "aListedAppInFrontPausesArborAndLeavingItResumes", "aPauseStartedByHandBeforehandIsLeftAlone", "aPauseAskedForByHandDuringTheAppsPauseOutlivesIt", "theWindowSwitchedToIsInViewAfterThePauseEnds", "oldSettingsFilesLoadWithEmptyLists", "aURLCannotRunIt"]},
+-    {"id": "A64", "area": "Arbor only", "title": "Shortcuts follow the keyboard layout", "trellis": "", "arbor": "⌃⌥Z is the key labelled Z on QWERTZ, AZERTY and Dvorak; Back shows as ⌃⌥Ü in Germany; `us:z` and `shortcutsFollowLayout` for positions", "status": "shipped", "spec": "F44", "priority": 2, "tests": ["qwertz", "azerty", "dvorakTypesEverythingSoNothingFallsBack", "everyDefaultShortcutWorksOnEveryLayoutAndNoTwoShareAKey", "aCollisionAfterFallingBackIsReportedAndTheOthersStillWork", "withTheSettingOffShortcutsArePositionsWithTheirUSLabels", "selectingALayoutMovesTheShortcutsAndTellsTheApp", "aPositionCanBeAskedForOutright", "theNumericKeypadIsNeverMeant", "theSampleLayoutsAreWhatMacOSHas"]},
++    {"id": "A64", "area": "Arbor only", "title": "Shortcuts follow the keyboard layout", "trellis": "", "arbor": "⌃⌥Z is the key labelled Z on QWERTZ, AZERTY and Dvorak; Back shows as ⌃⌥Ü in Germany; `us:z` and `shortcutsFollowLayout` for positions", "status": "shipped", "spec": "F44", "priority": 2, "tests": ["aKeyCanBeNamedByWhatItTypes", "theDefaultThatSitsOnThatKeyIsSeenReplacedAndRemoved", "theTwoWaysOfNamingAKeyAreOneShortcut", "qwertz", "azerty", "dvorakTypesEverythingSoNothingFallsBack", "everyDefaultShortcutWorksOnEveryLayoutAndNoTwoShareAKey", "aCollisionAfterFallingBackIsReportedAndTheOthersStillWork", "withTheSettingOffShortcutsArePositionsWithTheirUSLabels", "selectingALayoutMovesTheShortcutsAndTellsTheApp", "aPositionCanBeAskedForOutright", "theNumericKeypadIsNeverMeant", "theSampleLayoutsAreWhatMacOSHas"]},
+     {"id": "A49", "area": "Arbor only", "title": "Pin a window so that it stays in view", "trellis": "", "arbor": "`pin`, `unpin`, `toggle-pin`, menu Keep “Zoom” in View, rule action `pin`: keeps its place through every camera move, is raised again when covered, never takes the keyboard by itself, and gives it up when the view moves", "status": "shipped", "spec": "F49", "priority": 1, "tests": ["aPinnedWindowKeepsItsPlaceThroughEveryCameraMove", "otherFloatingWindowsStillLeaveWithTheDesktop", "dockedWindowsDoNotAvoidItAndDoNotPushIt", "pinningAWindowThatIsOutOfViewBringsItBackWithoutMovingTheCamera", "itStaysWhenTheDesktopIsSqueezedIntoATile", "afterEachCameraMoveItIsInFrontAndTheKeyboardIsWhereTheMovePutIt", "framingTheWindowThatAlreadyHasTheKeyboardDoesNotBuryIt", "clickingAnotherWindowDoesNotBuryIt", "aClickedWindowThatComesToTheFrontLateIsStillPutBehindIt", "clickingInTheWindowThatAlreadyHasTheKeyboardDoesNotBuryIt", "whileTheButtonStaysDownInThatWindowItIsNotLeftCovered", "clicksWithNothingPinnedCostNothing", "aLookThatFindsNothingCoveredAsksNoApp", "ofTwoPinnedWindowsOnlyTheOneThatIsCoveredIsRaised", "aPinnedWindowThatNothingCoversIsNotRaised", "whenTheStackingCannotBeToldItIsRaisedAnyway", "clickingThePinnedWindowGivesItTheKeyboardAndMovesNothing", "aMoveOfTheViewTakesTheKeyboardAlongAlsoOutOfAPinnedWindow", "aCommandThatLeavesTheViewWhereItIsLeavesTheKeyboardInThePinnedWindow", "theFrameShortcutInAPinnedWindowUnframesWhatIsBeneath", "pinnedWhereDockedWindowsHadPushedItThatIsItsPlaceFromNowOn", "aCameraMoveNeverGivesItTheKeyboard", "thePinnedWindowUsedLastIsInFrontOfTheOtherPinnedWindows", "whileAPinnedWindowHasTheKeyboardNothingIsRaisedOverIt", "anAppReportingItsRaisedWindowAsFocusedDoesNotStartALoop", "draggingAGapDoesNotMakeArborLookWithEveryMove", "withNothingPinnedNothingIsRaised", "dockingUnpins", "toggleFloatAndDockBesideUnpinToo", "pinningADockedWindowFloatsItAndItsSlotCloses", "pinningAFramedWindowDoesNotCoverTheView", "pinningADockedWindowWhoseOwnSizeIsMostOfTheDisplayHalvesIt", "pinningADockedWindowThatIsOutOfViewBringsItIntoView", "draggingAPinnedWindowMovesItAndNeverDocksIt", "pinningAndUnpinningMoveNothing", "unpinningLeavesItWhereItIsUntilTheCameraNextMoves", "togglePinGoesBothWaysAndActsOnTheFocusedWindow", "commandsThatCannotWorkSayWhy", "thePinRuleAppliesToNewWindows", "aTitleThatArrivesLateStillPins", "aLateTitleCanTakeThePinAwayAgain", "aBadActionIsReportedLikeOtherBadRules", "pinsSurviveARestart", "aPinnedWindowWhoseAppRestartedIsFoundAgainByAppAndTitle", "aStateFileFromBeforePinsLoadsAndTheNewOneRoundTrips", "eachDisplaysCameraLeavesThePinnedWindowsOfBothAlone", "thePinFollowsAWindowMovedToAnotherDisplay", "whenItsDisplayIsUnpluggedItComesIntoViewOnTheMainOneAndGoesBackAfterwards", "movedByMacOSBeforeTheUnplugWasReportedItStillGoesBackPinned", "unpinnedWhileItsDisplayWasAwayItStaysUnpinned", "dockedAndFloatedAgainWhileItsDisplayWasAwayItStaysUnpinned", "aMomentWithoutAnyDisplayDoesNotCostThePin", "pinnedWhileItsDisplayWasAwayItStaysWhereItWasPinned", "launchedWithoutTheDisplayItWasPinnedOnItIsStillPinned", "whenTheDisplayShrinksUnderItItIsBroughtBackIntoView", "minimizedItIsLeftAloneAndComesBackPinnedWhereItWas", "whileItsAppIsHiddenItIsLeftAloneAndComesBackPinnedWhereItWas", "onAnotherMacOSSpaceItIsLeftAlone", "switchingTabsInAPinnedWindowKeepsThePin", "pinningAWindowThatOpenedOverAFramedOneMakesItTheDisplaysNotThatSpaces", "closingItForgetsThePin", "closingItBeforeItIsRaisedIsHarmless", "excludingItsAppForgetsThePin", "floatAllLeavesItExactlyWhereItIs", "arrangeLeavesItOut", "withOnlyAPinnedWindowThereIsNothingToArrange", "pausingLeavesItExactlyWhereItIsAndResumingRemembersThePin", "movedDuringAPauseItStaysWhereItWasPut", "stateAndTheDrawingShowThePin", "aURLCanPinAndUnpin", "pinnedAndInFront", "onlyAFloatingWindowCanBePinned", "howeverAWindowStopsFloatingItsPinGoes", "movingAPinnedWindowKeepsItsPin", "pinningAndUnpinningLeavesTheWorkspaceAsItWas", "resettingTheTreeKeepsThePins", "pinsAreSavedAndAPinOnAWindowThatDoesNotFloatIsNotBelieved", "theCommandsHaveATextForm", "theRuleActionHasATextForm", "aWindowTheDesktopSqueezedIsItsOwnSizeOncePinned", "squeezedInHeightItIsItsOwnSizeOncePinnedToo", "squeezedAtTheEdgeOfTheScreenItGrowsInward", "pinningASqueezedWindowDoesNotCostItItsSize", "pinnedWhileOutOfViewASqueezedWindowComesAtItsOwnSize", "itGrowsToItsOwnSizeAsAMotionNotAJump"]},
+     {"id": "A77", "area": "Arbor only", "title": "A group keeps its identity", "trellis": "", "arbor": "A framed, saved, named or guest group goes on meaning its windows whatever leaves or arrives around it; docking at the edge of the view joins what is in view", "status": "shipped", "spec": "F62", "priority": 1, "tests": ["aFramedGroupStaysFramedWhenItsNeighbourLeaves", "aSavedViewOfAGroupStillShowsThatGroup", "whatIsDockedAtTheEdgeOfTheViewJoinsWhatIsInView", "aFirmlyKeptGroupSurvivesDownToOneWindowAndGrowsAgain", "noReferenceEverComesToMeanMore", "closingTheWindowBesideAFramedGroupLeavesTheViewOnTheGroup", "dockingAtTheEdgeOfTheViewShowsTheViewAndTheNewcomer", "tradingPlacesInAFramedPairKeepsThePairAndTheView", "aSavedViewOfAPairStillShowsThePair", "rearrangingAFramedPairBringsNothingElseIntoView", "aFloatingWindowDraggedToAnotherDisplayLeavesTheOneItLeftLaidOut", "noTwoReasonsShareABitAndEachHasAWord", "theTwoHalvesAgreeAfterEveryCommand", "aGroupNamedWhileALayoutWaitsIsStillKeptWhenTheWindowComes", "alsoOnTwoDisplaysWithDragsGapsAndWaitingSlots"]},
+     {"id": "A90", "area": "Arbor only", "title": "What commands cost is counted, pinned and shown", "trellis": "", "arbor": "Budgets for every everyday command, pinned by tests; `arborctl stats` says what commands cost on this Mac", "status": "shipped", "priority": 2, "tests": ["nothingIsDoneTwiceOrForNothing", "theListOfKnownWasteIsCurrent", "commandsThatChangeNothingMoveAndSaveNothing", "aCameraMoveTouchesEachWindowOnce", "anAppWithManyWindowsHidesAndShowsInOneLayout", "theStateIsWrittenOnlyWhenItChanged", "commandsAndLayoutsAreCounted", "everyCommandIsQuickOnABigDesk", "goingAwayAndComingBackMakesNothingNew", "nothingIsEverInTwoPlaces", "aCameraMoveMakesNoDockedWindowWaitForAnother", "takingTheHintChangesNothingButTheCost", "nothingForetoldGoesUnclaimed"]},
+diff --git a/docs/ARCHITECTURE.md b/docs/ARCHITECTURE.md
+index 92d8d09..374da3b 100644
+--- a/docs/ARCHITECTURE.md
++++ b/docs/ARCHITECTURE.md
+@@ -741,7 +741,8 @@ alone never is. The scroll tap is therefore installed by default (`scrollZoom`),
+ the Mac would pass through it, a hundred a second. `GestureRouter.scrollTapIsWanted` says when it has to be on (⌃⌥ down, a scroll of Arbor's or
+ its momentum, a pinch of Arbor's with `continuousZoom`); two monitors for modifier keys (a global one, and a local one for what goes to Arbor's own windows) and the handlers themselves
+ switch it. None of them remembers what the keys were: a key that goes up unheard (a menu, secure keyboard entry) would make the memory wrong and the next press would be ignored. While it
+-is on, `scrollNeedsALook` sends most scrolls on after reading the event's flags and one comparison under the lock. `ScrollZoom` counts notches and points of travel into steps; with `continuousZoom` the router streams the same scroll as the
++is on, `scrollNeedsALook` sends most scrolls on after reading the event's flags and one comparison under the lock. With `scrollOnDesktopZooms` what is under the pointer matters: `scrollAsksWhatIsUnder` says
++for which events, `DesktopGuardZones` (published to this tap too) answers for the windows Arbor knows, `SurfaceMemo` keeps the window list's answer for 0.3 s, and the list is read with the lock released. `ScrollZoom` counts notches and points of travel into steps; with `continuousZoom` the router streams the same scroll as the
+ magnification of a pinch that would have stepped as often.
+ 
+ Once a second `PointerInput` checks that Arbor still has Accessibility
+diff --git a/docs/SETTINGS.md b/docs/SETTINGS.md
+index 5603ad0..c85fe3b 100644
+--- a/docs/SETTINGS.md
++++ b/docs/SETTINGS.md
+@@ -83,7 +83,7 @@ File). There are four ways to change one, and each takes effect at once and show
+ | `pinchThreshold` | `0.25` | 0.05 to 2 | **Pinch travel for one step.** How far a pinch must travel for one step; smaller is more sensitive. *Advanced.* |
+ | `frameRectangleModifier` | `ctrl+opt` | modifier keys joined by +, such as shift+cmd, or none | **Frame a rectangle with.** Hold these keys and drag a rectangle to frame what it covers; none turns this off. |
+ | `frameRectangleOnDesktop` | `true` | true or false | **⇧-drag on the Desktop frames.** A ⇧-drag that starts on the Desktop, in a gap or on a tile also frames a rectangle. |
+-| `continuousZoom` | `false` | true or false | **Continuous zoom.** Not finished: the view will follow the fingers during a pinch, and pan with ⌥ and two fingers. For now a pinch steps as before. *Not in the settings window.* |
++| `continuousZoom` | `false` | true or false | **Continuous zoom.** Not finished: the view will follow the fingers during a pinch, and slide with ⌃⌥ and two fingers sideways. For now a pinch steps as before. *Not in the settings window.* |
+ | `guardDesktopClicks` | `false` | true or false | **Guard clicks on the Desktop.** An experiment, not yet seen at work on a Mac. While something is docked, a plain click on the bare Desktop is kept from macOS, which would sweep every window aside (“Click wallpaper to reveal desktop”). Drags, icons and widgets are left alone. *Advanced.* |
+ | `scrollZoom` | `true` | true or false | **Zoom with ⌃⌥ and scroll.** Scrolling with ⌃⌥ held zooms: up steps in toward the pointer, down steps out. Off with Pinch to zoom too. |
+ | `scrollZoomThreshold` | `40` | 4 to 400 pt | **Scroll travel for one step.** How far a Magic Mouse or trackpad must scroll for one step; smaller is more sensitive. A wheel steps once per notch. *Advanced.* |
+diff --git a/docs/TESTING.md b/docs/TESTING.md
+index bf70f69..3952fc6 100644
+--- a/docs/TESTING.md
++++ b/docs/TESTING.md
+@@ -802,7 +802,7 @@ and invalid arguments, nonsense lines and `arbor://` URLs; displays added, remov
+ reporting the windows before, after or never; timers fired early or late; settings.json edited sensibly and badly, and every setting in
+ `SettingsSchema` set to values it takes; commands from a shortcut, the menu or a gesture; keys held and let go (a peek); pinches in pieces; apps coming
+ to the front; native tabs opened, chosen and closed; drags whose release nobody sees; windows on Spaces that are not showing at launch;
+-apps that refuse to move, snap back, round their size or stop answering for a while; and Arbor itself pausing, quitting, crashing and being
++apps that refuse to move, snap back, round their size or stop answering for a while; the Accessibility permission taken away and given back (`revoke`, `grant`: while it is missing, and until Arbor has noticed, the rules rest); and Arbor itself pausing, quitting, crashing and being
+ launched again, with windows gone or renumbered, days gone by, or state.json damaged meanwhile.
+ 
+ **What it checks**, after every action: `Controller.invariantViolations()` (`Controller+Invariants.swift`: trees, camera, history
+@@ -813,7 +813,7 @@ windows are out of view; nothing Arbor placed is lost beyond the displays; overl
+ preview without a drag; one focus ring, around the window that has the keyboard; a floating window in view goes out of view only
+ when the camera moves; a pinned window is always in view; Go to… is open only while Arbor runs, on a display that is there and with nothing being
+ dragged, and the window chosen in it has the keyboard and is in view; a saved slot that waits for its window is in a tree and has a timer that ends the
+-wait; Arbor gives up only on windows that something keeps moving; only known timers, and they run dry; windows Arbor does not arrange are never moved;
++wait; the shortcuts the app was last told to register and the settings its taps were last told to follow are the ones Arbor wants now; Arbor gives up only on windows that something keeps moving; only known timers, and they run dry; windows Arbor does not arrange are never moved;
+ `state` and state.json survive JSON; after `quit` or `pause` everything is back in view; a restart keeps the shape of every tree).
+ 
+ **Running it**
+diff --git a/docs/features/F41-pass-through-apps.md b/docs/features/F41-pass-through-apps.md
+index 1c25242..2ca846f 100644
+--- a/docs/features/F41-pass-through-apps.md
++++ b/docs/features/F41-pass-through-apps.md
+@@ -81,5 +81,5 @@ Not shipped:
+ - `pass-through [bundle-id] on|off`, for files that must say which; repeating it changes and saves nothing. ✔ `onAndOffSayWhichAndCanBeRepeated`
+ - People read "shortcuts are off **in** Emacs" and "paused **for** Game", not "while … is frontmost". "pass-through" is the command's name only.
+ - **The key that summoned the app stays** (the product owner's day on the trunk; F53): with `"ctrl+opt+t": "summon Terminal"` and shortcuts off in Terminal, the key brought the terminal and could not send it away. While an app's window is summoned,
+-  the `summon` shortcut of that app is held besides ⌃⌥⎋; no other, and not while the app is in front without being summoned. `Change.input` is sent when that changes, also when the summon begins after the app came to the front (⌘Tab) or
++  the `summon` shortcut of that app is held besides ⌃⌥⎋; no other, not while the app is in front without being summoned, and not while another listed app is in front of a summoned window that stays (`summonStays`). `Change.input` is sent when that changes, also when the summon begins after the app came to the front (⌘Tab) or
+   ends while it is still there (docked, pinned, floated). ✔ `SummonKeyTests`
+diff --git a/docs/features/F44-shortcuts-follow-the-keyboard-layout.md b/docs/features/F44-shortcuts-follow-the-keyboard-layout.md
+index 146e684..2ebe54a 100644
+--- a/docs/features/F44-shortcuts-follow-the-keyboard-layout.md
++++ b/docs/features/F44-shortcuts-follow-the-keyboard-layout.md
+@@ -75,3 +75,5 @@ Not shipped, and decisions:
+ - **Any single character the layout types alone names its key** (rule 6): `ctrl+opt+ü`. It is read with the layout (`KeyChord(text:layout:)`) and becomes the position where it is printed, so `bindings` lists it as `ctrl+opt+us:[ (⌃⌥Ü)`. An entry that names a key by place or by print also stands in for the default that sits on that
+   key, so `"ctrl+opt+ü": null` frees Back. On a layout that does not type the character the entry is skipped and reported. ✔ `anyCharacterTheLayoutTypesAloneCanNameItsKey`, `aGermanCanBindAndFreeTheirOwnKeys`
+ - Not possible: `+` as a key's name (it separates the parts; write `us:]` in Germany), and the key only European keyboards have (`^` in Germany).
++- **`bind` and `unbind` read shortcuts as settings.json's are read**: on the layout in use, so `bind ctrl+opt+ö desktop` works on a German keyboard, is written into the file as `ctrl+opt+ö`, and what it "ran" before is what sat on
++  that key, however it was written: the default shown as ⌃⌥Ü, `us:;`, a letter. The parser, which knows no layout, lets modifiers and one single character through, tidied; the controller judges. ✔ `BindCommandTests`, "On another keyboard layout"
+diff --git a/docs/features/F55-zoom-with-a-mouse.md b/docs/features/F55-zoom-with-a-mouse.md
+index a7309dc..a514498 100644
+--- a/docs/features/F55-zoom-with-a-mouse.md
++++ b/docs/features/F55-zoom-with-a-mouse.md
+@@ -49,6 +49,6 @@ Decisions:
+ - **The scroll tap is installed by default, and paused** (the input owner's design). A trackpad sends a hundred scroll events a second for as long as anybody scrolls anything, momentum included; each would wake Arbor, all day, on battery, for something used a few times an hour, and a stalled tap
+   thread would freeze scrolling everywhere. So the tap is switched on only while a scroll could be Arbor's (`GestureRouter.scrollTapIsWanted`, tested): ⌃⌥ is down, a scroll of Arbor's or its momentum is in progress whatever the keys do, or, with `continuousZoom`, a pinch of Arbor's is. Two monitors for
+   modifier keys (they listen, they are in nobody's way; a global one, and a local one for what goes to Arbor's own windows) switch it with the keys, remembering nothing from one event to the next; the handlers switch it at the ends of pinches and scrolls. It fails the safe way: a busy main thread or secure keyboard entry leave the tap paused, and the scroll is the app's. This serves `continuousZoom` as well.
+-- With `scrollOnDesktopZooms` the tap is on all the time, every scroll has to be looked at, and what is under the pointer is asked once per scroll, or once per notch: that is a window list each time (0.25 ms, about 3 ms while an app hangs, read under the router's lock; a free-spinning or smoothed wheel sends a hundred or two a second), and one more reason for the default.
++- With `scrollOnDesktopZooms` the tap is on all the time, every scroll has to be looked at, and what is under the pointer is asked once per scroll, or once per notch: that could be a window list each time (0.25 ms, about 3 ms while an app hangs; a free-spinning or smoothed wheel sends a hundred or two events a second). So three things come first: the controller's own word on where bare Desktop might be (`DesktopGuardZones`, F60's: over a window Arbor knows, and on a display with nothing docked, a few rectangles say no); the last answer, good for 0.3 s while the pointer rests (`SurfaceMemo`); and the list is read with the router's lock released. With nothing docked a scroll on the wallpaper is Finder's, as a ⇧-drag is.
+ 
+-Not shipped: a wheel turned sideways does nothing (it is swallowed with the keys held), and so does a sideways stroke without `continuousZoom`; the verdict on what is under the pointer is not kept from one notch to the next. Still to do on a Mac: criterion 3; whether an app that saw `mayBegin` and then nothing keeps its scrollers showing; the cost per scroll event; a real wheel, a Magic Mouse.
++Not shipped: a wheel turned sideways does nothing (it is swallowed with the keys held), and so does a sideways stroke without `continuousZoom`. Still to do on a Mac: criterion 3; whether an app that saw `mayBegin` and then nothing keeps its scrollers showing; the cost per scroll event; a real wheel, a Magic Mouse.
+diff --git a/docs/features/F63-permission-taken-away.md b/docs/features/F63-permission-taken-away.md
+index 898a3b9..453cc03 100644
+--- a/docs/features/F63-permission-taken-away.md
++++ b/docs/features/F63-permission-taken-away.md
+@@ -23,6 +23,9 @@ Arbor cannot prevent this. It can notice at once, stop pretending, say what is g
+ - The pointer taps' own watchdog (once a second, because a tap held without permission can stop all input) reports what it finds, which counts as a second opinion.
+ - So does a call that macOS refuses because Accessibility is disabled: not everything that moves windows is a command (a drop, a window that closes, a gap that is dragged).
+ 
++**A loss that is over before it is noticed.** The privacy daemon restarts now and then, and for an instant every call is refused. If one was (a drop, a command, a window that opened), and macOS says yes when asked, what was refused has not been done, while Arbor's picture of the windows says that it has. Arbor then stops
++and starts in place, as for a loss: nothing is moved on the way out, everything is read again on the way in, arrangement and view stay, and nothing is said. At most once in ten seconds: a second such moment is made up for when the ten seconds are over. And at most three times with less than a minute between: if macOS says yes and goes on refusing, reading everything again does not help.
++
+ **Stopping.** Nothing is moved: it could not be, and if the alarm was false nothing shows. Arbor saves the arrangement and the view, removes its own tiles, gap handles, previews and focus ring (they would
+ soon be wrong), stops observing, removes both pointer taps, and gives the shortcuts back to the apps. A pause in progress is over: granting the permission again means wanting Arbor, as launching it does.
+ 
+@@ -86,6 +89,7 @@ warning sign in F10's menu model (`Controller+Menu.swift`, `MenuBarModel.Icon.ne
+ | 8 | `losingItAgainAndAgainIsHarmless`, `itIsLostOnceHoweverOftenTheAnswerIsNo` |
+ | 9 | `quittingWithoutItIsSafeAndTheNextLaunchBringsTheWindowsBack` |
+ | The first minute | `launchedWithoutThePermissionThenGrantedThenRevokedThenGrantedAgain`, `ifMacOSRefusesTapsFromTheFirstMinuteArborBelievesTheFlagAndGoesOn`, `onceTheThoroughWayHasWorkedItsNoIsBelievedAgainstTheFlag`; on a Mac: the first step of `check-F63.sh` |
++| Over before it is noticed | `whatWasRefusedInAMomentWithoutThePermissionIsMadeUpFor`, `theViewAndTheArrangementStayAsTheyWere`, `itDoesNotDependOnTheFileHavingBeenWritten`, `aSecondMomentSoonAfterTheFirstIsMadeUpForAsSoonAsTenSecondsAreOver`, `callsThatGoOnBeingRefusedDoNotSendItRoundInCircles`; chaos with `revoke` and `grant` |
+ | 10 | `scripts/mac-shell/check-F63.sh`, only on GitHub's throwaway Macs: it switches the permission off for every app |
+ 
+ Not shipped:
+diff --git a/scripts/mac-shell/check-F41.sh b/scripts/mac-shell/check-F41.sh
+index c9adcc5..03076f8 100755
+--- a/scripts/mac-shell/check-F41.sh
++++ b/scripts/mac-shell/check-F41.sh
+@@ -136,7 +136,8 @@ grep -E "code=(3|49|36|123) " "$KEYS_LOG"
+ shot 01-listed-app-in-front
+ 
+ step "a ⌃⌥-drag inside the app is the app's too"
+-drag $((KEYS_X - 60)) $((KEYS_Y - 20)) $((KEYS_X + 60)) $((KEYS_Y + 40)) --mods ctrl+opt
++# A drag that the harness's nets declined proves nothing about who got it.
++drag $((KEYS_X - 60)) $((KEYS_Y - 20)) $((KEYS_X + 60)) $((KEYS_Y + 40)) --mods ctrl+opt || check "the drag was let through by the harness" false
+ sleep 0.5
+ check "nothing was framed" all_on_screen
+ check "no frame-rect command ran" mentions_are "frame-rect" 0
+diff --git a/scripts/mac-shell/check-F44.sh b/scripts/mac-shell/check-F44.sh
+index aa2f11c..f216648 100755
+--- a/scripts/mac-shell/check-F44.sh
++++ b/scripts/mac-shell/check-F44.sh
+@@ -33,7 +33,8 @@ press() {
+ leaves() {
+   local before
+   before=$(ran "$2:")
+-  key "$1"
++  # A key that the harness's nets declined ran nothing either.
++  key "$1" || return 1
+   sleep 0.5
+   ran_is "$2:" "$before"
+ }
+@@ -117,7 +118,9 @@ echo "K126, on this Mac as it is:"
+ arbor_stop
+ 
+ step "K126, for the record: macOS's own shortcuts, raw (which bits come with arrow keys, and with the Globe key?)"
+-"$KEYS" hotkeys
++# All of them say how a person has set up their Mac, and this gets pasted into pull requests. The ones on the four arrows are the question:
++# macOS's tiling is there with the Globe key, Mission Control without, and nobody has seen whether the bits tell them apart.
++if on_throwaway_mac; then "$KEYS" hotkeys; else "$KEYS" hotkeys | grep -E "^key 12[3-6] "; fi
+ 
+ step "for the record: what the layouts' keys type"
+ "$KEYS" dump com.apple.keylayout.US com.apple.keylayout.ABC com.apple.keylayout.British com.apple.keylayout.German \
+diff --git a/scripts/mac-shell/input-taps.sh b/scripts/mac-shell/input-taps.sh
+index b8747c2..938c472 100755
+--- a/scripts/mac-shell/input-taps.sh
++++ b/scripts/mac-shell/input-taps.sh
+@@ -366,6 +366,9 @@ check "the app gets all three notches" test "$(count '^scroll ')" -eq 3
+ check "and Arbor does nothing" test "$(logged | grep -c -E "^INFO  (in|out):")" -eq 0
+ echo "a notch past Arbor's paused scroll tap: $(delays scroll)"
+ for keys in --opt --ctrl; do
++  # Two notches in and none out: not where ⌃ and a wheel zoom a person's screen.
++  [ "$keys" = --ctrl ] && ! on_throwaway_mac && [ "$(defaults read com.apple.universalaccess closeViewScrollWheelToggle 2>/dev/null)" = 1 ] \
++    && { echo "skipped: ⌃ and a wheel zoom this Mac's screen"; continue; }
+   mark "a wheel with $keys alone"
+   "$WITNESS" wheel "$cx" "$cy" 2 "$keys"
+   check "with $keys alone the app gets both notches" test "$(count '^scroll ')" -eq 2
+@@ -390,6 +393,41 @@ ctl show-all
+ mark "a plain scroll afterwards"
+ "$WITNESS" scroll "$cx" "$cy" 0 -120 --steps 6
+ check "the next plain scroll is the app's again (8 events)" test "$(count '^scroll ')" -eq 8
++echo "exactly ⌃⌥: with another key besides, a scroll is the app's"
++for more in --cmd --shift "--shift --cmd"; do
++  mark "two fingers with ⌃⌥ and $more"
++  # shellcheck disable=SC2086
++  "$WITNESS" scroll "$cx" "$cy" 0 100 --steps 6 --ctrl --opt $more
++  check "with ⌃⌥ and $more the app gets all of it (8 events)" test "$(count '^scroll ')" -eq 8
++  check "and Arbor does nothing" test "$(logged | grep -c -E "^INFO  (in|out):")" -eq 0
++done
++mark "a wheel with ⌃⌥⌘"
++"$WITNESS" wheel "$cx" "$cy" 2 --ctrl --opt --cmd
++check "a wheel with ⌃⌥⌘ is the app's" test "$(count '^scroll ')" -eq 2
++mark "a wheel with ⌃⌥⇧"
++"$WITNESS" wheel "$cx" "$cy" 1 --ctrl --opt --shift
++check "a wheel with ⌃⌥⇧ is Arbor's: ⇧ is how macOS turns a wheel sideways" test "$(count '^scroll ')" -eq 0
++ctl show-all
++check "with the keys up the tap is paused" eventually tap_is 0x400000 false
++
++step "F55: scrollOnDesktopZooms"
++printf '%s\n' '{"scrollOnDesktopZooms": true}' > "$ARBOR_HOME/settings.json"
++ctl reload-settings
++check "the tap is on all the time" eventually tap_is 0x400000 true
++mark "forty notches over window 2, no keys"
++"$WITNESS" wheel "$cx" "$cy" 40
++check "the app gets them all" test "$(count '^scroll ')" -eq 40
++echo "a notch over a window Arbor knows, with the tap on (a few rectangles, no window list): $(delays scroll)"
++read -r dx dy dw dh <<< "$(arbor_ask desktop)"
++pointer move "$((dx + dw / 2))" "$((dy + dh - 20))"
++mark "one notch down on the Desktop, no keys"
++"$WITNESS" wheel "$((dx + dw / 2))" "$((dy + dh - 20))" -1
++check "nobody else gets it" test "$(count '^scroll ')" -eq 0
++echo "a notch on the Desktop (the window list is read): $(delays scroll)"
++printf '%s\n' '{}' > "$ARBOR_HOME/settings.json"
++ctl reload-settings
++ctl show-all
++check "with the settings as they come the tap is paused again" eventually tap_is 0x400000 false
+ 
+ # The product owner's question on #68. Many people with big displays have "Use scroll gesture with modifier keys to zoom" on, with ⌃.
+ # The switch is the person's to set, so this part runs only where there is no person.
+diff --git a/scripts/mac-shell/witness.swift b/scripts/mac-shell/witness.swift
+index f0eee37..72d449c 100644
+--- a/scripts/mac-shell/witness.swift
++++ b/scripts/mac-shell/witness.swift
+@@ -17,7 +17,22 @@ import Foundation
+ 
+ setvbuf(stdout, nil, _IOLBF, 0)
+ 
++/// What ends what this process has begun and not yet ended: a key that is down, a pinch or a scroll in progress. Whatever
++/// ends the process first runs these, the last first: the Mac must not be left with ⌃⌥ down or half a gesture.
++var unfinished: [(name: String, end: () -> Void)] = []
++
++func begun(_ name: String, endsWith end: @escaping () -> Void) { unfinished.append((name, end)) }
++
++func ended(_ name: String) {
++  if let index = unfinished.lastIndex(where: { $0.name == name }) { unfinished.remove(at: index) }
++}
++
++func endEverything() {
++  while let last = unfinished.popLast() { last.end() }
++}
++
+ func fail(_ message: String) -> Never {
++  endEverything()
+   FileHandle.standardError.write(Data("witness: \(message)\n".utf8))
+   exit(64)
+ }
+@@ -32,10 +47,10 @@ let usage = """
+     taps                                every event tap on the Mac, as the window server lists them
+     pinch x y <total> [--steps n] [--opt] [--rotate] [--tap hid|session]
+                                         a pinch of that much magnification, with ⌥ held, with a rotation inside it
+-    scroll x y <dx> <dy> [--steps n] [--opt] [--ctrl] [--momentum n] [--tap hid|session]
++    scroll x y <dx> <dy> [--steps n] [--ctrl] [--opt] [--shift] [--cmd] [--momentum n] [--tap hid|session]
+                                         a two-finger scroll of that many points in all, with ⌥ or ⌃ held, then coasting for n events
+-    hold <seconds> [--opt] [--ctrl]     keep ⌥ or ⌃ down that long
+-    wheel x y <notches> [--opt] [--ctrl] [--tap hid|session]
++    hold <seconds> [--ctrl] [--opt] [--shift] [--cmd]     keep those keys down that long
++    wheel x y <notches> [--ctrl] [--opt] [--shift] [--cmd] [--tap hid|session]
+                                         a mouse wheel turned that many notches, up if positive, with ⌥ or ⌃ held
+     hold-space <repeats>                ⌃⌥Space held down: one key-down, then that many auto-repeats, then key-up
+   """
+@@ -200,14 +215,60 @@ func notch(up: Bool, at point: CGPoint, flags: CGEventFlags) {
+   event.post(tap: postAt)
+ }
+ 
+-/// Presses or lets go of ⌃ (59) and ⌥ (58), and answers with the flags events carry meanwhile.
+-func hold(control: Bool, option: Bool, down: Bool) -> CGEventFlags {
+-  var flags: CGEventFlags = []
+-  if control { flags.insert(.maskControl) }
+-  if option { flags.insert(.maskAlternate) }
+-  if control { key(59, down: down, flags: down ? .maskControl : []) }
+-  if option { key(58, down: down, flags: down ? flags : []) }
+-  return flags
++typealias ModifierKey = (name: String, code: CGKeyCode, mask: CGEventFlags)
++let modifierKeys: [ModifierKey] = [
++  ("--ctrl", 59, .maskControl), ("--opt", 58, .maskAlternate), ("--shift", 56, .maskShift), ("--cmd", 55, .maskCommand),
++]
++
++/// The modifier keys named on the command line.
++func modifiersAskedFor() -> [ModifierKey] { modifierKeys.filter { flag($0.name) } }
++
++var signalSources: [DispatchSourceSignal] = []
++
++/// Killed in the middle, this process ends what it has begun first. Every command that posts input calls this before it does.
++func endEverythingWhenKilled() {
++  guard signalSources.isEmpty else { return }
++  for number in [SIGINT, SIGTERM, SIGHUP] {
++    // A handler that does nothing, not SIG_IGN, which children would inherit: the source below does the work.
++    signal(number) { _ in }
++    let source = DispatchSource.makeSignalSource(signal: number, queue: .global(qos: .userInteractive))
++    source.setEventHandler {
++      endEverything()
++      exit(130)
++    }
++    source.resume()
++    signalSources.append(source)
++  }
++}
++
++/// Presses a key that `endEverything` lets go of, or lets go of it.
++func press(_ code: CGKeyCode, flags: CGEventFlags) {
++  begun("key \(code)") { key(code, down: false, flags: []) }
++  key(code, down: true, flags: flags)
++}
++
++func letGo(_ code: CGKeyCode, flags: CGEventFlags) {
++  key(code, down: false, flags: flags)
++  ended("key \(code)")
++}
++
++/// Presses or lets go of these keys, and answers with the flags events carry meanwhile.
++func hold(_ keys: [ModifierKey], down: Bool) -> CGEventFlags {
++  let all = keys.reduce(into: CGEventFlags()) { $0.insert($1.mask) }
++  if down {
++    var flags: CGEventFlags = []
++    for modifier in keys {
++      flags.insert(modifier.mask)
++      press(modifier.code, flags: flags)
++    }
++  } else {
++    var flags = all
++    for modifier in keys.reversed() {
++      flags.remove(modifier.mask)
++      letGo(modifier.code, flags: flags)
++    }
++  }
++  return all
+ }
+ 
+ func key(_ code: CGKeyCode, down: Bool, flags: CGEventFlags, repeating: Bool = false) {
+@@ -243,31 +304,41 @@ case "pinch":
+   let withRotation = flag("--rotate")
+   let point = CGPoint(x: number(0), y: number(1))
+   let total = number(2)
+-  let flags: CGEventFlags = withOption ? .maskAlternate : []
+-  if withOption { key(58, down: true, flags: .maskAlternate) }
++  let optionKey = modifierKeys.filter { withOption && $0.name == "--opt" }
++  endEverythingWhenKilled()
++  let flags = hold(optionKey, down: true)
++  begun("pinch") { magnify(0, .ended, at: point, flags: flags) }
+   magnify(0, .began, at: point, flags: flags)
+   rest(0.01)
+-  if withRotation { rotate(0, .began, at: point, flags: flags) }
++  if withRotation {
++    begun("rotation") { rotate(0, .ended, at: point, flags: flags) }
++    rotate(0, .began, at: point, flags: flags)
++  }
+   for _ in 1...steps {
+     magnify(total / Double(steps), .changed, at: point, flags: flags)
+     if withRotation { rotate(1, .changed, at: point, flags: flags) }
+     rest(0.01)
+   }
+   magnify(0, .ended, at: point, flags: flags)
++  ended("pinch")
+   rest(0.01)
+   // After the pinch, as fingers that are still turning would.
+-  if withRotation { rotate(0, .ended, at: point, flags: flags) }
+-  if withOption { key(58, down: false, flags: []) }
++  if withRotation {
++    rotate(0, .ended, at: point, flags: flags)
++    ended("rotation")
++  }
++  _ = hold(optionKey, down: false)
+ 
+ case "scroll":
+   let steps = max(1, min(500, Int(option("--steps").flatMap(Double.init) ?? 10)))
+   let coasting = max(0, min(500, Int(option("--momentum").flatMap(Double.init) ?? 0)))
+-  let withOption = flag("--opt")
+-  let withControl = flag("--ctrl")
++  let keys = modifiersAskedFor()
+   let point = CGPoint(x: number(0), y: number(1))
+   let dx = Int32(max(-10_000, min(10_000, number(2) / Double(steps))))
+   let dy = Int32(max(-10_000, min(10_000, number(3) / Double(steps))))
+-  let flags = hold(control: withControl, option: withOption, down: true)
++  endEverythingWhenKilled()
++  let flags = hold(keys, down: true)
++  begun("scroll") { scroll(dx: 0, dy: 0, phase: 4, momentum: 0, at: point, flags: flags) }
+   scroll(dx: 0, dy: 0, phase: 1, momentum: 0, at: point, flags: flags)
+   rest(0.01)
+   for _ in 1...steps {
+@@ -275,45 +346,51 @@ case "scroll":
+     rest(0.01)
+   }
+   scroll(dx: 0, dy: 0, phase: 4, momentum: 0, at: point, flags: flags)
++  ended("scroll")
+   // The keys are let go with the fingers; what coasts on carries none.
+-  _ = hold(control: withControl, option: withOption, down: false)
++  _ = hold(keys, down: false)
+   if coasting > 0 {
++    begun("momentum") { scroll(dx: 0, dy: 0, phase: 0, momentum: 3, at: point, flags: []) }
+     for index in 1...coasting {
+       scroll(dx: dx, dy: dy, phase: 0, momentum: index == 1 ? 1 : 2, at: point, flags: [])
+       rest(0.01)
+     }
+     scroll(dx: 0, dy: 0, phase: 0, momentum: 3, at: point, flags: [])
++    ended("momentum")
+   }
+ 
+ case "hold":
+-  let withOption = flag("--opt")
+-  let withControl = flag("--ctrl")
+-  _ = hold(control: withControl, option: withOption, down: true)
+-  rest(max(0, min(30, number(0))))
+-  _ = hold(control: withControl, option: withOption, down: false)
++  let keys = modifiersAskedFor()
++  // Read before anything is pressed: a number that is missing ends the process.
++  let seconds = max(0, min(30, number(0)))
++  endEverythingWhenKilled()
++  _ = hold(keys, down: true)
++  rest(seconds)
++  _ = hold(keys, down: false)
+ 
+ case "wheel":
+-  let withOption = flag("--opt")
+-  let withControl = flag("--ctrl")
++  let keys = modifiersAskedFor()
+   let point = CGPoint(x: number(0), y: number(1))
+   let notches = max(-50, min(50, Int(number(2))))
+-  let flags = hold(control: withControl, option: withOption, down: true)
++  endEverythingWhenKilled()
++  let flags = hold(keys, down: true)
+   for _ in 0..<abs(notches) {
+     notch(up: notches > 0, at: point, flags: flags)
+     rest(0.05)
+   }
+-  _ = hold(control: withControl, option: withOption, down: false)
++  _ = hold(keys, down: false)
+ 
+ case "hold-space":
+   let repeats = max(0, min(50, Int(number(0))))
+   let flags: CGEventFlags = [.maskControl, .maskAlternate]
+-  key(59, down: true, flags: .maskControl)
+-  key(58, down: true, flags: flags)
+-  key(49, down: true, flags: flags)
++  endEverythingWhenKilled()
++  press(59, flags: .maskControl)
++  press(58, flags: flags)
++  press(49, flags: flags)
+   for _ in 0..<repeats { key(49, down: true, flags: flags, repeating: true) }
+-  key(49, down: false, flags: flags)
+-  key(58, down: false, flags: .maskControl)
+-  key(59, down: false, flags: [])
++  letGo(49, flags: flags)
++  letGo(58, flags: .maskControl)
++  letGo(59, flags: [])
+ 
+ default:
+   fail("unknown command \(command)\n\(usage)")

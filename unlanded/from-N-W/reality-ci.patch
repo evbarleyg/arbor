@@ -1,0 +1,125 @@
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index dd1f0d8..db6dc92 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -77,7 +77,7 @@ jobs:
+     needs: changes
+     if: ${{ !cancelled() && needs.changes.outputs.mac != 'false' }}
+     runs-on: macos-26
+-    timeout-minutes: 30
++    timeout-minutes: 40
+     steps:
+       - uses: actions/checkout@v5
+       - name: Use the newest Xcode on the runner
+@@ -103,6 +103,17 @@ jobs:
+       - name: Real-pointer test
+         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+         run: ./scripts/ci-step.py e2e-drag ./scripts/mac-shell/e2e-drag.sh
++      # The journeys a rehearsal plays on Linux, here on real windows, written down step by step. It checks nothing: the `reality` job compares.
++      - name: Reality, on real windows
++        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
++        run: ./scripts/ci-step.py --summary 'total$|not come to rest' reality-mac ./scripts/mac-shell/reality.sh
++      - name: Keep what was written down
++        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
++        uses: actions/upload-artifact@v4
++        with:
++          name: reality-mac
++          path: mac-shell/reality
++          if-no-files-found: warn
+       - name: Keep the evidence
+         if: ${{ !cancelled() && steps.e2e.outcome != 'skipped' }}
+         uses: actions/upload-artifact@v4
+@@ -130,6 +141,21 @@ jobs:
+         run: ./scripts/ci-step.py toolchain swift --version
+       - name: Build
+         run: ./scripts/ci-step.py --summary 'warning:|Build complete' build swift build
++      # Before the tests, so that a test that fails does not cost the `reality` job its other half.
++      - name: Reality, rehearsed
++        run: ./scripts/ci-step.py --summary 'total$' reality-linux ./scripts/mac-shell/rehearse.sh scripts/mac-shell/reality.sh
++      - name: Keep what was written down
++        uses: actions/upload-artifact@v4
++        with:
++          name: reality-linux
++          path: .build/rehearsal/out/reality
++          if-no-files-found: warn
++      # Every run gets the number, Mac or no Mac. Only reported: the committed run may be older than what the pull request changes.
++      - name: Reality, against the last run on a Mac that was committed
++        run: >-
++          ./scripts/ci-step.py --summary '^reality:' reality-committed
++          python3 scripts/reality-diff.py collab/evidence/reality-mac .build/rehearsal/out/reality
++          --known collab/evidence/reality-known.txt
+       - name: Test
+         run: ./scripts/ci-step.py --summary 'Test run with|skipped' --log test.log test swift test
+       - name: Simulator smoke test
+@@ -143,3 +169,27 @@ jobs:
+         run: ./scripts/ci-step.py --summary 'error:|type-check' typecheck-mac make typecheck-mac
+       - name: Parity (no shipped feature may break; FEATURES.md must be current)
+         run: ./scripts/ci-step.py parity python3 scripts/parity.py --test-log test.log --check
++
++  # How far the stand-ins are from a real Mac: the same script on both, compared step by step (docs/TESTING.md, "Reality"). The number, and every
++  # divergence that collab/evidence/reality-known.txt does not have or has and is gone, come out as annotations.
++  reality:
++    needs: [real-windows, linux]
++    # Whenever a Mac ran, even if one of its checks or a test on Linux failed: both halves are written down before those.
++    if: ${{ !cancelled() && needs.real-windows.result != 'skipped' }}
++    runs-on: ubuntu-latest
++    timeout-minutes: 5
++    steps:
++      - uses: actions/checkout@v5
++      - uses: actions/download-artifact@v4
++        with:
++          name: reality-mac
++          path: reality/mac
++      - uses: actions/download-artifact@v4
++        with:
++          name: reality-linux
++          path: reality/linux
++      - name: The Mac against the rehearsal
++        run: >-
++          ./scripts/ci-step.py --summary '^reality:' reality
++          python3 scripts/reality-diff.py reality/mac reality/linux
++          --known collab/evidence/reality-known.txt --check --markdown "$GITHUB_STEP_SUMMARY"
+diff --git a/scripts/ci-changes.py b/scripts/ci-changes.py
+index 22c2e0f..cf2b4bd 100755
+--- a/scripts/ci-changes.py
++++ b/scripts/ci-changes.py
+@@ -5,8 +5,9 @@ A Mac is left out when it could prove nothing new, or nothing that will not be p
+ 
+   1. everything the pull request changes (for a push: everything since the commit before it) is
+      prose, or data the Linux job checks just as well: collab/, docs/, *.md, scripts/typecheck-mac/ (which
+-     only Linux runs), and the scripts in scripts/mac-shell/ that CI does not run (it runs e2e-drag.sh, and
+-     with it lib.sh and its tools; and `swift test` on a Mac type-checks every helper tool there, *.swift and *.m);
++     only Linux runs), and the scripts in scripts/mac-shell/ that CI does not run (it runs e2e-drag.sh and reality.sh, and
++     with them lib.sh and its tools; and `swift test` on a Mac type-checks every helper tool there, *.swift and *.m).
++     Not collab/evidence/reality-known.txt: whether a divergence between the stand-ins and a Mac is gone, only a Mac can say;
+   2. or, in an ordinary pull request, all the rest of it is code that also builds and is tested on
+      Linux (the core, the controller, the platform protocols, the fakes, arbor-sim, the tests);
+   3. or only prose has changed since the nearest earlier commit that passed the macOS job. That covers
+@@ -36,7 +37,10 @@ import re
+ import subprocess
+ import sys
+ 
+-PROSE = re.compile(r"^(collab|docs|scripts/typecheck-mac)/|^scripts/mac-shell/(?!(e2e-drag\.sh|lib\.sh|state\.py|.*\.swift|.*\.m)$)|\.md$")
++PROSE = re.compile(
++    r"^(?!collab/evidence/reality-known\.txt$)(collab|docs|scripts/typecheck-mac)/"
++    r"|^scripts/mac-shell/(?!(e2e-drag\.sh|reality\.sh|reality\.py|lib\.sh|state\.py|.*\.swift|.*\.m)$)|\.md$"
++)
+ # What Package.swift builds on Linux too. Anything in neither list needs a Mac.
+ HEADLESS = re.compile(
+     r"^(Sources/(ArborCore|ArborKit/(Controller|Platform|Support|Trace)|ArborTesting|arbor-sim|LinuxShims)|Tests)/"
+diff --git a/scripts/test-ci-changes.py b/scripts/test-ci-changes.py
+index 1ca7981..10ed3fc 100755
+--- a/scripts/test-ci-changes.py
++++ b/scripts/test-ci-changes.py
+@@ -39,6 +39,11 @@ TABLE = [
+     (False, "stand-ins that only Linux compiles", pull(), dict(files=[CORE, "scripts/typecheck-mac/stubs/AppKit/View.swift"])),
+     (True, "the Mac shell script CI runs", pull(), dict(files=[DOC, "scripts/mac-shell/e2e-drag.sh"])),
+     (True, "what that script is built on", pull(), dict(files=[DOC, "scripts/mac-shell/lib.sh"])),
++    (True, "the journeys CI plays on a Mac and in a rehearsal", pull(), dict(files=[DOC, "scripts/mac-shell/reality.sh"])),
++    (True, "what writes them down", pull(), dict(files=[DOC, "scripts/mac-shell/reality.py"])),
++    (True, "a stand-in cured, and its divergence off the list: only a Mac can say that it is gone", pull(),
++     dict(files=["Sources/ArborTesting/FakeWindowSystem.swift", "collab/evidence/reality-known.txt"])),
++    (False, "other evidence", pull(), dict(files=[CORE, "collab/evidence/e2e-latest.txt"])),
+     (True, "a helper tool, which only a Mac's tests type-check", pull(), dict(files=[DOC, "scripts/mac-shell/curtain.swift"])),
+     (True, "the one in Objective-C too", pull(), dict(files=[DOC, "scripts/mac-shell/vdisplay.m"])),
+     (True, "macOS-only code", pull(), dict(files=[CORE, UI])),

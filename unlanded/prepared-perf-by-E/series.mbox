@@ -1,0 +1,480 @@
+From 1cfadb730e792a3677a547a8a70ab993c4b010aa Mon Sep 17 00:00:00 2001
+From: ebg-ant <296364998+ebg-ant@users.noreply.github.com>
+Date: Wed, 14 Oct 2026 23:29:29 +0000
+Subject: [PATCH] perf: floating windows move together with the rest, and every
+ question to the window system is counted
+
+A camera move told the window system beforehand which docked windows it was about to move, so that their apps could work side by
+side. Floating windows still went one at a time, each waiting for its app's answer.
+
+- `placeFloatingWindows` makes its plan, foretells from that very plan (`movesInSight(in:on:reason:)`), and walks it. Not together with
+  the docked windows: floating windows are placed last, after the rounds in which a window that refuses its slot has the layout
+  reckoned again, and the Desktop may be elsewhere by then. Foretold from the first layout, a floating window went where the
+  final plan never sent it: twice on its way at best. `aLayoutReckonedAgainSendsNoFloatingWindowAnywhereTwice` holds that down.
+- With `shrinkOutOfView` nothing is foretold at the size a window has, because it is parked at another.
+- `Budget.questions` and `Budget.windowLists`: the fake counts every question it is asked. A command has the window server list
+  every window once at most (an app's quit twice, a start three times); seven everyday commands not at all.
+- `arbor-sim bench` prints what each command asks. A big desk for a benchmark is built once and kept.
+---
+ .../Controller/Controller+Layout.swift        |  5 +-
+ .../Controller/Controller+Together.swift      | 33 ++++++++++--
+ Sources/ArborTesting/Budget.swift             | 17 ++++++-
+ .../FakeWindowSystem+Stacking.swift           |  5 ++
+ Sources/ArborTesting/FakeWindowSystem.swift   | 51 +++++++++++++++----
+ Sources/ArborTesting/Workload.swift           | 11 +++-
+ Sources/arbor-sim/Bench.swift                 | 14 +++++
+ Tests/ArborKitTests/BudgetTests.swift         | 15 ++++++
+ Tests/ArborKitTests/MoveTogetherTests.swift   | 51 +++++++++++++++++--
+ collab/parity.json                            |  2 +-
+ docs/ARCHITECTURE.md                          |  2 +-
+ docs/TESTING.md                               |  3 +-
+ 12 files changed, 186 insertions(+), 23 deletions(-)
+
+diff --git a/Sources/ArborKit/Controller/Controller+Layout.swift b/Sources/ArborKit/Controller/Controller+Layout.swift
+index 056ed89..6b3cf6d 100644
+--- a/Sources/ArborKit/Controller/Controller+Layout.swift
++++ b/Sources/ArborKit/Controller/Controller+Layout.swift
+@@ -332,7 +332,10 @@ extension Controller {
+     letGoOfWindowsNoLongerInHand(on: displayID)
+     // Paid with this layout, or owed again because the app has stopped answering again (`unplaced`).
+     defer { owedMoves = owedMoves.filter { !workspace.contains($0) } }
+-    for (window, move) in floatingMoves(on: displayID, layout: layout, reason: reason) {
++    let plan = floatingMoves(on: displayID, layout: layout, reason: reason)
++    // From the very plan that is walked below, so that nothing is foretold that is not asked for (Controller+Together.swift).
++    system.moveTogether(movesInSight(in: plan, on: display, reason: reason))
++    for (window, move) in plan {
+       if case .fill(let desktop) = move {
+         fill(desktop, with: window, on: display)
+         continue
+diff --git a/Sources/ArborKit/Controller/Controller+Together.swift b/Sources/ArborKit/Controller/Controller+Together.swift
+index 9569b60..56f298a 100644
+--- a/Sources/ArborKit/Controller/Controller+Together.swift
++++ b/Sources/ArborKit/Controller/Controller+Together.swift
+@@ -6,9 +6,11 @@ import CoreGraphics
+ ///
+ /// `apply` stays as it is: one window at a time, each answer looked at before the next question. This only foretells
+ /// its questions. A move foretold and never asked for would leave a window where nobody meant it to be, so only what is
+-/// certain is foretold: docked windows going into their slots and out of view, which is most of what a camera move
+-/// moves. Floating windows have many reasons to stay where they are, and putting windows back has reasons of its own,
+-/// so neither is foretold. A move that is not foretold costs a wait of its own and nothing else.
++/// certain is foretold, and only just before it is asked for: docked windows going into their slots and out of view, before the
++/// first `apply` of that very layout; floating windows by `placeFloatingWindows` itself, from the plan it is about to walk.
++/// So a layout moves its windows in two breaths. One would not do: floating windows are placed last, after the rounds in which
++/// a window that refuses its slot has the layout reckoned again, and the Desktop may be elsewhere by then. Putting windows
++/// back has reasons of its own and is not foretold. A move that is not foretold costs a wait of its own and nothing else.
+ ///
+ /// `BudgetTests` and `MoveTogetherTests` fail on a move that goes unclaimed. Whoever gives `apply` or `park` a new reason to
+ /// leave a docked window alone gives it here as well.
+@@ -37,4 +39,29 @@ extension Controller {
+     // One window needs no company.
+     return moves.count > 1 ? moves : []
+   }
++
++  /// What `placeFloatingWindows` is about to ask for, walking `plan`.
++  func movesInSight(
++    in plan: [(window: WindowID, move: FloatingMove)], on display: DisplaySnapshot, reason: RelayoutReason
++  ) -> [(window: WindowID, frame: CGRect)] {
++    guard reason != .enforce else { return [] }
++    var moves: [(window: WindowID, frame: CGRect)] = []
++    for (window, move) in plan {
++      guard let current = windows[window] else { continue }
++      switch move {
++      case .place(let target, _):
++        if !isInPlace(current, at: target) { moves.append((window, target)) }
++      case .park:
++        // As for docked windows: with `shrinkOutOfView` it is parked at another size.
++        if !settings.shrinkOutOfView {
++          moves.append((window, CGRect(origin: parkingOrigin(for: current.frame.size, on: display), size: current.frame.size)))
++        }
++      case .fill:
++        // Asked for in steps, each depending on the answer to the one before.
++        break
++      }
++    }
++    // One window needs no company.
++    return moves.count > 1 ? moves : []
++  }
+ }
+diff --git a/Sources/ArborTesting/Budget.swift b/Sources/ArborTesting/Budget.swift
+index 54ee91e..398a8bb 100644
+--- a/Sources/ArborTesting/Budget.swift
++++ b/Sources/ArborTesting/Budget.swift
+@@ -25,6 +25,11 @@ public struct Budget: Equatable, Sendable, CustomStringConvertible {
+   /// Overlay updates with the scene that was already showing.
+   public var idleOverlayUpdates = 0
+   public var saves = 0
++  /// Times the window server was asked to list every window there is (`stackedWindows`, `windowsFrontToBack`,
++  /// `existingWindowIDs`). Milliseconds each, and more the more windows are open, Arbor's or not.
++  public var windowLists = 0
++  /// Every other question, by name.
++  public var questions: [String: Int] = [:]
+ 
+   public init(
+     moves: Int = 0, idleMoves: Int = 0, repeatMoves: Int = 0, movesAlone: Int = 0, unclaimedMoves: Int = 0,
+@@ -49,7 +54,8 @@ public struct Budget: Equatable, Sendable, CustomStringConvertible {
+ 
+   public var description: String {
+     "moves \(moves) (idle \(idleMoves), repeat \(repeatMoves), alone \(movesAlone), unclaimed \(unclaimedMoves)), focus \(focuses) (idle \(idleFocuses)), "
+-      + "focus reads \(focusReads), overlays \(overlayUpdates) (idle \(idleOverlayUpdates)), saves \(saves)"
++      + "focus reads \(focusReads), window lists \(windowLists), overlays \(overlayUpdates) (idle \(idleOverlayUpdates)), "
++      + "saves \(saves)"
+   }
+ }
+ 
+@@ -62,6 +68,8 @@ extension Harness {
+     let reads = system.focusedWindowReads
+     let updates = overlays.updateLog.count
+     let saves = store.saveCount
++    let asked = system.asked
++    let unclaimed = system.answersNobodyClaimed
+     body()
+     // Scheduled work can schedule more; a put-back waiting for the mouse button would do so forever.
+     for _ in 0..<4 where !scheduler.pendingKeys.isEmpty { scheduler.runPending() }
+@@ -74,7 +82,7 @@ extension Harness {
+       if !seen.insert(move.window).inserted { budget.repeatMoves += 1 }
+       if !move.together { budget.movesAlone += 1 }
+     }
+-    budget.unclaimedMoves = system.answersAhead.count
++    budget.unclaimedMoves = system.answersNobodyClaimed - unclaimed + system.answersAhead.count
+     for focus in system.focusLog[focuses...] {
+       budget.focuses += 1
+       if focus.wasFocused { budget.idleFocuses += 1 }
+@@ -85,6 +93,11 @@ extension Harness {
+       if !update.changed { budget.idleOverlayUpdates += 1 }
+     }
+     budget.saves = store.saveCount - saves
++    for (name, count) in system.asked where count > asked[name, default: 0] {
++      budget.questions[name] = count - asked[name, default: 0]
++    }
++    budget.windowLists = ["stackedWindows", "windowsFrontToBack", "existingWindowIDs"]
++      .map { budget.questions[$0, default: 0] }.reduce(0, +)
+     return budget
+   }
+ }
+diff --git a/Sources/ArborTesting/FakeWindowSystem+Stacking.swift b/Sources/ArborTesting/FakeWindowSystem+Stacking.swift
+index e3e2432..e7dc2dc 100644
+--- a/Sources/ArborTesting/FakeWindowSystem+Stacking.swift
++++ b/Sources/ArborTesting/FakeWindowSystem+Stacking.swift
+@@ -12,6 +12,11 @@ extension FakeWindowSystem {
+   /// Focusing or raising a window brings it to the front. Windows that never were lie behind the
+   /// ones that were, newest in front, as they do when apps open them one after another.
+   public func windowsFrontToBack() -> [WindowID] {
++    asked["windowsFrontToBack", default: 0] += 1
++    return frontToBack()
++  }
++
++  func frontToBack() -> [WindowID] {
+     guard !stackingIsUnknown else { return [] }
+     let front = raised.filter { windows[$0] != nil }
+     return front + windows.keys.filter { !front.contains($0) }.sorted(by: >)
+diff --git a/Sources/ArborTesting/FakeWindowSystem.swift b/Sources/ArborTesting/FakeWindowSystem.swift
+index affc128..231fa88 100644
+--- a/Sources/ArborTesting/FakeWindowSystem.swift
++++ b/Sources/ArborTesting/FakeWindowSystem.swift
+@@ -178,6 +178,9 @@ public final class FakeWindowSystem: WindowSystem {
+   public private(set) var moveLog: [Move] = []
+   public private(set) var focusLog: [Focus] = []
+   public private(set) var focusedWindowReads = 0
++  /// How often each of the other questions was asked, by name. `stackedWindows`, `windowsFrontToBack` and
++  /// `existingWindowIDs` each have the window server list every window there is, which takes milliseconds.
++  public internal(set) var asked: [String: Int] = [:]
+   /// Lets simulated time pass while a drag rests at a point. `Harness` points it at its scheduler.
+   public var passTime: ((Double) -> Void)?
+   /// The window being dragged by its title bar, from `beginDrag` to `endDrag`: where it was and
+@@ -187,6 +190,9 @@ public final class FakeWindowSystem: WindowSystem {
+   public var ignoresMoveTogether = false
+   /// What came of the moves announced with `moveTogether`, until `setFrame` asks for it.
+   public private(set) var answersAhead: [WindowID: (requested: CGRect, answer: CGRect?)] = [:]
++  /// How many of them were still there when the next forecast came. A layout makes two, so looking at what is left of the last
++  /// would miss what was left of the first.
++  public private(set) var answersNobodyClaimed = 0
+ 
+   /// A 1440×900 display with a 25-point menu bar.
+   public static let standardDisplay = DisplaySnapshot(
+@@ -213,11 +219,15 @@ public final class FakeWindowSystem: WindowSystem {
+   }
+ 
+   public func allWindows() -> [WindowSnapshot] {
++    asked["allWindows", default: 0] += 1
+     guard !isDenied else { return [] }
+     return windows.values.map(\.snapshot).sorted { $0.id < $1.id }
+   }
+ 
+-  public func displays() -> [DisplaySnapshot] { displayList }
++  public func displays() -> [DisplaySnapshot] {
++    asked["displays", default: 0] += 1
++    return displayList
++  }
+ 
+   public func setFrame(_ frame: CGRect, of window: WindowID) -> CGRect? {
+     if let ahead = answersAhead.removeValue(forKey: window), ahead.requested == frame { return ahead.answer }
+@@ -229,6 +239,7 @@ public final class FakeWindowSystem: WindowSystem {
+     // Like the Accessibility layer: what nobody asked for is reported, so that nobody believes an old frame.
+     let unclaimed = answersAhead.keys.sorted()
+     answersAhead.removeAll()
++    answersNobodyClaimed += unclaimed.count
+     for window in unclaimed {
+       if let snapshot = windows[window]?.snapshot { events?.windowChanged(snapshot, userInitiated: false) }
+     }
+@@ -318,9 +329,18 @@ public final class FakeWindowSystem: WindowSystem {
+     return isDenied ? nil : focused
+   }
+ 
+-  public func cursorLocation() -> CGPoint { cursor }
+-  public func isMouseButtonDown() -> Bool { mouseDown }
+-  public func secondsSinceClickOrModifierKey() -> Double { secondsSinceInput }
++  public func cursorLocation() -> CGPoint {
++    asked["cursorLocation", default: 0] += 1
++    return cursor
++  }
++  public func isMouseButtonDown() -> Bool {
++    asked["isMouseButtonDown", default: 0] += 1
++    return mouseDown
++  }
++  public func secondsSinceClickOrModifierKey() -> Double {
++    asked["secondsSinceClickOrModifierKey", default: 0] += 1
++    return secondsSinceInput
++  }
+   public func leaveStrayDialogs(_ leave: Bool, exceptOfApp inUse: String?) {
+     leavesStrayDialogs = leave
+     appWhoseDialogsNeverWait = leave ? inUse : nil
+@@ -335,11 +355,18 @@ public final class FakeWindowSystem: WindowSystem {
+     return true
+   }
+   public func bringInStrayDialogs(ofApp bundleID: String?) { strayDialogs.removeAll { $0 == bundleID } }
+-  public func strayDialogsWaiting() -> Int { strayDialogs.count }
+-  public func modifierKeysDown() -> KeyChord.Modifiers { heldModifiers }
++  public func strayDialogsWaiting() -> Int {
++    asked["strayDialogsWaiting", default: 0] += 1
++    return strayDialogs.count
++  }
++  public func modifierKeysDown() -> KeyChord.Modifiers {
++    asked["modifierKeysDown", default: 0] += 1
++    return heldModifiers
++  }
+ 
+   public func inputActivity() -> InputActivity {
+-    InputActivity(
++    asked["inputActivity", default: 0] += 1
++    return InputActivity(
+       pointerIdle: clock() - pointerUsedAt, keyboardIdle: clock() - keyReleasedAt, keyPresses: keyPresses)
+   }
+ 
+@@ -536,7 +563,10 @@ public final class FakeWindowSystem: WindowSystem {
+     return nextID
+   }
+ 
+-  public func existingWindowIDs() -> Set<WindowID> { Set(windows.keys).union(unlisted.keys) }
++  public func existingWindowIDs() -> Set<WindowID> {
++    asked["existingWindowIDs", default: 0] += 1
++    return Set(windows.keys).union(unlisted.keys)
++  }
+ 
+   /// Takes a window off the list before Arbor starts (its Space is not showing), or puts it back
+   /// (the user switched to its Space), which announces it as a window that was open all along.
+@@ -911,8 +941,9 @@ extension FakeWindowSystem {
+ 
+ extension FakeWindowSystem {
+   public func stackedWindows() -> [StackedWindow] {
+-    strangers
+-      + windowsFrontToBack().compactMap { id in
++    asked["stackedWindows", default: 0] += 1
++    return strangers
++      + frontToBack().compactMap { id in
+         guard let snapshot = windows[id]?.snapshot, snapshot.isPresent else { return nil }
+         return StackedWindow(id: id, frame: snapshot.frame)
+       }
+diff --git a/Sources/ArborTesting/Workload.swift b/Sources/ArborTesting/Workload.swift
+index c16f903..dce0d79 100644
+--- a/Sources/ArborTesting/Workload.swift
++++ b/Sources/ArborTesting/Workload.swift
+@@ -50,7 +50,13 @@ public struct Workload {
+           groups.append([id])
+         }
+       }
+-      for group in groups { Self.dock(group, in: &workspace) }
++      // The same every time, and in a debug build the longest part of making a big desk: a benchmark makes hundreds.
++      if let built = Self.builtWorkspaces[count] {
++        workspace = built
++      } else {
++        for group in groups { Self.dock(group, in: &workspace) }
++        Self.builtWorkspaces[count] = workspace
++      }
+       // Known to the arrangement like the rest: a window it does not know opened while Arbor was not looking, and
+       // stays in view whatever the view shows.
+       for id in floating { workspace.floating[id] = Self.openingFrame(Int(id.rawValue) - 101) }
+@@ -84,6 +90,9 @@ public struct Workload {
+     self.floating = floating
+   }
+ 
++  /// The groups of a desk of so many windows, docked.
++  private static var builtWorkspaces: [Int: Workspace] = [:]
++
+   /// Where the window with this index is before Arbor starts.
+   private static func openingFrame(_ index: Int) -> CGRect {
+     CGRect(x: 200 + (index % 7) * 40, y: 120 + (index % 5) * 40, width: 640, height: 420)
+diff --git a/Sources/arbor-sim/Bench.swift b/Sources/arbor-sim/Bench.swift
+index 82ba90a..0a4174e 100644
+--- a/Sources/arbor-sim/Bench.swift
++++ b/Sources/arbor-sim/Bench.swift
+@@ -38,6 +38,20 @@ func runBenchmarks(_ arguments: [String]) {
+     print("")
+   }
+ 
++  let names = [
++    "stackedWindows", "windowsFrontToBack", "existingWindowIDs", "allWindows", "displays", "inputActivity",
++    "cursorLocation", "isMouseButtonDown", "modifierKeysDown",
++  ]
++  print("what else is asked, 10 windows (the first three have the window server list every window)")
++  print("  \("command".padding(toLength: 24, withPad: " ", startingAt: 0))" + names.map { pad(String($0.prefix(9)), 10) }.joined())
++  for benchmark in BenchmarkCase.all {
++    let questions = benchmark.run(windows: 10, repetitions: 1).budget.questions
++    print(
++      "  \(benchmark.name.padding(toLength: 24, withPad: " ", startingAt: 0))"
++        + names.map { pad(String(questions[$0, default: 0]), 10) }.joined())
++  }
++  print("")
++
+   print("the pure parts, µs" + trees.map { pad("\($0)", 9) }.joined())
+   let columns = trees.map { CoreBenchmark.run(windows: $0) }
+   for row in columns[0].indices {
+diff --git a/Tests/ArborKitTests/BudgetTests.swift b/Tests/ArborKitTests/BudgetTests.swift
+index ab80705..5c77385 100644
+--- a/Tests/ArborKitTests/BudgetTests.swift
++++ b/Tests/ArborKitTests/BudgetTests.swift
+@@ -35,6 +35,21 @@ import Testing
+     }
+   }
+ 
++  /// `stackedWindows`, `windowsFrontToBack` and `existingWindowIDs` each have the window server list every window on the
++  /// Mac, Arbor's or not: milliseconds, on the main thread. The stage needs one list for a motion. Nothing needs two.
++  @Test(arguments: sizes) func aCommandHasTheWindowServerListItsWindowsOnceAtMost(windows: Int) {
++    // An app that quits is a layout, and a motion, per window that closes. A start asks what still exists, twice, and ends with
++    // the focused window in view: on a big desk that window is inside a tile, so the view goes to it, which is a motion.
++    let more = ["quit app": 2, "restart": 3]
++    for benchmark in BenchmarkCase.all {
++      let budget = benchmark.run(windows: windows).budget
++      #expect(budget.windowLists <= more[benchmark.name, default: 1], "\(benchmark.name) with \(windows) windows: \(budget)")
++    }
++    for name in ["seam step", "grid: seam step", "focus in view", "put back", "relayout", "echoes", "zoom again"] {
++      #expect(BenchmarkCase.named(name).run(windows: windows).budget.windowLists == 0, "\(name)")
++    }
++  }
++
+   @Test(arguments: sizes) func commandsThatChangeNothingMoveAndSaveNothing(windows: Int) {
+     for name in ["zoom again", "show-all again", "relayout", "displays: no change"] {
+       let budget = BenchmarkCase.named(name).run(windows: windows).budget
+diff --git a/Tests/ArborKitTests/MoveTogetherTests.swift b/Tests/ArborKitTests/MoveTogetherTests.swift
+index 1aa987f..13de11a 100644
+--- a/Tests/ArborKitTests/MoveTogetherTests.swift
++++ b/Tests/ArborKitTests/MoveTogetherTests.swift
+@@ -12,11 +12,10 @@ import Testing
+       let budget = BenchmarkCase.named(name).run(windows: windows).budget
+       #expect(budget.moves == windows && budget.movesAlone == 0, "\(name) with \(windows) windows: \(budget)")
+     }
+-    // On a desk with floating windows, those follow the Desktop one at a time. A single move needs no company.
+-    let floating = Workload(windows: windows).floating.count
++    // On a desk with floating windows, those follow the Desktop in the same breath. A single move needs no company.
+     for name in ["zoom", "back", "show-all", "zoom group", "neighbor", "focus out of view"] {
+       let budget = BenchmarkCase.named(name).run(windows: windows).budget
+-      #expect(budget.movesAlone <= floating + 1, "\(name) with \(windows) windows: \(budget)")
++      #expect(budget.movesAlone <= 1, "\(name) with \(windows) windows: \(budget)")
+     }
+   }
+ 
+@@ -27,6 +26,52 @@ import Testing
+     }
+   }
+ 
++  /// With `shrinkOutOfView` a window goes out of view at another size than it has, docked or floating. A forecast at the size
++  /// it has would be a move that nobody asks for: the window would go to the corner twice, large and then small.
++  @Test(arguments: [4, 10, 30]) func nothingForetoldGoesUnclaimedWhereWindowsShrinkOutOfView(windows: Int) {
++    var settings = Settings()
++    settings.shrinkOutOfView = true
++    let desk = Workload(windows: windows, settings: settings)
++    let h = desk.harness
++    for command in ["zoom \(desk.groups[0][0].rawValue)", "back", "zoom-node \(desk.node(ofGroup: 0).rawValue)", "show-all"] {
++      let budget = h.measure { h.run(command) }
++      #expect(budget.unclaimedMoves == 0 && budget.repeatMoves == 0, "\(command) with \(windows) windows: \(budget)")
++      #expect(budget.moves > 0, "\(command) moves something, or this says nothing")
++    }
++  }
++
++  /// Floating windows are placed last, after the rounds in which a window that refuses its slot has the layout reckoned again, and
++  /// the Desktop may be elsewhere by then. Foretold from the layout as it was first reckoned, they went where the final plan never
++  /// sent them: twice on their way at best, and left there at worst, if the final plan had nothing to ask of them.
++  @Test func aLayoutReckonedAgainSendsNoFloatingWindowAnywhereTwice() throws {
++    func desk(ignoring: Bool) -> (Harness, floating: [WindowID], stubborn: WindowID) {
++      let h = Harness()
++      h.system.ignoresMoveTogether = ignoring
++      let a = h.system.open(app: "A")
++      let floating = (0..<3).map {
++        h.system.open(app: "Note\($0)", frame: CGRect(x: 760 + $0 * 60, y: 120 + $0 * 60, width: 300, height: 240))
++      }
++      // Half the display is room enough for it to float in, so nothing is known about it until it is docked.
++      let stubborn = h.system.open(
++        app: "Settings", frame: CGRect(x: 800, y: 100, width: 600, height: 700), minimumSize: CGSize(width: 600, height: 700))
++      h.start()
++      h.run("dock \(a.rawValue) left")
++      return (h, floating, stubborn)
++    }
++    let (h, floating, stubborn) = desk(ignoring: false)
++    let log = h.system.moveLog.count
++    let budget = h.measure { h.run("dock \(stubborn.rawValue) right") }
++    #expect(h.system.moveLog[log...].filter { $0.window == stubborn }.count > 1, "it refuses, or this says nothing: \(budget)")
++    for window in floating {
++      #expect(h.system.moveLog[log...].filter { $0.window == window }.count <= 1, "\(window): \(budget)")
++    }
++    #expect(budget.unclaimedMoves == 0, "\(budget)")
++    // And they are where a window system that ignores the hint has them.
++    let (plain, _, _) = desk(ignoring: true)
++    plain.run("dock \(stubborn.rawValue) right")
++    for window in floating { #expect(h.frame(window) == plain.frame(window), "\(window)") }
++  }
++
+   /// A long walk through everything a desk goes through, once with a window system that takes the hint and once with
+   /// one that ignores it. After every step both desks must be the same.
+   @Test func takingTheHintChangesNothingButTheCost() {
+diff --git a/collab/parity.json b/collab/parity.json
+index aa0b287..52f0336 100644
+--- a/collab/parity.json
++++ b/collab/parity.json
+@@ -111,7 +111,7 @@
+     {"id": "A64", "area": "Arbor only", "title": "Shortcuts follow the keyboard layout", "trellis": "", "arbor": "⌃⌥Z is the key labelled Z on QWERTZ, AZERTY and Dvorak; Back shows as ⌃⌥Ü in Germany; `us:z` and `shortcutsFollowLayout` for positions", "status": "shipped", "spec": "F44", "priority": 2, "tests": ["qwertz", "azerty", "dvorakTypesEverythingSoNothingFallsBack", "everyDefaultShortcutWorksOnEveryLayoutAndNoTwoShareAKey", "aCollisionAfterFallingBackIsReportedAndTheOthersStillWork", "withTheSettingOffShortcutsArePositionsWithTheirUSLabels", "selectingALayoutMovesTheShortcutsAndTellsTheApp", "aPositionCanBeAskedForOutright", "theNumericKeypadIsNeverMeant", "theSampleLayoutsAreWhatMacOSHas"]},
+     {"id": "A49", "area": "Arbor only", "title": "Pin a window so that it stays in view", "trellis": "", "arbor": "`pin`, `unpin`, `toggle-pin`, menu Keep “Zoom” in View, rule action `pin`: keeps its place through every camera move, is raised again when covered, never takes the keyboard by itself, and gives it up when the view moves", "status": "shipped", "spec": "F49", "priority": 1, "tests": ["aPinnedWindowKeepsItsPlaceThroughEveryCameraMove", "otherFloatingWindowsStillLeaveWithTheDesktop", "dockedWindowsDoNotAvoidItAndDoNotPushIt", "pinningAWindowThatIsOutOfViewBringsItBackWithoutMovingTheCamera", "itStaysWhenTheDesktopIsSqueezedIntoATile", "afterEachCameraMoveItIsInFrontAndTheKeyboardIsWhereTheMovePutIt", "framingTheWindowThatAlreadyHasTheKeyboardDoesNotBuryIt", "clickingAnotherWindowDoesNotBuryIt", "aClickedWindowThatComesToTheFrontLateIsStillPutBehindIt", "clickingInTheWindowThatAlreadyHasTheKeyboardDoesNotBuryIt", "whileTheButtonStaysDownInThatWindowItIsNotLeftCovered", "clicksWithNothingPinnedCostNothing", "aLookThatFindsNothingCoveredAsksNoApp", "ofTwoPinnedWindowsOnlyTheOneThatIsCoveredIsRaised", "aPinnedWindowThatNothingCoversIsNotRaised", "whenTheStackingCannotBeToldItIsRaisedAnyway", "clickingThePinnedWindowGivesItTheKeyboardAndMovesNothing", "aMoveOfTheViewTakesTheKeyboardAlongAlsoOutOfAPinnedWindow", "aCommandThatLeavesTheViewWhereItIsLeavesTheKeyboardInThePinnedWindow", "theFrameShortcutInAPinnedWindowUnframesWhatIsBeneath", "pinnedWhereDockedWindowsHadPushedItThatIsItsPlaceFromNowOn", "aCameraMoveNeverGivesItTheKeyboard", "thePinnedWindowUsedLastIsInFrontOfTheOtherPinnedWindows", "whileAPinnedWindowHasTheKeyboardNothingIsRaisedOverIt", "anAppReportingItsRaisedWindowAsFocusedDoesNotStartALoop", "draggingAGapDoesNotMakeArborLookWithEveryMove", "withNothingPinnedNothingIsRaised", "dockingUnpins", "toggleFloatAndDockBesideUnpinToo", "pinningADockedWindowFloatsItAndItsSlotCloses", "pinningAFramedWindowDoesNotCoverTheView", "pinningADockedWindowWhoseOwnSizeIsMostOfTheDisplayHalvesIt", "pinningADockedWindowThatIsOutOfViewBringsItIntoView", "draggingAPinnedWindowMovesItAndNeverDocksIt", "pinningAndUnpinningMoveNothing", "unpinningLeavesItWhereItIsUntilTheCameraNextMoves", "togglePinGoesBothWaysAndActsOnTheFocusedWindow", "commandsThatCannotWorkSayWhy", "thePinRuleAppliesToNewWindows", "aTitleThatArrivesLateStillPins", "aLateTitleCanTakeThePinAwayAgain", "aBadActionIsReportedLikeOtherBadRules", "pinsSurviveARestart", "aPinnedWindowWhoseAppRestartedIsFoundAgainByAppAndTitle", "aStateFileFromBeforePinsLoadsAndTheNewOneRoundTrips", "eachDisplaysCameraLeavesThePinnedWindowsOfBothAlone", "thePinFollowsAWindowMovedToAnotherDisplay", "whenItsDisplayIsUnpluggedItComesIntoViewOnTheMainOneAndGoesBackAfterwards", "movedByMacOSBeforeTheUnplugWasReportedItStillGoesBackPinned", "unpinnedWhileItsDisplayWasAwayItStaysUnpinned", "dockedAndFloatedAgainWhileItsDisplayWasAwayItStaysUnpinned", "aMomentWithoutAnyDisplayDoesNotCostThePin", "pinnedWhileItsDisplayWasAwayItStaysWhereItWasPinned", "launchedWithoutTheDisplayItWasPinnedOnItIsStillPinned", "whenTheDisplayShrinksUnderItItIsBroughtBackIntoView", "minimizedItIsLeftAloneAndComesBackPinnedWhereItWas", "whileItsAppIsHiddenItIsLeftAloneAndComesBackPinnedWhereItWas", "onAnotherMacOSSpaceItIsLeftAlone", "switchingTabsInAPinnedWindowKeepsThePin", "pinningAWindowThatOpenedOverAFramedOneMakesItTheDisplaysNotThatSpaces", "closingItForgetsThePin", "closingItBeforeItIsRaisedIsHarmless", "excludingItsAppForgetsThePin", "floatAllLeavesItExactlyWhereItIs", "arrangeLeavesItOut", "withOnlyAPinnedWindowThereIsNothingToArrange", "pausingLeavesItExactlyWhereItIsAndResumingRemembersThePin", "movedDuringAPauseItStaysWhereItWasPut", "stateAndTheDrawingShowThePin", "aURLCanPinAndUnpin", "pinnedAndInFront", "onlyAFloatingWindowCanBePinned", "howeverAWindowStopsFloatingItsPinGoes", "movingAPinnedWindowKeepsItsPin", "pinningAndUnpinningLeavesTheWorkspaceAsItWas", "resettingTheTreeKeepsThePins", "pinsAreSavedAndAPinOnAWindowThatDoesNotFloatIsNotBelieved", "theCommandsHaveATextForm", "theRuleActionHasATextForm", "aWindowTheDesktopSqueezedIsItsOwnSizeOncePinned", "squeezedInHeightItIsItsOwnSizeOncePinnedToo", "squeezedAtTheEdgeOfTheScreenItGrowsInward", "pinningASqueezedWindowDoesNotCostItItsSize", "pinnedWhileOutOfViewASqueezedWindowComesAtItsOwnSize", "itGrowsToItsOwnSizeAsAMotionNotAJump"]},
+     {"id": "A77", "area": "Arbor only", "title": "A group keeps its identity", "trellis": "", "arbor": "A framed, saved, named or guest group goes on meaning its windows whatever leaves or arrives around it; docking at the edge of the view joins what is in view", "status": "shipped", "spec": "F62", "priority": 1, "tests": ["aFramedGroupStaysFramedWhenItsNeighbourLeaves", "aSavedViewOfAGroupStillShowsThatGroup", "whatIsDockedAtTheEdgeOfTheViewJoinsWhatIsInView", "aFirmlyKeptGroupSurvivesDownToOneWindowAndGrowsAgain", "noReferenceEverComesToMeanMore", "closingTheWindowBesideAFramedGroupLeavesTheViewOnTheGroup", "dockingAtTheEdgeOfTheViewShowsTheViewAndTheNewcomer", "tradingPlacesInAFramedPairKeepsThePairAndTheView", "aSavedViewOfAPairStillShowsThePair", "rearrangingAFramedPairBringsNothingElseIntoView", "aFloatingWindowDraggedToAnotherDisplayLeavesTheOneItLeftLaidOut", "noTwoReasonsShareABitAndEachHasAWord", "theTwoHalvesAgreeAfterEveryCommand", "aGroupNamedWhileALayoutWaitsIsStillKeptWhenTheWindowComes", "alsoOnTwoDisplaysWithDragsGapsAndWaitingSlots"]},
+-    {"id": "A90", "area": "Arbor only", "title": "What commands cost is counted, pinned and shown", "trellis": "", "arbor": "Budgets for every everyday command, pinned by tests; `arborctl stats` says what commands cost on this Mac", "status": "shipped", "priority": 2, "tests": ["nothingIsDoneTwiceOrForNothing", "theListOfKnownWasteIsCurrent", "commandsThatChangeNothingMoveAndSaveNothing", "aCameraMoveTouchesEachWindowOnce", "anAppWithManyWindowsHidesAndShowsInOneLayout", "theStateIsWrittenOnlyWhenItChanged", "commandsAndLayoutsAreCounted", "everyCommandIsQuickOnABigDesk", "goingAwayAndComingBackMakesNothingNew", "nothingIsEverInTwoPlaces", "aCameraMoveMakesNoDockedWindowWaitForAnother", "takingTheHintChangesNothingButTheCost", "nothingForetoldGoesUnclaimed"]},
++    {"id": "A90", "area": "Arbor only", "title": "What commands cost is counted, pinned and shown", "trellis": "", "arbor": "Budgets for every everyday command, pinned by tests; `arborctl stats` says what commands cost on this Mac", "status": "shipped", "priority": 2, "tests": ["nothingIsDoneTwiceOrForNothing", "theListOfKnownWasteIsCurrent", "commandsThatChangeNothingMoveAndSaveNothing", "aCameraMoveTouchesEachWindowOnce", "anAppWithManyWindowsHidesAndShowsInOneLayout", "theStateIsWrittenOnlyWhenItChanged", "commandsAndLayoutsAreCounted", "everyCommandIsQuickOnABigDesk", "goingAwayAndComingBackMakesNothingNew", "nothingIsEverInTwoPlaces", "aCameraMoveMakesNoDockedWindowWaitForAnother", "takingTheHintChangesNothingButTheCost", "nothingForetoldGoesUnclaimed", "aCommandHasTheWindowServerListItsWindowsOnceAtMost", "nothingForetoldGoesUnclaimedWhereWindowsShrinkOutOfView", "aLayoutReckonedAgainSendsNoFloatingWindowAnywhereTwice"]},
+     {"id": "A48", "area": "Arbor only", "title": "A window that leaves the arrangement gets its own size back", "trellis": "", "arbor": "`float`, ⌃⌥F and a drag out of a slot give the size back; Float All Windows, quitting and excluding put windows back where they were", "status": "shipped", "spec": "F48", "priority": 1, "tests": ["aFloatedWindowTakesItsOldSizeCentredOnItsSlot", "floatingAFramedWindowShowsTheDesktop", "floatAllPutsEveryWindowBackExactlyWhereItWas", "quittingPutsEveryWindowBackExactlyWhereItWas", "movingADockedWindowAroundDoesNotChangeWhatIsRemembered", "anOldStateFileLoadsAndItsWindowsKeepTheirSlotsSize", "theNextLaunchDocksThemAgainAndStillRemembers", "aWindowDraggedOutOfItsSlotShrinksBackUnderThePointer", "aDroppedWindowStaysUnderThePointerThoughTheDesktopMovesAway", "afterACrashTheNextLaunchStillKnowsTheSizes", "aPauseCannotBeSeenByWhoeverIsFramedOnAWindow", "quittingWhilePausedLeavesNoColumnShapedWindows", "anExcludedAppsWindowsGoBackToWhereTheyWere", "aWindowDockedByARuleAtBirthGoesBackToTheSizeItsAppGaveIt", "aSmallerDisplayFitsTheRememberedFrame", "aSqueezedWindowThatIsOnlyMovedStillHasItsOwnSizeToGoBackTo", "aFloatingWindowThatCanNoLongerBeAsSmallAsItWasStaysOnTheScreenWhenPushedAside", "aTilesWindowFloatedWhileTheDesktopIsATileTooComesIntoViewWithTheDesktop", "aWindowOutOfViewWhoseAppHangsWhenItIsLetGoOfComesBackWhenTheAppAnswers", "rememberedFramesRoundTrip", "aWorkspaceSavedBeforeThisExistedLoads", "aWindowFloatedBesideADesktopNarrowerThanItselfHasItsOwnSize"]},
+     {"id": "A17", "area": "Arbor only", "title": "Every setting is scriptable and checked", "trellis": "", "arbor": "`arborctl set gap 16`, `get`, `settings`, `reset`, `bind`, `unbind`, `rule add`, `settings --json`; ranges enforced with reasons and \"did you mean\"; a slip in settings.json costs one key, never the file", "status": "shipped", "spec": "F12", "priority": 2, "tests": ["setMovesTheWindowsAtOnceAndSaves", "aRefusedValueChangesNothing", "resetAllKeepsShortcutsRulesAndExcludedApps", "numbersOutsideTheRangeAreRefusedWithTheRange", "numbersThatAreNotFiniteAreRefused", "typosGetASuggestion", "theBeginningOfAKeyIsNotEnough", "aShortcutCanChangeASetting", "bindReplacesWhatTheShortcutRan", "unbindRemovesADefaultWithNull", "anAddedRuleAppliesToTheNextWindow", "moveTakesARuleToThatPlace", "numbersOutsideTheirRangeMoveToTheNearestEnd", "aValueOfTheWrongTypeCostsOnlyItsOwnKey", "nothingInTheFileCanCrashOrWedgeArbor", "whileTheFileIsBrokenNothingIsSavedOverIt", "levelsDecideOnlyWhereASettingIsShown", "theJSONFormSaysTheSameForScripts", "aWordFromTheLabelFindsTheKey", "anAppCanBeNamedAsPeopleKnowIt", "aRuleMatchesWhateverTheCaseOfItsBundleID", "aBrokenFileIsTheFirstThingSettingsAndStatusSay", "noURLCanChangeASettingUnlessTheUserSaidSo", "aChoicesValuesAreExplainedWhereTheyAreTyped"], "e2e": ["change the gap with a command"]},
+     {"id": "A53", "area": "Arbor only", "title": "Summon an app over any view", "trellis": "", "arbor": "`summon <app>`: its window over the view with the keyboard in it; again, or turning to another window, sends it out of view; remembers its place per display; opens the app if it has no window", "status": "shipped", "spec": "F53", "priority": 2, "tests": ["summoningBringsTheAppsWindowOverTheViewWithTheKeyboardInIt", "theAppCanBeNamedByBundleIDOrNameInAnyCase", "ofSeveralWindowsTheOneUsedLastComes", "summoningAgainSendsItOutOfViewAndTheKeyboardBack", "itGoesOutOfViewEvenWhereTheDesktopIsInView", "sentAwayItStaysOutOfViewWhateverTheCameraShows", "pulledOutOfItsCornerItGoesBackWithTheNextMoveOfTheViewAndNotWhileThatIsPlanned", "homeBringsItBackToTheDesktopAsAnOrdinaryWindow", "homeWorksWhenEverythingIsShowingAlready", "homeMakesTheSummonedWindowAnOrdinaryWindowToo", "pulledBackIntoViewByMacOSItGoesOutOfViewAgain", "ifTheWindowThatHadTheKeyboardIsGoneAWindowInViewGetsIt", "summonedWhileItHadTheKeyboardOnTheDesktopTheKeyboardGoesToTheWindowBeforeIt", "turningToAnotherWindowSendsItAway", "switchingToAWindowThatIsOutOfViewSendsItAwayAndMovesTheCameraAsEver", "withSummonStaysItStaysUntilSummonedAway", "aWindowTheDesktopSqueezedIsSummonedAtItsOwnSize", "aWindowThatFilledTheDesktopIsSummonedAtItsOwnSize", "summonedWhileItFillsTheDesktopWithTheKeyboardInItItIsItsOwnSizeToo", "theWindowLeftAloneOnTheDesktopTakesItAndGivesItBack", "everyWindowPlaysItsPart", "withSummonStaysAClickInTheWindowThatAlreadyHasTheKeyboardDoesNotBuryIt", "summonedAwayWhileTheKeyboardIsElsewhereTheKeyboardStaysThere", "ifTheWindowThatHadTheKeyboardIsOutOfViewByThenAWindowInViewGetsItAndTheViewStays", "aCommandThatMovesTheViewTakesTheKeyboardAlongWhichSendsItAway", "theFrameShortcutInASummonedWindowUnframesWhatIsBeneath", "anotherWindowOfTheSameAppDoesNotSendItAway", "aFocusReportFromTheBackgroundDoesNotSendItAway", "summoningAnotherAppReplacesItAndTheKeyboardGoesBackToWhereItWasBeforeBoth", "movedOrResizedWhileSummonedItReturnsToThatFrame", "theFrameIsRememberedAcrossARestartAndForTheAppsNextWindow", "aRememberedFrameThatNoLongerFitsIsFittedIntoTheDisplay", "whatTheAppMakesOfTheFrameIsWhatIsRemembered", "anAppWithoutAWindowIsAskedToOpenAndItsWindowIsSummonedWhenItAppears", "aWindowThatComesTooLateIsAnOrdinaryNewWindow", "anotherAppsNewWindowIsNotTakenForIt", "anAppThatIsNotInstalledIsAFailureThatSaysSo", "aMinimizedWindowIsAskedForAndSummonedWhenItIsBack", "aHiddenAppIsAskedForAndItsWindowSummonedWhenItShows", "aRuleThatDocksTheNewWindowWins", "aDockedWindowHasAPlaceAndThePlaceWins", "summoningADockedWindowAgainGoesBackWhereYouWere", "inViewAlreadyOnlyTheKeyboardGoesThereAndBack", "onceTheViewHasMovedThereIsNoBack", "onceTheKeyboardHasBeenElsewhereThereIsNoBack", "withTheKeyboardInItAlreadyThereIsNowhereToGoBackTo", "theWindowYouCameFromHasClosedTheViewStillGoesBack", "thePlaceYouCameFromIsGoneSoThePressStays", "carriedByHandToADisplayWithASummonedWindowOfItsOwnItTakesItsPlace", "draggedToADisplayWithASummonedWindowOfItsOwnItTakesItsPlace", "anOrdinaryWindowCarriedThereLeavesTheSummonedOneAlone", "goingToADockedOrPinnedWindowThatWaySendsTheSummonedOneAway", "aPinnedWindowOnlyGetsTheKeyboard", "anAppArborDoesNotArrangeIsAFailureThatSaysSo", "dockingOrPinningItMakesItAnOrdinaryWindowOfThatKind", "draggingItMovesItAndNeverDocksIt", "aNewTabInTheSummonedWindowIsStillTheSummonedWindow", "aWindowThatOpenedOverAFramedOneStopsBelongingToThatSpaceOnceItIsSummoned", "switchingToAWindowThatWasSentAwaySummonsIt", "aFocusReportFromTheBackgroundDoesNotSummonIt", "withTheDesktopSqueezedIntoATileItComesAndGoesAllTheSame", "itComesToTheDisplayUnderThePointerAndEachDisplayRemembersItsOwnPlace", "itComesToTheDisplayThatHasTheKeyboardWhenThePointerHasNotMovedSince", "sentAwayWhereNothingElseIsInViewTheKeyboardGoesToAWindowOnAnotherDisplay", "movedToTheOtherDisplayWhileSummonedItIsSummonedThere", "sentAwayOnADisplayThatIsUnpluggedItStaysOutOfViewAndCanBeSummonedOnTheOther", "summonedOnADisplayThatIsUnpluggedItComesIntoViewOnTheOther", "aMomentWithoutAnyDisplayChangesNothing", "minimizedWhileSummonedItIsLeftAloneAndComesBackSummoned", "hidingItsAppWhileSummonedAndShowingItAgain", "closingItEndsEverythingButTheRememberedFrame", "closingItWhileItIsAwayIsHarmless", "floatAllMakesThemOrdinaryWindowsInView", "floatAllBringsThemBackEvenWithNothingDocked", "arrangeLeavesThemOut", "pausingLeavesItInViewAndEndsTheSummon", "resumedWithTheKeyboardStillInItItIsSummonedAgainWhereItIs", "pausingBringsAWindowThatWasSentAwayIntoView", "pausingStopsWaitingForAWindow", "quittingLeavesEveryWindowInViewAndTheNextLaunchRemembers", "killedWhileSummonedItIsStillSummonedAtTheNextLaunch", "aStateFileFromBeforeSummoningLoadsAndTheNewOneRoundTrips", "stateAndTheDrawingShowIt", "scenariosCanExpectIt", "aURLCannotSummonUnlessEveryCommandIsAllowed", "whilePausedItSaysWhyItDoesNothing", "theReadmesRecipeBindsTheKeys", "oneWindowIsSummonedAtATimeAndTheOneBeforeIsStashed", "whereTheSummonedWindowIsIsWhereItWillBeNextTime", "dismissingStashesAndReturnsTheWindow", "howeverAWindowStopsFloatingItIsNeitherSummonedNorStashed", "aWindowHasOneRoleAtATime", "rolesCanBeHandedFromOneWorkspaceToAnother", "forgettingSummonsLeavesOrdinaryFloatingWindows", "withNothingSummonedEverTheWorkspaceIsAsItWas", "whatAFileSaysOfWindowsThatDoNotFloatIsNotBelieved", "theCommandHasATextForm", "itIsNotAcceptedFromURLs", "theSettingDefaultsToOffAndOldFilesLoad", "inViewWithTheKeyboardInItItIsSummonedWhereItIs", "aNewWindowWithTheKeyboardStaysWhereItsAppOpenedItUnlessTheAppHasAPlace", "inViewWithoutTheKeyboardItComesToItsPlace", "framingAWindowThatWasSentAwaySummonsIt", "floatMakesItAnOrdinaryFloatingWindowAgain", "minimizedWhileSummonedOnePressBringsItBack", "squeezedInViewWithTheKeyboardInItItIsSummonedThereAtItsOwnSize", "squeezedOntoTheDesktopItIsSummonedAtItsOwnSizeAndKeepsIt", "squeezedAndSummonedQuittingGivesItsOwnSizeBack", "stretchedOverTheDesktopItIsSummonedAtItsOwnSize", "inUseOnTheDesktopAtASizeArborGaveItItTakesItsOwnSizeAroundWhereItIs"]},
+diff --git a/docs/ARCHITECTURE.md b/docs/ARCHITECTURE.md
+index 92d8d09..15da526 100644
+--- a/docs/ARCHITECTURE.md
++++ b/docs/ARCHITECTURE.md
+@@ -250,7 +250,7 @@ and nothing else is worth optimising.
+ - Before a layout moves anything it tells the window system which `setFrame` calls are about to follow
+   (`WindowSystem.moveTogether`, `Controller+Together.swift`). A window system that can moves those windows at once, the apps side
+   by side, waits only so long for all of them together, and answers the calls from what came of it. `apply` stays one
+-  window at a time. Only docked windows are foretold, and not when they are put back. The hint changes what the calls cost, never
++  window at a time. Docked windows are foretold before the first `apply`, floating ones by `placeFloatingWindows` from the plan it is about to walk (they are placed last, and the layout may have been reckoned again by then), neither when windows are put back. The hint changes what the calls cost, never
+   what they return: `MoveTogetherTests` walks two desks through everything, one taking the hint and one ignoring it, and compares them after every step.
+   **Whoever gives `apply` or `park` a new reason to leave a docked window alone gives it to `movesInSight` as well**; the tests fail otherwise.
+ 
+diff --git a/docs/TESTING.md b/docs/TESTING.md
+index 94b7767..dbfc684 100644
+--- a/docs/TESTING.md
++++ b/docs/TESTING.md
+@@ -151,7 +151,8 @@ arrive first.
+ `pull <id> <edge> <points>` drags a window's edge with the mouse (positive
+ grows the window; give two edges for a corner): `pull 101 right 100 down 80`.
+ 
+-`arbor-sim bench [sizes…]` prints those budgets and the time each command takes, then times for the pure parts
++`arbor-sim bench [sizes…]` prints those budgets and the time each command takes, then what else each command asks of the window
++system (`Budget.questions`; the first three columns have the window server list every window on the Mac), then times for the pure parts
+ (layout, navigation, drop targets, encoding the state) on nested trees of 10, 50 and 150 windows. Build it with
+ `swift build -c release --product arbor-sim` for times worth quoting.
+ `press <command>` runs a command as its shortcut would (`press dock left`), so that Arbor answers on screen as well; whatever it
+-- 
+2.43.0
+

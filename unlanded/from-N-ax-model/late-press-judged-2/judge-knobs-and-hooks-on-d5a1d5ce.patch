@@ -1,0 +1,96 @@
+diff --git a/scripts/mac-on-linux/tests/StoreyOne.swift b/scripts/mac-on-linux/tests/StoreyOne.swift
+index 56cf941b..8318ea46 100644
+--- a/scripts/mac-on-linux/tests/StoreyOne.swift
++++ b/scripts/mac-on-linux/tests/StoreyOne.swift
+@@ -198,6 +198,7 @@ final class StoreyOne {
+     mac.note("Arbor starts")
+     story.listens(heard, storey: 1, from: mac.now)
+     story.onFailure { [mac] in String(format: "    THE MAIN THREAD STOOD STILL FOR %.2f s in all", mac.secondsTheMainThreadWaited) }
++    story.onFailure { [mac] in "    THE LIST WAS ASKED FOR \(mac.timesTheListWasAskedFor) TIMES" }
+     layer.start()
+     mac.pass(0.5)
+     story.onFailure { [mac] in "    what happened on the Mac, and what Arbor's layer made of it:\n" + mac.journal.map { "      " + $0 }.joined(separator: "\n") }
+diff --git a/scripts/mac-on-linux/tests/StoreyTwo.swift b/scripts/mac-on-linux/tests/StoreyTwo.swift
+index fc76b198..3270b27e 100644
+--- a/scripts/mac-on-linux/tests/StoreyTwo.swift
++++ b/scripts/mac-on-linux/tests/StoreyTwo.swift
+@@ -45,6 +45,7 @@ final class StoreyTwo {
+     mac.note("Arbor starts")
+     story.listens(heard, storey: 2, from: mac.now)
+     story.onFailure { [mac] in String(format: "    THE MAIN THREAD STOOD STILL FOR %.2f s in all", mac.secondsTheMainThreadWaited) }
++    story.onFailure { [mac] in "    THE LIST WAS ASKED FOR \(mac.timesTheListWasAskedFor) TIMES" }
+     watcher.start()
+     controller.start()
+     mac.pass(1)
+diff --git a/scripts/mac-on-linux/tests/main.swift b/scripts/mac-on-linux/tests/main.swift
+index e28f91b6..1b2ca78a 100644
+--- a/scripts/mac-on-linux/tests/main.swift
++++ b/scripts/mac-on-linux/tests/main.swift
+@@ -152,6 +152,12 @@ tellOfTheJudge(book)
+ tellOfTheJudgesRandomGestures(book)
+ tellOfTheJudgesSecondRound(book)
+ tellOfTheJudgesSecondRandomGestures(book)
++tellOfTheJudgesThirdRound(book)
++tellOfTheJudgesThirdRoundAtStoreyTwo(book)
++tellOfTheJudgesSixthRound(book)
++tellOfTheJudgesEighthRound(book)
++tellOfTheJudgesNinthRound(book)
++tellOfTheJudgesSixthRoundAtStoreyTwo(book)
+ tellOfPlacing(book)
+ tellOfArrangements(book)
+ tellOfSlowApps(book)
+diff --git a/scripts/typecheck-mac/stubs/FakeMacOS/Accessibility.swift b/scripts/typecheck-mac/stubs/FakeMacOS/Accessibility.swift
+index b7b84fd2..5ecbd195 100644
+--- a/scripts/typecheck-mac/stubs/FakeMacOS/Accessibility.swift
++++ b/scripts/typecheck-mac/stubs/FakeMacOS/Accessibility.swift
+@@ -412,7 +412,7 @@ extension FakeMac {
+       take(frame, window, listedAfter: serverListsACallAfter)
+     }
+     if let delay = window.goesBackAfter {
+-      appDoes(window.app, after: delay, "w\(window.number) goes back to where it was") { [self] in take(before, window) }
++      appDoes(window.app, after: delay, "w\(window.number) goes back to where it was") { [self] in take(before, window, listedAfter: serverListsAnAppsMoveAfter) }
+     }
+   }
+ 
+@@ -421,7 +421,10 @@ extension FakeMac {
+     guard window.isOpen else { return }
+     let before = window.frame
+     window.frame = frame
+-    if lag > 0 {
++    if lag > 0, let sizeLag = serverListsANewSizeAfter {
++      if before.size != frame.size { send(after: min(sizeLag, lag), from: .system, "") { window.bounds.size = frame.size } }
++      if before.origin != frame.origin { send(after: lag, from: .system, "") { window.bounds.origin = frame.origin } }
++    } else if lag > 0 {
+       send(after: lag, from: .system, "") { if window.frame == frame { window.bounds = frame } }
+     } else {
+       window.bounds = frame
+diff --git a/scripts/typecheck-mac/stubs/FakeMacOS/DesktopShown.swift b/scripts/typecheck-mac/stubs/FakeMacOS/DesktopShown.swift
+index baed92e6..18b259e9 100644
+--- a/scripts/typecheck-mac/stubs/FakeMacOS/DesktopShown.swift
++++ b/scripts/typecheck-mac/stubs/FakeMacOS/DesktopShown.swift
+@@ -39,7 +39,7 @@ extension FakeMac {
+   }
+ 
+   /// The window's frame as the window server lists it.
+-  public func listedBounds(of window: Window) -> CGRect { sweptTo?[window.number] ?? window.bounds.offsetBy(dx: listIsOffBy, dy: 0) }
++  public func listedBounds(of window: Window) -> CGRect { sweptTo?[window.number] ?? window.bounds.offsetBy(dx: listIsOffBy, dy: listIsOffDownBy) }
+ 
+   /// Whether what shows at the point is the strip of a window that was swept aside.
+   func isStrip(at point: CGPoint) -> Bool { windowShowing(at: point, reach: 4).map { sweptTo?[$0.number] != nil } ?? false }
+diff --git a/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift b/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift
+index 052e23e1..7f73c806 100644
+--- a/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift
++++ b/scripts/typecheck-mac/stubs/FakeMacOS/FakeMac.swift
+@@ -90,6 +90,12 @@ public final class FakeMac: @unchecked Sendable {
+   public var serverListsACallAfter: TimeInterval = 0
+   /// The window server lists every window so many points to the right of where its app has it, for good. GUESS: nobody has measured such a difference; the layer must not depend on there being none.
+   public var listIsOffBy: CGFloat = 0
++  /// THE JUDGE'S, UNCOMMITTED. The same downwards.
++  public var listIsOffDownBy: CGFloat = 0
++  /// THE JUDGE'S, UNCOMMITTED: a new SIZE is listed so long after its call, a new place after `serverListsACallAfter`: half-way frames. Nil: as committed.
++  public var serverListsANewSizeAfter: TimeInterval?
++  /// THE JUDGE'S, UNCOMMITTED: the list is so far behind a stubborn window's own way back. GUESS: nobody has measured the list against an app's own move.
++  public var serverListsAnAppsMoveAfter: TimeInterval = 0
+   /// While macOS shows its desktop: where the window server lists each window it swept aside, by number (DesktopShown.swift).
+   public internal(set) var sweptTo: [UInt32: CGRect]?
+   /// How long after the button went down on a strip the window server lists the windows where they are again, with the button still down. 27 ms on a hosted
