@@ -10,6 +10,7 @@
 #
 # So here the app in front is one that writes down every key it is given (keys.swift, as in check-F41.sh). Before each panel a plain x
 # must reach it: the control. With the panel up an x must not. After each way of closing it, an x must again, and the app must still be in front.
+# A look at Mission Control is one of the ways: the three that take the keyboard go when they go out of sight (4.19).
 #
 # Twice. First with the app's window among those Arbor arranges, as any app's is on a person's Mac. Then with an app Arbor does not look at, as it looks at
 # no accessory app (a launcher's field, a menu bar app's window): asked who has the keyboard, Accessibility's layer then answers "nobody", and
@@ -57,6 +58,22 @@ kept() {
   key x
   sleep 0.5
   check "$1: an x does not reach the app" seen_is $X "$before"
+}
+# look_away <picture>: a look at Mission Control, and back with ⎋. A panel hears nothing of it: it keeps its key status, no app comes forward, the Space is
+# not left and ⌃↑ reaches no monitor. macOS hides the panel for as long and brings it back (collab/BOARD.md, 4.19). How many windows the Dock
+# shows before and meanwhile is written down, not judged: nobody has measured what Mission Control is made of. The picture shows whether it came.
+look_away() {
+  local dock
+  dock=$(pgrep -x Dock | head -n 1)
+  echo "the Dock's windows on screen before: $("$ARBOR_POINTER" windows --pid "$dock" | awk '$8 == "on"' | wc -l | tr -d ' ')"
+  key ctrl+up
+  sleep 1.5
+  echo "the Dock's windows on screen meanwhile: $("$ARBOR_POINTER" windows --pid "$dock" | awk '$8 == "on"' | wc -l | tr -d ' ')"
+  echo "Arbor's own at the panels' levels meanwhile, as the window server has them (level, on or off): $(overlays | awk '$3 == 5 || $3 == 8 { printf "%s %s; ", $3, $8 }')"
+  echo "in front meanwhile: $("$KEYS" frontmost)"
+  shot "$1"
+  key escape
+  sleep 1.5
 }
 # The app has the keyboard, by a click in its window, and shows it.
 begin() {
@@ -152,6 +169,14 @@ session() {
   check "⌃⌥N again closes it" eventually gone field
   reaches "after ⌃⌥N"
 
+  begin "the name field, left by a look at Mission Control"
+  key ctrl+opt+n
+  check "the field is up" eventually field
+  look_away "$1"-07-mission-control-field
+  check "the field has gone" eventually gone field
+  check "because it went out of sight" logged "the name field is put away by going out of sight"
+  reaches "after Mission Control"
+
   begin "Go to…, closed with ⎋"
   key ctrl+opt+g
   check "the palette is up" eventually panel
@@ -167,6 +192,14 @@ session() {
   key ctrl+opt+g
   check "⌃⌥G again closes it" eventually gone panel
   reaches "after ⌃⌥G"
+
+  begin "Go to…, left by a look at Mission Control"
+  key ctrl+opt+g
+  check "the palette is up" eventually panel
+  look_away "$1"-08-mission-control-palette
+  check "the palette has gone" eventually gone panel
+  check "because it went out of sight" logged "find: the palette is put away by going out of sight"
+  reaches "after Mission Control"
 
   begin "the panel of shortcuts, closed with ⎋"
   key ctrl+opt+shift+/
@@ -185,6 +218,14 @@ session() {
   # Whose that x was is the spec's to say. It is written down, not judged.
   echo "the x that put the panel away: $(($(seen $X) - before)) reached the app"
   reaches "after that key"
+
+  begin "the panel of shortcuts, left by a look at Mission Control"
+  key ctrl+opt+shift+/
+  check "the panel is up" eventually panel
+  look_away "$1"-09-mission-control-shortcuts
+  check "the panel has gone" eventually gone panel
+  check "because it went out of sight" logged "the panel of shortcuts is put away by going out of sight"
+  reaches "after Mission Control"
 
   begin "the minimap, tapped"
   key ctrl+opt+m

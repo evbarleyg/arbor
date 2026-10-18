@@ -12,6 +12,7 @@ final class CheatSheetPanel: PassingPanel {
   var onDismiss: (() -> Void)?
   private let list = CheatSheetView()
   private var monitor: Any?
+  private let sightWatcher = SightWatcher()
 
   override init() {
     super.init()
@@ -51,6 +52,7 @@ final class CheatSheetPanel: PassingPanel {
   func hide() {
     if let monitor { NSEvent.removeMonitor(monitor) }
     monitor = nil
+    sightWatcher.end()
     // At once: while it faded it would still have the keyboard, and swallow what is typed next.
     disappear(atOnce: true)
   }
@@ -61,6 +63,7 @@ final class CheatSheetPanel: PassingPanel {
   /// keyboard (secure text entry, say). Those cannot be kept from the app, but they still put the panel away.
   private func watchOtherApps() {
     guard monitor == nil else { return }
+    sightWatcher.begin(for: self) { [weak self] cause in self?.dismiss(cause) }
     monitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown, .leftMouseDown, .rightMouseDown, .otherMouseDown]) {
       [weak self] event in
       // A key held down since before the panel came up is not a key press.

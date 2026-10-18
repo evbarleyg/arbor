@@ -41,6 +41,7 @@ final class NamePanel: OverlayPanel, NSTextFieldDelegate {
   private let noteLabel = NSTextField(labelWithString: "")
   /// Watches for clicks and key presses that go to other apps while the field is open.
   private var clickMonitor: Any?
+  private let sightWatcher = SightWatcher()
 
   override init() {
     super.init()
@@ -87,6 +88,10 @@ final class NamePanel: OverlayPanel, NSTextFieldDelegate {
     if wasHidden {
       // What has been typed stays when the model changes under an open field.
       field.stringValue = new.initial
+      sightWatcher.begin(for: self) { [weak self] cause in
+        Log.debug("the name field is put away by \(cause)")
+        self?.cancel()
+      }
       orderFrontRegardless()
       makeKey()
       field.selectText(nil)
@@ -112,6 +117,7 @@ final class NamePanel: OverlayPanel, NSTextFieldDelegate {
     model = nil
     if let clickMonitor { NSEvent.removeMonitor(clickMonitor) }
     clickMonitor = nil
+    sightWatcher.end()
     orderOut(nil)
   }
 
